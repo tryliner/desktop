@@ -1,0 +1,110 @@
+{
+  "name": "@liner/client",
+  "version": "0.1.24",
+  "type": "module",
+  "private": true,
+  "description": "Liner Music Player",
+  "author": {
+    "name": "hkamori",
+    "email": "dev@tryliner.fun"
+  },
+  "desktopName": "liner",
+  "main": "dist-electron/main.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "signer:build": "node ../signer/scripts/build-wasm.mjs",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "electron:build": "tsc -b && vite build && electron-builder",
+    "electron:build:linux": "tsc -b && vite build && electron-builder --linux",
+    "electron:build:win": "tsc -b && vite build && electron-builder --win"
+  },
+  "build": {
+    "appId": "com.hkamori.liner",
+    "productName": "Liner",
+    "executableName": "liner",
+    "artifactName": "${productName}-${version}-${arch}.${ext}",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*"
+    ],
+    "linux": {
+      "executableName": "liner",
+      "syncDesktopName": true,
+      "maintainer": "hkamori <dev@tryliner.fun>",
+      "icon": "build/icons",
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Audio"
+    },
+    "deb": {
+      "packageName": "liner",
+      "artifactName": "liner_${version}_${arch}.${ext}"
+    },
+    "appImage": {
+      "artifactName": "Liner-${version}.${ext}"
+    },
+    "win": {
+      "executableName": "liner",
+      "icon": "build/icon.ico",
+      "target": [
+        "nsis"
+      ]
+    },
+    "nsis": {
+      "artifactName": "Liner-Setup-${version}.${ext}",
+      "allowToChangeInstallationDirectory": true,
+      "oneClick": false
+    },
+    "mac": {
+      "icon": "build/icon.png",
+      "target": [
+        "dmg"
+      ]
+    }
+  },
+  "dependencies": {
+    "@braccato/core": "^1.4.0",
+    "@braccato/parsers": "^0.2.1",
+    "@kawarp/core": "^1.2.0",
+    "@kawarp/react": "^1.2.0",
+    "@mingcute/react": "^1.4.1",
+    "@solar-icons/react": "^1.1.1",
+    "@tanstack/react-virtual": "^3.13.23",
+    "framer-motion": "^12.38.0",
+    "gsap": "^3.15.0",
+    "next-themes": "^0.4.6",
+    "react": "19.2.4",
+    "react-apple-emojis": "^3.0.0",
+    "react-dom": "19.2.4",
+    "react-icons": "^5.6.0",
+    "react-router-dom": "^7.18.2",
+    "solar-icons": "^0.0.15",
+    "zustand": "^5.0.12"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^6.0.5",
+    "electron": "^44.0.0",
+    "electron-builder": "^26.15.3",
+    "eslint": "^9",
+    "jsdom": "^30.0.1",
+    "tailwindcss": "^4",
+    "ts-node": "^10.9.2",
+    "typescript": "^5",
+    "vite": "^8.2.1",
+    "vite-plugin-electron": "^1.1.1",
+    "vite-plugin-electron-renderer": "^1.0.0",
+    "vitest": "^4.1.9"
+  }
+}
