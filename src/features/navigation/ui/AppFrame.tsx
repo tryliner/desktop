@@ -76,7 +76,6 @@ export default function AppFrame({ children }: AppFrameProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [queuePopupOpen, setQueuePopupOpen] = useState(false);
   const [fullscreenPlayerOpen, setFullscreenPlayerOpen] = useState(false);
-  const [fullscreenEffectsReady, setFullscreenEffectsReady] = useState(false);
 
   useEffect(() => {
     if (pathname === "/settings") {
@@ -173,12 +172,10 @@ export default function AppFrame({ children }: AppFrameProps) {
     queuePopupOpen && !searchOpen && !isFullscreenPlayer;
 
   const openFullscreenPlayer = useCallback(() => {
-    setFullscreenEffectsReady(false);
     setFullscreenPlayerOpen(true);
   }, []);
 
   const closeFullscreenPlayer = useCallback(() => {
-    setFullscreenEffectsReady(false);
     setFullscreenPlayerOpen(false);
   }, []);
   const [searchScrollMask, setSearchScrollMask] = useState(
@@ -595,13 +592,9 @@ export default function AppFrame({ children }: AppFrameProps) {
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
             transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-            onAnimationComplete={() => setFullscreenEffectsReady(true)}
             className="dark absolute inset-0 z-[70] overflow-hidden bg-black will-change-transform"
           >
-            <FullscreenPlayer
-              effectsReady={fullscreenEffectsReady}
-              onClose={closeFullscreenPlayer}
-            />
+            <FullscreenPlayer onClose={closeFullscreenPlayer} />
           </motion.div>
         ) : isFullscreenRoute ? (
           <div data-theme="dark" className="dark absolute inset-0 z-[70] overflow-hidden bg-black">

@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { motion } from "framer-motion";
 import { KawarpEngine } from "../engine/kawarpEngine";
 
 interface KawarpWrapperProps {
@@ -88,19 +87,15 @@ export function KawarpWrapper({ src, onLoad, onError }: KawarpWrapperProps) {
   }, [src, onLoad, onError]);
 
   return (
-    <motion.div
+    <div
       ref={containerRef}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: loaded ? 1 : 0 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.4, ease: "easeInOut" }}
       className="absolute inset-0 pointer-events-none overflow-hidden"
     >
       <canvas
         ref={canvasRef}
         className="absolute inset-0 w-full h-full block"
       />
-    </motion.div>
+    </div>
   );
 }
 
