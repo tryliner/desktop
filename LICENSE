@@ -1,0 +1,80 @@
+Liner Source-Available & Non-Commercial Contribution License
+Version 1.0 (2026)
+
+Copyright (c) 2024-2026 Liner Project Contributors & feralbureau.
+All Rights Reserved.
+
+================================================================================
+TERMS AND CONDITIONS FOR USE, REPRODUCTION, MODIFICATION, AND CONTRIBUTION
+================================================================================
+
+1. PREAMBLE & SOURCE-AVAILABLE STATUS
+   The source code of the Liner software ("Software") is made publicly available
+   to foster transparency, enable security review, and welcome collaborative
+   community contributions to the official Liner upstream project.
+   
+   THIS SOFTWARE IS SOURCE-AVAILABLE. IT IS NOT PUBLIC DOMAIN NOR UNRESTRICTED
+   OPEN SOURCE. ANY USE, COPYING, MODIFICATION, OR REDISTRIBUTION OUTSIDE THE
+   EXPLICIT PERMISSIONS OF THIS LICENSE IS STRICTLY PROHIBITED.
+
+2. PERMITTED PERSONAL & EVALUATION USE
+   Subject to the terms and limitations of this License, you are granted a
+   personal, non-exclusive, non-transferable, royalty-free license to:
+   a) Inspect, study, and review the source code of the Software.
+   b) Compile, build, and run the Software locally solely for your own personal,
+      private, non-commercial, and non-monetized use.
+   c) Modify the Software locally for testing, debugging, or personal experimentation.
+
+3. UPSTREAM CONTRIBUTION PERMISSION
+   You are expressly permitted to create forks, branches, and modifications of
+   this Software for the SOLE PURPOSE of developing, preparing, and submitting
+   contributions (including bug fixes, feature improvements, performance patches,
+   and documentation) back to the official upstream repository:
+   https://github.com/tryliner/desktop (or official Liner project repositories).
+
+   By submitting any modification or Pull Request to the official upstream project,
+   you grant the project maintainers a perpetual, irrevocable, worldwide,
+   royalty-free, assignable right and license to use, incorporate, modify,
+   relicense, and distribute your contribution as part of the Liner project.
+
+4. STRICT PROHIBITIONS & RESTRICTIONS
+   Unless you have received prior express written authorization from the
+   copyright holders, you SHALL NOT:
+   
+   a) NO COMMERCIAL EXPLOITATION:
+      You may NOT use, deploy, run, sell, lease, sublicense, or monetize the
+      Software, or any derivative works, in whole or in part, for any commercial
+      purpose, paid service, subscription model, ad-supported application, or
+      enterprise offering.
+
+   b) NO PUBLIC COMPETING FORKS OR REDISTRIBUTION:
+      You may NOT publicly distribute, host, publish, release binaries, deploy
+      cloud instances, or package forks, clones, or derivative versions of this
+      Software (standalone or re-branded) for third-party public use.
+
+   c) NO CODE EXTRACTION OR ASSET THEFT:
+      You may NOT copy, extract, harvest, or reuse core algorithms, security
+      and cryptographic subsystems (including liner-signer), custom audio
+      processing logic, lyrics synchronization mechanics, visual shaders, or
+      distinctive user interface designs from this Software for use in separate
+      third-party applications or libraries.
+
+   d) TRADEMARKS AND BRANDING:
+      This license does NOT grant any right to use the trade names, trademarks,
+      service marks, logos ("Liner"), product design, or branding assets of the
+      copyright holders.
+
+5. TERMINATION
+   Any violation of the terms, conditions, or prohibitions of this License
+   automatically terminates all rights granted to you hereunder with immediate
+   effect. Upon termination, you must destroy all copies, binaries, and modified
+   versions of the Software in your possession.
+
+6. DISCLAIMER OF WARRANTY
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL
+   THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER
+   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING
+   FROM, OUT OF, OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+   IN THE SOFTWARE.

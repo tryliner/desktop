@@ -1,0 +1,85 @@
+.root {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  isolation: isolate;
+  background: #000;
+}
+
+.glow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle, var(--grid-motion-gradient) 0%, transparent 100%);
+  pointer-events: none;
+}
+
+.grid {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 190%;
+  height: auto;
+  display: grid;
+  grid-template-rows: repeat(5, auto);
+  gap: 1rem;
+  transform: translate(-50%, -50%) rotate(-15deg);
+  transform-origin: center;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  align-items: center;
+  gap: 1rem;
+  will-change: transform;
+}
+
+.item {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  min-width: 0;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #111;
+  color: #fff;
+}
+
+.content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  padding: 14px;
+  overflow: hidden;
+  font-family: var(--font-geist-mono), monospace;
+  font-size: clamp(10px, 0.95vw, 14px);
+  line-height: 1;
+  letter-spacing: 0.08em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+.imageLoaded {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .row {
+    will-change: auto;
+  }
+}

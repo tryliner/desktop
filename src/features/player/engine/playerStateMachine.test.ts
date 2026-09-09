@@ -1,0 +1,140 @@
+import { describe, expect, it, beforeEach } from "vitest";
+import { playerEngine, usePlayerStore } from "./playerEngine";
+import type { Track } from "@/shared/types";
+
+const mockTrack = (id: string, title: string, durationMs = 180000): Track => ({
+  id,
+  title,
+  artists: "Artist " + id,
+  durationMs,
+  coverUrl: "https://example.com/cover-" + id + ".jpg",
+  playCount: 0,
+});
+
+describe("Player State Machine", () => {
+  beforeEach(() => {
+    usePlayerStore.setState({
+      status: "idle",
+      queue: [],
+      currentIndex: -1,
+      currentTrack: null,
+      positionMs: 0,
+      durationMs: 0,
+      repeat: "off",
+      shuffle: false,
+      error: null,
+    });
+  });
+
+  it("starts playback and updates state immediately", async () => {
+    const track1 = mockTrack("1", "First Song");
+    const track2 = mockTrack("2", "Second Song");
+
+    await playerEngine.playTrack(track1, [track1, track2]);
+
+    const state = usePlayerStore.getState();
+    expect(state.currentTrack?.id).toBe("1");
+    expect(state.currentIndex).toBe(0);
+    expect(state.queue.length).toBe(2);
+    expect(state.status).toBe("loading");
+    expect(state.positionMs).toBe(0);
+    expect(state.durationMs).toBe(180000);
+  });
+
+  it("handles fast skipping (rapid next clicks) with instantaneous UI transitions", async () => {
+    const tracks = Array.from({ length: 10 }, (_, i) =>
+      mockTrack(String(i + 1), `Track ${i + 1}`, 200000),
+    );
+
+    await playerEngine.playTrack(tracks[0], tracks);
+    expect(usePlayerStore.getState().currentIndex).toBe(0);
+
+    // Rapidly skip 5 times
+    await playerEngine.skipNext();
+    await playerEngine.skipNext();
+    await playerEngine.skipNext();
+    await playerEngine.skipNext();
+    await playerEngine.skipNext();
+
+    const state = usePlayerStore.getState();
+    expect(state.currentIndex).toBe(5);
+    expect(state.currentTrack?.id).toBe("6");
+    expect(state.positionMs).toBe(0);
+    expect(state.status).toBe("loading");
+  });
+
+  it("respects repeat='one' mode during skip", async () => {
+    const tracks = [mockTrack("1", "Track 1"), mockTrack("2", "Track 2")];
+    await playerEngine.playTrack(tracks[0], tracks);
+
+    playerEngine.setRepeat("one");
+    await playerEngine.skipNext();
+
+    const state = usePlayerStore.getState();
+    expect(state.currentIndex).toBe(0);
+    expect(state.currentTrack?.id).toBe("1");
+  });
+
+  it("respects repeat='all' loop around the queue", async () => {
+    const tracks = [mockTrack("1", "Track 1"), mockTrack("2", "Track 2")];
+    await playerEngine.playTrack(tracks[1], tracks, undefined, undefined, 1);
+
+    playerEngine.setRepeat("all");
+    await playerEngine.skipNext();
+
+    const state = usePlayerStore.getState();
+    expect(state.currentIndex).toBe(0);
+    expect(state.currentTrack?.id).toBe("1");
+  });
+
+  it("stops playback when reaching end of queue with repeat='off'", async () => {
+    const tracks = [mockTrack("1", "Track 1"), mockTrack("2", "Track 2")];
+    await playerEngine.playTrack(tracks[1], tracks, undefined, undefined, 1);
+
+    playerEngine.setRepeat("off");
+    await playerEngine.skipNext();
+
+    const state = usePlayerStore.getState();
+    expect(state.status).toBe("idle");
+    expect(state.currentTrack).toBeNull();
+    expect(state.currentIndex).toBe(-1);
+  });
+
+  it("restarts track when skipPrevious is called after 3 seconds", async () => {
+    const tracks = [mockTrack("1", "Track 1"), mockTrack("2", "Track 2")];
+    await playerEngine.playTrack(tracks[1], tracks, undefined, undefined, 1);
+
+    usePlayerStore.setState({ positionMs: 5000 });
+    await playerEngine.skipPrevious();
+
+    const state = usePlayerStore.getState();
+    expect(state.currentIndex).toBe(1);
+    expect(state.positionMs).toBe(0);
+  });
+
+  it("goes to previous track when skipPrevious is called before 3 seconds", async () => {
+    const tracks = [mockTrack("1", "Track 1"), mockTrack("2", "Track 2")];
+    await playerEngine.playTrack(tracks[1], tracks, undefined, undefined, 1);
+
+    usePlayerStore.setState({ positionMs: 1000 });
+    await playerEngine.skipPrevious();
+
+    const state = usePlayerStore.getState();
+    expect(state.currentIndex).toBe(0);
+    expect(state.currentTrack?.id).toBe("1");
+  });
+
+  it("preserves queue and currentIndex when modifying queue items", () => {
+    const track1 = mockTrack("1", "Track 1");
+    const track2 = mockTrack("2", "Track 2");
+    const track3 = mockTrack("3", "Track 3");
+
+    playerEngine.addToQueue(track1);
+    playerEngine.addToQueue(track2);
+    expect(usePlayerStore.getState().queue.length).toBe(2);
+
+    playerEngine.playNext(track3);
+    const queue = usePlayerStore.getState().queue;
+    expect(queue.map((t) => t.id)).toContain("3");
+  });
+});
