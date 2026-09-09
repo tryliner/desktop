@@ -7,7 +7,7 @@
  * - Robust CORS and blob/imageBitmap loading
  */
 
-const BLUR_SIZE = 384;
+const BLUR_SIZE = 160;
 
 const VERTEX_SHADER = `
   attribute vec2 a_position;

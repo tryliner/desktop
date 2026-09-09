@@ -3,8 +3,10 @@ let pendingWrite: { name: string; value: string } | null = null;
 
 if (typeof window !== "undefined") {
   setInterval(() => {
-    if (pendingWrite) {
-      localStorage.setItem(pendingWrite.name, pendingWrite.value);
+    if (pendingWrite && typeof localStorage !== "undefined") {
+      try {
+        localStorage.setItem(pendingWrite.name, pendingWrite.value);
+      } catch {}
       pendingWrite = null;
     }
   }, 3000);

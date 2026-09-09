@@ -12,7 +12,7 @@ import { useLyricsStore, LyricsProviderIsland, braccatoThemeCss } from "@/featur
 import { AnimatePresence, motion } from "framer-motion";
 import { PlayerUiElements } from "./PlayerUiElements";
 import { DownLine } from "@mingcute/react";
-import { preloadCoverArt, useCoverSrc, CoverImage } from "@/features/covers";
+import { preloadCoverArt, useCoverSrc } from "@/features/covers";
 import "@braccato/core/element";
 import "@braccato/core/styles/variables.css";
 import "@braccato/core/styles/lyrics.css";
@@ -167,31 +167,6 @@ export function FullscreenPlayer({
           className="absolute inset-0"
           style={{ backgroundColor: "var(--color-bg-primary)" }}
         />
-        {coverUrl ? (
-          <AnimatePresence>
-            <motion.div
-              key={coverUrl}
-              aria-hidden="true"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.5, ease: "easeInOut" }}
-              className="absolute -inset-[15%] scale-125 blur-3xl transform-gpu"
-            >
-              <CoverImage
-                src={coverUrl}
-                alt=""
-                fill
-                sizes="100vw"
-                priority
-                unoptimized
-                draggable={false}
-                className="object-cover"
-              />
-            </motion.div>
-          </AnimatePresence>
-        ) : null}
-
         {effectsReady ? (
           <KawarpWrapper src={kawarpSrc} onError={onError} />
         ) : null}
