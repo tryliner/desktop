@@ -48,7 +48,7 @@ function ArtistContent() {
 
   const [data, setData] = useState<{
     title: string;
-    description: string;
+    bio?: string;
     coverUrl: string;
     monthlyListeners?: string;
     followers?: number;
@@ -61,6 +61,7 @@ function ArtistContent() {
     singles: ArtistReleaseViewModel[];
   } | null>(null);
   const [showAllTracks, setShowAllTracks] = useState(false);
+  const [showFullBio, setShowFullBio] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadingMore] = useState(false);
   const [hasMore] = useState(true);
@@ -107,6 +108,7 @@ function ArtistContent() {
         return;
       }
       setShowAllTracks(false);
+      setShowFullBio(false);
       setLoading(true);
       try {
         const artist = await api.getArtist(id);
@@ -114,9 +116,7 @@ function ArtistContent() {
         setData({
           title: artist.name,
           monthlyListeners: artist.monthlyListeners,
-          description:
-            artist.bio ??
-            (!artist.monthlyListeners ? t("artist.no_biography") : ""),
+          bio: artist.bio?.trim() || undefined,
           coverUrl: artist.cover ? mediaUrl(artist.cover.url) : "",
           totalTracks: tracks.length,
           tracks,
@@ -162,6 +162,16 @@ function ArtistContent() {
     toast(t("artist.added_to_queue"), "info");
   };
 
+  const handleShare = useCallback(async () => {
+    if (!data) return;
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      toast(t("toast.copied"), "info");
+    } catch {
+      toast(data.title, "info");
+    }
+  }, [data, t, toast]);
+
   const handleSaveToLibrary = () => {
     if (!data || !id) return;
     const decoded = decodeURIComponent(id);
@@ -204,13 +214,13 @@ function ArtistContent() {
     <div className="page-transition relative h-full w-full overflow-y-auto bg-bg-primary pb-[24px]">
       {data.coverUrl && (
         <div
-          className="pointer-events-none absolute left-0 top-0 z-0 w-full h-[450px]"
+          className="pointer-events-none absolute left-0 top-0 z-0 w-full h-[480px]"
           style={{
             backgroundImage: `url(${heroCoverSrc})`,
             backgroundSize: "cover",
             backgroundPosition: "center",
-            filter: "blur(90px) saturate(150%)",
-            opacity: 0.15,
+            filter: "blur(90px) saturate(160%)",
+            opacity: 0.18,
             maskImage:
               "linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%)",
             WebkitMaskImage:
@@ -224,168 +234,205 @@ function ArtistContent() {
           onClick={() =>
             window.history.length > 1 ? navigate(-1) : navigate("/library")
           }
-          className="inline-flex items-center gap-[10px] text-text-primary no-underline transition-opacity duration-200 hover:opacity-80 border-0 bg-transparent cursor-pointer p-0"
+          className="group inline-flex items-center gap-[8px] text-text-secondary hover:text-text-primary transition-colors duration-200 border-0 bg-transparent cursor-pointer p-0 text-[14px] font-[500] mb-[20px]"
           style={{ fontFamily: "var(--font-inter), sans-serif" }}
         >
-          <ArrowLeftLine size={24} />
-          <span className="text-[28px] font-[350]">{data.title}</span>
+          <ArrowLeftLine
+            size={20}
+            className="transition-transform duration-200 group-hover:-translate-x-1"
+          />
+          <span>{t("artist.back")}</span>
         </button>
 
-        <section className="mt-[20px] flex items-start gap-[28px]">
-          <div className="relative h-[170px] w-[170px] shrink-0 overflow-hidden rounded-full bg-border-alpha-14">
-            {data.coverUrl && (
+        <section className="flex flex-col sm:flex-row items-center sm:items-start gap-[28px] md:gap-[36px]">
+          <div className="relative h-[180px] w-[180px] md:h-[190px] md:w-[190px] shrink-0 overflow-hidden rounded-full bg-border-alpha-14 ring-1 ring-border-alpha-14 shadow-2xl shadow-black/25">
+            {data.coverUrl ? (
               <CoverImage
                 src={data.coverUrl}
                 alt={data.title}
                 fill
-                sizes="170px"
+                sizes="190px"
                 className="object-cover"
                 draggable={false}
               />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center bg-border-alpha-10 text-text-tertiary">
+                <User3Line size={64} />
+              </div>
             )}
           </div>
 
-          <div className="flex h-[170px] flex-1 justify-between">
-            <div className="flex flex-col justify-between py-[4px]">
-              <div>
-                <h1
-                  className="m-0 text-[34px] leading-[1.02] text-text-primary line-clamp-1"
-                  style={{
-                    fontFamily: "var(--font-inter), sans-serif",
-                    fontWeight: 400,
-                  }}
-                >
-                  {data.title}
-                </h1>
-                <div
-                  className="mt-[4px] mb-[6px] flex items-center gap-[16px] text-[14px] text-text-secondary font-[500]"
+          <div className="flex min-h-[190px] flex-1 flex-col justify-between py-[2px] min-w-0">
+            <div>
+              <div className="flex items-center gap-[6px] mb-[6px]">
+                <span
+                  className="text-[12px] font-[600] tracking-[0.08em] uppercase text-text-tertiary"
                   style={{ fontFamily: "var(--font-inter), sans-serif" }}
                 >
-                  {data.monthlyListeners && (
-                    <span className="flex items-center gap-[6px]">
-                      <User3Line size={16} />
-                      {(() => {
-                        const match = data.monthlyListeners.match(/^([\d.,]+[KMBkmb]?)/);
-                        const count = match ? match[1] : data.monthlyListeners;
-                        return t("artist.monthly_audience", { count });
-                      })()}
+                  {t("artist.artist_badge")}
+                </span>
+              </div>
+
+              <h1
+                className="m-0 text-[36px] sm:text-[44px] font-[600] tracking-[-0.03em] leading-[1.08] text-text-primary line-clamp-1"
+                style={{
+                  fontFamily: "var(--font-inter), sans-serif",
+                }}
+              >
+                {data.title}
+              </h1>
+
+              <div
+                className="mt-[10px] flex flex-wrap items-center gap-[8px] text-[13px] font-[500] text-text-secondary"
+                style={{ fontFamily: "var(--font-inter), sans-serif" }}
+              >
+                {data.monthlyListeners && (
+                  <span className="inline-flex items-center gap-[6px] rounded-full bg-border-alpha-8 px-[12px] py-[4px] border border-border-alpha-14 text-text-primary">
+                    <User3Line size={15} className="text-text-secondary" />
+                    {(() => {
+                      const match = data.monthlyListeners.match(/^([\d.,]+[KMBkmb]?)/);
+                      const count = match ? match[1] : data.monthlyListeners;
+                      return t("artist.monthly_audience", { count });
+                    })()}
+                  </span>
+                )}
+
+                {data.totalTracks !== undefined && data.totalTracks > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowAllTracks(true);
+                      document
+                        .getElementById("artist-tracks-section")
+                        ?.scrollIntoView({ behavior: "smooth" });
+                    }}
+                    className="inline-flex items-center gap-[6px] rounded-full bg-border-alpha-8 px-[12px] py-[4px] border border-border-alpha-14 text-text-secondary hover:text-text-primary hover:bg-border-alpha-14 transition-colors cursor-pointer"
+                    style={{ fontFamily: "var(--font-inter), sans-serif" }}
+                    title={t("artist.show_all")}
+                  >
+                    <Music2Line size={15} />
+                    <span>
+                      {Intl.NumberFormat("en-US", {
+                        notation: "compact",
+                        maximumFractionDigits: 1,
+                      }).format(data.totalTracks)}{" "}
+                      {t("artist.tracks")}
                     </span>
-                  )}
-                  {data.followers !== undefined && data.followers > 0 && (
-                    <span className="flex items-center gap-[6px]">
-                      <User3Line size={16} />
+                  </button>
+                )}
+
+                {data.followers !== undefined && data.followers > 0 && (
+                  <span className="inline-flex items-center gap-[6px] rounded-full bg-border-alpha-8 px-[12px] py-[4px] border border-border-alpha-14 text-text-secondary">
+                    <User3Line size={15} />
+                    <span>
                       {Intl.NumberFormat("en-US", {
                         notation: "compact",
                         maximumFractionDigits: 1,
                       }).format(data.followers)}{" "}
                       {t("artist.followers")}
                     </span>
-                  )}
-                  {data.totalListens !== undefined &&
-                    data.totalListens > 0 && (
-                      <span className="flex items-center gap-[6px]">
-                        <PlayCircleLine size={16} />
-                        {Intl.NumberFormat("en-US", {
-                          notation: "compact",
-                          maximumFractionDigits: 1,
-                        }).format(data.totalListens)}{" "}
-                        {t("artist.total_listens")}
-                      </span>
-                    )}
-                  {data.totalTracks !== undefined && data.totalTracks > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowAllTracks(true);
-                        document
-                          .getElementById("artist-tracks-section")
-                          ?.scrollIntoView({ behavior: "smooth" });
-                      }}
-                      className="flex items-center gap-[6px] text-text-secondary hover:text-text-primary transition-colors cursor-pointer bg-transparent border-0 p-0 text-[14px] font-[500]"
-                      style={{ fontFamily: "var(--font-inter), sans-serif" }}
-                      title={t("artist.show_all")}
-                    >
-                      <Music2Line size={16} />
+                  </span>
+                )}
+
+                {data.totalListens !== undefined && data.totalListens > 0 && (
+                  <span className="inline-flex items-center gap-[6px] rounded-full bg-border-alpha-8 px-[12px] py-[4px] border border-border-alpha-14 text-text-secondary">
+                    <PlayCircleLine size={15} />
+                    <span>
                       {Intl.NumberFormat("en-US", {
                         notation: "compact",
                         maximumFractionDigits: 1,
-                      }).format(data.totalTracks)}{" "}
-                      {t("artist.tracks")}
-                    </button>
-                  )}
-                </div>
-                {data.description && (
-                  <p
-                    className="m-0 max-w-[600px] text-[15px] leading-[1.4] text-text-secondary line-clamp-2"
-                    style={{
-                      fontFamily: "var(--font-inter), sans-serif",
-                      fontWeight: 350,
-                    }}
-                  >
-                    {data.description}
-                  </p>
+                      }).format(data.totalListens)}{" "}
+                      {t("artist.total_listens")}
+                    </span>
+                  </span>
                 )}
               </div>
 
-              <div className="flex items-center gap-[10px]">
-                <Button
-                  variant="primary"
-                  onClick={handlePlayAll}
-                  className="!h-[42px] !text-[16px] !font-[500] px-[24px]"
-                >
-                  <PlayFill size={16} />
-                  {t("artist.play")}
-                </Button>
-
-                <Button
-                  variant="outline"
-                  onClick={handleSaveToLibrary}
-                  className="!h-[42px] !w-[42px] !p-0 flex items-center justify-center text-text-primary"
-                  title={
-                    inLibrary
-                      ? t("artist.remove_from_library")
-                      : t("artist.save_to_library")
-                  }
-                >
-                  <AnimatePresence mode="wait">
-                    {inLibrary ? (
-                      <motion.span
-                        key="saved"
-                        initial={{ scale: 0.5, rotate: -20 }}
-                        animate={{ scale: 1, rotate: 0 }}
-                        exit={{ scale: 0.5, rotate: 20 }}
-                        className="flex"
-                      >
-                        <FolderCheckFill size={20} />
-                      </motion.span>
-                    ) : (
-                      <motion.span
-                        key="unsaved"
-                        initial={{ scale: 0.5, rotate: -20 }}
-                        animate={{ scale: 1, rotate: 0 }}
-                        exit={{ scale: 0.5, rotate: 20 }}
-                        className="flex"
-                      >
-                        <NewFolderLine size={20} />
-                      </motion.span>
-                    )}
-                  </AnimatePresence>
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={handleAddToQueue}
-                  className="!h-[42px] !w-[42px] !p-0 flex items-center justify-center text-text-primary"
-                  title={t("artist.add_to_queue")}
-                >
-                  <AddLine size={20} />
-                </Button>
-              </div>
+              {data.bio && (
+                <div className="mt-[12px]">
+                  <p
+                    className={`m-0 max-w-[680px] text-[14px] leading-[1.5] text-text-secondary ${
+                      showFullBio ? "" : "line-clamp-2"
+                    }`}
+                    style={{
+                      fontFamily: "var(--font-inter), sans-serif",
+                      fontWeight: 400,
+                    }}
+                  >
+                    {data.bio}
+                  </p>
+                  {data.bio.length > 140 && (
+                    <button
+                      type="button"
+                      onClick={() => setShowFullBio((prev) => !prev)}
+                      className="mt-[4px] text-[13px] font-[500] text-text-tertiary hover:text-text-primary transition-colors cursor-pointer bg-transparent border-0 p-0"
+                      style={{ fontFamily: "var(--font-inter), sans-serif" }}
+                    >
+                      {showFullBio ? t("artist.show_less") : t("artist.show_all")}
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
 
-            <div className="flex items-end gap-[10px] pb-[6px] pr-[16px]">
+            <div className="mt-[20px] flex items-center gap-[10px]">
+              <Button
+                variant="primary"
+                onClick={handlePlayAll}
+                className="!h-[42px] !text-[15px] !font-[600] px-[24px] rounded-full flex items-center gap-[8px]"
+              >
+                <PlayFill size={16} />
+                <span>{t("artist.play")}</span>
+              </Button>
+
               <Button
                 variant="outline"
-                className="!h-[42px] !w-[42px] !p-0 flex items-center justify-center text-text-primary"
+                onClick={handleSaveToLibrary}
+                className="!h-[42px] !w-[42px] !p-0 rounded-full flex items-center justify-center text-text-primary"
+                title={
+                  inLibrary
+                    ? t("artist.remove_from_library")
+                    : t("artist.save_to_library")
+                }
+              >
+                <AnimatePresence mode="wait">
+                  {inLibrary ? (
+                    <motion.span
+                      key="saved"
+                      initial={{ scale: 0.5, rotate: -20 }}
+                      animate={{ scale: 1, rotate: 0 }}
+                      exit={{ scale: 0.5, rotate: 20 }}
+                      className="flex"
+                    >
+                      <FolderCheckFill size={20} />
+                    </motion.span>
+                  ) : (
+                    <motion.span
+                      key="unsaved"
+                      initial={{ scale: 0.5, rotate: -20 }}
+                      animate={{ scale: 1, rotate: 0 }}
+                      exit={{ scale: 0.5, rotate: 20 }}
+                      className="flex"
+                    >
+                      <NewFolderLine size={20} />
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </Button>
+
+              <Button
+                variant="outline"
+                onClick={handleAddToQueue}
+                className="!h-[42px] !w-[42px] !p-0 rounded-full flex items-center justify-center text-text-primary"
+                title={t("artist.add_to_queue")}
+              >
+                <AddLine size={20} />
+              </Button>
+
+              <Button
+                variant="outline"
+                onClick={handleShare}
+                className="!h-[42px] !w-[42px] !p-0 rounded-full flex items-center justify-center text-text-primary"
                 title={t("artist.share")}
               >
                 <ShareForwardLine size={20} />

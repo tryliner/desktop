@@ -1,5 +1,7 @@
 {
   "artist": {
+    "artist_badge": "Исполнитель",
+    "back": "Назад",
     "no_biography": "Нет биографии",
     "followers": "подписчиков",
     "total_listens": "прослушиваний",

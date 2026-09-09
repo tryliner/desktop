@@ -1,5 +1,7 @@
 {
   "artist": {
+    "artist_badge": "Artist",
+    "back": "Back",
     "no_biography": "No biography",
     "followers": "followers",
     "total_listens": "total listens",
