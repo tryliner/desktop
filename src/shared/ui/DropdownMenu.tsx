@@ -117,17 +117,17 @@ export default function DropdownMenu({
           key="dropdown-menu"
           ref={menuRef}
           data-dropdown-menu="true"
-          initial={{ opacity: 0, scale: 0.95, y: -4 }}
+          initial={{ opacity: 0, scale: 0.96, y: -2 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: -4 }}
-          transition={{ duration: 0.12, ease: "easeOut" }}
-          className={`overflow-hidden rounded-md border border-border-primary bg-bg-primary p-[4px] shadow-2xl ${
-            isFixed ? "fixed z-[99999]" : "absolute right-0 top-full mt-[4px] z-50"
+          exit={{ opacity: 0, scale: 0.96, y: -2 }}
+          transition={{ duration: 0.1, ease: "easeOut" }}
+          className={`overflow-hidden rounded-md border border-border-primary/80 bg-bg-primary/95 backdrop-blur-md p-1 shadow-xl shadow-black/30 min-w-[160px] ${
+            isFixed ? "fixed z-[99999]" : "absolute right-0 top-full mt-1 z-50"
           }`}
           style={isFixed ? fixedStyle : {}}
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="flex flex-col gap-[2px] min-w-[140px]">
+          <div className="flex flex-col gap-0.5">
             {items.map((item) => (
               <button
                 key={item.id}
@@ -138,26 +138,27 @@ export default function DropdownMenu({
                   setOpen(false);
                   await item.onClick();
                 }}
-                className={`flex w-full items-center gap-[8px] rounded-md px-[10px] py-[6px] text-[13px] transition-colors border-none bg-transparent text-left cursor-pointer ${
+                className={`group flex w-full items-center gap-2.5 rounded-sm px-2.5 py-1.5 text-[13px] font-normal tracking-tight transition-colors border-none bg-transparent text-left cursor-pointer select-none outline-none ${
                   item.danger
-                    ? "text-red-500 hover:bg-red-500/10"
+                    ? "text-red-400 hover:bg-red-500/10 hover:text-red-400"
                     : "text-text-primary hover:bg-border-alpha-14"
                 } disabled:pointer-events-none disabled:opacity-40`}
                 style={{
                   fontFamily: "var(--font-inter), sans-serif",
-                  fontWeight: 400,
                 }}
               >
                 {item.icon && (
                   <span
-                    className={`shrink-0 flex items-center ${
-                      item.danger ? "text-red-500" : "text-text-secondary"
-                    }`}
+                    className={`shrink-0 flex items-center justify-center text-[15px] ${
+                      item.danger
+                        ? "text-red-400"
+                        : "text-text-secondary group-hover:text-text-primary"
+                    } transition-colors`}
                   >
                     {item.icon}
                   </span>
                 )}
-                <span className="truncate">{item.label}</span>
+                <span className="truncate flex-1">{item.label}</span>
               </button>
             ))}
           </div>

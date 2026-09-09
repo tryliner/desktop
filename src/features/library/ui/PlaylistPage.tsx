@@ -9,11 +9,9 @@ import {
   More2Line,
   HeartFill,
   PlaylistFill,
-  Edit2Fill,
-  Earth2Fill,
-  Delete2Fill,
   Upload2Line,
 } from "@mingcute/react";
+import { LuPencil, LuGlobe, LuTrash2 } from "react-icons/lu";
 import Button from "@/shared/ui/Button";
 import DropdownMenu from "@/shared/ui/DropdownMenu";
 import SongCardWithMenu from "@/features/player/ui/SongCardWithMenu";
@@ -447,19 +445,19 @@ function LibraryPlaylistContent() {
                   items={[
                     {
                       id: "rename",
-                      icon: <Edit2Fill size={18} />,
+                      icon: <LuPencil size={15} />,
                       label: t("common.rename"),
                       onClick: () => setIsEditingTitle(true),
                     },
                     {
                       id: "make-public",
-                      icon: <Earth2Fill size={18} />,
+                      icon: <LuGlobe size={15} />,
                       label: t("common.make_public"),
                       onClick: () => {},
                     },
                     {
                       id: "delete",
-                      icon: <Delete2Fill size={18} />,
+                      icon: <LuTrash2 size={15} />,
                       label: t("common.delete"),
                       danger: true,
                       onClick: () => {

@@ -1,13 +1,13 @@
 import { useCallback } from "react";
 import {
-  AddCircleFill,
-  Delete2Fill,
-  ForwardFill,
-  HeartFill,
-  NewFolderFill,
-  Playlist2Fill,
-} from "@mingcute/react";
-import { Radio } from "@solar-icons/react";
+  LuRadio,
+  LuStepForward,
+  LuListPlus,
+  LuHeart,
+  LuPlus,
+  LuTrash2,
+  LuFolderPlus,
+} from "react-icons/lu";
 import type { DropdownMenuItem } from "@/shared/ui/DropdownMenu";
 import { playerEngine } from "../engine/playerEngine";
 import {
@@ -74,7 +74,7 @@ export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
           {
             id: "start-radio",
             label: t("common.start_radio"),
-            icon: <Radio size={16} />,
+            icon: <LuRadio size={15} />,
             onClick: () => {
               if (!id) return;
               void playerEngine.startRadioStation({
@@ -90,7 +90,7 @@ export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
           {
             id: "play-next",
             label: t("common.play_next"),
-            icon: <ForwardFill size={16} />,
+            icon: <LuStepForward size={15} />,
             onClick: () => {
               if (!id) return;
               playerEngine.playNext({
@@ -106,7 +106,7 @@ export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
           {
             id: "add-to-queue",
             label: t("common.add_to_queue"),
-            icon: <Playlist2Fill size={16} />,
+            icon: <LuListPlus size={15} />,
             onClick: () => {
               if (!id) return;
               playerEngine.addToQueue({
@@ -123,9 +123,9 @@ export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
             id: liked ? "unlike-track" : "like-track",
             label: liked ? t("common.unlike") : t("common.like"),
             icon: (
-              <HeartFill
-                size={16}
-                className={liked ? "text-[#ff4d4d]" : "text-text-secondary"}
+              <LuHeart
+                size={15}
+                className={liked ? "fill-red-500 text-red-500" : "text-text-secondary"}
               />
             ),
             onClick: handleLike,
@@ -133,7 +133,7 @@ export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
           {
             id: "remove-from-playlist",
             label: t("common.remove_from_playlist"),
-            icon: <Delete2Fill size={16} />,
+            icon: <LuTrash2 size={15} />,
             danger: true,
             onClick: () => {
               if (!id) return;
@@ -155,7 +155,7 @@ export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
         {
           id: "start-radio",
           label: t("common.start_radio"),
-          icon: <Radio size={16} />,
+          icon: <LuRadio size={15} />,
           onClick: () => {
             if (!id) return;
             void playerEngine.startRadioStation({
@@ -171,7 +171,7 @@ export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
         {
           id: "play-next",
           label: t("common.play_next"),
-          icon: <ForwardFill size={16} />,
+          icon: <LuStepForward size={15} />,
           onClick: () => {
             if (!id) return;
             playerEngine.playNext({
@@ -187,7 +187,7 @@ export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
         {
           id: "add-to-queue",
           label: t("common.add_to_queue"),
-          icon: <Playlist2Fill size={16} />,
+          icon: <LuListPlus size={15} />,
           onClick: () => {
             if (!id) return;
             playerEngine.addToQueue({
@@ -204,9 +204,9 @@ export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
           id: liked ? "unlike-track" : "like-track",
           label: liked ? t("common.unlike") : t("common.like"),
           icon: (
-            <HeartFill
-              size={16}
-              className={liked ? "text-[#ff4d4d]" : "text-text-secondary"}
+            <LuHeart
+              size={15}
+              className={liked ? "fill-red-500 text-red-500" : "text-text-secondary"}
             />
           ),
           onClick: handleLike,
@@ -214,7 +214,7 @@ export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
         {
           id: "add-to-playlist",
           label: t("common.add_to_playlist"),
-          icon: <AddCircleFill size={16} />,
+          icon: <LuPlus size={15} />,
           onClick: () => {
             if (!id) return;
             useModalStore.getState().openAddToPlaylist({
@@ -234,7 +234,7 @@ export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
       {
         id: "add-to-library",
         label: t("common.add_to_library"),
-        icon: <NewFolderFill size={16} />,
+        icon: <LuFolderPlus size={15} />,
         onClick: () => {
           if (!id) return;
           useModalStore.getState().openAddToLibrary({

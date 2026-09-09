@@ -11,8 +11,8 @@ import type {
 } from "../types";
 import { useTranslation } from "@/languages";
 import { useModalStore } from "../store/modalStore";
+import { LuTrash2 } from "react-icons/lu";
 import {
-  Delete2Fill,
   More2Fill,
   PlaylistFill,
   DiscLine,
@@ -72,7 +72,7 @@ function useItemMenuItems(item: LibraryItemViewModel): DropdownMenuItem[] {
       {
         id: "remove-from-library",
         label: t("common.remove_from_library"),
-        icon: <Delete2Fill size={16} />,
+        icon: <LuTrash2 size={15} />,
         danger: true,
         onClick: () => {
           useModalStore.getState().openRemoveFromLibrary({

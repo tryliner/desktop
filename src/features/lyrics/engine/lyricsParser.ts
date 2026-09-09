@@ -75,6 +75,31 @@ function tryParseRichsync(raw: string): Lyric[] | null {
   }
 }
 
+function tryParseMxmSubtitles(raw: string): Lyric[] | null {
+  const trimmed = raw.trim();
+  if (!trimmed.startsWith("[")) return null;
+  try {
+    const lines = JSON.parse(trimmed);
+    if (!Array.isArray(lines) || lines.length === 0 || typeof lines[0]?.time?.total !== "number") {
+      return null;
+    }
+    return lines
+      .map((line: any): Lyric | null => {
+        const text = typeof line.text === "string" ? line.text.trim() : "";
+        if (!text) return null;
+        const startMs = Math.round(Number(line.time?.total ?? 0) * 1000);
+        return {
+          startTimeMs: startMs,
+          durationMs: 0,
+          words: text,
+        };
+      })
+      .filter((l): l is Lyric => Boolean(l));
+  } catch {
+    return null;
+  }
+}
+
 export function parseRawLyrics(
   raw: string,
   _format?: string,
@@ -88,8 +113,9 @@ export function parseRawLyrics(
 
   try {
     const richsyncLyrics = tryParseRichsync(trimmed);
+    const mxmSubtitles = richsyncLyrics ? null : tryParseMxmSubtitles(trimmed);
     const braccatoLyrics: Lyric[] =
-      richsyncLyrics ?? detectParser(trimmed).parse(trimmed, songDurationMs);
+      richsyncLyrics ?? mxmSubtitles ?? detectParser(trimmed).parse(trimmed, songDurationMs);
 
     if (!braccatoLyrics || braccatoLyrics.length === 0) {
       return {
