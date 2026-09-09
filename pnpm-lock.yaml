@@ -14,12 +14,6 @@ importers:
       '@braccato/parsers':
         specifier: ^0.2.1
         version: 0.2.1
-      '@kawarp/core':
-        specifier: ^1.2.0
-        version: 1.2.0
-      '@kawarp/react':
-        specifier: ^1.2.0
-        version: 1.2.0(react@19.2.4)
       '@mingcute/react':
         specifier: ^1.4.1
         version: 1.4.1(react@19.2.4)
@@ -305,14 +299,6 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.9':
     resolution: {integrity: sha512-3Belt6tdc8bPgAtbcmdtNJlirVoTmEb5e2gC94PnkwEW9jI6CAHUeoG85tjWP5WquqfavoMtMwiG4P926ZKKuQ==}
-
-  '@kawarp/core@1.2.0':
-    resolution: {integrity: sha512-PmwhFeoDjpuKImSptQugb9INCwk/S/QHsQ5foXhKjUERpwEzZZ12Hyf5FggedhZ70SQQ9RDPKHEunys454qbqA==}
-
-  '@kawarp/react@1.2.0':
-    resolution: {integrity: sha512-VEZ5lg9fErvUIMi4W89H1K1y6ELjf39+CaAejXV1I+ey2f5LbWZ3x1kVLweAhKqUgeBxelLDQldWPVezeWdR9g==}
-    peerDependencies:
-      react: ^18.0.0 || ^19.0.0
 
   '@malept/cross-spawn-promise@2.0.0':
     resolution: {integrity: sha512-1DpKU0Z5ThltBwjNySMC14g0CkbyhCaz9FkhxqNsZI6uAPJXFS8cMXlBKo26FJ8ZuW6S9GCMcR9IO5k2X5/9Fg==}
@@ -2658,13 +2644,6 @@ snapshots:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
-
-  '@kawarp/core@1.2.0': {}
-
-  '@kawarp/react@1.2.0(react@19.2.4)':
-    dependencies:
-      '@kawarp/core': 1.2.0
-      react: 19.2.4
 
   '@malept/cross-spawn-promise@2.0.0':
     dependencies:

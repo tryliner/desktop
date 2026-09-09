@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { Kawarp } from "@kawarp/react";
 import { motion } from "framer-motion";
+import { KawarpEngine } from "../engine/kawarpEngine";
 
 interface KawarpWrapperProps {
   src?: string;
@@ -8,39 +8,97 @@ interface KawarpWrapperProps {
   onError?: (err: Error) => void;
 }
 
-/**
- * KawarpWrapper: WebGL dynamic background shader.
- * Shows blurred backdrop first until WebGL texture finishes loading,
- * then smoothly crossfades into the active shader canvas without visual glitches.
- */
 export function KawarpWrapper({ src, onLoad, onError }: KawarpWrapperProps) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const engineRef = useRef<KawarpEngine | null>(null);
   const [loaded, setLoaded] = useState(false);
+
+  // Initialize WebGL engine once
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    let engine: KawarpEngine | null = null;
+    try {
+      engine = new KawarpEngine(canvas, {
+        warpIntensity: 1.1,
+        blurPasses: 8,
+        transitionDuration: 1000,
+        animationSpeed: 1.0,
+        saturation: 1.4,
+        scale: 1.2,
+        dithering: 0.012,
+      });
+      engineRef.current = engine;
+      engine.start();
+    } catch (err) {
+      onError?.(err instanceof Error ? err : new Error(String(err)));
+      return;
+    }
+
+    return () => {
+      engine?.dispose();
+      engineRef.current = null;
+    };
+  }, [onError]);
+
+  // Sync canvas dimensions to container bounding box
+  useEffect(() => {
+    const container = containerRef.current;
+    const canvas = canvasRef.current;
+    if (!container || !canvas) return;
+
+    const updateSize = () => {
+      const rect = container.getBoundingClientRect();
+      const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+      const width = Math.round(rect.width * dpr);
+      const height = Math.round(rect.height * dpr);
+
+      if (canvas.width !== width || canvas.height !== height) {
+        canvas.width = width;
+        canvas.height = height;
+        engineRef.current?.resize();
+      }
+    };
+
+    const resizeObserver = new ResizeObserver(updateSize);
+    resizeObserver.observe(container);
+    updateSize();
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, []);
+
+  // Load new src on change with smooth crossfade
+  useEffect(() => {
+    const engine = engineRef.current;
+    if (!engine || !src) return;
+
+    engine
+      .loadImage(src)
+      .then(() => {
+        setLoaded(true);
+        onLoad?.();
+      })
+      .catch((err) => {
+        onError?.(err instanceof Error ? err : new Error(String(err)));
+      });
+  }, [src, onLoad, onError]);
 
   return (
     <motion.div
+      ref={containerRef}
       initial={{ opacity: 0 }}
       animate={{ opacity: loaded ? 1 : 0 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.4, ease: "easeInOut" }}
-      className="absolute inset-0 scale-[1.2] transform-gpu pointer-events-none"
+      className="absolute inset-0 pointer-events-none overflow-hidden"
     >
-      <Kawarp
-        src={src}
-        className="w-full h-full"
-        animationSpeed={1.0}
-        warpIntensity={1.1}
-        blurPasses={8}
-        transitionDuration={1000}
-        saturation={1.4}
-        scale={1.2}
-        dithering={0.012}
-        onLoad={() => {
-          setLoaded(true);
-          onLoad?.();
-        }}
-        onError={(err) => {
-          onError?.(err);
-        }}
+      <canvas
+        ref={canvasRef}
+        className="absolute inset-0 w-full h-full block"
       />
     </motion.div>
   );

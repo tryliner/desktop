@@ -73,8 +73,6 @@
   "dependencies": {
     "@braccato/core": "^1.4.0",
     "@braccato/parsers": "^0.2.1",
-    "@kawarp/core": "^1.2.0",
-    "@kawarp/react": "^1.2.0",
     "@mingcute/react": "^1.4.1",
     "@solar-icons/react": "^1.1.1",
     "@tanstack/react-virtual": "^3.13.23",
