@@ -22,13 +22,13 @@ export function KawarpWrapper({ src, onLoad, onError }: KawarpWrapperProps) {
     let engine: KawarpEngine | null = null;
     try {
       engine = new KawarpEngine(canvas, {
-        warpIntensity: 1.1,
-        blurPasses: 8,
+        warpIntensity: 1.0,
+        blurPasses: 4,
         transitionDuration: 1000,
         animationSpeed: 1.0,
-        saturation: 1.4,
-        scale: 1.2,
-        dithering: 0.012,
+        saturation: 1.2,
+        scale: 1.08,
+        dithering: 0.008,
       });
       engineRef.current = engine;
       engine.start();

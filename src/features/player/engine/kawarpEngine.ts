@@ -7,7 +7,7 @@
  * - Robust CORS and blob/imageBitmap loading
  */
 
-const BLUR_SIZE = 128;
+const BLUR_SIZE = 384;
 
 const VERTEX_SHADER = `
   attribute vec2 a_position;
@@ -105,22 +105,21 @@ const DOMAIN_WARP_SHADER = `
 
   void main() {
     vec2 uv = v_texCoord;
-    float t = u_time * 0.05;
+    float t = u_time * 0.08;
 
-    vec2 center = uv - 0.5;
-    float centerWeight = 1.0 - smoothstep(0.0, 0.7, length(center));
+    // Multi-octave organic fluid domain warp
+    vec2 q = vec2(
+      snoise(uv * 0.5 + vec2(t * 0.6, t * 0.4)),
+      snoise(uv * 0.5 + vec2(-t * 0.5, t * 0.7) + vec2(43.12, 17.89))
+    );
 
-    float n1 = snoise(uv * 0.35 + vec2(t, t * 0.7));
-    float n2 = snoise(uv * 0.35 + vec2(-t * 0.8, t * 0.5) + vec2(50.0, 50.0));
-    float n3 = snoise(uv * 0.9 + vec2(t * 1.2, -t) + vec2(100.0, 0.0));
-    float n4 = snoise(uv * 0.9 + vec2(-t, t * 1.1) + vec2(0.0, 100.0));
+    vec2 r = vec2(
+      snoise(uv * 1.1 + q * 0.7 + vec2(t * 0.9, -t * 0.7)),
+      snoise(uv * 1.1 + q * 0.7 + vec2(-t * 0.6, t * 1.0) + vec2(92.41, 61.27))
+    );
 
-    vec2 warp = vec2(
-      n1 * 0.65 + n3 * 0.35,
-      n2 * 0.65 + n4 * 0.35
-    ) * centerWeight;
-
-    vec2 warpedUV = uv + warp * u_intensity;
+    vec2 warp = (q * 0.6 + r * 0.4);
+    vec2 warpedUV = uv + warp * (u_intensity * 0.28);
     warpedUV = clamp(warpedUV, 0.0, 1.0);
 
     gl_FragColor = texture2D(u_texture, warpedUV);
