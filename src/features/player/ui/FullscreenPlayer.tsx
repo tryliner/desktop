@@ -175,8 +175,8 @@ export function FullscreenPlayer({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.35, ease: "easeInOut" }}
-              className="absolute -inset-[10%] scale-110 blur-2xl"
+              transition={{ duration: 0.5, ease: "easeInOut" }}
+              className="absolute -inset-[15%] scale-125 blur-3xl transform-gpu"
             >
               <CoverImage
                 src={coverUrl}
@@ -192,11 +192,9 @@ export function FullscreenPlayer({
           </AnimatePresence>
         ) : null}
 
-        <AnimatePresence>
-          {effectsReady ? (
-            <KawarpWrapper key={kawarpSrc} src={kawarpSrc} onError={onError} />
-          ) : null}
-        </AnimatePresence>
+        {effectsReady ? (
+          <KawarpWrapper src={kawarpSrc} onError={onError} />
+        ) : null}
       </div>
 
       <div className="absolute inset-0 z-[1] bg-black/40" />

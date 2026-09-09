@@ -15,37 +15,28 @@ interface KawarpWrapperProps {
  */
 export function KawarpWrapper({ src, onLoad, onError }: KawarpWrapperProps) {
   const [loaded, setLoaded] = useState(false);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    setLoaded(false);
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
-  }, [src]);
 
   return (
     <motion.div
-      key={src}
       initial={{ opacity: 0 }}
       animate={{ opacity: loaded ? 1 : 0 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 0.6, ease: "easeInOut" }}
-      className="absolute inset-0 blur-2xl scale-[1.2] transform-gpu"
+      transition={{ duration: 0.4, ease: "easeInOut" }}
+      className="absolute inset-0 scale-[1.2] transform-gpu pointer-events-none"
     >
       <Kawarp
         src={src}
         className="w-full h-full"
-        animationSpeed={1.25}
+        animationSpeed={1.0}
+        warpIntensity={1.1}
+        blurPasses={8}
+        transitionDuration={1000}
+        saturation={1.4}
+        scale={1.2}
         dithering={0.012}
         onLoad={() => {
-          if (timeoutRef.current) clearTimeout(timeoutRef.current);
-          timeoutRef.current = setTimeout(() => {
-            setLoaded(true);
-            onLoad?.();
-          }, 300);
+          setLoaded(true);
+          onLoad?.();
         }}
         onError={(err) => {
           onError?.(err);

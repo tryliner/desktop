@@ -355,6 +355,23 @@ export class PlayerRuntime {
 
       if (epoch !== this.loadEpoch || controller.signal.aborted) return;
 
+      // wait for audio stream to buffer before unpausing to prevent clock oscillation in word lyrics
+      if (this.audio.readyState < 3) {
+        await new Promise<void>((resolve) => {
+          const timeout = setTimeout(resolve, 3000);
+          const onCanPlay = () => {
+            clearTimeout(timeout);
+            this.audio.removeEventListener("canplay", onCanPlay);
+            this.audio.removeEventListener("error", onCanPlay);
+            resolve();
+          };
+          this.audio.addEventListener("canplay", onCanPlay, { once: true });
+          this.audio.addEventListener("error", onCanPlay, { once: true });
+        });
+      }
+
+      if (epoch !== this.loadEpoch || controller.signal.aborted) return;
+
       const playPromise = this.audio.play();
       this.activePlayPromise = playPromise;
       await playPromise;
