@@ -264,12 +264,11 @@ function ArtistContent() {
                   {data.monthlyListeners && (
                     <span className="flex items-center gap-[6px]">
                       <User3Line size={16} />
-                      {data.monthlyListeners.toLowerCase().includes("audience") ||
-                      data.monthlyListeners.toLowerCase().includes("listener")
-                        ? data.monthlyListeners
-                        : t("artist.monthly_audience", {
-                            count: data.monthlyListeners,
-                          })}
+                      {(() => {
+                        const match = data.monthlyListeners.match(/^([\d.,]+[KMBkmb]?)/);
+                        const count = match ? match[1] : data.monthlyListeners;
+                        return t("artist.monthly_audience", { count });
+                      })()}
                     </span>
                   )}
                   {data.followers !== undefined && data.followers > 0 && (

@@ -31,38 +31,26 @@ export default function WindowControls({
         className={`flex h-full pointer-events-auto transition-colors ${
           isGlass
             ? "rounded-bl-xl bg-bg-primary/85 dark:bg-black/70 backdrop-blur-2xl border-b border-l border-black/15 dark:border-white/20 shadow-sm overflow-hidden"
-            : ""
+            : "drop-shadow-[0_2px_8px_rgba(0,0,0,0.35)]"
         }`}
       >
         <button
           onClick={handleMinimize}
-          className={`flex items-center justify-center w-[40px] h-full cursor-pointer border-none bg-transparent transition-all ${
-            isGlass
-              ? "text-text-primary/75 hover:text-text-primary hover:bg-border-alpha-14"
-              : "text-white/40 hover:text-white hover:bg-white/10"
-          }`}
+          className="flex items-center justify-center w-[40px] h-full cursor-pointer border-none bg-transparent transition-all text-text-secondary hover:text-text-primary hover:bg-border-alpha-14"
           aria-label="Minimize"
         >
           <LuMinus size={14} />
         </button>
         <button
           onClick={handleMaximize}
-          className={`flex items-center justify-center w-[40px] h-full cursor-pointer border-none bg-transparent transition-all ${
-            isGlass
-              ? "text-text-primary/75 hover:text-text-primary hover:bg-border-alpha-14"
-              : "text-white/40 hover:text-white hover:bg-white/10"
-          }`}
+          className="flex items-center justify-center w-[40px] h-full cursor-pointer border-none bg-transparent transition-all text-text-secondary hover:text-text-primary hover:bg-border-alpha-14"
           aria-label="Maximize"
         >
           <LuSquare size={12} />
         </button>
         <button
           onClick={handleClose}
-          className={`flex items-center justify-center w-[40px] h-full cursor-pointer border-none bg-transparent transition-all ${
-            isGlass
-              ? "text-text-primary/75 hover:text-white hover:bg-[#E81123]"
-              : "text-white/40 hover:text-white hover:bg-[#E81123] rounded-tr-xl"
-          }`}
+          className="flex items-center justify-center w-[40px] h-full cursor-pointer border-none bg-transparent transition-all text-text-secondary hover:text-white hover:bg-[#E81123]"
           aria-label="Close"
         >
           <LuX size={14} />
@@ -71,3 +59,5 @@ export default function WindowControls({
     </div>
   );
 }
+
+
