@@ -10,6 +10,7 @@ interface ArtistProfileModalProps {
   open: boolean;
   onClose: () => void;
   name: string;
+  verified?: boolean;
   geniusImageUrl?: string;
   fallbackImageUrl?: string;
   geniusUsername?: string;
@@ -147,6 +148,7 @@ export default function ArtistProfileModal({
   open,
   onClose,
   name,
+  verified,
   geniusImageUrl,
   fallbackImageUrl,
   geniusUsername,
@@ -246,6 +248,7 @@ export default function ArtistProfileModal({
               fadeColorClass="from-bg-primary"
             />
             {/* twitter / md3 wavy verified badge */}
+            {verified ? (
             <svg
               viewBox="0 0 24 24"
               className="h-[18px] w-[18px] shrink-0 text-[#1d9bf0]"
@@ -258,6 +261,7 @@ export default function ArtistProfileModal({
                 fill="#ffffff"
               />
             </svg>
+            ) : null}
           </div>
 
           {subtitle && (

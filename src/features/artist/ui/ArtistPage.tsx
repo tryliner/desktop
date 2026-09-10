@@ -64,6 +64,7 @@ function ArtistContent() {
     geniusAka?: string[];
     geniusUsername?: string;
     monthlyListeners?: string;
+    verified: boolean;
     followers?: number;
     totalListens?: number;
     totalTracks?: number;
@@ -212,6 +213,7 @@ function ArtistContent() {
         setData({
           title: artist.name,
           monthlyListeners: artist.monthlyListeners,
+          verified: Boolean(artist.verified),
           description: artist.bio?.trim() || "",
           coverUrl: artist.cover ? toMaxQualityAvatarUrl(mediaUrl(artist.cover.url)) : "",
           geniusImageUrl: artist.geniusImageUrl ? mediaUrl(artist.geniusImageUrl) : undefined,
@@ -362,6 +364,7 @@ function ArtistContent() {
                 {data.title}
               </h1>
               {/* twitter / md3 wavy verified badge with soft rounded petals */}
+              {data.verified ? (
               <svg
                 viewBox="0 0 24 24"
                 className="h-[24px] w-[24px] md:h-[32px] md:w-[32px] shrink-0 text-[#1d9bf0]"
@@ -374,6 +377,7 @@ function ArtistContent() {
                   fill="#ffffff"
                 />
               </svg>
+              ) : null}
             </div>
 
             {data.monthlyListeners ? (
@@ -681,6 +685,7 @@ function ArtistContent() {
     open={isProfileModalOpen}
     onClose={() => setIsProfileModalOpen(false)}
     name={data.title}
+    verified={data.verified}
     geniusImageUrl={data.geniusImageUrl}
     fallbackImageUrl={data.coverUrl}
     geniusUsername={data.geniusUsername}
