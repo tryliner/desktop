@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
+import { isWindowDraggingActive } from "@/shared/hooks";
 
 export interface DialogProps {
   open: boolean;
@@ -22,6 +23,7 @@ export default function Dialog({
   className = "",
 }: DialogProps) {
   const [mounted, setMounted] = useState(false);
+  const pointerStartRef = useRef<{ x: number; y: number; target: EventTarget | null } | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -41,6 +43,31 @@ export default function Dialog({
 
   if (!mounted || typeof document === "undefined") return null;
 
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    pointerStartRef.current = {
+      x: e.clientX,
+      y: e.clientY,
+      target: e.target,
+    };
+  };
+
+  const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (isWindowDraggingActive()) {
+      return;
+    }
+    const start = pointerStartRef.current;
+    if (start) {
+      const dist = Math.hypot(e.clientX - start.x, e.clientY - start.y);
+      if (dist > 6) {
+        return;
+      }
+      if (start.target !== e.currentTarget && (start.target as HTMLElement)?.closest?.("[data-dialog-container]")) {
+        return;
+      }
+    }
+    onOpenChange(false);
+  };
+
   return createPortal(
     <AnimatePresence>
       {open && (
@@ -53,7 +80,8 @@ export default function Dialog({
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             className="fixed inset-0 z-[199] bg-black/40 backdrop-blur-[2px] rounded-4xl overflow-hidden"
-            onClick={() => onOpenChange(false)}
+            onPointerDown={handlePointerDown}
+            onClick={handleBackdropClick}
           />
           <motion.div
             key="dialog"
