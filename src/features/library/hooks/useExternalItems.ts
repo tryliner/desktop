@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api, mediaUrl } from "@/shared/api";
+import { api, mediaUrl, toMaxQualityAvatarUrl } from "@/shared/api";
 import type { LibraryItemViewModel } from "../types";
 
 export type EntityType = "album" | "artist" | "playlist";
@@ -15,7 +15,8 @@ export function useExternalItems(type: EntityType) {
         if (!active) return;
         setData(response.items.map((entry: any) => {
           const value = entry[type];
-          const cover = value.cover ? mediaUrl(value.cover.url) : "";
+          const rawCover = value.cover ? mediaUrl(value.cover.url) : "";
+          const cover = type === "artist" ? toMaxQualityAvatarUrl(rawCover) : rawCover;
           return {
             id: value.id,
             title: type === "artist" ? value.name : value.title,

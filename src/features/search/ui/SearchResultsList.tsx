@@ -30,10 +30,13 @@ export const SearchResultsList = memo(function SearchResultsList({
   const internalRef = useRef<HTMLDivElement>(null);
   const containerRef = scrollRef ?? internalRef;
 
+  // accurate 64px card estimate with 6px gap prevents overlap and restores spacing
   const rowVirtualizer = useVirtualizer({
     count: items.length,
     getScrollElement: () => containerRef.current,
-    estimateSize: () => 58,
+    estimateSize: () => 64,
+    getItemKey: (index) => items[index]?.id || index,
+    gap: 6,
     overscan: 5,
   });
 
@@ -41,7 +44,7 @@ export const SearchResultsList = memo(function SearchResultsList({
     <div
       ref={containerRef}
       onScroll={onScroll}
-      className="h-full overflow-y-auto px-[10px] pt-[2px] pb-[10px]"
+      className="h-full overflow-y-auto px-[14px] pt-[8px] pb-[14px]"
       style={maskStyle}
     >
       <div
@@ -82,14 +85,15 @@ export const SearchResultsList = memo(function SearchResultsList({
 
           return (
             <div
-              key={it.id || virtualRow.index}
+              key={virtualRow.key}
+              ref={rowVirtualizer.measureElement}
+              data-index={virtualRow.index}
               style={{
                 position: "absolute",
                 top: 0,
                 left: 0,
                 width: "100%",
                 transform: `translateY(${virtualRow.start}px)`,
-                paddingBottom: 6,
               }}
             >
               <SongCardWithMenu
@@ -117,7 +121,7 @@ export const SearchResultsList = memo(function SearchResultsList({
         })}
       </div>
       {partialWarning ? (
-        <div className="text-accent-tertiary text-[12px] px-[6px] py-[4px]">
+        <div className="text-accent-tertiary text-[12px] px-[8px] py-[6px] mt-[6px]">
           {partialWarning}
         </div>
       ) : null}

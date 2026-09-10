@@ -118,6 +118,21 @@ export function mediaUrl(path: string): string {
   return BASE + (path.startsWith("/") ? path : "/" + path);
 }
 
+// upgrades youtube/google avatar artwork to maximum native resolution (=s0)
+export function toMaxQualityAvatarUrl(url: string | undefined): string {
+  if (!url) return "";
+  if (!/(?:[a-zA-Z0-9_-]+\.googleusercontent\.com|[a-zA-Z0-9_-]+\.ggpht\.com)/i.test(url)) {
+    return url;
+  }
+  if (/=w\d+-h\d+/.test(url)) {
+    return url.replace(/=w\d+-h\d+(?:-[a-zA-Z0-9_-]+)*/, "=s0");
+  }
+  if (/=s\d+/.test(url)) {
+    return url.replace(/=s\d+(?:-[a-zA-Z0-9_-]+)*/, "=s0");
+  }
+  return `${url}=s0`;
+}
+
 async function request<T>(
   path: string,
   init?: RequestInit,

@@ -1,7 +1,5 @@
 {
   "artist": {
-    "artist_badge": "Artist",
-    "back": "Back",
     "no_biography": "No biography",
     "followers": "followers",
     "total_listens": "total listens",
@@ -22,7 +20,10 @@
     "monthly_audience": "{count} monthly audience",
     "listeners": "{count} listeners",
     "show_all": "Show all",
-    "show_less": "Show less"
+    "show_less": "Show less",
+    "about_artist": "About",
+    "aka": "Also known as",
+    "genius_profile": "Genius Profile"
   },
   "collection": {
     "unknown_album": "Unknown Album",
@@ -62,6 +63,8 @@
     "remove_from_library": "Remove from library",
     "save_to_library": "Save to library",
     "share": "Share",
+    "back": "Back",
+    "link_copied": "Link copied",
     "download": "Download",
     "more": "More",
     "rename": "Rename",

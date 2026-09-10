@@ -1,7 +1,5 @@
 {
   "artist": {
-    "artist_badge": "Исполнитель",
-    "back": "Назад",
     "no_biography": "Нет биографии",
     "followers": "подписчиков",
     "total_listens": "прослушиваний",
@@ -22,7 +20,10 @@
     "monthly_audience": "{count} слушателей за месяц",
     "listeners": "{count} слушателей",
     "show_all": "Показать все",
-    "show_less": "Скрыть"
+    "show_less": "Скрыть",
+    "about_artist": "Об исполнителе",
+    "aka": "Также известен как",
+    "genius_profile": "Профиль Genius"
   },
   "collection": {
     "unknown_album": "Неизвестный альбом",
@@ -62,6 +63,8 @@
     "remove_from_library": "Удалить из библиотеки",
     "save_to_library": "Сохранить в библиотеку",
     "share": "Поделиться",
+    "back": "Назад",
+    "link_copied": "Ссылка скопирована",
     "download": "Скачать",
     "more": "Ещё",
     "rename": "Переименовать",

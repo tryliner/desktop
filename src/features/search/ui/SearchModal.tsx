@@ -24,7 +24,7 @@ import {
   useSearchAlbums,
   useSearchPlaylists,
 } from "../hooks";
-import { mediaUrl, toClientTrack } from "@/shared/api";
+import { mediaUrl, toClientTrack, toMaxQualityAvatarUrl } from "@/shared/api";
 import SearchResultsList from "./SearchResultsList";
 import { useTranslation } from "@/languages";
 
@@ -187,7 +187,7 @@ export function SearchModal({
             ...item,
             _type: "artist",
             title: item.name,
-            coverUrl,
+            coverUrl: toMaxQualityAvatarUrl(coverUrl),
             artists: "",
           };
         }
@@ -232,7 +232,7 @@ export function SearchModal({
         ...a,
         _type: "artist",
         title: a.name,
-        coverUrl: a.cover ? mediaUrl(a.cover.url) : (a.coverUrl ?? ""),
+        coverUrl: toMaxQualityAvatarUrl(a.cover ? mediaUrl(a.cover.url) : (a.coverUrl ?? "")),
       }));
     if (isAlbumSearchFilter)
       return albumResults.map((a: any) => ({

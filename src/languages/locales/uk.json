@@ -1,7 +1,5 @@
 {
   "artist": {
-    "artist_badge": "Виконавець",
-    "back": "Назад",
     "no_biography": "Немає біографії",
     "followers": "підписників",
     "total_listens": "прослуховувань",
@@ -22,7 +20,10 @@
     "monthly_audience": "{count} слухачів за місяць",
     "listeners": "{count} слухачів",
     "show_all": "Показати всі",
-    "show_less": "Приховати"
+    "show_less": "Приховати",
+    "about_artist": "Про виконавця",
+    "aka": "Також відомий як",
+    "genius_profile": "Профіль Genius"
   },
   "collection": {
     "unknown_album": "Невідомий альбом",
@@ -62,6 +63,8 @@
     "remove_from_library": "Видалити з бібліотеки",
     "save_to_library": "Зберегти в бібліотеку",
     "share": "Поділитися",
+    "back": "Назад",
+    "link_copied": "Посилання скопійовано",
     "download": "Завантажити",
     "more": "Ще",
     "rename": "Перейменувати",

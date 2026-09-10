@@ -28,7 +28,7 @@ import {
   useSearchAlbums,
   useSearchPlaylists,
 } from "@/features/search/hooks";
-import { mediaUrl, toClientTrack } from "@/shared/api";
+import { mediaUrl, toClientTrack, toMaxQualityAvatarUrl } from "@/shared/api";
 import {
   FullscreenPlayer,
   playerEngine,
@@ -260,7 +260,7 @@ export default function AppFrame({ children }: AppFrameProps) {
             ...item,
             _type: "artist",
             title: item.name,
-            coverUrl,
+            coverUrl: toMaxQualityAvatarUrl(coverUrl),
             artists: "",
           };
         }
@@ -310,7 +310,7 @@ export default function AppFrame({ children }: AppFrameProps) {
         ...a,
         _type: "artist",
         title: a.name,
-        coverUrl: a.cover ? mediaUrl(a.cover.url) : (a.coverUrl ?? ""),
+        coverUrl: toMaxQualityAvatarUrl(a.cover ? mediaUrl(a.cover.url) : (a.coverUrl ?? "")),
       }));
     if (isAlbumSearchFilter)
       return albumResults.map((a: any) => ({

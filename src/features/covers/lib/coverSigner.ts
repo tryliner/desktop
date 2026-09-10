@@ -3,7 +3,7 @@
 // hmac token is computed in-memory via rust wasm module
 
 const COVER_PROXY_BASE = "https://covers.tryliner.fun";
-const COVER_PROXY_SIZE = 512;
+const COVER_PROXY_SIZE = 1024;
 
 // Must mirror ALLOWED_HOSTS in apps/workers/covers: a token for any other host
 // is rejected there, so minting one would only produce a broken fallback.

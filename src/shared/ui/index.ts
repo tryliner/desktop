@@ -8,6 +8,7 @@ export { default as DropdownMenu, type DropdownMenuProps, type DropdownMenuItem 
 export { AppleEmojiProvider } from "./AppleEmojiProvider";
 export { default as ExplicitBadge } from "./ExplicitBadge";
 export { default as ScrollableRow } from "./ScrollableRow";
+export { default as ScrollableText, type ScrollableTextProps } from "./ScrollableText";
 export { default as Tooltip, type TooltipProps } from "./Tooltip";
 export {
   default as RootErrorBoundary,

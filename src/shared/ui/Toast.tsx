@@ -13,6 +13,7 @@ import { useTranslation } from "@/languages";
 import { api } from "@/shared/api";
 import { useImportStore } from "@/features/library/store/importStore";
 import { useModalStore } from "@/features/library/store/modalStore";
+import ScrollableText from "./ScrollableText";
 
 type ToastVariant = "success" | "error" | "info";
 
@@ -186,67 +187,7 @@ function useSafeTranslation() {
   }
 }
 
-export function ScrollableText({
-  text,
-  className = "",
-  style,
-  isParentHovered = false,
-}: {
-  text: string;
-  className?: string;
-  style?: React.CSSProperties;
-  isParentHovered?: boolean;
-}) {
-  const outerRef = useRef<HTMLSpanElement>(null);
-  const innerRef = useRef<HTMLSpanElement>(null);
-  const [delta, setDelta] = useState(0);
-  const [selfHovered, setSelfHovered] = useState(false);
-
-  useLayoutEffect(() => {
-    if (!outerRef.current || !innerRef.current) return;
-    const d = innerRef.current.scrollWidth - outerRef.current.clientWidth;
-    setDelta(Math.max(0, d));
-  }, [text]);
-
-  const isHovered = isParentHovered || selfHovered;
-
-  return (
-    <span
-      ref={outerRef}
-      className={`relative block overflow-hidden text-left ${className}`}
-      style={style}
-      onMouseEnter={() => setSelfHovered(true)}
-      onMouseLeave={() => setSelfHovered(false)}
-    >
-      {/* Left shadow fade in/out */}
-      <span
-        aria-hidden="true"
-        className="pointer-events-none absolute left-0 top-0 bottom-0 w-[14px] z-10 bg-gradient-to-r from-bg-elevated to-transparent transition-opacity duration-300 ease-out"
-        style={{ opacity: isHovered && delta > 0 ? 1 : 0 }}
-      />
-
-      {/* Right shadow fade */}
-      <span
-        aria-hidden="true"
-        className="pointer-events-none absolute right-0 top-0 bottom-0 w-[14px] z-10 bg-gradient-to-l from-bg-elevated to-transparent transition-opacity duration-300 ease-out"
-        style={{ opacity: delta > 0 ? 1 : 0 }}
-      />
-
-      <span
-        ref={innerRef}
-        className="inline-block whitespace-nowrap"
-        style={{
-          transform: isHovered && delta > 0 ? `translateX(-${delta + 4}px)` : "translateX(0)",
-          transition: isHovered
-            ? `transform ${Math.max(1000, delta * 18)}ms linear`
-            : "transform 300ms ease",
-        }}
-      >
-        {text}
-      </span>
-    </span>
-  );
-}
+export { ScrollableText };
 
 function ImportToastItem() {
   const { t } = useSafeTranslation();

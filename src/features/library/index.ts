@@ -1,5 +1,6 @@
 export { default as LibraryPage } from "./ui/LibraryPage";
 export { default as PlaylistPage } from "./ui/PlaylistPage";
+export { default as PlaylistPageSkeleton } from "./ui/PlaylistPageSkeleton";
 export { default as LibraryControls } from "./ui/LibraryControls";
 export { default as LibraryGrid } from "./ui/LibraryGrid";
 export { default as LibraryTabs } from "./ui/LibraryTabs";

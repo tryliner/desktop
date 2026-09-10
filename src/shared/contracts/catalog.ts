@@ -64,6 +64,9 @@ export interface ArtistDetails {
   bio?: string;
   cover?: Cover;
   monthlyListeners?: string;
+  geniusImageUrl?: string;
+  geniusAka?: string[];
+  geniusUsername?: string;
   tracks: ApiTrack[];
   albums: ArtistAlbum[];
   singles: ArtistRelease[];
