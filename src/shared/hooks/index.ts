@@ -9,6 +9,7 @@ export {
 export {
   useWindowDrag,
   default as useWindowDragDefault,
+  isWindowDraggingActive,
   type WindowDragOptions,
   DEFAULT_WINDOW_DRAG_IGNORE_SELECTOR,
 } from "./useWindowDrag";

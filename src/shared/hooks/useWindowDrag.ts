@@ -38,6 +38,16 @@ export const DEFAULT_WINDOW_DRAG_IGNORE_SELECTOR = [
   ".no-drag",
 ].join(", ");
 
+let lastWindowDragTime = 0;
+
+export function isWindowDraggingActive(): boolean {
+  return Date.now() - lastWindowDragTime < 350;
+}
+
+export function resetWindowDragTimeForTests(): void {
+  lastWindowDragTime = 0;
+}
+
 export function useWindowDrag({
   topAreaHeight = 32,
   dragThreshold = 5,
@@ -75,6 +85,8 @@ export function useWindowDrag({
           return;
         }
         isDragging = true;
+        // signal main process to lock cursor origin for smooth wayland drag
+        window.linerElectron?.dragStart?.();
       }
 
       const deltaX = e.screenX - lastScreenX;
@@ -83,11 +95,16 @@ export function useWindowDrag({
       lastScreenY = e.screenY;
 
       if (deltaX !== 0 || deltaY !== 0) {
+        lastWindowDragTime = Date.now();
         window.linerElectron?.dragMove(deltaX, deltaY);
       }
     };
 
     const handlePointerUp = () => {
+      if (isDragging) {
+        lastWindowDragTime = Date.now();
+        window.linerElectron?.dragEnd?.();
+      }
       window.removeEventListener("pointermove", handlePointerMove, { capture: true });
       window.removeEventListener("pointerup", handlePointerUp, { capture: true });
       window.removeEventListener("pointercancel", handlePointerUp, { capture: true });
@@ -112,6 +129,10 @@ export function useWindowDrag({
       lastScreenX = e.screenX;
       lastScreenY = e.screenY;
 
+      // trigger OS native window drag loop immediately (handles wayland windowing smoothly)
+      lastWindowDragTime = Date.now();
+      window.linerElectron?.startWindowMove?.();
+
       window.addEventListener("pointermove", handlePointerMove, { capture: true });
       window.addEventListener("pointerup", handlePointerUp, { capture: true });
       window.addEventListener("pointercancel", handlePointerUp, { capture: true });
@@ -120,6 +141,7 @@ export function useWindowDrag({
     const handleDoubleClick = (e: MouseEvent) => {
       if (!enableDoubleClickMaximize) return;
       if (e.button !== 0) return;
+      if (isWindowDraggingActive()) return;
 
       const target = e.target as HTMLElement | null;
       if (!isInDraggableRegion(target, e.clientY)) return;

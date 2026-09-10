@@ -1,7 +1,7 @@
 import React, { act } from "react";
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { createRoot, Root } from "react-dom/client";
-import { useWindowDrag } from "./useWindowDrag";
+import { useWindowDrag, resetWindowDragTimeForTests } from "./useWindowDrag";
 
 function DragTestComponent(props: { topAreaHeight?: number; dragThreshold?: number }) {
   useWindowDrag(props);
@@ -19,18 +19,22 @@ describe("useWindowDrag", () => {
   let root: Root;
   let mockDragMove: any;
   let mockToggleMaximize: any;
+  let mockStartWindowMove: any;
 
   beforeEach(async () => {
+    resetWindowDragTimeForTests();
     container = document.createElement("div");
     document.body.appendChild(container);
     root = createRoot(container);
 
     mockDragMove = vi.fn();
     mockToggleMaximize = vi.fn();
+    mockStartWindowMove = vi.fn();
 
     (window as any).linerElectron = {
       dragMove: mockDragMove,
       toggleMaximize: mockToggleMaximize,
+      startWindowMove: mockStartWindowMove,
     };
   });
 
@@ -230,6 +234,61 @@ describe("useWindowDrag", () => {
       cancelable: true,
     });
     button.dispatchEvent(dblClick);
+
+    expect(mockToggleMaximize).not.toHaveBeenCalled();
+  });
+
+  it("does not toggle maximize on double click after dragging window", async () => {
+    await act(async () => {
+      root.render(<DragTestComponent topAreaHeight={32} dragThreshold={5} />);
+    });
+
+    const emptyArea = document.getElementById("empty-drag-area")!;
+
+    const pointerDown = new PointerEvent("pointerdown", {
+      button: 0,
+      clientX: 50,
+      clientY: 10,
+      screenX: 100,
+      screenY: 100,
+      bubbles: true,
+      cancelable: true,
+      pointerType: "mouse",
+    });
+    emptyArea.dispatchEvent(pointerDown);
+
+    const largeMove = new PointerEvent("pointermove", {
+      button: 0,
+      clientX: 60,
+      clientY: 15,
+      screenX: 110,
+      screenY: 105,
+      bubbles: true,
+      cancelable: true,
+      pointerType: "mouse",
+    });
+    window.dispatchEvent(largeMove);
+
+    const pointerUp = new PointerEvent("pointerup", {
+      button: 0,
+      clientX: 60,
+      clientY: 15,
+      screenX: 110,
+      screenY: 105,
+      bubbles: true,
+      cancelable: true,
+      pointerType: "mouse",
+    });
+    window.dispatchEvent(pointerUp);
+
+    const dblClick = new MouseEvent("dblclick", {
+      button: 0,
+      clientX: 60,
+      clientY: 15,
+      bubbles: true,
+      cancelable: true,
+    });
+    emptyArea.dispatchEvent(dblClick);
 
     expect(mockToggleMaximize).not.toHaveBeenCalled();
   });

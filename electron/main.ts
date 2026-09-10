@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, shell } from "electron";
+import { app, BrowserWindow, ipcMain, shell, screen } from "electron";
 import path from "node:path";
 import dns from "node:dns";
 import net from "node:net";
@@ -213,13 +213,78 @@ if (!gotTheLock) {
       return mainWindow?.isMaximized() ?? false;
     });
 
-    ipcMain.on("window:drag-move", (_event, { deltaX, deltaY }: { deltaX: number; deltaY: number }) => {
+    ipcMain.handle("shell:open-downloads", async () => {
+      try {
+        const downloadsPath = app.getPath("downloads");
+        await shell.openPath(downloadsPath);
+        return true;
+      } catch (err) {
+        console.error("\x1b[41;37m shell \x1b[0m open-downloads error:", err);
+        return false;
+      }
+    });
+
+    // native os window move + system cursor fallback to stop wayland jitter feedback loop
+    let dragStartCursor: { x: number; y: number } | null = null;
+    let dragStartWinPos: { x: number; y: number } | null = null;
+
+    ipcMain.on("window:start-drag", () => {
+      if (!mainWindow) return;
+      try {
+        if (typeof (mainWindow as any).startWindowMove === "function") {
+          (mainWindow as any).startWindowMove();
+        }
+      } catch {
+        // fallback to manual cursor drag if startWindowMove is unsupported
+      }
+      if (mainWindow.isMaximized()) {
+        mainWindow.unmaximize();
+      }
+      const [wx, wy] = mainWindow.getPosition();
+      dragStartCursor = screen.getCursorScreenPoint();
+      dragStartWinPos = { x: wx, y: wy };
+    });
+
+    ipcMain.on("window:drag-start", () => {
       if (!mainWindow) return;
       if (mainWindow.isMaximized()) {
         mainWindow.unmaximize();
       }
-      const [x, y] = mainWindow.getPosition();
-      mainWindow.setPosition(Math.round(x + deltaX), Math.round(y + deltaY));
+      const [wx, wy] = mainWindow.getPosition();
+      dragStartCursor = screen.getCursorScreenPoint();
+      dragStartWinPos = { x: wx, y: wy };
+    });
+
+    ipcMain.on("window:drag-end", () => {
+      dragStartCursor = null;
+      dragStartWinPos = null;
+    });
+
+    ipcMain.on("window:drag-move", (_event, { deltaX, deltaY }: { deltaX: number; deltaY: number }) => {
+      if (!mainWindow) return;
+      if (mainWindow.isMaximized()) {
+        mainWindow.unmaximize();
+        const [wx, wy] = mainWindow.getPosition();
+        dragStartCursor = screen.getCursorScreenPoint();
+        dragStartWinPos = { x: wx, y: wy };
+      }
+
+      if (!dragStartCursor || !dragStartWinPos) {
+        const [wx, wy] = mainWindow.getPosition();
+        dragStartCursor = screen.getCursorScreenPoint();
+        dragStartWinPos = { x: wx, y: wy };
+      }
+
+      const currentCursor = screen.getCursorScreenPoint();
+      const dx = currentCursor.x - dragStartCursor.x;
+      const dy = currentCursor.y - dragStartCursor.y;
+
+      if ((dx !== 0 || dy !== 0) && dragStartWinPos) {
+        mainWindow.setPosition(Math.round(dragStartWinPos.x + dx), Math.round(dragStartWinPos.y + dy));
+      } else {
+        const [x, y] = mainWindow.getPosition();
+        mainWindow.setPosition(Math.round(x + deltaX), Math.round(y + deltaY));
+      }
     });
 
     // signing ipc handlers

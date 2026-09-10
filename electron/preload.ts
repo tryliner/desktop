@@ -11,7 +11,10 @@ export interface LinerElectronApi {
   toggleMaximize: () => Promise<void>;
   close: () => Promise<void>;
   isMaximized: () => Promise<boolean>;
+  startWindowMove: () => void;
+  dragStart: () => void;
   dragMove: (deltaX: number, deltaY: number) => void;
+  dragEnd: () => void;
   signRequest: (input: { method: string; path: string; body?: string | null }) => Promise<{
     signature?: string;
     timestamp?: number;
@@ -28,6 +31,7 @@ export interface LinerElectronApi {
   signRawPayload: (payload: number[] | Uint8Array) => Promise<string>;
   onDeeplink: (cb: (target: DeeplinkTarget) => void) => () => void;
   diagnoseNetwork: (hosts: string[]) => Promise<MainNetResult>;
+  openDownloads: () => Promise<boolean>;
 }
 
 const api: LinerElectronApi = {
@@ -35,14 +39,24 @@ const api: LinerElectronApi = {
   toggleMaximize: () => ipcRenderer.invoke("window:toggle-maximize"),
   close: () => ipcRenderer.invoke("window:close"),
   isMaximized: () => ipcRenderer.invoke("window:is-maximized"),
+  startWindowMove: () => {
+    ipcRenderer.send("window:start-drag");
+  },
+  dragStart: () => {
+    ipcRenderer.send("window:drag-start");
+  },
   dragMove: (deltaX: number, deltaY: number) => {
     ipcRenderer.send("window:drag-move", { deltaX, deltaY });
+  },
+  dragEnd: () => {
+    ipcRenderer.send("window:drag-end");
   },
   signRequest: (input) => ipcRenderer.invoke("signer:sign-request", input),
   signMonitorRequest: (input) => ipcRenderer.invoke("signer:sign-monitor-request", input),
   signCoverUrl: (payload) => ipcRenderer.invoke("signer:sign-cover-url", payload),
   signRawPayload: (payload) => ipcRenderer.invoke("signer:sign-raw-payload", payload),
   diagnoseNetwork: (hosts) => ipcRenderer.invoke("net:diagnose", hosts),
+  openDownloads: () => ipcRenderer.invoke("shell:open-downloads"),
   onDeeplink: (cb) => {
     const listener = (_event: unknown, target: DeeplinkTarget) => cb(target);
     ipcRenderer.on("deeplink:open", listener);
