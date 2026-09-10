@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { FolderOpenLine } from "@mingcute/react";
 import { useToast } from "@/shared/ui";
 import { useTranslation, type Locale } from "@/languages";
 import { usePlayerStore } from "@/features/player";
@@ -37,6 +38,7 @@ export function GeneralTab() {
     (state) => state.setDefaultPlaybackContext,
   );
   const { toast } = useToast();
+  const [dumpExported, setDumpExported] = useState(false);
   const connRunning = useConnectivityStore((s) => s.running);
   const connChecks = useConnectivityStore((s) => s.checks);
   const connLastRunAt = useConnectivityStore((s) => s.lastRunAt);
@@ -339,25 +341,47 @@ export function GeneralTab() {
                 : t("settings.connection.never_run")}
             </p>
           </div>
-          <button
-            type="button"
-            disabled={connRunning}
-            onClick={async () => {
-              const saved = await runAndSaveDump();
-              toast(
-                saved
-                  ? t("settings.connection.saved")
-                  : t("settings.connection.failed"),
-                saved ? "success" : "error",
-              );
-            }}
-            className="inline-flex items-center gap-[6px] rounded-md px-[14px] py-[7px] text-[13px] font-medium bg-border-alpha-14 text-text-primary hover:bg-border-alpha-24 transition-colors border-0 cursor-pointer active:scale-[0.98] disabled:opacity-50 disabled:cursor-default"
-            style={{ fontFamily: "var(--font-inter), sans-serif" }}
-          >
-            {connRunning
-              ? t("settings.connection.checking")
-              : t("settings.connection.button")}
-          </button>
+          <div className="flex items-center gap-[8px]">
+            {dumpExported && (
+              <button
+                type="button"
+                onClick={async () => {
+                  if (window.linerElectron?.openDownloads) {
+                    await window.linerElectron.openDownloads();
+                  } else {
+                    toast(t("settings.connection.open_folder"), "info");
+                  }
+                }}
+                title={t("settings.connection.open_folder")}
+                aria-label={t("settings.connection.open_folder")}
+                className="inline-flex items-center justify-center h-[34px] w-[34px] rounded-md bg-border-alpha-14 text-text-primary hover:bg-border-alpha-24 transition-colors border-0 cursor-pointer active:scale-[0.96]"
+              >
+                <FolderOpenLine size={18} />
+              </button>
+            )}
+            <button
+              type="button"
+              disabled={connRunning}
+              onClick={async () => {
+                const saved = await runAndSaveDump();
+                if (saved) {
+                  setDumpExported(true);
+                }
+                toast(
+                  saved
+                    ? t("settings.connection.saved")
+                    : t("settings.connection.failed"),
+                  saved ? "success" : "error",
+                );
+              }}
+              className="inline-flex items-center gap-[6px] rounded-md px-[14px] py-[7px] text-[13px] font-medium bg-border-alpha-14 text-text-primary hover:bg-border-alpha-24 transition-colors border-0 cursor-pointer active:scale-[0.98] disabled:opacity-50 disabled:cursor-default"
+              style={{ fontFamily: "var(--font-inter), sans-serif" }}
+            >
+              {connRunning
+                ? t("settings.connection.checking")
+                : t("settings.connection.button")}
+            </button>
+          </div>
         </div>
       </div>
     </div>

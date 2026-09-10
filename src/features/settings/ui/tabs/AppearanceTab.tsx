@@ -21,10 +21,6 @@ export function AppearanceTab() {
   const { t } = useTranslation();
   const [mounted, setMounted] = useState(false);
   const { theme, setTheme } = useTheme();
-  const miniPlayerStyle = usePlayerStore((state) => state.miniPlayerStyle);
-  const setMiniPlayerStyle = usePlayerStore(
-    (state) => state.setMiniPlayerStyle,
-  );
   const accentVariant = usePlayerStore((state) => state.accentVariant);
   const setAccentVariant = usePlayerStore((state) => state.setAccentVariant);
 
@@ -104,54 +100,6 @@ export function AppearanceTab() {
                   }}
                 >
                   {label}
-                </button>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      <div className="flex items-center justify-between">
-        <div className="flex flex-col gap-[4px]">
-          <h3 className="text-text-primary text-[15px] font-medium m-0">
-            {t("settings.customization.mini_player_style.title")}
-          </h3>
-          <p className="text-text-tertiary text-[13px] m-0">
-            {t("settings.customization.mini_player_style.description")}
-          </p>
-        </div>
-
-        {mounted && (
-          <div className="inline-flex items-center gap-[6px] rounded-xl bg-bg-elevated border border-border-primary p-[5px]">
-            {(
-              [
-                {
-                  value: "default",
-                  label: t("settings.customization.mini_player_style.default"),
-                },
-                {
-                  value: "rounded",
-                  label: t("settings.customization.mini_player_style.rounded"),
-                },
-              ] as const
-            ).map((item) => {
-              const isActive = miniPlayerStyle === item.value;
-              return (
-                <button
-                  key={item.value}
-                  type="button"
-                  onClick={() => setMiniPlayerStyle(item.value)}
-                  className={`inline-flex items-center gap-[5px] rounded-md px-[18px] py-[8px] text-[14px] leading-none border-0 cursor-pointer ${
-                    isActive
-                      ? "bg-border-alpha-14 text-text-primary shadow-sm"
-                      : "bg-transparent text-text-secondary hover:text-text-primary"
-                  }`}
-                  style={{
-                    fontFamily: "var(--font-inter), sans-serif",
-                    fontWeight: isActive ? 500 : 400,
-                  }}
-                >
-                  {item.label}
                 </button>
               );
             })}
