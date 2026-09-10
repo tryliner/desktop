@@ -488,6 +488,7 @@ export const api = {
       k?: number;
       drift_rate?: number;
       temperature?: number;
+      wave_id?: string;
     },
   ): Promise<RadioResponse> {
     if (options?.history && options.history.length > 0) {
@@ -504,6 +505,7 @@ export const api = {
     if (options?.k) params.set("k", String(options.k));
     if (options?.drift_rate) params.set("drift_rate", String(options.drift_rate));
     if (options?.temperature) params.set("temperature", String(options.temperature));
+    if (options?.wave_id) params.set("wave_id", options.wave_id);
     const qs = params.toString();
     return request<RadioResponse>(
       `/v1/tracks/${encodeURIComponent(id)}/radio${qs ? `?${qs}` : ""}`,

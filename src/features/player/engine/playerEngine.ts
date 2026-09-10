@@ -58,6 +58,15 @@ function parsePlaybackContext(context: string | null): PlaybackContext | undefin
   return { type: context };
 }
 
+// fresh station instance id so the backend can tell paginated waves apart
+// even when seed + history windows coincide
+function newRadioWaveId(): string {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
+  }
+  return `wave-${Date.now().toString(36)}-${Math.floor(Math.random() * 0xffffffff).toString(36)}`;
+}
+
 class PlaybackTelemetryTracker {
   private activeTrackId: string | null = null;
   private trackDurationMs = 0;
@@ -191,6 +200,7 @@ class PlayerEngine {
   private shuffleCursor = 0;
   private telemetry = new PlaybackTelemetryTracker();
   private radioAppendTimeout: ReturnType<typeof setTimeout> | null = null;
+  private radioWaveId: string | null = null;
 
   constructor() {
     usePlayerStore.setState({
@@ -332,6 +342,8 @@ class PlayerEngine {
 
     this.sessionId += 1;
     const mySession = this.sessionId;
+    // explicit play starts a fresh queue, so the wave instance resets too
+    this.radioWaveId = newRadioWaveId();
 
     if (context !== undefined) {
       store.setPlaybackContext(context);
@@ -364,6 +376,9 @@ class PlayerEngine {
     const store = usePlayerStore.getState();
     this.sessionId += 1;
     const mySession = this.sessionId;
+    // new station, new wave instance
+    this.radioWaveId = newRadioWaveId();
+    const waveId = this.radioWaveId;
 
     store.setPlaybackContext(`radio:${track.id}`);
     store.setPlaybackContextCover(track.coverUrl ?? null);
@@ -383,7 +398,7 @@ class PlayerEngine {
     }
 
     try {
-      const response = await api.getRadio(track.id, { k: 20 });
+      const response = await api.getRadio(track.id, { k: 20, wave_id: waveId });
       if (mySession !== this.sessionId) return;
       const additions = response.items
         .map(toClientTrack)
@@ -706,12 +721,16 @@ class PlayerEngine {
     if (!currentState.autoplaySimilar) return;
 
     const historyIds = currentState.queue.map((track) => track.id);
+    // keep paginating the same wave instance across queue generations
+    if (!this.radioWaveId) this.radioWaveId = newRadioWaveId();
+    const waveId = this.radioWaveId;
 
     let items: ApiRadioTrack[];
     try {
       const response = await api.getRadio(seedTrackId, {
         history: historyIds.slice(-20),
         k: 20,
+        wave_id: waveId,
       });
       items = response.items;
     } catch (error) {
@@ -737,7 +756,7 @@ class PlayerEngine {
     log(
       "green",
       "radio",
-      `appending ${additions.length} tracks from Radio Wave engine (history=${historyIds.length}): [${sample}]`,
+      `appending ${additions.length} tracks from Radio Wave engine (wave=${waveId.slice(0, 8)} history=${historyIds.length}): [${sample}]`,
     );
     state.setQueue([...state.queue, ...additions]);
   }
