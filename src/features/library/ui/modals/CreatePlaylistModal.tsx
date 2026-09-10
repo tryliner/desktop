@@ -240,7 +240,11 @@ export default function CreatePlaylistModal() {
                     </span>
                   </Tooltip>
                 ) : (
-                  <Tooltip content="YouTube • SoundCloud • Spotify • Deezer" side="top">
+                  <Tooltip
+                    side="top"
+                    multiline
+                    content={t("common.import_sources_hint")}
+                  >
                     <span className="inline-flex text-text-tertiary hover:text-text-secondary transition-colors cursor-help">
                       <InformationLine size={16} />
                     </span>
