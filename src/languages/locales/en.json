@@ -544,7 +544,8 @@
       "saved": "Report saved, attach it to your support message.",
       "failed": "Couldn't save the report.",
       "never_run": "Checks have not been run yet.",
-      "last_run": "{ok}/{total} checks ok · {time}"
+      "last_run": "{ok}/{total} checks ok · {time}",
+      "open_folder": "Open saved location"
     }
   },
   "toast": {

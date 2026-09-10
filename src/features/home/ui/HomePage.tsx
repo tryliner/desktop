@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import PopularTracksSection from "./PopularTracksSection";
 import HomePageSkeleton from "./HomePageSkeleton";
@@ -11,8 +11,13 @@ import { useRecentlyPlayed } from "../hooks/useRecentlyPlayed";
 import { useLikedTracks } from "@/features/library/hooks/useLikedTracks";
 import { useAuthStore } from "@/features/auth/store/authStore";
 import { playerEngine } from "@/features/player";
+import { useSongMenuItems } from "@/features/player/hooks/useSongMenuItems";
+import { usePlayerStore } from "@/features/player/store/playerStore";
+import { useToast } from "@/shared/ui";
+import DropdownMenu from "@/shared/ui/DropdownMenu";
 import CoverImage from "@/features/covers/ui/CoverImage";
 import { useTranslation } from "@/languages";
+import type { Track } from "@/shared/types";
 import {
   FireFill,
   TrophyFill,
@@ -25,6 +30,202 @@ import {
   SunsetFill,
   MoonStarsFill,
 } from "@mingcute/react";
+
+function QuickTrackCard({ track, idx }: { track: Track; idx: number }) {
+  const clickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { t } = useTranslation();
+  const { toast } = useToast();
+  const trackDoubleClickBehavior = usePlayerStore(
+    (state) => state.trackDoubleClickBehavior,
+  );
+
+  const menuItems = useSongMenuItems({
+    id: track.id,
+    title: track.title,
+    artists: track.artists,
+    coverUrl: track.coverUrl,
+    durationMs: track.durationMs,
+    searchType: "track",
+  });
+
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [menuPosition, setMenuPosition] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
+
+  const handleContextMenu = useCallback(
+    (e: React.MouseEvent) => {
+      if (menuItems.length === 0) return;
+      e.preventDefault();
+      e.stopPropagation();
+      setMenuPosition({ x: e.clientX, y: e.clientY });
+      setMenuOpen(true);
+    },
+    [menuItems],
+  );
+
+  const handleMenuOpenChange = useCallback((isOpen: boolean) => {
+    setMenuOpen(isOpen);
+    if (!isOpen) setMenuPosition(null);
+  }, []);
+
+  const handlePlay = useCallback(() => {
+    void playerEngine.playTrack(
+      track,
+      [track],
+      `${track.title} Radio`,
+      track.coverUrl,
+    );
+  }, [track]);
+
+  const handleDoubleClick = useCallback(() => {
+    if (trackDoubleClickBehavior === "queue") {
+      playerEngine.addToQueue({
+        id: track.id,
+        title: track.title,
+        artists: track.artists,
+        coverUrl: track.coverUrl,
+        durationMs: track.durationMs,
+        playCount: track.playCount ?? 0,
+      });
+      toast(`${track.title} — ${t("common.added_to_queue")}`, "success");
+    } else {
+      handlePlay();
+    }
+  }, [trackDoubleClickBehavior, track, handlePlay, toast, t]);
+
+  const handleClick = (e: React.MouseEvent) => {
+    const detail = (e as React.MouseEvent<HTMLDivElement>).detail;
+    if (detail >= 2) {
+      if (clickTimerRef.current) {
+        clearTimeout(clickTimerRef.current);
+        clickTimerRef.current = null;
+      }
+      handleDoubleClick();
+      return;
+    }
+
+    clickTimerRef.current = setTimeout(() => {
+      clickTimerRef.current = null;
+      handlePlay();
+    }, 200);
+  };
+
+  return (
+    <div
+      key={`quick-track-${track.id}-${idx}`}
+      className="group flex h-[56px] items-center gap-3 overflow-hidden rounded-[6px] bg-bg-elevated hover:bg-border-alpha-14 cursor-pointer transition-colors duration-150 pr-4 select-none"
+      onClick={handleClick}
+      onContextMenu={handleContextMenu}
+    >
+      <div className="relative h-[56px] w-[56px] shrink-0 overflow-hidden bg-border-alpha-14">
+        {track.coverUrl && (
+          <CoverImage
+            src={track.coverUrl}
+            alt={track.title}
+            fill
+            sizes="56px"
+            className="object-cover"
+          />
+        )}
+      </div>
+      <div className="flex min-w-0 flex-1 flex-col">
+        <span className="truncate text-[14px] font-medium text-text-primary">
+          {track.title}
+        </span>
+        <span className="truncate text-[12px] text-text-tertiary">
+          {track.artists}
+        </span>
+      </div>
+
+      {menuItems.length > 0 && (
+        <DropdownMenu
+          trigger={<span />}
+          items={menuItems}
+          open={menuOpen}
+          onOpenChange={handleMenuOpenChange}
+          position={menuPosition}
+        />
+      )}
+    </div>
+  );
+}
+
+function QuickAlbumCard({ album, idx }: { album: any; idx: number }) {
+  const navigate = useNavigate();
+
+  const menuItems = useSongMenuItems({
+    id: album.id,
+    title: album.title,
+    artists: album.artist,
+    coverUrl: album.coverUrl,
+    searchType: "album",
+  });
+
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [menuPosition, setMenuPosition] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
+
+  const handleContextMenu = useCallback(
+    (e: React.MouseEvent) => {
+      if (menuItems.length === 0) return;
+      e.preventDefault();
+      e.stopPropagation();
+      setMenuPosition({ x: e.clientX, y: e.clientY });
+      setMenuOpen(true);
+    },
+    [menuItems],
+  );
+
+  const handleMenuOpenChange = useCallback((isOpen: boolean) => {
+    setMenuOpen(isOpen);
+    if (!isOpen) setMenuPosition(null);
+  }, []);
+
+  return (
+    <div
+      key={`quick-album-${album.id}-${idx}`}
+      className="group flex h-[56px] items-center gap-3 overflow-hidden rounded-[6px] bg-bg-elevated hover:bg-border-alpha-14 cursor-pointer transition-colors duration-150 pr-4 select-none"
+      onClick={() =>
+        navigate(`/collection?type=album&id=${encodeURIComponent(album.id)}`)
+      }
+      onContextMenu={handleContextMenu}
+    >
+      <div className="relative h-[56px] w-[56px] shrink-0 overflow-hidden bg-border-alpha-14">
+        {album.coverUrl && (
+          <CoverImage
+            src={album.coverUrl}
+            alt={album.title}
+            fill
+            sizes="56px"
+            className="object-cover"
+          />
+        )}
+      </div>
+      <div className="flex min-w-0 flex-1 flex-col">
+        <span className="truncate text-[14px] font-medium text-text-primary">
+          {album.title}
+        </span>
+        <span className="truncate text-[12px] text-text-tertiary">
+          {album.artist}
+        </span>
+      </div>
+
+      {menuItems.length > 0 && (
+        <DropdownMenu
+          trigger={<span />}
+          items={menuItems}
+          open={menuOpen}
+          onOpenChange={handleMenuOpenChange}
+          position={menuPosition}
+        />
+      )}
+    </div>
+  );
+}
 
 export default function HomePage() {
   const { t } = useTranslation();
@@ -255,72 +456,21 @@ export default function HomePage() {
                   if (entry.type === "album") {
                     const album = entry.item;
                     return (
-                      <div
+                      <QuickAlbumCard
                         key={`quick-album-${album.id}-${idx}`}
-                        className="group flex h-[56px] items-center gap-3 overflow-hidden rounded-[6px] bg-bg-elevated hover:bg-border-alpha-14 cursor-pointer transition-colors duration-150 pr-4 select-none"
-                        onClick={() =>
-                          navigate(
-                            `/collection?type=album&id=${encodeURIComponent(album.id)}`,
-                          )
-                        }
-                      >
-                        <div className="relative h-[56px] w-[56px] shrink-0 overflow-hidden bg-border-alpha-14">
-                          {album.coverUrl && (
-                            <CoverImage
-                              src={album.coverUrl}
-                              alt={album.title}
-                              fill
-                              sizes="56px"
-                              className="object-cover"
-                            />
-                          )}
-                        </div>
-                        <div className="flex min-w-0 flex-1 flex-col">
-                          <span className="truncate text-[14px] font-medium text-text-primary">
-                            {album.title}
-                          </span>
-                          <span className="truncate text-[12px] text-text-tertiary">
-                            {album.artist}
-                          </span>
-                        </div>
-                      </div>
+                        album={album}
+                        idx={idx}
+                      />
                     );
                   }
                   if (entry.type === "track") {
                     const track = entry.item;
                     return (
-                      <div
+                      <QuickTrackCard
                         key={`quick-track-${track.id}-${idx}`}
-                        className="group flex h-[56px] items-center gap-3 overflow-hidden rounded-[6px] bg-bg-elevated hover:bg-border-alpha-14 cursor-pointer transition-colors duration-150 pr-4 select-none"
-                        onClick={() => {
-                          void playerEngine.playTrack(
-                            track,
-                            [track],
-                            `${track.title} Radio`,
-                            track.coverUrl,
-                          );
-                        }}
-                      >
-                        <div className="relative h-[56px] w-[56px] shrink-0 overflow-hidden bg-border-alpha-14">
-                          {track.coverUrl && (
-                            <CoverImage
-                              src={track.coverUrl}
-                              alt={track.title}
-                              fill
-                              sizes="56px"
-                              className="object-cover"
-                            />
-                          )}
-                        </div>
-                        <div className="flex min-w-0 flex-1 flex-col">
-                          <span className="truncate text-[14px] font-medium text-text-primary">
-                            {track.title}
-                          </span>
-                          <span className="truncate text-[12px] text-text-tertiary">
-                            {track.artists}
-                          </span>
-                        </div>
-                      </div>
+                        track={track}
+                        idx={idx}
+                      />
                     );
                   }
                   return null;
