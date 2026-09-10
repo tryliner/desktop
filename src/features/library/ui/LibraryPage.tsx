@@ -372,7 +372,7 @@ export default function LibraryPage() {
         <div className="px-[32px] pt-[4px] pb-[20px]">
           {activeTab === "playlists" && playlistsError ? (
             <div className="mb-[10px] text-[12px] text-accent-secondary">
-              {(playlistsError as Error).message}
+              {t("playlist.error_loading")}
             </div>
           ) : null}
           {initialLoading ? (

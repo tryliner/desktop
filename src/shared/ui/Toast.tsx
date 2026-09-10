@@ -244,7 +244,7 @@ function ImportToastItem() {
 
   const getSubtitle = () => {
     if (!job) return "";
-    if (isFailed) return job.error?.message || t("import.status_failed");
+    if (isFailed) return t("import.status_failed");
     if (isQueued) return t("import.status_queued_sub");
     if (isRunning) {
       if (job.result?.total) {

@@ -151,6 +151,12 @@
     "no_playlists_yet": "No playlists yet",
     "failed_add_playlist": "Failed to add to playlist",
     "failed_add_track": "Failed to add track",
+    "error_network": "No connection. Check your internet and try again.",
+    "error_server": "Something went wrong on our side. Try again later.",
+    "error_not_found": "Not found. It may have been removed.",
+    "error_session_expired": "Session expired. Please sign in again.",
+    "error_too_many": "Too many requests. Wait a bit and try again.",
+    "error_something_wrong": "Something went wrong. Try again.",
     "tracks_plural": "{count} tracks",
     "songs_plural": "{count} songs"
   },

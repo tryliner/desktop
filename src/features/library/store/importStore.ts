@@ -48,8 +48,8 @@ export const useImportStore = create<ActiveImportState>((set, get) => ({
       void get().listenToJob(job.id);
       return job;
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Failed to start import";
-      set({ error: msg, isPolling: false });
+      // store stays generic, callers map the raw error to a friendly message
+      set({ error: "Failed to start import", isPolling: false });
       throw err;
     }
   },
@@ -82,7 +82,7 @@ export const useImportStore = create<ActiveImportState>((set, get) => ({
         }
 
         if (current.status === "failed") {
-          set({ isPolling: false, job: current, error: current.error?.message ?? "Import failed" });
+          set({ isPolling: false, job: current, error: "Import failed" });
           return;
         }
       }
@@ -111,10 +111,10 @@ export const useImportStore = create<ActiveImportState>((set, get) => ({
         return;
       }
 
-      if (current.status === "failed") {
-        set({ isPolling: false, job: current, error: current.error?.message ?? "Import failed" });
-        return;
-      }
+        if (current.status === "failed") {
+          set({ isPolling: false, job: current, error: "Import failed" });
+          return;
+        }
 
       pollTimer = setTimeout(() => {
         void get().pollJob(jobId);

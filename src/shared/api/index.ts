@@ -1,4 +1,4 @@
-export { api, mediaUrl, toMaxQualityAvatarUrl, ApiError } from "./api";
+export { api, mediaUrl, toMaxQualityAvatarUrl, ApiError, resolveApiErrorMessage } from "./api";
 export type {
   SearchType,
   ApiCover,

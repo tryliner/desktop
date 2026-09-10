@@ -8,7 +8,7 @@ import Dialog from "@/shared/ui/Dialog";
 import { useTranslation } from "@/languages";
 import { useModalStore } from "../../store/modalStore";
 import { useImportStore } from "../../store/importStore";
-import { api } from "@/shared/api";
+import { api, resolveApiErrorMessage } from "@/shared/api";
 
 export default function CreatePlaylistModal() {
   const { t } = useTranslation();
@@ -74,8 +74,7 @@ export default function CreatePlaylistModal() {
       await useImportStore.getState().startImport(target);
       close();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : t("common.failed_import_playlist");
-      setImportError(msg);
+      setImportError(resolveApiErrorMessage(err, t, "common.failed_import_playlist"));
     } finally {
       setImporting(false);
     }

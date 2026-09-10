@@ -94,7 +94,7 @@ export function getAuthErrorCode(error: unknown): string {
   if (error.code === "USERNAME_TAKEN") return "username_taken";
   if (error.code === "INVALID_USERNAME") return "invalid_username";
   if (error.code === "INVALID_INPUT") return "invalid_input";
-  return error.message;
+  return "unknown_error";
 }
 
 export function authErrorMessage(error: unknown): string {
@@ -107,5 +107,6 @@ export function authErrorMessage(error: unknown): string {
     return "This username is already taken. Please choose another.";
   if (error.code === "INVALID_USERNAME")
     return "Username must be 3-30 lowercase characters (a-z, 0-9, _).";
-  return error.message;
+  // unknown api errors stay generic, never surface raw bodies
+  return "Something went wrong. Please try again.";
 }

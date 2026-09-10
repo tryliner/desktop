@@ -18,6 +18,7 @@ import {
   api,
   mediaUrl,
   toClientTrack,
+  resolveApiErrorMessage,
   type ImportReview,
   type ImportReviewDecision,
 } from "@/shared/api";
@@ -150,7 +151,7 @@ export default function ImportReviewModal() {
       })
       .catch((err) => {
         if (!active) return;
-        const msg = err instanceof Error ? err.message : t("import.status_failed");
+        const msg = resolveApiErrorMessage(err, t, "import.status_failed");
         toast(msg, "error");
         close();
       })
@@ -192,7 +193,7 @@ export default function ImportReviewModal() {
         void pollJob(jobId);
       }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : t("import.status_failed");
+      const msg = resolveApiErrorMessage(err, t, "import.status_failed");
       toast(msg, "error");
     } finally {
       setSubmitting(false);
@@ -216,7 +217,7 @@ export default function ImportReviewModal() {
         void pollJob(jobId);
       }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : t("import.status_failed");
+      const msg = resolveApiErrorMessage(err, t, "import.status_failed");
       toast(msg, "error");
     } finally {
       setSubmitting(false);

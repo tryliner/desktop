@@ -250,10 +250,7 @@ async function request<T>(
     if (res.status >= 500) {
       showToast("Ошибка сервера", "error", {
         id: `server-error-${res.status}`,
-        description:
-          typeof body.message === "string"
-            ? body.message
-            : `Сервер вернул ошибку (${res.status}).`,
+        description: "Попробуйте ещё раз позже.",
         requestId: resRequestId,
       });
     }
@@ -284,6 +281,25 @@ export class ApiError extends Error {
   get traceInfo(): string | undefined {
     return this.requestId ? `[reqId: ${this.requestId}]` : undefined;
   }
+}
+
+// maps any thrown error to a localized human-friendly message.
+// never surfaces raw api bodies, statuses, or technical jargon.
+export function resolveApiErrorMessage(
+  err: unknown,
+  t: (key: string) => string,
+  fallbackKey: string,
+): string {
+  if (err instanceof ApiError) {
+    if (err.status === 0) return t("common.error_network");
+    if (err.status === 401 || err.status === 403)
+      return t("common.error_session_expired");
+    if (err.status === 404) return t("common.error_not_found");
+    if (err.status === 429) return t("common.error_too_many");
+    if (err.status >= 500) return t("common.error_server");
+    return t(fallbackKey);
+  }
+  return t(fallbackKey);
 }
 
 // ---- Types from @liner/contracts --------------------------------------------
