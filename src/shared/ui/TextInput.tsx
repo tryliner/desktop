@@ -39,8 +39,8 @@ const TextInput = forwardRef<HTMLInputElement, TextInputProps>(
     const borderClass = hasError
       ? "border-accent-primary ring-1 ring-accent-primary"
       : isTransparent
-        ? "border-black/15 dark:border-white/20 hover:border-black/25 dark:hover:border-white/35 focus-within:border-black/40 dark:focus-within:border-white/50 focus-within:ring-1 focus-within:ring-black/15 dark:focus-within:ring-white/20"
-        : "border-border-primary focus-within:border-text-secondary focus-within:ring-1 focus-within:ring-text-secondary";
+        ? "border-black/15 dark:border-white/20 hover:border-black/25 dark:hover:border-white/35 focus-within:border-black/25 dark:focus-within:border-white/30"
+        : "border-border-primary focus-within:border-border-alpha-33";
 
     return (
       <div

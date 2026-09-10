@@ -16,6 +16,7 @@ export interface LibraryPlaylistSummary {
 export interface LibraryPlaylistDetail {
   id: string;
   title: string;
+  description?: string;
   trackCount: number;
   coverUrl: string;
   coverUrls: string[];
@@ -195,6 +196,7 @@ export function usePlaylist(id: string | null) {
         setData({
           id: response.playlist.id,
           title: response.playlist.title,
+          description: response.playlist.description,
           trackCount: response.items.length,
           coverUrl: covers[0] ?? "",
           coverUrls: covers,

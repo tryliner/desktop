@@ -13,7 +13,7 @@ import {
   PlaylistFill,
   Upload2Line,
 } from "@mingcute/react";
-import { LuPencil, LuGlobe, LuTrash2 } from "react-icons/lu";
+import { LuPencil, LuGlobe, LuTrash2, LuText } from "react-icons/lu";
 import Button from "@/shared/ui/Button";
 import DropdownMenu from "@/shared/ui/DropdownMenu";
 import SongCardWithMenu from "@/features/player/ui/SongCardWithMenu";
@@ -118,8 +118,10 @@ function LibraryPlaylistContent() {
   const { t } = useTranslation();
 
   const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [isEditingDescription, setIsEditingDescription] = useState(false);
   const reorderTracks = useReorderPlaylistTracks();
   const titleRef = useRef<HTMLHeadingElement>(null);
+  const descriptionRef = useRef<HTMLParagraphElement>(null);
 
   const {
     data: playlistDetail,
@@ -142,16 +144,24 @@ function LibraryPlaylistContent() {
       }));
       return {
         title: t("playlist.liked_songs"),
+        bio: "",
         description: t("common.tracks", { count: tracks.length }),
+        showCountInMeta: false,
+        countLabel: "",
         coverUrl: "",
         tracks,
         revision: 0,
       };
     }
     if (!playlistDetail) return null;
+    const bio = playlistDetail.description?.trim();
+    const countLabel = t("common.tracks", { count: playlistDetail.trackCount });
     return {
       title: playlistDetail.title || t("playlist.untitled_playlist"),
-      description: t("common.tracks", { count: playlistDetail.trackCount }),
+      bio: bio || "",
+      description: bio || countLabel,
+      showCountInMeta: Boolean(bio),
+      countLabel,
       coverUrl: playlistDetail.coverUrl || "",
       coverUrls:
         playlistDetail.coverUrls ??
@@ -174,6 +184,18 @@ function LibraryPlaylistContent() {
       selection?.addRange(range);
     }
   }, [isEditingTitle]);
+
+  useEffect(() => {
+    if (isEditingDescription && descriptionRef.current) {
+      descriptionRef.current.focus();
+      const selection = window.getSelection();
+      const range = document.createRange();
+      range.selectNodeContents(descriptionRef.current);
+      range.collapse(false);
+      selection?.removeAllRanges();
+      selection?.addRange(range);
+    }
+  }, [isEditingDescription]);
 
   const handlePlayAll = useCallback(() => {
     if (!viewData || viewData.tracks.length === 0) return;
@@ -339,15 +361,15 @@ function LibraryPlaylistContent() {
             <div className="relative z-10 px-[32px] pt-[24px]">
               <Link
                 to="/library"
-                className="inline-flex items-center gap-[10px] text-text-primary no-underline transition-opacity duration-200 hover:opacity-80 cursor-pointer"
+                className="inline-flex items-center gap-[8px] text-text-secondary no-underline transition-colors duration-200 hover:text-text-primary cursor-pointer"
                 style={{ fontFamily: "var(--font-inter), sans-serif" }}
               >
-                <ArrowLeftLine size={24} />
-                <span className="text-[28px] font-[350]">{viewData.title}</span>
+                <ArrowLeftLine size={18} />
+                <span className="text-[14px] font-[500]">{t("common.back")}</span>
               </Link>
 
-              <section className="mt-[20px] flex items-start gap-[28px]">
-                <div className="relative h-[170px] w-[170px] shrink-0 overflow-hidden rounded-xl bg-border-alpha-14 flex items-center justify-center">
+              <section className="mt-[24px] flex items-start gap-[24px]">
+                <div className="relative h-[180px] w-[180px] shrink-0 overflow-hidden rounded-xl bg-border-alpha-14 flex items-center justify-center">
                   {(() => {
                     const urls =
                       viewData.coverUrls ??
@@ -399,11 +421,11 @@ function LibraryPlaylistContent() {
                   })()}
                 </div>
 
-                <div className="flex min-h-[170px] flex-1 justify-between">
+                <div className="flex min-h-[180px] flex-1 justify-between">
                   <div className="flex flex-col justify-center">
                     <h1
                       ref={titleRef}
-                      className={`m-0 text-[34px] leading-[1.02] text-text-primary ${
+                      className={`m-0 text-[40px] leading-[1.0] text-text-primary ${
                         isLikesMode
                           ? ""
                           : "cursor-text outline-none transition-colors"
@@ -438,27 +460,80 @@ function LibraryPlaylistContent() {
                       }}
                       style={{
                         fontFamily: "var(--font-inter), sans-serif",
-                        fontWeight: 400,
+                        fontWeight: 600,
+                        letterSpacing: "-0.02em",
                       }}
                     >
                       {viewData.title}
                     </h1>
+                    {isLikesMode ? (
+                      <p
+                        className="m-0 mt-[8px] max-w-[480px] text-[14px] leading-[1.5] text-text-secondary line-clamp-2"
+                        style={{
+                          fontFamily: "var(--font-inter), sans-serif",
+                          fontWeight: 400,
+                        }}
+                      >
+                        {viewData.description}
+                      </p>
+                    ) : viewData.bio || isEditingDescription ? (
+                      <p
+                        ref={descriptionRef}
+                        className={`m-0 mt-[8px] max-w-[480px] text-[14px] leading-[1.5] text-text-secondary line-clamp-2 cursor-text outline-none transition-colors empty:min-h-[21px] ${
+                          isEditingDescription ? "bg-border-alpha-14 rounded-[4px] -ml-[4px] px-[4px]" : ""
+                        }`}
+                        contentEditable={isEditingDescription}
+                        suppressContentEditableWarning
+                        onBlur={(e) => {
+                          if (!isEditingDescription) return;
+                          const next = e.currentTarget.textContent?.trim() ?? "";
+                          if (decodedId && next !== viewData.bio) {
+                            void api
+                              .updatePlaylist(decodedId, { description: next })
+                              .then(() =>
+                                window.dispatchEvent(new Event("library:changed")),
+                              );
+                          }
+                          setIsEditingDescription(false);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            e.currentTarget.blur();
+                          }
+                          if (e.key === "Escape") {
+                            e.currentTarget.textContent = viewData.bio;
+                            e.currentTarget.blur();
+                            setIsEditingDescription(false);
+                          }
+                        }}
+                        onClick={() => setIsEditingDescription(true)}
+                        style={{
+                          fontFamily: "var(--font-inter), sans-serif",
+                          fontWeight: 400,
+                        }}
+                      >
+                        {viewData.bio}
+                      </p>
+                    ) : (
+                      <p
+                        className="m-0 mt-[8px] max-w-[480px] text-[14px] leading-[1.5] text-text-secondary line-clamp-2"
+                        style={{
+                          fontFamily: "var(--font-inter), sans-serif",
+                          fontWeight: 400,
+                        }}
+                      >
+                        {viewData.description}
+                      </p>
+                    )}
                     <p
-                      className="m-0 mt-[6px] max-w-[340px] text-[18px] leading-[1.2] text-text-tertiary"
-                      style={{
-                        fontFamily: "var(--font-inter), sans-serif",
-                        fontWeight: 350,
-                      }}
-                    >
-                      {viewData.description}
-                    </p>
-                    <p
-                      className="m-0 mt-[8px] text-[14px] text-text-secondary"
+                      className="m-0 mt-[6px] text-[13px] text-text-tertiary"
                       style={{
                         fontFamily: "var(--font-inter), sans-serif",
                         fontWeight: 400,
                       }}
                     >
+                      {viewData.showCountInMeta ? `${viewData.countLabel} • ` : ""}
                       {(() => {
                         const totalMs = viewData.tracks.reduce(
                           (acc, t) => acc + (t.durationMs || 0),
@@ -532,6 +607,12 @@ function LibraryPlaylistContent() {
                             icon: <LuPencil size={15} />,
                             label: t("common.rename"),
                             onClick: () => setIsEditingTitle(true),
+                          },
+                          {
+                            id: "edit-description",
+                            icon: <LuText size={15} />,
+                            label: t("common.edit_description"),
+                            onClick: () => setIsEditingDescription(true),
                           },
                           {
                             id: "make-public",
