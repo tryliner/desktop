@@ -14,8 +14,9 @@ import {
   useExternalItems,
   useLikedTrackCount,
 } from "../hooks";
-import { HeartFill } from "@mingcute/react";
+import { HeartFill, AddLine } from "@mingcute/react";
 import { useTranslation } from "@/languages";
+import { useModalStore } from "../store/modalStore";
 
 const PAGE_SIZE = 24;
 
@@ -166,6 +167,7 @@ export default function LibraryPage() {
   const { data: externalPlaylistItems = [] } = useExternalItems("playlist");
   const { data: likedCount, isLoading: likedCountLoading } =
     useLikedTrackCount();
+  const openCreatePlaylist = useModalStore((state) => state.openCreatePlaylist);
 
   const playlistItems: LibraryItemViewModel[] = useMemo(() => {
     if (!playlistsData) return [];
@@ -320,14 +322,14 @@ export default function LibraryPage() {
   }, []);
 
   return (
-    <>
+    <div className="relative h-full w-full overflow-hidden">
       <div
         ref={scrollContainerRef}
         onScroll={(event) => {
           const next = event.currentTarget.scrollTop > 2;
           setShowTopFog((prev) => (prev === next ? prev : next));
         }}
-        className="page-transition h-full w-full overflow-y-auto bg-bg-primary pb-[24px]"
+        className="page-transition h-full w-full overflow-y-auto bg-bg-primary pb-[80px]"
       >
         {/* Page Title */}
         <div className="px-[32px] pt-[20px] pb-[10px]">
@@ -414,6 +416,25 @@ export default function LibraryPage() {
           )}
         </div>
       </div>
-    </>
+
+      <AnimatePresence>
+        {activeTab === "playlists" && (
+          <motion.button
+            key="fab-create-playlist"
+            initial={{ opacity: 0, scale: 0.8, y: 12 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.8, y: 12 }}
+            transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+            type="button"
+            onClick={() => openCreatePlaylist()}
+            title={t("library.create_playlist")}
+            aria-label={t("library.create_playlist")}
+            className="absolute bottom-[20px] right-[24px] z-30 flex h-[44px] w-[44px] items-center justify-center rounded-[14px] bg-btn-primary-bg text-btn-primary-text shadow-[0_4px_14px_rgba(0,0,0,0.22)] hover:shadow-[0_6px_18px_rgba(0,0,0,0.3)] hover:opacity-95 active:scale-[0.92] transition-all border-0 cursor-pointer select-none"
+          >
+            <AddLine size={22} />
+          </motion.button>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }

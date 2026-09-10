@@ -14,6 +14,9 @@ export interface VolumePickerProps {
   fillClassName?: string;
   iconClassName?: string;
   valueClassName?: string;
+  trackBg?: string;
+  trackActiveBg?: string;
+  fillColor?: string;
   onVolumeChange?: (level: number) => void;
 }
 
@@ -26,6 +29,9 @@ export const VolumePicker = memo(function VolumePicker({
   fillClassName = "",
   iconClassName = "",
   valueClassName = "",
+  trackBg,
+  trackActiveBg,
+  fillColor,
   onVolumeChange,
 }: VolumePickerProps) {
   const player = usePlayerState();
@@ -170,7 +176,9 @@ export const VolumePicker = memo(function VolumePicker({
           type="button"
           onClick={handleToggleMute}
           aria-label={volumeLevel === 0 ? "Unmute" : "Mute"}
-          className={`flex h-full w-[24px] shrink-0 items-center justify-center border-none bg-transparent p-0 text-white/70 transition-colors duration-150 ease-out hover:text-white cursor-pointer ${iconClassName}`}
+          className={`flex h-full w-[24px] shrink-0 items-center justify-center border-none bg-transparent p-0 ${
+            !iconClassName ? "text-text-secondary hover:text-text-primary" : ""
+          } transition-colors duration-150 ease-out cursor-pointer ${iconClassName}`}
         >
           <span className="flex items-center justify-center transition-transform duration-150 ease-out hover:scale-110 active:scale-90">
             {percentage === 0 ? (
@@ -200,9 +208,7 @@ export const VolumePicker = memo(function VolumePicker({
           initial={false}
           animate={{
             scaleY: isActive ? (size === "sm" ? 1.35 : 1.3) : 1,
-            backgroundColor: isActive
-              ? "rgba(255, 255, 255, 0.28)"
-              : "rgba(255, 255, 255, 0.18)",
+            ...(trackBg ? { backgroundColor: isActive ? (trackActiveBg || trackBg) : trackBg } : {}),
           }}
           transition={{
             type: "spring",
@@ -210,20 +216,30 @@ export const VolumePicker = memo(function VolumePicker({
             damping: 30,
             mass: 0.8,
           }}
-          className={`relative w-full rounded-full overflow-hidden origin-center ${baseTrackHeights} ${trackClassName}`}
+          className={`relative w-full rounded-full overflow-hidden origin-center transition-colors duration-150 ${baseTrackHeights} ${
+            !trackBg
+              ? isActive
+                ? "bg-black/[0.22] dark:bg-white/[0.28]"
+                : "bg-black/[0.12] dark:bg-white/[0.18]"
+              : ""
+          } ${trackClassName}`}
         >
           <div
-            className={`absolute inset-y-0 left-0 rounded-full bg-white transition-[width] ease-out ${
+            className={`absolute inset-y-0 left-0 rounded-full ${
+              !fillColor && !fillClassName ? "bg-text-primary" : ""
+            } transition-[width] ease-out ${
               isDragging ? "duration-0" : "duration-100"
             } ${fillClassName}`}
-            style={{ width: `${percentage}%` }}
+            style={{ width: `${percentage}%`, ...(fillColor ? { backgroundColor: fillColor } : {}) }}
           />
         </motion.div>
       </div>
 
       {showValue && (
         <span
-          className={`w-[32px] shrink-0 text-right text-[12px] font-[500] tabular-nums text-white/60 group-hover:text-white/90 transition-colors ${valueClassName}`}
+          className={`w-[32px] shrink-0 text-right text-[12px] font-[500] tabular-nums ${
+            !valueClassName ? "text-text-tertiary group-hover:text-text-secondary" : ""
+          } transition-colors ${valueClassName}`}
         >
           {percentage}%
         </span>
