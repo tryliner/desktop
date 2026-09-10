@@ -21,6 +21,7 @@ import { useToast } from "@/shared/ui";
 import { useTranslation } from "@/languages";
 import { useModalStore } from "@/features/library";
 import { api, mediaUrl, toMaxQualityAvatarUrl, toClientTrack, type ApiTrack } from "@/shared/api";
+import { buildShareUrl } from "@/shared/utils/share";
 import { useExternalItems } from "@/features/library/hooks";
 import ArtistProfileModal from "./ArtistProfileModal";
 import ArtistPageSkeleton from "./ArtistPageSkeleton";
@@ -284,8 +285,8 @@ function ArtistContent() {
   };
 
   const handleShare = () => {
-    if (typeof navigator !== "undefined" && navigator.clipboard) {
-      navigator.clipboard.writeText(window.location.href);
+    if (typeof navigator !== "undefined" && navigator.clipboard && decodedId) {
+      navigator.clipboard.writeText(buildShareUrl("artist", decodedId));
       toast(t("common.link_copied"), "info");
     }
   };
@@ -367,7 +368,8 @@ function ArtistContent() {
               {data.verified ? (
               <svg
                 viewBox="0 0 24 24"
-                className="h-[24px] w-[24px] md:h-[32px] md:w-[32px] shrink-0 text-[#1d9bf0]"
+                // nudged down: flex centers on the line box, caps sit a touch lower
+                className="h-[24px] w-[24px] md:h-[32px] md:w-[32px] shrink-0 translate-y-[2px] md:translate-y-[3px] text-[#1d9bf0]"
                 fill="currentColor"
                 aria-label="Verified"
               >
@@ -472,7 +474,7 @@ function ArtistContent() {
 
           {/* right: bio card against header background */}
           {data.description && (
-            <div className="w-full md:w-[340px] lg:w-[380px] shrink-0 rounded-md bg-[#141414]/90 p-[16px] backdrop-blur-md flex flex-col gap-[6px]">
+            <div className="w-full md:w-[340px] lg:w-[380px] shrink-0 rounded-md bg-bg-panel/90 p-[16px] backdrop-blur-md flex flex-col gap-[6px]">
               <span
                 className="text-[15px] font-[600] tracking-[-0.01em] text-text-primary"
                 style={{ fontFamily: "var(--font-inter), sans-serif" }}

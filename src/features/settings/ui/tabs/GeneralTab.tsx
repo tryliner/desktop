@@ -4,6 +4,7 @@ import { useTranslation, type Locale } from "@/languages";
 import { usePlayerStore } from "@/features/player";
 import { ToggleSwitch } from "@/shared/ui";
 import { isTelemetryEnabled, setTelemetryEnabled } from "@/shared/telemetry";
+import { useConnectivityStore } from "@/features/connectivity";
 import {
   clearMediaAndCoverCache,
   clearSearchAndQueryCache,
@@ -36,6 +37,10 @@ export function GeneralTab() {
     (state) => state.setDefaultPlaybackContext,
   );
   const { toast } = useToast();
+  const connRunning = useConnectivityStore((s) => s.running);
+  const connChecks = useConnectivityStore((s) => s.checks);
+  const connLastRunAt = useConnectivityStore((s) => s.lastRunAt);
+  const runAndSaveDump = useConnectivityStore((s) => s.runAndSaveDump);
 
   const handleToggleTelemetry = (checked: boolean) => {
     setTelemetryOptIn(checked);
@@ -305,6 +310,54 @@ export function GeneralTab() {
               {t("settings.cache.search_cache.button")}
             </button>
           </div>
+        </div>
+      </div>
+
+      {/* Connection Diagnostics Section */}
+      <div className="flex flex-col gap-[20px]">
+        <div className="flex flex-col gap-[6px] border-b border-border-primary pb-[16px]">
+          <h2 className="text-text-primary text-[16px] font-medium m-0">
+            {t("settings.connection.title")}
+          </h2>
+          <p className="text-text-secondary text-[14px] m-0">
+            {t("settings.connection.description")}
+          </p>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-[4px]">
+            <h3 className="text-text-primary text-[15px] font-medium m-0">
+              {t("settings.connection.checks_title")}
+            </h3>
+            <p className="text-text-tertiary text-[13px] m-0">
+              {connChecks.length > 0 && connLastRunAt
+                ? t("settings.connection.last_run", {
+                    ok: connChecks.filter((c) => c.status === "ok").length,
+                    total: connChecks.length,
+                    time: new Date(connLastRunAt).toLocaleTimeString(),
+                  })
+                : t("settings.connection.never_run")}
+            </p>
+          </div>
+          <button
+            type="button"
+            disabled={connRunning}
+            onClick={async () => {
+              const saved = await runAndSaveDump();
+              toast(
+                saved
+                  ? t("settings.connection.saved")
+                  : t("settings.connection.failed"),
+                saved ? "success" : "error",
+              );
+            }}
+            className="inline-flex items-center gap-[6px] rounded-md px-[14px] py-[7px] text-[13px] font-medium bg-border-alpha-14 text-text-primary hover:bg-border-alpha-24 transition-colors border-0 cursor-pointer active:scale-[0.98] disabled:opacity-50 disabled:cursor-default"
+            style={{ fontFamily: "var(--font-inter), sans-serif" }}
+          >
+            {connRunning
+              ? t("settings.connection.checking")
+              : t("settings.connection.button")}
+          </button>
         </div>
       </div>
     </div>

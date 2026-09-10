@@ -29,6 +29,7 @@ import { playerEngine } from "@/features/player";
 import type { Track } from "@/shared/types";
 import { useTranslation } from "@/languages";
 import { api } from "@/shared/api";
+import { buildShareUrl } from "@/shared/utils/share";
 
 interface TrackItemProps {
   track: Track;
@@ -239,11 +240,11 @@ function LibraryPlaylistContent() {
   const { toast } = useToast();
 
   const handleShare = useCallback(() => {
-    if (typeof navigator !== "undefined" && navigator.clipboard) {
-      navigator.clipboard.writeText(window.location.href);
+    if (typeof navigator !== "undefined" && navigator.clipboard && decodedId && decodedId !== "likes") {
+      navigator.clipboard.writeText(buildShareUrl("playlist", decodedId));
       toast(t("common.link_copied"), "info");
     }
-  }, [t, toast]);
+  }, [t, toast, decodedId]);
 
   const urlsToPreload = useMemo(() => {
     if (!viewData) return [];

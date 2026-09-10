@@ -1,4 +1,10 @@
 import { contextBridge, ipcRenderer } from "electron";
+import type { MainNetResult } from "./netdiag";
+
+export interface DeeplinkTarget {
+  type: "artist" | "album" | "playlist" | "track";
+  id: string;
+}
 
 export interface LinerElectronApi {
   minimize: () => Promise<void>;
@@ -20,6 +26,8 @@ export interface LinerElectronApi {
   }>;
   signCoverUrl: (payload: string) => Promise<string>;
   signRawPayload: (payload: number[] | Uint8Array) => Promise<string>;
+  onDeeplink: (cb: (target: DeeplinkTarget) => void) => () => void;
+  diagnoseNetwork: (hosts: string[]) => Promise<MainNetResult>;
 }
 
 const api: LinerElectronApi = {
@@ -34,6 +42,14 @@ const api: LinerElectronApi = {
   signMonitorRequest: (input) => ipcRenderer.invoke("signer:sign-monitor-request", input),
   signCoverUrl: (payload) => ipcRenderer.invoke("signer:sign-cover-url", payload),
   signRawPayload: (payload) => ipcRenderer.invoke("signer:sign-raw-payload", payload),
+  diagnoseNetwork: (hosts) => ipcRenderer.invoke("net:diagnose", hosts),
+  onDeeplink: (cb) => {
+    const listener = (_event: unknown, target: DeeplinkTarget) => cb(target);
+    ipcRenderer.on("deeplink:open", listener);
+    return () => {
+      ipcRenderer.removeListener("deeplink:open", listener);
+    };
+  },
 };
 
 contextBridge.exposeInMainWorld("linerElectron", api);

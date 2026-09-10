@@ -20,6 +20,7 @@ import type { Track } from "@/shared/types";
 import { useTranslation } from "@/languages";
 import { useModalStore } from "@/features/library";
 import { api, mediaUrl, toClientTrack, type ApiTrack } from "@/shared/api";
+import { buildShareUrl } from "@/shared/utils/share";
 import { useExternalItems } from "@/features/library/hooks";
 
 function CollectionContent() {
@@ -217,8 +218,8 @@ function CollectionContent() {
   };
 
   const handleShare = () => {
-    if (typeof navigator !== "undefined" && navigator.clipboard) {
-      navigator.clipboard.writeText(window.location.href);
+    if (typeof navigator !== "undefined" && navigator.clipboard && decodedId) {
+      navigator.clipboard.writeText(buildShareUrl(entityType, decodedId));
       toast(t("common.link_copied"), "info");
     }
   };

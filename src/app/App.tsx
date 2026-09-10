@@ -6,6 +6,9 @@ import { I18nProvider } from "@/languages";
 import { AuthLock } from "@/features/auth";
 import { CoverSwRegistrar } from "@/features/covers";
 import { AppRoutes } from "./routes";
+import DeeplinkHandler from "./DeeplinkHandler";
+import EnvironmentWarning from "./EnvironmentWarning";
+import { ConnectivityWall } from "@/features/connectivity";
 import "./globals.css";
 
 export default function App() {
@@ -24,6 +27,9 @@ export default function App() {
           <I18nProvider>
             <ToastProvider>
               <RootErrorBoundary>
+                <DeeplinkHandler />
+                <EnvironmentWarning />
+                <ConnectivityWall />
                 <AuthLock>
                   <AppRoutes />
                 </AuthLock>

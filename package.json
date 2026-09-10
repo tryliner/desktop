@@ -29,6 +29,12 @@
     "directories": {
       "output": "release"
     },
+    "protocols": [
+      {
+        "name": "Liner",
+        "schemes": ["liner"]
+      }
+    ],
     "files": [
       "dist/**/*",
       "dist-electron/**/*"

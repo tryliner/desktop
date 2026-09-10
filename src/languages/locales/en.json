@@ -162,7 +162,9 @@
     "error_too_many": "Too many requests. Wait a bit and try again.",
     "error_something_wrong": "Something went wrong. Try again.",
     "tracks_plural": "{count} tracks",
-    "songs_plural": "{count} songs"
+    "songs_plural": "{count} songs",
+    "env_warning": "App should run inside Electron — deeplinks, offline checks and sharing need the desktop bridge.",
+    "env_skip": "Skip"
   },
   "home": {
     "goodMorning": "Good morning",
@@ -532,6 +534,17 @@
     "about": {
       "liner": "Liner",
       "telegram": "Telegram"
+    },
+    "connection": {
+      "title": "Connection",
+      "description": "Run every connectivity probe and save the offline report.",
+      "checks_title": "Offline report",
+      "button": "Run checks and save",
+      "checking": "Checking…",
+      "saved": "Report saved, attach it to your support message.",
+      "failed": "Couldn't save the report.",
+      "never_run": "Checks have not been run yet.",
+      "last_run": "{ok}/{total} checks ok · {time}"
     }
   },
   "toast": {
@@ -623,5 +636,39 @@
     "listening_to": "Listening to",
     "settings": "Settings",
     "sign_out": "Sign out"
+  },
+  "connectivity": {
+    "wall_title": "Connection failed",
+    "wall_subtitle": "Liner can't reach its servers. Your music and library are safe.",
+    "steps_title": "Quick fixes worth trying",
+    "step_net": "Check that Wi-Fi or cable is connected and pages open in a browser.",
+    "step_vpn": "Pause VPN, proxy or DNS filters for a minute — they often block the app.",
+    "step_firewall": "Allow Liner through the firewall and antivirus network shields.",
+    "step_router": "Restart the router, then press Retry below.",
+    "retry": "Retry",
+    "retrying": "Checking…",
+    "checks_title": "Connection checks",
+    "check_ok_count": "{ok} of {total} checks pass",
+    "never_run": "not run yet",
+    "status_ok": "ok",
+    "status_fail": "fail",
+    "status_skip": "skip",
+    "check_device": "Device online",
+    "check_api": "API health",
+    "check_covers": "Covers reachable",
+    "check_link": "Share links reachable",
+    "check_dns": "DNS",
+    "check_tcp": "TCP 443",
+    "check_tls": "TLS handshake",
+    "check_control": "Control endpoint",
+    "check_trace": "Route trace",
+    "check_platform": "Platform",
+    "check_main": "Desktop checks",
+    "copy_dump": "Copy report",
+    "dump_copied": "Report copied, paste it into your support message.",
+    "dump_copy_failed": "Couldn't access the clipboard.",
+    "download_dump": "Save report",
+    "support": "Contact support",
+    "support_hint": "Attach the saved report file so support sees the full picture."
   }
 }

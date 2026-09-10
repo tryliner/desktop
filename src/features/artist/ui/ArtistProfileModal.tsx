@@ -251,7 +251,8 @@ export default function ArtistProfileModal({
             {verified ? (
             <svg
               viewBox="0 0 24 24"
-              className="h-[18px] w-[18px] shrink-0 text-[#1d9bf0]"
+              // nudged down: flex centers on the line box, caps sit a touch lower
+              className="h-[18px] w-[18px] shrink-0 translate-y-[1px] text-[#1d9bf0]"
               fill="currentColor"
               aria-label="Verified"
             >

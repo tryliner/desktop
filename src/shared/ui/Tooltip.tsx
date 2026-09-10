@@ -12,6 +12,7 @@ export interface TooltipProps {
   className?: string;
   disabled?: boolean;
   multiline?: boolean;
+  wrapperClassName?: string;
 }
 
 function Tooltip({
@@ -24,6 +25,7 @@ function Tooltip({
   className = "",
   disabled = false,
   multiline = false,
+  wrapperClassName = "",
 }: TooltipProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -138,7 +140,7 @@ function Tooltip({
   return (
     <div
       ref={anchorRef}
-      className="relative inline-flex items-center justify-center"
+      className={`relative inline-flex items-center justify-center ${wrapperClassName}`}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       onFocus={handleMouseEnter}

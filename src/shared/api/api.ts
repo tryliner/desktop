@@ -18,6 +18,12 @@ import type {
 
 import { usePlayerStore } from "@/features/player/store/playerStore";
 import { showToast } from "@/shared/ui/Toast";
+import {
+  isConnectivityFailure,
+  recordConnectivityFailure,
+  statusOf,
+  stripQuery,
+} from "@/features/connectivity";
 
 const BASE =
   (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/+$/, "") ||
@@ -185,6 +191,14 @@ async function request<T>(
   } catch (err) {
     const durationMs = Math.round(performance.now() - startTime);
     telemetry.trackNetwork(method, path, 0, durationMs, requestId);
+    if (isConnectivityFailure(err)) {
+      recordConnectivityFailure({
+        method,
+        path: stripQuery(path),
+        status: statusOf(err),
+        latencyMs: durationMs,
+      });
+    }
     throw err;
   }
 
@@ -226,6 +240,14 @@ async function request<T>(
       } catch (err) {
         const durationMs = Math.round(performance.now() - startTime);
         telemetry.trackNetwork(method, path, 0, durationMs, requestId);
+        if (isConnectivityFailure(err)) {
+          recordConnectivityFailure({
+            method,
+            path: stripQuery(path),
+            status: statusOf(err),
+            latencyMs: durationMs,
+          });
+        }
         throw err;
       }
     }
@@ -255,12 +277,22 @@ async function request<T>(
       });
     }
 
-    throw new ApiError(
+    const apiErr = new ApiError(
       res.status,
       typeof body.message === "string" ? body.message : res.statusText,
       typeof body.code === "string" ? body.code : undefined,
       resRequestId,
     );
+    if (isConnectivityFailure(apiErr)) {
+      recordConnectivityFailure({
+        method,
+        path: stripQuery(path),
+        status: res.status,
+        ...(apiErr.code ? { code: apiErr.code } : {}),
+        latencyMs: durationMs,
+      });
+    }
+    throw apiErr;
   }
 
   if (res.status === 204) return undefined as unknown as T;

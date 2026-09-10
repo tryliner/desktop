@@ -346,7 +346,7 @@ export function SearchModal({
         >
           {/* 1. Sleek Floating Search Bar Island */}
           <div
-            className="w-[min(660px,calc(100vw-90px))] h-[54px] rounded-[8px] bg-[#0e0e0e]/98 backdrop-blur-2xl px-[18px] flex items-center gap-[14px]"
+            className="w-[min(660px,calc(100vw-90px))] h-[54px] rounded-[8px] bg-bg-panel/98 backdrop-blur-2xl px-[18px] flex items-center gap-[14px]"
           >
         <span className="shrink-0 flex items-center justify-center text-text-tertiary">
           <AnimatePresence mode="wait" initial={false}>
@@ -425,7 +425,7 @@ export function SearchModal({
               duration: 0.18,
               ease: [0.16, 1, 0.3, 1],
             }}
-            className="w-[min(660px,calc(100vw-90px))] mt-[8px] max-h-[500px] h-[500px] rounded-[8px] bg-[#0e0e0e]/98 backdrop-blur-2xl flex flex-col overflow-hidden"
+            className="w-[min(660px,calc(100vw-90px))] mt-[8px] max-h-[500px] h-[500px] rounded-[8px] bg-bg-panel/98 backdrop-blur-2xl flex flex-col overflow-hidden"
           >
             {/* Filter Pills Bar */}
             <div className="flex items-center gap-[6px] px-[14px] pt-[12px] pb-[6px] shrink-0 overflow-x-auto">
