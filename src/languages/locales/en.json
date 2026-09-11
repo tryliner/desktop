@@ -361,8 +361,7 @@
     "min": "min",
     "sec": "sec",
     "empty_title": "This playlist is empty",
-    "empty_subtitle": "Search for songs to add",
-    "add_songs": "Add songs"
+    "empty_subtitle": "Search for songs to add"
   },
   "search": {
     "placeholder": "Search tracks, artists, albums...",

@@ -1,4 +1,4 @@
-import { Link, useSearchParams, useNavigate } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useCallback, useEffect, useMemo, useRef, useState, Suspense } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import PlaylistPageSkeleton from "./PlaylistPageSkeleton";
@@ -13,17 +13,12 @@ import {
   PlaylistFill,
   Upload2Line,
   CheckLine,
-  Search2Line,
 } from "@mingcute/react";
 import { AnimatePresence, motion } from "framer-motion";
 import { LuPencil, LuGlobe, LuTrash2, LuText } from "react-icons/lu";
 import Button from "@/shared/ui/Button";
 import DropdownMenu from "@/shared/ui/DropdownMenu";
-import Dialog from "@/shared/ui/Dialog";
-import TextInput from "@/shared/ui/TextInput";
 import SongCardWithMenu from "@/features/player/ui/SongCardWithMenu";
-import SearchResultsList from "@/features/search/ui/SearchResultsList";
-import { useSearchAll } from "@/features/search";
 import CoverImage from "@/features/covers/ui/CoverImage";
 import { useCoverSrc } from "@/features/covers";
 import { useModalStore } from "../store/modalStore";
@@ -31,13 +26,12 @@ import {
   usePlaylist,
   useLikedTracks,
   useReorderPlaylistTracks,
-  useAddPlaylistTracks,
 } from "../hooks";
 import { useListReorder } from "@/shared/hooks";
 import { playerEngine } from "@/features/player";
 import type { Track } from "@/shared/types";
 import { useTranslation } from "@/languages";
-import { api, ApiError, mediaUrl, toClientTrack, toMaxQualityAvatarUrl } from "@/shared/api";
+import { api } from "@/shared/api";
 import { buildShareUrl } from "@/shared/utils/share";
 
 interface TrackItemProps {
@@ -96,154 +90,6 @@ function TrackItem({
         }}
       />
     </div>
-  );
-}
-
-interface AddSongsModalProps {
-  open: boolean;
-  onClose: () => void;
-  onAddTrack: (track: any) => void;
-}
-
-function AddSongsModal({ open, onClose, onAddTrack }: AddSongsModalProps) {
-  const { t } = useTranslation();
-  const navigate = useNavigate();
-  const [query, setQuery] = useState("");
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (open) {
-      setQuery("");
-      requestAnimationFrame(() => inputRef.current?.focus());
-    }
-  }, [open]);
-
-  const { items, loading, hasLoaded, partialWarning } = useSearchAll(query, {
-    enabled: open,
-    limit: 20,
-    debounceMs: 320,
-  });
-
-  const results = useMemo(() => {
-    return items.map((item: any) => {
-      const coverUrl = item.cover ? mediaUrl(item.cover.url) : (item.coverUrl ?? "");
-      if (item.type === "track") {
-        const clientTrack = toClientTrack(item);
-        return {
-          ...clientTrack,
-          ...item,
-          _type: "track",
-          coverUrl: clientTrack.coverUrl || coverUrl,
-          artists: clientTrack.artists,
-          artistId: clientTrack.artistId,
-          artistList: clientTrack.artistList,
-        };
-      }
-      if (item.type === "artist") {
-        return {
-          ...item,
-          _type: "artist",
-          title: item.name,
-          coverUrl: toMaxQualityAvatarUrl(coverUrl),
-          artists: "",
-        };
-      }
-      if (item.type === "album") {
-        return {
-          ...item,
-          _type: "album",
-          coverUrl,
-          artists: Array.isArray(item.artists)
-            ? item.artists.map((a: any) => a.name).join(", ")
-            : (item.artists ?? ""),
-          artistId: item.artists?.[0]?.id,
-          artistList: Array.isArray(item.artists)
-            ? item.artists.map((a: any) => ({ id: a.id, name: a.name }))
-            : undefined,
-        };
-      }
-      return {
-        ...item,
-        _type: item.type,
-        coverUrl,
-        artists: item.author ?? item.artists ?? "",
-        artistId: item.artists?.[0]?.id,
-        artistList: Array.isArray(item.artists)
-          ? item.artists.map((a: any) => ({ id: a.id, name: a.name }))
-          : undefined,
-      };
-    });
-  }, [items]);
-
-  const handleNavigateItem = useCallback(
-    (it: any) => {
-      onClose();
-      if (it._type === "artist") {
-        navigate(`/artist?id=${encodeURIComponent(it.id)}`);
-      } else if (it._type === "playlist") {
-        navigate(`/collection?type=playlist&id=${encodeURIComponent(it.id)}`);
-      } else if (it._type === "album") {
-        navigate(`/collection?type=album&id=${encodeURIComponent(it.id)}`);
-      }
-    },
-    [navigate, onClose],
-  );
-
-  const isSearchEmpty =
-    query.trim().length >= 2 && !loading && hasLoaded && results.length === 0;
-
-  return (
-    <Dialog
-      open={open}
-      onOpenChange={(next) => (!next ? onClose() : undefined)}
-      maxWidth={480}
-      maxHeight="70vh"
-    >
-      <div className="flex h-full min-h-0 flex-col gap-[12px] px-[12px] pb-[12px]">
-        <div className="px-[8px] pt-[4px]">
-          <h2
-            className="m-0 text-[18px] font-[600] tracking-[-0.01em] text-text-primary"
-            style={{ fontFamily: "var(--font-inter), sans-serif" }}
-          >
-            {t("playlist.add_songs")}
-          </h2>
-        </div>
-
-        <div className="px-[8px]">
-          <TextInput
-            ref={inputRef}
-            size="sm"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder={t("common.search")}
-            icon={<Search2Line size={16} />}
-            className="!h-[36px] w-full rounded-md !border-transparent bg-bg-elevated text-[13px]"
-          />
-        </div>
-
-        <div className="relative min-h-[240px] flex-1 overflow-hidden px-[8px]">
-          {isSearchEmpty ? (
-            <div className="flex h-full flex-col items-center justify-center gap-[6px] text-center">
-              <p className="m-0 text-[14px] font-medium text-text-primary">
-                {t("common.no_results")}
-              </p>
-              <p className="m-0 text-[12px] text-text-tertiary">
-                {t("common.try_another_search")}
-              </p>
-            </div>
-          ) : results.length > 0 ? (
-            <SearchResultsList
-              items={results}
-              isArtistSearchFilter={false}
-              isPlaylistSearchFilter={false}
-              onPlayFromSearch={onAddTrack}
-              onNavigateItem={handleNavigateItem}
-              partialWarning={partialWarning}
-            />
-          ) : null}
-        </div>
-      </div>
-    </Dialog>
   );
 }
 
@@ -349,28 +195,6 @@ function LibraryPlaylistContent() {
 
   const { toast } = useToast();
   const [addedToQueue, setAddedToQueue] = useState(false);
-  const [addSongsOpen, setAddSongsOpen] = useState(false);
-  const addTrackMutation = useAddPlaylistTracks();
-
-  const handleAddTrackFromSearch = useCallback(
-    (track: any) => {
-      if (!decodedId) return;
-      addTrackMutation.mutate(
-        { playlistId: decodedId, trackId: track.id },
-        {
-          onSuccess: () => toast(t("common.added_to_playlist"), "success"),
-          onError: (error: unknown) => {
-            if (error instanceof ApiError && error.status === 409) {
-              toast(t("common.track_already_in_playlist"), "error");
-            } else {
-              toast(t("common.failed_add_track"), "error");
-            }
-          },
-        },
-      );
-    },
-    [decodedId, addTrackMutation, toast, t],
-  );
 
   const handleAddToQueue = useCallback(() => {
     if (!viewData || viewData.tracks.length === 0) return;
@@ -877,7 +701,7 @@ function LibraryPlaylistContent() {
               </section>
 
               {currentTracks.length === 0 ? (
-                <div className="mt-[16px] flex flex-col items-center justify-center gap-[12px] rounded-xl bg-bg-elevated/60 px-[24px] py-[56px] text-center">
+                <div className="mt-[16px] flex flex-col items-center justify-center gap-[12px] py-[64px] text-center">
                   <PlaylistFill size={40} className="text-border-alpha-33" />
                   <div className="flex flex-col gap-[4px]">
                     <p
@@ -893,16 +717,6 @@ function LibraryPlaylistContent() {
                       {t("playlist.empty_subtitle")}
                     </p>
                   </div>
-                  {!isLikesMode && decodedId && (
-                    <Button
-                      variant="outline"
-                      onClick={() => setAddSongsOpen(true)}
-                      className="!h-[36px] mt-[4px] px-[16px]"
-                    >
-                      <Search2Line size={15} />
-                      {t("playlist.add_songs")}
-                    </Button>
-                  )}
                 </div>
               ) : (
               <div
@@ -1032,12 +846,6 @@ function LibraryPlaylistContent() {
           </div>
         )}
       </div>
-
-      <AddSongsModal
-        open={addSongsOpen}
-        onClose={() => setAddSongsOpen(false)}
-        onAddTrack={handleAddTrackFromSearch}
-      />
     </div>
   );
 }
