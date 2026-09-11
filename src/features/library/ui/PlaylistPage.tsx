@@ -701,7 +701,7 @@ function LibraryPlaylistContent() {
               </section>
 
               {currentTracks.length === 0 ? (
-                <div className="mt-[16px] flex flex-col items-center justify-center gap-[12px] py-[64px] text-center">
+                <div className="mt-[16px] flex min-h-[50vh] flex-col items-center justify-center gap-[12px] text-center">
                   <PlaylistFill size={40} className="text-border-alpha-33" />
                   <div className="flex flex-col gap-[4px]">
                     <p
