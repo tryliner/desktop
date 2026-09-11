@@ -31,7 +31,14 @@ export interface LinerElectronApi {
   signRawPayload: (payload: number[] | Uint8Array) => Promise<string>;
   onDeeplink: (cb: (target: DeeplinkTarget) => void) => () => void;
   diagnoseNetwork: (hosts: string[]) => Promise<MainNetResult>;
-  openDownloads: () => Promise<boolean>;
+  openDownloads: (customPath?: string) => Promise<boolean>;
+  openExportFolder: (customPath?: string) => Promise<boolean>;
+  saveDump: (input: { filename: string; content: string }) => Promise<{
+    success: boolean;
+    filePath?: string;
+    canceled?: boolean;
+    error?: string;
+  }>;
 }
 
 const api: LinerElectronApi = {
@@ -56,7 +63,9 @@ const api: LinerElectronApi = {
   signCoverUrl: (payload) => ipcRenderer.invoke("signer:sign-cover-url", payload),
   signRawPayload: (payload) => ipcRenderer.invoke("signer:sign-raw-payload", payload),
   diagnoseNetwork: (hosts) => ipcRenderer.invoke("net:diagnose", hosts),
-  openDownloads: () => ipcRenderer.invoke("shell:open-downloads"),
+  openDownloads: (customPath) => ipcRenderer.invoke("shell:open-downloads", customPath),
+  openExportFolder: (customPath) => ipcRenderer.invoke("shell:open-export-folder", customPath),
+  saveDump: (input) => ipcRenderer.invoke("dialog:save-dump", input),
   onDeeplink: (cb) => {
     const listener = (_event: unknown, target: DeeplinkTarget) => cb(target);
     ipcRenderer.on("deeplink:open", listener);

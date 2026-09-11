@@ -1,5 +1,6 @@
-import { app, BrowserWindow, ipcMain, shell, screen } from "electron";
+import { app, BrowserWindow, ipcMain, shell, screen, dialog, session } from "electron";
 import path from "node:path";
+import fs from "node:fs";
 import dns from "node:dns";
 import net from "node:net";
 import tls from "node:tls";
@@ -213,15 +214,65 @@ if (!gotTheLock) {
       return mainWindow?.isMaximized() ?? false;
     });
 
-    ipcMain.handle("shell:open-downloads", async () => {
+    let lastSavedExportPath: string | null = null;
+
+    session.defaultSession.on("will-download", (_event, item) => {
+      item.once("done", (_e, state) => {
+        if (state === "completed") {
+          lastSavedExportPath = item.getSavePath();
+        }
+      });
+    });
+
+    ipcMain.handle("dialog:save-dump", async (_event, { filename, content }: { filename: string; content: string }) => {
+      if (!mainWindow) return { success: false, canceled: true };
       try {
+        const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
+          defaultPath: path.join(app.getPath("downloads"), filename),
+          filters: [{ name: "JSON", extensions: ["json"] }],
+        });
+        if (canceled || !filePath) {
+          return { success: false, canceled: true };
+        }
+        await fs.promises.writeFile(filePath, content, "utf-8");
+        lastSavedExportPath = filePath;
+        return { success: true, filePath };
+      } catch (err) {
+        console.error("\x1b[41;37m dialog \x1b[0m save-dump error:", err);
+        return { success: false, error: String(err) };
+      }
+    });
+
+    const openFolderOrItem = async (customPath?: string) => {
+      try {
+        const targetPath = customPath || lastSavedExportPath;
+        if (targetPath && fs.existsSync(targetPath)) {
+          // opens explorer/finder highlighting the exported file
+          shell.showItemInFolder(targetPath);
+          return true;
+        }
+        if (targetPath) {
+          const dir = path.dirname(targetPath);
+          if (fs.existsSync(dir)) {
+            await shell.openPath(dir);
+            return true;
+          }
+        }
         const downloadsPath = app.getPath("downloads");
         await shell.openPath(downloadsPath);
         return true;
       } catch (err) {
-        console.error("\x1b[41;37m shell \x1b[0m open-downloads error:", err);
+        console.error("\x1b[41;37m shell \x1b[0m open-export-folder error:", err);
         return false;
       }
+    };
+
+    ipcMain.handle("shell:open-downloads", async (_event, customPath?: string) => {
+      return openFolderOrItem(customPath);
+    });
+
+    ipcMain.handle("shell:open-export-folder", async (_event, customPath?: string) => {
+      return openFolderOrItem(customPath);
     });
 
     // native os window move + system cursor fallback to stop wayland jitter feedback loop

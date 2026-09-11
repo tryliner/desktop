@@ -50,16 +50,42 @@ export function dumpFilename(dump: OfflineDump): string {
   return `liner-offline-dump-${dump.generatedAt.replace(/[:.]/g, "-")}.json`;
 }
 
-export function downloadDump(dump: OfflineDump): void {
-  const blob = new Blob([JSON.stringify(dump, null, 2)], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = dumpFilename(dump);
-  document.body.appendChild(anchor);
-  anchor.click();
-  anchor.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+export interface SaveDumpResult {
+  success: boolean;
+  filePath?: string;
+  canceled?: boolean;
+  error?: string;
+}
+
+export async function downloadDump(dump: OfflineDump): Promise<SaveDumpResult> {
+  const content = JSON.stringify(dump, null, 2);
+  const filename = dumpFilename(dump);
+
+  // use native save dialog in electron to track exact save destination
+  if (typeof window !== "undefined" && window.linerElectron?.saveDump) {
+    try {
+      const res = await window.linerElectron.saveDump({ filename, content });
+      return { success: res.success, filePath: res.filePath, canceled: res.canceled, error: res.error };
+    } catch (err) {
+      return { success: false, error: String(err) };
+    }
+  }
+
+  // web fallback with synthetic anchor download
+  try {
+    const blob = new Blob([content], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = filename;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: String(err) };
+  }
 }
 
 export async function copyDump(dump: OfflineDump): Promise<boolean> {

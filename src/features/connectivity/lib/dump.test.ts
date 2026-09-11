@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { buildOfflineDump, dumpFilename } from "./dump";
 
 describe("buildOfflineDump", () => {
@@ -24,5 +24,32 @@ describe("buildOfflineDump", () => {
     expect(dump.machine?.trace?.hops).toHaveLength(1);
     expect(JSON.stringify(dump)).not.toMatch(/bearer|token|authorization|proxy/i);
     expect(dumpFilename(dump)).toMatch(/^liner-offline-dump-.*\.json$/);
+  });
+
+  it("calls electron saveDump when available", async () => {
+    const dump = buildOfflineDump({
+      checks: [],
+      failures: [],
+      main: null,
+      endpoints: { api: "https://api.tryliner.fun", covers: "https://covers.tryliner.fun", link: "https://link.tryliner.fun" },
+    });
+
+    const mockSaveDump = vi.fn().mockResolvedValue({
+      success: true,
+      filePath: "/home/user/Desktop/test-dump.json",
+    });
+
+    (window as any).linerElectron = {
+      saveDump: mockSaveDump,
+    };
+
+    const { downloadDump } = await import("./dump");
+    const result = await downloadDump(dump);
+
+    expect(mockSaveDump).toHaveBeenCalledTimes(1);
+    expect(result.success).toBe(true);
+    expect(result.filePath).toBe("/home/user/Desktop/test-dump.json");
+
+    delete (window as any).linerElectron;
   });
 });

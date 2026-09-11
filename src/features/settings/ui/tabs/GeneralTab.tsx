@@ -346,8 +346,11 @@ export function GeneralTab() {
               <button
                 type="button"
                 onClick={async () => {
-                  if (window.linerElectron?.openDownloads) {
-                    await window.linerElectron.openDownloads();
+                  const targetPath = useConnectivityStore.getState().lastSavedDumpPath || undefined;
+                  if (window.linerElectron?.openExportFolder) {
+                    await window.linerElectron.openExportFolder(targetPath);
+                  } else if (window.linerElectron?.openDownloads) {
+                    await window.linerElectron.openDownloads(targetPath);
                   } else {
                     toast(t("settings.connection.open_folder"), "info");
                   }
@@ -363,16 +366,13 @@ export function GeneralTab() {
               type="button"
               disabled={connRunning}
               onClick={async () => {
-                const saved = await runAndSaveDump();
-                if (saved) {
+                const res = await runAndSaveDump();
+                if (res.success) {
                   setDumpExported(true);
+                  toast(t("settings.connection.saved"), "success");
+                } else if (!res.canceled) {
+                  toast(t("settings.connection.failed"), "error");
                 }
-                toast(
-                  saved
-                    ? t("settings.connection.saved")
-                    : t("settings.connection.failed"),
-                  saved ? "success" : "error",
-                );
               }}
               className="inline-flex items-center gap-[6px] rounded-md px-[14px] py-[7px] text-[13px] font-medium bg-border-alpha-14 text-text-primary hover:bg-border-alpha-24 transition-colors border-0 cursor-pointer active:scale-[0.98] disabled:opacity-50 disabled:cursor-default"
               style={{ fontFamily: "var(--font-inter), sans-serif" }}

@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { DIAG_ENDPOINTS, runAllChecks, type DiagnosticsResult } from "../lib/diagnostics";
-import { buildOfflineDump, downloadDump } from "../lib/dump";
+import { buildOfflineDump, downloadDump, type SaveDumpResult } from "../lib/dump";
 
 export const TRIP_COUNT = 3;
 export const TRIP_WINDOW_MS = 60_000;
@@ -23,10 +23,11 @@ interface ConnectivityState {
   main: DiagnosticsResult["main"];
   failures: FailureEntry[];
   lastRunAt?: number;
+  lastSavedDumpPath: string | null;
   recordFailure: (entry: Omit<FailureEntry, "at">) => void;
   runDiagnostics: () => Promise<void>;
   retry: () => Promise<void>;
-  runAndSaveDump: () => Promise<boolean>;
+  runAndSaveDump: () => Promise<SaveDumpResult>;
   reset: () => void;
 }
 
@@ -38,6 +39,7 @@ export const useConnectivityStore = create<ConnectivityState>((set, get) => ({
   main: null,
   failures: [],
   lastRunAt: undefined,
+  lastSavedDumpPath: null,
 
   recordFailure: (entry) => {
     const at = Date.now();
@@ -77,7 +79,7 @@ export const useConnectivityStore = create<ConnectivityState>((set, get) => ({
     await get().runDiagnostics();
     const state = get();
     try {
-      downloadDump(
+      const result = await downloadDump(
         buildOfflineDump({
           checks: state.checks,
           failures: state.failures,
@@ -85,9 +87,12 @@ export const useConnectivityStore = create<ConnectivityState>((set, get) => ({
           endpoints: DIAG_ENDPOINTS,
         }),
       );
-      return true;
-    } catch {
-      return false;
+      if (result.filePath) {
+        set({ lastSavedDumpPath: result.filePath });
+      }
+      return result;
+    } catch (err) {
+      return { success: false, error: String(err) };
     }
   },
 

@@ -3,6 +3,7 @@ import { useConnectivityStore } from "./connectivityStore";
 
 vi.mock("../lib/diagnostics", () => ({
   runAllChecks: vi.fn().mockResolvedValue({ checks: [], main: null }),
+  DIAG_ENDPOINTS: { api: "https://api.tryliner.fun", covers: "https://covers.tryliner.fun", link: "https://link.tryliner.fun" },
 }));
 
 describe("connectivityStore trip logic", () => {
@@ -39,5 +40,21 @@ describe("connectivityStore trip logic", () => {
       useConnectivityStore.getState().recordFailure({ method: "GET", path: "/v1/me", latencyMs: 1 });
     }
     expect(useConnectivityStore.getState().failures.length).toBeLessThanOrEqual(20);
+  });
+
+  it("updates lastSavedDumpPath when runAndSaveDump succeeds", async () => {
+    vi.useRealTimers();
+    (window as any).linerElectron = {
+      saveDump: vi.fn().mockResolvedValue({
+        success: true,
+        filePath: "/home/user/Desktop/test-offline-dump.json",
+      }),
+    };
+
+    const res = await useConnectivityStore.getState().runAndSaveDump();
+    expect(res.success).toBe(true);
+    expect(useConnectivityStore.getState().lastSavedDumpPath).toBe("/home/user/Desktop/test-offline-dump.json");
+
+    delete (window as any).linerElectron;
   });
 });
