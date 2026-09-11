@@ -21,6 +21,7 @@ import Sidebar from "./Sidebar";
 import WindowControls from "./WindowControls";
 import PageTransition from "./PageTransition";
 import RightDrawer from "./RightDrawer";
+import { useGlobalShortcuts } from "../hooks/useGlobalShortcuts";
 import {
   useSearchTracks,
   useSearchAll,
@@ -191,6 +192,29 @@ export default function AppFrame({ children }: AppFrameProps) {
   const closeFullscreenPlayer = useCallback(() => {
     setFullscreenPlayerOpen(false);
   }, []);
+
+  const handleCloseFullscreen = useCallback(() => {
+    if (fullscreenPlayerOpen) {
+      setFullscreenPlayerOpen(false);
+    } else if (isFullscreenRoute) {
+      navigate("/", { replace: true });
+    }
+  }, [fullscreenPlayerOpen, isFullscreenRoute, navigate]);
+
+  const handleOpenQueue = useCallback(() => setQueuePopupOpen(true), []);
+  const handleCloseQueue = useCallback(() => setQueuePopupOpen(false), []);
+
+  useGlobalShortcuts({
+    searchOpen,
+    openSearch,
+    closeSearch,
+    queueOpen: queuePopupOpen,
+    openQueue: handleOpenQueue,
+    closeQueue: handleCloseQueue,
+    fullscreenOpen: isFullscreenPlayer,
+    openFullscreen: openFullscreenPlayer,
+    closeFullscreen: handleCloseFullscreen,
+  });
   const [searchScrollMask, setSearchScrollMask] = useState(
     "linear-gradient(to bottom, black 0%, black 100%)",
   );
@@ -403,16 +427,6 @@ export default function AppFrame({ children }: AppFrameProps) {
   }, [isFullscreenPlayer, closeSearch]);
 
   useEffect(() => {
-    const onGlobalKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") {
-        return;
-      }
-      if (document.querySelector("[data-dialog-container]")) {
-        return;
-      }
-      closeSearch();
-    };
-
     const onGlobalPointerDown = (event: MouseEvent) => {
       const target = event.target as Node | null;
       if (!target) {
@@ -457,10 +471,8 @@ export default function AppFrame({ children }: AppFrameProps) {
       }
     };
 
-    document.addEventListener("keydown", onGlobalKeyDown, true);
     document.addEventListener("mousedown", onGlobalPointerDown, true);
     return () => {
-      document.removeEventListener("keydown", onGlobalKeyDown, true);
       document.removeEventListener("mousedown", onGlobalPointerDown, true);
     };
   }, [searchOpen, queuePopupOpen, handleQueuePopupToggle]);
