@@ -1,6 +1,7 @@
-import { useState } from "react";
-import { PlaylistFill } from "@mingcute/react";
+import { useState, useMemo, useRef, useCallback, useEffect } from "react";
+import { PlaylistFill, Search2Line, CloseCircleFill } from "@mingcute/react";
 import { useToast } from "@/shared/ui";
+import TextInput from "@/shared/ui/TextInput";
 import Dialog from "@/shared/ui/Dialog";
 import CoverImage from "@/features/covers/ui/CoverImage";
 import { useTranslation } from "@/languages";
@@ -16,10 +17,51 @@ export default function AddToPlaylistModal() {
   const close = useModalStore((state) => state.closeAddToPlaylist);
 
   const [addingTo, setAddingTo] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [scrollMask, setScrollMask] = useState(
+    "linear-gradient(to bottom, black 0%, black 100%)",
+  );
+
+  const scrollRef = useRef<HTMLDivElement>(null);
   const { data: playlistData } = usePlaylistsList();
   const addTrack = useAddPlaylistTracks();
 
-  const playlists = track?.playlists ?? playlistData.playlists;
+  const rawPlaylists = track?.playlists ?? playlistData?.playlists ?? [];
+
+  const playlists = useMemo(() => {
+    if (!searchQuery.trim()) return rawPlaylists;
+    const q = searchQuery.toLowerCase().trim();
+    return rawPlaylists.filter((p) => p.title.toLowerCase().includes(q));
+  }, [rawPlaylists, searchQuery]);
+
+  // update dynamic top and bottom scroll fade mask
+  const updateScrollMask = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const { scrollTop, clientHeight, scrollHeight } = el;
+    const showTop = scrollTop > 4;
+    const showBottom = scrollTop + clientHeight < scrollHeight - 4;
+
+    let stops = "";
+    if (showTop) stops += "transparent 0%, black 6%, ";
+    else stops += "black 0%, black 6%, ";
+    if (showBottom) stops += "black 94%, transparent 100%";
+    else stops += "black 94%, black 100%";
+
+    setScrollMask(`linear-gradient(to bottom, ${stops})`);
+  }, []);
+
+  useEffect(() => {
+    if (!open) {
+      setSearchQuery("");
+    }
+  }, [open]);
+
+  useEffect(() => {
+    if (rawPlaylists.length >= 5) {
+      updateScrollMask();
+    }
+  }, [open, rawPlaylists.length, playlists.length, updateScrollMask]);
 
   const handleAddToPlaylist = async (playlistId: string) => {
     if (!track) return;
@@ -55,7 +97,41 @@ export default function AddToPlaylistModal() {
           )}
         </div>
 
-        <div className="flex flex-col gap-[4px] max-h-[300px] overflow-y-auto -mx-[8px] px-[8px]">
+        {rawPlaylists.length >= 5 && (
+          <TextInput
+            size="sm"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder={t("library.search_playlists")}
+            icon={<Search2Line size={16} />}
+            rightSlot={
+              searchQuery ? (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className="border-none bg-transparent p-0 text-text-tertiary hover:text-text-primary cursor-pointer flex items-center justify-center"
+                >
+                  <CloseCircleFill size={15} />
+                </button>
+              ) : null
+            }
+            className="!h-[32px] w-full rounded-lg border-border-primary bg-bg-elevated text-[13px]"
+          />
+        )}
+
+        <div
+          ref={scrollRef}
+          onScroll={rawPlaylists.length >= 5 ? updateScrollMask : undefined}
+          style={
+            rawPlaylists.length >= 5
+              ? {
+                  WebkitMaskImage: scrollMask,
+                  maskImage: scrollMask,
+                }
+              : undefined
+          }
+          className="flex flex-col gap-[4px] max-h-[300px] overflow-y-auto -mx-[8px] px-[8px]"
+        >
           {playlists.length > 0 ? (
             playlists.map((playlist) => (
               <button
