@@ -8,7 +8,7 @@ import { Emoji } from "react-apple-emojis";
 import { EyeLine, EyeCloseLine, ArrowLeftLine } from "@mingcute/react";
 import WindowControls from "@/features/navigation/ui/WindowControls";
 import logo from "@/assets/logo.svg";
-import cloudsBanner from "@/assets/wallhaven-lmmd7y.jpg";
+import cloudsBanner from "@/assets/wallhaven-5g1yz8.jpg";
 import CircleDitherCanvas from "@/shared/ui/CircleDitherCanvas";
 import AppImage from "@/features/covers/ui/AppImage";
 import {
