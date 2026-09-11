@@ -134,11 +134,6 @@ export const useImportStore = create<ActiveImportState>((set, get) => ({
   },
 }));
 
-// Adds the pending track (if any) to the imported playlist once its import
-// job completes. Runs off a store subscription rather than inline in
-// listenToJob/pollJob because ImportReviewModal can also finalize a job
-// (via decidePlaylistImportReview/skipPlaylistImportReview) and sets the
-// completed job directly on the store, bypassing both of those paths.
 let lastHandledCompletedJobId: string | null = null;
 
 useImportStore.subscribe((state) => {

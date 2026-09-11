@@ -122,9 +122,6 @@ export default function CreatePlaylistModal() {
     setImportError("");
     setImporting(true);
     try {
-      // hand the pending track off to the import store: the import runs in
-      // the background and finishes after this modal closes, so the track
-      // gets added to the imported playlist once that import completes
       await useImportStore.getState().startImport(target, pendingTrack);
       close();
     } catch (err: unknown) {

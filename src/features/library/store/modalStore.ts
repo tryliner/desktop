@@ -62,9 +62,6 @@ interface ModalState {
   // Create playlist
   createPlaylistOpen: boolean;
   createPlaylistInitialUrl: string;
-  // Track a caller was trying to add to a playlist when it opened this modal
-  // (e.g. "Create playlist" clicked from inside the Add to playlist modal),
-  // so it can be added to the newly created/imported playlist once ready.
   createPlaylistPendingTrack: TrackDetail | null;
   openCreatePlaylist: (initialUrl?: string, pendingTrack?: TrackDetail | null) => void;
   closeCreatePlaylist: () => void;

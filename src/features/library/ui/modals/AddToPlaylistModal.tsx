@@ -90,8 +90,6 @@ export default function AddToPlaylistModal() {
   };
 
   const handleNewPlaylist = () => {
-    // capture the track before close() clears it from the store, so it can
-    // be handed off to the create/import playlist flow and added once ready
     const pendingTrack = track;
     close();
     openCreatePlaylist(undefined, pendingTrack);
