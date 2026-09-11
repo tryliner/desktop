@@ -115,7 +115,7 @@ export default function AddToPlaylistModal() {
                 </button>
               ) : null
             }
-            className="!h-[32px] w-full rounded-lg border-border-primary bg-bg-elevated text-[13px]"
+            className="!h-[32px] w-full rounded-lg !border-none bg-border-alpha-14 text-[13px]"
           />
         )}
 
