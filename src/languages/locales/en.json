@@ -342,7 +342,9 @@
     "earlier": "Earlier",
     "later": "Later",
     "reset": "Reset",
-    "offset_hint": "Negative shifts earlier, positive shifts later"
+    "offset_hint": "Negative shifts earlier, positive shifts later",
+    "track_unavailable": "\"{title}\" is unavailable, skipping...",
+    "playback_stopped_too_many_errors": "Playback stopped — too many tracks failed to load."
   },
   "playlist": {
     "liked_songs": "Liked songs",

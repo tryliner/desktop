@@ -17,7 +17,11 @@ import {
 import { toClientTrack } from "@/shared/api/track";
 import { log } from "@/shared/utils/logger";
 import { parseRawLyrics, useLyricsStore } from "@/features/lyrics";
+import { showToast } from "@/shared/ui";
+import { createTranslatorSync, getStoredLocale } from "@/languages";
 import type { Track } from "@/shared/types";
+
+const MAX_CONSECUTIVE_AUTO_SKIPS = 3;
 
 export { usePlayerStore, type PlayerStatus, type RepeatMode, type PlayerState };
 
@@ -224,6 +228,7 @@ class PlayerEngine {
   private telemetry = new PlaybackTelemetryTracker();
   private radioAppendTimeout: ReturnType<typeof setTimeout> | null = null;
   private radioWaveId: string | null = null;
+  private consecutiveAutoSkips = 0;
 
   constructor() {
     usePlayerStore.setState({
@@ -234,6 +239,7 @@ class PlayerEngine {
       playerRuntime.onEnded = () => {
         this.telemetry.onTrackCompleted();
       };
+      playerRuntime.onError = (info) => this.handlePlaybackError(info);
     }
 
     if (typeof window !== "undefined") {
@@ -272,6 +278,7 @@ class PlayerEngine {
         if (state.status !== prevStatus || newTrack) {
           if (state.status === "playing") {
             this.telemetry.onPlaying();
+            this.consecutiveAutoSkips = 0;
           } else if (state.status === "paused" || state.status === "idle") {
             this.telemetry.onPausedOrStopped();
           }
@@ -686,6 +693,35 @@ class PlayerEngine {
       coverUrl: item.coverUrl || selected.coverUrl,
       durationMs: item.durationMs ?? 0,
     }));
+  }
+
+  private handlePlaybackError(info: { trackId: string; message: string }): void {
+    const store = usePlayerStore.getState();
+    if (!store.currentTrack || store.currentTrack.id !== info.trackId) return;
+
+    const track = store.currentTrack;
+    const translate = createTranslatorSync(getStoredLocale());
+    this.consecutiveAutoSkips += 1;
+
+    if (this.consecutiveAutoSkips > MAX_CONSECUTIVE_AUTO_SKIPS) {
+      log(
+        "red",
+        "playback",
+        `${this.consecutiveAutoSkips} consecutive tracks failed to play — stopping instead of skipping further`,
+      );
+      showToast(translate("player.playback_stopped_too_many_errors"), "error");
+      this.consecutiveAutoSkips = 0;
+      this.stopPlayback();
+      store.setStatus("idle");
+      store.setPosition(0);
+      store.setDuration(0);
+      store.setCurrentTrack(null, -1);
+      return;
+    }
+
+    log("yellow", "playback", `"${track.title}" failed (${info.message}) — skipping to next`);
+    showToast(translate("player.track_unavailable", { title: track.title }), "error");
+    void this.skipNext(false);
   }
 
   private computeNextIndex(isAutoEnd: boolean = false): number | null {

@@ -1,5 +1,6 @@
 import { describe, expect, it, beforeEach } from "vitest";
 import { playerEngine, usePlayerStore } from "./playerEngine";
+import { playerRuntime } from "./playerRuntime";
 import type { Track } from "@/shared/types";
 
 const mockTrack = (id: string, title: string, durationMs = 180000): Track => ({
@@ -188,5 +189,73 @@ describe("Player State Machine", () => {
     for (let i = 0; i < remainingUpcoming.length - 1; i++) {
       expect(Number(remainingUpcoming[i])).toBeLessThan(Number(remainingUpcoming[i + 1]));
     }
+  });
+});
+
+describe("Player auto-skip on playback error", () => {
+  beforeEach(() => {
+    usePlayerStore.setState({
+      status: "idle",
+      queue: [],
+      currentIndex: -1,
+      currentTrack: null,
+      positionMs: 0,
+      durationMs: 0,
+      repeat: "off",
+      shuffle: false,
+      error: null,
+    });
+  });
+
+  it("advances to the next track when the current one fails to load/play", async () => {
+    const tracks = [mockTrack("1", "Track 1"), mockTrack("2", "Track 2"), mockTrack("3", "Track 3")];
+    await playerEngine.playTrack(tracks[0], tracks);
+    expect(usePlayerStore.getState().currentIndex).toBe(0);
+
+    playerRuntime!.onError!({ trackId: "1", message: "Track was not found." });
+
+    const state = usePlayerStore.getState();
+    expect(state.currentIndex).toBe(1);
+    expect(state.currentTrack?.id).toBe("2");
+  });
+
+  it("advances past a broken track even under repeat='one' instead of reselecting it forever", async () => {
+    const tracks = [mockTrack("1", "Track 1"), mockTrack("2", "Track 2")];
+    await playerEngine.playTrack(tracks[0], tracks);
+    playerEngine.setRepeat("one");
+
+    playerRuntime!.onError!({ trackId: "1", message: "dead track" });
+
+    const state = usePlayerStore.getState();
+    expect(state.currentIndex).toBe(1);
+    expect(state.currentTrack?.id).toBe("2");
+  });
+
+  it("ignores a stale error for a track the user has already navigated away from", async () => {
+    const tracks = [mockTrack("1", "Track 1"), mockTrack("2", "Track 2")];
+    await playerEngine.playTrack(tracks[0], tracks);
+    await playerEngine.skipNext();
+    expect(usePlayerStore.getState().currentTrack?.id).toBe("2");
+
+    playerRuntime!.onError!({ trackId: "1", message: "stale error" });
+
+    const state = usePlayerStore.getState();
+    expect(state.currentIndex).toBe(1);
+    expect(state.currentTrack?.id).toBe("2");
+  });
+
+  it("stops instead of auto-skipping forever when many consecutive tracks fail", async () => {
+    const tracks = Array.from({ length: 10 }, (_, i) => mockTrack(String(i + 1), `Track ${i + 1}`));
+    await playerEngine.playTrack(tracks[0], tracks);
+
+    for (let i = 0; i < 8; i++) {
+      const current = usePlayerStore.getState().currentTrack;
+      if (!current) break;
+      playerRuntime!.onError!({ trackId: current.id, message: "dead track" });
+    }
+
+    const state = usePlayerStore.getState();
+    expect(state.status).toBe("idle");
+    expect(state.currentTrack).toBeNull();
   });
 });

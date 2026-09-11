@@ -16,6 +16,7 @@ export class PlayerRuntime {
   private ttfbMs = 0;
   private activePlayPromise: Promise<void> | null = null;
   public onEnded?: () => void;
+  public onError?: (info: { trackId: string; message: string }) => void;
 
   constructor() {
     if (typeof window !== "undefined") {
@@ -228,6 +229,8 @@ export class PlayerRuntime {
           details: { mediaErrorCode: code },
         });
       }
+
+      this.onError?.({ trackId: this.currentTrackId, message });
     });
   }
 
@@ -430,6 +433,8 @@ export class PlayerRuntime {
           title: track.title,
         })
         .catch(() => {});
+
+      this.onError?.({ trackId: track.id, message });
     } finally {
       if (epoch === this.loadEpoch) {
         this.activePlayPromise = null;

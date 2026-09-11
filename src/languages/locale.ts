@@ -3,7 +3,7 @@ export type Locale = "en" | "ru" | "uk";
 const LOCALE_STORAGE_KEY = "liner_locale";
 
 export function getStoredLocale(): Locale {
-  if (typeof window === "undefined") return "ru";
+  if (typeof window === "undefined" || !window.localStorage) return "en";
   const stored = window.localStorage.getItem(LOCALE_STORAGE_KEY);
   if (stored === "en" || stored === "ru" || stored === "uk") return stored;
   // Handle legacy stored 'ua'
