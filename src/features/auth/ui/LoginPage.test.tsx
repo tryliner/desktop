@@ -83,6 +83,11 @@ vi.mock("@/languages", () => {
   };
 
   return {
+    LOCALE_OPTIONS: [
+      { value: "en", label: "English" },
+      { value: "ru", label: "Русский" },
+      { value: "uk", label: "Українська" },
+    ],
     useTranslation: () => ({
       locale: "en",
       setLocale: vi.fn(),

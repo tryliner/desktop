@@ -1,7 +1,12 @@
 import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
-import { usePlayerStore, type AccentVariant } from "@/features/player";
-import { useTranslation } from "@/languages";
+import {
+  usePlayerStore,
+  type AccentVariant,
+} from "@/features/player";
+import { useTranslation, LOCALE_OPTIONS } from "@/languages";
+import { Select } from "@/shared/ui";
+import { SettingBlock, SettingRow, SettingSection } from "../controls";
 import defaultLogo from "@/assets/branding/logo-default.svg";
 import spotifyLogo from "@/assets/branding/logo-spotify.svg";
 import yandexLogo from "@/assets/branding/logo-yandex.svg";
@@ -17,108 +22,200 @@ import pixelLogo from "@/assets/branding/logo-pixel.svg";
 import scanlinesLogo from "@/assets/branding/logo-scanlines.svg";
 import vhsLogo from "@/assets/branding/logo-vhs.svg";
 
+const font = { fontFamily: "var(--font-inter), sans-serif" } as const;
+
+const logos: Record<AccentVariant, string> = {
+  default: defaultLogo,
+  spotify: spotifyLogo,
+  yandex: yandexLogo,
+  discord: discordLogo,
+  telegram: telegramLogo,
+  aurora: auroraLogo,
+  sunset: sunsetLogo,
+  ocean: oceanLogo,
+  forest: forestLogo,
+  berry: berryLogo,
+  carbon: carbonLogo,
+  pixel: pixelLogo,
+  scanlines: scanlinesLogo,
+  vhs: vhsLogo,
+};
+
+const brandingVariants: readonly AccentVariant[] = [
+  "default",
+  "spotify",
+  "yandex",
+  "discord",
+  "telegram",
+  "aurora",
+  "sunset",
+  "ocean",
+  "forest",
+  "berry",
+  "carbon",
+  "pixel",
+  "scanlines",
+  "vhs",
+];
+
+// tiny dashboard mock so theme choice reads visually instead of as text
+function ThemeMock({ mode }: { mode: "light" | "dark" }) {
+  const dark = mode === "dark";
+  return (
+    <div className={`flex h-full w-full ${dark ? "bg-[#101012]" : "bg-[#ececee]"}`}>
+      <div className={`flex w-[36%] flex-col gap-[4px] p-[8px] ${dark ? "bg-[#1c1c1e]" : "bg-white"}`}>
+        <div className="flex gap-[3px] px-[1px] pb-[3px]">
+          <span className="h-[4px] w-[4px] rounded-full bg-[#ff5f57]" />
+          <span className="h-[4px] w-[4px] rounded-full bg-[#febc2e]" />
+          <span className="h-[4px] w-[4px] rounded-full bg-[#28c840]" />
+        </div>
+        {[22, 16, 20].map((w, i) => (
+          <span
+            key={i}
+            className={`h-[5px] rounded-full ${dark ? "bg-white/15" : "bg-black/10"}`}
+            style={{ width: w }}
+          />
+        ))}
+        <span className={`mt-auto h-[12px] rounded-[3px] ${dark ? "bg-white/20" : "bg-black/15"}`} />
+      </div>
+      <div className="flex flex-1 flex-col gap-[4px] p-[8px]">
+        <span className={`h-[6px] w-[46px] rounded-full ${dark ? "bg-white/25" : "bg-black/20"}`} />
+        <div className="grid grid-cols-2 gap-[4px]">
+          {[0, 1, 2, 3].map((i) => (
+            <span
+              key={i}
+              className={`h-[14px] rounded-[3px] ${dark ? "bg-white/10" : "bg-black/[0.07]"}`}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ThemeCard({
+  mode,
+  label,
+  active,
+  onSelect,
+}: {
+  mode: "light" | "dark" | "system";
+  label: string;
+  active: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      aria-pressed={active}
+      className="group flex cursor-pointer flex-col gap-[6px] border-0 bg-transparent p-0 text-left"
+    >
+      <span
+        className={`relative block h-[76px] w-full overflow-hidden rounded-lg border transition-colors ${
+          active
+            ? "border-text-primary ring-1 ring-text-primary"
+            : "border-border-primary group-hover:border-text-tertiary"
+        }`}
+      >
+        {mode === "system" ? (
+          <span className="flex h-full w-full">
+            <span className="h-full w-1/2 overflow-hidden">
+              <ThemeMock mode="light" />
+            </span>
+            <span className="h-full w-1/2 overflow-hidden">
+              <ThemeMock mode="dark" />
+            </span>
+          </span>
+        ) : (
+          <ThemeMock mode={mode} />
+        )}
+        {active ? (
+          <span className="absolute right-[6px] top-[6px] flex h-[18px] w-[18px] items-center justify-center rounded-full bg-text-primary">
+            <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+              <path
+                d="M2 6.5L4.5 9L10 3"
+                stroke="var(--color-bg-primary)"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </span>
+        ) : null}
+      </span>
+      <span
+        className={`text-[12.5px] leading-none ${active ? "text-text-primary" : "text-text-secondary"}`}
+        style={{ ...font, fontWeight: active ? 500 : 400 }}
+      >
+        {label}
+      </span>
+    </button>
+  );
+}
+
 export function AppearanceTab() {
-  const { t } = useTranslation();
+  const { t, locale, setLocale } = useTranslation();
   const [mounted, setMounted] = useState(false);
   const { theme, setTheme } = useTheme();
   const accentVariant = usePlayerStore((state) => state.accentVariant);
   const setAccentVariant = usePlayerStore((state) => state.setAccentVariant);
-
-  const logos: Record<AccentVariant, string> = {
-    default: defaultLogo,
-    spotify: spotifyLogo,
-    yandex: yandexLogo,
-    discord: discordLogo,
-    telegram: telegramLogo,
-    aurora: auroraLogo,
-    sunset: sunsetLogo,
-    ocean: oceanLogo,
-    forest: forestLogo,
-    berry: berryLogo,
-    carbon: carbonLogo,
-    pixel: pixelLogo,
-    scanlines: scanlinesLogo,
-    vhs: vhsLogo,
-  };
-
-  const brandingVariants: readonly AccentVariant[] = [
-    "default",
-    "spotify",
-    "yandex",
-    "discord",
-    "telegram",
-    "aurora",
-    "sunset",
-    "ocean",
-    "forest",
-    "berry",
-    "carbon",
-    "pixel",
-    "scanlines",
-    "vhs",
-  ];
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
   return (
-    <div className="flex flex-col gap-[24px]">
-      <div className="flex items-center justify-between">
-        <div className="flex flex-col gap-[4px]">
-          <h3 className="text-text-primary text-[15px] font-medium m-0">
-            {t("settings.theme.title")}
-          </h3>
-          <p className="text-text-tertiary text-[13px] m-0">
-            {t("settings.theme.description")}
-          </p>
-        </div>
+    <SettingSection>
+      <SettingRow
+        title={t("settings.language.label")}
+        description={t("settings.language.description")}
+        control={
+          mounted ? (
+            <Select
+              options={LOCALE_OPTIONS}
+              value={locale}
+              onChange={setLocale}
+              align="bottom-right"
+              aria-label={t("settings.language.label")}
+            />
+          ) : (
+            <span />
+          )
+        }
+      />
 
-        {mounted && (
-          <div className="inline-flex items-center gap-[6px] rounded-xl bg-bg-elevated border border-border-primary p-[5px]">
-            {(["light", "dark", "system"] as const).map((tVal) => {
-              const isActive = theme === tVal;
-              const label =
-                tVal === "light"
-                  ? t("settings.theme.light")
-                  : tVal === "dark"
-                    ? t("settings.theme.dark")
-                    : t("settings.theme.system");
-              return (
-                <button
-                  key={tVal}
-                  type="button"
-                  onClick={() => setTheme(tVal)}
-                  className={`inline-flex items-center gap-[5px] rounded-md px-[18px] py-[8px] text-[14px] leading-none capitalize border-0 cursor-pointer ${
-                    isActive
-                      ? "bg-border-alpha-14 text-text-primary shadow-sm"
-                      : "bg-transparent text-text-secondary hover:text-text-primary"
-                  }`}
-                  style={{
-                    fontFamily: "var(--font-inter), sans-serif",
-                    fontWeight: isActive ? 500 : 400,
-                  }}
-                >
-                  {label}
-                </button>
-              );
-            })}
+      <SettingBlock
+        title={t("settings.theme.title")}
+        description={t("settings.theme.description")}
+      >
+        {mounted ? (
+          <div className="grid grid-cols-3 gap-[10px]">
+            {(
+              [
+                { value: "system", label: t("settings.theme.system") },
+                { value: "light", label: t("settings.theme.light") },
+                { value: "dark", label: t("settings.theme.dark") },
+              ] as const
+            ).map((item) => (
+              <ThemeCard
+                key={item.value}
+                mode={item.value}
+                label={item.label}
+                active={theme === item.value}
+                onSelect={() => setTheme(item.value)}
+              />
+            ))}
           </div>
-        )}
-      </div>
+        ) : null}
+      </SettingBlock>
 
-      <div className="flex flex-col gap-[12px] pt-[8px]">
-        <div className="flex flex-col gap-[4px]">
-          <h3 className="text-text-primary text-[15px] font-medium m-0">
-            {t("settings.branding.title")}
-          </h3>
-          <p className="text-text-tertiary text-[13px] m-0">
-            {t("settings.branding.description")}
-          </p>
-        </div>
-
-        {mounted && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-[10px] mt-[4px]">
+      <SettingBlock
+        title={t("settings.branding.title")}
+        description={t("settings.branding.description")}
+      >
+        {mounted ? (
+          <div className="flex flex-wrap gap-[2px]">
             {brandingVariants.map((variantId) => {
               const isActive = accentVariant === variantId;
               const label = t(`settings.branding.${variantId}`);
@@ -127,18 +224,21 @@ export function AppearanceTab() {
                   key={variantId}
                   type="button"
                   onClick={() => setAccentVariant(variantId)}
-                  className={`flex flex-col items-center gap-[8px] p-[12px] rounded-xl border transition-all cursor-pointer ${
+                  title={label}
+                  aria-label={label}
+                  aria-pressed={isActive}
+                  className={`flex items-center gap-[8px] pl-[8px] pr-[12px] py-[6px] rounded-md border-none transition-colors cursor-pointer ${
                     isActive
-                      ? "bg-bg-elevated border-text-primary/40 shadow-sm"
-                      : "bg-transparent border-border-primary hover:border-border-primary/80 hover:bg-bg-elevated/50"
+                      ? "bg-bg-elevated text-text-primary font-[500]"
+                      : "bg-transparent text-text-secondary hover:bg-bg-elevated hover:text-text-primary"
                   }`}
                 >
-                  <div className="w-[32px] h-[32px] flex items-center justify-center">
+                  <div className="w-[22px] h-[22px] flex items-center justify-center shrink-0">
                     <img
                       src={logos[variantId]}
-                      alt={label}
-                      width={28}
-                      height={28}
+                      alt=""
+                      width={20}
+                      height={20}
                       className={
                         variantId === "default" ||
                         variantId === "carbon" ||
@@ -151,9 +251,7 @@ export function AppearanceTab() {
                     />
                   </div>
                   <span
-                    className={`text-[12px] leading-none ${
-                      isActive ? "text-text-primary font-medium" : "text-text-secondary"
-                    }`}
+                    className="text-[12px] leading-none whitespace-nowrap"
                     style={{ fontFamily: "var(--font-inter), sans-serif" }}
                   >
                     {label}
@@ -162,8 +260,8 @@ export function AppearanceTab() {
               );
             })}
           </div>
-        )}
-      </div>
-    </div>
+        ) : null}
+      </SettingBlock>
+    </SettingSection>
   );
 }

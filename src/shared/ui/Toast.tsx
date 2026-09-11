@@ -526,7 +526,7 @@ function ToastItem({
                   e.stopPropagation();
                   handleCopyRequestId(toast.requestId!);
                 }}
-                className="inline-flex items-center gap-[4px] px-[6px] py-[2px] rounded text-[11px] font-mono bg-border-alpha-14 hover:bg-border-alpha-24 text-text-secondary hover:text-text-primary transition-colors cursor-pointer border-0"
+                className="inline-flex items-center gap-[4px] px-[6px] py-[2px] rounded text-[11px] font-mono bg-border-alpha-14 hover:bg-border-alpha-33 text-text-secondary hover:text-text-primary transition-colors cursor-pointer border-0"
                 title="Скопировать ID ошибки для поддержки"
               >
                 <CopyIcon />

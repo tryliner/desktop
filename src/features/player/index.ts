@@ -4,8 +4,10 @@ export { toVolumeGain, toVolumeLevel } from "./engine/volume";
 export {
   usePlayerStore,
   type AccentVariant,
+  type AudioQuality,
   type MiniPlayerStyle,
   type TrackDoubleClickBehavior,
+  type DefaultPlaybackContext,
   type RepeatMode,
 } from "./store/playerStore";
 export { usePlayerState } from "./hooks/usePlayerState";

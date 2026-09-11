@@ -4,7 +4,6 @@ import { AnimatePresence, motion } from "framer-motion";
 import Button from "@/shared/ui/Button";
 import TextInput from "@/shared/ui/TextInput";
 import Select from "@/shared/ui/Select";
-import { Emoji } from "react-apple-emojis";
 import { EyeLine, EyeCloseLine, ArrowLeftLine } from "@mingcute/react";
 import WindowControls from "@/features/navigation/ui/WindowControls";
 import logo from "@/assets/logo.svg";
@@ -16,25 +15,7 @@ import {
   getAuthErrorCode,
   useAuthStore,
 } from "../store/authStore";
-import { useTranslation } from "@/languages";
-
-const LOCALE_OPTIONS = [
-  {
-    value: "en" as const,
-    label: "English",
-    icon: <Emoji name="flag-united-kingdom" width={16} />,
-  },
-  {
-    value: "ru" as const,
-    label: "Русский",
-    icon: <Emoji name="flag-russia" width={16} />,
-  },
-  {
-    value: "uk" as const,
-    label: "Українська",
-    icon: <Emoji name="flag-ukraine" width={16} />,
-  },
-];
+import { useTranslation, LOCALE_OPTIONS } from "@/languages";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const USERNAME_RE = /^[a-z0-9_]{3,30}$/;
@@ -206,8 +187,8 @@ export default function LoginPage() {
 
       <WindowControls variant="glass" />
 
-      {/* Centered glassmorphism container for auth form — without borders */}
-      <section className="relative z-10 mx-4 my-auto flex max-h-[calc(100%-48px)] w-full max-w-[470px] flex-col overflow-y-auto rounded-3xl bg-bg-primary/85 p-8 shadow-2xl backdrop-blur-2xl sm:p-10 dark:bg-black/70">
+      {/* Centered solid panel in new app style — bg stays visible around it */}
+      <section className="relative z-10 mx-4 my-auto flex max-h-[calc(100%-48px)] w-full max-w-[400px] flex-col overflow-y-auto rounded-xl border border-border-primary bg-bg-panel p-[28px] shadow-2xl">
         <div className="flex min-h-full w-full flex-col justify-between">
           {/* Top: logo + lang picker */}
           <div className="flex shrink-0 items-center gap-[10px]">
@@ -236,6 +217,28 @@ export default function LoginPage() {
           {/* Middle: grows + centers form content */}
           <div className="my-auto flex flex-col justify-center py-6">
             <div className="w-full">
+              {/* mode switch, same segmented pattern as create-playlist tabs */}
+              <div className="mb-[16px] flex rounded-lg bg-bg-elevated p-[3px]">
+                {(
+                  [
+                    { id: "login", label: t("login.btn_sign_in") },
+                    { id: "register", label: t("login.btn_create_account") },
+                  ] as const
+                ).map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => selectMode(item.id)}
+                    className={`h-[30px] flex-1 cursor-pointer rounded-md border-none text-[13px] font-[500] transition-all ${
+                      mode === item.id
+                        ? "bg-bg-primary text-text-primary shadow-sm"
+                        : "bg-transparent text-text-secondary hover:text-text-primary"
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
               <AnimatePresence initial={false}>
                 {mode === "register" && (
                   <motion.div
@@ -250,7 +253,7 @@ export default function LoginPage() {
                     className="overflow-hidden"
                   >
                     <div className="mb-2">
-                      <span className="inline-flex items-center rounded-full bg-border-alpha-14 px-2.5 py-0.5 text-[11px] font-[500] text-text-secondary">
+                      <span className="inline-flex items-center rounded-full border border-border-primary bg-bg-elevated px-2.5 py-0.5 text-[11px] font-[500] text-text-secondary">
                         {t("login.step_indicator", { step: registerStep, total: 2 })}
                       </span>
                     </div>
@@ -258,7 +261,7 @@ export default function LoginPage() {
                 )}
               </AnimatePresence>
               <h1
-                className="m-0 text-[32px] font-[500] leading-tight tracking-[-0.045em] text-text-primary"
+                className="m-0 text-[22px] font-[600] leading-tight tracking-[-0.02em] text-text-primary"
                 style={{ textWrap: "balance" }}
               >
                 {mode === "login"
@@ -268,7 +271,7 @@ export default function LoginPage() {
                     : t("login.profile_setup_title")}
               </h1>
               <p
-                className="m-0 mt-[9px] text-[13px] font-[400] leading-[1.5] text-text-tertiary"
+                className="m-0 mt-[6px] text-[13px] font-[400] leading-[1.5] text-text-secondary"
                 style={{ textWrap: "pretty" }}
               >
                 {mode === "login"
@@ -278,7 +281,7 @@ export default function LoginPage() {
                     : t("login.profile_setup_subtitle")}
               </p>
 
-              <form onSubmit={submit} className="mt-[28px] flex flex-col">
+              <form onSubmit={submit} className="mt-[20px] flex flex-col">
                 <AnimatePresence initial={false}>
                   {mode === "login" || registerStep === 1 ? (
                     <motion.div
@@ -308,7 +311,6 @@ export default function LoginPage() {
                         autoComplete="email"
                         placeholder={t("login.placeholder_email")}
                         value={email}
-                        variant="transparent"
                         hasError={Boolean(error)}
                         aria-invalid={Boolean(error)}
                         aria-describedby={error ? "auth-form-error" : undefined}
@@ -337,7 +339,6 @@ export default function LoginPage() {
                             : t("login.placeholder_password_new")
                         }
                         value={password}
-                        variant="transparent"
                         hasError={Boolean(error)}
                         aria-invalid={Boolean(error)}
                         aria-describedby={error ? "auth-form-error" : undefined}
@@ -390,8 +391,7 @@ export default function LoginPage() {
                               autoComplete="new-password"
                               placeholder={t("login.placeholder_confirm")}
                               value={confirmPassword}
-                              variant="transparent"
-                              hasError={Boolean(error)}
+                                    hasError={Boolean(error)}
                               aria-invalid={Boolean(error)}
                               aria-describedby={error ? "auth-form-error" : undefined}
                               onChange={(event) => {
@@ -449,7 +449,6 @@ export default function LoginPage() {
                         autoComplete="username"
                         placeholder={t("login.placeholder_username")}
                         value={username}
-                        variant="transparent"
                         icon={
                           <span className="text-[14px] font-medium text-text-tertiary select-none">
                             @
@@ -485,7 +484,6 @@ export default function LoginPage() {
                         autoComplete="name"
                         placeholder={t("login.placeholder_display_name")}
                         value={displayName}
-                        variant="transparent"
                         hasError={Boolean(error)}
                         aria-invalid={Boolean(error)}
                         aria-describedby={error ? "auth-form-error" : undefined}
@@ -545,24 +543,6 @@ export default function LoginPage() {
                           t("login.btn_sign_in")
                         )}
                       </Button>
-
-                      <div className="mt-[20px] flex items-center gap-[12px]">
-                        <div className="h-px flex-1 bg-border-primary" />
-                        <span className="text-[11px] text-text-tertiary">
-                          {t("login.separator_or")}
-                        </span>
-                        <div className="h-px flex-1 bg-border-primary" />
-                      </div>
-
-                      <Button
-                        type="button"
-                        variant="outline"
-                        disabled={submitting}
-                        onClick={() => selectMode("register")}
-                        className="mt-[12px] w-full"
-                      >
-                        {t("login.btn_create_account")}
-                      </Button>
                     </motion.div>
                   ) : registerStep === 1 ? (
                     <motion.div
@@ -583,18 +563,6 @@ export default function LoginPage() {
                       >
                         {t("login.btn_continue")}
                       </Button>
-
-                      <button
-                        type="button"
-                        disabled={submitting}
-                        onClick={() => selectMode("login")}
-                        className="mt-[16px] w-full border-0 bg-transparent p-0 text-center text-[12px] text-text-tertiary transition-colors hover:text-text-secondary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-text-secondary rounded-xs cursor-pointer"
-                      >
-                        {t("login.have_account")}{" "}
-                        <span className="font-[500] text-text-secondary">
-                          {t("login.have_account_action")}
-                        </span>
-                      </button>
                     </motion.div>
                   ) : (
                     <motion.div
@@ -637,18 +605,6 @@ export default function LoginPage() {
                           )}
                         </Button>
                       </div>
-
-                      <button
-                        type="button"
-                        disabled={submitting}
-                        onClick={() => selectMode("login")}
-                        className="mt-[16px] w-full border-0 bg-transparent p-0 text-center text-[12px] text-text-tertiary transition-colors hover:text-text-secondary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-text-secondary rounded-xs cursor-pointer"
-                      >
-                        {t("login.have_account")}{" "}
-                        <span className="font-[500] text-text-secondary">
-                          {t("login.have_account_action")}
-                        </span>
-                      </button>
                     </motion.div>
                   )}
                 </AnimatePresence>

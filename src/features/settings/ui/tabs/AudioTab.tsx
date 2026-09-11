@@ -1,33 +1,63 @@
+import { useState, useEffect } from "react";
 import { useTranslation } from "@/languages";
-import { usePlayerStore } from "@/features/player";
-import { ToggleSwitch } from "@/shared/ui";
+import { usePlayerStore, type AudioQuality } from "@/features/player";
+import { ToggleSwitch, Select } from "@/shared/ui";
+import { SettingRow, SettingSection } from "../controls";
 
 export function AudioTab() {
   const { t } = useTranslation();
+  const [mounted, setMounted] = useState(false);
   const pauseOnDeviceChange = usePlayerStore(
     (state) => state.pauseOnDeviceChange,
   );
   const setPauseOnDeviceChange = usePlayerStore(
     (state) => state.setPauseOnDeviceChange,
   );
+  const audioQuality = usePlayerStore((state) => state.audioQuality);
+  const setAudioQuality = usePlayerStore((state) => state.setAudioQuality);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // lossless is listed as unavailable, so the picker only offers live tiers
+  const quality: Exclude<AudioQuality, "lossless"> =
+    audioQuality === "lossless" ? "high" : audioQuality;
 
   return (
-    <div className="flex flex-col gap-[24px]">
-      <div className="flex items-center justify-between">
-        <div className="flex flex-col gap-[4px]">
-          <h3 className="text-text-primary text-[15px] font-medium m-0">
-            {t("settings.audio.pause_on_device_change.title")}
-          </h3>
-          <p className="text-text-tertiary text-[13px] m-0">
-            {t("settings.audio.pause_on_device_change.description")}
-          </p>
-        </div>
+    <SettingSection>
+      <SettingRow
+        title={t("settings.audio.title")}
+        description={t("settings.audio.description")}
+        control={
+          mounted ? (
+            <Select
+              aria-label={t("settings.audio.title")}
+              className="w-[210px]"
+              value={quality}
+              onChange={setAudioQuality}
+              options={[
+                { value: "low", label: t("settings.audio.low") },
+                { value: "standard", label: t("settings.audio.standard") },
+                { value: "high", label: t("settings.audio.high") },
+              ]}
+            />
+          ) : (
+            <span />
+          )
+        }
+      />
 
-        <ToggleSwitch
-          checked={pauseOnDeviceChange}
-          onChange={setPauseOnDeviceChange}
-        />
-      </div>
-    </div>
+      <SettingRow
+        title={t("settings.audio.pause_on_device_change.title")}
+        description={t("settings.audio.pause_on_device_change.description")}
+        control={
+          <ToggleSwitch
+            checked={pauseOnDeviceChange}
+            onChange={setPauseOnDeviceChange}
+          />
+        }
+      />
+    </SettingSection>
   );
 }

@@ -369,10 +369,13 @@
   },
   "settings": {
     "title": "Settings",
+    "reset_defaults": "Reset to defaults",
+    "save_preferences": "Save preferences",
     "tabs": {
       "general": "General",
       "appearance": "Appearance",
       "audio": "Audio",
+      "system": "System",
       "account": "Account",
       "about": "About"
     },
@@ -395,6 +398,12 @@
       "description": "Restore your last queue on startup or start empty.",
       "resume": "Resume last queue",
       "empty": "Start empty"
+    },
+    "telemetry": {
+      "title": "Anonymous Telemetry & Diagnostics",
+      "description": "Helps identify and fix playback errors, buffering stalls, and network issues. Never collects personal data, tokens, passwords, or local file paths.",
+      "enabled": "Anonymous telemetry enabled",
+      "disabled": "Telemetry completely disabled"
     },
     "cache": {
       "title": "Cache & Storage",

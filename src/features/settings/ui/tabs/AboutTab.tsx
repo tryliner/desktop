@@ -42,8 +42,8 @@ export function AboutTab() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center w-full min-h-[40vh] gap-[16px]">
-      <div className="w-[80px] h-[80px] rounded-2xl bg-bg-elevated border border-border-primary flex items-center justify-center shadow-sm">
+    <div className="flex w-full flex-col items-center justify-center gap-[12px] py-[32px]">
+      <div className="bg-bg-elevated flex h-[60px] w-[60px] items-center justify-center rounded-2xl">
         <img
           src={
             accentVariant === "default"
@@ -51,10 +51,10 @@ export function AboutTab() {
               : brandingLogos[accentVariant]
           }
           alt="Liner Logo"
-          width={48}
-          height={48}
+          width={40}
+          height={40}
           className={
-            "w-[48px] h-[48px] " +
+            "h-[40px] w-[40px] " +
             (accentVariant === "default" ||
             accentVariant === "carbon" ||
             accentVariant === "pixel" ||
@@ -66,21 +66,24 @@ export function AboutTab() {
         />
       </div>
 
-      <div className="flex flex-col items-center gap-[4px]">
+      <div className="flex flex-col items-center gap-[2px]">
         <h2
-          className="text-text-primary text-[24px] font-medium m-0"
+          className="text-text-primary text-[17px] font-[600] tracking-[-0.01em] m-0"
           style={{ fontFamily: "var(--font-inter), sans-serif" }}
         >
           {t("settings.about.liner")}
         </h2>
-        <p className="text-text-tertiary text-[14px] m-0">
+        <p
+          className="text-text-tertiary text-[12.5px] m-0"
+          style={{ fontFamily: "var(--font-inter), sans-serif" }}
+        >
           {t("common.app.version")}
         </p>
       </div>
 
-      <div className="flex gap-[12px] mt-[16px]">
-        <Button variant="secondary" onClick={openTelegram}>
-          <FaTelegramPlane size={15} className="mt-[1px]" />
+      <div className="mt-[8px] flex gap-[8px]">
+        <Button variant="secondary" size="sm" onClick={openTelegram}>
+          <FaTelegramPlane size={14} className="mt-[1px]" />
           {t("settings.about.telegram")}
         </Button>
       </div>
