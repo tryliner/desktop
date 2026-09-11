@@ -22,3 +22,4 @@ export {
   type UseSearchPlaylistsOptions,
   type UseSearchPlaylistsResult,
 } from "./hooks/useSearchPlaylists";
+export { SearchModal, type SearchModalProps } from "./ui/SearchModal";
