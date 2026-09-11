@@ -324,6 +324,8 @@
     "playing_from": "Playing from",
     "autoplay_radio": "Autoplay Radio",
     "clear_queue": "Clear queue",
+    "shuffle_on": "Shuffle on",
+    "shuffle_off": "Shuffle off",
     "save": "Save",
     "home": "In development",
     "home_subtitle": "Use search to listen to music",

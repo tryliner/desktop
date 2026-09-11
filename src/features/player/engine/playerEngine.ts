@@ -18,9 +18,36 @@ import { toClientTrack } from "@/shared/api/track";
 import { log } from "@/shared/utils/logger";
 import { parseRawLyrics } from "@/features/lyrics";
 import { useLyricsStore } from "@/features/lyrics";
+import { showToast } from "@/shared/ui";
+import { getStoredLocale } from "@/languages";
 import type { Track } from "@/shared/types";
 
 export { usePlayerStore, type PlayerStatus, type RepeatMode, type PlayerState };
+
+function shuffleArray<T>(array: T[]): T[] {
+  const result = [...array];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
+
+function restoreOriginalRelativeOrder<T>(currentUpcoming: T[], originalUpcoming: T[]): T[] {
+  if (originalUpcoming.length === 0) return currentUpcoming;
+  const originalPosMap = new Map<T, number>();
+  originalUpcoming.forEach((item, idx) => {
+    if (!originalPosMap.has(item)) {
+      originalPosMap.set(item, idx);
+    }
+  });
+
+  return [...currentUpcoming].sort((a, b) => {
+    const posA = originalPosMap.has(a) ? originalPosMap.get(a)! : Number.MAX_SAFE_INTEGER;
+    const posB = originalPosMap.has(b) ? originalPosMap.get(b)! : Number.MAX_SAFE_INTEGER;
+    return posA - posB;
+  });
+}
 
 const SYNC_RANK: Record<LyricsSyncLevel, number> = {
   plain: 0,
@@ -196,8 +223,7 @@ class PlayerEngine {
   private lyricsLoadToken = 0;
   private lyricsAbort: AbortController | null = null;
   private currentLyricsTrackId: string | null = null;
-  private shuffledIndices: number[] = [];
-  private shuffleCursor = 0;
+  private originalUpcomingQueue: Track[] = [];
   private telemetry = new PlaybackTelemetryTracker();
   private radioAppendTimeout: ReturnType<typeof setTimeout> | null = null;
   private radioWaveId: string | null = null;
@@ -351,14 +377,27 @@ class PlayerEngine {
     if (contextCover !== undefined) {
       store.setPlaybackContextCover(contextCover);
     }
-    store.setQueue(nextQueue);
+    let finalQueue = nextQueue;
+    let finalIndex = nextIndex;
 
-    if (store.shuffle) {
-      this.rebuildShuffleIndices(nextQueue.length, nextIndex);
+    if (store.shuffle && nextQueue.length > 1) {
+      const played = nextQueue.slice(0, nextIndex);
+      const selectedTrackItem = nextQueue[nextIndex] ?? track;
+      const upcoming = nextQueue.slice(nextIndex + 1);
+
+      this.originalUpcomingQueue = [...upcoming];
+      const shuffledUpcoming = shuffleArray(upcoming);
+
+      finalQueue = [...played, selectedTrackItem, ...shuffledUpcoming];
+      finalIndex = nextIndex;
+    } else {
+      this.originalUpcomingQueue = [];
     }
 
-    const selectedTrack = nextQueue[nextIndex] ?? track;
-    store.setCurrentTrack(selectedTrack, nextIndex);
+    store.setQueue(finalQueue);
+
+    const selectedTrack = finalQueue[finalIndex] ?? track;
+    store.setCurrentTrack(selectedTrack, finalIndex);
     store.setPosition(0);
     store.setDuration(selectedTrack.durationMs ?? 0);
     store.setStatus("loading", null);
@@ -367,7 +406,7 @@ class PlayerEngine {
       void playerRuntime.loadAndPlay(selectedTrack);
     }
 
-    if (nextIndex === nextQueue.length - 1) {
+    if (finalIndex === finalQueue.length - 1) {
       this.scheduleAppendSimilarTracks(mySession, selectedTrack.id);
     }
   }
@@ -383,10 +422,7 @@ class PlayerEngine {
     store.setPlaybackContext(`radio:${track.id}`);
     store.setPlaybackContextCover(track.coverUrl ?? null);
     store.setQueue([track]);
-
-    if (store.shuffle) {
-      this.rebuildShuffleIndices(1, 0);
-    }
+    this.originalUpcomingQueue = [];
 
     store.setCurrentTrack(track, 0);
     store.setPosition(0);
@@ -409,7 +445,10 @@ class PlayerEngine {
         const updatedQueue = [track, ...additions];
         latestStore.setQueue(updatedQueue);
         if (latestStore.shuffle) {
-          this.rebuildShuffleIndices(updatedQueue.length, 0);
+          const upcoming = additions;
+          this.originalUpcomingQueue = [...upcoming];
+          const shuffledUpcoming = shuffleArray(upcoming);
+          latestStore.setQueue([track, ...shuffledUpcoming]);
         }
         const sample = additions.slice(0, 3).map((t) => `"${t.title}" by ${t.artists || 'Unknown'}`).join(', ');
         log(
@@ -505,25 +544,12 @@ class PlayerEngine {
       return;
     }
 
-    let prevIndex: number;
-    if (store.shuffle && this.shuffledIndices.length === store.queue.length) {
-      if (this.shuffleCursor > 0) {
-        this.shuffleCursor -= 1;
-        prevIndex = this.shuffledIndices[this.shuffleCursor];
-      } else if (store.repeat === "all") {
-        this.shuffleCursor = this.shuffledIndices.length - 1;
-        prevIndex = this.shuffledIndices[this.shuffleCursor];
-      } else {
-        prevIndex = this.shuffledIndices[0];
-      }
-    } else {
-      prevIndex =
-        store.currentIndex > 0
-          ? store.currentIndex - 1
-          : store.repeat === "all"
-            ? store.queue.length - 1
-            : 0;
-    }
+    const prevIndex =
+      store.currentIndex > 0
+        ? store.currentIndex - 1
+        : store.repeat === "all"
+          ? store.queue.length - 1
+          : 0;
 
     this.sessionId += 1;
     const mySession = this.sessionId;
@@ -558,9 +584,45 @@ class PlayerEngine {
 
   public setShuffle(enabled: boolean): void {
     const store = usePlayerStore.getState();
+    if (store.shuffle === enabled) return;
     store.setShuffle(enabled);
-    if (enabled && store.queue.length > 0) {
-      this.rebuildShuffleIndices(store.queue.length, Math.max(0, store.currentIndex));
+
+    const { queue, currentIndex } = store;
+    if (queue.length > 0 && currentIndex >= 0) {
+      const played = queue.slice(0, currentIndex);
+      const current = queue[currentIndex];
+      const upcoming = queue.slice(currentIndex + 1);
+
+      if (enabled) {
+        this.originalUpcomingQueue = [...upcoming];
+        const shuffledUpcoming = shuffleArray(upcoming);
+        store.setQueue([...played, current, ...shuffledUpcoming]);
+      } else {
+        const unshuffledUpcoming = restoreOriginalRelativeOrder(
+          upcoming,
+          this.originalUpcomingQueue,
+        );
+        store.setQueue([...played, current, ...unshuffledUpcoming]);
+        this.originalUpcomingQueue = [];
+      }
+    }
+
+    try {
+      const locale = getStoredLocale();
+      const msg = enabled
+        ? locale === "ru"
+          ? "Случайный порядок включен"
+          : locale === "uk"
+            ? "Випадковий порядок увімкнено"
+            : "Shuffle on"
+        : locale === "ru"
+          ? "Случайный порядок выключен"
+          : locale === "uk"
+            ? "Випадковий порядок вимкнено"
+            : "Shuffle off";
+      showToast(msg, "info");
+    } catch {
+      // ignore in headless contexts
     }
   }
 
@@ -595,9 +657,10 @@ class PlayerEngine {
 
   public addToQueue(track: Track): void {
     const store = usePlayerStore.getState();
-    store.setQueue([...store.queue, track]);
+    const newQueue = [...store.queue, track];
+    store.setQueue(newQueue);
     if (store.shuffle) {
-      this.rebuildShuffleIndices(store.queue.length + 1, store.currentIndex);
+      this.originalUpcomingQueue.push(track);
     }
   }
 
@@ -618,14 +681,13 @@ class PlayerEngine {
     ];
     store.setQueue(nextQueue);
     if (store.shuffle) {
-      this.rebuildShuffleIndices(nextQueue.length, currentIndex);
+      this.originalUpcomingQueue.unshift(track);
     }
   }
 
   public clearQueue(): void {
     usePlayerStore.getState().clearQueue();
-    this.shuffledIndices = [];
-    this.shuffleCursor = 0;
+    this.originalUpcomingQueue = [];
   }
 
   public snapshotQueue(): Track[] {
@@ -647,52 +709,11 @@ class PlayerEngine {
     }));
   }
 
-  private rebuildShuffleIndices(queueLength: number, startIndex: number): void {
-    if (queueLength <= 0) {
-      this.shuffledIndices = [];
-      this.shuffleCursor = 0;
-      return;
-    }
-    const indices = Array.from({ length: queueLength }, (_, i) => i);
-    // Fisher-Yates shuffle algorithm
-    for (let i = indices.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [indices[i], indices[j]] = [indices[j], indices[i]];
-    }
-    // Place current track index at current position so playback order is clean
-    const currPos = indices.indexOf(startIndex);
-    if (currPos > 0) {
-      indices.splice(currPos, 1);
-      indices.unshift(startIndex);
-    }
-    this.shuffledIndices = indices;
-    this.shuffleCursor = 0;
-  }
-
   private computeNextIndex(): number | null {
     const store = usePlayerStore.getState();
     const queueSize = store.queue.length;
     if (queueSize === 0 || store.currentIndex < 0) return null;
     if (store.repeat === "one") return store.currentIndex;
-
-    if (store.shuffle) {
-      if (queueSize === 1) return store.currentIndex;
-      if (this.shuffledIndices.length !== queueSize) {
-        this.rebuildShuffleIndices(queueSize, store.currentIndex);
-      }
-      if (this.shuffleCursor + 1 < this.shuffledIndices.length) {
-        this.shuffleCursor += 1;
-        return this.shuffledIndices[this.shuffleCursor];
-      }
-      if (store.repeat === "all") {
-        const lastIndex =
-          this.shuffledIndices[this.shuffleCursor] ?? store.currentIndex;
-        this.rebuildShuffleIndices(queueSize, lastIndex);
-        this.shuffleCursor = 1 < this.shuffledIndices.length ? 1 : 0;
-        return this.shuffledIndices[this.shuffleCursor];
-      }
-      return null;
-    }
 
     if (store.currentIndex + 1 < queueSize) return store.currentIndex + 1;
     if (store.repeat === "all") return 0;

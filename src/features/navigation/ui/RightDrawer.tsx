@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, memo, useCallback } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { usePlayerState, playerEngine } from "@/features/player";
 import SongCardWithMenu from "@/features/player/ui/SongCardWithMenu";
 import { useLyricsStore, type WordData, useLyricsAnimator } from "@/features/lyrics";
@@ -22,39 +23,49 @@ const QueueList = memo(function QueueList({
 }) {
   return (
     <div className="flex flex-col gap-[2px]">
-      {queue.slice(0, queueLimit).map((item, index) => {
-        const isCurrent = index === currentIndex;
-        return (
-          <SongCardWithMenu
-            key={`${item.id}-${index}`}
-            id={item.id}
-            title={item.title}
-            artists={item.artists}
-            artistId={item.artistId}
-            artistList={item.artistList}
-            explicit={item.explicit}
-            durationMs={item.durationMs}
-            coverUrl={
-              item.coverUrl ?? (item as { cover_url?: string }).cover_url ?? ""
-            }
-            className={`px-[12px] py-[10px] rounded-[12px] transition-all duration-200 ${
-              isCurrent
-                ? "bg-border-alpha-14"
-                : "bg-transparent hover:bg-border-alpha-14"
-            }`}
-            imageShape="square"
-            onPlay={() => {
-              void playerEngine.playTrack(
-                item,
-                queue,
-                playbackContext,
-                playbackContextCover,
-                index,
-              );
-            }}
-          />
-        );
-      })}
+      <AnimatePresence mode="popLayout" initial={false}>
+        {queue.slice(0, queueLimit).map((item, index) => {
+          const isCurrent = index === currentIndex;
+          return (
+            <motion.div
+              key={`${item.id}-${index}`}
+              layout
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.96 }}
+              transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <SongCardWithMenu
+                id={item.id}
+                title={item.title}
+                artists={item.artists}
+                artistId={item.artistId}
+                artistList={item.artistList}
+                explicit={item.explicit}
+                durationMs={item.durationMs}
+                coverUrl={
+                  item.coverUrl ?? (item as { cover_url?: string }).cover_url ?? ""
+                }
+                className={`px-[12px] py-[10px] rounded-[12px] transition-all duration-200 ${
+                  isCurrent
+                    ? "bg-border-alpha-14"
+                    : "bg-transparent hover:bg-border-alpha-14"
+                }`}
+                imageShape="square"
+                onPlay={() => {
+                  void playerEngine.playTrack(
+                    item,
+                    queue,
+                    playbackContext,
+                    playbackContextCover,
+                    index,
+                  );
+                }}
+              />
+            </motion.div>
+          );
+        })}
+      </AnimatePresence>
     </div>
   );
 });

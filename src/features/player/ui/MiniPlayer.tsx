@@ -668,7 +668,7 @@ function MiniPlayer({
               <button
                 type="button"
                 aria-label="Shuffle"
-                title="Shuffle"
+                title={player.shuffle ? t("player.shuffle_on") : t("player.shuffle_off")}
                 className={`${iconButtonClass} ${
                   player.shuffle
                     ? "bg-bg-toolbox-active text-text-primary"
@@ -677,7 +677,7 @@ function MiniPlayer({
                 onPointerDown={(e) => e.stopPropagation()}
                 onClick={() => playerEngine.setShuffle(!player.shuffle)}
               >
-                <Shuffle size={18} weight="Outline" />
+                <Shuffle size={18} weight={player.shuffle ? "Bold" : "Outline"} />
               </button>
               <button
                 type="button"

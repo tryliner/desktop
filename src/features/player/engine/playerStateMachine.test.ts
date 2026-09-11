@@ -137,4 +137,48 @@ describe("Player State Machine", () => {
     const queue = usePlayerStore.getState().queue;
     expect(queue.map((t) => t.id)).toContain("3");
   });
+
+  it("shuffles only upcoming tracks when shuffle is enabled", async () => {
+    const tracks = Array.from({ length: 6 }, (_, i) => mockTrack(String(i + 1), `Track ${i + 1}`));
+    // Play Track 2 (index 1). Played: [Track 1], Playing: Track 2, Upcoming: [3, 4, 5, 6]
+    await playerEngine.playTrack(tracks[1], tracks, undefined, undefined, 1);
+
+    playerEngine.setShuffle(true);
+    const state = usePlayerStore.getState();
+
+    expect(state.shuffle).toBe(true);
+    expect(state.currentIndex).toBe(1);
+    expect(state.queue[0].id).toBe("1");
+    expect(state.queue[1].id).toBe("2");
+
+    // Upcoming tracks must be a permutation of [3, 4, 5, 6]
+    const upcomingIds = state.queue.slice(2).map((t) => t.id);
+    expect(upcomingIds.sort()).toEqual(["3", "4", "5", "6"]);
+  });
+
+  it("restores original relative order of remaining upcoming tracks when shuffle is disabled", async () => {
+    const tracks = Array.from({ length: 6 }, (_, i) => mockTrack(String(i + 1), `Track ${i + 1}`));
+    await playerEngine.playTrack(tracks[1], tracks, undefined, undefined, 1);
+
+    // Turn shuffle ON
+    playerEngine.setShuffle(true);
+
+    // Skip to next track (now playing index 2)
+    await playerEngine.skipNext();
+    const currentPlayingTrack = usePlayerStore.getState().currentTrack!;
+
+    // Turn shuffle OFF
+    playerEngine.setShuffle(false);
+    const state = usePlayerStore.getState();
+
+    expect(state.shuffle).toBe(false);
+    expect(state.currentTrack?.id).toBe(currentPlayingTrack.id);
+
+    // Played tracks + current track stay intact
+    const remainingUpcoming = state.queue.slice(state.currentIndex + 1).map((t) => t.id);
+    // Original upcoming tracks that were NOT played must maintain their relative order from 1..6
+    for (let i = 0; i < remainingUpcoming.length - 1; i++) {
+      expect(Number(remainingUpcoming[i])).toBeLessThan(Number(remainingUpcoming[i + 1]));
+    }
+  });
 });

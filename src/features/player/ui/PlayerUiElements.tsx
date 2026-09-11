@@ -20,6 +20,8 @@ import ExplicitBadge from "@/shared/ui/ExplicitBadge";
 import { VolumePicker } from "./VolumePicker";
 import { TimelineSlider } from "./TimelineSlider";
 
+import { useTranslation } from "@/languages";
+
 const iconButtonClass =
   "inline-flex h-[28px] w-[28px] items-center justify-center text-white opacity-70 transition-all duration-150 ease-out hover:opacity-100 active:scale-[0.94] shrink-0 border-none bg-transparent cursor-pointer";
 
@@ -74,6 +76,8 @@ export function PlayerUiElements({
   }, [track, isLiked, likeMutation, unlikeMutation]);
 
   const isCoverLoaded = useCoverReady(coverUrl);
+
+  const { t } = useTranslation();
 
   return (
     <>
@@ -191,12 +195,13 @@ export function PlayerUiElements({
         <button
           type="button"
           aria-label="Shuffle"
+          title={player.shuffle ? t("player.shuffle_on") : t("player.shuffle_off")}
           onClick={() => playerEngine.setShuffle(!player.shuffle)}
           className={`${iconButtonClass} ${
             player.shuffle ? "!text-white !opacity-100" : "!text-white/40"
           }`}
         >
-          <Shuffle size={18} />
+          <Shuffle size={18} weight={player.shuffle ? "Bold" : "Outline"} />
         </button>
 
         <button
