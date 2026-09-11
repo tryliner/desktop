@@ -63,16 +63,24 @@ describe("Player State Machine", () => {
     expect(state.status).toBe("loading");
   });
 
-  it("respects repeat='one' mode during skip", async () => {
+  it("overrides repeat='one' mode on manual skipNext and respects it on natural track end", async () => {
     const tracks = [mockTrack("1", "Track 1"), mockTrack("2", "Track 2")];
     await playerEngine.playTrack(tracks[0], tracks);
 
     playerEngine.setRepeat("one");
     await playerEngine.skipNext();
 
-    const state = usePlayerStore.getState();
-    expect(state.currentIndex).toBe(0);
-    expect(state.currentTrack?.id).toBe("1");
+    let state = usePlayerStore.getState();
+    expect(state.currentIndex).toBe(1);
+    expect(state.currentTrack?.id).toBe("2");
+    expect(state.repeat).toBe("one");
+
+    await playerEngine.skipNext(true);
+
+    state = usePlayerStore.getState();
+    expect(state.currentIndex).toBe(1);
+    expect(state.currentTrack?.id).toBe("2");
+    expect(state.repeat).toBe("one");
   });
 
   it("respects repeat='all' loop around the queue", async () => {

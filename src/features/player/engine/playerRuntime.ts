@@ -172,7 +172,7 @@ export class PlayerRuntime {
         log("cyan", "audio", "ended — skipping to next");
         this.onEnded?.();
         const state = usePlayerStore.getState();
-        state.dispatch({ type: "SKIP_NEXT" });
+        state.dispatch({ type: "SKIP_NEXT", isAutoEnd: true });
       }
     });
 

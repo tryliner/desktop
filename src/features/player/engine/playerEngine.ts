@@ -332,7 +332,7 @@ class PlayerEngine {
         this.seek(command.positionMs);
         break;
       case "SKIP_NEXT":
-        void this.skipNext();
+        void this.skipNext(command.isAutoEnd);
         break;
       case "SKIP_PREVIOUS":
         void this.skipPrevious();
@@ -499,9 +499,9 @@ class PlayerEngine {
     }
   }
 
-  public async skipNext(): Promise<void> {
+  public async skipNext(isAutoEnd: boolean = false): Promise<void> {
     const store = usePlayerStore.getState();
-    const nextIndex = this.computeNextIndex();
+    const nextIndex = this.computeNextIndex(isAutoEnd);
 
     if (nextIndex === null) {
       this.stopPlayback();
@@ -688,14 +688,14 @@ class PlayerEngine {
     }));
   }
 
-  private computeNextIndex(): number | null {
+  private computeNextIndex(isAutoEnd: boolean = false): number | null {
     const store = usePlayerStore.getState();
     const queueSize = store.queue.length;
     if (queueSize === 0 || store.currentIndex < 0) return null;
-    if (store.repeat === "one") return store.currentIndex;
+    if (isAutoEnd && store.repeat === "one") return store.currentIndex;
 
     if (store.currentIndex + 1 < queueSize) return store.currentIndex + 1;
-    if (store.repeat === "all") return 0;
+    if (store.repeat === "all" || store.repeat === "one") return 0;
     return null;
   }
 

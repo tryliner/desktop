@@ -76,7 +76,7 @@ export type PlayerCommand =
   | { type: "PAUSE_REQUESTED" }
   | { type: "RESUME_REQUESTED" }
   | { type: "SEEK_COMMITTED"; positionMs: number }
-  | { type: "SKIP_NEXT" }
+  | { type: "SKIP_NEXT"; isAutoEnd?: boolean }
   | { type: "SKIP_PREVIOUS" }
   | { type: "SET_VOLUME"; volume: number }
   | { type: "TOGGLE_PLAY_PAUSE" };
