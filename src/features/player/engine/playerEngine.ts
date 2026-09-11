@@ -676,6 +676,37 @@ class PlayerEngine {
     this.originalUpcomingQueue = [];
   }
 
+  public reorderQueue(fromIndex: number, toIndex: number): void {
+    const store = usePlayerStore.getState();
+    const queue = [...store.queue];
+    if (
+      fromIndex < 0 ||
+      fromIndex >= queue.length ||
+      toIndex < 0 ||
+      toIndex >= queue.length ||
+      fromIndex === toIndex
+    ) {
+      return;
+    }
+
+    const [movedItem] = queue.splice(fromIndex, 1);
+    queue.splice(toIndex, 0, movedItem);
+
+    let newCurrentIndex = store.currentIndex;
+    if (store.currentIndex === fromIndex) {
+      newCurrentIndex = toIndex;
+    } else if (fromIndex < store.currentIndex && toIndex >= store.currentIndex) {
+      newCurrentIndex -= 1;
+    } else if (fromIndex > store.currentIndex && toIndex <= store.currentIndex) {
+      newCurrentIndex += 1;
+    }
+
+    store.setQueue(queue);
+    if (newCurrentIndex !== store.currentIndex) {
+      store.setCurrentTrack(store.currentTrack, newCurrentIndex);
+    }
+  }
+
   public snapshotQueue(): Track[] {
     return [...usePlayerStore.getState().queue];
   }

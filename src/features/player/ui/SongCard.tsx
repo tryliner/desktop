@@ -32,6 +32,8 @@ export interface SongCardProps {
   onNavigate?: () => void;
   compact?: boolean;
   icon?: React.ReactNode;
+  showReorderHandle?: boolean;
+  onGrabStart?: (e: React.PointerEvent<HTMLDivElement>) => void;
 }
 
 function SongCard({
@@ -57,6 +59,8 @@ function SongCard({
   onNavigate,
   compact = false,
   icon,
+  showReorderHandle,
+  onGrabStart,
 }: SongCardProps) {
   const { t } = useTranslation();
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -69,6 +73,11 @@ function SongCard({
   const paddingClass = compact ? "p-[6px]" : "p-[8px]";
 
   const handleClick = (e: React.MouseEvent) => {
+    if (typeof window !== "undefined" && window.__linerWasDragging) {
+      e.stopPropagation();
+      e.preventDefault();
+      return;
+    }
     if (!onPlay) return;
     if (!onDoubleClick) {
       onPlay();
@@ -87,16 +96,34 @@ function SongCard({
 
     clickTimerRef.current = setTimeout(() => {
       clickTimerRef.current = null;
+      if (typeof window !== "undefined" && window.__linerWasDragging) return;
       onPlay();
     }, 200);
   };
 
   return (
     <div
-      className={`w-full flex items-center justify-between rounded-md ${paddingClass} outline-none transition-colors duration-150 ease-out ${
+      className={`group w-full flex items-center justify-between rounded-md ${paddingClass} outline-none transition-colors duration-150 ease-out ${
         className ?? ""
       } ${onPlay ? "cursor-pointer hover:bg-border-alpha-14" : ""}`}
       onClick={handleClick}
+      onPointerDown={(e) => {
+        if (clickTimerRef.current) {
+          clearTimeout(clickTimerRef.current);
+          clickTimerRef.current = null;
+        }
+        if (!onGrabStart) return;
+        const target = e.target as HTMLElement;
+        if (
+          target.closest("button") ||
+          target.closest("a") ||
+          target.closest("[role='menuitem']") ||
+          target.closest("[data-prevent-drag]")
+        ) {
+          return;
+        }
+        onGrabStart(e);
+      }}
       onContextMenu={onContextMenu}
       onKeyDown={(event) => {
         if (!onPlay) return;

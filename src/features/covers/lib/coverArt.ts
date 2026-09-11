@@ -29,6 +29,7 @@ interface CoverEntry {
   effectiveUrl?: string;
   /** Resolves once the load settles (loaded or errored); never rejects. */
   promise: Promise<void>;
+  element?: HTMLImageElement;
 }
 
 const entries = new Map<string, CoverEntry>();
@@ -55,6 +56,12 @@ function subscribe(url: string, listener: () => void): () => void {
 /** True once the cover has successfully decoded (a strict, no-fade success). */
 export function isCoverReady(url: string | undefined): boolean {
   return !!url && entries.get(url)?.status === "loaded";
+}
+
+export function getCoverElement(url: string | undefined): HTMLImageElement | undefined {
+  if (!url) return undefined;
+  const entry = entries.get(url);
+  return entry?.status === "loaded" ? entry.element : undefined;
 }
 
 /**
@@ -120,6 +127,7 @@ export function preloadCoverArt(url: string | undefined): Promise<void> {
       if (entry) {
         entry.status = status;
         if (effectiveUrl) entry.effectiveUrl = effectiveUrl;
+        if (status === "loaded") entry.element = img;
       }
       notify(url);
       resolve();

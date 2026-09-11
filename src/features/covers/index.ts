@@ -6,6 +6,7 @@ export {
   preloadCoverArt,
   markCoverReady,
   isCoverReady,
+  getCoverElement,
   useCoverReady,
   useCoverSrc,
 } from "./lib/coverArt";

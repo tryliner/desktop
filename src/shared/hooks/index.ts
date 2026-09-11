@@ -14,3 +14,9 @@ export {
   DEFAULT_WINDOW_DRAG_IGNORE_SELECTOR,
 } from "./useWindowDrag";
 
+export {
+  useListReorder,
+  type UseListReorderOptions,
+  type UseListReorderReturn,
+} from "./useListReorder";
+

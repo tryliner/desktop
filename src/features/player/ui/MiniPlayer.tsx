@@ -624,7 +624,21 @@ function MiniPlayer({
                   letterSpacing: "0",
                 }}
               >
-                <span className="min-w-0 truncate">{trackTitle}</span>
+                <span
+                  role="button"
+                  tabIndex={0}
+                  aria-label="Open player"
+                  className="min-w-0 truncate cursor-pointer"
+                  onClick={onFullscreenOpen}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      onFullscreenOpen?.();
+                    }
+                  }}
+                >
+                  {trackTitle}
+                </span>
               </p>
               <p
                 className="m-0 mt-[4px] flex min-w-0 items-center gap-[5px] text-[13px] font-[300] text-text-tertiary"

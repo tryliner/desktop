@@ -1,7 +1,6 @@
 const TEXT_ENTRY_TAGS = new Set(["INPUT", "TEXTAREA", "SELECT"]);
 
 const SPACE_CONSUMING_ROLES = new Set([
-  "button",
   "switch",
   "checkbox",
   "radio",
@@ -52,8 +51,7 @@ export function isKeyHandledByFocusedControl(
   const role = target.getAttribute("role");
 
   if (code === "Space") {
-    if (target.tagName === "BUTTON" || target.tagName === "SELECT") return true;
-    if (target.tagName === "A" && target.hasAttribute("href")) return true;
+    if (target.tagName === "SELECT") return true;
     return role !== null && SPACE_CONSUMING_ROLES.has(role);
   }
 

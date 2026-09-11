@@ -72,6 +72,15 @@ describe("Lyrics Animator Clock Synchronization logic", () => {
     // After word
     expect(calcWordProgress(5000, word)).toBe(100);
   });
+
+  it("short words with zero duration are 0% before timeMs and 100% once reached", () => {
+    const shortWord = { timeMs: 2500, endMs: 2500, text: "a" };
+
+    expect(calcWordProgress(1000, shortWord)).toBe(0);
+    expect(calcWordProgress(2499, shortWord)).toBe(0);
+    expect(calcWordProgress(2500, shortWord)).toBe(100);
+    expect(calcWordProgress(3000, shortWord)).toBe(100);
+  });
 });
 
 function calcWordProgress(estimatedMs: number, w: { timeMs: number; endMs: number }) {

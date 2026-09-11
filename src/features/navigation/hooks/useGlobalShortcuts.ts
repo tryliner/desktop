@@ -19,22 +19,27 @@ const NON_REPEATABLE_CODES = new Set([
   "Space",
   "KeyF",
   "KeyQ",
+  "KeyL",
   "KeyM",
   "Slash",
   "Escape",
 ]);
+
+export type RightPanelTab = "queue" | "lyrics";
 
 export interface GlobalShortcutsOptions {
   enabled?: boolean;
   searchOpen: boolean;
   openSearch: () => void;
   closeSearch: () => void;
-  queueOpen: boolean;
-  openQueue: () => void;
-  closeQueue: () => void;
+  rightPanelOpen: boolean;
+  rightPanelTab: RightPanelTab;
+  openRightPanel: (tab: RightPanelTab) => void;
+  closeRightPanel: () => void;
   fullscreenOpen: boolean;
   openFullscreen: () => void;
   closeFullscreen: () => void;
+  onEscapeFallback?: () => boolean;
 }
 
 export function useGlobalShortcuts(options: GlobalShortcutsOptions): void {
@@ -59,15 +64,18 @@ export function useGlobalShortcuts(options: GlobalShortcutsOptions): void {
           opts.closeSearch();
           return;
         }
-        if (opts.queueOpen) {
+        if (opts.rightPanelOpen) {
           event.preventDefault();
-          opts.closeQueue();
+          opts.closeRightPanel();
           return;
         }
         if (opts.fullscreenOpen) {
           event.preventDefault();
           opts.closeFullscreen();
           return;
+        }
+        if (opts.onEscapeFallback?.()) {
+          event.preventDefault();
         }
         return;
       }
@@ -85,14 +93,26 @@ export function useGlobalShortcuts(options: GlobalShortcutsOptions): void {
         }
         case "KeyF": {
           event.preventDefault();
-          if (opts.fullscreenOpen) opts.closeFullscreen();
-          else opts.openFullscreen();
+          if (opts.fullscreenOpen) {
+            opts.closeFullscreen();
+          } else {
+            const { currentTrack, status } = usePlayerStore.getState();
+            if (currentTrack !== null && status !== "idle") {
+              opts.openFullscreen();
+            }
+          }
           return;
         }
         case "KeyQ": {
           event.preventDefault();
-          if (opts.queueOpen) opts.closeQueue();
-          else opts.openQueue();
+          if (opts.rightPanelOpen && opts.rightPanelTab === "queue") opts.closeRightPanel();
+          else opts.openRightPanel("queue");
+          return;
+        }
+        case "KeyL": {
+          event.preventDefault();
+          if (opts.rightPanelOpen && opts.rightPanelTab === "lyrics") opts.closeRightPanel();
+          else opts.openRightPanel("lyrics");
           return;
         }
         case "KeyM": {

@@ -4,7 +4,19 @@ import { createRoot, Root } from "react-dom/client";
 import { act } from "react";
 import { useGlobalShortcuts, type GlobalShortcutsOptions } from "./useGlobalShortcuts";
 
-const playerState = { volume: 1, positionMs: 10_000, durationMs: 60_000 };
+const playerState: {
+  volume: number;
+  positionMs: number;
+  durationMs: number;
+  currentTrack: { id: string } | null;
+  status: "idle" | "loading" | "playing" | "paused" | "error";
+} = {
+  volume: 1,
+  positionMs: 10_000,
+  durationMs: 60_000,
+  currentTrack: null,
+  status: "idle",
+};
 
 vi.mock("@/features/player", () => ({
   playerEngine: {
@@ -28,9 +40,10 @@ function baseOptions(overrides: Partial<GlobalShortcutsOptions> = {}): GlobalSho
     searchOpen: false,
     openSearch: vi.fn(),
     closeSearch: vi.fn(),
-    queueOpen: false,
-    openQueue: vi.fn(),
-    closeQueue: vi.fn(),
+    rightPanelOpen: false,
+    rightPanelTab: "queue",
+    openRightPanel: vi.fn(),
+    closeRightPanel: vi.fn(),
     fullscreenOpen: false,
     openFullscreen: vi.fn(),
     closeFullscreen: vi.fn(),
@@ -78,6 +91,8 @@ describe("useGlobalShortcuts", () => {
     playerState.volume = 1;
     playerState.positionMs = 10_000;
     playerState.durationMs = 60_000;
+    playerState.currentTrack = null;
+    playerState.status = "idle";
   });
 
   afterEach(() => {
@@ -110,7 +125,10 @@ describe("useGlobalShortcuts", () => {
     expect(event.defaultPrevented).toBe(false);
   });
 
-  it("F opens Fullscreen Player when closed, and closes it when open", () => {
+  it("F opens Fullscreen Player when closed and a track is loaded, and closes it when open", () => {
+    playerState.currentTrack = { id: "track-1" };
+    playerState.status = "playing";
+
     const openFullscreen = vi.fn();
     mounted = mount(baseOptions({ fullscreenOpen: false, openFullscreen }));
     press("KeyF");
@@ -125,13 +143,68 @@ describe("useGlobalShortcuts", () => {
     expect(closeFullscreen).toHaveBeenCalledTimes(1);
   });
 
-  it("Q opens and closes the Queue without affecting playback", () => {
-    const openQueue = vi.fn();
-    mounted = mount(baseOptions({ queueOpen: false, openQueue }));
+  it("F does nothing when no track is loaded/playing", () => {
+    playerState.currentTrack = null;
+    playerState.status = "idle";
+
+    const openFullscreen = vi.fn();
+    mounted = mount(baseOptions({ fullscreenOpen: false, openFullscreen }));
+    press("KeyF");
+    expect(openFullscreen).not.toHaveBeenCalled();
+  });
+
+  it("Q opens the right panel on the Queue tab when closed, and closes it when already on Queue", () => {
+    const openRightPanel = vi.fn();
+    mounted = mount(baseOptions({ rightPanelOpen: false, openRightPanel }));
     press("KeyQ");
-    expect(openQueue).toHaveBeenCalledTimes(1);
+    expect(openRightPanel).toHaveBeenCalledWith("queue");
     expect(playerEngine.togglePlayPause).not.toHaveBeenCalled();
     expect(playerEngine.seek).not.toHaveBeenCalled();
+
+    act(() => mounted!.root.unmount());
+    document.body.removeChild(mounted.container);
+
+    const closeRightPanel = vi.fn();
+    mounted = mount(baseOptions({ rightPanelOpen: true, rightPanelTab: "queue", closeRightPanel }));
+    press("KeyQ");
+    expect(closeRightPanel).toHaveBeenCalledTimes(1);
+  });
+
+  it("Q switches to the Queue tab (without closing) when the panel is open on Lyrics", () => {
+    const openRightPanel = vi.fn();
+    const closeRightPanel = vi.fn();
+    mounted = mount(
+      baseOptions({ rightPanelOpen: true, rightPanelTab: "lyrics", openRightPanel, closeRightPanel }),
+    );
+    press("KeyQ");
+    expect(openRightPanel).toHaveBeenCalledWith("queue");
+    expect(closeRightPanel).not.toHaveBeenCalled();
+  });
+
+  it("L opens the right panel on the Lyrics tab when closed, and closes it when already on Lyrics", () => {
+    const openRightPanel = vi.fn();
+    mounted = mount(baseOptions({ rightPanelOpen: false, openRightPanel }));
+    press("KeyL");
+    expect(openRightPanel).toHaveBeenCalledWith("lyrics");
+
+    act(() => mounted!.root.unmount());
+    document.body.removeChild(mounted.container);
+
+    const closeRightPanel = vi.fn();
+    mounted = mount(baseOptions({ rightPanelOpen: true, rightPanelTab: "lyrics", closeRightPanel }));
+    press("KeyL");
+    expect(closeRightPanel).toHaveBeenCalledTimes(1);
+  });
+
+  it("L switches to the Lyrics tab (without closing) when the panel is open on Queue", () => {
+    const openRightPanel = vi.fn();
+    const closeRightPanel = vi.fn();
+    mounted = mount(
+      baseOptions({ rightPanelOpen: true, rightPanelTab: "queue", openRightPanel, closeRightPanel }),
+    );
+    press("KeyL");
+    expect(openRightPanel).toHaveBeenCalledWith("lyrics");
+    expect(closeRightPanel).not.toHaveBeenCalled();
   });
 
   it("M mutes and restores the previous volume level on toggle", () => {
@@ -214,15 +287,15 @@ describe("useGlobalShortcuts", () => {
     expect(event.defaultPrevented).toBe(false);
   });
 
-  it("lets a focused button handle Space instead of toggling playback", () => {
+  it("Space toggles playback even when a button happens to be focused", () => {
     const button = document.createElement("button");
     document.body.appendChild(button);
 
     mounted = mount(baseOptions());
     const event = press("Space", {}, button);
 
-    expect(playerEngine.togglePlayPause).not.toHaveBeenCalled();
-    expect(event.defaultPrevented).toBe(false);
+    expect(playerEngine.togglePlayPause).toHaveBeenCalledTimes(1);
+    expect(event.defaultPrevented).toBe(true);
   });
 
   it("ignores shortcuts combined with Ctrl/Cmd/Alt so browser shortcuts keep working", () => {
@@ -262,53 +335,68 @@ describe("useGlobalShortcuts", () => {
   });
 
   describe("Escape priority", () => {
-    it("closes Search first when Search, Queue and Fullscreen are all open", () => {
+    it("closes Search first when Search, the right panel and Fullscreen are all open", () => {
       const closeSearch = vi.fn();
-      const closeQueue = vi.fn();
+      const closeRightPanel = vi.fn();
       const closeFullscreen = vi.fn();
       mounted = mount(
         baseOptions({
           searchOpen: true,
           closeSearch,
-          queueOpen: true,
-          closeQueue,
+          rightPanelOpen: true,
+          closeRightPanel,
           fullscreenOpen: true,
           closeFullscreen,
         }),
       );
       press("Escape");
       expect(closeSearch).toHaveBeenCalledTimes(1);
-      expect(closeQueue).not.toHaveBeenCalled();
+      expect(closeRightPanel).not.toHaveBeenCalled();
       expect(closeFullscreen).not.toHaveBeenCalled();
     });
 
-    it("closes Queue next once Search is already closed", () => {
-      const closeQueue = vi.fn();
+    it("closes the right panel next once Search is already closed", () => {
+      const closeRightPanel = vi.fn();
       const closeFullscreen = vi.fn();
       mounted = mount(
         baseOptions({
           searchOpen: false,
-          queueOpen: true,
-          closeQueue,
+          rightPanelOpen: true,
+          closeRightPanel,
           fullscreenOpen: true,
           closeFullscreen,
         }),
       );
       press("Escape");
-      expect(closeQueue).toHaveBeenCalledTimes(1);
+      expect(closeRightPanel).toHaveBeenCalledTimes(1);
       expect(closeFullscreen).not.toHaveBeenCalled();
     });
 
-    it("closes Fullscreen Player last", () => {
+    it("closes Fullscreen Player next", () => {
       const closeFullscreen = vi.fn();
       mounted = mount(
-        baseOptions({ searchOpen: false, queueOpen: false, fullscreenOpen: true, closeFullscreen }),
+        baseOptions({ searchOpen: false, rightPanelOpen: false, fullscreenOpen: true, closeFullscreen }),
       );
       press("Escape");
       expect(closeFullscreen).toHaveBeenCalledTimes(1);
     });
 
-    it("does nothing when there is no dismissible overlay open", () => {
+    it("falls back to the caller's Escape handler last (e.g. navigating back on the artist page)", () => {
+      const onEscapeFallback = vi.fn(() => true);
+      mounted = mount(baseOptions({ onEscapeFallback }));
+      const event = press("Escape");
+      expect(onEscapeFallback).toHaveBeenCalledTimes(1);
+      expect(event.defaultPrevented).toBe(true);
+    });
+
+    it("does nothing when there is no dismissible overlay open and the fallback declines", () => {
+      const onEscapeFallback = vi.fn(() => false);
+      mounted = mount(baseOptions({ onEscapeFallback }));
+      const event = press("Escape");
+      expect(event.defaultPrevented).toBe(false);
+    });
+
+    it("does nothing when there is no dismissible overlay and no fallback is provided", () => {
       mounted = mount(baseOptions());
       const event = press("Escape");
       expect(event.defaultPrevented).toBe(false);

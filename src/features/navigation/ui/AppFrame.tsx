@@ -22,6 +22,7 @@ import WindowControls from "./WindowControls";
 import PageTransition from "./PageTransition";
 import RightDrawer from "./RightDrawer";
 import { useGlobalShortcuts } from "../hooks/useGlobalShortcuts";
+import { useDisableButtonFocus } from "../hooks/useDisableButtonFocus";
 import {
   useSearchTracks,
   useSearchAll,
@@ -56,6 +57,7 @@ interface AppFrameProps {
 const RIGHT_DRAWER_WIDTH = 420;
 const SIDEBAR_WIDTH = 58;
 const SHELL_EDGE_GAP = 12;
+const SEARCH_QUERY_CACHE_TTL_MS = 60_000;
 const LEGACY_LAYOUT_STORAGE_KEYS = [
   "liner_right_sidebar",
   "liner_sidebar_position",
@@ -77,7 +79,13 @@ export default function AppFrame({ children }: AppFrameProps) {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [queuePopupOpen, setQueuePopupOpen] = useState(false);
+  const [rightDrawerTab, setRightDrawerTabState] = useState<"queue" | "lyrics">(() => {
+    if (typeof window === "undefined") return "queue";
+    const saved = window.localStorage.getItem("liner_right_drawer_tab");
+    return saved === "queue" || saved === "lyrics" ? saved : "queue";
+  });
   const [fullscreenPlayerOpen, setFullscreenPlayerOpen] = useState(false);
+  const [fullscreenEffectsReady, setFullscreenEffectsReady] = useState(false);
 
   useEffect(() => {
     if (pathname === "/settings") {
@@ -142,7 +150,12 @@ export default function AppFrame({ children }: AppFrameProps) {
   }, []);
 
   useEffect(() => {
-    if (!searchOpen) return;
+    if (!searchOpen) {
+      const timeoutId = setTimeout(() => {
+        setSearchQuery("");
+      }, SEARCH_QUERY_CACHE_TTL_MS);
+      return () => clearTimeout(timeoutId);
+    }
     const id = requestAnimationFrame(updateSearchMask);
     requestAnimationFrame(() => searchInputRef.current?.focus());
     return () => cancelAnimationFrame(id);
@@ -201,19 +214,42 @@ export default function AppFrame({ children }: AppFrameProps) {
     }
   }, [fullscreenPlayerOpen, isFullscreenRoute, navigate]);
 
-  const handleOpenQueue = useCallback(() => setQueuePopupOpen(true), []);
-  const handleCloseQueue = useCallback(() => setQueuePopupOpen(false), []);
+  const setRightDrawerTab = useCallback((tab: "queue" | "lyrics") => {
+    setRightDrawerTabState(tab);
+    localStorage.setItem("liner_right_drawer_tab", tab);
+  }, []);
+
+  const openRightPanel = useCallback(
+    (tab: "queue" | "lyrics") => {
+      setRightDrawerTab(tab);
+      setQueuePopupOpen(true);
+    },
+    [setRightDrawerTab],
+  );
+  const closeRightPanel = useCallback(() => setQueuePopupOpen(false), []);
+
+  const isArtistRoute = pathname === "/artist";
+  const handleEscapeFallback = useCallback(() => {
+    if (!isArtistRoute) return false;
+    if (window.history.length > 1) navigate(-1);
+    else navigate("/library");
+    return true;
+  }, [isArtistRoute, navigate]);
+
+  useDisableButtonFocus();
 
   useGlobalShortcuts({
     searchOpen,
     openSearch,
     closeSearch,
-    queueOpen: queuePopupOpen,
-    openQueue: handleOpenQueue,
-    closeQueue: handleCloseQueue,
+    rightPanelOpen: queuePopupOpen,
+    rightPanelTab: rightDrawerTab,
+    openRightPanel,
+    closeRightPanel,
     fullscreenOpen: isFullscreenPlayer,
     openFullscreen: openFullscreenPlayer,
     closeFullscreen: handleCloseFullscreen,
+    onEscapeFallback: handleEscapeFallback,
   });
   const [searchScrollMask, setSearchScrollMask] = useState(
     "linear-gradient(to bottom, black 0%, black 100%)",
@@ -587,7 +623,10 @@ export default function AppFrame({ children }: AppFrameProps) {
                 }}
               >
                 <div className="absolute inset-y-[12px] right-[12px] w-[408px]">
-                  <RightDrawer />
+                  <RightDrawer
+                    activeTab={rightDrawerTab}
+                    onTabChange={setRightDrawerTab}
+                  />
                 </div>
               </motion.aside>
             )}
@@ -618,9 +657,13 @@ export default function AppFrame({ children }: AppFrameProps) {
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
             transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+            onAnimationComplete={() => setFullscreenEffectsReady(fullscreenPlayerOpen)}
             className="dark absolute inset-0 z-[70] overflow-hidden bg-black will-change-transform"
           >
-            <FullscreenPlayer onClose={closeFullscreenPlayer} />
+            <FullscreenPlayer
+              onClose={closeFullscreenPlayer}
+              effectsReady={fullscreenEffectsReady}
+            />
           </motion.div>
         ) : isFullscreenRoute ? (
           <div data-theme="dark" className="dark absolute inset-0 z-[70] overflow-hidden bg-black">

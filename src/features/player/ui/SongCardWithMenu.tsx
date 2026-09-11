@@ -32,6 +32,8 @@ export interface SongCardWithMenuProps {
   onNavigate?: () => void;
   compact?: boolean;
   icon?: React.ReactNode;
+  showReorderHandle?: boolean;
+  onGrabStart?: (e: React.PointerEvent<HTMLDivElement>) => void;
 }
 
 function SongCardWithMenu({
@@ -58,6 +60,8 @@ function SongCardWithMenu({
   onNavigate,
   compact,
   icon,
+  showReorderHandle,
+  onGrabStart,
 }: SongCardWithMenuProps) {
   const resolvedDurationMs = useMemo(() => {
     if (durationMs !== undefined) return durationMs;
@@ -166,6 +170,8 @@ function SongCardWithMenu({
       onNavigate={onNavigate}
       compact={compact}
       icon={icon}
+      showReorderHandle={showReorderHandle}
+      onGrabStart={onGrabStart}
     />
   );
 }

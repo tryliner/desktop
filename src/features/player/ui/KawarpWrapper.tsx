@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { KawarpEngine } from "../engine/kawarpEngine";
+import { getCoverElement } from "@/features/covers";
 
 interface KawarpWrapperProps {
   src?: string;
@@ -76,7 +77,7 @@ export function KawarpWrapper({ src, onLoad, onError }: KawarpWrapperProps) {
     if (!engine || !src) return;
 
     engine
-      .loadImage(src)
+      .loadImage(src, getCoverElement(src))
       .then(() => {
         setLoaded(true);
         onLoad?.();

@@ -1,10 +1,11 @@
-import { useState, useEffect, useRef, memo, useCallback } from "react";
+import { useState, useEffect, useRef, memo, useCallback, useMemo } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { usePlayerState, playerEngine } from "@/features/player";
 import SongCardWithMenu from "@/features/player/ui/SongCardWithMenu";
 import { useLyricsStore, type WordData, useLyricsAnimator } from "@/features/lyrics";
 import { useTranslation } from "@/languages";
-import { useToast } from "@/shared/ui";
+import { useToast, ReorderDropPlaceholder, FloatingDragCard } from "@/shared/ui";
+import { useListReorder } from "@/shared/hooks";
 import { FiMusic } from "react-icons/fi";
 
 const QueueList = memo(function QueueList({
@@ -13,85 +14,185 @@ const QueueList = memo(function QueueList({
   currentIndex,
   playbackContext,
   playbackContextCover,
+  scrollContainerRef,
 }: {
   queue: any[];
   queueLimit: number;
   currentIndex: number;
   playbackContext: any;
   playbackContextCover: any;
+  scrollContainerRef: React.RefObject<HTMLDivElement | null>;
 }) {
+  const visibleQueue = useMemo(
+    () => queue.slice(0, queueLimit),
+    [queue, queueLimit],
+  );
+
+  const queueContainerRef = useRef<HTMLDivElement>(null);
+
+  const handleReorder = useCallback((fromIndex: number, toIndex: number) => {
+    playerEngine.reorderQueue(fromIndex, toIndex);
+  }, []);
+
+  const {
+    isDragging,
+    dragIndex,
+    dropIndex,
+    draggedItem,
+    pointerPos,
+    grabOffset,
+    itemWidth,
+    handleCardGrab,
+  } = useListReorder<any>({
+    items: visibleQueue,
+    scrollContainerRef,
+    listContainerRef: queueContainerRef,
+    itemHeight: 70,
+    onReorder: handleReorder,
+    edgeThreshold: 70,
+    maxScrollSpeed: 18,
+  });
+
   return (
-    <div className="flex flex-col gap-[2px]">
-      <AnimatePresence mode="popLayout" initial={false}>
-        {queue.slice(0, queueLimit).map((item, index) => {
-          const isCurrent = index === currentIndex;
-          return (
-            <motion.div
-              key={`${item.id}-${index}`}
-              layout
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.96 }}
-              transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-            >
-              <SongCardWithMenu
-                id={item.id}
-                title={item.title}
-                artists={item.artists}
-                artistId={item.artistId}
-                artistList={item.artistList}
-                explicit={item.explicit}
-                durationMs={item.durationMs}
-                coverUrl={
-                  item.coverUrl ?? (item as { cover_url?: string }).cover_url ?? ""
-                }
-                className={`px-[12px] py-[10px] rounded-[12px] transition-all duration-200 ${
-                  isCurrent
-                    ? "bg-border-alpha-14"
-                    : "bg-transparent hover:bg-border-alpha-14"
-                }`}
-                imageShape="square"
-                onPlay={() => {
-                  void playerEngine.playTrack(
-                    item,
-                    queue,
-                    playbackContext,
-                    playbackContextCover,
-                    index,
-                  );
-                }}
-              />
-            </motion.div>
-          );
-        })}
-      </AnimatePresence>
+    <div
+      ref={queueContainerRef}
+      className="relative w-full"
+      style={{ height: `${visibleQueue.length * 70}px` }}
+    >
+      {isDragging && dropIndex !== null && (
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "70px",
+            transform: `translateY(${dropIndex * 70}px)`,
+            transition: "transform 180ms cubic-bezier(0.2, 0, 0, 1)",
+            pointerEvents: "none",
+            zIndex: 0,
+          }}
+          className="px-0 py-[2px]"
+        >
+          <ReorderDropPlaceholder />
+        </div>
+      )}
+
+      {visibleQueue.map((item, index) => {
+        const isCurrent = index === currentIndex;
+        const isThisDragged = isDragging && index === dragIndex;
+
+        let shiftY = 0;
+        if (isDragging && dragIndex !== null && dropIndex !== null && index !== dragIndex) {
+          if (dragIndex < dropIndex) {
+            if (index > dragIndex && index <= dropIndex) shiftY = -70;
+          } else if (dragIndex > dropIndex) {
+            if (index >= dropIndex && index < dragIndex) shiftY = 70;
+          }
+        }
+
+        return (
+          <div
+            key={`${item.id}-${index}`}
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "70px",
+              transform: `translateY(${index * 70 + shiftY}px)`,
+              transition: isDragging
+                ? "transform 180ms cubic-bezier(0.2, 0, 0, 1)"
+                : undefined,
+              opacity: isThisDragged ? 0 : 1,
+              zIndex: 1,
+            }}
+            className="px-0 py-[1px]"
+          >
+            <SongCardWithMenu
+              id={item.id}
+              title={item.title}
+              artists={item.artists}
+              artistId={item.artistId}
+              artistList={item.artistList}
+              explicit={item.explicit}
+              durationMs={item.durationMs}
+              coverUrl={
+                item.coverUrl ?? (item as { cover_url?: string }).cover_url ?? ""
+              }
+              showReorderHandle
+              onGrabStart={
+                !isDragging
+                  ? (e) => handleCardGrab(index, item, e)
+                  : undefined
+              }
+              className={`px-[12px] py-[10px] rounded-[12px] transition-colors duration-150 ${
+                isCurrent
+                  ? "bg-border-alpha-14"
+                  : "bg-transparent hover:bg-border-alpha-14"
+              }`}
+              imageShape="square"
+              onPlay={() => {
+                if (typeof window !== "undefined" && window.__linerWasDragging) return;
+                void playerEngine.playTrack(
+                  item,
+                  queue,
+                  playbackContext,
+                  playbackContextCover,
+                  index,
+                );
+              }}
+            />
+          </div>
+        );
+      })}
+
+      {isDragging && draggedItem && (
+        <FloatingDragCard
+          x={pointerPos.x}
+          y={pointerPos.y}
+          offsetX={grabOffset.x}
+          offsetY={grabOffset.y}
+          width={itemWidth}
+        >
+          <SongCardWithMenu
+            id={draggedItem.id}
+            title={draggedItem.title}
+            artists={draggedItem.artists}
+            artistId={draggedItem.artistId}
+            artistList={draggedItem.artistList}
+            explicit={draggedItem.explicit}
+            durationMs={draggedItem.durationMs}
+            coverUrl={
+              draggedItem.coverUrl ??
+              (draggedItem as { cover_url?: string }).cover_url ??
+              ""
+            }
+            className="px-[12px] py-[10px] rounded-md bg-transparent"
+            imageShape="square"
+          />
+        </FloatingDragCard>
+      )}
     </div>
   );
 });
 
-function RightDrawer() {
+export interface RightDrawerProps {
+  activeTab: "queue" | "lyrics";
+  onTabChange: (tab: "queue" | "lyrics") => void;
+}
+
+function RightDrawer({ activeTab, onTabChange }: RightDrawerProps) {
   const player = usePlayerState();
   const { t } = useTranslation();
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState<"queue" | "lyrics">("queue");
+  const queueScrollRef = useRef<HTMLDivElement>(null);
   const activeTabRef = useRef<"queue" | "lyrics">(activeTab);
 
   useEffect(() => {
     activeTabRef.current = activeTab;
   }, [activeTab]);
   const [queueLimit, setQueueLimit] = useState(50);
-
-  useEffect(() => {
-    const saved = localStorage.getItem("liner_right_drawer_tab");
-    if (saved === "queue" || saved === "lyrics") {
-      setActiveTab(saved);
-    }
-  }, []);
-
-  const handleTabChange = (tab: "queue" | "lyrics") => {
-    setActiveTab(tab);
-    localStorage.setItem("liner_right_drawer_tab", tab);
-  };
 
   const {
     lyricsLoading,
@@ -170,9 +271,7 @@ function RightDrawer() {
   useEffect(() => {
     effectiveSyncedLines.forEach((line, i) => {
       const words = line.words || [];
-      const animatedWords = words.filter(
-        (w) => w.text.trim().length > 0 && w.endMs > w.timeMs,
-      );
+      const animatedWords = words.filter((w) => w.text.trim().length > 0);
       if (animatedWords.length > 0) {
         setWordData(
           i,
@@ -243,12 +342,10 @@ function RightDrawer() {
 
     const words = wordsToRender;
     const hasBg = words.some((w) => w.isBackground);
-    const animatedWords = words.filter(
-      (word) => word.text.trim().length > 0 && word.endMs > word.timeMs,
-    );
+    const animatedWords = words.filter((word) => word.text.trim().length > 0);
 
     const renderPart = (word: WordData, key: number, className = "") => {
-      if (!word.text.trim() || word.endMs <= word.timeMs) return word.text;
+      if (!word.text.trim()) return word.text;
       const animIdx = animatedWords.indexOf(word);
       return (
         <span key={key} className="inline">
@@ -320,7 +417,7 @@ function RightDrawer() {
       <div className="flex items-center pt-[24px] border-b-[0.5px] border-border-primary shrink-0">
         <button
           type="button"
-          onClick={() => handleTabChange("queue")}
+          onClick={() => onTabChange("queue")}
           className={`flex-1 pb-[14px] relative -mb-[0.5px] border-b-[2px] text-[15px] font-[500] transition-colors duration-200 border-none bg-transparent cursor-pointer ${
             activeTab === "queue"
               ? "border-text-primary text-text-primary"
@@ -335,7 +432,7 @@ function RightDrawer() {
         </button>
         <button
           type="button"
-          onClick={() => handleTabChange("lyrics")}
+          onClick={() => onTabChange("lyrics")}
           className={`flex-1 pb-[14px] relative -mb-[0.5px] border-b-[2px] text-[15px] font-[500] transition-colors duration-200 border-none bg-transparent cursor-pointer ${
             activeTab === "lyrics"
               ? "border-text-primary text-text-primary"
@@ -354,33 +451,35 @@ function RightDrawer() {
       <div className="flex-1 overflow-hidden relative">
         {activeTab === "queue" && (
           <div
+            ref={queueScrollRef}
             className="absolute inset-0 overflow-y-auto px-[12px] py-[12px]"
-              onScroll={(e) => {
-                const target = e.currentTarget;
-                if (
-                  target.scrollHeight - target.scrollTop <=
-                  target.clientHeight * 1.5
-                ) {
-                  setQueueLimit((prev) =>
-                    Math.min(prev + 50, player.queue.length),
-                  );
-                }
-              }}
-            >
-              {player.queue.length > 0 ? (
-                <QueueList
-                  queue={player.queue}
-                  queueLimit={queueLimit}
-                  currentIndex={player.currentIndex}
-                  playbackContext={player.playbackContext}
-                  playbackContextCover={player.playbackContextCover}
-                />
-              ) : (
-                <div className="h-full flex items-center justify-center text-text-tertiary text-[14px]">
-                  {t("player.queue_empty")}
-                </div>
-              )}
-            </div>
+            onScroll={(e) => {
+              const target = e.currentTarget;
+              if (
+                target.scrollHeight - target.scrollTop <=
+                target.clientHeight * 1.5
+              ) {
+                setQueueLimit((prev) =>
+                  Math.min(prev + 50, player.queue.length),
+                );
+              }
+            }}
+          >
+            {player.queue.length > 0 ? (
+              <QueueList
+                queue={player.queue}
+                queueLimit={queueLimit}
+                currentIndex={player.currentIndex}
+                playbackContext={player.playbackContext}
+                playbackContextCover={player.playbackContextCover}
+                scrollContainerRef={queueScrollRef}
+              />
+            ) : (
+              <div className="h-full flex items-center justify-center text-text-tertiary text-[14px]">
+                {t("player.queue_empty")}
+              </div>
+            )}
+          </div>
         )}
 
         {activeTab === "lyrics" && (

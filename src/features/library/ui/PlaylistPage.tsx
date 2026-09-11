@@ -2,7 +2,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { useCallback, useEffect, useMemo, useRef, useState, Suspense } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import PlaylistPageSkeleton from "./PlaylistPageSkeleton";
-import { useToast } from "@/shared/ui";
+import { useToast, ReorderDropPlaceholder, FloatingDragCard } from "@/shared/ui";
 import {
   AddLine,
   ArrowLeftLine,
@@ -27,6 +27,7 @@ import {
   useLikedTracks,
   useReorderPlaylistTracks,
 } from "../hooks";
+import { useListReorder } from "@/shared/hooks";
 import { playerEngine } from "@/features/player";
 import type { Track } from "@/shared/types";
 import { useTranslation } from "@/languages";
@@ -40,7 +41,8 @@ interface TrackItemProps {
   playlistCoverUrl: string;
   allTracks: Track[];
   style?: React.CSSProperties;
-  onMove?: (itemId: string, beforeItemId: string) => void;
+  showReorderHandle?: boolean;
+  onGrabStart?: (e: React.PointerEvent<HTMLDivElement>) => void;
 }
 
 function TrackItem({
@@ -50,34 +52,11 @@ function TrackItem({
   playlistCoverUrl,
   allTracks,
   style,
-  onMove,
+  showReorderHandle,
+  onGrabStart,
 }: TrackItemProps) {
-  const wasDraggedRef = useRef(false);
-
   return (
-    <div
-      style={style}
-      draggable={Boolean(playlistId && track.playlistItemId)}
-      onDragStart={(event) => {
-        if (!track.playlistItemId) return;
-        event.dataTransfer.effectAllowed = "move";
-        event.dataTransfer.setData(
-          "application/x-liner-playlist-item",
-          track.playlistItemId,
-        );
-      }}
-      onDragOver={(event) => {
-        if (playlistId && track.playlistItemId) event.preventDefault();
-      }}
-      onDrop={(event) => {
-        event.preventDefault();
-        const itemId = event.dataTransfer.getData(
-          "application/x-liner-playlist-item",
-        );
-        if (itemId && itemId !== track.playlistItemId && track.playlistItemId)
-          onMove?.(itemId, track.playlistItemId);
-      }}
-    >
+    <div style={style} data-reorder-item>
       <SongCardWithMenu
         id={track.id}
         title={track.title}
@@ -88,6 +67,8 @@ function TrackItem({
         playlistId={playlistId}
         playlistItemId={track.playlistItemId}
         playlistTitle={playlistTitle}
+        showReorderHandle={showReorderHandle}
+        onGrabStart={onGrabStart}
         duration={
           track.durationMs
             ? `${Math.floor(track.durationMs / 60000)}:${String(
@@ -98,7 +79,7 @@ function TrackItem({
         durationMs={track.durationMs}
         explicit={track.explicit}
         onPlay={() => {
-          if (wasDraggedRef.current) return;
+          if (typeof window !== "undefined" && window.__linerWasDragging) return;
           const context = playlistId ? `playlist:${playlistId}` : playlistTitle;
           playerEngine.playTrack(
             track,
@@ -228,21 +209,62 @@ function LibraryPlaylistContent() {
     return () => clearTimeout(timer);
   }, [viewData, toast, t]);
 
-  const handleMoveTrack = useCallback(
-    (itemId: string, beforeItemId: string) => {
+  const trackListContainerRef = useRef<HTMLDivElement>(null);
+  const [optimisticTracks, setOptimisticTracks] = useState<Track[] | null>(null);
+
+  useEffect(() => {
+    setOptimisticTracks(null);
+  }, [viewData?.revision, decodedId]);
+
+  const currentTracks = useMemo(() => {
+    return optimisticTracks ?? viewData?.tracks ?? [];
+  }, [optimisticTracks, viewData?.tracks]);
+
+  const handleReorderCommit = useCallback(
+    (fromIndex: number, toIndex: number, movingTrack: Track) => {
       if (!decodedId || !viewData || isLikesMode) return;
+      if (fromIndex === toIndex || !movingTrack.playlistItemId) return;
+
+      const nextList = [...currentTracks];
+      const [item] = nextList.splice(fromIndex, 1);
+      nextList.splice(toIndex, 0, item);
+
+      const nextItem = nextList[toIndex + 1];
+      const beforeItemId = nextItem ? (nextItem.playlistItemId ?? null) : null;
+
+      setOptimisticTracks(nextList);
+
       reorderTracks.mutate({
         playlistId: decodedId,
-        itemId,
+        itemId: movingTrack.playlistItemId,
         beforeItemId,
         revision: viewData.revision,
       });
     },
-    [decodedId, isLikesMode, reorderTracks, viewData],
+    [currentTracks, decodedId, isLikesMode, reorderTracks, viewData],
   );
 
+  const {
+    isDragging,
+    dragIndex,
+    dropIndex,
+    draggedItem,
+    pointerPos,
+    grabOffset,
+    itemWidth,
+    handleCardGrab,
+  } = useListReorder<Track>({
+    items: currentTracks,
+    scrollContainerRef: scrollRef,
+    listContainerRef: trackListContainerRef,
+    itemHeight: 64,
+    onReorder: handleReorderCommit,
+    edgeThreshold: 80,
+    maxScrollSpeed: 22,
+  });
+
   const rowVirtualizer = useVirtualizer({
-    count: viewData?.tracks.length || 0,
+    count: currentTracks.length,
     getScrollElement: () => scrollRef.current,
     estimateSize: () => 64,
     overscan: 10,
@@ -678,36 +700,116 @@ function LibraryPlaylistContent() {
 
               {/* Track list */}
               <div
+                ref={trackListContainerRef}
                 className="relative mt-[16px]"
                 style={{
                   height: `${rowVirtualizer.getTotalSize()}px`,
                 }}
               >
+                {isDragging && dropIndex !== null && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      width: "100%",
+                      height: "64px",
+                      transform: `translateY(${dropIndex * 64}px)`,
+                      transition: "transform 180ms cubic-bezier(0.2, 0, 0, 1)",
+                      pointerEvents: "none",
+                      zIndex: 0,
+                    }}
+                    className="px-0 py-[2px]"
+                  >
+                    <ReorderDropPlaceholder />
+                  </div>
+                )}
+
                 {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-                  const track = viewData!.tracks[virtualRow.index];
+                  const index = virtualRow.index;
+                  const track = currentTracks[index];
+                  if (!track) return null;
+
+                  const isThisDragged = isDragging && index === dragIndex;
+
+                  let shiftY = 0;
+                  if (isDragging && dragIndex !== null && dropIndex !== null && index !== dragIndex) {
+                    if (dragIndex < dropIndex) {
+                      if (index > dragIndex && index <= dropIndex) shiftY = -64;
+                    } else if (dragIndex > dropIndex) {
+                      if (index >= dropIndex && index < dragIndex) shiftY = 64;
+                    }
+                  }
+
+                  const canReorder = Boolean(
+                    !isLikesMode && decodedId && track.playlistItemId,
+                  );
+
                   return (
                     <TrackItem
                       key={
-                        track.playlistItemId ?? `${track.id}-${virtualRow.index}`
+                        track.playlistItemId ?? `${track.id}-${index}`
                       }
                       track={track}
                       playlistId={isLikesMode ? undefined : (decodedId ?? undefined)}
-                      playlistTitle={viewData!.title}
-                      playlistCoverUrl={viewData!.coverUrl}
-                      allTracks={viewData!.tracks}
-                      onMove={handleMoveTrack}
+                      playlistTitle={viewData.title}
+                      playlistCoverUrl={viewData.coverUrl}
+                      allTracks={currentTracks}
+                      showReorderHandle={canReorder}
+                      onGrabStart={
+                        canReorder && !isDragging
+                          ? (e) => handleCardGrab(index, track, e)
+                          : undefined
+                      }
                       style={{
                         position: "absolute",
                         top: 0,
                         left: 0,
                         width: "100%",
                         height: `${virtualRow.size}px`,
-                        transform: `translateY(${virtualRow.start}px)`,
+                        transform: `translateY(${virtualRow.start + shiftY}px)`,
+                        transition: isDragging
+                          ? "transform 180ms cubic-bezier(0.2, 0, 0, 1)"
+                          : undefined,
+                        opacity: isThisDragged ? 0 : 1,
+                        zIndex: 1,
                       }}
                     />
                   );
                 })}
               </div>
+
+              {isDragging && draggedItem && (
+                <FloatingDragCard
+                  x={pointerPos.x}
+                  y={pointerPos.y}
+                  offsetX={grabOffset.x}
+                  offsetY={grabOffset.y}
+                  width={itemWidth}
+                >
+                  <SongCardWithMenu
+                    id={draggedItem.id}
+                    title={draggedItem.title}
+                    artists={draggedItem.artists}
+                    artistId={draggedItem.artistId}
+                    artistList={draggedItem.artistList}
+                    coverUrl={draggedItem.coverUrl || viewData.coverUrl}
+                    playlistId={isLikesMode ? undefined : (decodedId ?? undefined)}
+                    playlistItemId={draggedItem.playlistItemId}
+                    playlistTitle={viewData.title}
+                    duration={
+                      draggedItem.durationMs
+                        ? `${Math.floor(draggedItem.durationMs / 60000)}:${String(
+                            Math.floor((draggedItem.durationMs % 60000) / 1000),
+                          ).padStart(2, "0")}`
+                        : undefined
+                    }
+                    durationMs={draggedItem.durationMs}
+                    explicit={draggedItem.explicit}
+                    className="bg-transparent"
+                  />
+                </FloatingDragCard>
+              )}
             </div>
           </div>
         )}

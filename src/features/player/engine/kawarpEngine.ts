@@ -315,19 +315,21 @@ export class KawarpEngine {
     }
   }
 
-  public async loadImage(src: string): Promise<void> {
+  public async loadImage(src: string, preDecoded?: HTMLImageElement): Promise<void> {
     if (!src) return;
 
-    let bitmap: ImageBitmap | HTMLImageElement | null = null;
-    try {
-      // 1. First attempt: fetch blob + createImageBitmap
-      const res = await fetch(src, { mode: 'cors' });
-      if (res.ok) {
-        const blob = await res.blob();
-        bitmap = await createImageBitmap(blob);
+    let bitmap: ImageBitmap | HTMLImageElement | null =
+      preDecoded && preDecoded.complete && preDecoded.naturalWidth > 0 ? preDecoded : null;
+
+    if (!bitmap) {
+      try {
+        const res = await fetch(src, { mode: 'cors' });
+        if (res.ok) {
+          const blob = await res.blob();
+          bitmap = await createImageBitmap(blob);
+        }
+      } catch {
       }
-    } catch {
-      // ignore fetch failure and proceed to image fallback
     }
 
     if (!bitmap) {

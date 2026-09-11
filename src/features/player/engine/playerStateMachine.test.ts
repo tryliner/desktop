@@ -258,4 +258,58 @@ describe("Player auto-skip on playback error", () => {
     expect(state.status).toBe("idle");
     expect(state.currentTrack).toBeNull();
   });
+
+  describe("reorderQueue", () => {
+    it("reorders queue items and tracks currentIndex when moving active track", async () => {
+      const tracks = [
+        mockTrack("1", "Track 1"),
+        mockTrack("2", "Track 2"),
+        mockTrack("3", "Track 3"),
+        mockTrack("4", "Track 4"),
+      ];
+      await playerEngine.playTrack(tracks[1], tracks, null, null, 1);
+      expect(usePlayerStore.getState().currentIndex).toBe(1);
+      expect(usePlayerStore.getState().currentTrack?.id).toBe("2");
+
+      playerEngine.reorderQueue(1, 3);
+
+      const state = usePlayerStore.getState();
+      expect(state.queue.map((t) => t.id)).toEqual(["1", "3", "4", "2"]);
+      expect(state.currentIndex).toBe(3);
+      expect(state.currentTrack?.id).toBe("2");
+    });
+
+    it("adjusts currentIndex when an item moves across the active track position", async () => {
+      const tracks = [
+        mockTrack("1", "Track 1"),
+        mockTrack("2", "Track 2"),
+        mockTrack("3", "Track 3"),
+        mockTrack("4", "Track 4"),
+      ];
+      await playerEngine.playTrack(tracks[2], tracks, null, null, 2);
+      expect(usePlayerStore.getState().currentIndex).toBe(2);
+
+      playerEngine.reorderQueue(0, 3);
+      expect(usePlayerStore.getState().queue.map((t) => t.id)).toEqual(["2", "3", "4", "1"]);
+      expect(usePlayerStore.getState().currentIndex).toBe(1);
+      expect(usePlayerStore.getState().currentTrack?.id).toBe("3");
+
+      playerEngine.reorderQueue(2, 0);
+      expect(usePlayerStore.getState().queue.map((t) => t.id)).toEqual(["4", "2", "3", "1"]);
+      expect(usePlayerStore.getState().currentIndex).toBe(2);
+      expect(usePlayerStore.getState().currentTrack?.id).toBe("3");
+    });
+
+    it("ignores invalid indices or equal from/to indices", async () => {
+      const tracks = [mockTrack("1", "Track 1"), mockTrack("2", "Track 2")];
+      await playerEngine.playTrack(tracks[0], tracks);
+
+      playerEngine.reorderQueue(0, 0);
+      playerEngine.reorderQueue(-1, 1);
+      playerEngine.reorderQueue(0, 10);
+
+      expect(usePlayerStore.getState().queue.map((t) => t.id)).toEqual(["1", "2"]);
+      expect(usePlayerStore.getState().currentIndex).toBe(0);
+    });
+  });
 });

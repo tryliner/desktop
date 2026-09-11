@@ -460,21 +460,24 @@ export class PlayerRuntime {
   }
 
   public pause() {
-    this.loadEpoch += 1;
+    const epoch = ++this.loadEpoch;
     this.loadAbortController?.abort();
     this.loadAbortController = null;
     usePlayerStore.getState().setStatus("paused");
     log("cyan", "audio", "pause requested (fading out)");
 
-    const currentEpoch = this.loadEpoch;
     this.fadeVolume(0, 180, () => {
-      if (currentEpoch !== this.loadEpoch) return;
+      if (epoch !== this.loadEpoch) return;
       this.audio.pause();
       this.audio.volume = usePlayerStore.getState().volume;
     });
   }
 
   public resume() {
+    const epoch = ++this.loadEpoch;
+    this.loadAbortController?.abort();
+    this.loadAbortController = null;
+
     const targetVolume = usePlayerStore.getState().volume;
     usePlayerStore.getState().setStatus("playing");
     log("cyan", "audio", "resume requested (fading in)");
@@ -496,9 +499,11 @@ export class PlayerRuntime {
       this.activePlayPromise = playPromise;
       playPromise
         .then(() => {
+          if (epoch !== this.loadEpoch) return;
           this.fadeVolume(targetVolume, 180);
         })
         .catch((error) => {
+          if (epoch !== this.loadEpoch) return;
           if (error.name === "NotAllowedError") {
             log("yellow", "audio", "play blocked — waiting for user gesture");
             usePlayerStore.getState().setStatus("paused");
@@ -508,7 +513,7 @@ export class PlayerRuntime {
           }
         })
         .finally(() => {
-          this.activePlayPromise = null;
+          if (epoch === this.loadEpoch) this.activePlayPromise = null;
         });
     } else {
       this.fadeVolume(targetVolume, 180);
