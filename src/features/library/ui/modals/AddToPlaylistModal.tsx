@@ -34,7 +34,11 @@ export default function AddToPlaylistModal() {
   const playlists = useMemo(() => {
     if (!searchQuery.trim()) return rawPlaylists;
     const q = searchQuery.toLowerCase().trim();
-    return rawPlaylists.filter((p) => p.title.toLowerCase().includes(q));
+    return rawPlaylists.filter(
+      (p) =>
+        p.title.toLowerCase().includes(q) ||
+        (p.description ? p.description.toLowerCase().includes(q) : false),
+    );
   }, [rawPlaylists, searchQuery]);
 
   // update dynamic top and bottom scroll fade mask
@@ -81,8 +85,11 @@ export default function AddToPlaylistModal() {
   };
 
   const handleNewPlaylist = () => {
+    // capture the track before close() clears it from the store, so it can
+    // be handed off to the create/import playlist flow and added once ready
+    const pendingTrack = track;
     close();
-    openCreatePlaylist();
+    openCreatePlaylist(undefined, pendingTrack);
   };
 
   return (

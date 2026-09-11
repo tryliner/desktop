@@ -5,6 +5,7 @@ import type { Track } from "@/shared/types";
 export interface LibraryPlaylistSummary {
   id: string;
   title: string;
+  description?: string;
   trackCount: number;
   coverUrl: string;
   coverUrls: string[];

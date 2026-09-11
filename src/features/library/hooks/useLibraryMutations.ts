@@ -9,10 +9,10 @@ type Options = {
   onSettled?: () => void;
 };
 
-function useMutation<T>(action: (input: T) => Promise<unknown>) {
+function useMutation<T, R = unknown>(action: (input: T) => Promise<R>) {
   const [isPending, setIsPending] = useState(false);
   const mutateAsync = useCallback(
-    async (input: T) => {
+    async (input: T): Promise<R> => {
       setIsPending(true);
       try {
         const result = await action(input);

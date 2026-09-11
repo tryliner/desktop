@@ -1,12 +1,18 @@
 import { create } from "zustand";
 import { api, type ImportJob } from "@/shared/api";
+import { showToast } from "@/shared/ui";
+import { createTranslatorSync, getStoredLocale } from "@/languages";
 import { notifyLibraryChanged } from "../hooks/usePlaylists";
+import type { TrackDetail } from "./modalStore";
 
 export interface ActiveImportState {
   job: ImportJob | null;
   isPolling: boolean;
   error: string | null;
-  startImport: (url: string) => Promise<ImportJob>;
+  // track the caller wanted added to a playlist that is being created via
+  // this import (see CreatePlaylistModal); added once the job completes
+  pendingTrack: TrackDetail | null;
+  startImport: (url: string, pendingTrack?: TrackDetail | null) => Promise<ImportJob>;
   listenToJob: (jobId: string) => Promise<void>;
   pollJob: (jobId: string) => Promise<void>;
   cancelPolling: () => void;
@@ -20,6 +26,7 @@ export const useImportStore = create<ActiveImportState>((set, get) => ({
   job: null,
   isPolling: false,
   error: null,
+  pendingTrack: null,
 
   reset: () => {
     if (activeAbortController) {
@@ -27,7 +34,7 @@ export const useImportStore = create<ActiveImportState>((set, get) => ({
       activeAbortController = null;
     }
     if (pollTimer) clearTimeout(pollTimer);
-    set({ job: null, isPolling: false, error: null });
+    set({ job: null, isPolling: false, error: null, pendingTrack: null });
   },
 
   cancelPolling: () => {
@@ -39,9 +46,9 @@ export const useImportStore = create<ActiveImportState>((set, get) => ({
     set({ isPolling: false });
   },
 
-  startImport: async (url: string) => {
+  startImport: async (url: string, pendingTrack: TrackDetail | null = null) => {
     get().cancelPolling();
-    set({ error: null, isPolling: true });
+    set({ error: null, isPolling: true, pendingTrack });
     try {
       const job = await api.createPlaylistImport(url);
       set({ job, isPolling: true });
@@ -49,7 +56,7 @@ export const useImportStore = create<ActiveImportState>((set, get) => ({
       return job;
     } catch (err) {
       // store stays generic, callers map the raw error to a friendly message
-      set({ error: "Failed to start import", isPolling: false });
+      set({ error: "Failed to start import", isPolling: false, pendingTrack: null });
       throw err;
     }
   },
@@ -126,3 +133,30 @@ export const useImportStore = create<ActiveImportState>((set, get) => ({
     }
   },
 }));
+
+// Adds the pending track (if any) to the imported playlist once its import
+// job completes. Runs off a store subscription rather than inline in
+// listenToJob/pollJob because ImportReviewModal can also finalize a job
+// (via decidePlaylistImportReview/skipPlaylistImportReview) and sets the
+// completed job directly on the store, bypassing both of those paths.
+let lastHandledCompletedJobId: string | null = null;
+
+useImportStore.subscribe((state) => {
+  const { job, pendingTrack } = state;
+  if (!job || job.status !== "completed" || !job.playlistId || !pendingTrack) return;
+  if (job.id === lastHandledCompletedJobId) return;
+  lastHandledCompletedJobId = job.id;
+
+  useImportStore.setState({ pendingTrack: null });
+
+  void (async () => {
+    const translate = createTranslatorSync(getStoredLocale());
+    try {
+      await api.addPlaylistTrack(job.playlistId as string, pendingTrack.id);
+      notifyLibraryChanged();
+      showToast(translate("common.added_to_playlist"), "success");
+    } catch {
+      showToast(translate("common.failed_add_playlist"), "error");
+    }
+  })();
+});

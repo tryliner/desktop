@@ -3,9 +3,10 @@ import Button from "@/shared/ui/Button";
 import TextInput from "@/shared/ui/TextInput";
 import Tooltip from "@/shared/ui/Tooltip";
 import { CheckLine, InformationLine, LinkLine } from "@mingcute/react";
-import { useCreatePlaylist } from "../../hooks";
+import { useAddPlaylistTracks, useCreatePlaylist } from "../../hooks";
 import { notifyLibraryChanged } from "../../hooks/usePlaylists";
 import Dialog from "@/shared/ui/Dialog";
+import { useToast } from "@/shared/ui";
 import { useTranslation } from "@/languages";
 import { useModalStore } from "../../store/modalStore";
 import { useImportStore } from "../../store/importStore";
@@ -33,9 +34,11 @@ const font = { fontFamily: "var(--font-inter), sans-serif" } as const;
 
 export default function CreatePlaylistModal() {
   const { t } = useTranslation();
+  const { toast } = useToast();
 
   const open = useModalStore((state) => state.createPlaylistOpen);
   const initialUrl = useModalStore((state) => state.createPlaylistInitialUrl);
+  const pendingTrack = useModalStore((state) => state.createPlaylistPendingTrack);
   const close = useModalStore((state) => state.closeCreatePlaylist);
 
   const [tab, setTab] = useState<Tab>("create");
@@ -51,6 +54,7 @@ export default function CreatePlaylistModal() {
   const titleRef = useRef<HTMLInputElement>(null);
   const linkRef = useRef<HTMLInputElement>(null);
   const createPlaylist = useCreatePlaylist();
+  const addTrack = useAddPlaylistTracks();
 
   const detectedSource = detectSourceLabel(importUrl);
   const isCreate = tab === "create";
@@ -79,11 +83,21 @@ export default function CreatePlaylistModal() {
     }
     setCreateError("");
     try {
-      await createPlaylist.mutateAsync({
+      const playlist = await createPlaylist.mutateAsync({
         title: trimmed.slice(0, TITLE_MAX),
         description: description.trim() || undefined,
       });
       notifyLibraryChanged();
+
+      if (pendingTrack) {
+        try {
+          await addTrack.mutateAsync({ playlistId: playlist.id, trackId: pendingTrack.id });
+          toast(t("common.added_to_playlist"), "success");
+        } catch {
+          toast(t("common.failed_add_playlist"), "error");
+        }
+      }
+
       close();
     } catch {
       setCreateError(t("common.failed_create_playlist"));
@@ -108,7 +122,10 @@ export default function CreatePlaylistModal() {
     setImportError("");
     setImporting(true);
     try {
-      await useImportStore.getState().startImport(target);
+      // hand the pending track off to the import store: the import runs in
+      // the background and finishes after this modal closes, so the track
+      // gets added to the imported playlist once that import completes
+      await useImportStore.getState().startImport(target, pendingTrack);
       close();
     } catch (err: unknown) {
       setImportError(resolveApiErrorMessage(err, t, "common.failed_import_playlist"));
