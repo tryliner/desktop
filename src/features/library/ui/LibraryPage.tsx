@@ -417,24 +417,17 @@ export default function LibraryPage() {
         </div>
       </div>
 
-      <AnimatePresence>
-        {activeTab === "playlists" && (
-          <motion.button
-            key="fab-create-playlist"
-            initial={{ opacity: 0, scale: 0.8, y: 12 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.8, y: 12 }}
-            transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-            type="button"
-            onClick={() => openCreatePlaylist()}
-            title={t("library.create_playlist")}
-            aria-label={t("library.create_playlist")}
-            className="absolute bottom-[20px] right-[24px] z-30 flex h-[44px] w-[44px] items-center justify-center rounded-[14px] bg-btn-primary-bg text-btn-primary-text shadow-[0_4px_14px_rgba(0,0,0,0.22)] hover:shadow-[0_6px_18px_rgba(0,0,0,0.3)] hover:opacity-95 active:scale-[0.92] transition-all border-0 cursor-pointer select-none"
-          >
-            <AddLine size={22} />
-          </motion.button>
-        )}
-      </AnimatePresence>
+      {activeTab === "playlists" && (
+        <button
+          type="button"
+          onClick={() => openCreatePlaylist()}
+          title={t("library.create_playlist")}
+          aria-label={t("library.create_playlist")}
+          className="absolute bottom-[20px] right-[24px] z-30 flex h-[44px] w-[44px] items-center justify-center rounded-[14px] bg-btn-primary-bg text-btn-primary-text shadow-[0_4px_14px_rgba(0,0,0,0.22)] hover:shadow-[0_6px_18px_rgba(0,0,0,0.3)] hover:opacity-95 active:scale-[0.92] transition-all border-0 cursor-pointer select-none"
+        >
+          <AddLine size={22} />
+        </button>
+      )}
     </div>
   );
 }
