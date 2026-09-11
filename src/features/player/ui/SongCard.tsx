@@ -186,17 +186,6 @@ function SongCard({
           </p>
         </div>
       </div>
-            {explicit && <ExplicitBadge size="md" className="mr-[6px] shrink-0" />}
-            <ArtistLink
-              name={artists}
-              artistId={artistId}
-              artistList={artistList}
-              onNavigate={onNavigate}
-              className="text-text-secondary"
-            />
-          </p>
-        </div>
-      </div>
 
       <div className="flex items-center shrink-0 ml-[16px] gap-[16px]">
         {releaseDate && (
