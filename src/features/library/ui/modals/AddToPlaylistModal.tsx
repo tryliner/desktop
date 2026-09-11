@@ -90,7 +90,7 @@ export default function AddToPlaylistModal() {
                     className="text-[12px] text-text-tertiary"
                     style={{ fontFamily: "var(--font-inter), sans-serif" }}
                   >
-                    {playlist.trackCount} {t("common.tracks", { count: playlist.trackCount })}
+                    {t("common.tracks", { count: playlist.trackCount })}
                   </span>
                 </div>
 

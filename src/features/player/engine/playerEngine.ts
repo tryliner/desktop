@@ -16,10 +16,7 @@ import {
 } from "@/shared/api";
 import { toClientTrack } from "@/shared/api/track";
 import { log } from "@/shared/utils/logger";
-import { parseRawLyrics } from "@/features/lyrics";
-import { useLyricsStore } from "@/features/lyrics";
-import { showToast } from "@/shared/ui";
-import { getStoredLocale } from "@/languages";
+import { parseRawLyrics, useLyricsStore } from "@/features/lyrics";
 import type { Track } from "@/shared/types";
 
 export { usePlayerStore, type PlayerStatus, type RepeatMode, type PlayerState };
@@ -605,24 +602,6 @@ class PlayerEngine {
         store.setQueue([...played, current, ...unshuffledUpcoming]);
         this.originalUpcomingQueue = [];
       }
-    }
-
-    try {
-      const locale = getStoredLocale();
-      const msg = enabled
-        ? locale === "ru"
-          ? "Случайный порядок включен"
-          : locale === "uk"
-            ? "Випадковий порядок увімкнено"
-            : "Shuffle on"
-        : locale === "ru"
-          ? "Случайный порядок выключен"
-          : locale === "uk"
-            ? "Випадковий порядок вимкнено"
-            : "Shuffle off";
-      showToast(msg, "info");
-    } catch {
-      // ignore in headless contexts
     }
   }
 
