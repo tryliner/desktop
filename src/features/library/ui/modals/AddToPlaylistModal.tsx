@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import { PlaylistFill, Search2Line, CloseCircleFill, AddLine } from "@mingcute/react";
 import { useToast } from "@/shared/ui";
+import { ApiError } from "@/shared/api";
 import TextInput from "@/shared/ui/TextInput";
 import Dialog from "@/shared/ui/Dialog";
 import CoverImage from "@/features/covers/ui/CoverImage";
@@ -77,8 +78,12 @@ export default function AddToPlaylistModal() {
       await addTrack.mutateAsync({ playlistId, trackId: track.id });
       toast(t("common.added_to_playlist"), "success");
       close();
-    } catch {
-      toast(t("common.failed_add_playlist"), "error");
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 409) {
+        toast(t("common.track_already_in_playlist"), "error");
+      } else {
+        toast(t("common.failed_add_playlist"), "error");
+      }
     } finally {
       setAddingTo(null);
     }
