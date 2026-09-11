@@ -205,10 +205,10 @@ export default function HomePage() {
 
   return (
     <div className="relative min-h-full w-full bg-bg-primary overflow-hidden">
-      {/* Ambient time-of-day gradient glow */}
+      {/* Ambient time-of-day gradient glow (subtle top-left accent) */}
       <div
         aria-hidden="true"
-        className={`pointer-events-none absolute top-0 left-0 right-0 h-[360px] bg-gradient-to-b ${glowClass} blur-3xl opacity-80`}
+        className={`pointer-events-none absolute -top-8 -left-8 w-[380px] h-[200px] bg-gradient-to-br ${glowClass} blur-3xl opacity-60`}
       />
 
       <div className="relative z-1 grid grid-cols-1 items-start w-full">

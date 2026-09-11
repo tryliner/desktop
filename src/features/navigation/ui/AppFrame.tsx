@@ -63,7 +63,8 @@ const LEGACY_LAYOUT_STORAGE_KEYS = [
 ] as const;
 
 export default function AppFrame({ children }: AppFrameProps) {
-  const { pathname } = useLocation();
+  const location = useLocation();
+  const { pathname, search } = location;
   const navigate = useNavigate();
   const { t } = useTranslation();
 
@@ -110,6 +111,18 @@ export default function AppFrame({ children }: AppFrameProps) {
   const appFrameRef = useRef<HTMLDivElement>(null);
   const queueDrawerRef = useRef<HTMLDivElement>(null);
   const searchPopupRef = useRef<HTMLDivElement>(null);
+  const mainScrollRef = useRef<HTMLDivElement>(null);
+
+  // reset scroll position on route navigation so pages always open at top
+  useEffect(() => {
+    if (mainScrollRef.current) {
+      mainScrollRef.current.scrollTop = 0;
+      const innerScrollables = mainScrollRef.current.querySelectorAll(".overflow-y-auto");
+      innerScrollables.forEach((el) => {
+        el.scrollTop = 0;
+      });
+    }
+  }, [pathname, search]);
 
   const updateSearchMask = useCallback(() => {
     const el = searchScrollRef.current;
@@ -519,6 +532,7 @@ export default function AppFrame({ children }: AppFrameProps) {
         <main className="flex-1 min-w-0 flex flex-col relative h-full bg-bg-primary rounded-sm rounded-tr-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.035)] overflow-hidden">
           {!isFullscreenPlayer && <WindowControls />}
           <div
+            ref={mainScrollRef}
             className={`h-full ${
               searchOpen || isFullscreenPlayer
                 ? "overflow-hidden"

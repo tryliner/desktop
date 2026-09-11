@@ -6,7 +6,6 @@ import { useLyricsStore, type WordData, useLyricsAnimator } from "@/features/lyr
 import { useTranslation } from "@/languages";
 import { useToast } from "@/shared/ui";
 import { FiMusic } from "react-icons/fi";
-import { TrashBin2 } from "@solar-icons/react";
 
 const QueueList = memo(function QueueList({
   queue,
@@ -354,26 +353,8 @@ function RightDrawer() {
       {/* Content Area */}
       <div className="flex-1 overflow-hidden relative">
         {activeTab === "queue" && (
-          <>
-            {player.queue.length > 0 && (
-              <div className="absolute top-3 right-3 z-10">
-                <div className="rounded-lg bg-bg-panel border-[0.5px] border-border-primary pl-3 pr-1.5 h-[32px] flex items-center gap-1 shadow-sm">
-                  <span className="text-[12px] text-text-secondary font-[500] leading-none whitespace-nowrap">
-                    {player.queue.length}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => playerEngine.clearQueue()}
-                    className="inline-flex h-[24px] w-[24px] items-center justify-center rounded-md text-text-tertiary hover:text-text-primary hover:bg-border-alpha-14 transition-all duration-150 active:scale-[0.94] border-none bg-transparent cursor-pointer"
-                    aria-label={t("player.clear_queue")}
-                  >
-                    <TrashBin2 size={13} weight="Outline" />
-                  </button>
-                </div>
-              </div>
-            )}
-            <div
-              className="absolute inset-0 overflow-y-auto px-[12px] py-[12px]"
+          <div
+            className="absolute inset-0 overflow-y-auto px-[12px] py-[12px]"
               onScroll={(e) => {
                 const target = e.currentTarget;
                 if (
@@ -400,7 +381,6 @@ function RightDrawer() {
                 </div>
               )}
             </div>
-          </>
         )}
 
         {activeTab === "lyrics" && (

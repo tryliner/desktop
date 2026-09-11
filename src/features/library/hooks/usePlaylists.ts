@@ -143,7 +143,7 @@ if (typeof window !== "undefined") {
   if (target.__linerPlaylistsRefresh)
     window.removeEventListener("library:changed", target.__linerPlaylistsRefresh);
   target.__linerPlaylistsRefresh = () => {
-    loaded = false;
+    // silent background refresh without toggling loading state
     void load(true);
   };
   window.addEventListener("library:changed", target.__linerPlaylistsRefresh);
@@ -178,8 +178,8 @@ export function usePlaylist(id: string | null) {
     }
     let active = true;
 
-    const fetchDetail = async () => {
-      setIsLoading(true);
+    const fetchDetail = async (isBackground = false) => {
+      if (!isBackground) setIsLoading(true);
       try {
         const response = await api.getUserPlaylist(id);
         if (!active) return;
@@ -211,8 +211,8 @@ export function usePlaylist(id: string | null) {
       }
     };
 
-    void fetchDetail();
-    const refresh = () => void fetchDetail();
+    void fetchDetail(false);
+    const refresh = () => void fetchDetail(true);
     window.addEventListener("library:changed", refresh);
     return () => {
       active = false;

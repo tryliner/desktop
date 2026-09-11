@@ -12,7 +12,9 @@ import {
   HeartFill,
   PlaylistFill,
   Upload2Line,
+  CheckLine,
 } from "@mingcute/react";
+import { AnimatePresence, motion } from "framer-motion";
 import { LuPencil, LuGlobe, LuTrash2, LuText } from "react-icons/lu";
 import Button from "@/shared/ui/Button";
 import DropdownMenu from "@/shared/ui/DropdownMenu";
@@ -210,12 +212,21 @@ function LibraryPlaylistContent() {
     );
   }, [viewData, decodedId]);
 
+  const { toast } = useToast();
+  const [addedToQueue, setAddedToQueue] = useState(false);
+
   const handleAddToQueue = useCallback(() => {
     if (!viewData || viewData.tracks.length === 0) return;
     for (const track of viewData.tracks) {
       playerEngine.addToQueue(track);
     }
-  }, [viewData]);
+    toast(t("playlist.added_to_queue"), "info");
+    setAddedToQueue(true);
+    const timer = setTimeout(() => {
+      setAddedToQueue(false);
+    }, 1200);
+    return () => clearTimeout(timer);
+  }, [viewData, toast, t]);
 
   const handleMoveTrack = useCallback(
     (itemId: string, beforeItemId: string) => {
@@ -236,8 +247,6 @@ function LibraryPlaylistContent() {
     estimateSize: () => 64,
     overscan: 10,
   });
-
-  const { toast } = useToast();
 
   const handleShare = useCallback(() => {
     if (typeof navigator !== "undefined" && navigator.clipboard && decodedId && decodedId !== "likes") {
@@ -563,9 +572,33 @@ function LibraryPlaylistContent() {
                         variant="outline"
                         onClick={handleAddToQueue}
                         className="!h-[42px] !w-[42px] !p-0 flex items-center justify-center text-text-primary"
-                        title={t("common.add_to_queue")}
+                        title={t("playlist.add_to_queue")}
                       >
-                        <AddLine size={20} />
+                        <AnimatePresence mode="wait">
+                          {addedToQueue ? (
+                            <motion.span
+                              key="check"
+                              initial={{ opacity: 0, scale: 0.5 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              exit={{ opacity: 0, scale: 0.5 }}
+                              transition={{ duration: 0.08 }}
+                              className="flex items-center justify-center text-emerald-400"
+                            >
+                              <CheckLine size={20} />
+                            </motion.span>
+                          ) : (
+                            <motion.span
+                              key="add"
+                              initial={{ opacity: 0, scale: 0.5 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              exit={{ opacity: 0, scale: 0.5 }}
+                              transition={{ duration: 0.08 }}
+                              className="flex items-center justify-center"
+                            >
+                              <AddLine size={20} />
+                            </motion.span>
+                          )}
+                        </AnimatePresence>
                       </Button>
                     </div>
                   </div>

@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import useHorizontalScroll from "@/shared/hooks/useHorizontalScroll";
 
 interface ScrollableRowProps {
@@ -13,9 +14,6 @@ interface ScrollableRowProps {
 export function ScrollableRow({
   children,
   className = "",
-  overlayWidth = "w-[100px]",
-  leftOverlayClassName,
-  rightOverlayClassName,
   dragCursor,
   wheelMultiplier,
 }: ScrollableRowProps) {
@@ -24,14 +22,18 @@ export function ScrollableRow({
     wheelMultiplier,
   });
 
-  const baseOverlayClasses = `absolute top-0 bottom-0 ${overlayWidth} z-10 pointer-events-none transition-opacity duration-300`;
-  const leftClasses = `${baseOverlayClasses} left-0 ${leftOverlayClassName ?? "bg-gradient-to-r from-bg-primary to-transparent"} ${showLeftShadow ? "opacity-100" : "opacity-0"}`;
-  const rightClasses = `${baseOverlayClasses} right-0 ${rightOverlayClassName ?? "bg-gradient-to-l from-bg-primary to-transparent"} ${showRightShadow ? "opacity-100" : "opacity-0"}`;
+  const maskStyle = useMemo(() => {
+    const leftMask = showLeftShadow ? "transparent 0px, black 32px" : "black 0px";
+    const rightMask = showRightShadow ? "black calc(100% - 32px), transparent 100%" : "black 100%";
+    return {
+      maskImage: `linear-gradient(to right, ${leftMask}, ${rightMask})`,
+      WebkitMaskImage: `linear-gradient(to right, ${leftMask}, ${rightMask})`,
+      transition: "mask-image 0.25s ease, -webkit-mask-image 0.25s ease",
+    };
+  }, [showLeftShadow, showRightShadow]);
 
   return (
     <div className="relative group">
-      <div className={leftClasses} />
-
       <div
         ref={scrollRef}
         className={`no-scrollbar ${className}`}
@@ -40,12 +42,11 @@ export function ScrollableRow({
           display: "flex",
           scrollbarWidth: "none",
           msOverflowStyle: "none",
+          ...maskStyle,
         }}
       >
         {children}
       </div>
-
-      <div className={rightClasses} />
     </div>
   );
 }

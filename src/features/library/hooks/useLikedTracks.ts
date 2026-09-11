@@ -109,7 +109,7 @@ if (typeof window !== "undefined") {
   if (target.__linerLikedRefresh)
     window.removeEventListener("library:changed", target.__linerLikedRefresh);
   target.__linerLikedRefresh = () => {
-    loaded = false;
+    // silent background refresh without toggling loading state
     void load(true);
   };
   window.addEventListener("library:changed", target.__linerLikedRefresh);

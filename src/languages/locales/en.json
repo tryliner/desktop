@@ -348,6 +348,8 @@
     "liked_songs": "Liked songs",
     "untitled_playlist": "Untitled Playlist",
     "play_all": "Play all",
+    "add_to_queue": "Add playlist to a queue",
+    "added_to_queue": "Added playlist to queue",
     "import": "Import",
     "error_loading": "Error loading playlist",
     "not_found": "Playlist not found",
