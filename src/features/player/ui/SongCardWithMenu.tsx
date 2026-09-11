@@ -30,6 +30,8 @@ export interface SongCardWithMenuProps {
   playlistItemId?: string;
   playlistTitle?: string;
   onNavigate?: () => void;
+  compact?: boolean;
+  icon?: React.ReactNode;
 }
 
 function SongCardWithMenu({
@@ -54,6 +56,8 @@ function SongCardWithMenu({
   playlistItemId,
   playlistTitle,
   onNavigate,
+  compact,
+  icon,
 }: SongCardWithMenuProps) {
   const resolvedDurationMs = useMemo(() => {
     if (durationMs !== undefined) return durationMs;
@@ -160,6 +164,8 @@ function SongCardWithMenu({
       onContextMenu={handleContextMenu}
       menuPosition={menuPosition}
       onNavigate={onNavigate}
+      compact={compact}
+      icon={icon}
     />
   );
 }
