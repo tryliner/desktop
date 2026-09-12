@@ -38,13 +38,10 @@ function PlaylistPageSkeletonComponent({
         className="pointer-events-none absolute left-0 top-0 z-0 h-[450px] w-full bg-gradient-to-b from-white/[0.04] to-transparent blur-3xl opacity-30"
       />
 
-      <div className="relative z-10 px-[32px] pt-[24px]">
-        <div className="inline-flex items-center gap-[6px]">
-          <div className="skeleton-shimmer h-[18px] w-[18px] rounded-full shrink-0" />
-          <div className="skeleton-shimmer h-[14px] w-[50px] rounded-[4px]" />
-        </div>
+      <div className="relative z-10 px-[32px] pt-[20px]">
+        <div className="skeleton-shimmer h-[32px] w-[76px] rounded-md" />
 
-        <section className="mt-[24px] flex items-start gap-[24px]">
+        <section className="mt-[20px] flex items-start gap-[24px]">
           <div className="relative h-[180px] w-[180px] shrink-0 overflow-hidden rounded-xl bg-border-alpha-14">
             <div className="skeleton-shimmer h-full w-full" />
           </div>

@@ -1,4 +1,4 @@
-import { Link, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useCallback, useEffect, useMemo, useRef, useState, Suspense } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import PlaylistPageSkeleton from "./PlaylistPageSkeleton";
@@ -94,6 +94,7 @@ function TrackItem({
 }
 
 function LibraryPlaylistContent() {
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const id = searchParams.get("id");
   const isLikesMode = id === "likes";
@@ -394,20 +395,23 @@ function LibraryPlaylistContent() {
           isScrolled
             ? "opacity-100 pointer-events-auto translate-y-0"
             : "opacity-0 pointer-events-none -translate-y-2"
-        } bg-bg-primary/80 backdrop-blur-md`}
+        } bg-bg-primary`}
         style={{ height: "38px", marginBottom: "-38px" }}
         data-window-drag
       >
         <div className="flex items-center justify-between px-[32px] h-[38px]">
           <div className="flex items-center gap-[14px] min-w-0">
-            <Link
-              to="/library"
-              className="inline-flex items-center gap-[6px] text-text-secondary no-underline transition-colors duration-200 hover:text-text-primary cursor-pointer shrink-0"
+            <button
+              type="button"
+              onClick={() =>
+                window.history.length > 1 ? navigate(-1) : navigate("/library")
+              }
+              className="inline-flex items-center gap-[6px] text-text-secondary no-underline transition-colors duration-200 hover:text-text-primary cursor-pointer shrink-0 bg-transparent border-0 p-0"
               style={{ fontFamily: "var(--font-inter), sans-serif" }}
             >
               <ArrowLeftLine size={16} />
               <span className="text-[13px] font-[500]">{t("common.back")}</span>
-            </Link>
+            </button>
 
             {viewData && (
               <span
@@ -455,16 +459,22 @@ function LibraryPlaylistContent() {
                 }}
               />
             )}
-            <div className="relative z-10 px-[32px] pt-[24px]" data-window-drag>
-              <Link
-                to="/library"
-                className="inline-flex items-center gap-[6px] text-text-secondary no-underline transition-colors duration-200 hover:text-text-primary cursor-pointer"
+            <div className="relative z-10 px-[32px] pt-[20px]" data-window-drag>
+              <button
+                type="button"
+                onClick={() =>
+                  window.history.length > 1 ? navigate(-1) : navigate("/library")
+                }
+                className="group inline-flex h-[32px] items-center gap-[6px] rounded-md px-[12px] text-[13px] font-[500] text-text-primary bg-bg-panel hover:bg-bg-elevated transition-colors cursor-pointer border-0 shadow-sm"
                 style={{ fontFamily: "var(--font-inter), sans-serif" }}
               >
-                <ArrowLeftLine size={18} />
-                <span className="text-[14px] font-[500]">{t("common.back")}</span>
-              </Link>
-              <section className="mt-[24px] flex items-start gap-[24px]">
+                <ArrowLeftLine
+                  size={16}
+                  className="transition-transform duration-150 group-hover:-translate-x-0.5"
+                />
+                <span>{t("common.back")}</span>
+              </button>
+              <section className="mt-[20px] flex items-start gap-[24px]">
                 <div className="relative h-[180px] w-[180px] shrink-0 overflow-hidden rounded-xl bg-border-alpha-14 flex items-center justify-center">
                   {(() => {
                     const urls =
