@@ -14,7 +14,6 @@ export type DefaultPlaybackContext = "resume" | "empty";
 export type AccentVariant =
   | "default"
   | "spotify"
-  | "yandex"
   | "discord"
   | "telegram"
   | "aurora"
@@ -210,7 +209,6 @@ export const usePlayerStore = create<PlayerStore>()(
         const validVariants: AccentVariant[] = [
           "default",
           "spotify",
-          "yandex",
           "discord",
           "telegram",
           "aurora",

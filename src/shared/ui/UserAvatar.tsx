@@ -25,7 +25,7 @@ export function UserAvatar({ user, size = 36, className = "" }: UserAvatarProps)
 
   return (
     <div
-      className={`rounded-full bg-border-alpha-14 flex items-center justify-center text-text-secondary border border-border-primary/50 flex-shrink-0 overflow-hidden select-none ${className}`}
+      className={`rounded-[6px] bg-border-alpha-14 flex items-center justify-center text-text-secondary border border-border-primary/50 flex-shrink-0 overflow-hidden select-none ${className}`}
       style={{ width: size, height: size }}
     >
       {hasImage ? (

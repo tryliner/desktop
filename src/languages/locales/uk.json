@@ -379,15 +379,35 @@
   },
   "settings": {
     "title": "Налаштування",
+    "subtitle": "Керуйте своїми налаштуваннями",
     "reset_defaults": "Скинути за замовчуванням",
     "save_preferences": "Зберегти налаштування",
+    "groups": {
+      "preferences": "Вподобання",
+      "application": "Додаток",
+      "help": "Допомога"
+    },
+    "docs": "Документація",
+    "support": "Підтримка",
+    "manage_account": "Керування акаунтом",
     "tabs": {
       "general": "Основні",
       "appearance": "Вигляд",
-      "audio": "Аудіо",
+      "audio": "Аудіо та дані",
       "system": "Система",
       "account": "Акаунт",
-      "about": "Про додаток"
+      "about": "Про додаток",
+      "playback": "Відтворення",
+      "privacy": "Конфіденційність"
+    },
+    "playback": {
+      "description": "Поведінка черги, дії за кліком та виведення звуку."
+    },
+    "audio_data": {
+      "description": "Якість стрімінгу, офлайн-кеш та діагностика з'єднання."
+    },
+    "privacy": {
+      "description": "Анонімна статистика використання та звіти про збої."
     },
     "language": {
       "label": "Мова",
@@ -451,7 +471,6 @@
       "description": "Виберіть колір акценту логотипу.",
       "default": "Стандартний",
       "spotify": "Spotify",
-      "yandex": "Яндекс Музика",
       "discord": "Discord",
       "telegram": "Telegram",
       "aurora": "Aurora",

@@ -1,5 +1,5 @@
-export { GeneralTab } from "./GeneralTab";
+export { PlaybackTab } from "./PlaybackTab";
 export { AppearanceTab } from "./AppearanceTab";
 export { AudioTab } from "./AudioTab";
-export { SystemTab } from "./SystemTab";
+export { PrivacyTab } from "./PrivacyTab";
 export { AboutTab } from "./AboutTab";

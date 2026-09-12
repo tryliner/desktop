@@ -13,7 +13,7 @@ export function ToggleSwitch({
     <button
       type="button"
       onClick={() => onChange(!checked)}
-      className={`relative inline-flex h-[28px] w-[52px] items-center rounded-full border transition-colors cursor-pointer select-none ${
+      className={`relative inline-flex h-[22px] w-[40px] items-center rounded-full border transition-colors cursor-pointer select-none ${
         checked
           ? "bg-text-primary border-text-primary"
           : "bg-black/10 dark:bg-white/15 border-border-secondary dark:border-white/20"
@@ -22,9 +22,9 @@ export function ToggleSwitch({
       aria-label={ariaLabel}
     >
       <span
-        className={`inline-block h-[22px] w-[22px] rounded-full transition-all ${
+        className={`inline-block h-[16px] w-[16px] rounded-full transition-all ${
           checked
-            ? "translate-x-[27px] bg-bg-primary"
+            ? "translate-x-[21px] bg-bg-primary"
             : "translate-x-[3px] bg-text-secondary"
         }`}
       />

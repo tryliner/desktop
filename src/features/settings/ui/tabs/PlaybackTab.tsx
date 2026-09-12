@@ -4,7 +4,7 @@ import { usePlayerStore } from "@/features/player";
 import { ToggleSwitch } from "@/shared/ui";
 import { SettingRow, SettingSection, SegmentedControl } from "../controls";
 
-export function GeneralTab() {
+export function PlaybackTab() {
   const { t } = useTranslation();
   const [mounted, setMounted] = useState(false);
   const autoplaySimilar = usePlayerStore((state) => state.autoplaySimilar);
@@ -22,6 +22,12 @@ export function GeneralTab() {
   );
   const setDefaultPlaybackContext = usePlayerStore(
     (state) => state.setDefaultPlaybackContext,
+  );
+  const pauseOnDeviceChange = usePlayerStore(
+    (state) => state.pauseOnDeviceChange,
+  );
+  const setPauseOnDeviceChange = usePlayerStore(
+    (state) => state.setPauseOnDeviceChange,
   );
 
   useEffect(() => {
@@ -91,6 +97,17 @@ export function GeneralTab() {
           ) : (
             <span />
           )
+        }
+      />
+
+      <SettingRow
+        title={t("settings.audio.pause_on_device_change.title")}
+        description={t("settings.audio.pause_on_device_change.description")}
+        control={
+          <ToggleSwitch
+            checked={pauseOnDeviceChange}
+            onChange={setPauseOnDeviceChange}
+          />
         }
       />
     </SettingSection>

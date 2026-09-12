@@ -379,15 +379,35 @@
   },
   "settings": {
     "title": "Настройки",
+    "subtitle": "Управляйте своими настройками",
     "reset_defaults": "Сбросить по умолчанию",
     "save_preferences": "Сохранить настройки",
+    "groups": {
+      "preferences": "Предпочтения",
+      "application": "Приложение",
+      "help": "Помощь"
+    },
+    "docs": "Документация",
+    "support": "Поддержка",
+    "manage_account": "Управление аккаунтом",
     "tabs": {
       "general": "Основные",
       "appearance": "Внешний вид",
-      "audio": "Аудио",
+      "audio": "Аудио и данные",
       "system": "Система",
       "account": "Аккаунт",
-      "about": "О приложении"
+      "about": "О приложении",
+      "playback": "Воспроизведение",
+      "privacy": "Конфиденциальность"
+    },
+    "playback": {
+      "description": "Поведение очереди, действия по клику и вывод звука."
+    },
+    "audio_data": {
+      "description": "Качество стриминга, офлайн-кеш и диагностика соединения."
+    },
+    "privacy": {
+      "description": "Анонимная статистика использования и отчёты о сбоях."
     },
     "language": {
       "label": "Язык",
@@ -451,7 +471,6 @@
       "description": "Выберите цвет акцента логотипа.",
       "default": "Стандартный",
       "spotify": "Spotify",
-      "yandex": "Яндекс Музыка",
       "discord": "Discord",
       "telegram": "Telegram",
       "aurora": "Aurora",

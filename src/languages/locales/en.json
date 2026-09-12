@@ -375,15 +375,35 @@
   },
   "settings": {
     "title": "Settings",
+    "subtitle": "Manage your preferences",
     "reset_defaults": "Reset to defaults",
     "save_preferences": "Save preferences",
+    "groups": {
+      "preferences": "Preferences",
+      "application": "Application",
+      "help": "Help"
+    },
+    "docs": "Docs",
+    "support": "Support",
+    "manage_account": "Manage account",
     "tabs": {
       "general": "General",
       "appearance": "Appearance",
-      "audio": "Audio",
+      "audio": "Audio & Data",
       "system": "System",
       "account": "Account",
-      "about": "About"
+      "about": "About",
+      "playback": "Playback",
+      "privacy": "Privacy"
+    },
+    "playback": {
+      "description": "Queue behavior, click actions and audio output."
+    },
+    "audio_data": {
+      "description": "Streaming quality, offline cache and connection diagnostics."
+    },
+    "privacy": {
+      "description": "Anonymous usage statistics and crash reports."
     },
     "language": {
       "label": "Language",
@@ -447,7 +467,6 @@
       "description": "Choose the logo accent color.",
       "default": "Default",
       "spotify": "Spotify",
-      "yandex": "Yandex Music",
       "discord": "Discord",
       "telegram": "Telegram",
       "aurora": "Aurora",

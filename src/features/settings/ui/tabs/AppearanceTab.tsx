@@ -9,7 +9,6 @@ import { Select } from "@/shared/ui";
 import { SettingBlock, SettingRow, SettingSection } from "../controls";
 import defaultLogo from "@/assets/branding/logo-default.svg";
 import spotifyLogo from "@/assets/branding/logo-spotify.svg";
-import yandexLogo from "@/assets/branding/logo-yandex.svg";
 import discordLogo from "@/assets/branding/logo-discord.svg";
 import telegramLogo from "@/assets/branding/logo-telegram.svg";
 import auroraLogo from "@/assets/branding/logo-aurora.svg";
@@ -27,7 +26,6 @@ const font = { fontFamily: "var(--font-inter), sans-serif" } as const;
 const logos: Record<AccentVariant, string> = {
   default: defaultLogo,
   spotify: spotifyLogo,
-  yandex: yandexLogo,
   discord: discordLogo,
   telegram: telegramLogo,
   aurora: auroraLogo,
@@ -44,7 +42,6 @@ const logos: Record<AccentVariant, string> = {
 const brandingVariants: readonly AccentVariant[] = [
   "default",
   "spotify",
-  "yandex",
   "discord",
   "telegram",
   "aurora",

@@ -86,7 +86,7 @@ export function SettingSection({
           {label}
         </h4>
       ) : null}
-      <div className="flex flex-col divide-y divide-border-primary/60">
+      <div className="flex flex-col divide-y divide-solid divide-border-primary">
         {children}
       </div>
     </section>

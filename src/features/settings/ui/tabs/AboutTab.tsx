@@ -3,7 +3,6 @@ import Button from "@/shared/ui/Button";
 import { useTranslation } from "@/languages";
 import logo from "@/assets/logo.svg";
 import spotifyLogo from "@/assets/branding/logo-spotify.svg";
-import yandexLogo from "@/assets/branding/logo-yandex.svg";
 import discordLogo from "@/assets/branding/logo-discord.svg";
 import telegramLogo from "@/assets/branding/logo-telegram.svg";
 import auroraLogo from "@/assets/branding/logo-aurora.svg";
@@ -19,7 +18,6 @@ import { usePlayerStore, type AccentVariant } from "@/features/player";
 
 const brandingLogos: Record<Exclude<AccentVariant, "default">, string> = {
   spotify: spotifyLogo,
-  yandex: yandexLogo,
   discord: discordLogo,
   telegram: telegramLogo,
   aurora: auroraLogo,
