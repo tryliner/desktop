@@ -394,7 +394,7 @@ function LibraryPlaylistContent() {
           isScrolled
             ? "opacity-100 pointer-events-auto translate-y-0"
             : "opacity-0 pointer-events-none -translate-y-2"
-        } bg-bg-primary/80 backdrop-blur-md border-b border-border-white-alpha-14`}
+        } bg-bg-primary/80 backdrop-blur-md`}
         style={{ height: "38px", marginBottom: "-38px" }}
         data-window-drag
       >
