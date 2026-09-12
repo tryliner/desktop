@@ -221,24 +221,24 @@ export default function HomePage() {
         {isReady && (
           <div className="col-start-1 row-start-1 w-full pb-[40px]">
             {/* Hero Greeting Section */}
-          <div className={`relative px-8 pt-8 ${hasEnoughQuickData ? "pb-2" : "pb-0"}`}>
+          <div className={`relative px-8 pt-3.5 ${hasEnoughQuickData ? "pb-2" : "pb-0"}`}>
             <div
-              className={`relative inline-flex items-center gap-3 px-4 py-2.5 rounded-2xl rounded-tl-sm bg-bg-canvas/70 backdrop-blur-md ${
+              className={`relative -ml-3 inline-flex items-center gap-3 px-4 py-2 rounded-2xl rounded-tl-sm bg-bg-canvas/35 backdrop-blur-md ${
                 hasEnoughQuickData ? "mb-5" : "mb-2"
               }`}
             >
               <svg
-                viewBox="0 0 9 14"
-                className="absolute -left-[9px] top-3.5 w-[9px] h-[14px] text-bg-canvas/70 fill-current pointer-events-none"
+                viewBox="0 0 14 16"
+                className="absolute -left-[13px] top-1/2 -translate-y-1/2 w-[14px] h-[16px] text-bg-canvas/35 fill-current pointer-events-none"
                 aria-hidden="true"
               >
-                <path d="M9 0 C6 0, 2 2, 0 5 C3 8, 6 11, 9 14 Z" />
+                <path d="M14 0 C10 3, 4 6, 0 8 C4 10, 10 13, 14 16 Z" />
               </svg>
               <div className="flex items-center shrink-0">
                 {GreetingIcon}
               </div>
               <h1
-                className="text-[24px] font-bold text-text-primary tracking-tight m-0 leading-tight"
+                className="text-[22px] font-bold text-text-primary tracking-tight m-0 leading-tight"
                 style={{ fontFamily: "var(--font-inter), sans-serif" }}
               >
                 {fullGreeting}
