@@ -1,8 +1,6 @@
 import { memo, useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import ScrollableRow from "@/shared/ui/ScrollableRow";
-import useHorizontalScroll from "@/shared/hooks/useHorizontalScroll";
-import { LeftLine, RightLine } from "@mingcute/react";
 import { playerEngine } from "@/features/player";
 import { useSongMenuItems } from "@/features/player/hooks/useSongMenuItems";
 import { usePlayerStore } from "@/features/player/store/playerStore";
@@ -496,11 +494,6 @@ function PopularTracksSection({
   headingMarginTop = "mt-[32px]",
   rowClassName = "",
 }: PopularTracksSectionProps) {
-  const scrollController = useHorizontalScroll();
-  const { canScrollLeft, canScrollRight, scrollPrev, scrollNext } =
-    scrollController;
-  const showNav = canScrollLeft || canScrollRight;
-
   return (
     <div className="flex flex-col">
       <div className={`${headingMarginTop} px-8 flex items-center justify-between`}>
@@ -521,33 +514,9 @@ function PopularTracksSection({
             </p>
           )}
         </div>
-
-        {showNav && (
-          <div className="flex items-center gap-1.5 shrink-0 select-none">
-            <button
-              type="button"
-              onClick={scrollPrev}
-              disabled={!canScrollLeft}
-              aria-label="Previous"
-              className="flex items-center justify-center w-[28px] h-[28px] rounded-full bg-border-alpha-14 text-text-secondary hover:text-text-primary hover:bg-border-alpha-33 active:scale-95 disabled:opacity-20 disabled:pointer-events-none transition-all cursor-pointer border-none"
-            >
-              <LeftLine size={16} />
-            </button>
-            <button
-              type="button"
-              onClick={scrollNext}
-              disabled={!canScrollRight}
-              aria-label="Next"
-              className="flex items-center justify-center w-[28px] h-[28px] rounded-full bg-border-alpha-14 text-text-secondary hover:text-text-primary hover:bg-border-alpha-33 active:scale-95 disabled:opacity-20 disabled:pointer-events-none transition-all cursor-pointer border-none"
-            >
-              <RightLine size={16} />
-            </button>
-          </div>
-        )}
       </div>
 
       <ScrollableRow
-        controller={scrollController}
         className={`flex gap-[28px] pl-8 pr-8 mt-[16px] overflow-x-auto pb-[20px] ${rowClassName}`}
       >
         {items.map((item, index) => (

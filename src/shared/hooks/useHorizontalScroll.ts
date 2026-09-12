@@ -36,6 +36,8 @@ export function useHorizontalScroll(
   const suppressClick = useRef(false);
   const startX = useRef(0);
   const scrollLeft = useRef(0);
+  const animId = useRef<number | null>(null);
+  const dragSamples = useRef<Array<{ x: number; time: number }>>([]);
 
   const checkScroll = useCallback(() => {
     const el = scrollRef.current;
@@ -84,6 +86,10 @@ export function useHorizontalScroll(
     return () => {
       document.body.style.removeProperty("cursor");
       document.body.style.removeProperty("user-select");
+      if (animId.current !== null) {
+        cancelAnimationFrame(animId.current);
+        animId.current = null;
+      }
     };
   }, []);
 
@@ -93,13 +99,21 @@ export function useHorizontalScroll(
       const el = scrollRef.current;
       if (!el) return;
 
+      if (animId.current !== null) {
+        cancelAnimationFrame(animId.current);
+        animId.current = null;
+        suppressClick.current = true;
+      }
+
       isMouseDown.current = true;
       hasDragged.current = false;
       startX.current = event.pageX;
       scrollLeft.current = el.scrollLeft;
+      dragSamples.current = [{ x: event.pageX, time: performance.now() }];
 
       const onWindowMouseMove = (e: globalThis.MouseEvent) => {
         if (!isMouseDown.current) return;
+        const now = performance.now();
         const delta = e.pageX - startX.current;
         if (!hasDragged.current && Math.abs(delta) > 5) {
           hasDragged.current = true;
@@ -109,6 +123,10 @@ export function useHorizontalScroll(
         }
         if (hasDragged.current) {
           el.scrollLeft = scrollLeft.current - delta;
+          dragSamples.current = dragSamples.current.filter(
+            (s) => now - s.time <= 100,
+          );
+          dragSamples.current.push({ x: e.pageX, time: now });
         }
       };
 
@@ -130,6 +148,51 @@ export function useHorizontalScroll(
           setTimeout(() => {
             suppressClick.current = false;
           }, 50);
+
+          const samples = dragSamples.current;
+          if (samples.length >= 2 && el) {
+            const now = performance.now();
+            const recentSamples = samples.filter((s) => now - s.time <= 120);
+            if (recentSamples.length >= 2) {
+              const first = recentSamples[0];
+              const last = recentSamples[recentSamples.length - 1];
+              const dt = last.time - first.time;
+              const dx = last.x - first.x;
+              if (dt > 10) {
+                let velocity = dx / dt;
+                const maxVelocity = 3.0;
+                velocity = Math.max(-maxVelocity, Math.min(maxVelocity, velocity));
+                if (Math.abs(velocity) > 0.15) {
+                  let lastTime = performance.now();
+                  const friction = 0.94;
+                  const animateInertia = () => {
+                    const currentTime = performance.now();
+                    const elapsed = Math.min(currentTime - lastTime, 32);
+                    lastTime = currentTime;
+                    const decay = Math.pow(friction, elapsed / 16.67);
+                    velocity *= decay;
+                    if (Math.abs(velocity) < 0.02) {
+                      animId.current = null;
+                      return;
+                    }
+                    if (el) {
+                      el.scrollLeft -= velocity * elapsed;
+                      if (
+                        el.scrollLeft <= 0 ||
+                        Math.ceil(el.scrollLeft + el.clientWidth) >=
+                          el.scrollWidth
+                      ) {
+                        animId.current = null;
+                        return;
+                      }
+                    }
+                    animId.current = requestAnimationFrame(animateInertia);
+                  };
+                  animId.current = requestAnimationFrame(animateInertia);
+                }
+              }
+            }
+          }
         }
       };
 
