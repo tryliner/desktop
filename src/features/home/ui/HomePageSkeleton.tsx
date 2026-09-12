@@ -68,10 +68,17 @@ function HomePageSkeletonComponent({
       <div className={`relative px-8 pt-8 ${showQuickGrid ? "pb-2" : "pb-0"}`}>
         {/* Greeting Header */}
         <div
-          className={`relative inline-flex items-center gap-3 px-4 py-2.5 rounded-2xl bg-bg-canvas/70 ${
+          className={`relative inline-flex items-center gap-3 px-4 py-2.5 rounded-2xl rounded-tl-sm bg-bg-canvas/70 ${
             showQuickGrid ? "mb-5" : "mb-2"
           }`}
         >
+          <svg
+            viewBox="0 0 9 14"
+            className="absolute -left-[9px] top-3.5 w-[9px] h-[14px] text-bg-canvas/70 fill-current pointer-events-none"
+            aria-hidden="true"
+          >
+            <path d="M9 0 C6 0, 2 2, 0 5 C3 8, 6 11, 9 14 Z" />
+          </svg>
           <div className="skeleton-shimmer w-6 h-6 rounded-[6px] shrink-0" />
           <div className="skeleton-shimmer h-[24px] w-[220px] sm:w-[280px] rounded-[6px]" />
         </div>

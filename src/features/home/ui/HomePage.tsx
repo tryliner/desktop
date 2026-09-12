@@ -223,10 +223,17 @@ export default function HomePage() {
             {/* Hero Greeting Section */}
           <div className={`relative px-8 pt-8 ${hasEnoughQuickData ? "pb-2" : "pb-0"}`}>
             <div
-              className={`relative inline-flex items-center gap-3 px-4 py-2.5 rounded-2xl bg-bg-canvas/70 backdrop-blur-md ${
+              className={`relative inline-flex items-center gap-3 px-4 py-2.5 rounded-2xl rounded-tl-sm bg-bg-canvas/70 backdrop-blur-md ${
                 hasEnoughQuickData ? "mb-5" : "mb-2"
               }`}
             >
+              <svg
+                viewBox="0 0 9 14"
+                className="absolute -left-[9px] top-3.5 w-[9px] h-[14px] text-bg-canvas/70 fill-current pointer-events-none"
+                aria-hidden="true"
+              >
+                <path d="M9 0 C6 0, 2 2, 0 5 C3 8, 6 11, 9 14 Z" />
+              </svg>
               <div className="flex items-center shrink-0">
                 {GreetingIcon}
               </div>
