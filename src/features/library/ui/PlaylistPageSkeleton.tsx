@@ -38,20 +38,18 @@ function PlaylistPageSkeletonComponent({
         className="pointer-events-none absolute left-0 top-0 z-0 h-[450px] w-full bg-gradient-to-b from-white/[0.04] to-transparent blur-3xl opacity-30"
       />
 
-      <div className="flex items-center px-[32px] h-[38px]">
-        <div className="inline-flex items-center gap-[10px]">
-          <div className="skeleton-shimmer h-[20px] w-[20px] rounded-full shrink-0" />
-          <div className="skeleton-shimmer h-[16px] w-[50px] rounded-[6px]" />
+      <div className="relative z-10 px-[32px] pt-[24px]">
+        <div className="inline-flex items-center gap-[6px]">
+          <div className="skeleton-shimmer h-[18px] w-[18px] rounded-full shrink-0" />
+          <div className="skeleton-shimmer h-[14px] w-[50px] rounded-[4px]" />
         </div>
-      </div>
 
-      <div className="relative z-10 px-[32px] pt-[8px]">
-        <section className="mt-[16px] flex items-start gap-[28px]">
-          <div className="relative h-[170px] w-[170px] shrink-0 overflow-hidden rounded-xl bg-border-alpha-14">
+        <section className="mt-[24px] flex items-start gap-[24px]">
+          <div className="relative h-[180px] w-[180px] shrink-0 overflow-hidden rounded-xl bg-border-alpha-14">
             <div className="skeleton-shimmer h-full w-full" />
           </div>
 
-          <div className="flex min-h-[170px] flex-1 justify-between">
+          <div className="flex min-h-[180px] flex-1 justify-between">
             <div className="flex flex-col justify-center">
               <div className="skeleton-shimmer h-[34px] w-[260px] md:w-[320px] rounded-[6px]" />
               <div className="skeleton-shimmer h-[18px] w-[140px] rounded-[4px] mt-[8px]" />

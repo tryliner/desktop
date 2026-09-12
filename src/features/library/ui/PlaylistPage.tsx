@@ -375,15 +375,27 @@ function LibraryPlaylistContent() {
     <div
       ref={scrollRef}
       onScroll={(e) => {
-        const nextScrolled = e.currentTarget.scrollTop > 100;
+        const container = e.currentTarget;
+        let nextScrolled = false;
+        if (trackListContainerRef.current) {
+          const relativeTrackTop =
+            trackListContainerRef.current.getBoundingClientRect().top -
+            container.getBoundingClientRect().top;
+          nextScrolled = relativeTrackTop <= 38;
+        } else {
+          nextScrolled = container.scrollTop > 260;
+        }
         setIsScrolled((prev) => (prev === nextScrolled ? prev : nextScrolled));
       }}
       className="page-transition relative h-full w-full overflow-y-auto bg-bg-primary pb-[24px]"
     >
       <div
-        className={`sticky top-0 z-20 transition-colors duration-200 ${
-          isScrolled ? "bg-bg-primary" : "bg-transparent"
-        }`}
+        className={`sticky top-0 z-20 transition-all duration-200 ${
+          isScrolled
+            ? "opacity-100 pointer-events-auto translate-y-0"
+            : "opacity-0 pointer-events-none -translate-y-2"
+        } bg-bg-primary/80 backdrop-blur-md border-b border-border-white-alpha-14`}
+        style={{ height: "38px", marginBottom: "-38px" }}
         data-window-drag
       >
         <div className="flex items-center justify-between px-[32px] h-[38px]">
@@ -399,11 +411,7 @@ function LibraryPlaylistContent() {
 
             {viewData && (
               <span
-                className={`text-[14px] font-semibold text-text-primary truncate transition-all duration-200 ${
-                  isScrolled
-                    ? "opacity-100 translate-y-0"
-                    : "opacity-0 -translate-y-1 pointer-events-none"
-                }`}
+                className="text-[14px] font-semibold text-text-primary truncate"
                 style={{
                   fontFamily: "var(--font-inter), sans-serif",
                   letterSpacing: "-0.01em",
@@ -414,21 +422,9 @@ function LibraryPlaylistContent() {
             )}
           </div>
         </div>
-
-        <div className="pointer-events-none absolute inset-x-0 bottom-[-14px] h-[18px] overflow-hidden">
-          <div
-            className={`h-full w-full transition-opacity duration-200 ${
-              isScrolled ? "opacity-100" : "opacity-0"
-            }`}
-            style={{
-              background:
-                "linear-gradient(to bottom, var(--color-bg-primary) 0%, var(--color-bg-primary) 35%, transparent 100%)",
-            }}
-          />
-        </div>
       </div>
 
-      <div className="relative z-1 grid grid-cols-1 items-start w-full -mt-[38px]">
+      <div className="relative z-1 grid grid-cols-1 items-start w-full">
         {isReady && viewData && (
           <div className="col-start-1 row-start-1 w-full">
             {viewData.coverUrl && (
@@ -447,8 +443,16 @@ function LibraryPlaylistContent() {
                 }}
               />
             )}
-            <div className="relative z-10 px-[32px] pt-[46px]">
-              <section className="mt-[16px] flex items-start gap-[24px]">
+            <div className="relative z-10 px-[32px] pt-[24px]" data-window-drag>
+              <Link
+                to="/library"
+                className="inline-flex items-center gap-[6px] text-text-secondary no-underline transition-colors duration-200 hover:text-text-primary cursor-pointer"
+                style={{ fontFamily: "var(--font-inter), sans-serif" }}
+              >
+                <ArrowLeftLine size={18} />
+                <span className="text-[14px] font-[500]">{t("common.back")}</span>
+              </Link>
+              <section className="mt-[24px] flex items-start gap-[24px]">
                 <div className="relative h-[180px] w-[180px] shrink-0 overflow-hidden rounded-xl bg-border-alpha-14 flex items-center justify-center">
                   {(() => {
                     const urls =
