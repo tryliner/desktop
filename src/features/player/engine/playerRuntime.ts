@@ -10,7 +10,7 @@ export class PlayerRuntime {
   private loadEpoch = 0;
   private loadAbortController: AbortController | null = null;
   private isResetting = false;
-  private fadeAnimationId: number | null = null;
+  private fadeTimer: ReturnType<typeof setTimeout> | null = null;
   private stallStartTime: number | null = null;
   private loadStartTime = 0;
   private ttfbMs = 0;
@@ -44,7 +44,8 @@ export class PlayerRuntime {
 
     usePlayerStore.subscribe((state, prevState) => {
       if (state.volume !== prevState.volume) {
-        if (this.fadeAnimationId === null && !this.audio.paused) {
+        this.cancelFade();
+        if (!this.audio.paused) {
           this.audio.volume = state.volume;
         }
       }
@@ -247,9 +248,9 @@ export class PlayerRuntime {
   }
 
   private cancelFade(): void {
-    if (this.fadeAnimationId !== null) {
-      cancelAnimationFrame(this.fadeAnimationId);
-      this.fadeAnimationId = null;
+    if (this.fadeTimer !== null) {
+      clearTimeout(this.fadeTimer);
+      this.fadeTimer = null;
     }
   }
 
@@ -269,7 +270,8 @@ export class PlayerRuntime {
 
     const startTime = performance.now();
 
-    const step = (now: number) => {
+    const tick = () => {
+      const now = performance.now();
       const elapsed = now - startTime;
       const progress = Math.min(elapsed / durationMs, 1);
       const eased = 0.5 - 0.5 * Math.cos(progress * Math.PI);
@@ -277,15 +279,16 @@ export class PlayerRuntime {
       this.audio.volume = Math.max(0, Math.min(1, current));
 
       if (progress < 1) {
-        this.fadeAnimationId = requestAnimationFrame(step);
+        // audio fade ticks independently of display vsync in background
+        this.fadeTimer = setTimeout(tick, 16);
       } else {
-        this.fadeAnimationId = null;
+        this.fadeTimer = null;
         this.audio.volume = Math.max(0, Math.min(1, targetVolume));
         onComplete?.();
       }
     };
 
-    this.fadeAnimationId = requestAnimationFrame(step);
+    this.fadeTimer = setTimeout(tick, 16);
   }
 
   private safeResetAudioElement() {
@@ -469,7 +472,6 @@ export class PlayerRuntime {
     this.fadeVolume(0, 180, () => {
       if (epoch !== this.loadEpoch) return;
       this.audio.pause();
-      this.audio.volume = usePlayerStore.getState().volume;
     });
   }
 

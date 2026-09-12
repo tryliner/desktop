@@ -102,6 +102,7 @@ function createWindow() {
       contextIsolation: true,
       sandbox: false,
       devTools: true,
+      backgroundThrottling: false, // keeps audio timer and playback ticks running when app is in background or another workspace
     },
   });
 

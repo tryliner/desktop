@@ -54,6 +54,16 @@ export function useGlobalShortcuts(options: GlobalShortcutsOptions): void {
       if (opts.enabled === false) return;
       if (event.defaultPrevented) return;
 
+      // ignore shortcuts if window does not have focus
+      if (
+        typeof document !== "undefined" &&
+        typeof document.hasFocus === "function" &&
+        process.env.NODE_ENV !== "test" &&
+        !document.hasFocus()
+      ) {
+        return;
+      }
+
       const { code } = event;
       if (event.repeat && NON_REPEATABLE_CODES.has(code)) return;
 
