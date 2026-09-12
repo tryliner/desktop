@@ -26,7 +26,6 @@ export interface PlaylistPageSkeletonProps {
   className?: string;
 }
 
-// matches user playlist and liked tracks hero header and virtual tracklist layout
 function PlaylistPageSkeletonComponent({
   className = "",
 }: PlaylistPageSkeletonProps) {
@@ -34,27 +33,22 @@ function PlaylistPageSkeletonComponent({
     <div
       className={`relative w-full bg-bg-primary pb-[32px] select-none ${className}`}
     >
-      {/* subtle ambient header glow */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute left-0 top-0 z-0 h-[450px] w-full bg-gradient-to-b from-white/[0.04] to-transparent blur-3xl opacity-30"
       />
 
-      <div className="relative z-10 px-[32px] pt-[24px]">
-        {/* top row: back link and playlist title */}
+      <div className="relative z-10 px-[32px] pt-[4px]">
         <div className="inline-flex items-center gap-[10px]">
           <div className="skeleton-shimmer h-[24px] w-[24px] rounded-full shrink-0" />
           <div className="skeleton-shimmer h-[28px] w-[220px] rounded-[6px]" />
         </div>
 
-        {/* hero header: artwork + metadata */}
         <section className="mt-[20px] flex items-start gap-[28px]">
-          {/* cover artwork */}
           <div className="relative h-[170px] w-[170px] shrink-0 overflow-hidden rounded-xl bg-border-alpha-14">
             <div className="skeleton-shimmer h-full w-full" />
           </div>
 
-          {/* title, description, duration and action buttons */}
           <div className="flex min-h-[170px] flex-1 justify-between">
             <div className="flex flex-col justify-center">
               <div className="skeleton-shimmer h-[34px] w-[260px] md:w-[320px] rounded-[6px]" />
@@ -62,14 +56,11 @@ function PlaylistPageSkeletonComponent({
               <div className="skeleton-shimmer h-[14px] w-[130px] rounded-[4px] mt-[10px]" />
 
               <div className="mt-[18px] flex items-center gap-[10px]">
-                {/* play all */}
                 <div className="skeleton-shimmer h-[42px] w-[124px] rounded-md" />
-                {/* add to queue */}
                 <div className="skeleton-shimmer h-[42px] w-[42px] rounded-md" />
               </div>
             </div>
 
-            {/* right action buttons: share + more */}
             <div className="flex items-end gap-[10px] pb-[6px] pr-[16px]">
               <div className="skeleton-shimmer h-[42px] w-[42px] rounded-md" />
               <div className="skeleton-shimmer h-[42px] w-[42px] rounded-md" />
@@ -77,7 +68,6 @@ function PlaylistPageSkeletonComponent({
           </div>
         </section>
 
-        {/* tracklist rows */}
         <section className="mt-[20px]">
           <div className="flex flex-col -mx-[8px] space-y-[2px]">
             {Array.from({ length: 8 }).map((_, i) => (

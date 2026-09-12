@@ -112,6 +112,7 @@ function SongCard({
           clearTimeout(clickTimerRef.current);
           clickTimerRef.current = null;
         }
+        if (e.clientY <= 32) return;
         if (!onGrabStart) return;
         const target = e.target as HTMLElement;
         if (

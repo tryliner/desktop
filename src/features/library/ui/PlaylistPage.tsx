@@ -375,8 +375,11 @@ function LibraryPlaylistContent() {
       ref={scrollRef}
       className="page-transition relative h-full w-full overflow-y-auto bg-bg-primary pb-[24px]"
     >
+      <div
+        className="sticky top-0 z-20 h-[32px] w-full shrink-0 bg-bg-primary"
+        data-window-drag
+      />
       <div className="relative z-1 grid grid-cols-1 items-start w-full">
-        {/* Real Content Layer */}
         {isReady && viewData && (
           <div className="col-start-1 row-start-1 w-full">
             {viewData.coverUrl && (
@@ -395,7 +398,7 @@ function LibraryPlaylistContent() {
                 }}
               />
             )}
-            <div className="relative z-10 px-[32px] pt-[24px]">
+            <div className="relative z-10 px-[32px] pt-[4px]">
               <Link
                 to="/library"
                 className="inline-flex items-center gap-[8px] text-text-secondary no-underline transition-colors duration-200 hover:text-text-primary cursor-pointer"
