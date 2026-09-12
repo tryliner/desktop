@@ -116,8 +116,10 @@
     "name_required": "Имя обязательно",
     "paste_link_first": "Сначала вставьте ссылку",
     "added_to_library": "{type} добавлен(а) в библиотеку",
+    "added_to_library_success": "Добавлено в библиотеку",
     "failed_to_add_library": "Не удалось добавить в библиотеку",
     "removed_from_library": "{type} удален(а) из библиотеки",
+    "removed_from_library_success": "Удалено из библиотеки",
     "failed_remove_from_library": "Не удалось удалить из библиотеки",
     "failed_to_load_track": "Не удалось загрузить трек",
     "failed_to_resolve_link": "Не удалось распознать ссылку",
@@ -156,7 +158,10 @@
     "description_placeholder": "Описание (необязательно)",
     "supported_sources": "Поддерживаемые источники",
     "error_network": "Нет соединения. Проверьте интернет и попробуйте снова.",
+    "error_network_title": "Ошибка соединения",
     "error_server": "Что-то пошло не так на нашей стороне. Попробуйте позже.",
+    "error_server_title": "Ошибка сервера",
+    "error_timeout_title": "Сервер не отвечает",
     "error_not_found": "Не найдено. Возможно, это уже удалено.",
     "error_session_expired": "Сессия истекла. Войдите снова.",
     "error_too_many": "Слишком много запросов. Подождите и попробуйте снова.",
@@ -346,8 +351,9 @@
     "earlier": "Раньше",
     "later": "Позже",
     "reset": "Сбросить",
-    "offset_hint": "Минус (-) показывает текст раньше, плюс (+) позже",
+    "offset_hint": "Отрицательное значение сдвигает текст раньше, положительное — позже",
     "track_unavailable": "«{title}» недоступен, пропускаем...",
+    "track_unavailable_title": "Трек недоступен",
     "playback_stopped_too_many_errors": "Воспроизведение остановлено — слишком много треков не удалось загрузить."
   },
   "playlist": {
@@ -408,6 +414,17 @@
     },
     "privacy": {
       "description": "Анонимная статистика использования и отчёты о сбоях."
+    },
+    "notifications": {
+      "test_button": "Тестовое уведомление",
+      "playback_title": "Воспроизведение",
+      "playback_sub": "Daft Punk — Instant Crush",
+      "playback_action": "Пауза",
+      "release_title": "Новый релиз артиста",
+      "release_sub": "Kendrick Lamar — GNX",
+      "release_action": "Слушать",
+      "copy_request_id": "Скопировать ID ошибки для поддержки",
+      "copied": "Скопировано!"
     },
     "language": {
       "label": "Язык",

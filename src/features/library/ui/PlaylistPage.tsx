@@ -201,7 +201,10 @@ function LibraryPlaylistContent() {
     for (const track of viewData.tracks) {
       playerEngine.addToQueue(track);
     }
-    toast(t("playlist.added_to_queue"), "info");
+    const playlistTitle = viewData.title || t("playlist.untitled_playlist");
+    toast(t("playlist.added_to_queue"), "info", {
+      description: playlistTitle,
+    });
     setAddedToQueue(true);
     const timer = setTimeout(() => {
       setAddedToQueue(false);
@@ -273,9 +276,11 @@ function LibraryPlaylistContent() {
   const handleShare = useCallback(() => {
     if (typeof navigator !== "undefined" && navigator.clipboard && decodedId && decodedId !== "likes") {
       navigator.clipboard.writeText(buildShareUrl("playlist", decodedId));
-      toast(t("common.link_copied"), "info");
+      toast(t("common.link_copied"), "checkmark", {
+        description: viewData?.title || undefined,
+      });
     }
-  }, [t, toast, decodedId]);
+  }, [t, toast, decodedId, viewData?.title]);
 
   const urlsToPreload = useMemo(() => {
     if (!viewData) return [];

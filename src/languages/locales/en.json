@@ -116,8 +116,10 @@
     "name_required": "Name is required",
     "paste_link_first": "Paste a link first",
     "added_to_library": "Added {type} to library",
+    "added_to_library_success": "Added to library",
     "failed_to_add_library": "Failed to add to library",
     "removed_from_library": "Removed {type} from library",
+    "removed_from_library_success": "Removed from library",
     "failed_remove_from_library": "Failed to remove from library",
     "failed_to_load_track": "Failed to load track",
     "failed_to_resolve_link": "Failed to resolve link",
@@ -156,8 +158,11 @@
     "description_placeholder": "Description (optional)",
     "supported_sources": "Supported sources",
     "error_network": "No connection. Check your internet and try again.",
-    "error_server": "Something went wrong on our side. Try again later.",
-    "error_not_found": "Not found. It may have been removed.",
+    "error_network_title": "Network error",
+    "error_server": "Something went wrong on our end. Try again later.",
+    "error_server_title": "Server error",
+    "error_timeout_title": "Server timeout",
+    "error_not_found": "Not found. It might have been deleted.",
     "error_session_expired": "Session expired. Please sign in again.",
     "error_too_many": "Too many requests. Wait a bit and try again.",
     "error_something_wrong": "Something went wrong. Try again.",
@@ -342,8 +347,9 @@
     "earlier": "Earlier",
     "later": "Later",
     "reset": "Reset",
-    "offset_hint": "Negative shifts earlier, positive shifts later",
+    "offset_hint": "Negative moves lyrics earlier, positive later",
     "track_unavailable": "\"{title}\" is unavailable, skipping...",
+    "track_unavailable_title": "Track unavailable",
     "playback_stopped_too_many_errors": "Playback stopped — too many tracks failed to load."
   },
   "playlist": {
@@ -404,6 +410,17 @@
     },
     "privacy": {
       "description": "Anonymous usage statistics and crash reports."
+    },
+    "notifications": {
+      "test_button": "Test notification",
+      "playback_title": "Playback",
+      "playback_sub": "Daft Punk — Instant Crush",
+      "playback_action": "Pause",
+      "release_title": "New artist release",
+      "release_sub": "Kendrick Lamar — GNX",
+      "release_action": "Listen",
+      "copy_request_id": "Copy request ID for support",
+      "copied": "Copied!"
     },
     "language": {
       "label": "Language",

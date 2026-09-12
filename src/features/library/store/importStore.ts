@@ -149,7 +149,9 @@ useImportStore.subscribe((state) => {
     try {
       await api.addPlaylistTrack(job.playlistId as string, pendingTrack.id);
       notifyLibraryChanged();
-      showToast(translate("common.added_to_playlist"), "success");
+      showToast(translate("common.added_to_playlist"), "checkmark", {
+        description: pendingTrack.title || undefined,
+      });
     } catch {
       showToast(translate("common.failed_add_playlist"), "error");
     }

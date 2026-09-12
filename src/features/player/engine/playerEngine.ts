@@ -776,7 +776,9 @@ class PlayerEngine {
     }
 
     log("yellow", "playback", `"${track.title}" failed (${info.message}) — skipping to next`);
-    showToast(translate("player.track_unavailable", { title: track.title }), "error");
+    showToast(translate("player.track_unavailable_title"), "error", {
+      description: track.artists ? `${track.title} — ${track.artists}` : track.title,
+    });
     void this.skipNext(false);
   }
 

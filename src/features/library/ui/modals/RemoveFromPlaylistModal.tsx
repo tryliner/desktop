@@ -27,7 +27,9 @@ export default function RemoveFromPlaylistModal() {
       playlistId: detail.playlistId,
       itemId: detail.playlistItemId,
     });
-    toast(t("common.removed_from_playlist"), "success");
+    toast(t("common.removed_from_playlist"), "info", {
+      description: detail.trackTitle || undefined,
+    });
     close();
   }, [detail, toast, removeTracks, t, close]);
 

@@ -73,14 +73,19 @@ export default function AddToPlaylistModal() {
 
   const handleAddToPlaylist = async (playlistId: string) => {
     if (!track) return;
+    const targetPlaylist = playlists.find((p) => p.id === playlistId);
     setAddingTo(playlistId);
     try {
       await addTrack.mutateAsync({ playlistId, trackId: track.id });
-      toast(t("common.added_to_playlist"), "success");
+      toast(t("common.added_to_playlist"), "checkmark", {
+        description: targetPlaylist?.title || undefined,
+      });
       close();
     } catch (error) {
       if (error instanceof ApiError && error.status === 409) {
-        toast(t("common.track_already_in_playlist"), "error");
+        toast(t("common.track_already_in_playlist"), "error", {
+          description: track.title || undefined,
+        });
       } else {
         toast(t("common.failed_add_playlist"), "error");
       }

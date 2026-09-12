@@ -3,7 +3,15 @@ export { default as Dialog, type DialogProps } from "./Dialog";
 export { default as Select, type SelectProps, type SelectOption } from "./Select";
 export { default as TextInput, type TextInputProps } from "./TextInput";
 export { default as ToggleSwitch, type ToggleSwitchProps } from "./ToggleSwitch";
-export { ToastProvider, useToast, showToast, type ToastOptions } from "./Toast";
+export {
+  ToastProvider,
+  useToast,
+  showToast,
+  type ToastOptions,
+  type ToastVariant,
+  type ToastAction,
+  type ToastCallable,
+} from "./Toast";
 export { default as DropdownMenu, type DropdownMenuProps, type DropdownMenuItem } from "./DropdownMenu";
 export { AppleEmojiProvider } from "./AppleEmojiProvider";
 export { default as ExplicitBadge } from "./ExplicitBadge";

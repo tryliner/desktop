@@ -261,7 +261,9 @@ function ArtistContent() {
   const handleAddToQueue = () => {
     if (!data || data.tracks.length === 0) return;
     data.tracks.forEach((track) => playerEngine.addToQueue(track));
-    toast(t("artist.added_to_queue"), "info");
+    toast(t("artist.added_to_queue"), "info", {
+      description: data.title || undefined,
+    });
   };
 
   const handleSaveToLibrary = () => {
@@ -287,7 +289,9 @@ function ArtistContent() {
   const handleShare = () => {
     if (typeof navigator !== "undefined" && navigator.clipboard && decodedId) {
       navigator.clipboard.writeText(buildShareUrl("artist", decodedId));
-      toast(t("common.link_copied"), "info");
+      toast(t("common.link_copied"), "checkmark", {
+        description: data?.title || undefined,
+      });
     }
   };
 

@@ -116,8 +116,10 @@
     "name_required": "Ім'я обов'язкове",
     "paste_link_first": "Спочатку вставте посилання",
     "added_to_library": "{type} додано до бібліотеки",
+    "added_to_library_success": "Додано до бібліотеки",
     "failed_to_add_library": "Не вдалося додати до бібліотеки",
     "removed_from_library": "{type} видалено з бібліотеки",
+    "removed_from_library_success": "Видалено з бібліотеки",
     "failed_remove_from_library": "Не вдалося видалити з бібліотеки",
     "failed_to_load_track": "Не вдалося завантажити трек",
     "failed_to_resolve_link": "Не вдалося розпізнати посилання",
@@ -156,7 +158,10 @@
     "description_placeholder": "Опис (необов'язково)",
     "supported_sources": "Підтримувані джерела",
     "error_network": "Немає з'єднання. Перевірте інтернет і спробуйте знову.",
+    "error_network_title": "Помилка з'єднання",
     "error_server": "Щось пішло не так на нашому боці. Спробуйте пізніше.",
+    "error_server_title": "Помилка сервера",
+    "error_timeout_title": "Сервер не відповідає",
     "error_not_found": "Не знайдено. Можливо, це вже видалено.",
     "error_session_expired": "Сесія завершилася. Увійдіть знову.",
     "error_too_many": "Забагато запитів. Зачекайте і спробуйте знову.",
@@ -348,6 +353,7 @@
     "reset": "Скинути",
     "offset_hint": "Від'ємне значення зміщує текст раніше, додатне — пізніше",
     "track_unavailable": "«{title}» недоступний, пропускаємо...",
+    "track_unavailable_title": "Трек недоступний",
     "playback_stopped_too_many_errors": "Відтворення зупинено — забагато треків не вдалося завантажити."
   },
   "playlist": {
@@ -408,6 +414,17 @@
     },
     "privacy": {
       "description": "Анонімна статистика використання та звіти про збої."
+    },
+    "notifications": {
+      "test_button": "Тестове сповіщення",
+      "playback_title": "Відтворення",
+      "playback_sub": "Daft Punk — Instant Crush",
+      "playback_action": "Пауза",
+      "release_title": "Новий реліз артиста",
+      "release_sub": "Kendrick Lamar — GNX",
+      "release_action": "Слухати",
+      "copy_request_id": "Скопіювати ID помилки для підтримки",
+      "copied": "Скопійовано!"
     },
     "language": {
       "label": "Мова",

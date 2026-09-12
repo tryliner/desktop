@@ -113,7 +113,9 @@ function SongCardWithMenu({
         durationMs: resolvedDurationMs,
         playCount: 0,
       });
-      toast(`${title} — ${t("common.added_to_queue")}`, "success");
+      toast(t("common.added_to_queue"), "checkmark", {
+        description: artists ? `${title} — ${artists}` : title,
+      });
     } else if (onPlay) {
       onPlay();
     }

@@ -47,13 +47,9 @@ function RemoveFromLibraryModalContent() {
       { type: targetType, id: targetId },
       {
         onSuccess: () =>
-          toast(
-            t("common.removed_from_library", {
-              type: detail.title || targetType,
-              name: detail.title || targetType,
-            }),
-            "success",
-          ),
+          toast(t("common.removed_from_library_success"), "info", {
+            description: detail.title || undefined,
+          }),
         onError: () =>
           toast(t("common.failed_to_remove_library"), "error"),
       },

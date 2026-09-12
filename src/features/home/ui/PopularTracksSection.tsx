@@ -90,7 +90,11 @@ function TrackCard({
         durationMs: item.item.durationMs,
         playCount: item.item.playCount ?? 0,
       });
-      toast(`${item.item.title} — ${t("common.added_to_queue")}`, "success");
+      toast(t("common.added_to_queue"), "checkmark", {
+        description: item.item.artists
+          ? `${item.item.title} — ${item.item.artists}`
+          : item.item.title,
+      });
     } else {
       handlePlay();
     }

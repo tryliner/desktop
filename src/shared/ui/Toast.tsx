@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -15,7 +16,13 @@ import { useImportStore } from "@/features/library/store/importStore";
 import { useModalStore } from "@/features/library/store/modalStore";
 import ScrollableText from "./ScrollableText";
 
-type ToastVariant = "success" | "error" | "info";
+export type ToastVariant =
+  | "success"
+  | "error"
+  | "info"
+  | "loading"
+  | "checkmark"
+  | "loader";
 
 export interface ToastAction {
   label: string;
@@ -30,6 +37,8 @@ export interface ToastOptions {
   requestId?: string;
   errorCode?: string;
   action?: ToastAction;
+  button?: ToastAction;
+  icon?: React.ReactNode | "checkmark" | "loader" | "info" | "error";
   onDismiss?: () => void;
 }
 
@@ -42,40 +51,88 @@ interface Toast {
   requestId?: string;
   errorCode?: string;
   action?: ToastAction;
+  button?: ToastAction;
+  icon?: React.ReactNode | "checkmark" | "loader" | "info" | "error";
   onDismiss?: () => void;
 }
 
-interface ToastContextValue {
-  toast: (
+export interface ToastCallable {
+  (
     message: string,
-    variant?: ToastVariant,
+    variantOrOptions?: ToastVariant | ToastOptions,
     options?: ToastOptions,
-  ) => void;
+  ): void;
+  success: (message: string, options?: ToastOptions) => void;
+  checkmark: (message: string, options?: ToastOptions) => void;
+  loader: (message: string, options?: ToastOptions) => void;
+  loading: (message: string, options?: ToastOptions) => void;
+  error: (message: string, options?: ToastOptions) => void;
+  info: (message: string, options?: ToastOptions) => void;
+}
+
+interface ToastContextValue {
+  toast: ToastCallable;
 }
 
 const ToastContext = createContext<ToastContextValue | null>(null);
 
-export function showToast(
-  message: string,
-  variant: ToastVariant = "info",
-  options?: ToastOptions,
-) {
-  if (typeof window !== "undefined") {
-    window.dispatchEvent(
-      new CustomEvent("liner:toast", {
-        detail: { message, variant, options },
-      }),
-    );
+function normalizeToastArgs(
+  variantOrOptions?: ToastVariant | ToastOptions,
+  maybeOptions?: ToastOptions,
+): { variant: ToastVariant; options?: ToastOptions } {
+  if (typeof variantOrOptions === "string") {
+    return { variant: variantOrOptions, options: maybeOptions };
   }
+  if (variantOrOptions && typeof variantOrOptions === "object") {
+    const opts = variantOrOptions;
+    let variant: ToastVariant = "info";
+    if (
+      opts.icon === "checkmark" ||
+      opts.icon === "loader" ||
+      opts.icon === "info" ||
+      opts.icon === "error"
+    ) {
+      variant = opts.icon as ToastVariant;
+    }
+    return { variant, options: opts };
+  }
+  return { variant: "info", options: maybeOptions };
 }
 
-const DURATION = 3500;
+export function showToast(
+  message: string,
+  variantOrOptions?: ToastVariant | ToastOptions,
+  maybeOptions?: ToastOptions,
+) {
+  if (typeof window === "undefined") return;
+  const { variant, options } = normalizeToastArgs(variantOrOptions, maybeOptions);
+  window.dispatchEvent(
+    new CustomEvent("liner:toast", {
+      detail: { message, variant, options },
+    }),
+  );
+}
 
-const variantAccent: Record<ToastVariant, string> = {
-  success: "#34A853",
-  error: "#EA4335",
-  info: "#4285F4",
-};
+showToast.success = (message: string, options?: ToastOptions) =>
+  showToast(message, "success", options);
+showToast.checkmark = (message: string, options?: ToastOptions) =>
+  showToast(message, "checkmark", options);
+showToast.loader = (message: string, options?: ToastOptions) =>
+  showToast(message, "loader", options);
+showToast.loading = (message: string, options?: ToastOptions) =>
+  showToast(message, "loading", options);
+showToast.error = (message: string, options?: ToastOptions) =>
+  showToast(message, "error", options);
+showToast.info = (message: string, options?: ToastOptions) =>
+  showToast(message, "info", options);
+
+const DURATION = 3000;
+
+// Batching / autohide policy for the top-center notification stack.
+const BATCH_FREEZE_COUNT = 3;
+const MAX_BATCH_SIZE = 6;
+const SWIPE_DISMISS_OFFSET_Y = -48;
+const SWIPE_DISMISS_VELOCITY_Y = -400;
 
 function CopyIcon() {
   return (
@@ -111,6 +168,21 @@ function ErrorIcon() {
         strokeLinecap="round"
         strokeLinejoin="round"
       />
+    </svg>
+  );
+}
+
+function InfoIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" />
+      <path
+        d="M12 11v5"
+        stroke="currentColor"
+        strokeWidth="2.2"
+        strokeLinecap="round"
+      />
+      <circle cx="12" cy="7.8" r="1.3" fill="currentColor" />
     </svg>
   );
 }
@@ -390,14 +462,22 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     setToasts((current) => current.filter((t) => t.id !== id));
   }, []);
 
-  const toast = useCallback(
+  const toastCore = useCallback(
     (
       message: string,
-      variant: ToastVariant = "info",
-      options?: ToastOptions,
+      variantOrOptions?: ToastVariant | ToastOptions,
+      maybeOptions?: ToastOptions,
     ) => {
+      const { variant, options } = normalizeToastArgs(
+        variantOrOptions,
+        maybeOptions,
+      );
       const id = options?.id ?? ++idRef.current;
-      const duration = options?.duration ?? DURATION;
+      const isLoader =
+        variant === "loading" ||
+        variant === "loader" ||
+        options?.icon === "loader";
+      const duration = options?.duration ?? (isLoader ? 999999 : DURATION);
 
       setToasts((current) => {
         const idx = current.findIndex((t) => t.id === id);
@@ -409,7 +489,9 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
           description: options?.description,
           requestId: options?.requestId,
           errorCode: options?.errorCode,
-          action: options?.action,
+          action: options?.action ?? options?.button,
+          button: options?.button ?? options?.action,
+          icon: options?.icon,
           onDismiss: options?.onDismiss,
         };
         if (idx >= 0) {
@@ -417,11 +499,28 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
           next[idx] = item;
           return next;
         }
-        return [...current, item];
+        // Newest notification goes on top of the batch; cap the batch
+        // so a burst of toasts can never grow the stack without bounds.
+        return [item, ...current].slice(0, MAX_BATCH_SIZE);
       });
     },
     [],
   );
+
+  const toastCallable = useMemo(() => {
+    const fn = (
+      message: string,
+      variantOrOptions?: ToastVariant | ToastOptions,
+      options?: ToastOptions,
+    ) => toastCore(message, variantOrOptions, options);
+    fn.success = (msg: string, opts?: ToastOptions) => toastCore(msg, "success", opts);
+    fn.checkmark = (msg: string, opts?: ToastOptions) => toastCore(msg, "checkmark", opts);
+    fn.loader = (msg: string, opts?: ToastOptions) => toastCore(msg, "loader", opts);
+    fn.loading = (msg: string, opts?: ToastOptions) => toastCore(msg, "loading", opts);
+    fn.error = (msg: string, opts?: ToastOptions) => toastCore(msg, "error", opts);
+    fn.info = (msg: string, opts?: ToastOptions) => toastCore(msg, "info", opts);
+    return fn as ToastCallable;
+  }, [toastCore]);
 
   useEffect(() => {
     const handleCustomToast = (e: Event) => {
@@ -431,37 +530,132 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         options?: ToastOptions;
       }>).detail;
       if (detail && detail.message) {
-        toast(detail.message, detail.variant, detail.options);
+        toastCore(detail.message, detail.variant, detail.options);
       }
     };
     window.addEventListener("liner:toast", handleCustomToast);
     return () => window.removeEventListener("liner:toast", handleCustomToast);
-  }, [toast]);
+  }, [toastCore]);
+
+  // Keep up to 3 cards in the visible stack (active + 2 in the batch deck)
+  const visibleToasts = toasts.slice(0, 3);
+  const [activeCardWidth, setActiveCardWidth] = useState<number | null>(null);
+  const [activeCardHeight, setActiveCardHeight] = useState<number | null>(null);
+
+  const handleMeasureActive = useCallback((w: number, h: number) => {
+    setActiveCardWidth(w);
+    setActiveCardHeight(h);
+  }, []);
 
   return (
-    <ToastContext.Provider value={{ toast }}>
+    <ToastContext.Provider value={{ toast: toastCallable }}>
       {children}
+      {/* top-center notification batch deck - positioned below window drag area */}
+      <div className="fixed top-[44px] left-1/2 -translate-x-1/2 z-[9999] pointer-events-none">
+        <motion.div
+          layout
+          transition={{ type: "spring", stiffness: 480, damping: 38 }}
+          className="relative grid grid-cols-1 grid-rows-1 items-start justify-items-center"
+        >
+          <AnimatePresence mode="popLayout">
+            {visibleToasts.map((item, index) => (
+              <NotificationCard
+                key={item.id}
+                item={item}
+                index={index}
+                batchSize={toasts.length}
+                isTop={index === 0}
+                activeCardWidth={activeCardWidth}
+                activeCardHeight={activeCardHeight}
+                onMeasureActive={handleMeasureActive}
+                onDismiss={() => remove(item.id)}
+              />
+            ))}
+          </AnimatePresence>
+        </motion.div>
+      </div>
       <div className="fixed bottom-[20px] right-[20px] z-[9999] flex flex-col gap-[10px] pointer-events-none max-w-[420px]">
         <ImportToastItem />
-        <AnimatePresence mode="popLayout">
-          {toasts.map((t) => (
-            <ToastItem key={t.id} toast={t} onDismiss={() => remove(t.id)} />
-          ))}
-        </AnimatePresence>
       </div>
     </ToastContext.Provider>
   );
 }
 
-function ToastItem({
-  toast,
+function NotificationCard({
+  item,
+  index,
+  batchSize,
+  isTop,
+  activeCardWidth,
+  activeCardHeight,
+  onMeasureActive,
   onDismiss,
 }: {
-  toast: Toast;
+  item: Toast;
+  index: number;
+  batchSize: number;
+  isTop: boolean;
+  activeCardWidth: number | null;
+  activeCardHeight: number | null;
+  onMeasureActive: (w: number, h: number) => void;
   onDismiss: () => void;
 }) {
-  const [isCardHovered, setIsCardHovered] = useState(false);
+  const { t } = useSafeTranslation();
+  const [hovered, setHovered] = useState(false);
+  const [dragging, setDragging] = useState(false);
   const [copiedId, setCopiedId] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  // measure active card dimensions so background deck cards can match its width exactly
+  useLayoutEffect(() => {
+    if (!isTop || !cardRef.current) return;
+    const el = cardRef.current;
+    onMeasureActive(el.offsetWidth, el.offsetHeight);
+    if (typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(() => {
+      if (cardRef.current) {
+        onMeasureActive(cardRef.current.offsetWidth, cardRef.current.offsetHeight);
+      }
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [isTop, onMeasureActive]);
+
+  // mirror the dismiss callback so timer bookkeeping survives re-renders
+  const dismissRef = useRef(onDismiss);
+  dismissRef.current = onDismiss;
+
+  // deck cards stay frozen until promoted to top slot
+  const paused =
+    index !== 0 || hovered || dragging || batchSize >= BATCH_FREEZE_COUNT;
+  const remainingRef = useRef(item.duration);
+  const startedAtRef = useRef(0);
+
+  useEffect(() => {
+    if (paused) return;
+    if (!(item.duration < 999999)) return;
+    if (remainingRef.current <= 0) {
+      dismissRef.current();
+      return;
+    }
+    startedAtRef.current = Date.now();
+    const timer = setTimeout(() => dismissRef.current(), remainingRef.current);
+    return () => {
+      clearTimeout(timer);
+      if (startedAtRef.current) {
+        remainingRef.current = Math.max(
+          0,
+          remainingRef.current - (Date.now() - startedAtRef.current),
+        );
+        startedAtRef.current = 0;
+      }
+    };
+  }, [paused, item.duration]);
+
+  const dismiss = useCallback(() => {
+    item.onDismiss?.();
+    dismissRef.current();
+  }, [item]);
 
   const handleCopyRequestId = (reqId: string) => {
     if (typeof navigator !== "undefined" && navigator.clipboard) {
@@ -471,93 +665,194 @@ function ToastItem({
     }
   };
 
-  useEffect(() => {
-    let removeTimer: any;
-
-    if (toast.duration && toast.duration < 999999) {
-      removeTimer = setTimeout(onDismiss, toast.duration);
-    }
-
-    return () => {
-      if (removeTimer) clearTimeout(removeTimer);
-    };
-  }, [onDismiss, toast.duration]);
+  const yOffset = index === 0 ? 0 : index === 1 ? 8 : 15;
+  const scale = index === 0 ? 1 : index === 1 ? 0.96 : 0.92;
+  const opacity = index === 0 ? 1 : index === 1 ? 0.95 : 0.75;
+  const zIndex = 30 - index * 10;
+  const resolvedAction = item.action ?? item.button;
 
   return (
     <motion.div
+      ref={cardRef}
       layout
-      initial={{ opacity: 0, y: 16, scale: 0.95 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: -10, scale: 0.95 }}
-      transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-      onMouseEnter={() => setIsCardHovered(true)}
-      onMouseLeave={() => setIsCardHovered(false)}
-      className="pointer-events-auto flex items-center justify-between gap-[10px] rounded-xl border border-border-primary bg-bg-elevated px-[16px] py-[12px] shadow-lg max-w-[380px]"
-      style={{ fontFamily: "var(--font-inter), sans-serif" }}
+      initial={
+        index === 0
+          ? { opacity: 0, y: -20, scale: 0.95 }
+          : { opacity: 0, y: yOffset, scale }
+      }
+      animate={{
+        opacity,
+        y: yOffset,
+        scale,
+        transition: {
+          type: "spring",
+          stiffness: 480,
+          damping: 38,
+          mass: 0.8,
+        },
+      }}
+      exit={{
+        opacity: 0,
+        y: -48,
+        scale: 0.92,
+        transition: { duration: 0.18, ease: "easeIn" },
+      }}
+      drag={index === 0 ? "y" : false}
+      dragConstraints={{ top: 0, bottom: 0 }}
+      dragElastic={{ top: 0.55, bottom: 0.08 }}
+      onDragStart={() => setDragging(true)}
+      onDragEnd={(_, info) => {
+        setDragging(false);
+        if (
+          info.offset.y < SWIPE_DISMISS_OFFSET_Y ||
+          info.velocity.y < SWIPE_DISMISS_VELOCITY_Y
+        ) {
+          dismiss();
+        }
+      }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      data-no-window-drag
+      className={`relative flex items-center gap-[8px] rounded-[12px] border border-border-primary/60 bg-bg-elevated pl-[12px] ${
+        resolvedAction ? "pr-[5px]" : "pr-[12px]"
+      } py-[5px] shadow-2xl min-h-[38px] box-border ${
+        index === 0
+          ? "pointer-events-auto cursor-grab active:cursor-grabbing"
+          : "pointer-events-none select-none"
+      }`}
+      style={{
+        gridArea: "1 / 1",
+        zIndex,
+        transformOrigin: "bottom center",
+        fontFamily: "var(--font-inter), sans-serif",
+        maxWidth: "min(520px, calc(100vw - 32px))",
+        minWidth: "min(180px, calc(100vw - 32px))",
+        minHeight: "38px",
+        width: index > 0 && activeCardWidth ? `${activeCardWidth}px` : undefined,
+        height: index > 0 && activeCardHeight ? `${activeCardHeight}px` : undefined,
+      }}
     >
-      <div className="flex items-center gap-[10px] min-w-0 flex-1">
-        <span
-          className="flex items-center justify-center shrink-0"
-          style={{ color: variantAccent[toast.variant] }}
-        >
-          {toast.variant === "success" && <CheckIcon />}
-          {toast.variant === "error" && <ErrorIcon />}
-          {toast.variant === "info" && <SpinnerIcon />}
-        </span>
-        <div className="flex flex-col min-w-0 flex-1 overflow-hidden">
+      <span
+        className="flex shrink-0 items-center justify-center text-text-tertiary"
+        style={{ color: getNotificationIconColor(item.variant, item.icon) }}
+      >
+        {renderNotificationIcon(item.variant, item.icon)}
+      </span>
+      <div className="flex min-w-0 flex-1 flex-col justify-center overflow-hidden">
+        <div className="flex min-w-0 items-center gap-[6px]">
           <ScrollableText
-            text={toast.message}
-            className="text-text-primary text-[14px]"
-            style={{ fontWeight: 350 }}
-            isParentHovered={isCardHovered}
+            text={item.message}
+            className="max-w-[220px] shrink-0 text-text-primary text-[13px] font-[600] leading-tight"
+            isParentHovered={hovered && index === 0}
           />
-          {toast.description && (
-            <ScrollableText
-              text={toast.description}
-              className="text-text-tertiary text-[12px]"
-              isParentHovered={isCardHovered}
-            />
-          )}
-          {toast.requestId && (
-            <div className="mt-[4px] flex items-center gap-[6px]">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleCopyRequestId(toast.requestId!);
-                }}
-                className="inline-flex items-center gap-[4px] px-[6px] py-[2px] rounded text-[11px] font-mono bg-border-alpha-14 hover:bg-border-alpha-33 text-text-secondary hover:text-text-primary transition-colors cursor-pointer border-0"
-                title="Скопировать ID ошибки для поддержки"
-              >
-                <CopyIcon />
-                <span>{copiedId ? "Скопировано!" : `ID: ${toast.requestId.length > 14 ? toast.requestId.slice(0, 12) + "..." : toast.requestId}`}</span>
-              </button>
-            </div>
+          {item.description && (
+            <>
+              <span aria-hidden className="shrink-0 text-text-tertiary text-[12.5px] leading-tight">
+                ·
+              </span>
+              <ScrollableText
+                text={item.description}
+                className="min-w-0 flex-1 text-text-tertiary text-[12.5px] leading-tight"
+                isParentHovered={hovered && index === 0}
+              />
+            </>
           )}
         </div>
+        {item.requestId && (
+          <div className="mt-[4px] flex items-center gap-[6px]">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleCopyRequestId(item.requestId!);
+              }}
+              className="inline-flex items-center gap-[4px] px-[6px] py-[2px] rounded text-[11px] font-mono bg-border-alpha-14 hover:bg-border-alpha-33 text-text-secondary hover:text-text-primary transition-colors cursor-pointer border-0"
+              title={t("settings.notifications.copy_request_id")}
+            >
+              <CopyIcon />
+              <span>{copiedId ? t("settings.notifications.copied") : `ID: ${item.requestId.length > 14 ? item.requestId.slice(0, 12) + "..." : item.requestId}`}</span>
+            </button>
+          </div>
+        )}
       </div>
-      {toast.action && (
+      {resolvedAction && (
         <button
           type="button"
           onClick={() => {
-            toast.action?.onClick();
-            onDismiss();
+            resolvedAction.onClick?.();
+            dismiss();
           }}
-          className="inline-flex items-center gap-[4px] px-[8px] py-[4px] rounded-lg text-[12px] font-[500] bg-btn-primary-bg text-btn-primary-text hover:opacity-90 active:scale-[0.96] transition-all border-0 cursor-pointer shadow-sm shrink-0"
+          className="inline-flex shrink-0 items-center justify-center gap-[4px] px-[10px] h-[28px] rounded-lg text-[12.5px] font-[600] bg-border-alpha-14 hover:bg-border-alpha-33 text-text-primary active:scale-[0.96] transition-all border-0 cursor-pointer"
         >
-          {toast.action.icon}
-          <span>{toast.action.label}</span>
+          {resolvedAction.icon && <span>{resolvedAction.icon}</span>}
+          <span>{resolvedAction.label}</span>
         </button>
       )}
     </motion.div>
   );
 }
 
+function renderNotificationIcon(
+  variant: ToastVariant,
+  customIcon?: React.ReactNode | "checkmark" | "loader" | "info" | "error",
+) {
+  if (customIcon && typeof customIcon !== "string") {
+    return customIcon;
+  }
+  const resolved = (
+    typeof customIcon === "string" ? customIcon : variant
+  ).toLowerCase();
+
+  switch (resolved) {
+    case "success":
+    case "checkmark":
+    case "check":
+      return <CheckIcon />;
+    case "loading":
+    case "loader":
+    case "spinner":
+      return <SpinnerIcon />;
+    case "error":
+      return <ErrorIcon />;
+    case "info":
+    default:
+      return <InfoIcon />;
+  }
+}
+
+function getNotificationIconColor(
+  variant: ToastVariant,
+  customIcon?: React.ReactNode | "checkmark" | "loader" | "info" | "error",
+): string | undefined {
+  if (customIcon && typeof customIcon !== "string") {
+    return undefined;
+  }
+  const resolved = (
+    typeof customIcon === "string" ? customIcon : variant
+  ).toLowerCase();
+
+  switch (resolved) {
+    case "success":
+    case "checkmark":
+    case "check":
+      return "#34A853";
+    case "error":
+      return "#EA4335";
+    case "loading":
+    case "loader":
+    case "spinner":
+      return "#4285F4";
+    case "info":
+    default:
+      return undefined;
+  }
+}
+
 export function useToast() {
   const ctx = useContext(ToastContext);
   if (!ctx) {
     return {
-      toast: showToast,
+      toast: showToast as ToastCallable,
     };
   }
   return ctx;

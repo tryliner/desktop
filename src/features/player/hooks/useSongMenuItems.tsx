@@ -18,6 +18,7 @@ import {
   useModalStore,
 } from "@/features/library";
 import { useTranslation } from "@/languages";
+import { showToast } from "@/shared/ui";
 
 export interface SongMenuContext {
   id?: string;
@@ -117,6 +118,9 @@ export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
                 durationMs: durationMs ?? 0,
                 playCount: 0,
               });
+              showToast(t("common.added_to_queue"), "checkmark", {
+                description: artists ? `${title} — ${artists}` : title,
+              });
             },
           },
           {
@@ -197,6 +201,9 @@ export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
               coverUrl,
               durationMs: durationMs ?? 0,
               playCount: 0,
+            });
+            showToast(t("common.added_to_queue"), "checkmark", {
+              description: artists ? `${title} — ${artists}` : title,
             });
           },
         },

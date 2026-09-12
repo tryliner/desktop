@@ -193,7 +193,9 @@ function CollectionContent() {
     for (const track of data.tracks) {
       playerEngine.addToQueue(track);
     }
-    toast(t("collection.added_to_queue"), "info");
+    toast(t("collection.added_to_queue"), "info", {
+      description: data.title || undefined,
+    });
   };
 
   const handleSaveToLibrary = () => {
@@ -220,7 +222,9 @@ function CollectionContent() {
   const handleShare = () => {
     if (typeof navigator !== "undefined" && navigator.clipboard && decodedId) {
       navigator.clipboard.writeText(buildShareUrl(entityType, decodedId));
-      toast(t("common.link_copied"), "info");
+      toast(t("common.link_copied"), "checkmark", {
+        description: data?.title || undefined,
+      });
     }
   };
 

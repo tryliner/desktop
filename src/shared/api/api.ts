@@ -18,12 +18,21 @@ import type {
 
 import { usePlayerStore } from "@/features/player/store/playerStore";
 import { showToast } from "@/shared/ui/Toast";
+import { createTranslatorSync, getStoredLocale } from "@/languages";
 import {
   isConnectivityFailure,
   recordConnectivityFailure,
   statusOf,
   stripQuery,
 } from "@/features/connectivity";
+
+function translate(key: string, vars?: Record<string, string | number>) {
+  try {
+    return createTranslatorSync(getStoredLocale())(key, vars);
+  } catch {
+    return key;
+  }
+}
 
 const BASE =
   (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/+$/, "") ||
@@ -70,9 +79,9 @@ async function fetchWithTimeout(
     return res;
   } catch (err: any) {
     if (didTimeout) {
-      showToast("Сервер не отвечает", "error", {
+      showToast(translate("common.error_timeout_title"), "error", {
         id: "network-timeout-toast",
-        description: "Превышено время ожидания ответа от сервера.",
+        description: translate("common.error_network"),
       });
       throw new ApiError(
         0,
@@ -83,9 +92,9 @@ async function fetchWithTimeout(
     if (userSignal?.aborted) {
       throw err;
     }
-    showToast("Ошибка соединения", "error", {
+    showToast(translate("common.error_network_title"), "error", {
       id: "network-error-toast",
-      description: "Не удалось подключиться к серверу Liner.",
+      description: translate("common.error_network"),
     });
     throw new ApiError(
       0,
@@ -270,9 +279,9 @@ async function request<T>(
         : undefined);
 
     if (res.status >= 500) {
-      showToast("Ошибка сервера", "error", {
+      showToast(translate("common.error_server_title"), "error", {
         id: `server-error-${res.status}`,
-        description: "Попробуйте ещё раз позже.",
+        description: translate("common.error_server"),
         requestId: resRequestId,
       });
     }

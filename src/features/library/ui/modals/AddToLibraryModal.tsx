@@ -29,13 +29,9 @@ export default function AddToLibraryModal() {
       { type: item.type, id: item.id },
       {
         onSuccess: () => {
-          toast(
-            t("common.added_to_library", {
-              type: item.title || item.type,
-              name: item.title || item.type,
-            }),
-            "success",
-          );
+          toast(t("common.added_to_library_success"), "checkmark", {
+            description: item.title || undefined,
+          });
           close();
         },
         onError: () => toast(t("common.failed_to_add_library"), "error"),
