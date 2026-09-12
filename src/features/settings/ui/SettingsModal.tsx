@@ -10,6 +10,7 @@ import {
   Book2,
   QuestionCircle,
   MenuDots,
+  Database,
 } from "@solar-icons/react";
 import Dialog from "@/shared/ui/Dialog";
 import { UserAvatar } from "@/shared/ui";
@@ -20,23 +21,25 @@ import {
   PlaybackTab,
   AppearanceTab,
   AudioTab,
+  StorageTab,
   PrivacyTab,
   AboutTab,
 } from "./tabs";
 
-type TabId = "Playback" | "Appearance" | "Audio" | "Privacy" | "About";
+type TabId = "Playback" | "Appearance" | "Audio" | "Storage" | "Privacy" | "About";
 
 const TAB_ICONS: Record<TabId, typeof Play> = {
   Playback: Play,
   Appearance: Palette,
   Audio: HeadphonesRound,
+  Storage: Database,
   Privacy: ShieldCheck,
   About: InfoCircle,
 };
 
 const TAB_GROUPS: { labelKey: "preferences" | "application"; ids: TabId[] }[] = [
   { labelKey: "preferences", ids: ["Playback", "Audio", "Appearance"] },
-  { labelKey: "application", ids: ["Privacy", "About"] },
+  { labelKey: "application", ids: ["Storage", "Privacy", "About"] },
 ];
 
 const SETTING_ITEMS: { tabId: TabId; titleKey: string; descKey?: string }[] = [
@@ -53,9 +56,12 @@ const SETTING_ITEMS: { tabId: TabId; titleKey: string; descKey?: string }[] = [
 
   // Audio
   { tabId: "Audio", titleKey: "settings.audio.title", descKey: "settings.audio.description" },
-  { tabId: "Audio", titleKey: "settings.cache.local_cache.title", descKey: "settings.cache.local_cache.description" },
-  { tabId: "Audio", titleKey: "settings.cache.search_cache.title", descKey: "settings.cache.search_cache.description" },
   { tabId: "Audio", titleKey: "settings.connection.checks_title" },
+
+  // Storage
+  { tabId: "Storage", titleKey: "settings.storage.title", descKey: "settings.storage.description" },
+  { tabId: "Storage", titleKey: "settings.storage.usage_title" },
+  { tabId: "Storage", titleKey: "settings.storage.open_folder", descKey: "settings.storage.open_folder_description" },
 
   // Privacy
   { tabId: "Privacy", titleKey: "settings.telemetry.title", descKey: "settings.telemetry.description" },
@@ -84,6 +90,7 @@ export default function SettingsModal() {
     Playback: t("settings.tabs.playback"),
     Appearance: t("settings.tabs.appearance"),
     Audio: t("settings.tabs.audio"),
+    Storage: t("settings.tabs.storage"),
     Privacy: t("settings.tabs.privacy"),
     About: t("settings.tabs.about"),
   };
@@ -91,7 +98,8 @@ export default function SettingsModal() {
   const tabDescriptions: Record<TabId, string> = {
     Playback: t("settings.playback.description"),
     Appearance: t("settings.theme.description"),
-    Audio: t("settings.audio_data.description"),
+    Audio: t("settings.audio.description"),
+    Storage: t("settings.storage.description"),
     Privacy: t("settings.privacy.description"),
     About: t("common.app.version"),
   };
@@ -105,6 +113,7 @@ export default function SettingsModal() {
       Playback: "settings.tabs.playback",
       Appearance: "settings.theme.title",
       Audio: "settings.tabs.audio",
+      Storage: "settings.tabs.storage",
       Privacy: "settings.tabs.privacy",
       About: "settings.tabs.about",
     };
@@ -112,7 +121,8 @@ export default function SettingsModal() {
     const TAB_DESC_KEYS: Record<TabId, string> = {
       Playback: "settings.playback.description",
       Appearance: "settings.theme.description",
-      Audio: "settings.audio_data.description",
+      Audio: "settings.audio.description",
+      Storage: "settings.storage.description",
       Privacy: "settings.privacy.description",
       About: "common.app.version",
     };
@@ -335,16 +345,18 @@ export default function SettingsModal() {
           </button>
         </div>
 
-        <div className="flex-1 min-h-0 overflow-y-auto px-[24px] pb-[16px]">
+        <div className="flex-1 min-h-0 overflow-y-auto px-[24px] pb-[16px] flex flex-col">
           <motion.div
             key={activeTab}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.1, ease: "linear" }}
+            className="flex-1 flex flex-col"
           >
             {activeTab === "Playback" && <PlaybackTab searchQuery={searchQuery} />}
             {activeTab === "Appearance" && <AppearanceTab searchQuery={searchQuery} />}
             {activeTab === "Audio" && <AudioTab searchQuery={searchQuery} />}
+            {activeTab === "Storage" && <StorageTab searchQuery={searchQuery} />}
             {activeTab === "Privacy" && <PrivacyTab searchQuery={searchQuery} />}
             {activeTab === "About" && <AboutTab searchQuery={searchQuery} />}
           </motion.div>

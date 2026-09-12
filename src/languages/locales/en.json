@@ -396,7 +396,8 @@
     "tabs": {
       "general": "General",
       "appearance": "Appearance",
-      "audio": "Audio & Data",
+      "audio": "Audio",
+      "storage": "Cache & Storage",
       "system": "System",
       "account": "Account",
       "about": "About",
@@ -471,6 +472,32 @@
         "description": "Clears UI state, library, and active data streams.",
         "button": "Clear Library Cache",
         "success": "Library cache cleared"
+      }
+    },
+    "storage": {
+      "title": "Cache & Storage",
+      "description": "Storage breakdown, local cache analytics and media files.",
+      "usage_title": "Storage Usage",
+      "device_usage": "Liner is currently using {size} of local storage.",
+      "device_usage_raw": "Liner is currently using {size} of local storage.",
+      "open_folder": "Open Cache Folder",
+      "open_folder_description": "Reveal the folder where temporary cache and media are collected",
+      "clear_button": "Clear Cache ({size})",
+      "clear_selected": "Clear Selected Cache",
+      "select_all": "Select all",
+      "deselect_all": "Deselect all",
+      "empty_storage": "Cache is squeaky clean!",
+      "cloud_disclaimer": "All media, covers and tracks stay in the cloud and will be re-downloaded seamlessly when played.",
+      "clearing_title": "Clearing cache...",
+      "clearing_subtitle": "Please keep this window open while Liner is cleaning your cache.",
+      "cleared_title": "Storage Cleared",
+      "cleared_subtitle": "Your cache has been swept clean. New media will stream and cache automatically.",
+      "done_button": "Done",
+      "categories": {
+        "covers": "Cover Artwork",
+        "audio": "Audio Tracks",
+        "lyrics": "Lyrics",
+        "metadata": "Catalog & Search"
       }
     },
     "theme": {

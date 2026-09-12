@@ -6,6 +6,17 @@ export interface DeeplinkTarget {
   id: string;
 }
 
+export interface ElectronCacheStats {
+  cacheSize: number;
+  httpCacheSize: number;
+  codeCacheSize: number;
+  serviceWorkerSize: number;
+  indexedDbSize: number;
+  localStorageSize: number;
+  blobStorageSize: number;
+  cachePath: string;
+}
+
 export interface LinerElectronApi {
   minimize: () => Promise<void>;
   toggleMaximize: () => Promise<void>;
@@ -40,6 +51,11 @@ export interface LinerElectronApi {
     error?: string;
   }>;
   setAppIcon: (dataUrl: string) => Promise<void>;
+  getCacheStats: () => Promise<ElectronCacheStats>;
+  openCacheFolder: () => Promise<boolean>;
+  clearCoversCache: () => Promise<boolean>;
+  clearAudioCache: () => Promise<boolean>;
+  clearHttpCache: () => Promise<boolean>;
 }
 
 const api: LinerElectronApi = {
@@ -68,6 +84,11 @@ const api: LinerElectronApi = {
   openExportFolder: (customPath) => ipcRenderer.invoke("shell:open-export-folder", customPath),
   saveDump: (input) => ipcRenderer.invoke("dialog:save-dump", input),
   setAppIcon: (dataUrl) => ipcRenderer.invoke("app:set-icon", dataUrl),
+  getCacheStats: () => ipcRenderer.invoke("storage:get-cache-stats"),
+  openCacheFolder: () => ipcRenderer.invoke("shell:open-cache-folder"),
+  clearCoversCache: () => ipcRenderer.invoke("storage:clear-covers-cache"),
+  clearAudioCache: () => ipcRenderer.invoke("storage:clear-audio-cache"),
+  clearHttpCache: () => ipcRenderer.invoke("storage:clear-http-cache"),
   onDeeplink: (cb) => {
     const listener = (_event: unknown, target: DeeplinkTarget) => cb(target);
     ipcRenderer.on("deeplink:open", listener);

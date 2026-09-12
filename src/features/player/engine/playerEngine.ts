@@ -16,9 +16,9 @@ import {
 } from "@/shared/api";
 import { toClientTrack } from "@/shared/api/track";
 import { log } from "@/shared/utils/logger";
-import { parseRawLyrics, useLyricsStore, lyricsCache } from "@/features/lyrics";
+import { parseRawLyrics, useLyricsStore, lyricsCache, type CachedLyricsItem } from "@/features/lyrics";
 import { preloadCoverArt } from "@/features/covers";
-import { linerDb } from "@/shared/storage";
+import { linerDb, type CachedLyricsRecord } from "@/shared/storage";
 import { showToast } from "@/shared/ui";
 import { createTranslatorSync, getStoredLocale } from "@/languages";
 import type { Track } from "@/shared/types";
@@ -972,7 +972,14 @@ class PlayerEngine {
     let bestCandidate: LyricsCandidate | null = null;
 
     const memoryCached = lyricsCache.get(trackId);
-    const cached = memoryCached || (await linerDb.getLyrics(trackId));
+    let cached: CachedLyricsItem | CachedLyricsRecord | null = memoryCached || null;
+    if (!cached) {
+      try {
+        cached = await linerDb.getLyrics(trackId);
+      } catch {
+        cached = null;
+      }
+    }
     const isWordLevel = cached && isWordLevelLyrics(cached.candidate);
 
     if (cached && isWordLevel) {

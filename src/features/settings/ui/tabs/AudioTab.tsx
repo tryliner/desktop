@@ -6,10 +6,6 @@ import { useTranslation } from "@/languages";
 import { usePlayerStore, type AudioQuality } from "@/features/player";
 import { Select } from "@/shared/ui";
 import { useConnectivityStore } from "@/features/connectivity";
-import {
-  clearMediaAndCoverCache,
-  clearSearchAndQueryCache,
-} from "@/shared/utils/cacheManager";
 import { SettingRow, SettingSection } from "../controls";
 
 export function AudioTab({ searchQuery }: { searchQuery?: string }) {
@@ -57,58 +53,6 @@ export function AudioTab({ searchQuery }: { searchQuery?: string }) {
             ) : (
               <span />
             )
-          }
-        />
-      </SettingSection>
-
-      <SettingSection label={t("settings.cache.title")}>
-        <SettingRow
-          title={t("settings.cache.local_cache.title")}
-          description={t("settings.cache.local_cache.description")}
-          titleKey="settings.cache.local_cache.title"
-          descKey="settings.cache.local_cache.description"
-          searchQuery={searchQuery}
-          control={
-            <Button
-              variant="secondary"
-              size="sm"
-              type="button"
-              onClick={async () => {
-                try {
-                  await clearMediaAndCoverCache();
-                  toast(t("settings.cache.local_cache.success"), "success");
-                } catch {
-                  toast(t("settings.cache.local_cache.error"), "error");
-                }
-              }}
-            >
-              {t("settings.cache.local_cache.button")}
-            </Button>
-          }
-        />
-
-        <SettingRow
-          title={t("settings.cache.search_cache.title")}
-          description={t("settings.cache.search_cache.description")}
-          titleKey="settings.cache.search_cache.title"
-          descKey="settings.cache.search_cache.description"
-          searchQuery={searchQuery}
-          control={
-            <Button
-              variant="secondary"
-              size="sm"
-              type="button"
-              onClick={async () => {
-                try {
-                  await clearSearchAndQueryCache();
-                  toast(t("settings.cache.search_cache.success"), "success");
-                } catch {
-                  toast(t("settings.cache.search_cache.error"), "error");
-                }
-              }}
-            >
-              {t("settings.cache.search_cache.button")}
-            </Button>
           }
         />
       </SettingSection>

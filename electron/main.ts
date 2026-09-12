@@ -294,6 +294,115 @@ if (!gotTheLock) {
       return openFolderOrItem(customPath);
     });
 
+    // locates provider path where cache is collected
+    const getCacheDirectory = () => {
+      const userData = app.getPath("userData");
+      const subCache = path.join(userData, "Cache");
+      if (fs.existsSync(subCache)) return subCache;
+      return userData;
+    };
+
+    // recursively sums folder size in bytes safely
+    const getDirectorySizeSafe = async (dirPath: string): Promise<number> => {
+      let total = 0;
+      try {
+        if (!fs.existsSync(dirPath)) return 0;
+        const entries = await fs.promises.readdir(dirPath, { withFileTypes: true });
+        for (const entry of entries) {
+          const full = path.join(dirPath, entry.name);
+          if (entry.isDirectory()) {
+            total += await getDirectorySizeSafe(full);
+          } else if (entry.isFile()) {
+            const s = await fs.promises.stat(full);
+            total += s.size;
+          }
+        }
+      } catch {}
+      return total;
+    };
+
+    ipcMain.handle("storage:get-cache-stats", async () => {
+      try {
+        const userData = app.getPath("userData");
+        const cachePath = getCacheDirectory();
+
+        const [sessionCache, diskHttpCache, diskCodeCache, swCache, idbCache, lsCache, blobCache] = await Promise.all([
+          session.defaultSession.getCacheSize().catch(() => 0),
+          getDirectorySizeSafe(path.join(userData, "Cache")),
+          getDirectorySizeSafe(path.join(userData, "Code Cache")),
+          getDirectorySizeSafe(path.join(userData, "Service Worker")),
+          getDirectorySizeSafe(path.join(userData, "IndexedDB")),
+          getDirectorySizeSafe(path.join(userData, "Local Storage")),
+          getDirectorySizeSafe(path.join(userData, "blob_storage")),
+        ]);
+
+        const httpCacheSize = Math.max(sessionCache, diskHttpCache);
+
+        return {
+          cacheSize: httpCacheSize + diskCodeCache,
+          httpCacheSize,
+          codeCacheSize: diskCodeCache,
+          serviceWorkerSize: swCache,
+          indexedDbSize: idbCache,
+          localStorageSize: lsCache,
+          blobStorageSize: blobCache,
+          cachePath,
+        };
+      } catch (err) {
+        console.error("\x1b[41;37m storage \x1b[0m get-cache-stats error:", err);
+        return {
+          cacheSize: 0,
+          httpCacheSize: 0,
+          codeCacheSize: 0,
+          serviceWorkerSize: 0,
+          indexedDbSize: 0,
+          localStorageSize: 0,
+          blobStorageSize: 0,
+          cachePath: app.getPath("userData"),
+        };
+      }
+    });
+
+    ipcMain.handle("shell:open-cache-folder", async () => {
+      try {
+        const cachePath = getCacheDirectory();
+        await shell.openPath(cachePath);
+        return true;
+      } catch (err) {
+        console.error("\x1b[41;37m shell \x1b[0m open-cache-folder error:", err);
+        return false;
+      }
+    });
+
+    ipcMain.handle("storage:clear-covers-cache", async () => {
+      try {
+        await session.defaultSession.clearStorageData({
+          storages: ["serviceworkers", "cachestorage"],
+        });
+        return true;
+      } catch (err) {
+        console.error("\x1b[41;37m storage \x1b[0m clear-covers-cache error:", err);
+        return false;
+      }
+    });
+
+    ipcMain.handle("storage:clear-audio-cache", async () => {
+      // Audio blobs and tracks are cleared safely inside renderer via linerDb
+      return true;
+    });
+
+    // clears chromium http and v8 code cache
+    ipcMain.handle("storage:clear-http-cache", async () => {
+      try {
+        await session.defaultSession.clearCache();
+        await session.defaultSession.clearCodeCaches({});
+        return true;
+      } catch (err) {
+        console.error("\x1b[41;37m storage \x1b[0m clear-http-cache error:", err);
+        return false;
+      }
+    });
+
     // native os window move + system cursor fallback to stop wayland jitter feedback loop
     let dragStartCursor: { x: number; y: number } | null = null;
     let dragStartWinPos: { x: number; y: number } | null = null;

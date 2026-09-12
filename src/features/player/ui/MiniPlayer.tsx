@@ -349,6 +349,7 @@ function MiniPlayer({
                   .padStart(2, "0")}`
               : undefined
           }
+          explicit={item.explicit}
           onPlay={() => {
             void playerEngine.playTrack(
               item,

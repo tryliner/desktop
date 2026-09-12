@@ -11,6 +11,7 @@ export interface PopularAlbumItem {
   coverUrl: string;
   totalTracks: number;
   albumType: string;
+  explicit?: boolean;
 }
 
 export interface PopularArtistItem {

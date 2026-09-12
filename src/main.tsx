@@ -4,10 +4,12 @@ import App from "./app/App";
 import { RootErrorBoundary } from "@/shared/ui";
 import { initGlobalErrorHandlers } from "@/shared/utils/globalErrorHandlers";
 import { initTelemetry } from "@/shared/telemetry";
+import { initBackgroundStorageAnalytics } from "@/shared/utils/cacheManager";
 
-// Initialize global uncaught error and telemetry listeners
+// Initialize global uncaught error, telemetry listeners, and background storage tracker
 initGlobalErrorHandlers();
 initTelemetry();
+initBackgroundStorageAnalytics();
 
 const rootElement = document.getElementById("root");
 

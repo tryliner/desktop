@@ -54,6 +54,11 @@ class LinerDb {
   private memLyrics = new Map<string, CachedLyricsRecord>();
   private memArtists = new Map<string, CachedArtistRecord>();
 
+  // drops stale connection on any error so next call auto-reconnects
+  private handleDbError(err: unknown) {
+    this.dbPromise = null;
+  }
+
   private open(): Promise<IDBDatabase> {
     if (!this.isSupported) {
       return Promise.reject(new Error("IndexedDB is not available"));
@@ -62,7 +67,14 @@ class LinerDb {
     if (this.dbPromise) return this.dbPromise;
 
     this.dbPromise = new Promise<IDBDatabase>((resolve, reject) => {
-      const request = indexedDB.open(DB_NAME, DB_VERSION);
+      let request: IDBOpenDBRequest;
+      try {
+        request = indexedDB.open(DB_NAME, DB_VERSION);
+      } catch (err) {
+        this.dbPromise = null;
+        reject(err);
+        return;
+      }
 
       request.onupgradeneeded = () => {
         const db = request.result;
@@ -90,32 +102,86 @@ class LinerDb {
         }
       };
 
-      request.onsuccess = () => resolve(request.result);
+      request.onsuccess = () => {
+        const db = request.result;
+        db.onclose = () => {
+          this.dbPromise = null;
+        };
+        db.onversionchange = () => {
+          try {
+            db.close();
+          } catch {}
+          this.dbPromise = null;
+        };
+        db.onerror = () => {
+          this.dbPromise = null;
+        };
+        resolve(db);
+      };
+
       request.onerror = () => {
-        this.isSupported = false;
+        this.dbPromise = null;
         reject(request.error);
+      };
+
+      request.onblocked = () => {
+        this.dbPromise = null;
       };
     });
 
     return this.dbPromise;
   }
 
-  async getTrack(id: string): Promise<CachedTrackRecord | null> {
-    if (!this.isSupported) {
-      return this.memTracks.get(id) || null;
+  // executes indexeddb transaction with one auto-reconnect retry and zero unhandled rejections
+  private async runTransaction<T>(
+    storeName: "tracks" | "audio" | "lyrics" | "artists",
+    mode: IDBTransactionMode,
+    operation: (store: IDBObjectStore) => Promise<T>,
+  ): Promise<T | null> {
+    if (!this.isSupported) return null;
+
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const db = await this.open();
+        return await new Promise<T>((resolve, reject) => {
+          try {
+            const tx = db.transaction(storeName, mode);
+            const store = tx.objectStore(storeName);
+            tx.onerror = () => reject(tx.error);
+            tx.onabort = () => reject(new Error("tx aborted"));
+            operation(store).then(resolve, reject);
+          } catch (err) {
+            reject(err);
+          }
+        });
+      } catch (err) {
+        this.handleDbError(err);
+        if (attempt === 0) {
+          // retry once on fresh connection
+          continue;
+        }
+      }
     }
-    try {
-      const db = await this.open();
+    return null;
+  }
+
+  async getTrack(id: string): Promise<CachedTrackRecord | null> {
+    const mem = this.memTracks.get(id);
+    if (mem) return mem;
+
+    const result = await this.runTransaction("tracks", "readonly", (store) => {
       return new Promise<CachedTrackRecord | null>((resolve) => {
-        const tx = db.transaction("tracks", "readonly");
-        const store = tx.objectStore("tracks");
         const req = store.get(id);
         req.onsuccess = () => resolve(req.result || null);
-        req.onerror = () => resolve(this.memTracks.get(id) || null);
+        req.onerror = () => resolve(null);
       });
-    } catch {
-      return this.memTracks.get(id) || null;
+    });
+
+    if (result) {
+      this.memTracks.set(id, result);
+      return result;
     }
+    return this.memTracks.get(id) || null;
   }
 
   async putTrack(track: Track): Promise<void> {
@@ -131,35 +197,62 @@ class LinerDb {
     };
     this.memTracks.set(track.id, record);
 
-    if (!this.isSupported) return;
-    try {
-      const db = await this.open();
-      await new Promise<void>((resolve, reject) => {
-        const tx = db.transaction("tracks", "readwrite");
-        const store = tx.objectStore("tracks");
+    await this.runTransaction("tracks", "readwrite", (store) => {
+      return new Promise<void>((resolve, reject) => {
         const req = store.put(record);
         req.onsuccess = () => resolve();
         req.onerror = () => reject(req.error);
       });
-    } catch {}
+    });
+  }
+
+  async getTotalTrackBytes(): Promise<number> {
+    const result = await this.runTransaction("tracks", "readonly", (store) => {
+      return new Promise<number>((resolve) => {
+        let total = 0;
+        const req = store.openCursor();
+        req.onsuccess = () => {
+          const cursor = req.result;
+          if (cursor) {
+            const val = cursor.value as CachedTrackRecord;
+            total += JSON.stringify(val || {}).length * 2;
+            cursor.continue();
+          } else {
+            resolve(total);
+          }
+        };
+        req.onerror = () => resolve(0);
+      });
+    });
+
+    if (result !== null && result !== undefined) {
+      return result;
+    }
+
+    let total = 0;
+    for (const item of this.memTracks.values()) {
+      total += JSON.stringify(item || {}).length * 2;
+    }
+    return total;
   }
 
   async getAudio(trackId: string): Promise<CachedAudioRecord | null> {
-    if (!this.isSupported) {
-      return this.memAudio.get(trackId) || null;
-    }
-    try {
-      const db = await this.open();
+    const mem = this.memAudio.get(trackId);
+    if (mem) return mem;
+
+    const result = await this.runTransaction("audio", "readonly", (store) => {
       return new Promise<CachedAudioRecord | null>((resolve) => {
-        const tx = db.transaction("audio", "readonly");
-        const store = tx.objectStore("audio");
         const req = store.get(trackId);
         req.onsuccess = () => resolve(req.result || null);
-        req.onerror = () => resolve(this.memAudio.get(trackId) || null);
+        req.onerror = () => resolve(null);
       });
-    } catch {
-      return this.memAudio.get(trackId) || null;
+    });
+
+    if (result) {
+      this.memAudio.set(trackId, result);
+      return result;
     }
+    return this.memAudio.get(trackId) || null;
   }
 
   async putAudio(trackId: string, blob: Blob, mimeType: string): Promise<void> {
@@ -172,72 +265,51 @@ class LinerDb {
     };
     this.memAudio.set(trackId, record);
 
-    if (!this.isSupported) return;
-    try {
-      const db = await this.open();
-      await new Promise<void>((resolve, reject) => {
-        const tx = db.transaction("audio", "readwrite");
-        const store = tx.objectStore("audio");
+    await this.runTransaction("audio", "readwrite", (store) => {
+      return new Promise<void>((resolve, reject) => {
         const req = store.put(record);
         req.onsuccess = () => resolve();
         req.onerror = () => reject(req.error);
       });
-    } catch {}
+    });
   }
 
   async hasAudio(trackId: string): Promise<boolean> {
-    if (!this.isSupported) {
-      return this.memAudio.has(trackId);
-    }
-    try {
-      const db = await this.open();
+    if (this.memAudio.has(trackId)) return true;
+
+    const result = await this.runTransaction("audio", "readonly", (store) => {
       return new Promise<boolean>((resolve) => {
-        const tx = db.transaction("audio", "readonly");
-        const store = tx.objectStore("audio");
         const req = store.count(IDBKeyRange.only(trackId));
         req.onsuccess = () => resolve(req.result > 0);
-        req.onerror = () => resolve(this.memAudio.has(trackId));
+        req.onerror = () => resolve(false);
       });
-    } catch {
-      return this.memAudio.has(trackId);
-    }
+    });
+
+    return result ?? this.memAudio.has(trackId);
   }
 
   async deleteAudio(trackId: string): Promise<void> {
     this.memAudio.delete(trackId);
-    if (!this.isSupported) return;
-    try {
-      const db = await this.open();
-      await new Promise<void>((resolve, reject) => {
-        const tx = db.transaction("audio", "readwrite");
-        const store = tx.objectStore("audio");
+
+    await this.runTransaction("audio", "readwrite", (store) => {
+      return new Promise<void>((resolve) => {
         const req = store.delete(trackId);
         req.onsuccess = () => resolve();
         req.onerror = () => resolve();
       });
-    } catch {}
+    });
   }
 
   async getTotalAudioBytes(): Promise<number> {
-    if (!this.isSupported) {
-      let total = 0;
-      for (const item of this.memAudio.values()) {
-        total += item.byteSize || 0;
-      }
-      return total;
-    }
-    try {
-      const db = await this.open();
+    const result = await this.runTransaction("audio", "readonly", (store) => {
       return new Promise<number>((resolve) => {
-        const tx = db.transaction("audio", "readonly");
-        const store = tx.objectStore("audio");
         let total = 0;
         const req = store.openCursor();
         req.onsuccess = () => {
           const cursor = req.result;
           if (cursor) {
             const val = cursor.value as CachedAudioRecord;
-            total += val.byteSize || 0;
+            total += val.byteSize || val.blob?.size || 0;
             cursor.continue();
           } else {
             resolve(total);
@@ -245,31 +317,36 @@ class LinerDb {
         };
         req.onerror = () => resolve(0);
       });
-    } catch {
-      let total = 0;
-      for (const item of this.memAudio.values()) {
-        total += item.byteSize || 0;
-      }
-      return total;
+    });
+
+    if (result !== null && result !== undefined) {
+      return result;
     }
+
+    let total = 0;
+    for (const item of this.memAudio.values()) {
+      total += item.byteSize || 0;
+    }
+    return total;
   }
 
   async getLyrics(trackId: string): Promise<CachedLyricsRecord | null> {
-    if (!this.isSupported) {
-      return this.memLyrics.get(trackId) || null;
-    }
-    try {
-      const db = await this.open();
+    const mem = this.memLyrics.get(trackId);
+    if (mem) return mem;
+
+    const result = await this.runTransaction("lyrics", "readonly", (store) => {
       return new Promise<CachedLyricsRecord | null>((resolve) => {
-        const tx = db.transaction("lyrics", "readonly");
-        const store = tx.objectStore("lyrics");
         const req = store.get(trackId);
         req.onsuccess = () => resolve(req.result || null);
-        req.onerror = () => resolve(this.memLyrics.get(trackId) || null);
+        req.onerror = () => resolve(null);
       });
-    } catch {
-      return this.memLyrics.get(trackId) || null;
+    });
+
+    if (result) {
+      this.memLyrics.set(trackId, result);
+      return result;
     }
+    return this.memLyrics.get(trackId) || null;
   }
 
   async putLyrics(record: CachedLyricsRecord): Promise<void> {
@@ -277,17 +354,14 @@ class LinerDb {
       return;
     }
     this.memLyrics.set(record.trackId, record);
-    if (!this.isSupported) return;
-    try {
-      const db = await this.open();
-      await new Promise<void>((resolve, reject) => {
-        const tx = db.transaction("lyrics", "readwrite");
-        const store = tx.objectStore("lyrics");
+
+    await this.runTransaction("lyrics", "readwrite", (store) => {
+      return new Promise<void>((resolve, reject) => {
         const req = store.put(record);
         req.onsuccess = () => resolve();
         req.onerror = () => reject(req.error);
       });
-    } catch {}
+    });
   }
 
   async updateLyricsChecked(trackId: string): Promise<void> {
@@ -298,18 +372,8 @@ class LinerDb {
   }
 
   async getTotalLyricsBytes(): Promise<number> {
-    if (!this.isSupported) {
-      let total = 0;
-      for (const item of this.memLyrics.values()) {
-        total += (item.rawLyrics?.length || 0) * 2;
-      }
-      return total;
-    }
-    try {
-      const db = await this.open();
+    const result = await this.runTransaction("lyrics", "readonly", (store) => {
       return new Promise<number>((resolve) => {
-        const tx = db.transaction("lyrics", "readonly");
-        const store = tx.objectStore("lyrics");
         let total = 0;
         const req = store.openCursor();
         req.onsuccess = () => {
@@ -324,46 +388,48 @@ class LinerDb {
         };
         req.onerror = () => resolve(0);
       });
-    } catch {
-      let total = 0;
-      for (const item of this.memLyrics.values()) {
-        total += (item.rawLyrics?.length || 0) * 2;
-      }
-      return total;
+    });
+
+    if (result !== null && result !== undefined) {
+      return result;
     }
+
+    let total = 0;
+    for (const item of this.memLyrics.values()) {
+      total += (item.rawLyrics?.length || 0) * 2;
+    }
+    return total;
   }
 
   async getArtist(id: string): Promise<CachedArtistRecord | null> {
-    if (!this.isSupported) {
-      return this.memArtists.get(id) || null;
-    }
-    try {
-      const db = await this.open();
+    const mem = this.memArtists.get(id);
+    if (mem) return mem;
+
+    const result = await this.runTransaction("artists", "readonly", (store) => {
       return new Promise<CachedArtistRecord | null>((resolve) => {
-        const tx = db.transaction("artists", "readonly");
-        const store = tx.objectStore("artists");
         const req = store.get(id);
         req.onsuccess = () => resolve(req.result || null);
-        req.onerror = () => resolve(this.memArtists.get(id) || null);
+        req.onerror = () => resolve(null);
       });
-    } catch {
-      return this.memArtists.get(id) || null;
+    });
+
+    if (result) {
+      this.memArtists.set(id, result);
+      return result;
     }
+    return this.memArtists.get(id) || null;
   }
 
   async putArtist(record: CachedArtistRecord): Promise<void> {
     this.memArtists.set(record.id, record);
-    if (!this.isSupported) return;
-    try {
-      const db = await this.open();
-      await new Promise<void>((resolve, reject) => {
-        const tx = db.transaction("artists", "readwrite");
-        const store = tx.objectStore("artists");
+
+    await this.runTransaction("artists", "readwrite", (store) => {
+      return new Promise<void>((resolve, reject) => {
         const req = store.put(record);
         req.onsuccess = () => resolve();
         req.onerror = () => reject(req.error);
       });
-    } catch {}
+    });
   }
 
   async updateArtistChecked(id: string): Promise<void> {
@@ -374,18 +440,8 @@ class LinerDb {
   }
 
   async getTotalArtistBytes(): Promise<number> {
-    if (!this.isSupported) {
-      let total = 0;
-      for (const item of this.memArtists.values()) {
-        total += JSON.stringify(item.data || {}).length * 2;
-      }
-      return total;
-    }
-    try {
-      const db = await this.open();
+    const result = await this.runTransaction("artists", "readonly", (store) => {
       return new Promise<number>((resolve) => {
-        const tx = db.transaction("artists", "readonly");
-        const store = tx.objectStore("artists");
         let total = 0;
         const req = store.openCursor();
         req.onsuccess = () => {
@@ -400,13 +456,17 @@ class LinerDb {
         };
         req.onerror = () => resolve(0);
       });
-    } catch {
-      let total = 0;
-      for (const item of this.memArtists.values()) {
-        total += JSON.stringify(item.data || {}).length * 2;
-      }
-      return total;
+    });
+
+    if (result !== null && result !== undefined) {
+      return result;
     }
+
+    let total = 0;
+    for (const item of this.memArtists.values()) {
+      total += JSON.stringify(item.data || {}).length * 2;
+    }
+    return total;
   }
 
   async clearStore(storeName: "tracks" | "audio" | "lyrics" | "artists"): Promise<void> {
@@ -415,17 +475,13 @@ class LinerDb {
     if (storeName === "lyrics") this.memLyrics.clear();
     if (storeName === "artists") this.memArtists.clear();
 
-    if (!this.isSupported) return;
-    try {
-      const db = await this.open();
-      await new Promise<void>((resolve, reject) => {
-        const tx = db.transaction(storeName, "readwrite");
-        const store = tx.objectStore(storeName);
+    await this.runTransaction(storeName, "readwrite", (store) => {
+      return new Promise<void>((resolve) => {
         const req = store.clear();
         req.onsuccess = () => resolve();
         req.onerror = () => resolve();
       });
-    } catch {}
+    });
   }
 
   async clearAll(): Promise<void> {

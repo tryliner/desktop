@@ -50,6 +50,18 @@ class QueryCacheStore {
     this.inFlight.clear();
   }
 
+  public getStats(): { count: number; bytes: number } {
+    let bytes = 0;
+    for (const [key, record] of this.store.entries()) {
+      try {
+        bytes += (key.length * 2) + (JSON.stringify(record?.data || {}).length * 2);
+      } catch {
+        bytes += key.length * 2 + 512;
+      }
+    }
+    return { count: this.store.size, bytes };
+  }
+
   public subscribe<T>(key: string, listener: (data: T) => void): () => void {
     let set = this.listeners.get(key);
     if (!set) {

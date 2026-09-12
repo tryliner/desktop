@@ -32,7 +32,9 @@
     "protocols": [
       {
         "name": "Liner",
-        "schemes": ["liner"]
+        "schemes": [
+          "liner"
+        ]
       }
     ],
     "files": [
@@ -84,6 +86,7 @@
     "@tanstack/react-virtual": "^3.13.23",
     "framer-motion": "^12.38.0",
     "gsap": "^3.15.0",
+    "lottie-web": "^5.13.0",
     "next-themes": "^0.4.6",
     "react": "19.2.4",
     "react-apple-emojis": "^3.0.0",

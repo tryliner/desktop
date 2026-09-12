@@ -145,6 +145,22 @@ class LyricsCache {
     this.saveIndex([]);
     this.memCache.clear();
   }
+
+  getStats(): { count: number; bytes: number } {
+    let bytes = 0;
+    const index = this.getIndex();
+    for (const id of index) {
+      const raw = localStorage.getItem(STORAGE_PREFIX + id);
+      if (raw) {
+        bytes += (STORAGE_PREFIX.length + id.length + raw.length) * 2;
+      }
+    }
+    const idxRaw = localStorage.getItem(STORAGE_INDEX_KEY);
+    if (idxRaw) {
+      bytes += (STORAGE_INDEX_KEY.length + idxRaw.length) * 2;
+    }
+    return { count: index.length, bytes };
+  }
 }
 
 export const lyricsCache = new LyricsCache();

@@ -40,8 +40,9 @@ export function AboutTab({ searchQuery: _searchQuery }: { searchQuery?: string }
   };
 
 
+  // centers about content in the middle of the settings tab
   return (
-    <div className="flex w-full flex-col items-center justify-center gap-[12px] py-[32px]">
+    <div className="flex-1 flex w-full flex-col items-center justify-center gap-[12px] py-[32px]">
       <div className="bg-bg-elevated flex h-[60px] w-[60px] items-center justify-center rounded-2xl">
         <img
           src={

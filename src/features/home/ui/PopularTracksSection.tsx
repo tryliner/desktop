@@ -10,6 +10,7 @@ import type { PopularItem } from "../hooks/usePopularTracks";
 import type { Track } from "@/shared/types";
 import ArtistLink from "@/features/artist/ui/ArtistLink";
 import CoverImage from "@/features/covers/ui/CoverImage";
+import ExplicitBadge from "@/shared/ui/ExplicitBadge";
 import { useTranslation } from "@/languages";
 
 export interface PopularTracksSectionProps {
@@ -158,12 +159,15 @@ function TrackCard({
         <span className="truncate text-[14px] font-[500] text-text-primary">
           {item.item.title}
         </span>
-        <ArtistLink
-          name={item.item.artists}
-          artistId={item.item.artistId}
-          artistList={item.item.artistList}
-          className="text-[13px] text-text-tertiary"
-        />
+        <div className="flex min-w-0 items-center overflow-hidden text-[13px] text-text-tertiary">
+          {item.item.explicit && <ExplicitBadge size="md" className="mr-[6px] shrink-0" />}
+          <ArtistLink
+            name={item.item.artists}
+            artistId={item.item.artistId}
+            artistList={item.item.artistList}
+            className="text-[13px] text-text-tertiary"
+          />
+        </div>
       </div>
 
       {menuItems.length > 0 && (
@@ -256,9 +260,12 @@ function AlbumCard({
         <span className="truncate text-[14px] font-[500] text-text-primary">
           {item.item.title}
         </span>
-        <span className="truncate text-[13px] text-text-tertiary">
-          {item.item.artist}
-        </span>
+        <div className="flex min-w-0 items-center overflow-hidden text-[13px] text-text-tertiary">
+          {item.item.explicit && <ExplicitBadge size="md" className="mr-[6px] shrink-0" />}
+          <span className="truncate text-[13px] text-text-tertiary">
+            {item.item.artist}
+          </span>
+        </div>
       </div>
 
       {menuItems.length > 0 && (
