@@ -139,7 +139,7 @@ export default function AppImage({
       {!isLoaded && !hasError && (
         <div
           aria-hidden="true"
-          className="absolute inset-0 pointer-events-none bg-[#161616]"
+          className="absolute inset-0 pointer-events-none bg-bg-panel"
         />
       )}
 
