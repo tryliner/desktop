@@ -12,7 +12,7 @@ import {
 } from "@/shared/utils/cacheManager";
 import { SettingRow, SettingSection } from "../controls";
 
-export function AudioTab() {
+export function AudioTab({ searchQuery }: { searchQuery?: string }) {
   const { t } = useTranslation();
   const [mounted, setMounted] = useState(false);
   const { toast } = useToast();
@@ -38,6 +38,9 @@ export function AudioTab() {
         <SettingRow
           title={t("settings.audio.title")}
           description={t("settings.audio.description")}
+          titleKey="settings.audio.title"
+          descKey="settings.audio.description"
+          searchQuery={searchQuery}
           control={
             mounted ? (
               <Select
@@ -62,6 +65,9 @@ export function AudioTab() {
         <SettingRow
           title={t("settings.cache.local_cache.title")}
           description={t("settings.cache.local_cache.description")}
+          titleKey="settings.cache.local_cache.title"
+          descKey="settings.cache.local_cache.description"
+          searchQuery={searchQuery}
           control={
             <Button
               variant="secondary"
@@ -84,6 +90,9 @@ export function AudioTab() {
         <SettingRow
           title={t("settings.cache.search_cache.title")}
           description={t("settings.cache.search_cache.description")}
+          titleKey="settings.cache.search_cache.title"
+          descKey="settings.cache.search_cache.description"
+          searchQuery={searchQuery}
           control={
             <Button
               variant="secondary"
@@ -107,6 +116,8 @@ export function AudioTab() {
       <SettingSection label={t("settings.connection.title")}>
         <SettingRow
           title={t("settings.connection.checks_title")}
+          titleKey="settings.connection.checks_title"
+          searchQuery={searchQuery}
           description={
             connChecks.length > 0 && connLastRunAt
               ? t("settings.connection.last_run", {

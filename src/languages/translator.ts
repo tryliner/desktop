@@ -37,6 +37,19 @@ function getFlatDict(locale: Locale): Record<string, string> {
   return flat;
 }
 
+const ALL_LOCALES: Locale[] = ["en", "ru", "uk"];
+
+export function getTranslationsForAllLocales(key: string): string[] {
+  const results: string[] = [];
+  for (const loc of ALL_LOCALES) {
+    const dict = getFlatDict(loc);
+    if (dict[key]) {
+      results.push(dict[key]);
+    }
+  }
+  return results;
+}
+
 function getPluralRules(locale: Locale): Intl.PluralRules {
   let rules = pluralRules.get(locale);
   if (!rules) {

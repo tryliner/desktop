@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { getTranslationsForAllLocales } from "@/languages";
 
 const font = { fontFamily: "var(--font-inter), sans-serif" } as const;
 
@@ -7,11 +8,33 @@ export function SettingRow({
   title,
   description,
   control,
+  titleKey,
+  descKey,
+  searchQuery,
 }: {
   title: string;
   description?: string;
   control: ReactNode;
+  titleKey?: string;
+  descKey?: string;
+  searchQuery?: string;
 }) {
+  if (searchQuery && searchQuery.trim()) {
+    const q = searchQuery.toLowerCase().trim();
+    let isMatch =
+      title.toLowerCase().includes(q) ||
+      (description ? description.toLowerCase().includes(q) : false);
+
+    if (!isMatch && (titleKey || descKey)) {
+      const allTexts: string[] = [];
+      if (titleKey) allTexts.push(...getTranslationsForAllLocales(titleKey));
+      if (descKey) allTexts.push(...getTranslationsForAllLocales(descKey));
+      isMatch = allTexts.some((text) => text.toLowerCase().includes(q));
+    }
+
+    if (!isMatch) return null;
+  }
+
   return (
     <div className="flex items-center justify-between gap-[16px] py-[13px]">
       <div className="flex min-w-0 max-w-[360px] flex-col gap-[2px]">
@@ -40,11 +63,33 @@ export function SettingBlock({
   title,
   description,
   children,
+  titleKey,
+  descKey,
+  searchQuery,
 }: {
   title: string;
   description?: string;
   children: ReactNode;
+  titleKey?: string;
+  descKey?: string;
+  searchQuery?: string;
 }) {
+  if (searchQuery && searchQuery.trim()) {
+    const q = searchQuery.toLowerCase().trim();
+    let isMatch =
+      title.toLowerCase().includes(q) ||
+      (description ? description.toLowerCase().includes(q) : false);
+
+    if (!isMatch && (titleKey || descKey)) {
+      const allTexts: string[] = [];
+      if (titleKey) allTexts.push(...getTranslationsForAllLocales(titleKey));
+      if (descKey) allTexts.push(...getTranslationsForAllLocales(descKey));
+      isMatch = allTexts.some((text) => text.toLowerCase().includes(q));
+    }
+
+    if (!isMatch) return null;
+  }
+
   return (
     <div className="flex flex-col gap-[10px] py-[13px]">
       <div className="flex min-w-0 max-w-[460px] flex-col gap-[2px]">

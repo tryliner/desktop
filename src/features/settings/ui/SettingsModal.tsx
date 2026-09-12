@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion } from "framer-motion";
-import { CloseLine } from "@mingcute/react";
+import { CloseLine, Search2Line, CloseCircleFill } from "@mingcute/react";
 import {
   Play,
   Palette,
@@ -10,11 +10,10 @@ import {
   Book2,
   QuestionCircle,
   MenuDots,
-  Settings,
 } from "@solar-icons/react";
 import Dialog from "@/shared/ui/Dialog";
 import { UserAvatar } from "@/shared/ui";
-import { useTranslation } from "@/languages";
+import { useTranslation, getTranslationsForAllLocales } from "@/languages";
 import { useModalStore } from "@/features/library";
 import { useAuthStore } from "@/features/auth";
 import {
@@ -40,6 +39,32 @@ const TAB_GROUPS: { labelKey: "preferences" | "application"; ids: TabId[] }[] = 
   { labelKey: "application", ids: ["Privacy", "About"] },
 ];
 
+const SETTING_ITEMS: { tabId: TabId; titleKey: string; descKey?: string }[] = [
+  // Playback
+  { tabId: "Playback", titleKey: "settings.autoplay_similar.title", descKey: "settings.autoplay_similar.description" },
+  { tabId: "Playback", titleKey: "settings.track_double_click.title", descKey: "settings.track_double_click.description" },
+  { tabId: "Playback", titleKey: "settings.default_playback_context.title", descKey: "settings.default_playback_context.description" },
+  { tabId: "Playback", titleKey: "settings.audio.pause_on_device_change.title", descKey: "settings.audio.pause_on_device_change.description" },
+
+  // Appearance
+  { tabId: "Appearance", titleKey: "settings.language.label", descKey: "settings.language.description" },
+  { tabId: "Appearance", titleKey: "settings.theme.title", descKey: "settings.theme.description" },
+  { tabId: "Appearance", titleKey: "settings.branding.title", descKey: "settings.branding.description" },
+
+  // Audio
+  { tabId: "Audio", titleKey: "settings.audio.title", descKey: "settings.audio.description" },
+  { tabId: "Audio", titleKey: "settings.cache.local_cache.title", descKey: "settings.cache.local_cache.description" },
+  { tabId: "Audio", titleKey: "settings.cache.search_cache.title", descKey: "settings.cache.search_cache.description" },
+  { tabId: "Audio", titleKey: "settings.connection.checks_title" },
+
+  // Privacy
+  { tabId: "Privacy", titleKey: "settings.telemetry.title", descKey: "settings.telemetry.description" },
+
+  // About
+  { tabId: "About", titleKey: "settings.about.liner", descKey: "common.app.version" },
+  { tabId: "About", titleKey: "settings.notifications.test_button" },
+];
+
 const font = { fontFamily: "var(--font-inter), sans-serif" } as const;
 
 export default function SettingsModal() {
@@ -48,8 +73,10 @@ export default function SettingsModal() {
   const close = useModalStore((state) => state.closeSettings);
 
   const [activeTab, setActiveTab] = useState<TabId>("Playback");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const handleClose = () => {
+    setSearchQuery("");
     close();
   };
 
@@ -68,6 +95,69 @@ export default function SettingsModal() {
     Privacy: t("settings.privacy.description"),
     About: t("common.app.version"),
   };
+
+  const matchingTabIds = useMemo(() => {
+    if (!searchQuery.trim()) return null;
+    const query = searchQuery.toLowerCase().trim();
+    const set = new Set<TabId>();
+
+    const TAB_LABEL_KEYS: Record<TabId, string> = {
+      Playback: "settings.tabs.playback",
+      Appearance: "settings.theme.title",
+      Audio: "settings.tabs.audio",
+      Privacy: "settings.tabs.privacy",
+      About: "settings.tabs.about",
+    };
+
+    const TAB_DESC_KEYS: Record<TabId, string> = {
+      Playback: "settings.playback.description",
+      Appearance: "settings.theme.description",
+      Audio: "settings.audio_data.description",
+      Privacy: "settings.privacy.description",
+      About: "common.app.version",
+    };
+
+    (Object.keys(TAB_LABEL_KEYS) as TabId[]).forEach((tabId) => {
+      const texts = [
+        ...getTranslationsForAllLocales(TAB_LABEL_KEYS[tabId]),
+        ...getTranslationsForAllLocales(TAB_DESC_KEYS[tabId]),
+      ];
+      if (texts.some((txt) => txt.toLowerCase().includes(query))) {
+        set.add(tabId);
+      }
+    });
+
+    SETTING_ITEMS.forEach((item) => {
+      const texts = [
+        ...getTranslationsForAllLocales(item.titleKey),
+        ...(item.descKey ? getTranslationsForAllLocales(item.descKey) : []),
+      ];
+      if (texts.some((txt) => txt.toLowerCase().includes(query))) {
+        set.add(item.tabId);
+      }
+    });
+
+    return set;
+  }, [searchQuery]);
+
+  const filteredGroups = useMemo(() => {
+    if (!matchingTabIds) return TAB_GROUPS;
+
+    return TAB_GROUPS.map((group) => {
+      const ids = group.ids.filter((id) => matchingTabIds.has(id));
+      return { ...group, ids };
+    }).filter((group) => group.ids.length > 0);
+  }, [matchingTabIds]);
+
+  useEffect(() => {
+    if (!searchQuery.trim()) return;
+    if (matchingTabIds && matchingTabIds.size > 0 && !matchingTabIds.has(activeTab)) {
+      const firstMatch = TAB_GROUPS.flatMap((g) => g.ids).find((id) => matchingTabIds.has(id));
+      if (firstMatch) {
+        setActiveTab(firstMatch);
+      }
+    }
+  }, [searchQuery, matchingTabIds, activeTab]);
 
   const openExternal = (url: string) => {
     window.open(url, "_blank", "noopener,noreferrer");
@@ -90,24 +180,30 @@ export default function SettingsModal() {
     >
       {/* ── Left sidebar ── */}
       <aside className="w-[248px] shrink-0 flex flex-col min-h-0 bg-transparent">
-        <div className="flex items-center gap-[11px] px-[16px] pt-[16px] pb-[12px]">
-          <span className="w-[34px] h-[34px] rounded-[10px] bg-border-alpha-14 flex items-center justify-center shrink-0">
-            <Settings size={19} weight="Bold" className="text-text-primary" />
-          </span>
-          <span className="min-w-0 flex flex-col leading-tight">
-            <span
-              className="text-text-primary text-[14.5px] font-[600] tracking-[-0.01em] truncate"
+        <div className="px-[12px] pt-[14px] pb-[8px]">
+          <div className="relative flex items-center">
+            <Search2Line
+              size={15}
+              className="absolute left-[10px] text-text-tertiary pointer-events-none"
+            />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder={t("settings.search_placeholder")}
+              className="w-full h-[32px] pl-[30px] pr-[26px] bg-border-alpha-14 text-text-primary text-[13px] rounded-[8px] border-0 outline-none placeholder:text-text-tertiary focus:bg-border-alpha-20 transition-colors"
               style={font}
-            >
-              {t("settings.title")}
-            </span>
-            <span
-              className="text-text-tertiary text-[12px] truncate"
-              style={font}
-            >
-              {t("settings.subtitle")}
-            </span>
-          </span>
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                className="absolute right-[6px] p-0 border-0 bg-transparent text-text-tertiary hover:text-text-primary cursor-pointer flex items-center justify-center"
+              >
+                <CloseCircleFill size={14} />
+              </button>
+            )}
+          </div>
         </div>
 
         <nav
@@ -115,7 +211,12 @@ export default function SettingsModal() {
           role="tablist"
           aria-label={t("settings.title")}
         >
-          {TAB_GROUPS.map((group) => (
+          {filteredGroups.length === 0 ? (
+            <p className="text-text-tertiary text-[12px] px-[10px] py-[8px] m-0" style={font}>
+              {t("search.no_results") || "Ничего не найдено"}
+            </p>
+          ) : (
+            filteredGroups.map((group) => (
             <div key={group.labelKey} className="flex flex-col gap-[2px]">
               <p
                 className="text-text-tertiary text-[11px] font-[500] m-0 px-[10px] pb-[4px] pt-[2px]"
@@ -150,7 +251,7 @@ export default function SettingsModal() {
                 );
               })}
             </div>
-          ))}
+          )))}
 
           <div className="flex flex-col gap-[2px] pt-[2px] mt-[2px] border-t border-solid border-border-primary">
             <p
@@ -241,11 +342,11 @@ export default function SettingsModal() {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.1, ease: "linear" }}
           >
-            {activeTab === "Playback" && <PlaybackTab />}
-            {activeTab === "Appearance" && <AppearanceTab />}
-            {activeTab === "Audio" && <AudioTab />}
-            {activeTab === "Privacy" && <PrivacyTab />}
-            {activeTab === "About" && <AboutTab />}
+            {activeTab === "Playback" && <PlaybackTab searchQuery={searchQuery} />}
+            {activeTab === "Appearance" && <AppearanceTab searchQuery={searchQuery} />}
+            {activeTab === "Audio" && <AudioTab searchQuery={searchQuery} />}
+            {activeTab === "Privacy" && <PrivacyTab searchQuery={searchQuery} />}
+            {activeTab === "About" && <AboutTab searchQuery={searchQuery} />}
           </motion.div>
         </div>
         </div>

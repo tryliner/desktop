@@ -151,7 +151,7 @@ function ThemeCard({
   );
 }
 
-export function AppearanceTab() {
+export function AppearanceTab({ searchQuery }: { searchQuery?: string }) {
   const { t, locale, setLocale } = useTranslation();
   const [mounted, setMounted] = useState(false);
   const { theme, setTheme } = useTheme();
@@ -167,6 +167,9 @@ export function AppearanceTab() {
       <SettingRow
         title={t("settings.language.label")}
         description={t("settings.language.description")}
+        titleKey="settings.language.label"
+        descKey="settings.language.description"
+        searchQuery={searchQuery}
         control={
           mounted ? (
             <Select
@@ -185,6 +188,9 @@ export function AppearanceTab() {
       <SettingBlock
         title={t("settings.theme.title")}
         description={t("settings.theme.description")}
+        titleKey="settings.theme.title"
+        descKey="settings.theme.description"
+        searchQuery={searchQuery}
       >
         {mounted ? (
           <div className="grid grid-cols-3 gap-[10px]">
@@ -210,6 +216,9 @@ export function AppearanceTab() {
       <SettingBlock
         title={t("settings.branding.title")}
         description={t("settings.branding.description")}
+        titleKey="settings.branding.title"
+        descKey="settings.branding.description"
+        searchQuery={searchQuery}
       >
         {mounted ? (
           <div className="flex flex-wrap gap-[2px]">

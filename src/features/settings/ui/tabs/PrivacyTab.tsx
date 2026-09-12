@@ -5,7 +5,7 @@ import { ToggleSwitch } from "@/shared/ui";
 import { isTelemetryEnabled, setTelemetryEnabled } from "@/shared/telemetry";
 import { SettingRow, SettingSection } from "../controls";
 
-export function PrivacyTab() {
+export function PrivacyTab({ searchQuery }: { searchQuery?: string }) {
   const { t } = useTranslation();
   const [telemetryOptIn, setTelemetryOptIn] = useState(() => isTelemetryEnabled());
   const { toast } = useToast();
@@ -21,6 +21,9 @@ export function PrivacyTab() {
       <SettingRow
         title={t("settings.telemetry.title")}
         description={t("settings.telemetry.description")}
+        titleKey="settings.telemetry.title"
+        descKey="settings.telemetry.description"
+        searchQuery={searchQuery}
         control={
           <ToggleSwitch
             checked={telemetryOptIn}

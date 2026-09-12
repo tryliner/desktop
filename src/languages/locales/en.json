@@ -381,6 +381,7 @@
   },
   "settings": {
     "title": "Settings",
+    "search_placeholder": "Search settings...",
     "subtitle": "Manage your preferences",
     "reset_defaults": "Reset to defaults",
     "save_preferences": "Save preferences",

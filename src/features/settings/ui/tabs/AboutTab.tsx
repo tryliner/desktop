@@ -33,7 +33,7 @@ const brandingLogos: Record<Exclude<AccentVariant, "default">, string> = {
   vhs: vhsLogo,
 };
 
-export function AboutTab() {
+export function AboutTab({ searchQuery: _searchQuery }: { searchQuery?: string }) {
   const { t } = useTranslation();
   const accentVariant = usePlayerStore((state) => state.accentVariant);
 

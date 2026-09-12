@@ -385,6 +385,7 @@
   },
   "settings": {
     "title": "Настройки",
+    "search_placeholder": "Поиск настроек...",
     "subtitle": "Управляйте своими настройками",
     "reset_defaults": "Сбросить по умолчанию",
     "save_preferences": "Сохранить настройки",

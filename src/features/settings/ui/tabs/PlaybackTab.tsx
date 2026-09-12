@@ -4,7 +4,7 @@ import { usePlayerStore } from "@/features/player";
 import { ToggleSwitch } from "@/shared/ui";
 import { SettingRow, SettingSection, SegmentedControl } from "../controls";
 
-export function PlaybackTab() {
+export function PlaybackTab({ searchQuery }: { searchQuery?: string }) {
   const { t } = useTranslation();
   const [mounted, setMounted] = useState(false);
   const autoplaySimilar = usePlayerStore((state) => state.autoplaySimilar);
@@ -40,6 +40,9 @@ export function PlaybackTab() {
       <SettingRow
         title={t("settings.autoplay_similar.title")}
         description={t("settings.autoplay_similar.description")}
+        titleKey="settings.autoplay_similar.title"
+        descKey="settings.autoplay_similar.description"
+        searchQuery={searchQuery}
         control={
           <ToggleSwitch
             checked={autoplaySimilar}
@@ -51,6 +54,9 @@ export function PlaybackTab() {
       <SettingRow
         title={t("settings.track_double_click.title")}
         description={t("settings.track_double_click.description")}
+        titleKey="settings.track_double_click.title"
+        descKey="settings.track_double_click.description"
+        searchQuery={searchQuery}
         control={
           mounted ? (
             <SegmentedControl
@@ -77,6 +83,9 @@ export function PlaybackTab() {
       <SettingRow
         title={t("settings.default_playback_context.title")}
         description={t("settings.default_playback_context.description")}
+        titleKey="settings.default_playback_context.title"
+        descKey="settings.default_playback_context.description"
+        searchQuery={searchQuery}
         control={
           mounted ? (
             <SegmentedControl
@@ -103,6 +112,9 @@ export function PlaybackTab() {
       <SettingRow
         title={t("settings.audio.pause_on_device_change.title")}
         description={t("settings.audio.pause_on_device_change.description")}
+        titleKey="settings.audio.pause_on_device_change.title"
+        descKey="settings.audio.pause_on_device_change.description"
+        searchQuery={searchQuery}
         control={
           <ToggleSwitch
             checked={pauseOnDeviceChange}
