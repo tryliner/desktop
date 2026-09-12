@@ -382,7 +382,7 @@ function LibraryPlaylistContent() {
           const relativeTrackTop =
             trackListContainerRef.current.getBoundingClientRect().top -
             container.getBoundingClientRect().top;
-          nextScrolled = relativeTrackTop <= 38;
+          nextScrolled = relativeTrackTop <= 44;
         } else {
           nextScrolled = container.scrollTop > 260;
         }
@@ -396,26 +396,26 @@ function LibraryPlaylistContent() {
             ? "opacity-100 pointer-events-auto translate-y-0"
             : "opacity-0 pointer-events-none -translate-y-2"
         } bg-bg-primary`}
-        style={{ height: "38px", marginBottom: "-38px" }}
+        style={{ height: "44px", marginBottom: "-44px" }}
         data-window-drag
       >
-        <div className="flex items-center justify-between px-[32px] h-[38px]">
+        <div className="flex items-center justify-between px-[32px] h-[44px]">
           <div className="flex items-center gap-[12px] min-w-0">
             <button
               type="button"
               onClick={() =>
                 window.history.length > 1 ? navigate(-1) : navigate("/library")
               }
-              className="inline-flex shrink-0 items-center justify-center gap-[4px] px-[10px] h-[28px] rounded-lg text-[12.5px] font-[600] bg-border-alpha-14 hover:bg-border-alpha-33 text-text-primary active:scale-[0.96] transition-all border-0 cursor-pointer select-none"
+              className="inline-flex shrink-0 items-center justify-center gap-[4px] text-[12.5px] font-[600] text-text-secondary hover:text-text-primary active:scale-[0.96] transition-all border-0 bg-transparent p-0 cursor-pointer select-none"
               style={{ fontFamily: "var(--font-inter), sans-serif" }}
             >
               <ArrowLeftLine size={15} />
-              <span>{t("common.back")}</span>
+              <span className="leading-none">{t("common.back")}</span>
             </button>
 
             {viewData && (
               <span
-                className="text-[14px] font-semibold text-text-primary truncate"
+                className="text-[14px] font-semibold text-text-primary truncate leading-none"
                 style={{
                   fontFamily: "var(--font-inter), sans-serif",
                   letterSpacing: "-0.01em",
@@ -465,7 +465,7 @@ function LibraryPlaylistContent() {
                 onClick={() =>
                   window.history.length > 1 ? navigate(-1) : navigate("/library")
                 }
-                className="group inline-flex h-[32px] items-center gap-[6px] rounded-md px-[12px] text-[13px] font-[500] text-text-primary bg-black/70 hover:bg-black/85 backdrop-blur-md transition-colors cursor-pointer border border-white/[0.08] shadow-sm"
+                className="group inline-flex h-[32px] items-center gap-[6px] rounded-md px-[12px] text-[13px] font-[500] text-text-primary bg-black/70 hover:bg-black/85 backdrop-blur-md transition-colors cursor-pointer border-0 shadow-sm"
                 style={{ fontFamily: "var(--font-inter), sans-serif" }}
               >
                 <ArrowLeftLine
