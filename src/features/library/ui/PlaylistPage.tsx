@@ -103,6 +103,8 @@ function LibraryPlaylistContent() {
 
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [isEditingDescription, setIsEditingDescription] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [showTitle, setShowTitle] = useState(false);
   const reorderTracks = useReorderPlaylistTracks();
   const titleRef = useRef<HTMLHeadingElement>(null);
   const descriptionRef = useRef<HTMLParagraphElement>(null);
@@ -373,18 +375,69 @@ function LibraryPlaylistContent() {
   return (
     <div
       ref={scrollRef}
+      onScroll={(e) => {
+        const top = e.currentTarget.scrollTop;
+        const nextScrolled = top > 20;
+        const nextTitle = top > 130;
+        setIsScrolled((prev) => (prev === nextScrolled ? prev : nextScrolled));
+        setShowTitle((prev) => (prev === nextTitle ? prev : nextTitle));
+      }}
       className="page-transition relative h-full w-full overflow-y-auto bg-bg-primary pb-[24px]"
     >
       <div
-        className="sticky top-0 z-20 h-[32px] w-full shrink-0 bg-bg-primary"
+        className={`sticky top-0 z-20 transition-colors duration-200 ${
+          isScrolled ? "bg-bg-primary" : "bg-transparent"
+        }`}
         data-window-drag
-      />
+      >
+        <div className="flex items-center justify-between px-[32px] h-[52px]">
+          <div className="flex items-center gap-[16px] min-w-0">
+            <Link
+              to="/library"
+              className="inline-flex items-center gap-[8px] text-text-secondary no-underline transition-colors duration-200 hover:text-text-primary cursor-pointer shrink-0"
+              style={{ fontFamily: "var(--font-inter), sans-serif" }}
+            >
+              <ArrowLeftLine size={18} />
+              <span className="text-[14px] font-[500]">{t("common.back")}</span>
+            </Link>
+
+            {viewData && (
+              <span
+                className={`text-[15px] font-semibold text-text-primary truncate transition-all duration-200 ${
+                  showTitle
+                    ? "opacity-100 translate-y-0"
+                    : "opacity-0 -translate-y-1 pointer-events-none"
+                }`}
+                style={{
+                  fontFamily: "var(--font-inter), sans-serif",
+                  letterSpacing: "-0.01em",
+                }}
+              >
+                {viewData.title}
+              </span>
+            )}
+          </div>
+        </div>
+
+        <div className="pointer-events-none absolute inset-x-0 bottom-[-20px] h-[28px] overflow-hidden">
+          <div
+            className={`h-full w-full transition-opacity duration-200 ${
+              isScrolled ? "opacity-100" : "opacity-0"
+            }`}
+            style={{
+              background:
+                "linear-gradient(to bottom, var(--color-bg-primary) 0%, var(--color-bg-primary) 35%, transparent 100%)",
+            }}
+          />
+        </div>
+      </div>
+
       <div className="relative z-1 grid grid-cols-1 items-start w-full">
         {isReady && viewData && (
           <div className="col-start-1 row-start-1 w-full">
             {viewData.coverUrl && (
               <div
-                className="pointer-events-none absolute left-0 top-0 z-0 w-full h-[450px]"
+                className="pointer-events-none absolute left-0 top-0 z-0 w-full h-[480px]"
                 style={{
                   backgroundImage: `url(${heroCoverSrc})`,
                   backgroundSize: "cover",
@@ -398,17 +451,8 @@ function LibraryPlaylistContent() {
                 }}
               />
             )}
-            <div className="relative z-10 px-[32px] pt-[4px]">
-              <Link
-                to="/library"
-                className="inline-flex items-center gap-[8px] text-text-secondary no-underline transition-colors duration-200 hover:text-text-primary cursor-pointer"
-                style={{ fontFamily: "var(--font-inter), sans-serif" }}
-              >
-                <ArrowLeftLine size={18} />
-                <span className="text-[14px] font-[500]">{t("common.back")}</span>
-              </Link>
-
-              <section className="mt-[24px] flex items-start gap-[24px]">
+            <div className="relative z-10 px-[32px] pt-[8px]">
+              <section className="mt-[16px] flex items-start gap-[24px]">
                 <div className="relative h-[180px] w-[180px] shrink-0 overflow-hidden rounded-xl bg-border-alpha-14 flex items-center justify-center">
                   {(() => {
                     const urls =
