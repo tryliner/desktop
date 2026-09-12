@@ -14,6 +14,7 @@ import { useTranslation } from "@/languages";
 import { api } from "@/shared/api";
 import { useImportStore } from "@/features/library/store/importStore";
 import { useModalStore } from "@/features/library/store/modalStore";
+import { notifyLibraryChanged } from "@/features/library/hooks/usePlaylists";
 import ScrollableText from "./ScrollableText";
 
 export type ToastVariant =
@@ -128,11 +129,10 @@ showToast.info = (message: string, options?: ToastOptions) =>
 
 const DURATION = 3000;
 
-// Batching / autohide policy for the top-center notification stack.
 const BATCH_FREEZE_COUNT = 3;
 const MAX_BATCH_SIZE = 6;
-const SWIPE_DISMISS_OFFSET_Y = -48;
-const SWIPE_DISMISS_VELOCITY_Y = -400;
+const SWIPE_DISMISS_OFFSET_Y = -12;
+const SWIPE_DISMISS_VELOCITY_Y = -120;
 
 function CopyIcon() {
   return (
@@ -280,6 +280,7 @@ function ImportToastBridge({
   const isReviewOpen = useModalStore((state) => state.importReviewOpen);
 
   const [dismissedQueuedId, setDismissedQueuedId] = useState<string | null>(null);
+  const [dismissedProgressId, setDismissedProgressId] = useState<string | null>(null);
   const [openingReview, setOpeningReview] = useState(false);
 
   const handleOpenReview = useCallback(async () => {
@@ -295,9 +296,21 @@ function ImportToastBridge({
     }
   }, [job, openingReview, openImportReview]);
 
+  const finalizeWithMatches = useCallback(async (jobId: string) => {
+    try {
+      const res = await api.skipPlaylistImportReview(jobId);
+      if (res.finalized) {
+        const finalJob = await api.getPlaylistImport(jobId).catch(() => null);
+        useImportStore.setState({ job: finalJob ?? null, isPolling: false });
+        notifyLibraryChanged();
+      }
+    } catch {}
+  }, []);
+
   const shouldShow =
     Boolean(job) &&
     !(job?.status === "queued" && dismissedQueuedId === job.id) &&
+    !(job?.status === "running" && dismissedProgressId === job.id) &&
     !(job?.status === "awaiting_decision" && isReviewOpen);
 
   const isQueued = job?.status === "queued";
@@ -306,6 +319,16 @@ function ImportToastBridge({
   const isFinalizing = job?.status === "finalizing";
   const isCompleted = job?.status === "completed";
   const isFailed = job?.status === "failed";
+
+  useEffect(() => {
+    if (
+      isAwaiting &&
+      job?.id &&
+      (dismissedProgressId === job.id || dismissedQueuedId === job.id)
+    ) {
+      void finalizeWithMatches(job.id);
+    }
+  }, [isAwaiting, job?.id, dismissedProgressId, dismissedQueuedId, finalizeWithMatches]);
 
   const getSubtitle = useCallback(() => {
     if (!job) return "";
@@ -364,6 +387,7 @@ function ImportToastBridge({
         id: "import-job-card",
         description: subtitle,
         duration: 999999,
+        onDismiss: () => setDismissedProgressId(job.id),
       });
       return;
     }
@@ -376,6 +400,9 @@ function ImportToastBridge({
         action: {
           label: t("import.review_action"),
           onClick: () => void handleOpenReview(),
+        },
+        onDismiss: () => {
+          void finalizeWithMatches(job.id);
         },
       });
       return;
@@ -676,7 +703,7 @@ function NotificationCard({
       }}
       drag={index === 0 ? "y" : false}
       dragConstraints={{ top: 0, bottom: 0 }}
-      dragElastic={{ top: 0.55, bottom: 0.08 }}
+      dragElastic={{ top: 0.85, bottom: 0.08 }}
       onDragStart={() => setDragging(true)}
       onDragEnd={(_, info) => {
         setDragging(false);

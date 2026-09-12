@@ -23,9 +23,13 @@ const QueueList = memo(function QueueList({
   playbackContextCover: any;
   scrollContainerRef: React.RefObject<HTMLDivElement | null>;
 }) {
+  const effectiveLimit = Math.max(
+    queueLimit,
+    currentIndex >= 0 ? currentIndex + 25 : 0,
+  );
   const visibleQueue = useMemo(
-    () => queue.slice(0, queueLimit),
-    [queue, queueLimit],
+    () => queue.slice(0, effectiveLimit),
+    [queue, effectiveLimit],
   );
 
   const queueContainerRef = useRef<HTMLDivElement>(null);
@@ -192,7 +196,90 @@ function RightDrawer({ activeTab, onTabChange }: RightDrawerProps) {
   useEffect(() => {
     activeTabRef.current = activeTab;
   }, [activeTab]);
-  const [queueLimit, setQueueLimit] = useState(50);
+  const [queueLimit, setQueueLimit] = useState(() =>
+    Math.max(50, Math.ceil(((player.currentIndex >= 0 ? player.currentIndex : 0) + 30) / 50) * 50),
+  );
+
+  useEffect(() => {
+    if (player.currentIndex >= 0) {
+      setQueueLimit((prev) =>
+        Math.max(
+          prev,
+          Math.min(player.queue.length, Math.ceil((player.currentIndex + 30) / 50) * 50),
+        ),
+      );
+    }
+  }, [player.currentIndex, player.queue.length]);
+
+  const scrollQueueToCurrent = useCallback(
+    (smooth = false) => {
+      const container = queueScrollRef.current;
+      if (!container || player.currentIndex < 0 || player.queue.length === 0) return;
+      const targetY = Math.max(
+        0,
+        12 + player.currentIndex * 70 + 35 - (container.clientHeight || 500) / 2,
+      );
+      if (smooth) {
+        container.scrollTo({ top: targetY, behavior: "smooth" });
+      } else {
+        container.scrollTop = targetY;
+      }
+    },
+    [player.currentIndex, player.queue.length],
+  );
+
+  const queueScrollCallbackRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      queueScrollRef.current = node;
+      if (node && player.currentIndex >= 0 && player.queue.length > 0) {
+        const targetY = Math.max(
+          0,
+          12 + player.currentIndex * 70 + 35 - (node.clientHeight || 500) / 2,
+        );
+        node.scrollTop = targetY;
+        requestAnimationFrame(() => {
+          if (queueScrollRef.current) {
+            const h = queueScrollRef.current.clientHeight || 500;
+            queueScrollRef.current.scrollTop = Math.max(
+              0,
+              12 + player.currentIndex * 70 + 35 - h / 2,
+            );
+          }
+        });
+        setTimeout(() => {
+          if (queueScrollRef.current) {
+            const h = queueScrollRef.current.clientHeight || 500;
+            queueScrollRef.current.scrollTop = Math.max(
+              0,
+              12 + player.currentIndex * 70 + 35 - h / 2,
+            );
+          }
+        }, 50);
+        setTimeout(() => {
+          if (queueScrollRef.current) {
+            const h = queueScrollRef.current.clientHeight || 500;
+            queueScrollRef.current.scrollTop = Math.max(
+              0,
+              12 + player.currentIndex * 70 + 35 - h / 2,
+            );
+          }
+        }, 150);
+      }
+    },
+    [player.currentIndex, player.queue.length],
+  );
+
+  const prevQueueTrackIdRef = useRef<string | null>(player.currentTrack?.id ?? null);
+
+  useEffect(() => {
+    const currentId = player.currentTrack?.id ?? null;
+    if (activeTab === "queue" && currentId !== null && currentId !== prevQueueTrackIdRef.current) {
+      prevQueueTrackIdRef.current = currentId;
+      scrollQueueToCurrent(true);
+    } else {
+      prevQueueTrackIdRef.current = currentId;
+    }
+  }, [activeTab, player.currentTrack?.id, scrollQueueToCurrent]);
 
   const {
     lyricsLoading,
@@ -413,7 +500,6 @@ function RightDrawer({ activeTab, onTabChange }: RightDrawerProps) {
 
   return (
     <div className="flex flex-col h-full w-full rounded-4xl border-[0.5px] border-border-secondary bg-bg-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.035)] overflow-hidden">
-      {/* Tabs Header */}
       <div className="flex items-center pt-[24px] border-b-[0.5px] border-border-primary shrink-0">
         <button
           type="button"
@@ -447,11 +533,10 @@ function RightDrawer({ activeTab, onTabChange }: RightDrawerProps) {
         </button>
       </div>
 
-      {/* Content Area */}
       <div className="flex-1 overflow-hidden relative">
         {activeTab === "queue" && (
           <div
-            ref={queueScrollRef}
+            ref={queueScrollCallbackRef}
             className="absolute inset-0 overflow-y-auto px-[12px] py-[12px]"
             onScroll={(e) => {
               const target = e.currentTarget;
