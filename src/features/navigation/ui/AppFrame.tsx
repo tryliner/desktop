@@ -121,8 +121,17 @@ export default function AppFrame({ children }: AppFrameProps) {
   const queueDrawerRef = useRef<HTMLDivElement>(null);
   const searchPopupRef = useRef<HTMLDivElement>(null);
   const mainScrollRef = useRef<HTMLDivElement>(null);
+  const prevLocationRef = useRef(pathname + search);
 
-  // reset scroll position on route navigation so pages always open at top
+  useEffect(() => {
+    if (prevLocationRef.current !== pathname + search) {
+      prevLocationRef.current = pathname + search;
+      if (searchOpen && searchQuery.trim().length === 0) {
+        closeSearch();
+      }
+    }
+  }, [pathname, search, searchOpen, searchQuery, closeSearch]);
+
   useEffect(() => {
     if (mainScrollRef.current) {
       mainScrollRef.current.scrollTop = 0;
@@ -228,13 +237,14 @@ export default function AppFrame({ children }: AppFrameProps) {
   );
   const closeRightPanel = useCallback(() => setQueuePopupOpen(false), []);
 
-  const isArtistRoute = pathname === "/artist";
+  const isBackNavigableRoute =
+    pathname === "/artist" || pathname === "/library/playlist";
   const handleEscapeFallback = useCallback(() => {
-    if (!isArtistRoute) return false;
+    if (!isBackNavigableRoute) return false;
     if (window.history.length > 1) navigate(-1);
     else navigate("/library");
     return true;
-  }, [isArtistRoute, navigate]);
+  }, [isBackNavigableRoute, navigate]);
 
   useDisableButtonFocus();
 

@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, shell, screen, dialog, session } from "electron";
+import { app, BrowserWindow, ipcMain, shell, screen, dialog, session, nativeImage } from "electron";
 import path from "node:path";
 import fs from "node:fs";
 import dns from "node:dns";
@@ -130,6 +130,9 @@ function createWindow() {
   mainWindow.webContents.on("console-message", (_event, level, message) => {
     // clean devtools format directives for terminal readability
     const cleanMsg = message.replace(/%c/g, "").trim();
+    try {
+      fs.appendFileSync(path.join(process.cwd(), "renderer.log"), `[${level}] ${cleanMsg}\n`);
+    } catch {}
     if (level >= 3) {
       console.error(`\x1b[41;37m renderer error \x1b[0m ${cleanMsg}`);
     } else if (level === 2) {
@@ -213,6 +216,21 @@ if (!gotTheLock) {
 
     ipcMain.handle("window:is-maximized", () => {
       return mainWindow?.isMaximized() ?? false;
+    });
+
+    ipcMain.handle("app:set-icon", async (_event, dataUrl: string) => {
+      if (!mainWindow || !dataUrl) return;
+      try {
+        const icon = nativeImage.createFromDataURL(dataUrl);
+        if (!icon.isEmpty()) {
+          mainWindow.setIcon(icon);
+          if (process.platform === "darwin" && app.dock) {
+            app.dock.setIcon(icon);
+          }
+        }
+      } catch (err) {
+        console.error("\x1b[41;37m icon \x1b[0m set-icon error:", err);
+      }
     });
 
     let lastSavedExportPath: string | null = null;

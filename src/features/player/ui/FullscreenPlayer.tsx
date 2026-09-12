@@ -1,7 +1,7 @@
 import {
   useCallback,
   useEffect,
-  useLayoutEffect,
+  createElement,
   useRef,
   useState,
 } from "react";
@@ -76,18 +76,17 @@ function BraccatoLyricsView({ lyrics }: BraccatoLyricsViewProps) {
 
   return (
     <div className="relative flex flex-col flex-1 w-full h-full min-h-0">
-      {/* @ts-expect-error custom element */}
-      <BRACCATO_TAG
-        ref={setElement}
-        source="#liner-audio"
-        className="block flex-1 w-full h-full px-6"
-        style={{
+      {createElement(BRACCATO_TAG, {
+        ref: setElement,
+        source: "#liner-audio",
+        className: "block flex-1 w-full h-full px-6",
+        style: {
           overflowY: "auto",
           overflowX: "hidden",
           position: "relative",
           scrollbarWidth: "none",
-        }}
-      />
+        },
+      })}
     </div>
   );
 }
@@ -167,6 +166,12 @@ export function FullscreenPlayer({
           className="absolute inset-0"
           style={{ backgroundColor: "var(--color-bg-primary)" }}
         />
+        {kawarpSrc && (
+          <div
+            className="absolute inset-0 bg-cover bg-center filter blur-3xl scale-110 opacity-70 pointer-events-none"
+            style={{ backgroundImage: `url(${kawarpSrc})` }}
+          />
+        )}
         {effectsReady ? (
           <KawarpWrapper src={kawarpSrc} onError={onError} />
         ) : null}

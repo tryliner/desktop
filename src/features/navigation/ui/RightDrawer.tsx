@@ -215,7 +215,7 @@ function RightDrawer({ activeTab, onTabChange }: RightDrawerProps) {
       if (!container || player.currentIndex < 0 || player.queue.length === 0) return;
       const targetY = Math.max(
         0,
-        Math.round(12 + player.currentIndex * 70 + 35 - (container.clientHeight || 500) / 2),
+        Math.round(6 + player.currentIndex * 70 + 35 - (container.clientHeight || 500) / 2),
       );
       if (smooth) {
         container.scrollTo({ top: targetY, behavior: "smooth" });
@@ -232,7 +232,7 @@ function RightDrawer({ activeTab, onTabChange }: RightDrawerProps) {
       if (node && player.currentIndex >= 0 && player.queue.length > 0) {
         const targetY = Math.max(
           0,
-          Math.round(12 + player.currentIndex * 70 + 35 - (node.clientHeight || 500) / 2),
+          Math.round(6 + player.currentIndex * 70 + 35 - (node.clientHeight || 500) / 2),
         );
         node.scrollTop = targetY;
         requestAnimationFrame(() => {
@@ -498,44 +498,68 @@ function RightDrawer({ activeTab, onTabChange }: RightDrawerProps) {
 
   return (
     <div className="flex flex-col h-full w-full rounded-4xl border border-border-secondary bg-bg-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.035)] overflow-hidden">
-      <div className="flex items-center pt-[24px] border-b border-border-primary shrink-0">
-        <button
-          type="button"
-          onClick={() => onTabChange("queue")}
-          className={`flex-1 pb-[14px] relative -mb-[1px] border-b-[2px] text-[15px] font-[500] transition-colors duration-200 border-none bg-transparent cursor-pointer ${
-            activeTab === "queue"
-              ? "border-text-primary text-text-primary"
-              : "border-transparent text-text-secondary hover:text-text-primary"
-          }`}
-          style={{
-            fontFamily: "var(--font-inter), sans-serif",
-            letterSpacing: "-0.01em",
-          }}
-        >
-          {t("player.queue")}
-        </button>
-        <button
-          type="button"
-          onClick={() => onTabChange("lyrics")}
-          className={`flex-1 pb-[14px] relative -mb-[1px] border-b-[2px] text-[15px] font-[500] transition-colors duration-200 border-none bg-transparent cursor-pointer ${
-            activeTab === "lyrics"
-              ? "border-text-primary text-text-primary"
-              : "border-transparent text-text-secondary hover:text-text-primary"
-          }`}
-          style={{
-            fontFamily: "var(--font-inter), sans-serif",
-            letterSpacing: "-0.01em",
-          }}
-        >
-          {t("player.lyrics")}
-        </button>
+      <div className="px-[12px] pt-[12px] pb-[6px] shrink-0">
+        <div className="grid grid-cols-2 p-[3px] rounded-xl bg-bg-elevated border border-border-primary/60">
+          <button
+            type="button"
+            onClick={() => onTabChange("queue")}
+            className={`relative flex items-center justify-center py-[7px] px-[12px] rounded-lg text-[13px] font-medium transition-colors border-none bg-transparent cursor-pointer select-none active:scale-[0.98] ${
+              activeTab === "queue"
+                ? "text-text-primary"
+                : "text-text-secondary hover:text-text-primary"
+            }`}
+            style={{
+              fontFamily: "var(--font-inter), sans-serif",
+              letterSpacing: "-0.01em",
+            }}
+          >
+            {activeTab === "queue" && (
+              <motion.div
+                layoutId="activeRightDrawerTab"
+                className="absolute inset-0 rounded-lg bg-bg-primary shadow-sm border border-border-primary/30"
+                transition={{
+                  type: "spring",
+                  stiffness: 450,
+                  damping: 35,
+                }}
+              />
+            )}
+            <span className="relative z-10">{t("player.queue")}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => onTabChange("lyrics")}
+            className={`relative flex items-center justify-center py-[7px] px-[12px] rounded-lg text-[13px] font-medium transition-colors border-none bg-transparent cursor-pointer select-none active:scale-[0.98] ${
+              activeTab === "lyrics"
+                ? "text-text-primary"
+                : "text-text-secondary hover:text-text-primary"
+            }`}
+            style={{
+              fontFamily: "var(--font-inter), sans-serif",
+              letterSpacing: "-0.01em",
+            }}
+          >
+            {activeTab === "lyrics" && (
+              <motion.div
+                layoutId="activeRightDrawerTab"
+                className="absolute inset-0 rounded-lg bg-bg-primary shadow-sm border border-border-primary/30"
+                transition={{
+                  type: "spring",
+                  stiffness: 450,
+                  damping: 35,
+                }}
+              />
+            )}
+            <span className="relative z-10">{t("player.lyrics")}</span>
+          </button>
+        </div>
       </div>
 
       <div className="flex-1 overflow-hidden relative">
         {activeTab === "queue" && (
           <div
             ref={queueScrollCallbackRef}
-            className="absolute inset-0 overflow-y-auto px-[12px] py-[12px]"
+            className="absolute inset-0 overflow-y-auto px-[12px] pt-[6px] pb-[12px]"
             onScroll={(e) => {
               const target = e.currentTarget;
               if (

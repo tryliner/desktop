@@ -12,9 +12,8 @@ export function KawarpWrapper({ src, onLoad, onError }: KawarpWrapperProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const engineRef = useRef<KawarpEngine | null>(null);
-  const [loaded, setLoaded] = useState(false);
+  const [, setLoaded] = useState(false);
 
-  // Initialize WebGL engine once
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -43,7 +42,6 @@ export function KawarpWrapper({ src, onLoad, onError }: KawarpWrapperProps) {
     };
   }, [onError]);
 
-  // Sync canvas dimensions to container bounding box
   useEffect(() => {
     const container = containerRef.current;
     const canvas = canvasRef.current;
@@ -51,6 +49,7 @@ export function KawarpWrapper({ src, onLoad, onError }: KawarpWrapperProps) {
 
     const updateSize = () => {
       const rect = container.getBoundingClientRect();
+      if (rect.width <= 0 || rect.height <= 0) return;
       const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
       const width = Math.round(rect.width * dpr);
       const height = Math.round(rect.height * dpr);
@@ -64,14 +63,15 @@ export function KawarpWrapper({ src, onLoad, onError }: KawarpWrapperProps) {
 
     const resizeObserver = new ResizeObserver(updateSize);
     resizeObserver.observe(container);
+    window.addEventListener("resize", updateSize, { passive: true });
     updateSize();
 
     return () => {
       resizeObserver.disconnect();
+      window.removeEventListener("resize", updateSize);
     };
   }, []);
 
-  // Load new src on change with smooth crossfade
   useEffect(() => {
     const engine = engineRef.current;
     if (!engine || !src) return;

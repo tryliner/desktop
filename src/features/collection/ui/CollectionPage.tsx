@@ -19,9 +19,9 @@ import { useToast } from "@/shared/ui";
 import type { Track } from "@/shared/types";
 import { useTranslation } from "@/languages";
 import { useModalStore } from "@/features/library";
-import { api, mediaUrl, toClientTrack, type ApiTrack } from "@/shared/api";
 import { buildShareUrl } from "@/shared/utils/share";
 import { useExternalItems } from "@/features/library/hooks";
+import { useCollection } from "../hooks/useCollection";
 
 function CollectionContent() {
   const [searchParams] = useSearchParams();
@@ -30,13 +30,7 @@ function CollectionContent() {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const [data, setData] = useState<{
-    title: string;
-    description: string;
-    coverUrl: string;
-    tracks: Track[];
-  } | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data, loading } = useCollection(type, id);
   const heroCoverSrc = useCoverSrc(data?.coverUrl);
   const entityType = type === "playlist" ? "playlist" : "album";
   const decodedId = id ? decodeURIComponent(id) : "";
@@ -116,66 +110,6 @@ function CollectionContent() {
       return () => clearTimeout(timer);
     }
   }, [isReady, skeletonExited]);
-
-  useEffect(() => {
-    async function load() {
-      if (!type || !id) {
-        setLoading(false);
-        setData(null);
-        return;
-      }
-      setLoading(true);
-      setData(null);
-      setImagesLoaded(false);
-      setSkeletonExited(false);
-      try {
-        const decodedId = id ? decodeURIComponent(id) : "";
-        const collection =
-          type === "playlist"
-            ? await api.getPlaylist(id)
-            : await api.getAlbum(id);
-        const collectionCoverUrl = collection.cover ? mediaUrl(collection.cover.url) : "";
-        const tracks = collection.tracks.map((t) => {
-          const clientTrack = toClientTrack(t);
-          let updated = clientTrack;
-          if (collection.type === "album") {
-            const albumData = {
-              id: decodedId,
-              title: collection.title,
-            };
-            updated = {
-              ...updated,
-              album: updated.album?.id ? updated.album : albumData,
-            };
-            if (collectionCoverUrl && (!updated.coverUrl || updated.coverUrl.includes("i.ytimg.com"))) {
-              updated = { ...updated, coverUrl: collectionCoverUrl };
-            }
-          }
-          return updated;
-        });
-        const description =
-          collection.type === "album"
-            ? [
-                collection.artists.map((artist) => artist.name).join(", "),
-                collection.year,
-              ]
-                .filter(Boolean)
-                .join(" • ")
-            : [collection.author, collection.year].filter(Boolean).join(" • ");
-        setData({
-          title: collection.title,
-          description,
-          coverUrl: collectionCoverUrl,
-          tracks,
-        });
-      } catch {
-        setData(null);
-      } finally {
-        setLoading(false);
-      }
-    }
-    load();
-  }, [type, id]);
 
   const playbackContext = id ? `${entityType}:${decodedId}` : (data?.title || null);
 

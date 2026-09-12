@@ -1,7 +1,5 @@
 import { FaTelegramPlane } from "react-icons/fa";
-import { BellRingingLine } from "@mingcute/react";
 import Button from "@/shared/ui/Button";
-import { showToast } from "@/shared/ui";
 import { useTranslation } from "@/languages";
 import logo from "@/assets/logo.svg";
 import spotifyLogo from "@/assets/branding/logo-spotify.svg";
@@ -41,25 +39,6 @@ export function AboutTab({ searchQuery: _searchQuery }: { searchQuery?: string }
     window.open("https://t.me/liner_app", "_blank");
   };
 
-  const fireTestNotifications = () => {
-    showToast(t("settings.notifications.playback_title"), "info", {
-      description: t("settings.notifications.playback_sub"),
-      action: {
-        label: t("settings.notifications.playback_action"),
-        onClick: () => {},
-      },
-    });
-    // Slight stagger so the batch deck animation reads clearly.
-    setTimeout(() => {
-      showToast(t("settings.notifications.release_title"), "success", {
-        description: t("settings.notifications.release_sub"),
-        action: {
-          label: t("settings.notifications.release_action"),
-          onClick: () => {},
-        },
-      });
-    }, 450);
-  };
 
   return (
     <div className="flex w-full flex-col items-center justify-center gap-[12px] py-[32px]">
@@ -105,10 +84,6 @@ export function AboutTab({ searchQuery: _searchQuery }: { searchQuery?: string }
         <Button variant="secondary" size="sm" onClick={openTelegram}>
           <FaTelegramPlane size={14} className="mt-[1px]" />
           {t("settings.about.telegram")}
-        </Button>
-        <Button variant="secondary" size="sm" onClick={fireTestNotifications}>
-          <BellRingingLine size={15} />
-          {t("settings.notifications.test_button")}
         </Button>
       </div>
     </div>

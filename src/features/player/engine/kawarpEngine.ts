@@ -1,12 +1,3 @@
-/**
- * Kawarp WebGL fluid animated background engine.
- *
- * Implements multi-pass Kawase blur and domain warping with zero glitches:
- * - Direct FBO dimension tracking to prevent viewport/quadrant scaling bugs
- * - Instant blur on first frame without black buffer crossfade
- * - Robust CORS and blob/imageBitmap loading
- */
-
 const BLUR_SIZE = 160;
 
 const VERTEX_SHADER = `
@@ -107,7 +98,6 @@ const DOMAIN_WARP_SHADER = `
     vec2 uv = v_texCoord;
     float t = u_time * 0.08;
 
-    // Multi-octave organic fluid domain warp
     vec2 q = vec2(
       snoise(uv * 0.5 + vec2(t * 0.6, t * 0.4)),
       snoise(uv * 0.5 + vec2(-t * 0.5, t * 0.7) + vec2(43.12, 17.89))
@@ -233,7 +223,7 @@ export class KawarpEngine {
       antialias: false,
       depth: false,
       stencil: false,
-      preserveDrawingBuffer: false,
+      preserveDrawingBuffer: true,
       powerPreference: 'high-performance',
     });
     if (!gl) throw new Error('WebGL not supported');
@@ -316,6 +306,14 @@ export class KawarpEngine {
       this.deleteFramebuffer(this.warpFBO);
       this.warpFBO = this.createFramebuffer(width, height, true);
     }
+    if (this.hasImage) {
+      this.render(this.accumulatedTime, performance.now());
+    }
+  }
+
+  public renderImmediate() {
+    if (!this.hasImage) return;
+    this.render(this.accumulatedTime, performance.now());
   }
 
   public async loadImage(src: string, preDecoded?: HTMLImageElement): Promise<void> {
@@ -367,7 +365,6 @@ export class KawarpEngine {
 
   private processNewImage() {
     if (!this.hasImage) {
-      // First image ever loaded: blur immediately into nextAlbumFBO AND currentAlbumFBO
       this.blurSourceInto(this.nextAlbumFBO);
       this.blurSourceInto(this.currentAlbumFBO);
       this.hasImage = true;
@@ -375,7 +372,6 @@ export class KawarpEngine {
       return;
     }
 
-    // Subsequent images: swap FBOs and smoothly crossfade over transitionDuration
     const temp = this.currentAlbumFBO;
     this.currentAlbumFBO = this.nextAlbumFBO;
     this.nextAlbumFBO = temp;
@@ -388,13 +384,11 @@ export class KawarpEngine {
   private blurSourceInto(targetFBO: FboInfo) {
     const gl = this.gl;
 
-    // ensure texture units are unbound so render targets never collide in a feedback loop
     gl.activeTexture(gl.TEXTURE1);
     gl.bindTexture(gl.TEXTURE_2D, null);
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, null);
 
-    // 1. Tint source texture -> blurFBO1
     gl.useProgram(this.tintProgram);
     this.setupAttributes();
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.blurFBO1.framebuffer);
@@ -406,7 +400,6 @@ export class KawarpEngine {
     gl.uniform1f(this.uniforms.tint.tintIntensity, this.tintIntensity);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
 
-    // 2. Kawase blur passes between blurFBO1 and blurFBO2
     gl.useProgram(this.blurProgram);
     this.setupAttributes();
     gl.uniform2f(this.uniforms.blur.resolution, BLUR_SIZE, BLUR_SIZE);
@@ -426,7 +419,6 @@ export class KawarpEngine {
       writeFBO = temp;
     }
 
-    // 3. Copy final blur to target FBO with explicit sampler detach
     gl.bindTexture(gl.TEXTURE_2D, null);
     gl.bindFramebuffer(gl.FRAMEBUFFER, targetFBO.framebuffer);
     gl.viewport(0, 0, BLUR_SIZE, BLUR_SIZE);
@@ -434,7 +426,6 @@ export class KawarpEngine {
     gl.uniform1f(this.uniforms.blur.offset, 0.0);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
 
-    // clean up bound textures & framebuffer
     gl.bindTexture(gl.TEXTURE_2D, null);
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
   }
@@ -470,7 +461,6 @@ export class KawarpEngine {
     const width = Math.max(1, this.canvas.width);
     const height = Math.max(1, this.canvas.height);
 
-    // ensure warpFBO matches canvas resolution on every frame without glitching
     if (this.warpFBO.width !== width || this.warpFBO.height !== height) {
       this.deleteFramebuffer(this.warpFBO);
       this.warpFBO = this.createFramebuffer(width, height, true);
@@ -488,7 +478,6 @@ export class KawarpEngine {
     let currentTexture: WebGLTexture;
 
     if (this.isTransitioning && blendFactor < 1.0) {
-      // smooth crossfade into dedicated transition buffer (isolated from blur ping-pongs)
       gl.useProgram(this.blendProgram);
       this.setupAttributes();
       gl.bindFramebuffer(gl.FRAMEBUFFER, this.transitionFBO.framebuffer);
@@ -502,12 +491,10 @@ export class KawarpEngine {
       gl.bindTexture(gl.TEXTURE_2D, this.nextAlbumFBO.texture);
       gl.uniform1i(this.uniforms.blend.texture2, 1);
 
-      // smooth cosine easing
       const easedBlend = 0.5 - 0.5 * Math.cos(blendFactor * Math.PI);
       gl.uniform1f(this.uniforms.blend.blend, easedBlend);
       gl.drawArrays(gl.TRIANGLES, 0, 6);
 
-      // clean unbind texture units to avoid any feedback loop with subsequent FBO bindings
       gl.activeTexture(gl.TEXTURE1);
       gl.bindTexture(gl.TEXTURE_2D, null);
       gl.activeTexture(gl.TEXTURE0);
@@ -518,7 +505,6 @@ export class KawarpEngine {
       currentTexture = this.nextAlbumFBO.texture;
     }
 
-    // Warp upscales to warpFBO
     gl.useProgram(this.warpProgram);
     this.setupAttributes();
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.warpFBO.framebuffer);
@@ -530,7 +516,6 @@ export class KawarpEngine {
     gl.uniform1f(this.uniforms.warp.intensity, this.warpIntensity);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
 
-    // Final output to canvas
     gl.useProgram(this.outputProgram);
     this.setupAttributes();
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);

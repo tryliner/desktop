@@ -2,6 +2,7 @@ import { usePlayerStore } from "../store/playerStore";
 import { api, mediaUrl, ApiError } from "@/shared/api";
 import { log } from "@/shared/utils/logger";
 import { telemetry } from "@/shared/telemetry";
+import { linerDb } from "@/shared/storage";
 import type { Track } from "@/shared/types";
 
 export class PlayerRuntime {
@@ -15,6 +16,7 @@ export class PlayerRuntime {
   private loadStartTime = 0;
   private ttfbMs = 0;
   private activePlayPromise: Promise<void> | null = null;
+  private activeBlobUrl: string | null = null;
   public onEnded?: () => void;
   public onError?: (info: { trackId: string; message: string }) => void;
 
@@ -216,6 +218,7 @@ export class PlayerRuntime {
 
       const message = audioEl.error?.message || "Audio playback error";
       const code = audioEl.error?.code;
+      console.error("[AudioElementError]", this.currentTrackId, code, message, audioEl.src);
       log("red", "audio", `error (code ${code}): ${message}`);
       usePlayerStore.getState().setStatus("error", message);
 
@@ -296,10 +299,13 @@ export class PlayerRuntime {
     try {
       this.cancelFade();
       this.audio.pause();
+      if (this.activeBlobUrl) {
+        URL.revokeObjectURL(this.activeBlobUrl);
+        this.activeBlobUrl = null;
+      }
       this.audio.removeAttribute("src");
       this.audio.load();
     } catch {
-      // ignore clean reset errors
     } finally {
       this.isResetting = false;
     }
@@ -319,7 +325,6 @@ export class PlayerRuntime {
     this.cancelFade();
     const epoch = ++this.loadEpoch;
 
-    // Abort previous in-flight network requests
     this.loadAbortController?.abort();
     const controller = new AbortController();
     this.loadAbortController = controller;
@@ -332,10 +337,65 @@ export class PlayerRuntime {
     store.setStatus("loading", null);
     store.setPosition(startPositionMs > 0 ? startPositionMs : 0);
 
-    // Safely detach previous source
     this.safeResetAudioElement();
 
     try {
+      const cachedAudio = await linerDb.getAudio(track.id);
+      if (epoch !== this.loadEpoch || controller.signal.aborted) {
+        return;
+      }
+
+      if (cachedAudio) {
+        void linerDb.putTrack(track);
+        const blobUrl = URL.createObjectURL(cachedAudio.blob);
+        this.activeBlobUrl = blobUrl;
+        this.audio.src = blobUrl;
+        this.audio.volume = 0;
+        this.audio.load();
+
+        this.seekWhenReady(epoch, startPositionMs);
+        log(
+          "cyan",
+          "playback",
+          `audio cache hit for "${track.title}" (${Math.round(cachedAudio.byteSize / 1024)} KB)`,
+        );
+
+        if (this.audio.readyState < 3) {
+          await new Promise<void>((resolve) => {
+            const timeout = setTimeout(resolve, 3000);
+            const onCanPlay = () => {
+              clearTimeout(timeout);
+              this.audio.removeEventListener("canplay", onCanPlay);
+              this.audio.removeEventListener("error", onCanPlay);
+              resolve();
+            };
+            this.audio.addEventListener("canplay", onCanPlay, { once: true });
+            this.audio.addEventListener("error", onCanPlay, { once: true });
+          });
+        }
+
+        if (epoch !== this.loadEpoch || controller.signal.aborted) return;
+
+        const playPromise = this.audio.play();
+        this.activePlayPromise = playPromise;
+        await playPromise;
+
+        const audioStartLatencyMs = Math.round(
+          performance.now() - this.loadStartTime,
+        );
+
+        if (epoch === this.loadEpoch) {
+          usePlayerStore.getState().setStatus("playing");
+          this.fadeVolume(usePlayerStore.getState().volume, 180);
+        }
+        log(
+          "green",
+          "playback",
+          `started (cached): ${track.title} in ${audioStartLatencyMs}ms`,
+        );
+        return;
+      }
+
       const session = await api.createPlaybackSession(
         track.id,
         undefined,
@@ -348,7 +408,27 @@ export class PlayerRuntime {
         return;
       }
 
-      this.audio.src = mediaUrl(session.streamUrl);
+      const url = mediaUrl(session.streamUrl);
+      const response = await fetch(url, {
+        headers: { Range: "bytes=0-" },
+        signal: controller.signal,
+      });
+
+      if (!response.ok && response.status !== 206) {
+        throw new Error(`Failed to fetch media stream: ${response.status}`);
+      }
+
+      const arrayBuffer = await response.arrayBuffer();
+      if (epoch !== this.loadEpoch || controller.signal.aborted) return;
+
+      const mimeType = session.mimeType || response.headers.get("content-type") || "audio/webm";
+      const blob = new Blob([arrayBuffer], { type: mimeType });
+      void linerDb.putAudio(track.id, blob, mimeType);
+      void linerDb.putTrack(track);
+
+      const blobUrl = URL.createObjectURL(blob);
+      this.activeBlobUrl = blobUrl;
+      this.audio.src = blobUrl;
       this.audio.volume = 0;
       this.audio.load();
 
@@ -356,12 +436,9 @@ export class PlayerRuntime {
       log(
         "green",
         "playback",
-        `stream ready: ${session.codec} ${session.bitrate} bps ${session.mimeType}`,
+        `stream downloaded & cached: ${session.codec} ${session.bitrate} bps (${Math.round(blob.size / 1024)} KB)`,
       );
 
-      if (epoch !== this.loadEpoch || controller.signal.aborted) return;
-
-      // wait for audio stream to buffer before unpausing to prevent clock oscillation in word lyrics
       if (this.audio.readyState < 3) {
         await new Promise<void>((resolve) => {
           const timeout = setTimeout(resolve, 3000);
@@ -405,12 +482,10 @@ export class PlayerRuntime {
       });
     } catch (error) {
       if (epoch !== this.loadEpoch || controller.signal.aborted) {
-        // Superseded or intentionally aborted — ignore completely
         return;
       }
 
       if (error instanceof DOMException && error.name === "AbortError") {
-        // Interrupted by another play/load request — benign
         return;
       }
 
@@ -426,6 +501,7 @@ export class PlayerRuntime {
           : error instanceof Error
             ? error.message
             : "Playback failed to start.";
+      console.error("[LoadAndPlayError]", track.id, error);
       log("red", "playback", `failed: ${message}`);
       usePlayerStore.getState().setStatus("error", message);
 

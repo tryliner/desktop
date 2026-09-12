@@ -204,8 +204,13 @@ export default function HomePage() {
   }, [isReady, skeletonExited]);
 
   return (
-    <div className="relative min-h-full w-full bg-bg-primary overflow-hidden">
-      {/* Ambient time-of-day gradient glow (subtle top-left accent) */}
+    <div className="relative h-full w-full overflow-y-auto overflow-x-hidden bg-bg-primary">
+      <div
+        data-window-drag
+        className="sticky top-0 z-20 h-[32px] w-full shrink-0 select-none pointer-events-auto"
+        style={{ marginBottom: "-32px" }}
+        aria-hidden="true"
+      />
       <div
         aria-hidden="true"
         className={`pointer-events-none absolute -top-8 -left-8 w-[380px] h-[200px] bg-gradient-to-br ${glowClass} blur-3xl opacity-60`}

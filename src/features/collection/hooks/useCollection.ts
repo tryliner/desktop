@@ -1,0 +1,112 @@
+import { useEffect, useState } from "react";
+import { api, mediaUrl, toClientTrack } from "@/shared/api";
+import { queryCache } from "@/shared/cache/queryCache";
+import type { Track } from "@/shared/types";
+
+export interface CollectionPageData {
+  title: string;
+  description: string;
+  coverUrl: string;
+  tracks: Track[];
+}
+
+export function useCollection(type: string | null, id: string | null) {
+  const cacheKey = type && id ? `collection:${type}:${id}` : null;
+  const cached = cacheKey ? queryCache.get<CollectionPageData>(cacheKey) : undefined;
+  const [data, setData] = useState<CollectionPageData | null>(cached ?? null);
+  const [loading, setLoading] = useState<boolean>(!cached && Boolean(type && id));
+
+  useEffect(() => {
+    if (!type || !id || !cacheKey) {
+      setData(null);
+      setLoading(false);
+      return;
+    }
+
+    const initial = queryCache.get<CollectionPageData>(cacheKey);
+    if (initial) {
+      setData(initial);
+      setLoading(false);
+    } else {
+      setData(null);
+      setLoading(true);
+    }
+
+    let active = true;
+
+    const unsubscribe = queryCache.subscribe<CollectionPageData>(cacheKey, (updated) => {
+      if (active) {
+        setData(updated);
+        setLoading(false);
+      }
+    });
+
+    void queryCache
+      .fetchWithSwr(
+        cacheKey,
+        async () => {
+          const decodedId = id ? decodeURIComponent(id) : "";
+          const collection =
+            type === "playlist"
+              ? await api.getPlaylist(id)
+              : await api.getAlbum(id);
+          const collectionCoverUrl = collection.cover ? mediaUrl(collection.cover.url) : "";
+          const tracks = collection.tracks.map((t) => {
+            const clientTrack = toClientTrack(t);
+            let updated = clientTrack;
+            if (collection.type === "album") {
+              const albumData = {
+                id: decodedId,
+                title: collection.title,
+              };
+              updated = {
+                ...updated,
+                album: updated.album?.id ? updated.album : albumData,
+              };
+              if (collectionCoverUrl && (!updated.coverUrl || updated.coverUrl.includes("i.ytimg.com"))) {
+                updated = { ...updated, coverUrl: collectionCoverUrl };
+              }
+            }
+            return updated;
+          });
+          const description =
+            collection.type === "album"
+              ? [
+                  collection.artists.map((artist) => artist.name).join(", "),
+                  collection.year,
+                ]
+                  .filter(Boolean)
+                  .join(" • ")
+              : [collection.author, collection.year].filter(Boolean).join(" • ");
+
+          const formatted: CollectionPageData = {
+            title: collection.title,
+            description,
+            coverUrl: collectionCoverUrl,
+            tracks,
+          };
+          return formatted;
+        },
+        { staleTimeMs: 5 * 60 * 1000 },
+      )
+      .then(({ data: result }) => {
+        if (active) {
+          setData(result);
+          setLoading(false);
+        }
+      })
+      .catch(() => {
+        if (active && !queryCache.get(cacheKey)) {
+          setData(null);
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      active = false;
+      unsubscribe();
+    };
+  }, [type, id, cacheKey]);
+
+  return { data, loading };
+}

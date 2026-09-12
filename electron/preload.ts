@@ -39,6 +39,7 @@ export interface LinerElectronApi {
     canceled?: boolean;
     error?: string;
   }>;
+  setAppIcon: (dataUrl: string) => Promise<void>;
 }
 
 const api: LinerElectronApi = {
@@ -66,6 +67,7 @@ const api: LinerElectronApi = {
   openDownloads: (customPath) => ipcRenderer.invoke("shell:open-downloads", customPath),
   openExportFolder: (customPath) => ipcRenderer.invoke("shell:open-export-folder", customPath),
   saveDump: (input) => ipcRenderer.invoke("dialog:save-dump", input),
+  setAppIcon: (dataUrl) => ipcRenderer.invoke("app:set-icon", dataUrl),
   onDeeplink: (cb) => {
     const listener = (_event: unknown, target: DeeplinkTarget) => cb(target);
     ipcRenderer.on("deeplink:open", listener);

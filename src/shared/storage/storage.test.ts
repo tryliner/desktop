@@ -1,0 +1,146 @@
+import { describe, it, expect, beforeEach } from "vitest";
+import { linerDb } from "./linerDb";
+import { audioCache } from "./audioCache";
+
+describe("linerDb storage layer", () => {
+  beforeEach(async () => {
+    await linerDb.clearAll();
+  });
+
+  it("stores and retrieves track metadata", async () => {
+    await linerDb.putTrack({
+      id: "track_test_1",
+      title: "Test Song",
+      artists: "Test Artist",
+      durationMs: 180000,
+      coverUrl: "",
+      playCount: 0,
+    });
+
+    const record = await linerDb.getTrack("track_test_1");
+    expect(record).not.toBeNull();
+    expect(record?.title).toBe("Test Song");
+    expect(record?.artists).toBe("Test Artist");
+    expect(record?.durationMs).toBe(180000);
+  });
+
+  it("stores, checks, and calculates total bytes for audio blobs", async () => {
+    const dummyBlob = new Blob(["dummy audio data content"], { type: "audio/ogg" });
+    await audioCache.saveAudioBlob("track_audio_1", dummyBlob, "audio/ogg");
+
+    const hasAudio = await audioCache.hasAudio("track_audio_1");
+    expect(hasAudio).toBe(true);
+
+    const totalBytes = await linerDb.getTotalAudioBytes();
+    expect(totalBytes).toBe(dummyBlob.size);
+
+    await audioCache.deleteAudio("track_audio_1");
+    const hasAudioAfter = await audioCache.hasAudio("track_audio_1");
+    expect(hasAudioAfter).toBe(false);
+  });
+
+  it("stores lyrics and updates weekly checked timestamp", async () => {
+    const initialTime = Date.now() - 10000;
+    await linerDb.putLyrics({
+      trackId: "track_lyric_1",
+      syncLevel: "word_level",
+      quality: 95,
+      activeProvider: "kugou",
+      availableProviders: [],
+      rawLyrics: "[00:01.00] Hello world",
+      rawFormat: "lrc",
+      candidate: {
+        provider: "kugou",
+        contentKind: "word_synced",
+        syncLevel: "word_level",
+        quality: {
+          total: 95,
+          match: 30,
+          content: 30,
+          sync: 35,
+          source: 0,
+          reasons: [],
+        },
+        lyrics: {
+          format: "lrc",
+          content: "[00:01.00] Hello world",
+        },
+      },
+      lastCheckedAt: initialTime,
+      updatedAt: initialTime,
+    });
+
+    const record = await linerDb.getLyrics("track_lyric_1");
+    expect(record).not.toBeNull();
+    expect(record?.syncLevel).toBe("word_level");
+    expect(record?.quality).toBe(95);
+    expect(record?.lastCheckedAt).toBe(initialTime);
+
+    await linerDb.updateLyricsChecked("track_lyric_1");
+    const updated = await linerDb.getLyrics("track_lyric_1");
+    expect(updated?.lastCheckedAt).toBeGreaterThan(initialTime);
+
+    await linerDb.putLyrics({
+      trackId: "track_line_only",
+      syncLevel: "line_level",
+      quality: 60,
+      activeProvider: "lrclib",
+      availableProviders: [],
+      rawLyrics: "[00:01.00] Line only",
+      rawFormat: "lrc",
+      candidate: {
+        provider: "lrclib",
+        contentKind: "line_synced",
+        syncLevel: "line_level",
+        quality: {
+          total: 60,
+          match: 20,
+          content: 20,
+          sync: 20,
+          source: 0,
+          reasons: [],
+        },
+        lyrics: {
+          format: "lrc",
+          content: "[00:01.00] Line only",
+        },
+      },
+      lastCheckedAt: initialTime,
+      updatedAt: initialTime,
+    });
+    const lineRecord = await linerDb.getLyrics("track_line_only");
+    expect(lineRecord).toBeNull();
+  });
+
+  it("stores artist data and calculates total artist bytes", async () => {
+    const initialTime = Date.now() - 50000;
+    await linerDb.putArtist({
+      id: "artist_test_1",
+      data: {
+        title: "Test Artist",
+        description: "Bio",
+        coverUrl: "https://example.com/cover.jpg",
+        verified: true,
+        tracks: [],
+        popularSongs: [],
+        albums: [],
+        reposts: [],
+        singles: [],
+      },
+      savedAt: initialTime,
+      lastCheckedAt: initialTime,
+    });
+
+    const record = await linerDb.getArtist("artist_test_1");
+    expect(record).not.toBeNull();
+    expect(record?.data.title).toBe("Test Artist");
+    expect(record?.lastCheckedAt).toBe(initialTime);
+
+    const totalBytes = await linerDb.getTotalArtistBytes();
+    expect(totalBytes).toBeGreaterThan(0);
+
+    await linerDb.updateArtistChecked("artist_test_1");
+    const updated = await linerDb.getArtist("artist_test_1");
+    expect(updated?.lastCheckedAt).toBeGreaterThan(initialTime);
+  });
+});

@@ -399,7 +399,7 @@ function LibraryPlaylistContent() {
         style={{ height: "44px", marginBottom: "-44px" }}
         data-window-drag
       >
-        <div className="flex items-center justify-between px-[32px] h-[44px]">
+        <div className="flex items-center justify-between pl-[21px] pr-[32px] h-[44px]">
           <div className="flex items-center gap-[12px] min-w-0">
             <button
               type="button"
@@ -409,13 +409,17 @@ function LibraryPlaylistContent() {
               className="inline-flex shrink-0 items-center justify-center gap-[5px] text-[12.5px] font-[600] text-text-secondary hover:text-text-primary active:scale-[0.96] transition-all border-0 bg-transparent p-0 cursor-pointer select-none"
               style={{ fontFamily: "var(--font-inter), sans-serif" }}
             >
-              <ArrowLeftLine size={15} className="shrink-0 translate-y-[1px]" />
+              <ArrowLeftLine size={15} className="shrink-0 -translate-y-[0.5px]" />
               <span>{t("common.back")}</span>
             </button>
 
             {viewData && (
               <span
-                className="text-[14px] font-semibold text-text-primary truncate"
+                className={`text-[14px] font-semibold text-text-primary truncate ${
+                  viewData.title && !/\p{Lu}/u.test(viewData.title)
+                    ? "-translate-y-[2px]"
+                    : "-translate-y-[1px]"
+                }`}
                 style={{
                   fontFamily: "var(--font-inter), sans-serif",
                   letterSpacing: "-0.01em",

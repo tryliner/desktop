@@ -2,6 +2,7 @@ import { HashRouter } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { ToastProvider, AppleEmojiProvider, RootErrorBoundary } from "@/shared/ui";
 import { useWindowDrag } from "@/shared/hooks";
+import { useAppIconSync } from "@/features/player";
 import { I18nProvider } from "@/languages";
 import { AuthLock } from "@/features/auth";
 import { CoverSwRegistrar } from "@/features/covers";
@@ -13,6 +14,7 @@ import "./globals.css";
 
 export default function App() {
   useWindowDrag();
+  useAppIconSync();
 
   return (
     <HashRouter>

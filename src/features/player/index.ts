@@ -8,15 +8,14 @@ export {
   type MiniPlayerStyle,
   type TrackDoubleClickBehavior,
   type DefaultPlaybackContext,
-  type RepeatMode,
 } from "./store/playerStore";
 export { usePlayerState } from "./hooks/usePlayerState";
+export { useAppIconSync } from "./hooks/useAppIconSync";
 export {
   useSongMenuItems,
   type SongMenuContext,
 } from "./hooks/useSongMenuItems";
 
-// UI Components
 export { default as MiniPlayer, type MiniPlayerProps } from "./ui/MiniPlayer";
 export {
   FullscreenPlayer,

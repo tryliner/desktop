@@ -6,6 +6,7 @@ export {
 } from "./engine/lyricsParser";
 export { braccatoThemeCss } from "./engine/braccatoTheme";
 export { useLyricsStore } from "./store/lyricsStore";
+export { lyricsCache } from "./store/lyricsCache";
 export {
   useLyricsAnimator,
   type LyricsWord,

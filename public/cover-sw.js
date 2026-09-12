@@ -1,16 +1,5 @@
-// Cover-art cache service worker.
-//
-// Cover CDNs rate-limit aggressively (HTTP 429), so every cover is cached and,
-// crucially, de-duplicated: the mini player, fullscreen cover, blurred
-// background and the WebGL layer can all request the same URL in the same
-// frame and only one network fetch is made.
-//
-// Cache entries are keyed by URL string with `ignoreVary`, so a cover is
-// stored once regardless of request mode or `Origin`/`Vary` differences. The
-// previous version keyed by full Request, which stored the CORS and no-CORS
-// variants of one cover separately and never coalesced them.
-
 const CACHE_NAME = "liner-covers-v2";
+const MAX_ENTRIES = 600;
 
 const COVER_HOSTS = [
   "yt3.googleusercontent.com",
@@ -22,8 +11,6 @@ const COVER_HOSTS = [
   "yandex-images.clstorage.net",
 ];
 
-// URL -> in-flight network Response promise. Coalesces concurrent misses for
-// the same cover into a single upstream request.
 const inFlight = new Map();
 
 function isCoverRequest(url) {
@@ -52,23 +39,30 @@ self.addEventListener("activate", (event) => {
   );
 });
 
+async function enforceQuota(cache) {
+  try {
+    const keys = await cache.keys();
+    if (keys.length > MAX_ENTRIES) {
+      const toDelete = keys.slice(0, keys.length - MAX_ENTRIES);
+      await Promise.all(toDelete.map((req) => cache.delete(req)));
+    }
+  } catch {
+  }
+}
+
 async function fetchAndCache(request, cache, cacheKey) {
   let pending = inFlight.get(cacheKey);
   if (!pending) {
     pending = (async () => {
       const response = await fetch(request);
-      // A 429 (or any non-2xx) is never cached, so a later attempt can succeed
-      // once the CDN cools down. Opaque responses (status 0) are skipped too:
-      // now that every layer requests covers with CORS they shouldn't occur,
-      // and caching one would poison the entry for pixel-reading consumers.
       if (response.ok && response.type !== "opaque") {
         await cache.put(cacheKey, response.clone());
+        void enforceQuota(cache);
       }
       return response;
     })().finally(() => inFlight.delete(cacheKey));
     inFlight.set(cacheKey, pending);
   }
-  // Each consumer needs its own body; the shared promise's response is cloned.
   return (await pending).clone();
 }
 
