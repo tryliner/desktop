@@ -201,6 +201,7 @@ export class KawarpEngine {
   private blurFBO2: FboInfo;
   private currentAlbumFBO: FboInfo;
   private nextAlbumFBO: FboInfo;
+  private transitionFBO: FboInfo;
   private warpFBO: FboInfo;
 
   private animationId: number | null = null;
@@ -211,6 +212,7 @@ export class KawarpEngine {
   private isTransitioning = false;
   private transitionStartTime = 0;
   private transitionDuration = 1000;
+  private loadSequenceId = 0;
 
   private warpIntensity = 1.1;
   private blurPasses = 8;
@@ -296,10 +298,11 @@ export class KawarpEngine {
     this.texCoordBuffer = this.createBuffer(new Float32Array([0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1]));
 
     this.sourceTexture = this.createTexture();
-    this.blurFBO1 = this.createFramebuffer(BLUR_SIZE, BLUR_SIZE, true);
-    this.blurFBO2 = this.createFramebuffer(BLUR_SIZE, BLUR_SIZE, true);
-    this.currentAlbumFBO = this.createFramebuffer(BLUR_SIZE, BLUR_SIZE, true);
-    this.nextAlbumFBO = this.createFramebuffer(BLUR_SIZE, BLUR_SIZE, true);
+    this.blurFBO1 = this.createFramebuffer(BLUR_SIZE, BLUR_SIZE, false);
+    this.blurFBO2 = this.createFramebuffer(BLUR_SIZE, BLUR_SIZE, false);
+    this.currentAlbumFBO = this.createFramebuffer(BLUR_SIZE, BLUR_SIZE, false);
+    this.nextAlbumFBO = this.createFramebuffer(BLUR_SIZE, BLUR_SIZE, false);
+    this.transitionFBO = this.createFramebuffer(BLUR_SIZE, BLUR_SIZE, false);
 
     const initW = Math.max(1, canvas.width || 640);
     const initH = Math.max(1, canvas.height || 360);
@@ -317,6 +320,7 @@ export class KawarpEngine {
 
   public async loadImage(src: string, preDecoded?: HTMLImageElement): Promise<void> {
     if (!src) return;
+    const loadId = ++this.loadSequenceId;
 
     let bitmap: ImageBitmap | HTMLImageElement | null =
       preDecoded && preDecoded.complete && preDecoded.naturalWidth > 0 ? preDecoded : null;
@@ -340,6 +344,14 @@ export class KawarpEngine {
         img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
         img.src = src;
       });
+    }
+
+    // drop out-of-order stale loads
+    if (loadId !== this.loadSequenceId) {
+      if ('close' in bitmap && typeof (bitmap as ImageBitmap).close === 'function') {
+        (bitmap as ImageBitmap).close();
+      }
+      return;
     }
 
     const gl = this.gl;
@@ -376,6 +388,12 @@ export class KawarpEngine {
   private blurSourceInto(targetFBO: FboInfo) {
     const gl = this.gl;
 
+    // ensure texture units are unbound so render targets never collide in a feedback loop
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, null);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, null);
+
     // 1. Tint source texture -> blurFBO1
     gl.useProgram(this.tintProgram);
     this.setupAttributes();
@@ -388,7 +406,7 @@ export class KawarpEngine {
     gl.uniform1f(this.uniforms.tint.tintIntensity, this.tintIntensity);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
 
-    // 2. Kawase blur passes
+    // 2. Kawase blur passes between blurFBO1 and blurFBO2
     gl.useProgram(this.blurProgram);
     this.setupAttributes();
     gl.uniform2f(this.uniforms.blur.resolution, BLUR_SIZE, BLUR_SIZE);
@@ -408,12 +426,17 @@ export class KawarpEngine {
       writeFBO = temp;
     }
 
-    // 3. Copy final blur to target FBO
+    // 3. Copy final blur to target FBO with explicit sampler detach
+    gl.bindTexture(gl.TEXTURE_2D, null);
     gl.bindFramebuffer(gl.FRAMEBUFFER, targetFBO.framebuffer);
     gl.viewport(0, 0, BLUR_SIZE, BLUR_SIZE);
     gl.bindTexture(gl.TEXTURE_2D, readFBO.texture);
     gl.uniform1f(this.uniforms.blur.offset, 0.0);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+    // clean up bound textures & framebuffer
+    gl.bindTexture(gl.TEXTURE_2D, null);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
   }
 
   public start() {
@@ -465,10 +488,10 @@ export class KawarpEngine {
     let currentTexture: WebGLTexture;
 
     if (this.isTransitioning && blendFactor < 1.0) {
-      // Smooth crossfade between previous and next album FBOs
+      // smooth crossfade into dedicated transition buffer (isolated from blur ping-pongs)
       gl.useProgram(this.blendProgram);
       this.setupAttributes();
-      gl.bindFramebuffer(gl.FRAMEBUFFER, this.blurFBO1.framebuffer);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, this.transitionFBO.framebuffer);
       gl.viewport(0, 0, BLUR_SIZE, BLUR_SIZE);
 
       gl.activeTexture(gl.TEXTURE0);
@@ -479,12 +502,18 @@ export class KawarpEngine {
       gl.bindTexture(gl.TEXTURE_2D, this.nextAlbumFBO.texture);
       gl.uniform1i(this.uniforms.blend.texture2, 1);
 
-      // Smooth cosine easing
+      // smooth cosine easing
       const easedBlend = 0.5 - 0.5 * Math.cos(blendFactor * Math.PI);
       gl.uniform1f(this.uniforms.blend.blend, easedBlend);
       gl.drawArrays(gl.TRIANGLES, 0, 6);
 
-      currentTexture = this.blurFBO1.texture;
+      // clean unbind texture units to avoid any feedback loop with subsequent FBO bindings
+      gl.activeTexture(gl.TEXTURE1);
+      gl.bindTexture(gl.TEXTURE_2D, null);
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, null);
+
+      currentTexture = this.transitionFBO.texture;
     } else {
       currentTexture = this.nextAlbumFBO.texture;
     }
@@ -585,7 +614,12 @@ export class KawarpEngine {
   private createFramebuffer(width: number, height: number, useHighPrecision: boolean = false): FboInfo {
     const gl = this.gl;
     const texture = this.createTexture();
-    const canUseHalfFloat = useHighPrecision && this.halfFloatExt && this.halfFloatLinearExt;
+    const canColorBufferFloat = !!(
+      gl.getExtension('EXT_color_buffer_half_float') ||
+      gl.getExtension('WEBGL_color_buffer_half_float')
+    );
+    const canUseHalfFloat =
+      useHighPrecision && this.halfFloatExt && this.halfFloatLinearExt && canColorBufferFloat;
     const type = canUseHalfFloat ? this.halfFloatExt.HALF_FLOAT_OES : gl.UNSIGNED_BYTE;
 
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, type, null);
@@ -617,6 +651,7 @@ export class KawarpEngine {
     this.deleteFramebuffer(this.blurFBO2);
     this.deleteFramebuffer(this.currentAlbumFBO);
     this.deleteFramebuffer(this.nextAlbumFBO);
+    this.deleteFramebuffer(this.transitionFBO);
     this.deleteFramebuffer(this.warpFBO);
   }
 }

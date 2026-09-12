@@ -76,15 +76,23 @@ export function KawarpWrapper({ src, onLoad, onError }: KawarpWrapperProps) {
     const engine = engineRef.current;
     if (!engine || !src) return;
 
+    let isCancelled = false;
+
     engine
       .loadImage(src, getCoverElement(src))
       .then(() => {
+        if (isCancelled) return;
         setLoaded(true);
         onLoad?.();
       })
       .catch((err) => {
+        if (isCancelled) return;
         onError?.(err instanceof Error ? err : new Error(String(err)));
       });
+
+    return () => {
+      isCancelled = true;
+    };
   }, [src, onLoad, onError]);
 
   return (
