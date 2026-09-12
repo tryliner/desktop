@@ -261,7 +261,17 @@ function useSafeTranslation() {
 
 export { ScrollableText };
 
-function ImportToastItem() {
+function ImportToastBridge({
+  onToast,
+  onDismiss,
+}: {
+  onToast: (
+    message: string,
+    variantOrOptions?: ToastVariant | ToastOptions,
+    options?: ToastOptions,
+  ) => void;
+  onDismiss: (id: string | number) => void;
+}) {
   const { t } = useSafeTranslation();
   const navigate = useNavigate();
   const job = useImportStore((state) => state.job);
@@ -270,10 +280,9 @@ function ImportToastItem() {
   const isReviewOpen = useModalStore((state) => state.importReviewOpen);
 
   const [dismissedQueuedId, setDismissedQueuedId] = useState<string | null>(null);
-  const [isCardHovered, setIsCardHovered] = useState(false);
   const [openingReview, setOpeningReview] = useState(false);
 
-  const handleOpenReview = async () => {
+  const handleOpenReview = useCallback(async () => {
     if (!job || openingReview) return;
     setOpeningReview(true);
     try {
@@ -284,23 +293,7 @@ function ImportToastItem() {
     } finally {
       setOpeningReview(false);
     }
-  };
-
-  useEffect(() => {
-    if (!job) return;
-    if (job.status === "queued") {
-      const timer = setTimeout(() => {
-        setDismissedQueuedId(job.id);
-      }, 3500);
-      return () => clearTimeout(timer);
-    }
-    if (job.status === "completed" || job.status === "failed") {
-      const timer = setTimeout(() => {
-        reset();
-      }, job.status === "completed" ? 5000 : 7000);
-      return () => clearTimeout(timer);
-    }
-  }, [job?.id, job?.status, reset]);
+  }, [job, openingReview, openImportReview]);
 
   const shouldShow =
     Boolean(job) &&
@@ -314,7 +307,7 @@ function ImportToastItem() {
   const isCompleted = job?.status === "completed";
   const isFailed = job?.status === "failed";
 
-  const getSubtitle = () => {
+  const getSubtitle = useCallback(() => {
     if (!job) return "";
     if (isFailed) return t("import.status_failed");
     if (isQueued) return t("import.status_queued_sub");
@@ -336,122 +329,108 @@ function ImportToastItem() {
       return t("import.status_completed_sub_empty");
     }
     return "";
-  };
+  }, [job, isFailed, isQueued, isRunning, isAwaiting, isFinalizing, isCompleted, t]);
 
-  const getTitle = () => {
+  const getTitle = useCallback(() => {
     if (isQueued) return t("import.status_queued");
     if (isRunning) return t("import.status_running");
     if (isAwaiting) return t("import.status_awaiting_decision");
     if (isFinalizing) return t("import.status_finalizing");
     if (isCompleted) return t("import.status_completed");
     return t("import.status_failed");
-  };
+  }, [isQueued, isRunning, isAwaiting, isFinalizing, isCompleted, t]);
 
-  return (
-    <AnimatePresence mode="popLayout">
-      {shouldShow && job && (
-        <motion.div
-          key={`${job.id}-${job.status}`}
-          layout
-          initial={{ opacity: 0, y: 16, scale: 0.95 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: -10, scale: 0.95 }}
-          transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-          onMouseEnter={() => setIsCardHovered(true)}
-          onMouseLeave={() => setIsCardHovered(false)}
-          className="pointer-events-auto flex items-center justify-between gap-[12px] rounded-xl border border-border-primary bg-bg-elevated shadow-2xl px-[16px] py-[12px] min-w-[280px] max-w-[380px]"
-          style={{ fontFamily: "var(--font-inter), sans-serif" }}
-        >
-          <div className="flex items-center gap-[10px] min-w-0 flex-1">
-            <span
-              className="flex items-center justify-center shrink-0"
-              style={{
-                color: (isCompleted || isQueued)
-                  ? "#34A853"
-                  : isFailed
-                    ? "#EA4335"
-                    : "#4285F4",
-              }}
-            >
-              {isRunning || isFinalizing ? (
-                <SpinnerIcon />
-              ) : isAwaiting ? (
-                <span className="relative flex h-3 w-3">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#4285F4] opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-3 w-3 bg-[#4285F4]"></span>
-                </span>
-              ) : (isCompleted || isQueued) ? (
-                <CheckIcon />
-              ) : (
-                <ErrorIcon />
-              )}
-            </span>
+  useEffect(() => {
+    if (!shouldShow || !job) {
+      onDismiss("import-job-card");
+      return;
+    }
 
-            <div className="flex flex-col min-w-0 flex-1 overflow-hidden">
-              <ScrollableText
-                text={getTitle()}
-                className="text-text-primary text-[13px] font-[500]"
-                isParentHovered={isCardHovered}
-              />
-              <ScrollableText
-                text={getSubtitle()}
-                className="text-text-tertiary text-[11px]"
-                isParentHovered={isCardHovered}
-              />
-            </div>
-          </div>
+    const title = getTitle();
+    const subtitle = getSubtitle();
 
-          <div className="flex items-center gap-[6px] shrink-0">
-            {isAwaiting && (
-              <button
-                type="button"
-                disabled={openingReview}
-                onClick={() => void handleOpenReview()}
-                className="relative inline-flex items-center justify-center px-[10px] py-[5px] rounded-lg text-[12px] font-[500] bg-btn-primary-bg text-btn-primary-text hover:opacity-90 active:scale-[0.96] transition-all border-0 cursor-pointer shadow-sm disabled:pointer-events-none"
-              >
-                <span
-                  className={`transition-opacity duration-200 ${openingReview ? "opacity-0" : "opacity-100"}`}
-                >
-                  {t("import.review_action")}
-                </span>
-                <span
-                  aria-hidden="true"
-                  className={`pointer-events-none absolute inset-0 flex items-center justify-center transition-opacity duration-200 ${openingReview ? "opacity-100" : "opacity-0"}`}
-                >
-                  <SpinnerIcon />
-                </span>
-              </button>
-            )}
+    if (isQueued) {
+      onToast(title, "checkmark", {
+        id: "import-job-card",
+        description: subtitle,
+        duration: 3500,
+        onDismiss: () => setDismissedQueuedId(job.id),
+      });
+      return;
+    }
 
-            {isCompleted && job.playlistId && (
-              <button
-                type="button"
-                onClick={() => {
-                  navigate(`/library/playlist?id=${encodeURIComponent(job.playlistId!)}`);
-                  reset();
-                }}
-                className="inline-flex items-center gap-[4px] px-[10px] py-[5px] rounded-lg text-[12px] font-[500] bg-btn-primary-bg text-btn-primary-text hover:opacity-90 active:scale-[0.96] transition-all border-0 cursor-pointer shadow-sm"
-              >
-                <ExternalLinkIcon />
-                <span>{t("import.view_playlist")}</span>
-              </button>
-            )}
+    if (isRunning || isFinalizing) {
+      onToast(title, "loader", {
+        id: "import-job-card",
+        description: subtitle,
+        duration: 999999,
+      });
+      return;
+    }
 
-            {(isCompleted || isFailed) && (
-              <button
-                type="button"
-                onClick={reset}
-                aria-label={t("common.close")}
-                className="inline-flex items-center justify-center h-[24px] w-[24px] rounded-md text-text-tertiary hover:text-text-primary hover:bg-border-alpha-14 transition-colors border-0 bg-transparent cursor-pointer"
-              >
-                <CloseIcon />
-              </button>
-            )}
-          </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
+    if (isAwaiting) {
+      onToast(title, "info", {
+        id: "import-job-card",
+        description: subtitle,
+        duration: 999999,
+        action: {
+          label: t("import.review_action"),
+          onClick: () => void handleOpenReview(),
+        },
+      });
+      return;
+    }
+
+    if (isCompleted) {
+      onToast(title, "checkmark", {
+        id: "import-job-card",
+        description: subtitle,
+        duration: 5000,
+        action: job.playlistId
+          ? {
+              label: t("import.view_playlist"),
+              onClick: () => {
+                navigate(`/library/playlist?id=${encodeURIComponent(job.playlistId!)}`);
+                reset();
+              },
+            }
+          : undefined,
+        onDismiss: reset,
+      });
+      return;
+    }
+
+    if (isFailed) {
+      onToast(title, "error", {
+        id: "import-job-card",
+        description: subtitle,
+        duration: 7000,
+        onDismiss: reset,
+      });
+    }
+  }, [
+    shouldShow,
+    job,
+    job?.status,
+    job?.result?.imported,
+    job?.result?.total,
+    isQueued,
+    isRunning,
+    isAwaiting,
+    isFinalizing,
+    isCompleted,
+    isFailed,
+    getTitle,
+    getSubtitle,
+    handleOpenReview,
+    navigate,
+    onDismiss,
+    onToast,
+    reset,
+    t,
+  ]);
+
+  return null;
 }
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
@@ -574,9 +553,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
           </AnimatePresence>
         </motion.div>
       </div>
-      <div className="fixed bottom-[20px] right-[20px] z-[9999] flex flex-col gap-[10px] pointer-events-none max-w-[420px]">
-        <ImportToastItem />
-      </div>
+      <ImportToastBridge onToast={toastCore} onDismiss={remove} />
     </ToastContext.Provider>
   );
 }

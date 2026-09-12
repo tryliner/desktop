@@ -242,4 +242,41 @@ describe("Toast Batches & Stacking", () => {
     expect(card.style.minWidth).toContain("180px");
     expect(card.style.minHeight).toBe("38px");
   });
+
+  it("bridges active import jobs into the unified top-center notification deck", async () => {
+    const { useImportStore } = await import("@/features/library/store/importStore");
+
+    await act(async () => {
+      root.render(
+        <MemoryRouter>
+          <ToastProvider>
+            <div>app</div>
+          </ToastProvider>
+        </MemoryRouter>,
+      );
+    });
+
+    await act(async () => {
+      useImportStore.setState({
+        job: {
+          id: "job-123",
+          source: "spotify",
+          sourceUrl: "https://open.spotify.com/playlist/test",
+          status: "running",
+          requiresDecision: false,
+          result: { imported: 15, total: 30, skipped: 0 },
+          createdAt: new Date().toISOString(),
+        },
+      });
+    });
+
+    const card = container.querySelector(".grid > div");
+    expect(card).toBeDefined();
+    expect(card?.textContent).toContain("15 / 30");
+
+    // Clear import job
+    await act(async () => {
+      useImportStore.getState().reset();
+    });
+  });
 });
