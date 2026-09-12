@@ -619,7 +619,6 @@ export default function AppFrame({ children }: AppFrameProps) {
                 className="pointer-events-auto absolute right-0 top-[32px] w-[420px] z-[35]"
                 style={{
                   bottom: shouldShowMiniPlayer ? 70 : 0,
-                  willChange: "transform, opacity",
                 }}
               >
                 <div className="absolute inset-y-[12px] right-[12px] w-[408px]">

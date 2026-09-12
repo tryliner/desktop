@@ -67,12 +67,10 @@ const QueueList = memo(function QueueList({
         <div
           style={{
             position: "absolute",
-            top: 0,
+            top: `${dropIndex * 70}px`,
             left: 0,
             width: "100%",
             height: "70px",
-            transform: `translateY(${dropIndex * 70}px)`,
-            transition: "transform 180ms cubic-bezier(0.2, 0, 0, 1)",
             pointerEvents: "none",
             zIndex: 0,
           }}
@@ -100,11 +98,11 @@ const QueueList = memo(function QueueList({
             key={`${item.id}-${index}`}
             style={{
               position: "absolute",
-              top: 0,
+              top: `${index * 70}px`,
               left: 0,
               width: "100%",
               height: "70px",
-              transform: `translateY(${index * 70 + shiftY}px)`,
+              transform: shiftY ? `translateY(${shiftY}px)` : undefined,
               transition: isDragging
                 ? "transform 180ms cubic-bezier(0.2, 0, 0, 1)"
                 : undefined,
@@ -217,7 +215,7 @@ function RightDrawer({ activeTab, onTabChange }: RightDrawerProps) {
       if (!container || player.currentIndex < 0 || player.queue.length === 0) return;
       const targetY = Math.max(
         0,
-        12 + player.currentIndex * 70 + 35 - (container.clientHeight || 500) / 2,
+        Math.round(12 + player.currentIndex * 70 + 35 - (container.clientHeight || 500) / 2),
       );
       if (smooth) {
         container.scrollTo({ top: targetY, behavior: "smooth" });
@@ -234,7 +232,7 @@ function RightDrawer({ activeTab, onTabChange }: RightDrawerProps) {
       if (node && player.currentIndex >= 0 && player.queue.length > 0) {
         const targetY = Math.max(
           0,
-          12 + player.currentIndex * 70 + 35 - (node.clientHeight || 500) / 2,
+          Math.round(12 + player.currentIndex * 70 + 35 - (node.clientHeight || 500) / 2),
         );
         node.scrollTop = targetY;
         requestAnimationFrame(() => {
@@ -242,7 +240,7 @@ function RightDrawer({ activeTab, onTabChange }: RightDrawerProps) {
             const h = queueScrollRef.current.clientHeight || 500;
             queueScrollRef.current.scrollTop = Math.max(
               0,
-              12 + player.currentIndex * 70 + 35 - h / 2,
+              Math.round(12 + player.currentIndex * 70 + 35 - h / 2),
             );
           }
         });
@@ -251,7 +249,7 @@ function RightDrawer({ activeTab, onTabChange }: RightDrawerProps) {
             const h = queueScrollRef.current.clientHeight || 500;
             queueScrollRef.current.scrollTop = Math.max(
               0,
-              12 + player.currentIndex * 70 + 35 - h / 2,
+              Math.round(12 + player.currentIndex * 70 + 35 - h / 2),
             );
           }
         }, 50);
@@ -260,7 +258,7 @@ function RightDrawer({ activeTab, onTabChange }: RightDrawerProps) {
             const h = queueScrollRef.current.clientHeight || 500;
             queueScrollRef.current.scrollTop = Math.max(
               0,
-              12 + player.currentIndex * 70 + 35 - h / 2,
+              Math.round(12 + player.currentIndex * 70 + 35 - h / 2),
             );
           }
         }, 150);
@@ -499,12 +497,12 @@ function RightDrawer({ activeTab, onTabChange }: RightDrawerProps) {
     lastLine?.text;
 
   return (
-    <div className="flex flex-col h-full w-full rounded-4xl border-[0.5px] border-border-secondary bg-bg-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.035)] overflow-hidden">
-      <div className="flex items-center pt-[24px] border-b-[0.5px] border-border-primary shrink-0">
+    <div className="flex flex-col h-full w-full rounded-4xl border border-border-secondary bg-bg-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.035)] overflow-hidden">
+      <div className="flex items-center pt-[24px] border-b border-border-primary shrink-0">
         <button
           type="button"
           onClick={() => onTabChange("queue")}
-          className={`flex-1 pb-[14px] relative -mb-[0.5px] border-b-[2px] text-[15px] font-[500] transition-colors duration-200 border-none bg-transparent cursor-pointer ${
+          className={`flex-1 pb-[14px] relative -mb-[1px] border-b-[2px] text-[15px] font-[500] transition-colors duration-200 border-none bg-transparent cursor-pointer ${
             activeTab === "queue"
               ? "border-text-primary text-text-primary"
               : "border-transparent text-text-secondary hover:text-text-primary"
@@ -519,7 +517,7 @@ function RightDrawer({ activeTab, onTabChange }: RightDrawerProps) {
         <button
           type="button"
           onClick={() => onTabChange("lyrics")}
-          className={`flex-1 pb-[14px] relative -mb-[0.5px] border-b-[2px] text-[15px] font-[500] transition-colors duration-200 border-none bg-transparent cursor-pointer ${
+          className={`flex-1 pb-[14px] relative -mb-[1px] border-b-[2px] text-[15px] font-[500] transition-colors duration-200 border-none bg-transparent cursor-pointer ${
             activeTab === "lyrics"
               ? "border-text-primary text-text-primary"
               : "border-transparent text-text-secondary hover:text-text-primary"
