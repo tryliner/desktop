@@ -67,10 +67,8 @@ function HomePageSkeletonComponent({
       {/* Hero Greeting Section */}
       <div className={`relative px-8 pt-8 ${showQuickGrid ? "pb-2" : "pb-0"}`}>
         {/* Greeting Header */}
-        <div className={`relative flex items-center gap-3 ${showQuickGrid ? "mb-5" : "mb-2"}`}>
-          <div className="flex items-center justify-center w-10 h-10 rounded-full bg-bg-elevated overflow-hidden shrink-0">
-            <div className="skeleton-shimmer w-full h-full rounded-full" />
-          </div>
+        <div className={`relative flex items-center gap-2.5 ${showQuickGrid ? "mb-5" : "mb-2"}`}>
+          <div className="skeleton-shimmer w-6 h-6 rounded-[6px] shrink-0" />
           <div className="skeleton-shimmer h-[26px] w-[240px] sm:w-[320px] rounded-[6px]" />
         </div>
 

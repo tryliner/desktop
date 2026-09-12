@@ -222,8 +222,8 @@ export default function HomePage() {
           <div className="col-start-1 row-start-1 w-full pb-[40px]">
             {/* Hero Greeting Section */}
           <div className={`relative px-8 pt-8 ${hasEnoughQuickData ? "pb-2" : "pb-0"}`}>
-            <div className={`relative flex items-center gap-3 ${hasEnoughQuickData ? "mb-5" : "mb-2"}`}>
-              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-bg-elevated">
+            <div className={`relative flex items-center gap-2.5 ${hasEnoughQuickData ? "mb-5" : "mb-2"}`}>
+              <div className="flex items-center shrink-0">
                 {GreetingIcon}
               </div>
               <h1
