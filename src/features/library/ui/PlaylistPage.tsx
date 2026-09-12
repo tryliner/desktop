@@ -104,7 +104,6 @@ function LibraryPlaylistContent() {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [showTitle, setShowTitle] = useState(false);
   const reorderTracks = useReorderPlaylistTracks();
   const titleRef = useRef<HTMLHeadingElement>(null);
   const descriptionRef = useRef<HTMLParagraphElement>(null);
@@ -376,11 +375,8 @@ function LibraryPlaylistContent() {
     <div
       ref={scrollRef}
       onScroll={(e) => {
-        const top = e.currentTarget.scrollTop;
-        const nextScrolled = top > 90;
-        const nextTitle = top > 140;
+        const nextScrolled = e.currentTarget.scrollTop > 100;
         setIsScrolled((prev) => (prev === nextScrolled ? prev : nextScrolled));
-        setShowTitle((prev) => (prev === nextTitle ? prev : nextTitle));
       }}
       className="page-transition relative h-full w-full overflow-y-auto bg-bg-primary pb-[24px]"
     >
@@ -390,21 +386,21 @@ function LibraryPlaylistContent() {
         }`}
         data-window-drag
       >
-        <div className="flex items-center justify-between px-[32px] h-[52px]">
-          <div className="flex items-center gap-[16px] min-w-0">
+        <div className="flex items-center justify-between px-[32px] h-[38px]">
+          <div className="flex items-center gap-[14px] min-w-0">
             <Link
               to="/library"
-              className="inline-flex items-center gap-[8px] text-text-secondary no-underline transition-colors duration-200 hover:text-text-primary cursor-pointer shrink-0"
+              className="inline-flex items-center gap-[6px] text-text-secondary no-underline transition-colors duration-200 hover:text-text-primary cursor-pointer shrink-0"
               style={{ fontFamily: "var(--font-inter), sans-serif" }}
             >
-              <ArrowLeftLine size={18} />
-              <span className="text-[14px] font-[500]">{t("common.back")}</span>
+              <ArrowLeftLine size={16} />
+              <span className="text-[13px] font-[500]">{t("common.back")}</span>
             </Link>
 
             {viewData && (
               <span
-                className={`text-[15px] font-semibold text-text-primary truncate transition-all duration-200 ${
-                  showTitle
+                className={`text-[14px] font-semibold text-text-primary truncate transition-all duration-200 ${
+                  isScrolled
                     ? "opacity-100 translate-y-0"
                     : "opacity-0 -translate-y-1 pointer-events-none"
                 }`}
@@ -419,7 +415,7 @@ function LibraryPlaylistContent() {
           </div>
         </div>
 
-        <div className="pointer-events-none absolute inset-x-0 bottom-[-20px] h-[28px] overflow-hidden">
+        <div className="pointer-events-none absolute inset-x-0 bottom-[-14px] h-[18px] overflow-hidden">
           <div
             className={`h-full w-full transition-opacity duration-200 ${
               isScrolled ? "opacity-100" : "opacity-0"
@@ -432,7 +428,7 @@ function LibraryPlaylistContent() {
         </div>
       </div>
 
-      <div className="relative z-1 grid grid-cols-1 items-start w-full -mt-[52px]">
+      <div className="relative z-1 grid grid-cols-1 items-start w-full -mt-[38px]">
         {isReady && viewData && (
           <div className="col-start-1 row-start-1 w-full">
             {viewData.coverUrl && (
@@ -451,7 +447,7 @@ function LibraryPlaylistContent() {
                 }}
               />
             )}
-            <div className="relative z-10 px-[32px] pt-[60px]">
+            <div className="relative z-10 px-[32px] pt-[46px]">
               <section className="mt-[16px] flex items-start gap-[24px]">
                 <div className="relative h-[180px] w-[180px] shrink-0 overflow-hidden rounded-xl bg-border-alpha-14 flex items-center justify-center">
                   {(() => {
