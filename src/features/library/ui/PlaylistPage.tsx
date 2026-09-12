@@ -400,17 +400,17 @@ function LibraryPlaylistContent() {
         data-window-drag
       >
         <div className="flex items-center justify-between px-[32px] h-[38px]">
-          <div className="flex items-center gap-[14px] min-w-0">
+          <div className="flex items-center gap-[12px] min-w-0">
             <button
               type="button"
               onClick={() =>
                 window.history.length > 1 ? navigate(-1) : navigate("/library")
               }
-              className="inline-flex items-center gap-[6px] text-text-secondary no-underline transition-colors duration-200 hover:text-text-primary cursor-pointer shrink-0 bg-transparent border-0 p-0"
+              className="inline-flex shrink-0 items-center justify-center gap-[4px] px-[10px] h-[28px] rounded-lg text-[12.5px] font-[600] bg-border-alpha-14 hover:bg-border-alpha-33 text-text-primary active:scale-[0.96] transition-all border-0 cursor-pointer select-none"
               style={{ fontFamily: "var(--font-inter), sans-serif" }}
             >
-              <ArrowLeftLine size={16} />
-              <span className="text-[13px] font-[500]">{t("common.back")}</span>
+              <ArrowLeftLine size={15} />
+              <span>{t("common.back")}</span>
             </button>
 
             {viewData && (
@@ -465,7 +465,7 @@ function LibraryPlaylistContent() {
                 onClick={() =>
                   window.history.length > 1 ? navigate(-1) : navigate("/library")
                 }
-                className="group inline-flex h-[32px] items-center gap-[6px] rounded-md px-[12px] text-[13px] font-[500] text-text-primary bg-bg-panel hover:bg-bg-elevated transition-colors cursor-pointer border-0 shadow-sm"
+                className="group inline-flex h-[32px] items-center gap-[6px] rounded-md px-[12px] text-[13px] font-[500] text-text-primary bg-black/70 hover:bg-black/85 backdrop-blur-md transition-colors cursor-pointer border border-white/[0.08] shadow-sm"
                 style={{ fontFamily: "var(--font-inter), sans-serif" }}
               >
                 <ArrowLeftLine
