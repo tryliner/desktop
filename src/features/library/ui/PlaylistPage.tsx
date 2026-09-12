@@ -377,8 +377,8 @@ function LibraryPlaylistContent() {
       ref={scrollRef}
       onScroll={(e) => {
         const top = e.currentTarget.scrollTop;
-        const nextScrolled = top > 20;
-        const nextTitle = top > 130;
+        const nextScrolled = top > 90;
+        const nextTitle = top > 140;
         setIsScrolled((prev) => (prev === nextScrolled ? prev : nextScrolled));
         setShowTitle((prev) => (prev === nextTitle ? prev : nextTitle));
       }}
@@ -432,7 +432,7 @@ function LibraryPlaylistContent() {
         </div>
       </div>
 
-      <div className="relative z-1 grid grid-cols-1 items-start w-full">
+      <div className="relative z-1 grid grid-cols-1 items-start w-full -mt-[52px]">
         {isReady && viewData && (
           <div className="col-start-1 row-start-1 w-full">
             {viewData.coverUrl && (
@@ -451,7 +451,7 @@ function LibraryPlaylistContent() {
                 }}
               />
             )}
-            <div className="relative z-10 px-[32px] pt-[8px]">
+            <div className="relative z-10 px-[32px] pt-[60px]">
               <section className="mt-[16px] flex items-start gap-[24px]">
                 <div className="relative h-[180px] w-[180px] shrink-0 overflow-hidden rounded-xl bg-border-alpha-14 flex items-center justify-center">
                   {(() => {
