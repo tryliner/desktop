@@ -68,7 +68,7 @@ function ArtistPageSkeleton({ className = "" }: ArtistPageSkeletonProps) {
           </div>
 
           {/* right: bio card */}
-          <div className="w-full md:w-[340px] lg:w-[380px] shrink-0 rounded-md bg-[#141414]/90 p-[16px] backdrop-blur-md flex flex-col gap-[8px]">
+          <div className="w-full md:w-[340px] lg:w-[380px] shrink-0 rounded-md bg-bg-panel/90 p-[16px] backdrop-blur-md flex flex-col gap-[8px]">
             <div className="skeleton-shimmer h-[15px] w-[80px] rounded-[4px]" />
             <div className="skeleton-shimmer h-[13px] w-[96%] rounded-[4px] mt-[2px]" />
             <div className="skeleton-shimmer h-[13px] w-[88%] rounded-[4px]" />

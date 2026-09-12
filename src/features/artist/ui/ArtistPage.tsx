@@ -488,7 +488,6 @@ function ArtistContent() {
               <p
                 className="m-0 text-[13px] leading-[1.5] text-text-secondary font-[400] select-text line-clamp-3"
                 style={{ fontFamily: "var(--font-inter), sans-serif" }}
-                title={stripMarkdown(data.description)}
               >
                 {stripMarkdown(data.description)}
               </p>
