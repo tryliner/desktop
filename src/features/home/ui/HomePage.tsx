@@ -237,11 +237,7 @@ export default function HomePage() {
                   title={t("library.liked_songs")}
                   artists={`${likedData.total} ${likedData.total === 1 ? t("library.song") : t("library.songs")}`}
                   coverUrl=""
-                  icon={
-                    <div className="flex items-center justify-center w-full h-full bg-gradient-to-br from-indigo-500 via-purple-500 to-rose-500 text-white rounded-md">
-                      <HeartFill size={20} className="text-white" />
-                    </div>
-                  }
+                  icon={<HeartFill size={22} className="text-accent-primary" />}
                   onPlay={() => navigate("/library/playlist?id=likes")}
                   compact
                   className="bg-bg-elevated hover:bg-border-alpha-14"
