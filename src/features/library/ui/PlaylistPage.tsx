@@ -406,16 +406,16 @@ function LibraryPlaylistContent() {
               onClick={() =>
                 window.history.length > 1 ? navigate(-1) : navigate("/library")
               }
-              className="inline-flex shrink-0 items-center justify-center gap-[4px] text-[12.5px] font-[600] text-text-secondary hover:text-text-primary active:scale-[0.96] transition-all border-0 bg-transparent p-0 cursor-pointer select-none"
+              className="inline-flex shrink-0 items-center justify-center gap-[5px] text-[12.5px] font-[600] text-text-secondary hover:text-text-primary active:scale-[0.96] transition-all border-0 bg-transparent p-0 cursor-pointer select-none"
               style={{ fontFamily: "var(--font-inter), sans-serif" }}
             >
-              <ArrowLeftLine size={15} />
-              <span className="leading-none">{t("common.back")}</span>
+              <ArrowLeftLine size={15} className="shrink-0 translate-y-[1px]" />
+              <span>{t("common.back")}</span>
             </button>
 
             {viewData && (
               <span
-                className="text-[14px] font-semibold text-text-primary truncate leading-none"
+                className="text-[14px] font-semibold text-text-primary truncate"
                 style={{
                   fontFamily: "var(--font-inter), sans-serif",
                   letterSpacing: "-0.01em",
@@ -470,7 +470,7 @@ function LibraryPlaylistContent() {
               >
                 <ArrowLeftLine
                   size={16}
-                  className="transition-transform duration-150 group-hover:-translate-x-0.5"
+                  className="transition-transform duration-150 group-hover:-translate-x-0.5 translate-y-[1px]"
                 />
                 <span>{t("common.back")}</span>
               </button>
