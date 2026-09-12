@@ -222,12 +222,16 @@ export default function HomePage() {
           <div className="col-start-1 row-start-1 w-full pb-[40px]">
             {/* Hero Greeting Section */}
           <div className={`relative px-8 pt-8 ${hasEnoughQuickData ? "pb-2" : "pb-0"}`}>
-            <div className={`relative flex items-center gap-2.5 ${hasEnoughQuickData ? "mb-5" : "mb-2"}`}>
+            <div
+              className={`relative inline-flex items-center gap-3 px-4 py-2.5 rounded-2xl bg-bg-canvas/70 backdrop-blur-md ${
+                hasEnoughQuickData ? "mb-5" : "mb-2"
+              }`}
+            >
               <div className="flex items-center shrink-0">
                 {GreetingIcon}
               </div>
               <h1
-                className="text-[26px] font-bold text-text-primary tracking-tight m-0"
+                className="text-[24px] font-bold text-text-primary tracking-tight m-0 leading-tight"
                 style={{ fontFamily: "var(--font-inter), sans-serif" }}
               >
                 {fullGreeting}
