@@ -422,6 +422,18 @@ function LibraryPlaylistContent() {
             )}
           </div>
         </div>
+
+        <div className="pointer-events-none absolute inset-x-0 bottom-[-18px] h-[24px] overflow-hidden">
+          <div
+            className={`h-full w-full transition-opacity duration-200 ${
+              isScrolled ? "opacity-100" : "opacity-0"
+            }`}
+            style={{
+              background:
+                "linear-gradient(to bottom, var(--color-bg-primary) 0%, var(--color-bg-primary) 25%, transparent 100%)",
+            }}
+          />
+        </div>
       </div>
 
       <div className="relative z-1 grid grid-cols-1 items-start w-full">
