@@ -15,20 +15,30 @@ export interface PlaybackContext {
 }
 
 export interface RecordPlaybackEventRequest {
+  playbackSessionId: string;
+  listeningSessionId: string;
   trackId: string;
   playedDurationMs: number;
   trackDurationMs?: number;
+  completionRate: number;
   completed?: boolean;
   skipped?: boolean;
+  loopCount?: number;
+  hasSeekBackward?: boolean;
   context?: PlaybackContext;
 }
 
 export interface PlaybackHistoryItem {
   id: string;
+  playbackSessionId: string;
+  listeningSessionId: string;
   track: Track;
   playedDurationMs: number;
+  completionRate: number;
   completed: boolean;
   skipped: boolean;
+  loopCount: number;
+  hasSeekBackward: boolean;
   context?: PlaybackContext;
   listenedAt: string;
 }

@@ -97,45 +97,76 @@ function newRadioWaveId(): string {
 
 class PlaybackTelemetryTracker {
   private activeTrackId: string | null = null;
+  private playbackSessionId: string = "";
+  private listeningSessionId: string = "";
+  private lastActivityTime: number = 0;
   private trackDurationMs = 0;
   private playedDurationMs = 0;
   private lastTickTime: number | null = null;
-  private scrobbleReported = false;
-  private completedReported = false;
+  private completed = false;
+  private loopCount = 0;
+  private hasSeekBackward = false;
   private context?: PlaybackContext;
+  private readonly SESSION_TIMEOUT_MS = 30 * 60 * 1000;
+
+  private getOrCreateListeningSession(): string {
+    const now = Date.now();
+    if (!this.listeningSessionId || now - this.lastActivityTime > this.SESSION_TIMEOUT_MS) {
+      this.listeningSessionId =
+        typeof crypto !== "undefined" && "randomUUID" in crypto
+          ? crypto.randomUUID()
+          : `ls_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+    }
+    this.lastActivityTime = now;
+    return this.listeningSessionId;
+  }
+
+  private generatePlaybackSessionId(): string {
+    return typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : `ps_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+  }
 
   public startTrack(track: Track, contextStr: string | null) {
     this.flushCurrentTrack();
 
+    this.playbackSessionId = this.generatePlaybackSessionId();
     this.activeTrackId = track.id;
     this.trackDurationMs = track.durationMs ?? 0;
     this.playedDurationMs = 0;
     this.lastTickTime = null;
-    this.scrobbleReported = false;
-    this.completedReported = false;
+    this.completed = false;
+    this.loopCount = 0;
+    this.hasSeekBackward = false;
     this.context = parsePlaybackContext(contextStr);
+    this.getOrCreateListeningSession();
   }
 
   public onPlaying() {
-    this.lastTickTime = Date.now();
+    const now = Date.now();
+    this.lastTickTime = now;
+    this.lastActivityTime = now;
   }
 
   public onPausedOrStopped() {
+    const now = Date.now();
+    this.lastActivityTime = now;
     if (this.lastTickTime !== null) {
-      const delta = Date.now() - this.lastTickTime;
+      const delta = now - this.lastTickTime;
       if (delta > 0 && delta < 10000) {
         this.playedDurationMs += delta;
       }
       this.lastTickTime = null;
     }
-    this.checkScrobbleThreshold();
   }
 
   public onTick(isPlaying: boolean) {
     if (!this.activeTrackId) return;
 
+    const now = Date.now();
+    this.lastActivityTime = now;
+
     if (isPlaying) {
-      const now = Date.now();
       if (this.lastTickTime !== null) {
         const delta = now - this.lastTickTime;
         if (delta > 0 && delta < 5000) {
@@ -143,69 +174,57 @@ class PlaybackTelemetryTracker {
         }
       }
       this.lastTickTime = now;
-      this.checkScrobbleThreshold();
     } else {
       this.lastTickTime = null;
     }
   }
 
-  public onTrackCompleted() {
-    if (!this.activeTrackId || this.completedReported) return;
+  public recordSeekBackward() {
+    this.hasSeekBackward = true;
+    this.lastActivityTime = Date.now();
+  }
+
+  public onTrackCompleted(isRepeatOne: boolean = false) {
+    if (!this.activeTrackId) return;
     this.onPausedOrStopped();
-    this.completedReported = true;
-    this.sendEvent({
-      trackId: this.activeTrackId,
-      playedDurationMs: Math.round(this.playedDurationMs),
-      trackDurationMs: this.trackDurationMs > 0 ? this.trackDurationMs : undefined,
-      completed: true,
-      skipped: false,
-      context: this.context,
-    });
+    this.completed = true;
+    if (isRepeatOne) {
+      this.loopCount += 1;
+    }
   }
 
   public flushCurrentTrack() {
     if (!this.activeTrackId) return;
     this.onPausedOrStopped();
 
-    const wasCompleted = this.completedReported;
-    const isSkipped = !wasCompleted && this.playedDurationMs < 30000;
+    const durationMs = this.trackDurationMs > 0 ? this.trackDurationMs : this.playedDurationMs;
+    const rawRate = durationMs > 0 ? this.playedDurationMs / durationMs : this.completed ? 1.0 : 0.0;
+    const completionRate = Math.min(1.0, Math.max(0.0, rawRate));
+    const isSkipped = !this.completed && this.playedDurationMs < 30000;
 
-    if (!wasCompleted && this.playedDurationMs > 1000) {
+    if (this.playedDurationMs >= 3000 || this.completed) {
       this.sendEvent({
+        playbackSessionId: this.playbackSessionId,
+        listeningSessionId: this.getOrCreateListeningSession(),
         trackId: this.activeTrackId,
         playedDurationMs: Math.round(this.playedDurationMs),
         trackDurationMs: this.trackDurationMs > 0 ? this.trackDurationMs : undefined,
-        completed: false,
+        completionRate: Number(completionRate.toFixed(4)),
+        completed: this.completed,
         skipped: isSkipped,
+        loopCount: this.loopCount,
+        hasSeekBackward: this.hasSeekBackward,
         context: this.context,
       });
     }
 
     this.activeTrackId = null;
+    this.playbackSessionId = "";
     this.lastTickTime = null;
     this.playedDurationMs = 0;
-    this.scrobbleReported = false;
-    this.completedReported = false;
-  }
-
-  private checkScrobbleThreshold() {
-    if (!this.activeTrackId || this.scrobbleReported || this.completedReported) return;
-    const thresholdMs =
-      this.trackDurationMs > 0
-        ? Math.min(30000, this.trackDurationMs * 0.5)
-        : 30000;
-
-    if (this.playedDurationMs >= thresholdMs) {
-      this.scrobbleReported = true;
-      this.sendEvent({
-        trackId: this.activeTrackId,
-        playedDurationMs: Math.round(this.playedDurationMs),
-        trackDurationMs: this.trackDurationMs > 0 ? this.trackDurationMs : undefined,
-        completed: false,
-        skipped: false,
-        context: this.context,
-      });
-    }
+    this.completed = false;
+    this.loopCount = 0;
+    this.hasSeekBackward = false;
   }
 
   private sendEvent(payload: RecordPlaybackEventRequest) {
@@ -237,7 +256,8 @@ class PlayerEngine {
 
     if (playerRuntime) {
       playerRuntime.onEnded = () => {
-        this.telemetry.onTrackCompleted();
+        const isRepeatOne = usePlayerStore.getState().repeat === "one";
+        this.telemetry.onTrackCompleted(isRepeatOne);
       };
       playerRuntime.onError = (info) => this.handlePlaybackError(info);
     }
@@ -614,10 +634,15 @@ class PlayerEngine {
 
   public seek(positionMs: number, autoPlay: boolean = false): void {
     const store = usePlayerStore.getState();
+    const currentMs = store.positionMs;
     const durationMs = store.durationMs || store.currentTrack?.durationMs || 0;
     const nextMs = Math.round(
       Math.max(0, Math.min(durationMs || positionMs, positionMs)),
     );
+
+    if (nextMs < currentMs - 3000) {
+      this.telemetry.recordSeekBackward();
+    }
 
     store.setPosition(nextMs);
     if (playerRuntime) {
