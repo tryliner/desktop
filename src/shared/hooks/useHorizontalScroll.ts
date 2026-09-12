@@ -1,154 +1,168 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { MouseEvent, MouseEventHandler, RefObject } from "react";
 
 export interface HorizontalScrollOptions {
-  wheelMultiplier?: number;
   dragCursor?: string;
+  wheelMultiplier?: number;
 }
 
 export interface HorizontalScrollHandlers {
   onMouseDown: MouseEventHandler<HTMLDivElement>;
-  onMouseMove: MouseEventHandler<HTMLDivElement>;
-  onMouseUp: MouseEventHandler<HTMLDivElement>;
-  onMouseLeave: MouseEventHandler<HTMLDivElement>;
   onClickCapture: MouseEventHandler<HTMLDivElement>;
+  onDragStart: (event: React.DragEvent) => void;
 }
 
 export interface UseHorizontalScrollResult {
   scrollRef: RefObject<HTMLDivElement | null>;
+  canScrollLeft: boolean;
+  canScrollRight: boolean;
   showLeftShadow: boolean;
   showRightShadow: boolean;
+  scrollPrev: () => void;
+  scrollNext: () => void;
   handlers: HorizontalScrollHandlers;
 }
 
 export function useHorizontalScroll(
   options: HorizontalScrollOptions = {},
 ): UseHorizontalScrollResult {
-  const { wheelMultiplier = 5, dragCursor = "grabbing" } = options;
+  const { dragCursor = "grabbing" } = options;
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showLeftShadow, setShowLeftShadow] = useState(false);
-  const [showRightShadow, setShowRightShadow] = useState(true);
+  const [showRightShadow, setShowRightShadow] = useState(false);
 
-  const isDragging = useRef(false);
+  const isMouseDown = useRef(false);
   const hasDragged = useRef(false);
   const suppressClick = useRef(false);
   const startX = useRef(0);
   const scrollLeft = useRef(0);
 
-  const stopDragging = useCallback(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    isDragging.current = false;
-    el.style.removeProperty("cursor");
-    el.style.removeProperty("user-select");
-  }, []);
-
   const checkScroll = useCallback(() => {
     const el = scrollRef.current;
     if (!el) return;
     const { scrollLeft: currentScroll, scrollWidth, clientWidth } = el;
-    setShowLeftShadow(currentScroll > 0);
-    setShowRightShadow(Math.ceil(currentScroll + clientWidth) < scrollWidth);
+    setShowLeftShadow(currentScroll > 1);
+    setShowRightShadow(Math.ceil(currentScroll + clientWidth) < scrollWidth - 1);
   }, []);
 
-  useEffect(() => {
+  const scrollPrev = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const step = Math.max(el.clientWidth * 0.75, 200);
+    el.scrollBy({ left: -step, behavior: "smooth" });
+  }, []);
+
+  const scrollNext = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const step = Math.max(el.clientWidth * 0.75, 200);
+    el.scrollBy({ left: step, behavior: "smooth" });
+  }, []);
+
+  useLayoutEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
 
-    const handleWheel = (event: WheelEvent) => {
-      if (event.deltaY === 0) return;
-
-      const { scrollLeft: currentScroll, scrollWidth, clientWidth } = el;
-      const canScrollRight =
-        Math.ceil(currentScroll + clientWidth) < scrollWidth;
-      const canScrollLeft = currentScroll > 0;
-      const scrollingRight = event.deltaY > 0;
-      const scrollingLeft = event.deltaY < 0;
-
-      if (
-        (scrollingRight && canScrollRight) ||
-        (scrollingLeft && canScrollLeft)
-      ) {
-        event.preventDefault();
-        el.scrollTo({
-          left: el.scrollLeft + event.deltaY * wheelMultiplier,
-          behavior: "smooth",
-        });
-      }
-    };
-
-    el.addEventListener("wheel", handleWheel, { passive: false });
-    el.addEventListener("scroll", checkScroll);
-    window.addEventListener("resize", checkScroll);
-
     checkScroll();
 
+    el.addEventListener("scroll", checkScroll, { passive: true });
+    window.addEventListener("resize", checkScroll);
+
+    const resizeObserver = new ResizeObserver(() => {
+      checkScroll();
+    });
+    resizeObserver.observe(el);
+
     return () => {
-      el.removeEventListener("wheel", handleWheel);
       el.removeEventListener("scroll", checkScroll);
       window.removeEventListener("resize", checkScroll);
+      resizeObserver.disconnect();
     };
-  }, [checkScroll, wheelMultiplier]);
+  }, [checkScroll]);
+
+  useEffect(() => {
+    return () => {
+      document.body.style.removeProperty("cursor");
+      document.body.style.removeProperty("user-select");
+    };
+  }, []);
 
   const onMouseDown = useCallback(
     (event: MouseEvent<HTMLDivElement>) => {
+      if (event.button !== 0) return;
       const el = scrollRef.current;
       if (!el) return;
-      isDragging.current = true;
+
+      isMouseDown.current = true;
       hasDragged.current = false;
-      startX.current = event.pageX - el.offsetLeft;
+      startX.current = event.pageX;
       scrollLeft.current = el.scrollLeft;
-      el.style.cursor = dragCursor;
-      el.style.userSelect = "none";
+
+      const onWindowMouseMove = (e: globalThis.MouseEvent) => {
+        if (!isMouseDown.current) return;
+        const delta = e.pageX - startX.current;
+        if (!hasDragged.current && Math.abs(delta) > 5) {
+          hasDragged.current = true;
+          el.style.cursor = dragCursor;
+          document.body.style.cursor = dragCursor;
+          document.body.style.userSelect = "none";
+        }
+        if (hasDragged.current) {
+          el.scrollLeft = scrollLeft.current - delta;
+        }
+      };
+
+      const onWindowMouseUp = () => {
+        if (!isMouseDown.current) return;
+        isMouseDown.current = false;
+        window.removeEventListener("mousemove", onWindowMouseMove);
+        window.removeEventListener("mouseup", onWindowMouseUp);
+
+        document.body.style.removeProperty("cursor");
+        document.body.style.removeProperty("user-select");
+        if (el) {
+          el.style.removeProperty("cursor");
+        }
+
+        if (hasDragged.current) {
+          suppressClick.current = true;
+          hasDragged.current = false;
+          setTimeout(() => {
+            suppressClick.current = false;
+          }, 50);
+        }
+      };
+
+      window.addEventListener("mousemove", onWindowMouseMove);
+      window.addEventListener("mouseup", onWindowMouseUp);
     },
     [dragCursor],
   );
 
-  const onMouseMove = useCallback((event: MouseEvent<HTMLDivElement>) => {
-    if (!isDragging.current) return;
-    const el = scrollRef.current;
-    if (!el) return;
-    event.preventDefault();
-    const x = event.pageX - el.offsetLeft;
-    const delta = Math.abs(x - startX.current);
-    if (delta > 4) {
-      hasDragged.current = true;
+  const onClickCapture = useCallback((event: MouseEvent<HTMLDivElement>) => {
+    if (suppressClick.current) {
+      event.preventDefault();
+      event.stopPropagation();
+      suppressClick.current = false;
     }
-    const walk = (x - startX.current) * 1.5;
-    el.scrollLeft = scrollLeft.current - walk;
   }, []);
 
-  const onMouseUp = useCallback(() => {
-    if (hasDragged.current) {
-      suppressClick.current = true;
-    }
-    stopDragging();
-  }, [stopDragging]);
-
-  const onMouseLeave = useCallback(() => {
-    if (hasDragged.current) {
-      suppressClick.current = true;
-    }
-    stopDragging();
-  }, [stopDragging]);
-
-  const onClickCapture = useCallback((event: MouseEvent<HTMLDivElement>) => {
-    if (!suppressClick.current) return;
+  const onDragStart = useCallback((event: React.DragEvent) => {
     event.preventDefault();
-    event.stopPropagation();
-    suppressClick.current = false;
   }, []);
 
   return {
     scrollRef,
+    canScrollLeft: showLeftShadow,
+    canScrollRight: showRightShadow,
     showLeftShadow,
     showRightShadow,
+    scrollPrev,
+    scrollNext,
     handlers: {
       onMouseDown,
-      onMouseMove,
-      onMouseUp,
-      onMouseLeave,
       onClickCapture,
+      onDragStart,
     },
   };
 }

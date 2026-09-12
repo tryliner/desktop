@@ -1,5 +1,7 @@
 import { useMemo } from "react";
-import useHorizontalScroll from "@/shared/hooks/useHorizontalScroll";
+import useHorizontalScroll, {
+  type UseHorizontalScrollResult,
+} from "@/shared/hooks/useHorizontalScroll";
 
 interface ScrollableRowProps {
   children: React.ReactNode;
@@ -9,6 +11,7 @@ interface ScrollableRowProps {
   rightOverlayClassName?: string;
   dragCursor?: string;
   wheelMultiplier?: number;
+  controller?: UseHorizontalScrollResult;
 }
 
 export function ScrollableRow({
@@ -16,11 +19,15 @@ export function ScrollableRow({
   className = "",
   dragCursor,
   wheelMultiplier,
+  controller,
 }: ScrollableRowProps) {
-  const { scrollRef, showLeftShadow, showRightShadow } = useHorizontalScroll({
+  const internalController = useHorizontalScroll({
     dragCursor,
     wheelMultiplier,
   });
+
+  const { scrollRef, showLeftShadow, showRightShadow, handlers } =
+    controller ?? internalController;
 
   const maskStyle = useMemo(() => {
     const leftMask = showLeftShadow ? "transparent 0px, black 32px" : "black 0px";
@@ -36,7 +43,8 @@ export function ScrollableRow({
     <div className="relative group">
       <div
         ref={scrollRef}
-        className={`no-scrollbar ${className}`}
+        {...handlers}
+        className={`no-scrollbar cursor-grab ${className}`}
         style={{
           overflowX: "auto",
           display: "flex",

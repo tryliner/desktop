@@ -197,6 +197,9 @@ function RightDrawer({ activeTab, onTabChange }: RightDrawerProps) {
   const [queueLimit, setQueueLimit] = useState(() =>
     Math.max(50, Math.ceil(((player.currentIndex >= 0 ? player.currentIndex : 0) + 30) / 50) * 50),
   );
+  const [isQueueScrolled, setIsQueueScrolled] = useState(false);
+  const [isLyricsScrolled, setIsLyricsScrolled] = useState(false);
+  const isScrolled = activeTab === "queue" ? isQueueScrolled : isLyricsScrolled;
 
   useEffect(() => {
     if (player.currentIndex >= 0) {
@@ -217,6 +220,7 @@ function RightDrawer({ activeTab, onTabChange }: RightDrawerProps) {
         0,
         Math.round(6 + player.currentIndex * 70 + 35 - (container.clientHeight || 500) / 2),
       );
+      setIsQueueScrolled(targetY > 2);
       if (smooth) {
         container.scrollTo({ top: targetY, behavior: "smooth" });
       } else {
@@ -235,31 +239,38 @@ function RightDrawer({ activeTab, onTabChange }: RightDrawerProps) {
           Math.round(6 + player.currentIndex * 70 + 35 - (node.clientHeight || 500) / 2),
         );
         node.scrollTop = targetY;
+        setIsQueueScrolled(targetY > 2);
         requestAnimationFrame(() => {
           if (queueScrollRef.current) {
             const h = queueScrollRef.current.clientHeight || 500;
-            queueScrollRef.current.scrollTop = Math.max(
+            const finalY = Math.max(
               0,
-              Math.round(12 + player.currentIndex * 70 + 35 - h / 2),
+              Math.round(6 + player.currentIndex * 70 + 35 - h / 2),
             );
+            queueScrollRef.current.scrollTop = finalY;
+            setIsQueueScrolled(finalY > 2);
           }
         });
         setTimeout(() => {
           if (queueScrollRef.current) {
             const h = queueScrollRef.current.clientHeight || 500;
-            queueScrollRef.current.scrollTop = Math.max(
+            const finalY = Math.max(
               0,
-              Math.round(12 + player.currentIndex * 70 + 35 - h / 2),
+              Math.round(6 + player.currentIndex * 70 + 35 - h / 2),
             );
+            queueScrollRef.current.scrollTop = finalY;
+            setIsQueueScrolled(finalY > 2);
           }
         }, 50);
         setTimeout(() => {
           if (queueScrollRef.current) {
             const h = queueScrollRef.current.clientHeight || 500;
-            queueScrollRef.current.scrollTop = Math.max(
+            const finalY = Math.max(
               0,
-              Math.round(12 + player.currentIndex * 70 + 35 - h / 2),
+              Math.round(6 + player.currentIndex * 70 + 35 - h / 2),
             );
+            queueScrollRef.current.scrollTop = finalY;
+            setIsQueueScrolled(finalY > 2);
           }
         }, 150);
       }
@@ -349,6 +360,7 @@ function RightDrawer({ activeTab, onTabChange }: RightDrawerProps) {
     activeLineIndicesRef.current = [];
     if (lyricsContainerRef.current) {
       lyricsContainerRef.current.scrollTop = 0;
+      setIsLyricsScrolled(false);
     }
   }, [player.currentTrack?.id]);
 
@@ -498,7 +510,7 @@ function RightDrawer({ activeTab, onTabChange }: RightDrawerProps) {
 
   return (
     <div className="flex flex-col h-full w-full rounded-4xl border border-border-secondary bg-bg-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.035)] overflow-hidden">
-      <div className="px-[12px] pt-[12px] pb-[6px] shrink-0">
+      <div className="relative px-[12px] pt-[12px] pb-[6px] shrink-0 z-20">
         <div className="grid grid-cols-2 p-[3px] rounded-xl bg-bg-elevated border border-border-primary/60">
           <button
             type="button"
@@ -553,6 +565,18 @@ function RightDrawer({ activeTab, onTabChange }: RightDrawerProps) {
             <span className="relative z-10">{t("player.lyrics")}</span>
           </button>
         </div>
+
+        <div className="pointer-events-none absolute inset-x-0 top-full h-[24px] overflow-hidden z-20">
+          <div
+            className={`h-full w-full transition-opacity duration-200 ${
+              isScrolled ? "opacity-100" : "opacity-0"
+            }`}
+            style={{
+              background:
+                "linear-gradient(to bottom, var(--color-bg-primary) 0%, var(--color-bg-primary) 20%, transparent 100%)",
+            }}
+          />
+        </div>
       </div>
 
       <div className="flex-1 overflow-hidden relative">
@@ -562,6 +586,8 @@ function RightDrawer({ activeTab, onTabChange }: RightDrawerProps) {
             className="absolute inset-0 overflow-y-auto px-[12px] pt-[6px] pb-[12px]"
             onScroll={(e) => {
               const target = e.currentTarget;
+              const next = target.scrollTop > 2;
+              setIsQueueScrolled((prev) => (prev === next ? prev : next));
               if (
                 target.scrollHeight - target.scrollTop <=
                 target.clientHeight * 1.5
@@ -599,6 +625,10 @@ function RightDrawer({ activeTab, onTabChange }: RightDrawerProps) {
                 "linear-gradient(to bottom, transparent, black 5%, black 95%, transparent)",
             }}
             ref={lyricsContainerCallbackRef}
+            onScroll={(e) => {
+              const next = e.currentTarget.scrollTop > 2;
+              setIsLyricsScrolled((prev) => (prev === next ? prev : next));
+            }}
           >
             <div
               className="flex flex-col gap-[24px] pb-[50vh] pt-[10vh]"
