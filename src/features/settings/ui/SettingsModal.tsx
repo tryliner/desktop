@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { motion } from "framer-motion";
-import { CloseLine, Search2Line, CloseCircleFill, UserEditLine, ExitLine } from "@mingcute/react";
+import { CloseLine, Search2Line, CloseCircleFill, ExitLine } from "@mingcute/react";
 import {
   Play,
   Palette,
@@ -9,11 +9,10 @@ import {
   InfoCircle,
   Book2,
   QuestionCircle,
-  MenuDots,
   Database,
 } from "@solar-icons/react";
 import Dialog from "@/shared/ui/Dialog";
-import { UserAvatar, DropdownMenu } from "@/shared/ui";
+import { UserAvatar } from "@/shared/ui";
 import { useTranslation, getTranslationsForAllLocales } from "@/languages";
 import { useModalStore } from "@/features/library";
 import { useAuthStore } from "@/features/auth";
@@ -313,37 +312,18 @@ export default function SettingsModal() {
                 {handle}
               </span>
             </span>
-            <DropdownMenu
-              items={[
-                {
-                  id: "edit_profile",
-                  label: t("settings.profile.edit_profile") || "Edit profile",
-                  icon: <UserEditLine size={16} />,
-                  onClick: () => {
-                    // edit profile placeholder
-                  },
-                },
-                {
-                  id: "logout",
-                  label: t("settings.profile.sign_out") || "Log out",
-                  icon: <ExitLine size={16} />,
-                  danger: true,
-                  onClick: async () => {
-                    handleClose();
-                    await logout();
-                  },
-                },
-              ]}
-              trigger={
-                <button
-                  type="button"
-                  aria-label={t("common.more_options") || "More options"}
-                  className="p-1 rounded-md text-text-tertiary hover:text-text-primary hover:bg-border-alpha-14 transition-colors border-0 bg-transparent cursor-pointer flex items-center justify-center shrink-0"
-                >
-                  <MenuDots size={18} weight="Bold" className="shrink-0" />
-                </button>
-              }
-            />
+            <button
+              type="button"
+              onClick={async () => {
+                handleClose();
+                await logout();
+              }}
+              title={t("settings.profile.sign_out") || "Log out"}
+              aria-label={t("settings.profile.sign_out") || "Log out"}
+              className="p-1.5 rounded-md text-text-tertiary hover:text-[#E81123] hover:bg-border-alpha-14 transition-colors border-0 bg-transparent cursor-pointer flex items-center justify-center shrink-0"
+            >
+              <ExitLine size={18} className="shrink-0" />
+            </button>
           </div>
         </div>
       </aside>

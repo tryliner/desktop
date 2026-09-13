@@ -3060,3 +3060,440 @@ once the app is packaged.
 [1] audio  playing background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
 [1] playback  started (cached): ПАПА in 28ms background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
 [1] preload  preloaded audio: "дворик шизы" (2093 KB) background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] boot  volume 0.03356926721711391 background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] boot  player runtime initialized background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[0] [vite] hot updated: /src/app/globals.css
+[0] [vite] hot updated: /src/features/artist/ui/ArtistPage.tsx
+[1] lyrics  fetching for "дворик шизы" background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[3] %o
+
+%s
+
+%s
+ Error: useTranslation must be used within an I18nProvider The above error occurred in the <EnvironmentWarning> component. React will try to recreate this component tree from scratch using the error boundary you provided, RootErrorBoundary.
+[1] RootErrorBoundary  Uncaught React rendering error: useTranslation must be used within an I18nProvider background:#ef4444;color:#ffffff;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal; Error: useTranslation must be used within an I18nProvider 
+    at EnvironmentWarning (http://localhost:5173/src/app/EnvironmentWarning.tsx?t=1789320952158:12:16)
+    at RootErrorBoundary (http://localhost:5173/src/shared/ui/RootErrorBoundary.tsx?t=1789321326019:9:3)
+    at ToastProvider (http://localhost:5173/src/shared/ui/Toast.tsx?t=1789321326036:488:33)
+    at I18nProvider (http://localhost:5173/src/languages/I18nProvider.tsx?t=1789321326019:9:32)
+    at EmojiProvider (http://localhost:5173/node_modules/.vite/deps/react-apple-emojis.js?v=3d2680fa:13:26)
+    at AppleEmojiProvider (http://localhost:5173/src/shared/ui/AppleEmojiProvider.tsx:5:38)
+    at V (http://localhost:5173/node_modules/.vite/deps/next-themes.js?v=3d2680fa:40:25)
+    at J (http://localhost:5173/node_modules/.vite/deps/next-themes.js?v=3d2680fa:38:29)
+    at Router (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=3d2680fa:4788:29)
+    at HashRouter (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=3d2680fa:7259:23)
+    at App (http://localhost:5173/src/app/App.tsx?t=1789320952158:19:2)
+    at RootErrorBoundary (http://localhost:5173/src/shared/ui/RootErrorBoundary.tsx?t=1789321326019:9:3)
+[0] [vite] hot updated: /src/app/globals.css
+[0] [vite] hot updated: /src/features/collection/ui/CollectionPage.tsx
+[0] [vite] hot updated: /src/app/globals.css
+[0] [vite] hot updated: /src/features/collection/ui/CollectionPageSkeleton.tsx
+[0] [vite] hot updated: /src/app/globals.css
+[0] [vite] hot updated: /src/features/library/ui/LibraryGrid.tsx
+[0] [vite] hot updated: /src/app/globals.css
+[0] [vite] hot updated: /src/features/library/ui/PlaylistPage.tsx
+[0] [vite] hot updated: /src/app/globals.css
+[0] [vite] hot updated: /src/features/library/ui/PlaylistPageSkeleton.tsx
+[0] [vite] hot updated: /src/app/globals.css
+[0] [vite] hot updated: /src/features/library/ui/modals/ImportReviewModal.tsx
+[3] %o
+
+%s
+
+%s
+ Error: useTranslation must be used within an I18nProvider The above error occurred in the <EnvironmentWarning> component. React will try to recreate this component tree from scratch using the error boundary you provided, RootErrorBoundary.
+[1] RootErrorBoundary  Uncaught React rendering error: useTranslation must be used within an I18nProvider background:#ef4444;color:#ffffff;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal; Error: useTranslation must be used within an I18nProvider 
+    at EnvironmentWarning (http://localhost:5173/src/app/EnvironmentWarning.tsx?t=1789320952158:12:16)
+    at RootErrorBoundary (http://localhost:5173/src/shared/ui/RootErrorBoundary.tsx?t=1789321326019:9:3)
+    at ToastProvider (http://localhost:5173/src/shared/ui/Toast.tsx?t=1789321326036:488:33)
+    at I18nProvider (http://localhost:5173/src/languages/I18nProvider.tsx?t=1789321326019:9:32)
+    at EmojiProvider (http://localhost:5173/node_modules/.vite/deps/react-apple-emojis.js?v=3d2680fa:13:26)
+    at AppleEmojiProvider (http://localhost:5173/src/shared/ui/AppleEmojiProvider.tsx:5:38)
+    at V (http://localhost:5173/node_modules/.vite/deps/next-themes.js?v=3d2680fa:40:25)
+    at J (http://localhost:5173/node_modules/.vite/deps/next-themes.js?v=3d2680fa:38:29)
+    at Router (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=3d2680fa:4788:29)
+    at HashRouter (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=3d2680fa:7259:23)
+    at App (http://localhost:5173/src/app/App.tsx?t=1789320952158:19:2)
+    at RootErrorBoundary (http://localhost:5173/src/shared/ui/RootErrorBoundary.tsx?t=1789321326019:9:3)
+[0] [vite] hot updated: /src/app/globals.css
+[0] [vite] hot updated: /src/features/navigation/ui/AppFrame.tsx
+[0] [vite] hot updated: /src/app/globals.css
+[0] [vite] hot updated: /src/features/navigation/ui/WindowControls.tsx
+[0] [vite] hot updated: /src/app/globals.css
+[0] [vite] hot updated: /src/features/settings/ui/tabs/StorageTab.tsx
+[3] %o
+
+%s
+
+%s
+ Error: useTranslation must be used within an I18nProvider The above error occurred in the <EnvironmentWarning> component. React will try to recreate this component tree from scratch using the error boundary you provided, RootErrorBoundary.
+[1] RootErrorBoundary  Uncaught React rendering error: useTranslation must be used within an I18nProvider background:#ef4444;color:#ffffff;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal; Error: useTranslation must be used within an I18nProvider 
+    at EnvironmentWarning (http://localhost:5173/src/app/EnvironmentWarning.tsx?t=1789320952158:12:16)
+    at RootErrorBoundary (http://localhost:5173/src/shared/ui/RootErrorBoundary.tsx?t=1789321326019:9:3)
+    at ToastProvider (http://localhost:5173/src/shared/ui/Toast.tsx?t=1789321326036:488:33)
+    at I18nProvider (http://localhost:5173/src/languages/I18nProvider.tsx?t=1789321326019:9:32)
+    at EmojiProvider (http://localhost:5173/node_modules/.vite/deps/react-apple-emojis.js?v=3d2680fa:13:26)
+    at AppleEmojiProvider (http://localhost:5173/src/shared/ui/AppleEmojiProvider.tsx:5:38)
+    at V (http://localhost:5173/node_modules/.vite/deps/next-themes.js?v=3d2680fa:40:25)
+    at J (http://localhost:5173/node_modules/.vite/deps/next-themes.js?v=3d2680fa:38:29)
+    at Router (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=3d2680fa:4788:29)
+    at HashRouter (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=3d2680fa:7259:23)
+    at App (http://localhost:5173/src/app/App.tsx?t=1789320952158:19:2)
+    at RootErrorBoundary (http://localhost:5173/src/shared/ui/RootErrorBoundary.tsx?t=1789321326019:9:3)
+[0] [vite] hot updated: /src/app/globals.css
+[0] [vite] hot updated: /src/app/App.tsx
+[0] [vite] hot updated: /src/app/EnvironmentWarning.tsx
+[0] [vite] invalidate /src/shared/ui/Toast.tsx: Could not Fast Refresh ("showToast" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[0] [vite] hot updated: /src/shared/ui/Toast.tsx
+[0] [vite] hot updated: /src/shared/ui/RootErrorFallback.tsx
+[0] [vite] hot updated: /src/shared/ui/StickyHeader.tsx
+[0] [vite] hot updated: /src/features/player/ui/FullscreenPlayer.tsx
+[0] [vite] hot updated: /src/features/player/ui/PlayerUiElements.tsx
+[0] [vite] hot updated: /src/features/player/ui/SongCard.tsx
+[0] [vite] hot updated: /src/features/player/ui/SongCardWithMenu.tsx
+[0] [vite] hot updated: /src/features/auth/ui/LoginPage.tsx
+[0] [vite] hot updated: /src/features/connectivity/ui/ConnectivityWall.tsx
+[0] [vite] hot updated: /src/features/home/ui/HomePage.tsx
+[0] [vite] hot updated: /src/features/library/ui/LibraryPage.tsx
+[0] [vite] hot updated: /src/features/library/ui/PlaylistPage.tsx
+[0] [vite] hot updated: /src/features/lyrics/ui/LyricsProviderIsland.tsx
+[0] [vite] hot updated: /src/app/DeeplinkHandler.tsx
+[0] [vite] hot updated: /src/features/artist/ui/ArtistPage.tsx
+[0] [vite] hot updated: /src/features/collection/ui/CollectionPage.tsx
+[0] [vite] hot updated: /src/features/home/ui/PopularTracksSection.tsx
+[0] [vite] hot updated: /src/features/navigation/ui/AppFrame.tsx
+[0] [vite] hot updated: /src/features/navigation/ui/Sidebar.tsx
+[0] [vite] hot updated: /src/features/navigation/ui/RightDrawer.tsx
+[0] [vite] hot updated: /src/features/library/ui/modals/ImportReviewModal.tsx
+[0] [vite] hot updated: /src/features/settings/ui/tabs/PlaybackTab.tsx
+[0] [vite] hot updated: /src/features/settings/ui/tabs/AppearanceTab.tsx
+[0] [vite] hot updated: /src/features/settings/ui/tabs/AudioTab.tsx
+[0] [vite] hot updated: /src/features/settings/ui/tabs/AboutTab.tsx
+[0] [vite] hot updated: /src/features/player/ui/VolumePicker.tsx
+[0] [vite] hot updated: /src/features/player/ui/MiniPlayer.tsx
+[0] [vite] hot updated: /src/features/collection/ui/ReleaseCard.tsx
+[0] [vite] hot updated: /src/features/settings/ui/SettingsModal.tsx
+[0] [vite] hot updated: /src/features/library/ui/modals/CreatePlaylistModal.tsx
+[0] [vite] hot updated: /src/features/library/ui/modals/ImportLikesModal.tsx
+[0] [vite] hot updated: /src/features/artist/ui/ArtistProfileModal.tsx
+[0] [vite] hot updated: /src/features/auth/ui/AuthLock.tsx
+[0] [vite] hot updated: /src/features/library/ui/modals/AddToPlaylistModal.tsx
+[0] [vite] hot updated: /src/features/library/ui/modals/AddToLibraryModal.tsx
+[0] [vite] hot updated: /src/features/library/ui/modals/RemoveFromPlaylistModal.tsx
+[0] [vite] hot updated: /src/features/library/ui/modals/RemoveFromLibraryModal.tsx
+[0] [vite] hot updated: /src/features/library/ui/LibraryControls.tsx
+[0] [vite] hot updated: /src/features/library/ui/LibraryGrid.tsx
+[0] [vite] hot updated: /src/features/library/ui/LibraryTabs.tsx
+[0] [vite] hot updated: /src/features/search/ui/SearchResultsList.tsx
+[0] [vite] hot updated: /src/features/settings/ui/tabs/StorageTab.tsx
+[0] [vite] hot updated: /src/features/settings/ui/tabs/PrivacyTab.tsx
+[0] [vite] hot updated: /src/features/settings/ui/controls.tsx
+[0] [vite] invalidate /src/languages/I18nProvider.tsx: Could not Fast Refresh ("useTranslation" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[0] [vite] hot updated: /src/languages/I18nProvider.tsx
+[3] %o
+
+%s
+
+%s
+ Error: useTranslation must be used within an I18nProvider The above error occurred in the <EnvironmentWarning> component. React will try to recreate this component tree from scratch using the error boundary you provided, RootErrorBoundary.
+[1] RootErrorBoundary  Uncaught React rendering error: useTranslation must be used within an I18nProvider background:#ef4444;color:#ffffff;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal; Error: useTranslation must be used within an I18nProvider 
+    at EnvironmentWarning (http://localhost:5173/src/app/EnvironmentWarning.tsx?t=1789321326013:12:16)
+    at RootErrorBoundary (http://localhost:5173/src/shared/ui/RootErrorBoundary.tsx?t=1789321326019:9:3)
+    at ToastProvider (http://localhost:5173/src/shared/ui/Toast.tsx?t=1789321326013:488:33)
+    at I18nProvider (http://localhost:5173/src/languages/I18nProvider.tsx?t=1789321326013:9:32)
+    at EmojiProvider (http://localhost:5173/node_modules/.vite/deps/react-apple-emojis.js?v=3d2680fa:13:26)
+    at AppleEmojiProvider (http://localhost:5173/src/shared/ui/AppleEmojiProvider.tsx:5:38)
+    at V (http://localhost:5173/node_modules/.vite/deps/next-themes.js?v=3d2680fa:40:25)
+    at J (http://localhost:5173/node_modules/.vite/deps/next-themes.js?v=3d2680fa:38:29)
+    at Router (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=3d2680fa:4788:29)
+    at HashRouter (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=3d2680fa:7259:23)
+    at App (http://localhost:5173/src/app/App.tsx?t=1789321326013:19:2)
+    at RootErrorBoundary (http://localhost:5173/src/shared/ui/RootErrorBoundary.tsx?t=1789321326019:9:3)
+[3] Maximum update depth exceeded. This can happen when a component calls setState inside useEffect, but useEffect either doesn't have a dependency array, or one of the dependencies changes on every render.
+[1] boot  volume 0.03356926721711391 background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] boot  player runtime initialized background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] lyrics  fetching for "дворик шизы" background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] lyrics  done, no lyrics found background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[0] [vite] hot updated: /src/app/globals.css
+[0] [vite] hot updated: /src/app/App.tsx
+[0] [vite] hot updated: /src/app/EnvironmentWarning.tsx
+[0] [vite] invalidate /src/shared/ui/Toast.tsx: Could not Fast Refresh ("showToast" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[0] [vite] hot updated: /src/shared/ui/Toast.tsx
+[0] [vite] hot updated: /src/shared/ui/RootErrorFallback.tsx
+[0] [vite] hot updated: /src/shared/ui/StickyHeader.tsx
+[0] [vite] hot updated: /src/features/player/ui/FullscreenPlayer.tsx
+[0] [vite] hot updated: /src/features/player/ui/PlayerUiElements.tsx
+[0] [vite] hot updated: /src/features/player/ui/SongCard.tsx
+[0] [vite] hot updated: /src/features/player/ui/SongCardWithMenu.tsx
+[0] [vite] hot updated: /src/features/auth/ui/LoginPage.tsx
+[0] [vite] hot updated: /src/features/connectivity/ui/ConnectivityWall.tsx
+[0] [vite] hot updated: /src/features/home/ui/HomePage.tsx
+[0] [vite] hot updated: /src/features/library/ui/LibraryPage.tsx
+[0] [vite] hot updated: /src/features/library/ui/PlaylistPage.tsx
+[0] [vite] hot updated: /src/features/lyrics/ui/LyricsProviderIsland.tsx
+[0] [vite] hot updated: /src/app/DeeplinkHandler.tsx
+[0] [vite] hot updated: /src/features/artist/ui/ArtistPage.tsx
+[0] [vite] hot updated: /src/features/collection/ui/CollectionPage.tsx
+[0] [vite] hot updated: /src/features/home/ui/PopularTracksSection.tsx
+[0] [vite] hot updated: /src/features/navigation/ui/AppFrame.tsx
+[0] [vite] hot updated: /src/features/navigation/ui/Sidebar.tsx
+[0] [vite] hot updated: /src/features/navigation/ui/RightDrawer.tsx
+[0] [vite] hot updated: /src/features/library/ui/modals/ImportReviewModal.tsx
+[0] [vite] hot updated: /src/features/settings/ui/tabs/PlaybackTab.tsx
+[0] [vite] hot updated: /src/features/settings/ui/tabs/AppearanceTab.tsx
+[0] [vite] hot updated: /src/features/settings/ui/tabs/AudioTab.tsx
+[0] [vite] hot updated: /src/features/settings/ui/tabs/AboutTab.tsx
+[0] [vite] hot updated: /src/features/player/ui/VolumePicker.tsx
+[0] [vite] hot updated: /src/features/player/ui/MiniPlayer.tsx
+[0] [vite] hot updated: /src/features/collection/ui/ReleaseCard.tsx
+[0] [vite] hot updated: /src/features/settings/ui/SettingsModal.tsx
+[0] [vite] hot updated: /src/features/library/ui/modals/CreatePlaylistModal.tsx
+[0] [vite] hot updated: /src/features/library/ui/modals/ImportLikesModal.tsx
+[0] [vite] hot updated: /src/features/artist/ui/ArtistProfileModal.tsx
+[0] [vite] hot updated: /src/features/auth/ui/AuthLock.tsx
+[0] [vite] hot updated: /src/features/library/ui/modals/AddToPlaylistModal.tsx
+[0] [vite] hot updated: /src/features/library/ui/modals/AddToLibraryModal.tsx
+[0] [vite] hot updated: /src/features/library/ui/modals/RemoveFromPlaylistModal.tsx
+[0] [vite] hot updated: /src/features/library/ui/modals/RemoveFromLibraryModal.tsx
+[0] [vite] hot updated: /src/features/library/ui/LibraryControls.tsx
+[0] [vite] hot updated: /src/features/library/ui/LibraryGrid.tsx
+[0] [vite] hot updated: /src/features/library/ui/LibraryTabs.tsx
+[0] [vite] hot updated: /src/features/search/ui/SearchResultsList.tsx
+[0] [vite] hot updated: /src/features/settings/ui/tabs/StorageTab.tsx
+[0] [vite] hot updated: /src/features/settings/ui/tabs/PrivacyTab.tsx
+[0] [vite] hot updated: /src/features/settings/ui/controls.tsx
+[0] [vite] invalidate /src/languages/I18nProvider.tsx: Could not Fast Refresh ("useTranslation" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[0] [vite] hot updated: /src/languages/I18nProvider.tsx
+[3] %o
+
+%s
+
+%s
+ Error: useTranslation must be used within an I18nProvider The above error occurred in the <EnvironmentWarning> component. React will try to recreate this component tree from scratch using the error boundary you provided, RootErrorBoundary.
+[1] RootErrorBoundary  Uncaught React rendering error: useTranslation must be used within an I18nProvider background:#ef4444;color:#ffffff;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal; Error: useTranslation must be used within an I18nProvider 
+    at EnvironmentWarning (http://localhost:5173/src/app/EnvironmentWarning.tsx?t=1789321326016:12:16)
+    at RootErrorBoundary (http://localhost:5173/src/shared/ui/RootErrorBoundary.tsx?t=1789321326019:9:3)
+    at ToastProvider (http://localhost:5173/src/shared/ui/Toast.tsx?t=1789321326016:488:33)
+    at I18nProvider (http://localhost:5173/src/languages/I18nProvider.tsx?t=1789321326016:9:32)
+    at EmojiProvider (http://localhost:5173/node_modules/.vite/deps/react-apple-emojis.js?v=3d2680fa:13:26)
+    at AppleEmojiProvider (http://localhost:5173/src/shared/ui/AppleEmojiProvider.tsx:5:38)
+    at V (http://localhost:5173/node_modules/.vite/deps/next-themes.js?v=3d2680fa:40:25)
+    at J (http://localhost:5173/node_modules/.vite/deps/next-themes.js?v=3d2680fa:38:29)
+    at Router (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=3d2680fa:4788:29)
+    at HashRouter (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=3d2680fa:7259:23)
+    at App (http://localhost:5173/src/app/App.tsx?t=1789321326016:19:2)
+    at RootErrorBoundary (http://localhost:5173/src/shared/ui/RootErrorBoundary.tsx?t=1789321326019:9:3)
+[3] Maximum update depth exceeded. This can happen when a component calls setState inside useEffect, but useEffect either doesn't have a dependency array, or one of the dependencies changes on every render.
+[1] lyrics  done, no lyrics found background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[0] [vite] hot updated: /src/app/globals.css
+[0] [vite] hot updated: /src/app/App.tsx
+[0] [vite] hot updated: /src/app/EnvironmentWarning.tsx
+[0] [vite] hot updated: /src/shared/ui/Toast.tsx
+[0] [vite] hot updated: /src/shared/ui/RootErrorFallback.tsx
+[0] [vite] hot updated: /src/shared/ui/StickyHeader.tsx
+[0] [vite] hot updated: /src/features/player/ui/FullscreenPlayer.tsx
+[0] [vite] hot updated: /src/features/player/ui/PlayerUiElements.tsx
+[0] [vite] hot updated: /src/features/player/ui/SongCard.tsx
+[0] [vite] hot updated: /src/features/player/ui/SongCardWithMenu.tsx
+[0] [vite] hot updated: /src/features/auth/ui/LoginPage.tsx
+[0] [vite] hot updated: /src/features/connectivity/ui/ConnectivityWall.tsx
+[0] [vite] hot updated: /src/features/home/ui/HomePage.tsx
+[0] [vite] hot updated: /src/features/library/ui/LibraryPage.tsx
+[0] [vite] hot updated: /src/features/library/ui/PlaylistPage.tsx
+[0] [vite] hot updated: /src/features/lyrics/ui/LyricsProviderIsland.tsx
+[0] [vite] hot updated: /src/app/DeeplinkHandler.tsx
+[0] [vite] hot updated: /src/features/artist/ui/ArtistPage.tsx
+[0] [vite] hot updated: /src/features/collection/ui/CollectionPage.tsx
+[0] [vite] hot updated: /src/features/home/ui/PopularTracksSection.tsx
+[0] [vite] hot updated: /src/features/navigation/ui/AppFrame.tsx
+[0] [vite] hot updated: /src/features/navigation/ui/Sidebar.tsx
+[0] [vite] hot updated: /src/features/navigation/ui/RightDrawer.tsx
+[0] [vite] hot updated: /src/features/library/ui/modals/ImportReviewModal.tsx
+[0] [vite] hot updated: /src/features/settings/ui/tabs/PlaybackTab.tsx
+[0] [vite] hot updated: /src/features/settings/ui/tabs/AppearanceTab.tsx
+[0] [vite] hot updated: /src/features/settings/ui/tabs/AudioTab.tsx
+[0] [vite] hot updated: /src/features/settings/ui/tabs/AboutTab.tsx
+[0] [vite] hot updated: /src/features/player/ui/VolumePicker.tsx
+[0] [vite] hot updated: /src/features/player/ui/MiniPlayer.tsx
+[0] [vite] hot updated: /src/features/collection/ui/ReleaseCard.tsx
+[0] [vite] hot updated: /src/features/settings/ui/SettingsModal.tsx
+[0] [vite] hot updated: /src/features/library/ui/modals/CreatePlaylistModal.tsx
+[0] [vite] hot updated: /src/features/library/ui/modals/ImportLikesModal.tsx
+[0] [vite] hot updated: /src/features/artist/ui/ArtistProfileModal.tsx
+[0] [vite] hot updated: /src/features/auth/ui/AuthLock.tsx
+[0] [vite] hot updated: /src/features/library/ui/modals/AddToPlaylistModal.tsx
+[0] [vite] hot updated: /src/features/library/ui/modals/AddToLibraryModal.tsx
+[0] [vite] hot updated: /src/features/library/ui/modals/RemoveFromPlaylistModal.tsx
+[0] [vite] hot updated: /src/features/library/ui/modals/RemoveFromLibraryModal.tsx
+[0] [vite] hot updated: /src/features/library/ui/LibraryControls.tsx
+[0] [vite] hot updated: /src/features/library/ui/LibraryGrid.tsx
+[0] [vite] hot updated: /src/features/library/ui/LibraryTabs.tsx
+[0] [vite] hot updated: /src/features/search/ui/SearchResultsList.tsx
+[0] [vite] hot updated: /src/features/settings/ui/tabs/StorageTab.tsx
+[0] [vite] hot updated: /src/features/settings/ui/tabs/PrivacyTab.tsx
+[0] [vite] hot updated: /src/features/settings/ui/controls.tsx
+[0] [vite] hot updated: /src/languages/I18nProvider.tsx
+[0] [vite] invalidate /src/shared/ui/Toast.tsx: Could not Fast Refresh ("showToast" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[0] [vite] hot updated: /src/shared/ui/Toast.tsx
+[0] [vite] hot updated: /src/app/globals.css
+[3] %o
+
+%s
+
+%s
+ Error: useTranslation must be used within an I18nProvider The above error occurred in the <EnvironmentWarning> component. React will try to recreate this component tree from scratch using the error boundary you provided, RootErrorBoundary.
+[1] RootErrorBoundary  Uncaught React rendering error: useTranslation must be used within an I18nProvider background:#ef4444;color:#ffffff;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal; Error: useTranslation must be used within an I18nProvider 
+    at EnvironmentWarning (http://localhost:5173/src/app/EnvironmentWarning.tsx?t=1789321326016:12:16)
+    at RootErrorBoundary (http://localhost:5173/src/shared/ui/RootErrorBoundary.tsx?t=1789321326019:9:3)
+    at ToastProvider (http://localhost:5173/src/shared/ui/Toast.tsx?t=1789321326022:488:33)
+    at I18nProvider (http://localhost:5173/src/languages/I18nProvider.tsx?t=1789321326016:9:32)
+    at EmojiProvider (http://localhost:5173/node_modules/.vite/deps/react-apple-emojis.js?v=3d2680fa:13:26)
+    at AppleEmojiProvider (http://localhost:5173/src/shared/ui/AppleEmojiProvider.tsx:5:38)
+    at V (http://localhost:5173/node_modules/.vite/deps/next-themes.js?v=3d2680fa:40:25)
+    at J (http://localhost:5173/node_modules/.vite/deps/next-themes.js?v=3d2680fa:38:29)
+    at Router (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=3d2680fa:4788:29)
+    at HashRouter (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=3d2680fa:7259:23)
+    at App (http://localhost:5173/src/app/App.tsx?t=1789321326016:19:2)
+    at RootErrorBoundary (http://localhost:5173/src/shared/ui/RootErrorBoundary.tsx?t=1789321326019:9:3)
+[0] [vite] hot updated: /src/shared/ui/ToggleSwitch.tsx
+[0] [vite] hot updated: /src/app/globals.css
+[0] [vite] hot updated: /src/shared/ui/EntitySidebar.tsx
+[0] [vite] hot updated: /src/app/globals.css
+[0] [vite] hot updated: /src/shared/ui/StickyHeader.tsx
+[0] [vite] hot updated: /src/app/globals.css
+[0] [vite] hot updated: /src/app/App.tsx
+[0] [vite] hot updated: /src/app/EnvironmentWarning.tsx
+[0] [vite] hot updated: /src/shared/ui/Toast.tsx
+[0] [vite] hot updated: /src/shared/ui/RootErrorFallback.tsx
+[0] [vite] hot updated: /src/shared/ui/StickyHeader.tsx
+[0] [vite] hot updated: /src/features/player/ui/FullscreenPlayer.tsx
+[0] [vite] hot updated: /src/features/player/ui/PlayerUiElements.tsx
+[0] [vite] hot updated: /src/features/player/ui/SongCard.tsx
+[0] [vite] hot updated: /src/features/player/ui/SongCardWithMenu.tsx
+[0] [vite] hot updated: /src/features/auth/ui/LoginPage.tsx
+[0] [vite] hot updated: /src/features/connectivity/ui/ConnectivityWall.tsx
+[0] [vite] hot updated: /src/features/home/ui/HomePage.tsx
+[0] [vite] hot updated: /src/features/library/ui/LibraryPage.tsx
+[0] [vite] hot updated: /src/features/library/ui/PlaylistPage.tsx
+[0] [vite] hot updated: /src/features/lyrics/ui/LyricsProviderIsland.tsx
+[0] [vite] hot updated: /src/app/DeeplinkHandler.tsx
+[0] [vite] hot updated: /src/features/artist/ui/ArtistPage.tsx
+[0] [vite] hot updated: /src/features/collection/ui/CollectionPage.tsx
+[0] [vite] hot updated: /src/features/home/ui/PopularTracksSection.tsx
+[0] [vite] hot updated: /src/features/navigation/ui/AppFrame.tsx
+[0] [vite] hot updated: /src/features/navigation/ui/Sidebar.tsx
+[0] [vite] hot updated: /src/features/navigation/ui/RightDrawer.tsx
+[0] [vite] hot updated: /src/features/library/ui/modals/ImportReviewModal.tsx
+[0] [vite] hot updated: /src/features/settings/ui/tabs/PlaybackTab.tsx
+[0] [vite] hot updated: /src/features/settings/ui/tabs/AppearanceTab.tsx
+[0] [vite] hot updated: /src/features/settings/ui/tabs/AudioTab.tsx
+[0] [vite] hot updated: /src/features/settings/ui/tabs/AboutTab.tsx
+[0] [vite] hot updated: /src/features/player/ui/VolumePicker.tsx
+[0] [vite] hot updated: /src/features/player/ui/MiniPlayer.tsx
+[0] [vite] hot updated: /src/features/collection/ui/ReleaseCard.tsx
+[0] [vite] hot updated: /src/features/settings/ui/SettingsModal.tsx
+[0] [vite] hot updated: /src/features/library/ui/modals/CreatePlaylistModal.tsx
+[0] [vite] hot updated: /src/features/library/ui/modals/ImportLikesModal.tsx
+[0] [vite] hot updated: /src/features/artist/ui/ArtistProfileModal.tsx
+[0] [vite] hot updated: /src/features/auth/ui/AuthLock.tsx
+[0] [vite] hot updated: /src/features/library/ui/modals/AddToPlaylistModal.tsx
+[0] [vite] hot updated: /src/features/library/ui/modals/AddToLibraryModal.tsx
+[0] [vite] hot updated: /src/features/library/ui/modals/RemoveFromPlaylistModal.tsx
+[0] [vite] hot updated: /src/features/library/ui/modals/RemoveFromLibraryModal.tsx
+[0] [vite] hot updated: /src/features/library/ui/LibraryControls.tsx
+[0] [vite] hot updated: /src/features/library/ui/LibraryGrid.tsx
+[0] [vite] hot updated: /src/features/library/ui/LibraryTabs.tsx
+[0] [vite] hot updated: /src/features/search/ui/SearchResultsList.tsx
+[0] [vite] hot updated: /src/features/settings/ui/tabs/StorageTab.tsx
+[0] [vite] hot updated: /src/features/settings/ui/tabs/PrivacyTab.tsx
+[0] [vite] hot updated: /src/features/settings/ui/controls.tsx
+[3] Maximum update depth exceeded. This can happen when a component calls setState inside useEffect, but useEffect either doesn't have a dependency array, or one of the dependencies changes on every render.
+[0] [vite] connecting...
+[0] [vite] connected.
+[1] Download the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[1] boot  volume 0.03356926721711391 background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] boot  player runtime initialized background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] lyrics  fetching for "дворик шизы" background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[2] Electron Security Warning (Insecure Content-Security-Policy) font-weight: bold; This renderer process has either no Content Security
+  Policy set or a policy with "unsafe-eval" enabled. This exposes users of
+  this app to unnecessary security risks.
+
+For more information and help, consult
+https://electronjs.org/docs/tutorial/security.
+This warning will not show up
+once the app is packaged.
+[1] lyrics  done, no lyrics found background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] playback  stream downloaded & cached: opus 195540 bps (2093 KB) background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] audio  playing background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] playback  started: дворик шизы in 660ms background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] preload  preloaded audio: "astral step" (1866 KB) background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] lyrics  cache hit for "astral step" (age: 2s) background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] playback  audio cache hit for "astral step" (1866 KB) background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] audio  playing background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] playback  started (cached): astral step in 46ms background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] preload  preloaded audio: "грустные губы" (1798 KB) background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] preload  preloaded audio: "грустные губы" (1798 KB) background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] playback  audio cache hit for "грустные губы" (1798 KB) background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] lyrics  fetching for "грустные губы" background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] audio  playing background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] playback  started (cached): грустные губы in 56ms background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] lyrics  candidate Polaris Mono q=93 sync=line_level background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] lyrics  skip worse candidate LRCLIB q=93 background:#eab308;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] lyrics  skip worse candidate Cadence q=74 background:#eab308;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] lyrics  done, best=Polaris Mono q=93 background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] lyrics  fetching for "гуль" background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] preload  preloaded audio: "гуль" (1607 KB) background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] lyrics  candidate LRCLIB q=88 sync=line_level background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] lyrics  skip worse candidate Cadence q=74 background:#eab308;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] lyrics  done, best=LRCLIB q=88 background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] playback  stream downloaded & cached: opus 151965 bps (1607 KB) background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] audio  playing background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] playback  started: гуль in 308ms background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] preload  preloaded audio: "догвилль" (1881 KB) background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] preload  preloaded audio: "догвилль" (1881 KB) background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] audio  paused background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] audio  ended — skipping to next background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] lyrics  cache hit for "догвилль" (age: 95s) background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] playback  audio cache hit for "догвилль" (1881 KB) background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] audio  playing background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] playback  started (cached): догвилль in 26ms background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] preload  preloaded audio: "Адская колыбельная" (2848 KB) background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[0] [vite] hot updated: /src/app/globals.css
+[0] [vite] hot updated: /src/features/settings/ui/SettingsModal.tsx
+[3] %o
+
+%s
+
+%s
+ ReferenceError: DropdownMenu is not defined The above error occurred in the <SettingsModal> component. React will try to recreate this component tree from scratch using the error boundary you provided, RootErrorBoundary.
+[1] RootErrorBoundary  Uncaught React rendering error: DropdownMenu is not defined background:#ef4444;color:#ffffff;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal; ReferenceError: DropdownMenu is not defined 
+    at SettingsModal (http://localhost:5173/src/features/settings/ui/SettingsModal.tsx?t=1789321483657:126:16)
+    at div (<anonymous>)
+    at AppFrame (http://localhost:5173/src/features/navigation/ui/AppFrame.tsx?t=1789321483657:31:36)
+    at AuthLock (http://localhost:5173/src/features/auth/ui/AuthLock.tsx?t=1789321483657:9:28)
+    at RootErrorBoundary (http://localhost:5173/src/shared/ui/RootErrorBoundary.tsx?t=1789321326019:9:3)
+    at ToastProvider (http://localhost:5173/src/shared/ui/Toast.tsx?t=1789321326019:488:33)
+    at I18nProvider (http://localhost:5173/src/languages/I18nProvider.tsx?t=1789321326019:9:32)
+    at EmojiProvider (http://localhost:5173/node_modules/.vite/deps/react-apple-emojis.js?v=3d2680fa:13:26)
+    at AppleEmojiProvider (http://localhost:5173/src/shared/ui/AppleEmojiProvider.tsx:5:38)
+    at V (http://localhost:5173/node_modules/.vite/deps/next-themes.js?v=3d2680fa:40:25)
+    at J (http://localhost:5173/node_modules/.vite/deps/next-themes.js?v=3d2680fa:38:29)
+    at Router (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=3d2680fa:4788:29)
+    at HashRouter (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=3d2680fa:7259:23)
+    at App (http://localhost:5173/src/app/App.tsx?t=1789321326019:19:2)
+    at RootErrorBoundary (http://localhost:5173/src/shared/ui/RootErrorBoundary.tsx?t=1789321326019:9:3)
+[0] [vite] hot updated: /src/app/globals.css
+[0] [vite] hot updated: /src/features/settings/ui/SettingsModal.tsx
+[1] audio  paused background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] audio  ended — skipping to next background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] playback  audio cache hit for "Адская колыбельная" (2848 KB) background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] lyrics  fetching for "Адская колыбельная" background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] audio  playing background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] playback  started (cached): Адская колыбельная in 31ms background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] lyrics  candidate Liner Atlas q=90 sync=line_level background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] lyrics  skip worse candidate Polaris q=89 background:#eab308;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] lyrics  skip worse candidate Polaris Mono q=89 background:#eab308;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] lyrics  skip worse candidate LRCLIB q=89 background:#eab308;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] lyrics  skip worse candidate Genius q=59 background:#eab308;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] lyrics  done, best=Liner Atlas q=90 background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] preload  preloaded audio: "самое худшее интро" (1398 KB) background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
