@@ -520,34 +520,29 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
             </p>
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
-            <span className="text-text-primary text-[13px] font-mono font-[600]">
+            <span className="text-text-primary text-[13.5px] font-[600]">
               {cacheLimit === 0 ? t("settings.storage.no_limit") : formatStorageBytes(cacheLimit)}
             </span>
-            {cacheLimit === 3 * 1024 * 1024 * 1024 && (
-              <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold bg-purple-500/20 text-purple-400 border border-purple-500/30">
-                {t("settings.storage.recommended")}
-              </span>
-            )}
           </div>
         </div>
 
         {(() => {
           const steps = [
-            { label: "250 MB", bytes: 250 * 1024 * 1024 },
-            { label: "1 GB", bytes: 1024 * 1024 * 1024 },
-            { label: "2 GB", bytes: 2 * 1024 * 1024 * 1024 },
-            { label: "3 GB", bytes: 3 * 1024 * 1024 * 1024 },
-            { label: "5 GB", bytes: 5 * 1024 * 1024 * 1024 },
-            { label: "10 GB", bytes: 10 * 1024 * 1024 * 1024 },
-            { label: t("settings.storage.no_limit"), bytes: 0 },
+            { label: "250 MB", bytes: 250 * 1024 * 1024, isRecommended: false },
+            { label: "1 GB", bytes: 1024 * 1024 * 1024, isRecommended: false },
+            { label: "2 GB", bytes: 2 * 1024 * 1024 * 1024, isRecommended: false },
+            { label: "3 GB", bytes: 3 * 1024 * 1024 * 1024, isRecommended: true },
+            { label: "5 GB", bytes: 5 * 1024 * 1024 * 1024, isRecommended: false },
+            { label: "10 GB", bytes: 10 * 1024 * 1024 * 1024, isRecommended: false },
+            { label: t("settings.storage.no_limit"), bytes: 0, isRecommended: false },
           ];
           const activeIdx = Math.max(0, steps.findIndex((s) => s.bytes === cacheLimit));
           const pct = (activeIdx / (steps.length - 1)) * 100;
 
           return (
-            <div className="flex flex-col gap-2 pt-2 pb-1 px-4">
+            <div className="flex flex-col gap-2 pt-2 pb-1 px-6">
               <div className="relative w-full h-[18px] flex items-center select-none group">
-                <div className="absolute left-0 right-0 h-[2px] rounded-full bg-border-alpha-14" />
+                <div className="absolute left-0 right-0 h-[2px] rounded-full bg-white/15 dark:bg-white/15" />
                 <div
                   className="absolute left-0 h-[2px] rounded-full bg-text-primary transition-all duration-150"
                   style={{ width: `${pct}%` }}
@@ -560,7 +555,7 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
                     <div
                       key={s.bytes}
                       className={`absolute w-[2px] h-[6px] rounded-full -translate-x-1/2 transition-colors pointer-events-none ${
-                        isPassed ? "bg-text-primary opacity-60" : "bg-border-alpha-24"
+                        isPassed ? "bg-text-primary opacity-80" : "bg-white/35 dark:bg-white/35"
                       }`}
                       style={{ left: `${tickPct}%` }}
                     />
@@ -568,7 +563,7 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
                 })}
 
                 <div
-                  className="absolute w-[12px] h-[12px] rounded-full bg-text-primary shadow-[0_1px_3px_rgba(0,0,0,0.35)] -translate-x-1/2 transition-all duration-150 pointer-events-none group-hover:scale-125"
+                  className="absolute w-[12px] h-[12px] rounded-full bg-text-primary shadow-[0_1px_3px_rgba(0,0,0,0.4)] -translate-x-1/2 transition-all duration-150 pointer-events-none group-hover:scale-125"
                   style={{ left: `${pct}%` }}
                 />
 
@@ -588,23 +583,28 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
                 />
               </div>
 
-              <div className="relative w-full h-[16px] select-none text-[10.5px] font-mono text-text-tertiary">
+              <div className="relative w-full h-[28px] select-none text-[11px]">
                 {steps.map((s, i) => {
                   const tickPct = (i / (steps.length - 1)) * 100;
                   const isActive = i === activeIdx;
                   return (
-                    <span
+                    <div
                       key={s.bytes}
                       onClick={() => void handleLimitChange(s.bytes)}
                       style={{ left: `${tickPct}%` }}
-                      className={`absolute -translate-x-1/2 whitespace-nowrap cursor-pointer transition-colors ${
+                      className={`absolute -translate-x-1/2 flex flex-col items-center cursor-pointer transition-colors ${
                         isActive
                           ? "text-text-primary font-[600]"
-                          : "hover:text-text-secondary"
+                          : "text-text-tertiary hover:text-text-secondary font-[500]"
                       }`}
                     >
-                      {s.label}
-                    </span>
+                      <span className="whitespace-nowrap">{s.label}</span>
+                      {s.isRecommended && (
+                        <span className="text-[9.5px] font-[600] text-purple-400 dark:text-purple-400 leading-none mt-0.5 whitespace-nowrap">
+                          {t("settings.storage.recommended")}
+                        </span>
+                      )}
+                    </div>
                   );
                 })}
               </div>
