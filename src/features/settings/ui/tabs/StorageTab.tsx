@@ -327,149 +327,149 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
             transition={{ duration: 0.15 }}
             className="flex flex-col gap-[20px]"
           >
-      <div className="flex flex-col sm:flex-row items-center gap-4 bg-white/[0.035] dark:bg-white/[0.035] p-[12px] sm:p-[14px] rounded-2xl">
-        <div className="flex-1 w-full flex flex-col gap-0.5">
-          {analytics?.categories.map((cat) => {
-            const isSelected = selectedCategories.has(cat.id);
-            const isHovered = hoveredCategoryId === cat.id;
-            const total = analytics.totalBytes || 1;
-            const pct = Math.round((cat.bytes / total) * 100);
-            const pctLabel = cat.bytes === 0 ? "0%" : pct === 0 ? "<1%" : `${pct}%`;
-
-            return (
-              <button
-                key={cat.id}
-                type="button"
-                onClick={() => toggleCategory(cat.id)}
-                onMouseEnter={() => setHoveredCategoryId(cat.id)}
-                onMouseLeave={() => setHoveredCategoryId(null)}
-                className={`w-full flex items-center justify-between px-[10px] py-[9px] rounded-lg transition-all border-0 cursor-pointer text-left ${
-                  isSelected
-                    ? isHovered
-                      ? "bg-white/[0.05] opacity-100"
-                      : "bg-transparent opacity-100"
-                    : isHovered
-                    ? "bg-white/[0.03] opacity-60"
-                    : "bg-transparent opacity-35"
-                }`}
-              >
-                <div className="flex items-center gap-[8px] min-w-0">
-                  <div
-                    className="w-[8px] h-[8px] rounded-full shrink-0 transition-opacity"
-                    style={{ backgroundColor: cat.color }}
-                  />
-
-                  <span className="text-text-primary text-[12.5px] font-[500] truncate">
-                    {t(cat.labelKey)}
-                  </span>
-
-                  <span className="text-[10px] font-[600] px-[5px] py-[0.5px] rounded bg-white/[0.06] text-text-tertiary">
-                    {pctLabel}
-                  </span>
-                </div>
-
-                <span className="text-text-secondary text-[12px] font-[500] shrink-0">
-                  {formatStorageBytes(cat.bytes)}
-                </span>
-              </button>
-            );
-          })}
+      <div className="flex flex-col gap-[14px] bg-white/[0.035] dark:bg-white/[0.035] p-[16px] rounded-2xl">
+        <div>
+          <h5 className="text-text-primary text-[13.5px] font-[600] m-0">
+            {t("settings.storage.usage_title")}
+          </h5>
+          <p className="text-text-tertiary text-[11.5px] m-0 mt-0.5">
+            {t("settings.storage.description")}
+          </p>
         </div>
 
-        <div className="w-[1px] self-stretch bg-white/[0.06] hidden sm:block" />
+        <div className="flex flex-col sm:flex-row items-center gap-4">
+          <div className="flex-1 w-full flex flex-col gap-0.5">
+            {analytics?.categories.map((cat) => {
+              const isSelected = selectedCategories.has(cat.id);
+              const isHovered = hoveredCategoryId === cat.id;
+              const total = analytics.totalBytes || 1;
+              const pct = Math.round((cat.bytes / total) * 100);
+              const pctLabel = cat.bytes === 0 ? "0%" : pct === 0 ? "<1%" : `${pct}%`;
 
-        <div className="flex flex-col items-center justify-center shrink-0 px-2 py-1">
-          <div className="relative w-[126px] h-[126px] flex items-center justify-center">
-            <svg
-              width="126"
-              height="126"
-              viewBox="0 0 200 200"
-              className="overflow-visible"
-            >
-              <circle
-                cx="100"
-                cy="100"
-                r="70"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="24"
-                className="text-white/[0.08]"
-              />
-
-              <AnimatePresence>
-                {donutSlices.map((slice) => {
-                  const isHovered = hoveredCategoryId === slice.id;
-                  const pathData = describeDonutSegment(
-                    100,
-                    100,
-                    isHovered ? 56 : 58,
-                    isHovered ? 85 : 82,
-                    slice.startAngle,
-                    slice.endAngle
-                  );
-
-                  return (
-                    <motion.path
-                      key={slice.id}
-                      d={pathData}
-                      fill={slice.color}
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.95 }}
-                      transition={{ duration: 0.2, ease: "easeOut" }}
-                      className="cursor-pointer hover:opacity-90 origin-center"
-                      onMouseEnter={() => setHoveredCategoryId(slice.id)}
-                      onMouseLeave={() => setHoveredCategoryId(null)}
+              return (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => toggleCategory(cat.id)}
+                  onMouseEnter={() => setHoveredCategoryId(cat.id)}
+                  onMouseLeave={() => setHoveredCategoryId(null)}
+                  className={`w-full flex items-center justify-between px-[10px] py-[9px] rounded-lg transition-all border-0 cursor-pointer text-left ${
+                    isSelected
+                      ? isHovered
+                        ? "bg-white/[0.05] opacity-100"
+                        : "bg-transparent opacity-100"
+                      : isHovered
+                      ? "bg-white/[0.03] opacity-60"
+                      : "bg-transparent opacity-35"
+                  }`}
+                >
+                  <div className="flex items-center gap-[8px] min-w-0">
+                    <div
+                      className="w-[8px] h-[8px] rounded-full shrink-0 transition-opacity"
+                      style={{ backgroundColor: cat.color }}
                     />
-                  );
-                })}
-              </AnimatePresence>
-            </svg>
 
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
-              <div className="relative flex items-center justify-center">
-                <span className="text-[19px] font-[700] text-text-primary tracking-tight leading-none">
-                  {formattedCenter.val}
-                </span>
-                <span className="absolute top-full left-1/2 -translate-x-1/2 mt-0.5 text-[10px] font-[600] text-text-tertiary uppercase leading-none whitespace-nowrap">
-                  {formattedCenter.unit}
-                </span>
+                    <span className="text-text-primary text-[12.5px] font-[500] truncate">
+                      {t(cat.labelKey)}
+                    </span>
+
+                    <span className="text-[10px] font-[600] px-[5px] py-[0.5px] rounded bg-white/[0.06] text-text-tertiary">
+                      {pctLabel}
+                    </span>
+                  </div>
+
+                  <span className="text-text-secondary text-[12px] font-[500] shrink-0">
+                    {formatStorageBytes(cat.bytes)}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="w-[1px] self-stretch bg-white/[0.06] hidden sm:block" />
+
+          <div className="flex items-center justify-center shrink-0 px-2 py-1">
+            <div className="relative w-[126px] h-[126px] flex items-center justify-center">
+              <svg
+                width="126"
+                height="126"
+                viewBox="0 0 200 200"
+                className="overflow-visible"
+              >
+                <circle
+                  cx="100"
+                  cy="100"
+                  r="70"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="24"
+                  className="text-white/[0.08]"
+                />
+
+                <AnimatePresence>
+                  {donutSlices.map((slice) => {
+                    const isHovered = hoveredCategoryId === slice.id;
+                    const pathData = describeDonutSegment(
+                      100,
+                      100,
+                      isHovered ? 56 : 58,
+                      isHovered ? 85 : 82,
+                      slice.startAngle,
+                      slice.endAngle
+                    );
+
+                    return (
+                      <motion.path
+                        key={slice.id}
+                        d={pathData}
+                        fill={slice.color}
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        transition={{ duration: 0.2, ease: "easeOut" }}
+                        className="cursor-pointer hover:opacity-90 origin-center"
+                        onMouseEnter={() => setHoveredCategoryId(slice.id)}
+                        onMouseLeave={() => setHoveredCategoryId(null)}
+                      />
+                    );
+                  })}
+                </AnimatePresence>
+              </svg>
+
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
+                <div className="relative flex items-center justify-center">
+                  <span className="text-[19px] font-[700] text-text-primary tracking-tight leading-none">
+                    {formattedCenter.val}
+                  </span>
+                  <span className="absolute top-full left-1/2 -translate-x-1/2 mt-0.5 text-[10px] font-[600] text-text-tertiary uppercase leading-none whitespace-nowrap">
+                    {formattedCenter.unit}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
-
-          <span className="text-[11.5px] font-[500] text-text-tertiary mt-2 text-center select-none tracking-tight">
-            {t("settings.storage.usage_title")}
-          </span>
         </div>
       </div>
 
       <div className="flex flex-col gap-[14px] bg-white/[0.035] dark:bg-white/[0.035] p-[16px] rounded-2xl">
-        <div className="flex items-center justify-between gap-2">
-          <div>
-            <h5 className="text-text-primary text-[13.5px] font-[600] m-0">
-              {t("settings.storage.audio_cache_limit")}
-            </h5>
-            <p className="text-text-tertiary text-[11.5px] m-0 mt-0.5">
-              {t("settings.storage.audio_cache_limit_desc")}
-            </p>
-          </div>
-          <div className="flex items-center gap-1.5 shrink-0">
-            <span className="text-text-primary text-[13.5px] font-[600]">
-              {cacheLimit === 0 ? t("settings.storage.no_limit") : formatStorageBytes(cacheLimit)}
-            </span>
-          </div>
+        <div>
+          <h5 className="text-text-primary text-[13.5px] font-[600] m-0">
+            {t("settings.storage.audio_cache_limit")}
+          </h5>
+          <p className="text-text-tertiary text-[11.5px] m-0 mt-0.5">
+            {t("settings.storage.audio_cache_limit_desc")}
+          </p>
         </div>
 
         {(() => {
           const steps = [
-            { label: "250 MB", bytes: 250 * 1024 * 1024, isRecommended: false },
-            { label: "1 GB", bytes: 1024 * 1024 * 1024, isRecommended: false },
-            { label: "2 GB", bytes: 2 * 1024 * 1024 * 1024, isRecommended: false },
-            { label: "3 GB", bytes: 3 * 1024 * 1024 * 1024, isRecommended: true },
-            { label: "5 GB", bytes: 5 * 1024 * 1024 * 1024, isRecommended: false },
-            { label: "10 GB", bytes: 10 * 1024 * 1024 * 1024, isRecommended: false },
-            { label: t("settings.storage.no_limit"), bytes: 0, isRecommended: false },
+            { label: "250 MB", bytes: 250 * 1024 * 1024 },
+            { label: "1 GB", bytes: 1024 * 1024 * 1024 },
+            { label: "2 GB", bytes: 2 * 1024 * 1024 * 1024 },
+            { label: "3 GB", bytes: 3 * 1024 * 1024 * 1024 },
+            { label: "5 GB", bytes: 5 * 1024 * 1024 * 1024 },
+            { label: "10 GB", bytes: 10 * 1024 * 1024 * 1024 },
+            { label: t("settings.storage.no_limit"), bytes: 0 },
           ];
           const activeIdx = Math.max(0, steps.findIndex((s) => s.bytes === cacheLimit));
           const pct = (activeIdx / (steps.length - 1)) * 100;
@@ -518,28 +518,23 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
                 />
               </div>
 
-              <div className="relative w-full h-[28px] select-none text-[11px]">
+              <div className="relative w-full h-[16px] select-none text-[11px]">
                 {steps.map((s, i) => {
                   const tickPct = (i / (steps.length - 1)) * 100;
                   const isActive = i === activeIdx;
                   return (
-                    <div
+                    <span
                       key={s.bytes}
                       onClick={() => void handleLimitChange(s.bytes)}
                       style={{ left: `${tickPct}%` }}
-                      className={`absolute -translate-x-1/2 flex flex-col items-center cursor-pointer transition-colors ${
+                      className={`absolute -translate-x-1/2 whitespace-nowrap cursor-pointer transition-colors ${
                         isActive
                           ? "text-text-primary font-[600]"
                           : "text-text-tertiary hover:text-text-secondary font-[500]"
                       }`}
                     >
-                      <span className="whitespace-nowrap">{s.label}</span>
-                      {s.isRecommended && (
-                        <span className="text-[9.5px] font-[600] text-purple-400 dark:text-purple-400 leading-none mt-0.5 whitespace-nowrap">
-                          {t("settings.storage.recommended")}
-                        </span>
-                      )}
-                    </div>
+                      {s.label}
+                    </span>
                   );
                 })}
               </div>
