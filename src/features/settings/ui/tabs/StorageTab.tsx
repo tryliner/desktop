@@ -214,15 +214,12 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
     }
   };
 
-  // formats total size for center display: e.g. "785" and "MB"
   const formattedCenter = useMemo(() => {
-    const total = analytics?.totalBytes ?? 0;
-    if (total <= 0) return { val: "0", unit: "B" };
-    const parts = formatStorageBytes(total).split(" ");
+    if (selectedBytes <= 0) return { val: "0", unit: "B" };
+    const parts = formatStorageBytes(selectedBytes).split(" ");
     return { val: parts[0] || "0", unit: parts[1] || "B" };
-  }, [analytics]);
+  }, [selectedBytes]);
 
-  // slices math for donut chart
   const donutSlices = useMemo((): Array<{
     id: StorageCategoryId;
     color: string;
@@ -234,16 +231,15 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
     labelY: number;
     isSingle: boolean;
   }> => {
-    if (!analytics || analytics.totalBytes <= 0) return [];
-    const total = analytics.totalBytes;
-    const nonEmpty = analytics.categories.filter((c) => c.bytes > 0);
+    if (!analytics || selectedBytes <= 0) return [];
+    const active = analytics.categories.filter((c) => selectedCategories.has(c.id) && c.bytes > 0);
 
-    if (nonEmpty.length === 0) return [];
-    if (nonEmpty.length === 1) {
+    if (active.length === 0) return [];
+    if (active.length === 1) {
       return [
         {
-          id: nonEmpty[0].id,
-          color: nonEmpty[0].color,
+          id: active[0].id,
+          color: active[0].color,
           startAngle: 0,
           endAngle: 359.99,
           percent: 100,
@@ -256,10 +252,10 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
     }
 
     let currentAngle = 0;
-    const gap = 1.8; // degrees gap between segments
+    const gap = 1.8;
 
-    return nonEmpty.map((item) => {
-      const sliceFraction = item.bytes / total;
+    return active.map((item) => {
+      const sliceFraction = item.bytes / selectedBytes;
       const angleSpan = sliceFraction * 360;
       const startAngle = currentAngle + gap / 2;
       const endAngle = currentAngle + angleSpan - gap / 2;
@@ -267,7 +263,6 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
 
       const percent = Math.round(sliceFraction * 100);
 
-      // compute coordinates for percentage label on larger slices
       const midAngle = (startAngle + endAngle) / 2;
       const labelPos = polarToCartesian(100, 100, 70, midAngle);
 
@@ -283,7 +278,7 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
         isSingle: false,
       };
     });
-  }, [analytics]);
+  }, [analytics, selectedBytes, selectedCategories]);
 
   return (
     <div className="flex-1 flex flex-col relative w-full h-full min-h-[460px]">
@@ -351,9 +346,9 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
             transition={{ duration: 0.15 }}
             className="flex flex-col gap-[20px]"
           >
-      <div className="flex flex-col sm:flex-row items-center gap-4 bg-white/[0.035] dark:bg-white/[0.035] p-[16px] rounded-2xl">
-        <div className="flex-1 w-full divide-y divide-white/[0.05]">
-          {analytics?.categories.map((cat) => {
+      <div className="flex flex-col sm:flex-row items-center gap-4 bg-white/[0.035] dark:bg-white/[0.035] p-[12px] sm:p-[14px] rounded-2xl">
+        <div className="flex-1 w-full flex flex-col">
+          {analytics?.categories.map((cat, idx) => {
             const isSelected = selectedCategories.has(cat.id);
             const isHovered = hoveredCategoryId === cat.id;
             const total = analytics.totalBytes || 1;
@@ -361,58 +356,54 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
             const pctLabel = cat.bytes === 0 ? "0%" : pct === 0 ? "<1%" : `${pct}%`;
 
             return (
-              <button
-                type="button"
-                key={cat.id}
-                onClick={() => toggleCategory(cat.id)}
-                onMouseEnter={() => setHoveredCategoryId(cat.id)}
-                onMouseLeave={() => setHoveredCategoryId(null)}
-                className={`w-full flex items-center justify-between px-[12px] py-[10px] transition-colors border-0 cursor-pointer text-left first:rounded-t-xl last:rounded-b-xl ${
-                  isHovered
-                    ? "bg-white/[0.05]"
-                    : "bg-transparent hover:bg-white/[0.02]"
-                }`}
-              >
-                <div className="flex items-center gap-[12px] min-w-0">
-                  <div
-                    className={`w-[18px] h-[18px] rounded-full flex items-center justify-center transition-colors border ${
-                      isSelected
-                        ? "bg-white border-white text-black"
-                        : "border-border-alpha-24 bg-transparent"
-                    }`}
-                  >
-                    {isSelected && <CheckLine size={13} />}
+              <div key={cat.id} className="flex flex-col">
+                {idx > 0 && <div className="h-[1px] bg-white/[0.06] dark:bg-white/[0.06] w-full" />}
+                <button
+                  type="button"
+                  onClick={() => toggleCategory(cat.id)}
+                  onMouseEnter={() => setHoveredCategoryId(cat.id)}
+                  onMouseLeave={() => setHoveredCategoryId(null)}
+                  className={`w-full flex items-center justify-between px-[10px] py-[6px] rounded-lg transition-all border-0 cursor-pointer text-left ${
+                    isSelected
+                      ? isHovered
+                        ? "bg-white/[0.05] opacity-100"
+                        : "bg-transparent opacity-100"
+                      : isHovered
+                      ? "bg-white/[0.03] opacity-60"
+                      : "bg-transparent opacity-35"
+                  }`}
+                >
+                  <div className="flex items-center gap-[8px] min-w-0">
+                    <div
+                      className="w-[8px] h-[8px] rounded-full shrink-0 transition-opacity"
+                      style={{ backgroundColor: cat.color }}
+                    />
+
+                    <span className="text-text-primary text-[12.5px] font-[500] truncate">
+                      {t(cat.labelKey)}
+                    </span>
+
+                    <span className="text-[10px] font-[600] px-[5px] py-[0.5px] rounded bg-white/[0.06] text-text-tertiary">
+                      {pctLabel}
+                    </span>
                   </div>
 
-                  <div
-                    className="w-[9px] h-[9px] rounded-full shrink-0"
-                    style={{ backgroundColor: cat.color }}
-                  />
-
-                  <span className="text-text-primary text-[13.5px] font-[500] truncate">
-                    {t(cat.labelKey)}
+                  <span className="text-text-secondary text-[12px] font-[500] shrink-0">
+                    {formatStorageBytes(cat.bytes)}
                   </span>
-
-                  <span className="text-[11px] font-[600] px-[6px] py-[1px] rounded bg-white/[0.06] text-text-tertiary">
-                    {pctLabel}
-                  </span>
-                </div>
-
-                <span className="text-text-secondary text-[13px] font-[500] shrink-0">
-                  {formatStorageBytes(cat.bytes)}
-                </span>
-              </button>
+                </button>
+              </div>
             );
           })}
         </div>
 
-        <div className="w-[1px] self-stretch bg-white/[0.05] hidden sm:block" />
+        <div className="w-[1px] self-stretch bg-white/[0.06] hidden sm:block" />
 
-        <div className="flex flex-col items-center justify-center shrink-0 px-2 py-1">
-          <div className="relative w-[150px] h-[150px] flex items-center justify-center">
+        <div className="flex items-center justify-center shrink-0 px-2">
+          <div className="relative w-[126px] h-[126px] flex items-center justify-center">
             <svg
-              width="150"
-              height="150"
+              width="126"
+              height="126"
               viewBox="0 0 200 200"
               className="overflow-visible"
             >
@@ -482,23 +473,16 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
               })}
             </svg>
 
-            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none select-none">
-              <span className="text-[24px] font-[700] text-text-primary tracking-tight leading-none">
-                {formattedCenter.val}
-              </span>
-              <span className="text-[11px] font-[600] text-text-tertiary tracking-wider uppercase mt-1">
-                {formattedCenter.unit}
-              </span>
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
+              <div className="flex items-baseline gap-1">
+                <span className="text-[17px] font-[700] text-text-primary tracking-tight leading-none">
+                  {formattedCenter.val}
+                </span>
+                <span className="text-[10px] font-[600] text-text-tertiary uppercase leading-none">
+                  {formattedCenter.unit}
+                </span>
+              </div>
             </div>
-          </div>
-
-          <div className="text-center mt-2">
-            <h4 className="text-text-primary text-[13px] font-[600] m-0">
-              {t("settings.storage.usage_title")}
-            </h4>
-            <p className="text-text-tertiary text-[11px] m-0 mt-0.5 leading-snug">
-              {formatStorageBytes(analytics?.totalBytes ?? 0)}
-            </p>
           </div>
         </div>
       </div>
