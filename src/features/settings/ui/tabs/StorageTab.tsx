@@ -37,8 +37,8 @@ function describeDonutSegment(
   startAngle: number,
   endAngle: number,
 ) {
-  const delta = endAngle - startAngle;
-  const safeEndAngle = delta >= 360 ? startAngle + 359.99 : endAngle;
+  const delta = Math.max(0.1, endAngle - startAngle);
+  const safeEndAngle = delta >= 360 ? startAngle + 359.99 : startAngle + delta;
   const startOuter = polarToCartesian(x, y, outerRadius, startAngle);
   const endOuter = polarToCartesian(x, y, outerRadius, safeEndAngle);
   const startInner = polarToCartesian(x, y, innerRadius, safeEndAngle);
@@ -225,11 +225,6 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
     color: string;
     startAngle: number;
     endAngle: number;
-    percent: number;
-    showLabel: boolean;
-    labelX: number;
-    labelY: number;
-    isSingle: boolean;
   }> => {
     if (!analytics || selectedBytes <= 0) return [];
     const active = analytics.categories.filter((c) => selectedCategories.has(c.id) && c.bytes > 0);
@@ -242,40 +237,26 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
           color: active[0].color,
           startAngle: 0,
           endAngle: 359.99,
-          percent: 100,
-          showLabel: false,
-          labelX: 100,
-          labelY: 100,
-          isSingle: true,
         },
       ];
     }
 
+    const baseGap = 2;
     let currentAngle = 0;
-    const gap = 1.8;
 
     return active.map((item) => {
       const sliceFraction = item.bytes / selectedBytes;
-      const angleSpan = sliceFraction * 360;
-      const startAngle = currentAngle + gap / 2;
-      const endAngle = currentAngle + angleSpan - gap / 2;
-      currentAngle += angleSpan;
-
-      const percent = Math.round(sliceFraction * 100);
-
-      const midAngle = (startAngle + endAngle) / 2;
-      const labelPos = polarToCartesian(100, 100, 70, midAngle);
+      const rawSpan = sliceFraction * 360;
+      const sliceGap = Math.min(baseGap, rawSpan * 0.35);
+      const startAngle = currentAngle + sliceGap / 2;
+      const endAngle = Math.max(startAngle + 0.8, currentAngle + rawSpan - sliceGap / 2);
+      currentAngle += rawSpan;
 
       return {
         id: item.id,
         color: item.color,
         startAngle,
         endAngle,
-        percent,
-        showLabel: percent >= 12,
-        labelX: labelPos.x,
-        labelY: labelPos.y,
-        isSingle: false,
       };
     });
   }, [analytics, selectedBytes, selectedCategories]);
@@ -347,8 +328,8 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
             className="flex flex-col gap-[20px]"
           >
       <div className="flex flex-col sm:flex-row items-center gap-4 bg-white/[0.035] dark:bg-white/[0.035] p-[12px] sm:p-[14px] rounded-2xl">
-        <div className="flex-1 w-full flex flex-col">
-          {analytics?.categories.map((cat, idx) => {
+        <div className="flex-1 w-full flex flex-col gap-0.5">
+          {analytics?.categories.map((cat) => {
             const isSelected = selectedCategories.has(cat.id);
             const isHovered = hoveredCategoryId === cat.id;
             const total = analytics.totalBytes || 1;
@@ -356,50 +337,48 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
             const pctLabel = cat.bytes === 0 ? "0%" : pct === 0 ? "<1%" : `${pct}%`;
 
             return (
-              <div key={cat.id} className="flex flex-col">
-                {idx > 0 && <div className="h-[1px] bg-white/[0.06] dark:bg-white/[0.06] w-full" />}
-                <button
-                  type="button"
-                  onClick={() => toggleCategory(cat.id)}
-                  onMouseEnter={() => setHoveredCategoryId(cat.id)}
-                  onMouseLeave={() => setHoveredCategoryId(null)}
-                  className={`w-full flex items-center justify-between px-[10px] py-[6px] rounded-lg transition-all border-0 cursor-pointer text-left ${
-                    isSelected
-                      ? isHovered
-                        ? "bg-white/[0.05] opacity-100"
-                        : "bg-transparent opacity-100"
-                      : isHovered
-                      ? "bg-white/[0.03] opacity-60"
-                      : "bg-transparent opacity-35"
-                  }`}
-                >
-                  <div className="flex items-center gap-[8px] min-w-0">
-                    <div
-                      className="w-[8px] h-[8px] rounded-full shrink-0 transition-opacity"
-                      style={{ backgroundColor: cat.color }}
-                    />
+              <button
+                key={cat.id}
+                type="button"
+                onClick={() => toggleCategory(cat.id)}
+                onMouseEnter={() => setHoveredCategoryId(cat.id)}
+                onMouseLeave={() => setHoveredCategoryId(null)}
+                className={`w-full flex items-center justify-between px-[10px] py-[9px] rounded-lg transition-all border-0 cursor-pointer text-left ${
+                  isSelected
+                    ? isHovered
+                      ? "bg-white/[0.05] opacity-100"
+                      : "bg-transparent opacity-100"
+                    : isHovered
+                    ? "bg-white/[0.03] opacity-60"
+                    : "bg-transparent opacity-35"
+                }`}
+              >
+                <div className="flex items-center gap-[8px] min-w-0">
+                  <div
+                    className="w-[8px] h-[8px] rounded-full shrink-0 transition-opacity"
+                    style={{ backgroundColor: cat.color }}
+                  />
 
-                    <span className="text-text-primary text-[12.5px] font-[500] truncate">
-                      {t(cat.labelKey)}
-                    </span>
-
-                    <span className="text-[10px] font-[600] px-[5px] py-[0.5px] rounded bg-white/[0.06] text-text-tertiary">
-                      {pctLabel}
-                    </span>
-                  </div>
-
-                  <span className="text-text-secondary text-[12px] font-[500] shrink-0">
-                    {formatStorageBytes(cat.bytes)}
+                  <span className="text-text-primary text-[12.5px] font-[500] truncate">
+                    {t(cat.labelKey)}
                   </span>
-                </button>
-              </div>
+
+                  <span className="text-[10px] font-[600] px-[5px] py-[0.5px] rounded bg-white/[0.06] text-text-tertiary">
+                    {pctLabel}
+                  </span>
+                </div>
+
+                <span className="text-text-secondary text-[12px] font-[500] shrink-0">
+                  {formatStorageBytes(cat.bytes)}
+                </span>
+              </button>
             );
           })}
         </div>
 
         <div className="w-[1px] self-stretch bg-white/[0.06] hidden sm:block" />
 
-        <div className="flex items-center justify-center shrink-0 px-2">
+        <div className="flex flex-col items-center justify-center shrink-0 px-2 py-1">
           <div className="relative w-[126px] h-[126px] flex items-center justify-center">
             <svg
               width="126"
@@ -417,60 +396,34 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
                 className="text-white/[0.08]"
               />
 
-              {donutSlices.map((slice) => {
-                const isHovered = hoveredCategoryId === slice.id;
-                if (slice.isSingle) {
+              <AnimatePresence>
+                {donutSlices.map((slice) => {
+                  const isHovered = hoveredCategoryId === slice.id;
+                  const pathData = describeDonutSegment(
+                    100,
+                    100,
+                    isHovered ? 56 : 58,
+                    isHovered ? 85 : 82,
+                    slice.startAngle,
+                    slice.endAngle
+                  );
+
                   return (
-                    <circle
+                    <motion.path
                       key={slice.id}
-                      cx="100"
-                      cy="100"
-                      r="70"
-                      fill="none"
-                      stroke={slice.color}
-                      strokeWidth={isHovered ? 27 : 24}
-                      className="transition-all duration-200 cursor-pointer"
+                      d={pathData}
+                      fill={slice.color}
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      transition={{ duration: 0.2, ease: "easeOut" }}
+                      className="cursor-pointer hover:opacity-90 origin-center"
                       onMouseEnter={() => setHoveredCategoryId(slice.id)}
                       onMouseLeave={() => setHoveredCategoryId(null)}
                     />
                   );
-                }
-
-                const pathData = describeDonutSegment(
-                  100,
-                  100,
-                  isHovered ? 56 : 58,
-                  isHovered ? 85 : 82,
-                  slice.startAngle,
-                  slice.endAngle
-                );
-
-                return (
-                  <g key={slice.id}>
-                    <path
-                      d={pathData}
-                      fill={slice.color}
-                      className="transition-all duration-200 cursor-pointer hover:opacity-90"
-                      onMouseEnter={() => setHoveredCategoryId(slice.id)}
-                      onMouseLeave={() => setHoveredCategoryId(null)}
-                    />
-                    {slice.showLabel && (
-                      <text
-                        x={slice.labelX}
-                        y={slice.labelY}
-                        fill="#FFFFFF"
-                        fontSize="8.5"
-                        fontWeight="600"
-                        textAnchor="middle"
-                        dominantBaseline="middle"
-                        className="pointer-events-none drop-shadow-sm select-none"
-                      >
-                        {slice.percent}%
-                      </text>
-                    )}
-                  </g>
-                );
-              })}
+                })}
+              </AnimatePresence>
             </svg>
 
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
@@ -484,6 +437,10 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
               </div>
             </div>
           </div>
+
+          <span className="text-[11.5px] font-[500] text-text-tertiary mt-2 text-center select-none tracking-tight">
+            {t("settings.storage.usage_title")}
+          </span>
         </div>
       </div>
 
