@@ -121,12 +121,71 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
   const [clearedSuccess, setClearedSuccess] = useState(false);
   const [hoveredCategoryId, setHoveredCategoryId] = useState<StorageCategoryId | null>(null);
   const [cacheLimit, setCacheLimit] = useState<number>(() => getAudioCacheLimitBytes());
+  const [dragPct, setDragPct] = useState<number | null>(null);
+  const dragPctRef = useRef<number | null>(null);
+  dragPctRef.current = dragPct;
+  const sliderTrackRef = useRef<HTMLDivElement>(null);
+
+  const steps = useMemo(
+    () => [
+      { label: "250 MB", bytes: 250 * 1024 * 1024 },
+      { label: "1 GB", bytes: 1024 * 1024 * 1024 },
+      { label: "2 GB", bytes: 2 * 1024 * 1024 * 1024 },
+      { label: "3 GB", bytes: 3 * 1024 * 1024 * 1024 },
+      { label: "5 GB", bytes: 5 * 1024 * 1024 * 1024 },
+      { label: "10 GB", bytes: 10 * 1024 * 1024 * 1024 },
+      { label: t("settings.storage.no_limit"), bytes: 0 },
+    ],
+    [t],
+  );
+
+  const activeIdx = Math.max(0, steps.findIndex((s) => s.bytes === cacheLimit));
+  const snappedPct = (activeIdx / (steps.length - 1)) * 100;
+  const isDragging = dragPct !== null;
+  const currentPct = isDragging ? dragPct : snappedPct;
 
   const handleLimitChange = async (newLimit: number) => {
     setCacheLimit(newLimit);
     await setAudioCacheLimitBytes(newLimit);
     const updated = await refreshStorageAnalytics();
     setAnalytics(updated);
+  };
+
+  const commitSliderChange = (finalPct: number) => {
+    const closestIdx = Math.round((finalPct / 100) * (steps.length - 1));
+    const clampedIdx = Math.max(0, Math.min(steps.length - 1, closestIdx));
+    setDragPct(null);
+    if (steps[clampedIdx]) {
+      void handleLimitChange(steps[clampedIdx].bytes);
+    }
+  };
+
+  const handleSliderPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return;
+    const track = sliderTrackRef.current;
+    if (!track) return;
+    track.setPointerCapture(e.pointerId);
+    const rect = track.getBoundingClientRect();
+    const rawPct = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
+    setDragPct(rawPct);
+  };
+
+  const handleSliderPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (dragPctRef.current === null) return;
+    const track = sliderTrackRef.current;
+    if (!track) return;
+    const rect = track.getBoundingClientRect();
+    const rawPct = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
+    setDragPct(rawPct);
+  };
+
+  const handleSliderPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (dragPctRef.current === null) return;
+    const track = sliderTrackRef.current;
+    if (track && track.hasPointerCapture(e.pointerId)) {
+      track.releasePointerCapture(e.pointerId);
+    }
+    commitSliderChange(dragPctRef.current);
   };
 
   useEffect(() => {
@@ -136,7 +195,6 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
     };
   }, []);
 
-  // load live metrics if not cached yet
   useEffect(() => {
     if (!analytics) {
       setLoading(true);
@@ -468,93 +526,87 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
       <div className="flex flex-col gap-[14px] bg-white/[0.035] dark:bg-white/[0.035] p-[16px] rounded-2xl">
         <div>
           <h5 className="text-text-primary text-[13.5px] font-[600] m-0">
-            {t("settings.storage.audio_cache_limit")}
+            {t("settings.storage.cache_limit")}
           </h5>
           <p className="text-text-tertiary text-[11.5px] m-0 mt-0.5">
-            {t("settings.storage.audio_cache_limit_desc")}
+            {t("settings.storage.cache_limit_desc")}
           </p>
         </div>
 
-        {(() => {
-          const steps = [
-            { label: "250 MB", bytes: 250 * 1024 * 1024 },
-            { label: "1 GB", bytes: 1024 * 1024 * 1024 },
-            { label: "2 GB", bytes: 2 * 1024 * 1024 * 1024 },
-            { label: "3 GB", bytes: 3 * 1024 * 1024 * 1024 },
-            { label: "5 GB", bytes: 5 * 1024 * 1024 * 1024 },
-            { label: "10 GB", bytes: 10 * 1024 * 1024 * 1024 },
-            { label: t("settings.storage.no_limit"), bytes: 0 },
-          ];
-          const activeIdx = Math.max(0, steps.findIndex((s) => s.bytes === cacheLimit));
-          const pct = (activeIdx / (steps.length - 1)) * 100;
+        <div className="flex flex-col gap-2 pt-2 pb-1 px-6">
+          <div
+            ref={sliderTrackRef}
+            onPointerDown={handleSliderPointerDown}
+            onPointerMove={handleSliderPointerMove}
+            onPointerUp={handleSliderPointerUp}
+            onPointerCancel={handleSliderPointerUp}
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "ArrowLeft" || e.key === "ArrowDown") {
+                e.preventDefault();
+                const nextIdx = Math.max(0, activeIdx - 1);
+                void handleLimitChange(steps[nextIdx].bytes);
+              } else if (e.key === "ArrowRight" || e.key === "ArrowUp") {
+                e.preventDefault();
+                const nextIdx = Math.min(steps.length - 1, activeIdx + 1);
+                void handleLimitChange(steps[nextIdx].bytes);
+              }
+            }}
+            className="relative w-full h-[18px] flex items-center select-none group cursor-pointer outline-none"
+          >
+            <div className="absolute left-0 right-0 h-[2px] rounded-full bg-white/15 dark:bg-white/15 pointer-events-none" />
+            <div
+              className={`absolute left-0 h-[2px] rounded-full bg-text-primary pointer-events-none ${
+                isDragging ? "" : "transition-all duration-150"
+              }`}
+              style={{ width: `${currentPct}%` }}
+            />
 
-          return (
-            <div className="flex flex-col gap-2 pt-2 pb-1 px-6">
-              <div className="relative w-full h-[18px] flex items-center select-none group">
-                <div className="absolute left-0 right-0 h-[2px] rounded-full bg-white/15 dark:bg-white/15" />
+            {steps.map((s, i) => {
+              const tickPct = (i / (steps.length - 1)) * 100;
+              const isPassed = tickPct <= currentPct;
+              return (
                 <div
-                  className="absolute left-0 h-[2px] rounded-full bg-text-primary transition-all duration-150"
-                  style={{ width: `${pct}%` }}
+                  key={s.bytes}
+                  className={`absolute w-[2px] h-[6px] rounded-full -translate-x-1/2 transition-colors pointer-events-none ${
+                    isPassed ? "bg-text-primary opacity-80" : "bg-white/35 dark:bg-white/35"
+                  }`}
+                  style={{ left: `${tickPct}%` }}
                 />
+              );
+            })}
 
-                {steps.map((s, i) => {
-                  const tickPct = (i / (steps.length - 1)) * 100;
-                  const isPassed = i <= activeIdx;
-                  return (
-                    <div
-                      key={s.bytes}
-                      className={`absolute w-[2px] h-[6px] rounded-full -translate-x-1/2 transition-colors pointer-events-none ${
-                        isPassed ? "bg-text-primary opacity-80" : "bg-white/35 dark:bg-white/35"
-                      }`}
-                      style={{ left: `${tickPct}%` }}
-                    />
-                  );
-                })}
+            <div
+              className={`absolute w-[12px] h-[12px] rounded-full bg-text-primary shadow-[0_1px_3px_rgba(0,0,0,0.4)] -translate-x-1/2 pointer-events-none ${
+                isDragging ? "scale-125" : "transition-all duration-150 group-hover:scale-125"
+              }`}
+              style={{ left: `${currentPct}%` }}
+            />
+          </div>
 
-                <div
-                  className="absolute w-[12px] h-[12px] rounded-full bg-text-primary shadow-[0_1px_3px_rgba(0,0,0,0.4)] -translate-x-1/2 transition-all duration-150 pointer-events-none group-hover:scale-125"
-                  style={{ left: `${pct}%` }}
-                />
-
-                <input
-                  type="range"
-                  min={0}
-                  max={steps.length - 1}
-                  step={1}
-                  value={activeIdx}
-                  onChange={(e) => {
-                    const idx = Number(e.target.value);
-                    if (steps[idx]) {
-                      void handleLimitChange(steps[idx].bytes);
-                    }
-                  }}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 m-0 p-0"
-                />
-              </div>
-
-              <div className="relative w-full h-[16px] select-none text-[11px]">
-                {steps.map((s, i) => {
-                  const tickPct = (i / (steps.length - 1)) * 100;
-                  const isActive = i === activeIdx;
-                  return (
-                    <span
-                      key={s.bytes}
-                      onClick={() => void handleLimitChange(s.bytes)}
-                      style={{ left: `${tickPct}%` }}
-                      className={`absolute -translate-x-1/2 whitespace-nowrap cursor-pointer transition-colors ${
-                        isActive
-                          ? "text-text-primary font-[600]"
-                          : "text-text-tertiary hover:text-text-secondary font-[500]"
-                      }`}
-                    >
-                      {s.label}
-                    </span>
-                  );
-                })}
-              </div>
-            </div>
-          );
-        })()}
+          <div className="relative w-full h-[16px] select-none text-[11px]">
+            {steps.map((s, i) => {
+              const tickPct = (i / (steps.length - 1)) * 100;
+              const isActive = isDragging
+                ? Math.round((currentPct / 100) * (steps.length - 1)) === i
+                : i === activeIdx;
+              return (
+                <span
+                  key={s.bytes}
+                  onClick={() => void handleLimitChange(s.bytes)}
+                  style={{ left: `${tickPct}%` }}
+                  className={`absolute -translate-x-1/2 whitespace-nowrap cursor-pointer transition-colors ${
+                    isActive
+                      ? "text-text-primary font-[600]"
+                      : "text-text-tertiary hover:text-text-secondary font-[500]"
+                  }`}
+                >
+                  {s.label}
+                </span>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
       <div className="mt-auto flex items-center gap-[8px] pt-4">
