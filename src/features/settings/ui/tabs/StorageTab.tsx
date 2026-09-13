@@ -325,7 +325,7 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
-            className="flex flex-col gap-[20px]"
+            className="flex flex-col gap-[20px] pt-[8px]"
           >
       <div className="flex flex-col gap-[14px] bg-white/[0.035] dark:bg-white/[0.035] p-[16px] rounded-2xl">
         <div>
@@ -333,7 +333,9 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
             {t("settings.storage.usage_title")}
           </h5>
           <p className="text-text-tertiary text-[11.5px] m-0 mt-0.5">
-            {t("settings.storage.description")}
+            {t("settings.storage.device_usage_raw", {
+              size: formatStorageBytes(analytics?.totalBytes ?? 0),
+            })}
           </p>
         </div>
 
@@ -388,11 +390,11 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
 
           <div className="w-[1px] self-stretch bg-white/[0.06] hidden sm:block" />
 
-          <div className="flex items-center justify-center shrink-0 px-2 py-1">
-            <div className="relative w-[126px] h-[126px] flex items-center justify-center">
+          <div className="flex flex-col items-center justify-center shrink-0 px-6 py-2">
+            <div className="relative w-[136px] h-[136px] flex items-center justify-center">
               <svg
-                width="126"
-                height="126"
+                width="136"
+                height="136"
                 viewBox="0 0 200 200"
                 className="overflow-visible"
               >
@@ -447,6 +449,10 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
                 </div>
               </div>
             </div>
+
+            <span className="text-[11.5px] font-[500] text-text-tertiary mt-2.5 text-center select-none tracking-tight">
+              {t("settings.storage.usage_title")}
+            </span>
           </div>
         </div>
       </div>
