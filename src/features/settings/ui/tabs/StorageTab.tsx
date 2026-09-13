@@ -351,165 +351,159 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
             transition={{ duration: 0.15 }}
             className="flex flex-col gap-[20px]"
           >
-      {/* ── Pie/Donut Chart & Storage Usage Header ── */}
-      <div className="flex flex-col items-center justify-center pt-2 pb-1">
-        <div className="relative w-[200px] h-[200px] flex items-center justify-center">
-          <svg
-            width="200"
-            height="200"
-            viewBox="0 0 200 200"
-            className="overflow-visible"
-          >
-            {/* background track ring */}
-            <circle
-              cx="100"
-              cy="100"
-              r="70"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="24"
-              className="text-border-alpha-14"
-            />
+      <div className="flex flex-col sm:flex-row items-center gap-4 bg-white/[0.035] dark:bg-white/[0.035] p-[16px] rounded-2xl">
+        <div className="flex-1 w-full divide-y divide-white/[0.05]">
+          {analytics?.categories.map((cat) => {
+            const isSelected = selectedCategories.has(cat.id);
+            const isHovered = hoveredCategoryId === cat.id;
+            const total = analytics.totalBytes || 1;
+            const pct = Math.round((cat.bytes / total) * 100);
+            const pctLabel = cat.bytes === 0 ? "0%" : pct === 0 ? "<1%" : `${pct}%`;
 
-            {/* donut slices */}
-            {donutSlices.map((slice) => {
-              const isHovered = hoveredCategoryId === slice.id;
-              if (slice.isSingle) {
-                return (
-                  <circle
-                    key={slice.id}
-                    cx="100"
-                    cy="100"
-                    r="70"
-                    fill="none"
-                    stroke={slice.color}
-                    strokeWidth={isHovered ? 27 : 24}
-                    className="transition-all duration-200 cursor-pointer"
-                    onMouseEnter={() => setHoveredCategoryId(slice.id)}
-                    onMouseLeave={() => setHoveredCategoryId(null)}
+            return (
+              <button
+                type="button"
+                key={cat.id}
+                onClick={() => toggleCategory(cat.id)}
+                onMouseEnter={() => setHoveredCategoryId(cat.id)}
+                onMouseLeave={() => setHoveredCategoryId(null)}
+                className={`w-full flex items-center justify-between px-[12px] py-[10px] transition-colors border-0 cursor-pointer text-left first:rounded-t-xl last:rounded-b-xl ${
+                  isHovered
+                    ? "bg-white/[0.05]"
+                    : "bg-transparent hover:bg-white/[0.02]"
+                }`}
+              >
+                <div className="flex items-center gap-[12px] min-w-0">
+                  <div
+                    className={`w-[18px] h-[18px] rounded-full flex items-center justify-center transition-colors border ${
+                      isSelected
+                        ? "bg-white border-white text-black"
+                        : "border-border-alpha-24 bg-transparent"
+                    }`}
+                  >
+                    {isSelected && <CheckLine size={13} />}
+                  </div>
+
+                  <div
+                    className="w-[9px] h-[9px] rounded-full shrink-0"
+                    style={{ backgroundColor: cat.color }}
                   />
-                );
-              }
 
-              const pathData = describeDonutSegment(
-                100,
-                100,
-                isHovered ? 56 : 58,
-                isHovered ? 85 : 82,
-                slice.startAngle,
-                slice.endAngle
-              );
+                  <span className="text-text-primary text-[13.5px] font-[500] truncate">
+                    {t(cat.labelKey)}
+                  </span>
 
-              return (
-                <g key={slice.id}>
-                  <path
-                    d={pathData}
-                    fill={slice.color}
-                    className="transition-all duration-200 cursor-pointer hover:opacity-90"
-                    onMouseEnter={() => setHoveredCategoryId(slice.id)}
-                    onMouseLeave={() => setHoveredCategoryId(null)}
-                  />
-                  {slice.showLabel && (
-                    <text
-                      x={slice.labelX}
-                      y={slice.labelY}
-                      fill="#FFFFFF"
-                      fontSize="8.5"
-                      fontWeight="600"
-                      textAnchor="middle"
-                      dominantBaseline="middle"
-                      className="pointer-events-none drop-shadow-sm select-none"
-                    >
-                      {slice.percent}%
-                    </text>
-                  )}
-                </g>
-              );
-            })}
-          </svg>
-
-          {/* center capacity label */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none select-none">
-            <span className="text-[30px] font-[700] text-text-primary tracking-tight leading-none">
-              {formattedCenter.val}
-            </span>
-            <span className="text-[12px] font-[600] text-text-tertiary tracking-wider uppercase mt-1">
-              {formattedCenter.unit}
-            </span>
-          </div>
-        </div>
-
-        {/* subtitle usage description */}
-        <div className="text-center mt-3">
-          <h4 className="text-text-primary text-[15px] font-[600] m-0">
-            {t("settings.storage.usage_title")}
-          </h4>
-          <p className="text-text-tertiary text-[12.5px] m-0 mt-1 max-w-[360px]">
-            {t("settings.storage.device_usage_raw", {
-              size: formatStorageBytes(analytics?.totalBytes ?? 0),
-            })}
-          </p>
-        </div>
-      </div>
-
-      {/* ── Category Breakdown Checklist ── */}
-      <div className="flex flex-col gap-[4px] bg-border-alpha-10 p-[6px] rounded-xl border border-border-alpha-14">
-        {analytics?.categories.map((cat) => {
-          const isSelected = selectedCategories.has(cat.id);
-          const isHovered = hoveredCategoryId === cat.id;
-          const total = analytics.totalBytes || 1;
-          const pct = Math.round((cat.bytes / total) * 100);
-          const pctLabel = cat.bytes === 0 ? "0%" : pct === 0 ? "<1%" : `${pct}%`;
-
-          return (
-            <button
-              type="button"
-              key={cat.id}
-              onClick={() => toggleCategory(cat.id)}
-              onMouseEnter={() => setHoveredCategoryId(cat.id)}
-              onMouseLeave={() => setHoveredCategoryId(null)}
-              className={`w-full flex items-center justify-between px-[12px] py-[10px] rounded-lg transition-colors border-0 cursor-pointer text-left ${
-                isHovered
-                  ? "bg-border-alpha-14"
-                  : "bg-transparent hover:bg-border-alpha-10"
-              }`}
-            >
-              <div className="flex items-center gap-[12px] min-w-0">
-                {/* checkbox circle */}
-                <div
-                  className={`w-[18px] h-[18px] rounded-full flex items-center justify-center transition-colors border ${
-                    isSelected
-                      ? "bg-white border-white text-black"
-                      : "border-border-alpha-24 bg-transparent"
-                  }`}
-                >
-                  {isSelected && <CheckLine size={13} />}
+                  <span className="text-[11px] font-[600] px-[6px] py-[1px] rounded bg-white/[0.06] text-text-tertiary">
+                    {pctLabel}
+                  </span>
                 </div>
 
-                {/* category color indicator */}
-                <div
-                  className="w-[9px] h-[9px] rounded-full shrink-0"
-                  style={{ backgroundColor: cat.color }}
-                />
-
-                <span className="text-text-primary text-[13.5px] font-[500] truncate">
-                  {t(cat.labelKey)}
+                <span className="text-text-secondary text-[13px] font-[500] shrink-0">
+                  {formatStorageBytes(cat.bytes)}
                 </span>
+              </button>
+            );
+          })}
+        </div>
 
-                <span className="text-[11px] font-[600] px-[6px] py-[1px] rounded bg-border-alpha-14 text-text-tertiary">
-                  {pctLabel}
-                </span>
-              </div>
+        <div className="w-[1px] self-stretch bg-white/[0.05] hidden sm:block" />
 
-              <span className="text-text-secondary text-[13px] font-mono shrink-0">
-                {formatStorageBytes(cat.bytes)}
+        <div className="flex flex-col items-center justify-center shrink-0 px-2 py-1">
+          <div className="relative w-[150px] h-[150px] flex items-center justify-center">
+            <svg
+              width="150"
+              height="150"
+              viewBox="0 0 200 200"
+              className="overflow-visible"
+            >
+              <circle
+                cx="100"
+                cy="100"
+                r="70"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="24"
+                className="text-white/[0.08]"
+              />
+
+              {donutSlices.map((slice) => {
+                const isHovered = hoveredCategoryId === slice.id;
+                if (slice.isSingle) {
+                  return (
+                    <circle
+                      key={slice.id}
+                      cx="100"
+                      cy="100"
+                      r="70"
+                      fill="none"
+                      stroke={slice.color}
+                      strokeWidth={isHovered ? 27 : 24}
+                      className="transition-all duration-200 cursor-pointer"
+                      onMouseEnter={() => setHoveredCategoryId(slice.id)}
+                      onMouseLeave={() => setHoveredCategoryId(null)}
+                    />
+                  );
+                }
+
+                const pathData = describeDonutSegment(
+                  100,
+                  100,
+                  isHovered ? 56 : 58,
+                  isHovered ? 85 : 82,
+                  slice.startAngle,
+                  slice.endAngle
+                );
+
+                return (
+                  <g key={slice.id}>
+                    <path
+                      d={pathData}
+                      fill={slice.color}
+                      className="transition-all duration-200 cursor-pointer hover:opacity-90"
+                      onMouseEnter={() => setHoveredCategoryId(slice.id)}
+                      onMouseLeave={() => setHoveredCategoryId(null)}
+                    />
+                    {slice.showLabel && (
+                      <text
+                        x={slice.labelX}
+                        y={slice.labelY}
+                        fill="#FFFFFF"
+                        fontSize="8.5"
+                        fontWeight="600"
+                        textAnchor="middle"
+                        dominantBaseline="middle"
+                        className="pointer-events-none drop-shadow-sm select-none"
+                      >
+                        {slice.percent}%
+                      </text>
+                    )}
+                  </g>
+                );
+              })}
+            </svg>
+
+            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none select-none">
+              <span className="text-[24px] font-[700] text-text-primary tracking-tight leading-none">
+                {formattedCenter.val}
               </span>
-            </button>
-          );
-        })}
+              <span className="text-[11px] font-[600] text-text-tertiary tracking-wider uppercase mt-1">
+                {formattedCenter.unit}
+              </span>
+            </div>
+          </div>
+
+          <div className="text-center mt-2">
+            <h4 className="text-text-primary text-[13px] font-[600] m-0">
+              {t("settings.storage.usage_title")}
+            </h4>
+            <p className="text-text-tertiary text-[11px] m-0 mt-0.5 leading-snug">
+              {formatStorageBytes(analytics?.totalBytes ?? 0)}
+            </p>
+          </div>
+        </div>
       </div>
 
-      <div className="flex flex-col gap-[14px] bg-border-alpha-10 p-[16px] rounded-xl border border-border-alpha-14">
+      <div className="flex flex-col gap-[14px] bg-white/[0.035] dark:bg-white/[0.035] p-[16px] rounded-2xl">
         <div className="flex items-center justify-between gap-2">
           <div>
             <h5 className="text-text-primary text-[13.5px] font-[600] m-0">
