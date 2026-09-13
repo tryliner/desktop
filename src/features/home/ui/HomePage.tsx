@@ -219,7 +219,7 @@ export default function HomePage() {
       <div className="relative z-1 grid grid-cols-1 items-start w-full">
         {/* Real Content Layer */}
         {isReady && (
-          <div className="col-start-1 row-start-1 w-full pb-[40px]">
+          <div className="col-start-1 row-start-1 w-full pb-[16px]">
             {/* Hero Greeting Section */}
           <div className={`relative px-8 pt-4 ${hasEnoughQuickData ? "pb-2" : "pb-0"}`}>
             <div
@@ -318,7 +318,7 @@ export default function HomePage() {
               title={t("home.whatEveryonesOn")}
               icon={<FireFill className="w-5 h-5 text-amber-500" />}
               items={popularTracksOnly}
-              headingMarginTop="mt-[28px]"
+              headingMarginTop="mt-[18px]"
             />
           )}
 
@@ -328,7 +328,7 @@ export default function HomePage() {
               title={t("home.jumpBackIn")}
               icon={<TimeFill className="w-5 h-5 text-sky-400" />}
               items={recentlyPlayed}
-              headingMarginTop="mt-[32px]"
+              headingMarginTop="mt-[22px]"
             />
           )}
 
@@ -338,8 +338,7 @@ export default function HomePage() {
               title={t("home.mostListened")}
               icon={<TrophyFill className="w-5 h-5 text-yellow-500" />}
               items={popularTracksAllTime}
-              showRanks={true}
-              headingMarginTop="mt-[32px]"
+              headingMarginTop="mt-[22px]"
             />
           )}
 
@@ -349,7 +348,7 @@ export default function HomePage() {
               title={t("home.popularAlbums")}
               icon={<AlbumFill className="w-5 h-5 text-emerald-400" />}
               items={popularAlbums}
-              headingMarginTop="mt-[32px]"
+              headingMarginTop="mt-[22px]"
             />
           )}
 
@@ -359,7 +358,7 @@ export default function HomePage() {
               title={t("home.popularPlaylists")}
               icon={<PlaylistFill className="w-5 h-5 text-rose-400" />}
               items={popularPlaylists}
-              headingMarginTop="mt-[32px]"
+              headingMarginTop="mt-[22px]"
             />
           )}
         </div>

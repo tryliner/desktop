@@ -491,7 +491,7 @@ function PopularTracksSection({
   badge,
   items,
   showRanks = false,
-  headingMarginTop = "mt-[32px]",
+  headingMarginTop = "mt-[22px]",
   rowClassName = "",
 }: PopularTracksSectionProps) {
   return (
@@ -517,7 +517,7 @@ function PopularTracksSection({
       </div>
 
       <ScrollableRow
-        className={`flex gap-[28px] pl-8 pr-8 mt-[16px] overflow-x-auto pb-[20px] ${rowClassName}`}
+        className={`flex gap-[28px] pl-8 pr-8 mt-[12px] overflow-x-auto pb-[2px] ${rowClassName}`}
       >
         {items.map((item, index) => (
           <PopularItemCard

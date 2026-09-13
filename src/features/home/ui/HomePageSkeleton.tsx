@@ -9,7 +9,7 @@ const TITLE_WIDTHS = ["w-[78%]", "w-[88%]", "w-[68%]", "w-[82%]", "w-[72%]", "w-
 const ARTIST_WIDTHS = ["w-[52%]", "w-[44%]", "w-[60%]", "w-[48%]", "w-[56%]", "w-[40%]", "w-[50%]"];
 
 function SectionSkeleton({
-  headingMarginTop = "mt-[32px]",
+  headingMarginTop = "mt-[22px]",
   titleWidth = "w-[180px]",
   cardsCount = 7,
 }: {
@@ -28,7 +28,7 @@ function SectionSkeleton({
       </div>
 
       {/* Cards Row */}
-      <div className="flex gap-[28px] pl-8 pr-8 mt-[16px] overflow-hidden pb-[20px]">
+      <div className="flex gap-[28px] pl-8 pr-8 mt-[12px] overflow-hidden pb-[2px]">
         {Array.from({ length: cardsCount }).map((_, i) => (
           <div key={i} className="flex-shrink-0 w-[175px]">
             {/* Thumbnail */}
@@ -57,7 +57,7 @@ function HomePageSkeletonComponent({
   showQuickGrid = false,
 }: HomePageSkeletonProps) {
   return (
-    <div className="relative min-h-full w-full bg-bg-primary pb-[40px] select-none overflow-hidden">
+    <div className="relative min-h-full w-full bg-bg-primary pb-[16px] select-none overflow-hidden">
       {/* Ambient time-of-day gradient glow matching actual page */}
       <div
         aria-hidden="true"
@@ -118,21 +118,21 @@ function HomePageSkeletonComponent({
 
       {/* Section 1: Listening Right Now */}
       <SectionSkeleton
-        headingMarginTop={showQuickGrid ? "mt-[28px]" : "mt-[20px]"}
+        headingMarginTop={showQuickGrid ? "mt-[18px]" : "mt-[14px]"}
         titleWidth="w-[190px]"
         cardsCount={7}
       />
 
       {/* Section 2: Jump Back In */}
       <SectionSkeleton
-        headingMarginTop="mt-[32px]"
+        headingMarginTop="mt-[22px]"
         titleWidth="w-[170px]"
         cardsCount={7}
       />
 
       {/* Section 3: Most Listened of All Time */}
       <SectionSkeleton
-        headingMarginTop="mt-[32px]"
+        headingMarginTop="mt-[22px]"
         titleWidth="w-[210px]"
         cardsCount={7}
       />
