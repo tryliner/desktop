@@ -20,7 +20,6 @@ import {
   type StorageCategoryId,
 } from "@/shared/utils/cacheManager";
 
-// helpers for polar svg donut math
 function polarToCartesian(centerX: number, centerY: number, radius: number, angleInDegrees: number) {
   const angleInRadians = ((angleInDegrees - 90) * Math.PI) / 180.0;
   return {
@@ -325,7 +324,7 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
-            className="flex flex-col gap-[20px] pt-[8px]"
+            className="flex-1 flex flex-col gap-[20px] pt-[8px]"
           >
       <div className="bg-white/[0.035] dark:bg-white/[0.035] px-[16px] py-[10px] rounded-2xl">
         <div className="flex flex-col sm:flex-row items-center gap-4">
@@ -344,17 +343,37 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
                   onClick={() => toggleCategory(cat.id)}
                   onMouseEnter={() => setHoveredCategoryId(cat.id)}
                   onMouseLeave={() => setHoveredCategoryId(null)}
-                  className={`w-full flex items-center justify-between px-[10px] py-[9px] rounded-lg transition-all border-0 cursor-pointer text-left ${
+                  className={`group w-full flex items-center justify-between px-[10px] py-[8px] rounded-lg transition-all border-0 cursor-pointer text-left ${
                     isSelected
                       ? isHovered
                         ? "bg-white/[0.05] opacity-100"
                         : "bg-transparent opacity-100"
                       : isHovered
-                      ? "bg-white/[0.03] opacity-60"
-                      : "bg-transparent opacity-35"
+                      ? "bg-white/[0.03] opacity-65"
+                      : "bg-transparent opacity-40"
                   }`}
                 >
-                  <div className="flex items-center gap-[8px] min-w-0">
+                  <div className="flex items-center gap-[9px] min-w-0">
+                    <div
+                      className={`w-[15px] h-[15px] rounded-[4px] flex items-center justify-center transition-all shrink-0 border ${
+                        isSelected
+                          ? "bg-white border-white text-black shadow-sm"
+                          : "border-white/20 bg-white/[0.03] group-hover:border-white/40"
+                      }`}
+                    >
+                      {isSelected && (
+                        <motion.div
+                          initial={{ scale: 0.5, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          exit={{ scale: 0.5, opacity: 0 }}
+                          transition={{ duration: 0.12 }}
+                          className="flex items-center justify-center"
+                        >
+                          <CheckLine size={11} className="stroke-[1.5]" />
+                        </motion.div>
+                      )}
+                    </div>
+
                     <div
                       className="w-[8px] h-[8px] rounded-full shrink-0 transition-opacity"
                       style={{ backgroundColor: cat.color }}
@@ -376,8 +395,6 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
               );
             })}
           </div>
-
-          <div className="w-[1px] self-stretch bg-white/[0.06] hidden sm:block" />
 
           <div className="flex flex-col items-center justify-center shrink-0 px-6">
             <div className="flex flex-col items-center">
@@ -540,7 +557,7 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
         })()}
       </div>
 
-      <div className="flex flex-col gap-[8px]">
+      <div className="mt-auto flex flex-col gap-[8px] pt-4">
         <div className="flex items-center gap-[8px]">
           <Button
             variant="primary"
