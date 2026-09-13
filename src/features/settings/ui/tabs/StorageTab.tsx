@@ -545,11 +545,11 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
           const pct = (activeIdx / (steps.length - 1)) * 100;
 
           return (
-            <div className="flex flex-col gap-2 pt-1 pb-0.5">
-              <div className="relative w-full h-[24px] flex items-center select-none">
-                <div className="absolute left-0 right-0 h-[6px] rounded-full bg-border-alpha-14" />
+            <div className="flex flex-col gap-3 pt-2 pb-1">
+              <div className="relative w-full h-[18px] flex items-center select-none group">
+                <div className="absolute left-0 right-0 h-[2px] rounded-full bg-border-alpha-14" />
                 <div
-                  className="absolute left-0 h-[6px] rounded-full bg-white transition-all duration-150"
+                  className="absolute left-0 h-[2px] rounded-full bg-text-primary transition-all duration-150"
                   style={{ width: `${pct}%` }}
                 />
 
@@ -559,8 +559,8 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
                   return (
                     <div
                       key={s.label}
-                      className={`absolute w-[8px] h-[8px] rounded-full -translate-x-1/2 transition-colors pointer-events-none ${
-                        isPassed ? "bg-white" : "bg-border-alpha-24"
+                      className={`absolute w-[2px] h-[6px] rounded-full -translate-x-1/2 transition-colors pointer-events-none ${
+                        isPassed ? "bg-text-primary opacity-60" : "bg-border-alpha-24"
                       }`}
                       style={{ left: `${tickPct}%` }}
                     />
@@ -568,11 +568,9 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
                 })}
 
                 <div
-                  className="absolute w-[18px] h-[18px] rounded-full bg-white shadow-md -translate-x-1/2 transition-all duration-150 pointer-events-none border border-black/15 flex items-center justify-center"
+                  className="absolute w-[12px] h-[12px] rounded-full bg-text-primary shadow-[0_1px_3px_rgba(0,0,0,0.35)] -translate-x-1/2 transition-all duration-150 pointer-events-none group-hover:scale-125"
                   style={{ left: `${pct}%` }}
-                >
-                  <div className="w-[6px] h-[6px] rounded-full bg-black/80" />
-                </div>
+                />
 
                 <input
                   type="range"
@@ -590,7 +588,7 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
                 />
               </div>
 
-              <div className="flex justify-between items-center text-[11px] font-mono text-text-tertiary select-none px-0.5">
+              <div className="flex justify-between items-center text-[10.5px] font-mono text-text-tertiary select-none">
                 {steps.map((s, i) => {
                   const isActive = i === activeIdx;
                   return (
