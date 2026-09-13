@@ -1,0 +1,86 @@
+[0] [vite] connecting...
+[0] [vite] connected.
+[1] Download the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[1] boot  volume 0.007624271267102909 background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] boot  player runtime initialized background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] lyrics  fetching for "хостел 6" background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[2] Electron Security Warning (Insecure Content-Security-Policy) font-weight: bold; This renderer process has either no Content Security
+  Policy set or a policy with "unsafe-eval" enabled. This exposes users of
+  this app to unnecessary security risks.
+
+For more information and help, consult
+https://electronjs.org/docs/tutorial/security.
+This warning will not show up
+once the app is packaged.
+[1] lyrics  candidate LRCLIB q=87 sync=line_level background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] lyrics  skip worse candidate Genius q=64 background:#eab308;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] lyrics  skip worse candidate Cadence q=74 background:#eab308;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] lyrics  done, best=LRCLIB q=87 background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] lyrics  fetching for "губы кровят" background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] playback  audio cache hit for "губы кровят" (1395 KB) background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] audio  playing background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] playback  started (cached): губы кровят in 51ms background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] lyrics  candidate Liner Atlas q=90 sync=line_level background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] lyrics  skip worse candidate LRCLIB q=89 background:#eab308;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] lyrics  skip worse candidate Cadence q=74 background:#eab308;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] lyrics  done, best=Liner Atlas q=90 background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] radio  appending 20 tracks from Radio Wave engine (wave=8cacaf13 history=1): ["как я" by lafkrat, "Queen 2" by ivycraft, "тебя теряю" by k0vertessence] background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] lyrics  fetching for "не попался" background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] lyrics  candidate Polaris Mono q=93 sync=line_level background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] lyrics  skip worse candidate LRCLIB q=93 background:#eab308;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] lyrics  candidate Wordly q=100 sync=word_level background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] lyrics  done, best=Wordly q=100 background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] preload  preloaded audio: "speed" (1428 KB) background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] playback  stream downloaded & cached: opus 154096 bps (1700 KB) background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] audio  playing background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] playback  started: не попался in 1631ms background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] audio  pause requested (fading out) background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] audio  paused background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] audio  resume requested (fading in) background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] audio  playing background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] lyrics  cache hit for "speed" (age: 140s) background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] playback  audio cache hit for "speed" (1428 KB) background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] audio  playing background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] playback  started (cached): speed in 52ms background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] preload  preloaded audio: "гуль" (1607 KB) background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] preload  preloaded audio: "гуль" (1607 KB) background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] audio  paused background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] audio  ended — skipping to next background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] playback  audio cache hit for "гуль" (1607 KB) background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] lyrics  fetching for "гуль" background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] audio  playing background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] playback  started (cached): гуль in 83ms background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] lyrics  candidate LRCLIB q=88 sync=line_level background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] lyrics  skip worse candidate Cadence q=74 background:#eab308;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] lyrics  done, best=LRCLIB q=88 background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] preload  preloaded audio: "заново" (1494 KB) background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] audio  paused background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] audio  ended — skipping to next background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] playback  audio cache hit for "заново" (1494 KB) background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] lyrics  fetching for "заново" background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] audio  playing background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] playback  started (cached): заново in 31ms background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] lyrics  candidate LRCLIB q=68 sync=plain background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] lyrics  candidate Cadence q=74 sync=line_level background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] lyrics  done, best=Cadence q=74 background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] preload  preloaded audio: "speed 2" (1453 KB) background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] audio  paused background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] audio  ended — skipping to next background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] playback  audio cache hit for "speed 2" (1453 KB) background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] lyrics  fetching for "speed 2" background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] audio  playing background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] playback  started (cached): speed 2 in 41ms background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] lyrics  candidate Genius q=81 sync=plain background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] lyrics  done, best=Genius q=81 background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] preload  preloaded audio: "ghostbless.mp3" (1302 KB) background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] audio  paused background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] audio  ended — skipping to next background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] playback  audio cache hit for "ghostbless.mp3" (1302 KB) background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] lyrics  fetching for "ghostbless.mp3" background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] audio  playing background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] playback  started (cached): ghostbless.mp3 in 65ms background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] lyrics  candidate Polaris q=68 sync=plain background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] lyrics  skip worse candidate Polaris Mono q=68 background:#eab308;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] lyrics  skip worse candidate Genius q=64 background:#eab308;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] lyrics  done, best=Polaris q=68 background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] preload  preloaded audio: "Глаз императора" (1445 KB) background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;

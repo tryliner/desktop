@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { motion } from "framer-motion";
-import { CloseLine, Search2Line, CloseCircleFill } from "@mingcute/react";
+import { CloseLine, Search2Line, CloseCircleFill, UserEditLine, ExitLine } from "@mingcute/react";
 import {
   Play,
   Palette,
@@ -13,7 +13,7 @@ import {
   Database,
 } from "@solar-icons/react";
 import Dialog from "@/shared/ui/Dialog";
-import { UserAvatar } from "@/shared/ui";
+import { UserAvatar, DropdownMenu } from "@/shared/ui";
 import { useTranslation, getTranslationsForAllLocales } from "@/languages";
 import { useModalStore } from "@/features/library";
 import { useAuthStore } from "@/features/auth";
@@ -101,7 +101,7 @@ export default function SettingsModal() {
     Audio: t("settings.audio.description"),
     Storage: t("settings.storage.description"),
     Privacy: t("settings.privacy.description"),
-    About: t("common.app.version"),
+    About: t("settings.about.tagline"),
   };
 
   const matchingTabIds = useMemo(() => {
@@ -124,7 +124,7 @@ export default function SettingsModal() {
       Audio: "settings.audio.description",
       Storage: "settings.storage.description",
       Privacy: "settings.privacy.description",
-      About: "common.app.version",
+      About: "settings.about.tagline",
     };
 
     (Object.keys(TAB_LABEL_KEYS) as TabId[]).forEach((tabId) => {
@@ -174,6 +174,7 @@ export default function SettingsModal() {
   };
 
   const user = useAuthStore((state) => state.user);
+  const logout = useAuthStore((state) => state.logout);
   const displayName =
     user?.displayName ||
     user?.username ||
@@ -312,7 +313,37 @@ export default function SettingsModal() {
                 {handle}
               </span>
             </span>
-            <MenuDots size={18} weight="Bold" className="text-text-tertiary shrink-0" />
+            <DropdownMenu
+              items={[
+                {
+                  id: "edit_profile",
+                  label: t("settings.profile.edit_profile") || "Edit profile",
+                  icon: <UserEditLine size={16} />,
+                  onClick: () => {
+                    // edit profile placeholder
+                  },
+                },
+                {
+                  id: "logout",
+                  label: t("settings.profile.sign_out") || "Log out",
+                  icon: <ExitLine size={16} />,
+                  danger: true,
+                  onClick: async () => {
+                    handleClose();
+                    await logout();
+                  },
+                },
+              ]}
+              trigger={
+                <button
+                  type="button"
+                  aria-label={t("common.more_options") || "More options"}
+                  className="p-1 rounded-md text-text-tertiary hover:text-text-primary hover:bg-border-alpha-14 transition-colors border-0 bg-transparent cursor-pointer flex items-center justify-center shrink-0"
+                >
+                  <MenuDots size={18} weight="Bold" className="shrink-0" />
+                </button>
+              }
+            />
           </div>
         </div>
       </aside>
