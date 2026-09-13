@@ -41,6 +41,7 @@ export interface ToastOptions {
   button?: ToastAction;
   icon?: React.ReactNode | "checkmark" | "loader" | "info" | "error";
   onDismiss?: () => void;
+  inSettings?: boolean;
 }
 
 interface Toast {
@@ -55,6 +56,7 @@ interface Toast {
   button?: ToastAction;
   icon?: React.ReactNode | "checkmark" | "loader" | "info" | "error";
   onDismiss?: () => void;
+  inSettings?: boolean;
 }
 
 export interface ToastCallable {
@@ -484,6 +486,8 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         variant === "loader" ||
         options?.icon === "loader";
       const duration = options?.duration ?? (isLoader ? 999999 : DURATION);
+      const inSettings =
+        options?.inSettings ?? Boolean(useModalStore.getState().settingsOpen);
 
       setToasts((current) => {
         const idx = current.findIndex((t) => t.id === id);
@@ -499,14 +503,16 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
           button: options?.button ?? options?.action,
           icon: options?.icon,
           onDismiss: options?.onDismiss,
+          inSettings,
         };
         if (idx >= 0) {
           const next = [...current];
-          next[idx] = item;
+          next[idx] = {
+            ...item,
+            inSettings: current[idx].inSettings ?? item.inSettings,
+          };
           return next;
         }
-        // Newest notification goes on top of the batch; cap the batch
-        // so a burst of toasts can never grow the stack without bounds.
         return [item, ...current].slice(0, MAX_BATCH_SIZE);
       });
     },
@@ -669,7 +675,8 @@ function NotificationCard({
     }
   };
 
-  const yOffset = index === 0 ? 0 : index === 1 ? 8 : 15;
+  const shiftY = item.inSettings ? -24 : 0;
+  const yOffset = (index === 0 ? 0 : index === 1 ? 8 : 15) + shiftY;
   const scale = index === 0 ? 1 : index === 1 ? 0.96 : 0.92;
   const opacity = index === 0 ? 1 : index === 1 ? 0.95 : 0.75;
   const zIndex = 30 - index * 10;
@@ -681,7 +688,7 @@ function NotificationCard({
       layout
       initial={
         index === 0
-          ? { opacity: 0, y: -20, scale: 0.95 }
+          ? { opacity: 0, y: -20 + shiftY, scale: 0.95 }
           : { opacity: 0, y: yOffset, scale }
       }
       animate={{
@@ -697,7 +704,7 @@ function NotificationCard({
       }}
       exit={{
         opacity: 0,
-        y: -48,
+        y: -48 + shiftY,
         scale: 0.92,
         transition: { duration: 0.18, ease: "easeIn" },
       }}
