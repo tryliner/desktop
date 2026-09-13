@@ -143,4 +143,53 @@ describe("linerDb storage layer", () => {
     const updated = await linerDb.getArtist("artist_test_1");
     expect(updated?.lastCheckedAt).toBeGreaterThan(initialTime);
   });
+
+  it("tracks lastPlayedAt on putAudio and touchAudio", async () => {
+    const blob1 = new Blob(["audio content 1"], { type: "audio/ogg" });
+    const earlyTime = 100000;
+    await linerDb.putAudio("track_lru_1", blob1, "audio/ogg", earlyTime);
+
+    const initial = await linerDb.getAudio("track_lru_1");
+    expect(initial?.lastPlayedAt).toBe(earlyTime);
+
+    await linerDb.touchAudio("track_lru_1");
+    const touched = await linerDb.getAudio("track_lru_1");
+    expect(touched?.lastPlayedAt).toBeGreaterThan(earlyTime);
+  });
+
+  it("enforces cache limit and evicts oldest played tracks first", async () => {
+    const chunk1 = new Blob(["1234567890".repeat(10)], { type: "audio/ogg" });
+    const chunk2 = new Blob(["1234567890".repeat(10)], { type: "audio/ogg" });
+    const chunk3 = new Blob(["1234567890".repeat(10)], { type: "audio/ogg" });
+
+    await linerDb.putAudio("track_oldest", chunk1, "audio/ogg", 1000);
+    await linerDb.putAudio("track_middle", chunk2, "audio/ogg", 2000);
+    await linerDb.putAudio("track_newest", chunk3, "audio/ogg", 3000);
+
+    const initialTotal = await linerDb.getTotalAudioBytes();
+    expect(initialTotal).toBe(300);
+
+    const limit = 200;
+    const evicted = await audioCache.enforceCacheLimit(limit);
+    expect(evicted).toBeGreaterThan(0);
+
+    const hasOldest = await audioCache.hasAudio("track_oldest");
+    const hasNewest = await audioCache.hasAudio("track_newest");
+
+    expect(hasOldest).toBe(false);
+    expect(hasNewest).toBe(true);
+  });
+
+  it("handles getLimitBytes and setLimitBytes with defaults and clamping", async () => {
+    expect(audioCache.getLimitBytes()).toBe(3 * 1024 * 1024 * 1024);
+
+    await audioCache.setLimitBytes(100);
+    expect(audioCache.getLimitBytes()).toBe(250 * 1024 * 1024);
+
+    await audioCache.setLimitBytes(0);
+    expect(audioCache.getLimitBytes()).toBe(0);
+
+    await audioCache.setLimitBytes(5 * 1024 * 1024 * 1024);
+    expect(audioCache.getLimitBytes()).toBe(5 * 1024 * 1024 * 1024);
+  });
 });

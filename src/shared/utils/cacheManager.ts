@@ -1,9 +1,22 @@
 import { linerDb } from "@/shared/storage/linerDb";
-import { audioCache } from "@/shared/storage/audioCache";
+import {
+  audioCache,
+  DEFAULT_AUDIO_CACHE_LIMIT_BYTES,
+  MIN_AUDIO_CACHE_LIMIT_BYTES,
+} from "@/shared/storage/audioCache";
 import { queryCache } from "@/shared/cache/queryCache";
 import { lyricsCache } from "@/features/lyrics";
 
-// essential keys that must never be wiped
+export { DEFAULT_AUDIO_CACHE_LIMIT_BYTES, MIN_AUDIO_CACHE_LIMIT_BYTES };
+
+export function getAudioCacheLimitBytes(): number {
+  return audioCache.getLimitBytes();
+}
+
+export async function setAudioCacheLimitBytes(bytes: number): Promise<void> {
+  await audioCache.setLimitBytes(bytes);
+}
+
 const PRESERVED_STORAGE_KEYS = new Set([
   "liner_access_token",
   "liner_refresh_token",
@@ -25,6 +38,7 @@ export interface StorageCategoryItem {
 export interface StorageAnalytics {
   categories: StorageCategoryItem[];
   totalBytes: number;
+  audioCacheLimitBytes?: number;
   deviceQuotaBytes?: number;
   deviceUsageBytes?: number;
   deviceUsagePercent?: number;
@@ -293,6 +307,7 @@ export async function getStorageAnalytics(): Promise<StorageAnalytics> {
   return {
     categories,
     totalBytes,
+    audioCacheLimitBytes: audioCache.getLimitBytes(),
     deviceQuotaBytes,
     deviceUsageBytes,
     deviceUsagePercent,

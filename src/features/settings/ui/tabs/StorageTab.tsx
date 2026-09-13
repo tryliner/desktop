@@ -14,6 +14,8 @@ import {
   clearStorageCategories,
   openCacheFolder,
   formatStorageBytes,
+  getAudioCacheLimitBytes,
+  setAudioCacheLimitBytes,
   type StorageAnalytics,
   type StorageCategoryId,
 } from "@/shared/utils/cacheManager";
@@ -119,8 +121,15 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
   const [clearingProgress, setClearingProgress] = useState(0);
   const [clearedSuccess, setClearedSuccess] = useState(false);
   const [hoveredCategoryId, setHoveredCategoryId] = useState<StorageCategoryId | null>(null);
+  const [cacheLimit, setCacheLimit] = useState<number>(() => getAudioCacheLimitBytes());
 
-  // mark storage tab as open while mounted to pause background polling and prevent flicker
+  const handleLimitChange = async (newLimit: number) => {
+    setCacheLimit(newLimit);
+    await setAudioCacheLimitBytes(newLimit);
+    const updated = await refreshStorageAnalytics();
+    setAnalytics(updated);
+  };
+
   useEffect(() => {
     setStorageTabOpen(true);
     return () => {
@@ -500,7 +509,59 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
         })}
       </div>
 
-      {/* ── Actions: Clear & Open Folder ── */}
+      <div className="flex flex-col gap-[10px] bg-border-alpha-10 p-[14px] rounded-xl border border-border-alpha-14">
+        <div className="flex items-center justify-between gap-2">
+          <div>
+            <h5 className="text-text-primary text-[13.5px] font-[600] m-0">
+              Лимит кэша аудио
+            </h5>
+            <p className="text-text-tertiary text-[11.5px] m-0 mt-0.5">
+              Старые треки автоматически удаляются при заполнении
+            </p>
+          </div>
+          <span className="text-text-secondary text-[12px] font-mono font-[600]">
+            {cacheLimit === 0 ? "Без лимита" : formatStorageBytes(cacheLimit)}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-4 gap-[6px]">
+          {[
+            { label: "250 MB", bytes: 250 * 1024 * 1024 },
+            { label: "1 GB", bytes: 1024 * 1024 * 1024 },
+            { label: "2 GB", bytes: 2 * 1024 * 1024 * 1024 },
+            { label: "3 GB", bytes: 3 * 1024 * 1024 * 1024, badge: "Реком." },
+            { label: "5 GB", bytes: 5 * 1024 * 1024 * 1024 },
+            { label: "10 GB", bytes: 10 * 1024 * 1024 * 1024 },
+            { label: "Без лимита", bytes: 0 },
+          ].map((preset) => {
+            const active = cacheLimit === preset.bytes;
+            return (
+              <button
+                key={preset.label}
+                type="button"
+                onClick={() => handleLimitChange(preset.bytes)}
+                className={`flex items-center justify-center gap-1.5 py-[6px] px-[6px] rounded-lg text-[11.5px] font-[500] border transition-all cursor-pointer ${
+                  active
+                    ? "bg-white text-black border-white font-[600] shadow-sm"
+                    : "bg-border-alpha-10 text-text-secondary border-border-alpha-14 hover:bg-border-alpha-14 hover:text-text-primary"
+                }`}
+              >
+                <span>{preset.label}</span>
+                {preset.badge && (
+                  <span
+                    className={`text-[8.5px] px-1 py-0.2 rounded font-bold ${
+                      active ? "bg-black text-white" : "bg-purple-500/20 text-purple-400"
+                    }`}
+                  >
+                    {preset.badge}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       <div className="flex flex-col gap-[8px]">
         <div className="flex items-center gap-[8px]">
           <Button

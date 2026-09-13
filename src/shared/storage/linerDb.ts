@@ -19,6 +19,7 @@ export interface CachedAudioRecord {
   mimeType: string;
   byteSize: number;
   savedAt: number;
+  lastPlayedAt?: number;
 }
 
 export interface CachedLyricsRecord {
@@ -43,7 +44,7 @@ export interface CachedArtistRecord {
 }
 
 const DB_NAME = "liner_db_v1";
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 class LinerDb {
   private dbPromise: Promise<IDBDatabase> | null = null;
@@ -54,7 +55,6 @@ class LinerDb {
   private memLyrics = new Map<string, CachedLyricsRecord>();
   private memArtists = new Map<string, CachedArtistRecord>();
 
-  // drops stale connection on any error so next call auto-reconnects
   private handleDbError(err: unknown) {
     this.dbPromise = null;
   }
@@ -88,6 +88,12 @@ class LinerDb {
           const audioStore = db.createObjectStore("audio", { keyPath: "trackId" });
           audioStore.createIndex("savedAt", "savedAt", { unique: false });
           audioStore.createIndex("byteSize", "byteSize", { unique: false });
+          audioStore.createIndex("lastPlayedAt", "lastPlayedAt", { unique: false });
+        } else {
+          const audioStore = request.transaction?.objectStore("audio");
+          if (audioStore && !audioStore.indexNames.contains("lastPlayedAt")) {
+            audioStore.createIndex("lastPlayedAt", "lastPlayedAt", { unique: false });
+          }
         }
 
         if (!db.objectStoreNames.contains("lyrics")) {
@@ -255,13 +261,16 @@ class LinerDb {
     return this.memAudio.get(trackId) || null;
   }
 
-  async putAudio(trackId: string, blob: Blob, mimeType: string): Promise<void> {
+  async putAudio(trackId: string, blob: Blob, mimeType: string, lastPlayedAt?: number): Promise<void> {
+    const existing = this.memAudio.get(trackId);
+    const now = Date.now();
     const record: CachedAudioRecord = {
       trackId,
       blob,
       mimeType,
       byteSize: blob.size,
-      savedAt: Date.now(),
+      savedAt: existing?.savedAt ?? now,
+      lastPlayedAt: lastPlayedAt ?? now,
     };
     this.memAudio.set(trackId, record);
 
@@ -272,6 +281,49 @@ class LinerDb {
         req.onerror = () => reject(req.error);
       });
     });
+  }
+
+  async touchAudio(trackId: string): Promise<void> {
+    const record = await this.getAudio(trackId);
+    if (!record) return;
+    record.lastPlayedAt = Date.now();
+    this.memAudio.set(trackId, record);
+
+    await this.runTransaction("audio", "readwrite", (store) => {
+      return new Promise<void>((resolve) => {
+        const req = store.put(record);
+        req.onsuccess = () => resolve();
+        req.onerror = () => resolve();
+      });
+    });
+  }
+
+  async getOldestAudioRecords(): Promise<CachedAudioRecord[]> {
+    const result = await this.runTransaction("audio", "readonly", (store) => {
+      return new Promise<CachedAudioRecord[]>((resolve) => {
+        const records: CachedAudioRecord[] = [];
+        const req = store.openCursor();
+        req.onsuccess = () => {
+          const cursor = req.result;
+          if (cursor) {
+            records.push(cursor.value as CachedAudioRecord);
+            cursor.continue();
+          } else {
+            records.sort((a, b) => (a.lastPlayedAt ?? a.savedAt) - (b.lastPlayedAt ?? b.savedAt));
+            resolve(records);
+          }
+        };
+        req.onerror = () => resolve([]);
+      });
+    });
+
+    if (result && result.length > 0) {
+      return result;
+    }
+
+    const memList = Array.from(this.memAudio.values());
+    memList.sort((a, b) => (a.lastPlayedAt ?? a.savedAt) - (b.lastPlayedAt ?? b.savedAt));
+    return memList;
   }
 
   async hasAudio(trackId: string): Promise<boolean> {
