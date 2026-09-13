@@ -557,39 +557,33 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
         })()}
       </div>
 
-      <div className="mt-auto flex flex-col gap-[8px] pt-4">
-        <div className="flex items-center gap-[8px]">
-          <Button
-            variant="primary"
-            size="default"
-            type="button"
-            disabled={selectedBytes === 0 || loading}
-            onClick={handleClearSelected}
-            className="flex-1 justify-center !h-[40px] !text-[13.5px] font-[500] rounded-xl"
-          >
-            {selectedBytes > 0
-              ? t("settings.storage.clear_button", {
-                  size: formatStorageBytes(selectedBytes),
-                })
-              : t("settings.storage.clear_selected")}
-          </Button>
+      <div className="mt-auto flex items-center gap-[8px] pt-4">
+        <Button
+          variant="primary"
+          size="default"
+          type="button"
+          disabled={selectedBytes === 0 || loading}
+          onClick={handleClearSelected}
+          className="flex-1 justify-center !h-[40px] !text-[13.5px] font-[500] rounded-xl"
+        >
+          {selectedBytes > 0
+            ? t("settings.storage.clear_button", {
+                size: formatStorageBytes(selectedBytes),
+              })
+            : t("settings.storage.clear_selected")}
+        </Button>
 
-          <Button
-            variant="secondary"
-            size="default"
-            type="button"
-            onClick={handleOpenFolder}
-            title={t("settings.storage.open_folder")}
-            className="flex items-center gap-[6px] !h-[40px] px-[14px] font-[500] text-[13px] rounded-xl shrink-0"
-          >
-            <FolderOpenLine size={16} />
-            <span>{t("settings.storage.open_folder")}</span>
-          </Button>
-        </div>
-
-        <p className="text-text-tertiary text-[12px] text-center m-0 leading-normal px-4">
-          {t("settings.storage.cloud_disclaimer")}
-        </p>
+        <Button
+          variant="secondary"
+          size="default"
+          type="button"
+          onClick={handleOpenFolder}
+          title={t("settings.storage.open_folder")}
+          className="flex items-center gap-[6px] !h-[40px] px-[14px] font-[500] text-[13px] rounded-xl shrink-0"
+        >
+          <FolderOpenLine size={16} />
+          <span>{t("settings.storage.open_folder")}</span>
+        </Button>
       </div>
           </motion.div>
         )}
