@@ -509,7 +509,7 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
         })}
       </div>
 
-      <div className="flex flex-col gap-[10px] bg-border-alpha-10 p-[14px] rounded-xl border border-border-alpha-14">
+      <div className="flex flex-col gap-[14px] bg-border-alpha-10 p-[16px] rounded-xl border border-border-alpha-14">
         <div className="flex items-center justify-between gap-2">
           <div>
             <h5 className="text-text-primary text-[13.5px] font-[600] m-0">
@@ -519,47 +519,98 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
               Старые треки автоматически удаляются при заполнении
             </p>
           </div>
-          <span className="text-text-secondary text-[12px] font-mono font-[600]">
-            {cacheLimit === 0 ? "Без лимита" : formatStorageBytes(cacheLimit)}
-          </span>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <span className="text-text-primary text-[13px] font-mono font-[600]">
+              {cacheLimit === 0 ? "Без лимита" : formatStorageBytes(cacheLimit)}
+            </span>
+            {cacheLimit === 3 * 1024 * 1024 * 1024 && (
+              <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold bg-purple-500/20 text-purple-400 border border-purple-500/30">
+                Реком.
+              </span>
+            )}
+          </div>
         </div>
 
-        <div className="grid grid-cols-4 gap-[6px]">
-          {[
+        {(() => {
+          const steps = [
             { label: "250 MB", bytes: 250 * 1024 * 1024 },
             { label: "1 GB", bytes: 1024 * 1024 * 1024 },
             { label: "2 GB", bytes: 2 * 1024 * 1024 * 1024 },
-            { label: "3 GB", bytes: 3 * 1024 * 1024 * 1024, badge: "Реком." },
+            { label: "3 GB", bytes: 3 * 1024 * 1024 * 1024 },
             { label: "5 GB", bytes: 5 * 1024 * 1024 * 1024 },
             { label: "10 GB", bytes: 10 * 1024 * 1024 * 1024 },
             { label: "Без лимита", bytes: 0 },
-          ].map((preset) => {
-            const active = cacheLimit === preset.bytes;
-            return (
-              <button
-                key={preset.label}
-                type="button"
-                onClick={() => handleLimitChange(preset.bytes)}
-                className={`flex items-center justify-center gap-1.5 py-[6px] px-[6px] rounded-lg text-[11.5px] font-[500] border transition-all cursor-pointer ${
-                  active
-                    ? "bg-white text-black border-white font-[600] shadow-sm"
-                    : "bg-border-alpha-10 text-text-secondary border-border-alpha-14 hover:bg-border-alpha-14 hover:text-text-primary"
-                }`}
-              >
-                <span>{preset.label}</span>
-                {preset.badge && (
-                  <span
-                    className={`text-[8.5px] px-1 py-0.2 rounded font-bold ${
-                      active ? "bg-black text-white" : "bg-purple-500/20 text-purple-400"
-                    }`}
-                  >
-                    {preset.badge}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
+          ];
+          const activeIdx = Math.max(0, steps.findIndex((s) => s.bytes === cacheLimit));
+          const pct = (activeIdx / (steps.length - 1)) * 100;
+
+          return (
+            <div className="flex flex-col gap-2 pt-1 pb-0.5">
+              <div className="relative w-full h-[24px] flex items-center select-none">
+                <div className="absolute left-0 right-0 h-[6px] rounded-full bg-border-alpha-14" />
+                <div
+                  className="absolute left-0 h-[6px] rounded-full bg-white transition-all duration-150"
+                  style={{ width: `${pct}%` }}
+                />
+
+                {steps.map((s, i) => {
+                  const tickPct = (i / (steps.length - 1)) * 100;
+                  const isPassed = i <= activeIdx;
+                  return (
+                    <div
+                      key={s.label}
+                      className={`absolute w-[8px] h-[8px] rounded-full -translate-x-1/2 transition-colors pointer-events-none ${
+                        isPassed ? "bg-white" : "bg-border-alpha-24"
+                      }`}
+                      style={{ left: `${tickPct}%` }}
+                    />
+                  );
+                })}
+
+                <div
+                  className="absolute w-[18px] h-[18px] rounded-full bg-white shadow-md -translate-x-1/2 transition-all duration-150 pointer-events-none border border-black/15 flex items-center justify-center"
+                  style={{ left: `${pct}%` }}
+                >
+                  <div className="w-[6px] h-[6px] rounded-full bg-black/80" />
+                </div>
+
+                <input
+                  type="range"
+                  min={0}
+                  max={steps.length - 1}
+                  step={1}
+                  value={activeIdx}
+                  onChange={(e) => {
+                    const idx = Number(e.target.value);
+                    if (steps[idx]) {
+                      void handleLimitChange(steps[idx].bytes);
+                    }
+                  }}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 m-0 p-0"
+                />
+              </div>
+
+              <div className="flex justify-between items-center text-[11px] font-mono text-text-tertiary select-none px-0.5">
+                {steps.map((s, i) => {
+                  const isActive = i === activeIdx;
+                  return (
+                    <span
+                      key={s.label}
+                      onClick={() => void handleLimitChange(s.bytes)}
+                      className={`cursor-pointer transition-colors ${
+                        isActive
+                          ? "text-text-primary font-[600]"
+                          : "hover:text-text-secondary"
+                      }`}
+                    >
+                      {s.label}
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })()}
       </div>
 
       <div className="flex flex-col gap-[8px]">
