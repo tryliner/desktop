@@ -327,18 +327,7 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
             transition={{ duration: 0.15 }}
             className="flex flex-col gap-[20px] pt-[8px]"
           >
-      <div className="flex flex-col gap-[14px] bg-white/[0.035] dark:bg-white/[0.035] p-[16px] rounded-2xl">
-        <div>
-          <h5 className="text-text-primary text-[13.5px] font-[600] m-0">
-            {t("settings.storage.usage_title")}
-          </h5>
-          <p className="text-text-tertiary text-[11.5px] m-0 mt-0.5">
-            {t("settings.storage.device_usage_raw", {
-              size: formatStorageBytes(analytics?.totalBytes ?? 0),
-            })}
-          </p>
-        </div>
-
+      <div className="bg-white/[0.035] dark:bg-white/[0.035] px-[16px] py-[10px] rounded-2xl">
         <div className="flex flex-col sm:flex-row items-center gap-4">
           <div className="flex-1 w-full flex flex-col gap-0.5">
             {analytics?.categories.map((cat) => {
@@ -390,69 +379,71 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
 
           <div className="w-[1px] self-stretch bg-white/[0.06] hidden sm:block" />
 
-          <div className="flex flex-col items-center justify-center shrink-0 px-6 py-2">
-            <div className="relative w-[136px] h-[136px] flex items-center justify-center">
-              <svg
-                width="136"
-                height="136"
-                viewBox="0 0 200 200"
-                className="overflow-visible"
-              >
-                <circle
-                  cx="100"
-                  cy="100"
-                  r="70"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="24"
-                  className="text-white/[0.08]"
-                />
+          <div className="flex flex-col items-center justify-center shrink-0 px-6">
+            <div className="flex flex-col items-center">
+              <div className="relative w-[136px] h-[136px] flex items-center justify-center">
+                <svg
+                  width="136"
+                  height="136"
+                  viewBox="0 0 200 200"
+                  className="overflow-visible"
+                >
+                  <circle
+                    cx="100"
+                    cy="100"
+                    r="70"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="24"
+                    className="text-white/[0.08]"
+                  />
 
-                <AnimatePresence>
-                  {donutSlices.map((slice) => {
-                    const isHovered = hoveredCategoryId === slice.id;
-                    const pathData = describeDonutSegment(
-                      100,
-                      100,
-                      isHovered ? 56 : 58,
-                      isHovered ? 85 : 82,
-                      slice.startAngle,
-                      slice.endAngle
-                    );
+                  <AnimatePresence>
+                    {donutSlices.map((slice) => {
+                      const isHovered = hoveredCategoryId === slice.id;
+                      const pathData = describeDonutSegment(
+                        100,
+                        100,
+                        isHovered ? 57.5 : 58,
+                        isHovered ? 83.5 : 82,
+                        slice.startAngle,
+                        slice.endAngle
+                      );
 
-                    return (
-                      <motion.path
-                        key={slice.id}
-                        d={pathData}
-                        fill={slice.color}
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.95 }}
-                        transition={{ duration: 0.2, ease: "easeOut" }}
-                        className="cursor-pointer hover:opacity-90 origin-center"
-                        onMouseEnter={() => setHoveredCategoryId(slice.id)}
-                        onMouseLeave={() => setHoveredCategoryId(null)}
-                      />
-                    );
-                  })}
-                </AnimatePresence>
-              </svg>
+                      return (
+                        <motion.path
+                          key={slice.id}
+                          d={pathData}
+                          fill={slice.color}
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ duration: 0.15, ease: "easeOut" }}
+                          className="cursor-pointer transition-opacity origin-center"
+                          onMouseEnter={() => setHoveredCategoryId(slice.id)}
+                          onMouseLeave={() => setHoveredCategoryId(null)}
+                        />
+                      );
+                    })}
+                  </AnimatePresence>
+                </svg>
 
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
-                <div className="relative flex items-center justify-center">
-                  <span className="text-[19px] font-[700] text-text-primary tracking-tight leading-none">
-                    {formattedCenter.val}
-                  </span>
-                  <span className="absolute top-full left-1/2 -translate-x-1/2 mt-0.5 text-[10px] font-[600] text-text-tertiary uppercase leading-none whitespace-nowrap">
-                    {formattedCenter.unit}
-                  </span>
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
+                  <div className="relative flex items-center justify-center">
+                    <span className="text-[19px] font-[700] text-text-primary tracking-tight leading-none">
+                      {formattedCenter.val}
+                    </span>
+                    <span className="absolute top-full left-1/2 -translate-x-1/2 mt-0.5 text-[10px] font-[600] text-text-tertiary uppercase leading-none whitespace-nowrap">
+                      {formattedCenter.unit}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <span className="text-[11.5px] font-[500] text-text-tertiary mt-2.5 text-center select-none tracking-tight">
-              {t("settings.storage.usage_title")}
-            </span>
+              <span className="text-[11.5px] font-[500] text-text-tertiary -mt-1 text-center select-none tracking-tight">
+                {t("settings.storage.usage_title")}
+              </span>
+            </div>
           </div>
         </div>
       </div>
