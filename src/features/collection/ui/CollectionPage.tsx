@@ -3,19 +3,18 @@ import { useEffect, useState, useMemo, Suspense } from "react";
 import CollectionPageSkeleton from "./CollectionPageSkeleton";
 import {
   AddLine,
-  ArrowLeftLine,
   PlayFill,
   NewFolderLine,
   FolderCheckFill,
   ShareForwardLine,
+  PlaylistFill,
 } from "@mingcute/react";
 import Button from "@/shared/ui/Button";
 import SongCardWithMenu from "@/features/player/ui/SongCardWithMenu";
 import CoverImage from "@/features/covers/ui/CoverImage";
-import { useCoverSrc } from "@/features/covers";
 import { playerEngine } from "@/features/player";
 import { AnimatePresence, motion } from "framer-motion";
-import { useToast } from "@/shared/ui";
+import { useToast, EntitySidebar, StickyHeader, SIDEBAR_TITLE_CLASS, SIDEBAR_SUBTITLE_CLASS } from "@/shared/ui";
 import type { Track } from "@/shared/types";
 import { useTranslation } from "@/languages";
 import { useModalStore } from "@/features/library";
@@ -31,7 +30,6 @@ function CollectionContent() {
   const navigate = useNavigate();
 
   const { data, loading } = useCollection(type, id);
-  const heroCoverSrc = useCoverSrc(data?.coverUrl);
   const entityType = type === "playlist" ? "playlist" : "album";
   const decodedId = id ? decodeURIComponent(id) : "";
 
@@ -162,6 +160,8 @@ function CollectionContent() {
     }
   };
 
+  const [isScrolled, setIsScrolled] = useState(false);
+
   if (!loading && !data) {
     return (
       <div className="page-transition h-full w-full bg-bg-primary flex items-center justify-center">
@@ -173,82 +173,68 @@ function CollectionContent() {
   const isAlbum = type !== "playlist";
 
   return (
-    <div className="page-transition relative h-full w-full overflow-y-auto bg-bg-primary pb-[24px]">
+    <div
+      onScroll={(e) => {
+        const nextScrolled = e.currentTarget.scrollTop > 180;
+        setIsScrolled((prev) => (prev === nextScrolled ? prev : nextScrolled));
+      }}
+      className="page-transition relative h-full w-full overflow-y-auto bg-bg-primary pb-[24px]"
+    >
+      <StickyHeader
+        isScrolled={isScrolled}
+        showBack={isReady}
+        title={data?.title}
+        thumbnail={
+          data?.coverUrl ? (
+            <div className="relative h-[24px] w-[24px] shrink-0 overflow-hidden rounded-[4px] bg-border-alpha-14">
+              <CoverImage
+                src={data.coverUrl}
+                alt={data.title}
+                fill
+                sizes="24px"
+                className="object-cover"
+                draggable={false}
+              />
+            </div>
+          ) : (
+            <div className="flex h-[24px] w-[24px] shrink-0 items-center justify-center rounded-[4px] bg-border-alpha-14 text-text-secondary">
+              <PlaylistFill size={13} />
+            </div>
+          )
+        }
+      />
       <div className="relative z-1 grid grid-cols-1 items-start w-full">
         {/* Real Content Layer */}
         {isReady && data && (
           <div className="col-start-1 row-start-1 w-full">
-            {data.coverUrl && (
-              <div
-                className="pointer-events-none absolute left-0 top-0 z-0 w-full h-[450px]"
-                style={{
-                  backgroundImage: `url(${heroCoverSrc})`,
-                  backgroundSize: "cover",
-                  backgroundPosition: "center",
-                  filter: "blur(90px) saturate(150%)",
-                  opacity: 0.15,
-                  maskImage:
-                    "linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%)",
-                  WebkitMaskImage:
-                    "linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%)",
-                }}
-              />
-            )}
-            <div className="relative z-10 px-[32px] pt-[24px]">
-              <button
-                type="button"
-                onClick={() =>
-                  window.history.length > 1 ? navigate(-1) : navigate("/library")
-                }
-                className="inline-flex items-center gap-[10px] text-text-primary no-underline transition-opacity duration-200 hover:opacity-80 border-0 bg-transparent cursor-pointer p-0"
-                style={{ fontFamily: "var(--font-inter), sans-serif" }}
-              >
-                <ArrowLeftLine size={24} />
-                <span className="text-[28px] font-[350]">{data.title}</span>
-              </button>
-
-              <section className="mt-[20px] flex items-start gap-[28px]">
-                <div className="relative h-[170px] w-[170px] shrink-0 overflow-hidden rounded-xl bg-border-alpha-14">
-                  {data.coverUrl && (
+            <div className="relative z-10 flex items-start gap-[32px] px-[32px] pt-[56px] pb-[24px]" data-window-drag>
+              <EntitySidebar
+                cover={
+                  data.coverUrl ? (
                     <CoverImage
                       src={data.coverUrl}
                       alt={data.title}
                       fill
-                      sizes="170px"
+                      sizes="280px"
                       className="object-cover"
                       draggable={false}
                     />
-                  )}
-                </div>
+                  ) : (
+                    <PlaylistFill size={48} className="text-border-alpha-33" />
+                  )
+                }
 
-                <div className="flex min-h-[170px] flex-1 justify-between">
-                  <div className="flex flex-col justify-center">
-                    <h1
-                      className="m-0 text-[34px] leading-[1.02] text-text-primary"
-                      style={{
-                        fontFamily: "var(--font-inter), sans-serif",
-                        fontWeight: 400,
-                      }}
-                    >
-                      {data.title}
-                    </h1>
-                    <p
-                      className="m-0 mt-[6px] max-w-[340px] text-[18px] leading-[1.2] text-text-tertiary"
-                      style={{
-                        fontFamily: "var(--font-inter), sans-serif",
-                        fontWeight: 350,
-                      }}
-                    >
-                      {data.description}
-                    </p>
-                    <p
-                      className="m-0 mt-[8px] text-[14px] text-text-secondary"
-                      style={{
-                        fontFamily: "var(--font-inter), sans-serif",
-                        fontWeight: 400,
-                      }}
-                    >
-                      {data.tracks.length} {t("collection.tracks_count")} •{" "}
+                title={
+                  <h1 className={SIDEBAR_TITLE_CLASS}>{data.title}</h1>
+                }
+                subtitle={
+                  data.description ? (
+                    <p className={SIDEBAR_SUBTITLE_CLASS}>{data.description}</p>
+                  ) : undefined
+                }
+                meta={
+                  <>
+                    {data.tracks.length} {t("collection.tracks_count")} •{" "}
                       {(() => {
                         const totalMs = data.tracks.reduce(
                           (acc, t) => acc + (t.durationMs || 0),
@@ -261,31 +247,35 @@ function CollectionContent() {
                         const totalSecs = Math.floor((totalMs % 60000) / 1000);
                         return `${totalMins} ${t("collection.min")} ${totalSecs} ${t("collection.sec")}`;
                       })()}
-                    </p>
-
-                    <div className="mt-[16px] flex items-center gap-[10px]">
+                    </>
+                  }
+                  primaryAction={
+                    <>
                       <Button
                         variant="primary"
                         onClick={handlePlayAll}
-                        className="!h-[42px] !text-[16px] !font-[500] px-[24px]"
+                        className="!h-[36px] w-full !text-[14px] !font-[500] px-[16px]"
                       >
                         <PlayFill size={16} />
                         {t("common.play_all")}
                       </Button>
-
+                    </>
+                  }
+                  actions={
+                    <>
                       <Button
                         variant="outline"
                         onClick={handleAddToQueue}
-                        className="!h-[42px] !w-[42px] !p-0 flex items-center justify-center text-text-primary"
+                        className="!h-[36px] !w-[36px] !p-0 flex items-center justify-center text-text-primary"
                         title={t("common.add_to_queue")}
                       >
-                        <AddLine size={20} />
+                        <AddLine size={18} />
                       </Button>
 
                       <Button
                         variant="outline"
                         onClick={handleSaveToLibrary}
-                        className="!h-[42px] !w-[42px] !p-0 flex items-center justify-center text-text-primary"
+                        className="!h-[36px] !w-[36px] !p-0 flex items-center justify-center text-text-primary"
                         title={
                           inLibrary
                             ? t("common.remove_from_library")
@@ -301,7 +291,7 @@ function CollectionContent() {
                               exit={{ scale: 0.5, rotate: 20 }}
                               className="flex"
                             >
-                              <FolderCheckFill size={20} />
+                              <FolderCheckFill size={18} />
                             </motion.span>
                           ) : (
                             <motion.span
@@ -311,28 +301,25 @@ function CollectionContent() {
                               exit={{ scale: 0.5, rotate: 20 }}
                               className="flex"
                             >
-                              <NewFolderLine size={20} />
+                              <NewFolderLine size={18} />
                             </motion.span>
                           )}
                         </AnimatePresence>
                       </Button>
-                    </div>
-                  </div>
 
-                  <div className="flex items-end gap-[10px] pb-[6px] pr-[16px]">
-                    <Button
-                      variant="outline"
-                      onClick={handleShare}
-                      className="!h-[42px] !w-[42px] !p-0 flex items-center justify-center text-text-primary"
-                      title={t("common.share")}
-                    >
-                      <ShareForwardLine size={20} />
-                    </Button>
-                  </div>
-                </div>
-              </section>
-
-              <section className="mt-[20px]">
+                      <Button
+                        variant="outline"
+                        onClick={handleShare}
+                        className="!h-[36px] !w-[36px] !p-0 flex items-center justify-center text-text-primary"
+                        title={t("common.share")}
+                      >
+                        <ShareForwardLine size={18} />
+                      </Button>
+                    </>
+                  }
+                />
+                <div className="min-w-0 flex-1">
+              <section>
                 <div className="flex flex-col -mx-[8px]">
                   {data.tracks.map((track, index) => (
                     <SongCardWithMenu
@@ -367,6 +354,7 @@ function CollectionContent() {
                   ))}
                 </div>
               </section>
+              </div>
             </div>
           </div>
         )}

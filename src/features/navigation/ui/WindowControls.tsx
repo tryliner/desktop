@@ -2,12 +2,12 @@ import { LuMinus, LuSquare, LuX } from "react-icons/lu";
 
 export interface WindowControlsProps {
   className?: string;
-  variant?: "default" | "glass";
+  variant?: "default" | "glass" | "island";
 }
 
+// unified dark matte glass floating island with 3 window control buttons
 export default function WindowControls({
   className = "",
-  variant = "default",
 }: WindowControlsProps) {
   const handleMinimize = () => {
     window.linerElectron?.minimize();
@@ -21,43 +21,48 @@ export default function WindowControls({
     window.linerElectron?.close();
   };
 
-  const isGlass = variant === "glass";
-
   return (
     <div
-      className={`absolute top-0 right-0 h-[32px] z-[62] flex justify-end pointer-events-none ${className}`.trim()}
+      className={`absolute top-[12px] right-[32px] h-[32px] z-[62] flex items-center justify-end pointer-events-none select-none ${className}`.trim()}
     >
       <div
-        className={`flex h-full pointer-events-auto transition-colors ${
-          isGlass
-            ? "rounded-bl-xl bg-bg-primary/85 dark:bg-black/70 backdrop-blur-2xl border-b border-l border-black/15 dark:border-white/20 shadow-sm overflow-hidden"
-            : "drop-shadow-[0_2px_8px_rgba(0,0,0,0.35)]"
-        }`}
+        data-no-window-drag
+        className="flex items-center h-[32px] px-[3px] gap-[2px] rounded-md bg-black/70 backdrop-blur-md text-text-primary pointer-events-auto transition-colors"
       >
         <button
+          type="button"
           onClick={handleMinimize}
-          className="flex items-center justify-center w-[40px] h-full cursor-pointer border-none bg-transparent transition-all text-text-secondary hover:text-text-primary hover:bg-border-alpha-14"
+          className="flex items-center justify-center w-[28px] h-[26px] rounded-sm cursor-pointer border-none bg-transparent transition-colors text-text-primary hover:bg-white/10 active:scale-95"
           aria-label="Minimize"
+          title="Minimize"
         >
-          <LuMinus size={14} />
+          <LuMinus size={13} />
         </button>
         <button
+          type="button"
           onClick={handleMaximize}
-          className="flex items-center justify-center w-[40px] h-full cursor-pointer border-none bg-transparent transition-all text-text-secondary hover:text-text-primary hover:bg-border-alpha-14"
+          className="flex items-center justify-center w-[28px] h-[26px] rounded-sm cursor-pointer border-none bg-transparent transition-colors text-text-primary hover:bg-white/10 active:scale-95"
           aria-label="Maximize"
+          title="Maximize"
         >
-          <LuSquare size={12} />
+          <LuSquare size={11} />
         </button>
         <button
+          type="button"
           onClick={handleClose}
-          className="flex items-center justify-center w-[40px] h-full cursor-pointer border-none bg-transparent transition-all text-text-secondary hover:text-white hover:bg-[#E81123]"
+          className="flex items-center justify-center w-[28px] h-[26px] rounded-sm cursor-pointer border-none bg-transparent transition-colors text-text-primary hover:bg-[#E81123] hover:text-white active:scale-95"
           aria-label="Close"
+          title="Close"
         >
-          <LuX size={14} />
+          <LuX size={13} />
         </button>
       </div>
     </div>
   );
 }
+
+
+
+
 
 

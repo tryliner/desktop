@@ -238,7 +238,9 @@ export default function AppFrame({ children }: AppFrameProps) {
   const closeRightPanel = useCallback(() => setQueuePopupOpen(false), []);
 
   const isBackNavigableRoute =
-    pathname === "/artist" || pathname === "/library/playlist";
+    pathname === "/artist" ||
+    pathname === "/library/playlist" ||
+    pathname === "/collection";
   const handleEscapeFallback = useCallback(() => {
     if (!isBackNavigableRoute) return false;
     if (window.history.length > 1) navigate(-1);
