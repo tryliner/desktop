@@ -342,7 +342,7 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
             transition={{ duration: 0.15 }}
             className="flex-1 flex flex-col gap-[20px] pt-[8px]"
           >
-      <div className="bg-white/[0.035] dark:bg-white/[0.035] px-[16px] py-[10px] rounded-2xl">
+      <div className="bg-white/[0.035] dark:bg-white/[0.035] pl-[10px] pr-[16px] py-[10px] rounded-2xl">
         <div className="flex flex-col sm:flex-row items-center gap-4">
           <div className="flex-1 w-full flex flex-col gap-0.5">
             {analytics?.categories.map((cat) => {
@@ -482,7 +482,7 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
       </div>
 
       <div className="flex flex-col gap-[14px] bg-white/[0.035] dark:bg-white/[0.035] p-[16px] rounded-2xl">
-        <div>
+        <div className="pl-[6px]">
           <h5 className="text-text-primary text-[13.5px] font-[600] m-0">
             {t("settings.storage.cache_limit")}
           </h5>
