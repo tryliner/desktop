@@ -427,11 +427,11 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
             </svg>
 
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
-              <div className="flex items-baseline gap-1">
-                <span className="text-[17px] font-[700] text-text-primary tracking-tight leading-none">
+              <div className="relative flex items-center justify-center">
+                <span className="text-[19px] font-[700] text-text-primary tracking-tight leading-none">
                   {formattedCenter.val}
                 </span>
-                <span className="text-[10px] font-[600] text-text-tertiary uppercase leading-none">
+                <span className="absolute top-full left-1/2 -translate-x-1/2 mt-0.5 text-[10px] font-[600] text-text-tertiary uppercase leading-none whitespace-nowrap">
                   {formattedCenter.unit}
                 </span>
               </div>
