@@ -23,6 +23,8 @@ export interface DropdownMenuProps {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   position?: { x: number; y: number } | null;
+  side?: "top" | "bottom";
+  align?: "start" | "end";
 }
 
 function useFixedStyle(
@@ -30,6 +32,8 @@ function useFixedStyle(
   isFixed: boolean,
   position: { x: number; y: number } | null | undefined,
   open: boolean,
+  side: "top" | "bottom" = "bottom",
+  align: "start" | "end" = "start",
 ): React.CSSProperties {
   const [style, setStyle] = useState<React.CSSProperties>(() =>
     position ? { left: position.x, top: position.y } : {},
@@ -38,20 +42,21 @@ function useFixedStyle(
   useLayoutEffect(() => {
     if (!isFixed || !position || !menuRef.current) return;
     const rect = menuRef.current.getBoundingClientRect();
-    let left = position.x;
-    let top = position.y;
+    let left = align === "end" ? position.x - rect.width : position.x;
+    let top = side === "top" ? position.y - rect.height : position.y;
 
     if (left + rect.width > window.innerWidth) {
-      left = position.x - rect.width;
+      left = window.innerWidth - rect.width - 8;
     }
-    if (top + rect.height > window.innerHeight) {
-      top = position.y - rect.height;
+    if (left < 8) left = 8;
+
+    if (side !== "top" && top + rect.height > window.innerHeight) {
+      top = position.y - rect.height - 8;
     }
-    if (left < 0) left = 0;
-    if (top < 0) top = 0;
+    if (top < 8) top = 8;
 
     setStyle({ left, top });
-  }, [isFixed, position, open, menuRef]);
+  }, [isFixed, position, open, menuRef, side, align]);
 
   return style;
 }
@@ -62,6 +67,8 @@ export default function DropdownMenu({
   open: controlledOpen,
   onOpenChange,
   position,
+  side = "bottom",
+  align = "start",
 }: DropdownMenuProps) {
   const [internalOpen, setInternalOpen] = useState(false);
   const open = controlledOpen ?? internalOpen;
@@ -77,13 +84,15 @@ export default function DropdownMenu({
   useLayoutEffect(() => {
     if (!position && open && containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect();
-      setComputedPos({ x: rect.left, y: rect.bottom + 4 });
+      const x = align === "end" ? rect.right : rect.left;
+      const y = side === "top" ? rect.top - 4 : rect.bottom + 4;
+      setComputedPos({ x, y });
     }
-  }, [open, position]);
+  }, [open, position, side, align]);
 
   const targetPos = position || computedPos;
   const isFixed = Boolean(targetPos);
-  const fixedStyle = useFixedStyle(menuRef, isFixed, targetPos, open);
+  const fixedStyle = useFixedStyle(menuRef, isFixed, targetPos, open, side, align);
 
   useEffect(() => {
     if (!open) return;
@@ -117,12 +126,12 @@ export default function DropdownMenu({
           key="dropdown-menu"
           ref={menuRef}
           data-dropdown-menu="true"
-          initial={{ opacity: 0, scale: 0.96, y: -2 }}
+          initial={{ opacity: 0, scale: 0.96, y: side === "top" ? 2 : -2 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.96, y: -2 }}
+          exit={{ opacity: 0, scale: 0.96, y: side === "top" ? 2 : -2 }}
           transition={{ duration: 0.1, ease: "easeOut" }}
           className={`overflow-hidden rounded-md border border-border-primary/80 bg-bg-primary/95 backdrop-blur-md p-1 shadow-xl shadow-black/30 min-w-[160px] ${
-            isFixed ? "fixed z-[99999]" : "absolute right-0 top-full mt-1 z-50"
+            isFixed ? "fixed z-[99999]" : side === "top" ? "absolute right-0 bottom-full mb-1 z-50" : "absolute right-0 top-full mt-1 z-50"
           }`}
           style={isFixed ? fixedStyle : {}}
           onClick={(e) => e.stopPropagation()}

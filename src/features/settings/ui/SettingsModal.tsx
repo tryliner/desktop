@@ -190,59 +190,7 @@ export default function SettingsModal() {
       className="p-0 h-[620px] max-h-[86vh] !flex-row overflow-hidden !bg-bg-elevated !border-0"
     >
       <aside className="w-[248px] shrink-0 flex flex-col min-h-0 bg-transparent">
-        <div className="shrink-0 px-[12px] pt-[12px] pb-[4px]">
-          <div className="flex items-center gap-[10px] px-[6px] py-[4px] min-w-0">
-            <span className="relative shrink-0">
-              <UserAvatar user={user ?? null} size={32} />
-              <span className="absolute right-[-1px] bottom-[-1px] w-[10px] h-[10px] rounded-full bg-[#12B76A] border-2 border-bg-primary" aria-hidden />
-            </span>
-            <span className="flex-1 min-w-0 flex flex-col leading-tight">
-              <span
-                className="text-text-primary text-[13px] font-[500] truncate"
-                style={font}
-              >
-                {displayName}
-              </span>
-              <span
-                className="text-text-tertiary text-[12px] truncate"
-                style={font}
-              >
-                {handle}
-              </span>
-            </span>
-            <DropdownMenu
-              items={[
-                {
-                  id: "edit_profile",
-                  label: t("settings.profile.edit_profile") || "Edit profile",
-                  icon: <UserEditLine size={16} />,
-                  onClick: () => {},
-                },
-                {
-                  id: "logout",
-                  label: t("settings.profile.sign_out") || "Log out",
-                  icon: <ExitLine size={16} />,
-                  danger: true,
-                  onClick: async () => {
-                    handleClose();
-                    await logout();
-                  },
-                },
-              ]}
-              trigger={
-                <button
-                  type="button"
-                  aria-label={t("common.more_options") || "More options"}
-                  className="p-1 rounded-md text-text-tertiary hover:text-text-primary hover:bg-border-alpha-14 transition-colors border-0 bg-transparent cursor-pointer flex items-center justify-center shrink-0"
-                >
-                  <MenuDots size={18} weight="Bold" className="shrink-0" />
-                </button>
-              }
-            />
-          </div>
-        </div>
-
-        <div className="px-[12px] pt-[4px] pb-[8px]">
+        <div className="px-[12px] pt-[14px] pb-[8px]">
           <div className="relative flex items-center">
             <Search2Line
               size={15}
@@ -342,6 +290,60 @@ export default function SettingsModal() {
             </button>
           </div>
         </nav>
+
+        <div className="shrink-0 p-[12px] pt-[8px]">
+          <div className="flex items-center gap-[10px] px-[6px] py-[4px] min-w-0">
+            <span className="relative shrink-0">
+              <UserAvatar user={user ?? null} size={32} />
+              <span className="absolute right-[-1px] bottom-[-1px] w-[10px] h-[10px] rounded-full bg-[#12B76A] border-2 border-bg-primary" aria-hidden />
+            </span>
+            <span className="flex-1 min-w-0 flex flex-col leading-tight">
+              <span
+                className="text-text-primary text-[13px] font-[500] truncate"
+                style={font}
+              >
+                {displayName}
+              </span>
+              <span
+                className="text-text-tertiary text-[12px] truncate"
+                style={font}
+              >
+                {handle}
+              </span>
+            </span>
+            <DropdownMenu
+              side="top"
+              align="end"
+              items={[
+                {
+                  id: "edit_profile",
+                  label: t("settings.profile.edit_profile") || "Edit profile",
+                  icon: <UserEditLine size={16} />,
+                  onClick: () => {},
+                },
+                {
+                  id: "logout",
+                  label: t("settings.profile.sign_out") || "Log out",
+                  icon: <ExitLine size={16} />,
+                  danger: true,
+                  onClick: async () => {
+                    handleClose();
+                    await logout();
+                  },
+                },
+              ]}
+              trigger={
+                <button
+                  type="button"
+                  aria-label={t("common.more_options") || "More options"}
+                  className="p-1 rounded-md text-text-tertiary hover:text-text-primary hover:bg-border-alpha-14 transition-colors border-0 bg-transparent cursor-pointer flex items-center justify-center shrink-0"
+                >
+                  <MenuDots size={18} weight="Bold" className="shrink-0" />
+                </button>
+              }
+            />
+          </div>
+        </div>
       </aside>
 
       {/* ── Right secondary frame: same roundness, inset with padding, darker ── */}
