@@ -675,7 +675,7 @@ function NotificationCard({
     }
   };
 
-  const shiftY = item.inSettings ? -24 : 0;
+  const shiftY = item.inSettings ? -19 : 0;
   const yOffset = (index === 0 ? 0 : index === 1 ? 8 : 15) + shiftY;
   const scale = index === 0 ? 1 : index === 1 ? 0.96 : 0.92;
   const opacity = index === 0 ? 1 : index === 1 ? 0.95 : 0.75;
