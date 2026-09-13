@@ -171,4 +171,50 @@ describe("PlayerRuntime audio caching", () => {
     expect(storedAudio).not.toBeNull();
     expect(storedAudio?.byteSize).toBe(4);
   });
+
+  it("preloads audio in the background and enables instant cache-hit play on skip", async () => {
+    const sessionSpy = vi.spyOn(api, "createPlaybackSession").mockResolvedValue({
+      sessionId: "pb_preload_1",
+      trackId: "next-track-3",
+      transport: "proxy",
+      playbackId: "pb_preload_1",
+      streamUrl: "/v1/playback/pb_preload_1/media",
+      mimeType: "audio/webm",
+      codec: "opus",
+      bitrate: 128000,
+      expiresAt: new Date().toISOString(),
+    });
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(new Uint8Array([5, 6, 7, 8]), {
+        status: 206,
+        headers: { "content-type": "audio/webm" },
+      }),
+    );
+
+    const nextTrack: Track = {
+      ...track,
+      id: "next-track-3",
+      title: "Next Track",
+    };
+
+    await playerRuntime!.preloadTrack(nextTrack);
+
+    expect(sessionSpy).toHaveBeenCalledTimes(1);
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+
+    const storedAudio = await linerDb.getAudio("next-track-3");
+    expect(storedAudio).not.toBeNull();
+    expect(storedAudio?.byteSize).toBe(4);
+
+    sessionSpy.mockClear();
+    fetchSpy.mockClear();
+
+    const playSpy = vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue();
+    await playerRuntime!.loadAndPlay(nextTrack);
+
+    expect(sessionSpy).not.toHaveBeenCalled();
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(playSpy).toHaveBeenCalled();
+    expect(usePlayerStore.getState().status).toBe("playing");
+  });
 });

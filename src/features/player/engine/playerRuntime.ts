@@ -17,6 +17,9 @@ export class PlayerRuntime {
   private ttfbMs = 0;
   private activePlayPromise: Promise<void> | null = null;
   private activeBlobUrl: string | null = null;
+  private preloadingTrackId: string | null = null;
+  private preloadingPromise: Promise<void> | null = null;
+  private preloadAbortController: AbortController | null = null;
   public onEnded?: () => void;
   public onError?: (info: { trackId: string; message: string }) => void;
 
@@ -321,9 +324,76 @@ export class PlayerRuntime {
     log("cyan", "playback", "pending load cancelled");
   }
 
+  public async preloadTrack(track: Track): Promise<void> {
+    if (this.currentTrackId === track.id) return;
+    if (this.preloadingTrackId === track.id) return;
+
+    const cached = await linerDb.getAudio(track.id);
+    if (cached) return;
+
+    this.preloadAbortController?.abort();
+    const controller = new AbortController();
+    this.preloadAbortController = controller;
+    this.preloadingTrackId = track.id;
+
+    const promise = (async () => {
+      try {
+        const session = await api.createPlaybackSession(
+          track.id,
+          undefined,
+          controller.signal,
+        );
+        if (controller.signal.aborted) return;
+
+        const url = mediaUrl(session.streamUrl);
+        const response = await fetch(url, {
+          headers: { Range: "bytes=0-" },
+          signal: controller.signal,
+        });
+
+        if (!response.ok && response.status !== 206) return;
+
+        const arrayBuffer = await response.arrayBuffer();
+        if (controller.signal.aborted) return;
+
+        const mimeType =
+          session.mimeType ||
+          response.headers.get("content-type") ||
+          "audio/webm";
+        const blob = new Blob([arrayBuffer], { type: mimeType });
+        await linerDb.putAudio(track.id, blob, mimeType);
+        await linerDb.putTrack(track);
+        log(
+          "green",
+          "preload",
+          `preloaded audio: "${track.title}" (${Math.round(blob.size / 1024)} KB)`,
+        );
+      } catch {
+      } finally {
+        if (this.preloadingTrackId === track.id) {
+          this.preloadingTrackId = null;
+          this.preloadingPromise = null;
+          this.preloadAbortController = null;
+        }
+      }
+    })();
+
+    this.preloadingPromise = promise;
+    await promise;
+  }
+
   public async loadAndPlay(track: Track, startPositionMs: number = 0) {
     this.cancelFade();
     const epoch = ++this.loadEpoch;
+
+    if (this.preloadingTrackId === track.id && this.preloadingPromise) {
+      await this.preloadingPromise;
+    } else if (this.preloadingTrackId && this.preloadingTrackId !== track.id) {
+      this.preloadAbortController?.abort();
+      this.preloadAbortController = null;
+      this.preloadingTrackId = null;
+      this.preloadingPromise = null;
+    }
 
     this.loadAbortController?.abort();
     const controller = new AbortController();

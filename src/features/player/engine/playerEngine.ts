@@ -683,6 +683,7 @@ class PlayerEngine {
     if (store.shuffle) {
       this.originalUpcomingQueue.push(track);
     }
+    this.preloadNextTrack(store);
   }
 
   public playNext(track: Track): void {
@@ -704,6 +705,7 @@ class PlayerEngine {
     if (store.shuffle) {
       this.originalUpcomingQueue.unshift(track);
     }
+    this.preloadNextTrack(store);
   }
 
   public clearQueue(): void {
@@ -740,6 +742,7 @@ class PlayerEngine {
     if (newCurrentIndex !== store.currentIndex) {
       store.setCurrentTrack(store.currentTrack, newCurrentIndex);
     }
+    this.preloadNextTrack(store);
   }
 
   public snapshotQueue(): Track[] {
@@ -864,6 +867,7 @@ class PlayerEngine {
       `appending ${additions.length} tracks from Radio Wave engine (wave=${waveId.slice(0, 8)} history=${historyIds.length}): [${sample}]`,
     );
     state.setQueue([...state.queue, ...additions]);
+    this.preloadNextTrack(state);
   }
 
   private async syncDiscordPresence(
@@ -890,6 +894,25 @@ class PlayerEngine {
 
     if (!lyricsCache.has(nextTrack.id)) {
       void this.prefetchLyrics(nextTrack.id);
+    }
+
+    void linerDb.putTrack(nextTrack);
+
+    if (playerRuntime) {
+      void playerRuntime.preloadTrack(nextTrack);
+    }
+
+    const upcomingSlice =
+      currentIndex >= 0
+        ? queue.slice(currentIndex + 2, currentIndex + 4)
+        : queue.slice(1, 3);
+    for (const upcoming of upcomingSlice) {
+      if (upcoming.coverUrl) {
+        void preloadCoverArt(upcoming.coverUrl);
+      }
+      if (!lyricsCache.has(upcoming.id)) {
+        void this.prefetchLyrics(upcoming.id);
+      }
     }
   }
 
