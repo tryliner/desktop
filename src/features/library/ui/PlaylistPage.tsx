@@ -11,9 +11,11 @@ import {
   PlaylistFill,
   CheckLine,
   ArrowLeftLine,
+  ShareForwardLine,
 } from "@mingcute/react";
 import { AnimatePresence, motion } from "framer-motion";
 import { LuPencil, LuTrash2, LuText, LuShuffle } from "react-icons/lu";
+import { buildShareUrl } from "@/shared/utils/share";
 import Button from "@/shared/ui/Button";
 import DropdownMenu from "@/shared/ui/DropdownMenu";
 import SongCardWithMenu from "@/features/player/ui/SongCardWithMenu";
@@ -234,6 +236,15 @@ function LibraryPlaylistContent() {
     }, 1200);
     return () => clearTimeout(timer);
   }, [currentTracks, viewData, toast, t]);
+
+  const handleShare = useCallback(() => {
+    if (typeof navigator !== "undefined" && navigator.clipboard && decodedId) {
+      navigator.clipboard.writeText(buildShareUrl("playlist", decodedId));
+      toast(t("common.link_copied"), "checkmark", {
+        description: viewData?.title || undefined,
+      });
+    }
+  }, [decodedId, viewData?.title, toast, t]);
 
   const handleReorderCommit = useCallback(
     (fromIndex: number, toIndex: number, movingTrack: Track) => {
@@ -705,6 +716,12 @@ function LibraryPlaylistContent() {
                                 icon: <LuText size={15} />,
                                 label: t("common.edit_description"),
                                 onClick: () => setIsEditingDescription(true),
+                              },
+                              {
+                                id: "share",
+                                icon: <ShareForwardLine size={15} />,
+                                label: t("common.share"),
+                                onClick: handleShare,
                               },
                               {
                                 id: "delete",
