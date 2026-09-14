@@ -20,7 +20,7 @@ import scanlinesLogo from "@/assets/branding/logo-scanlines.svg";
 import vhsLogo from "@/assets/branding/logo-vhs.svg";
 import { usePlayerStore, type AccentVariant } from "@/features/player";
 
-const APP_VERSION = "0.1.25";
+const APP_VERSION = "0.1.26";
 
 const brandingLogos: Record<Exclude<AccentVariant, "default">, string> = {
   spotify: spotifyLogo,

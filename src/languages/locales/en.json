@@ -636,7 +636,7 @@
       "check_updates": "Check for updates",
       "checking_updates": "Checking…",
       "up_to_date": "Up to date",
-      "latest_version_toast": "You are running the latest version (v0.1.25)",
+      "latest_version_toast": "You are running the latest version (v0.1.26)",
       "build_info": "Production release · Electron 44 · React 19",
       "tech_stack_title": "Technology & Engine",
       "tech_electron": "Electron 44 & Web Audio",
