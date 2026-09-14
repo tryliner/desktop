@@ -27,7 +27,7 @@ export interface CollectionPageSkeletonProps {
   isAlbum?: boolean;
 }
 
-// matches album and catalog playlist hero headers and tracklist layout
+// matches the sidebar + track list layout
 function CollectionPageSkeletonComponent({
   className = "",
   isAlbum = true,
@@ -36,52 +36,34 @@ function CollectionPageSkeletonComponent({
     <div
       className={`relative w-full bg-bg-primary pb-[32px] select-none ${className}`}
     >
-      {/* subtle ambient header glow */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute left-0 top-0 z-0 h-[450px] w-full bg-gradient-to-b from-white/[0.04] to-transparent blur-3xl opacity-30"
-      />
+      <div className="flex items-start gap-[32px] px-[32px] pt-[20px] pb-[24px]">
+        <aside className="w-[280px] shrink-0">
+          {/* back link */}
+          <div className="skeleton-shimmer h-[32px] w-[64px] rounded-md" />
 
-      <div className="relative z-10 px-[32px] pt-[24px]">
-        {/* top row: back button and collection title */}
-        <div className="inline-flex items-center gap-[10px]">
-          <div className="skeleton-shimmer h-[24px] w-[24px] rounded-full shrink-0" />
-          <div className="skeleton-shimmer h-[28px] w-[220px] rounded-[6px]" />
-        </div>
-
-        {/* hero header: artwork + metadata */}
-        <section className="mt-[20px] flex items-start gap-[28px]">
           {/* cover artwork */}
-          <div className="relative h-[170px] w-[170px] shrink-0 overflow-hidden rounded-xl bg-border-alpha-14">
+          <div className="relative mt-[16px] aspect-square w-full overflow-hidden rounded-md bg-border-alpha-14">
             <div className="skeleton-shimmer h-full w-full" />
           </div>
 
-          {/* title, subtitle, track count and action buttons */}
-          <div className="flex min-h-[170px] flex-1 justify-between">
-            <div className="flex flex-col justify-center">
-              <div className="skeleton-shimmer h-[34px] w-[260px] md:w-[340px] rounded-[6px]" />
-              <div className="skeleton-shimmer h-[18px] w-[210px] rounded-[4px] mt-[8px]" />
-              <div className="skeleton-shimmer h-[14px] w-[140px] rounded-[4px] mt-[10px]" />
+          {/* title, subtitle, meta and action buttons */}
+          <div className="skeleton-shimmer h-[26px] w-[80%] rounded-[6px] mt-[16px]" />
+          <div className="skeleton-shimmer h-[16px] w-[60%] rounded-[4px] mt-[8px]" />
+          <div className="skeleton-shimmer h-[14px] w-[40%] rounded-[4px] mt-[8px]" />
 
-              <div className="mt-[18px] flex items-center gap-[10px]">
-                {/* play all */}
-                <div className="skeleton-shimmer h-[42px] w-[124px] rounded-md" />
-                {/* add to queue */}
-                <div className="skeleton-shimmer h-[42px] w-[42px] rounded-md" />
-                {/* save to library */}
-                <div className="skeleton-shimmer h-[42px] w-[42px] rounded-md" />
-              </div>
-            </div>
-
-            {/* right share button */}
-            <div className="flex items-end gap-[10px] pb-[6px] pr-[16px]">
-              <div className="skeleton-shimmer h-[42px] w-[42px] rounded-md" />
-            </div>
+          <div className="skeleton-shimmer h-[36px] w-full rounded-md mt-[16px]" />
+          <div className="mt-[8px] flex items-center gap-[8px]">
+            {/* add to queue */}
+            <div className="skeleton-shimmer h-[36px] w-[36px] rounded-md" />
+            {/* save to library */}
+            <div className="skeleton-shimmer h-[36px] w-[36px] rounded-md" />
+            {/* share */}
+            <div className="skeleton-shimmer h-[36px] w-[36px] rounded-md" />
           </div>
-        </section>
+        </aside>
 
-        {/* tracklist rows */}
-        <section className="mt-[20px]">
+        <div className="min-w-0 flex-1 pt-[48px]">
+          {/* tracklist rows */}
           <div className="flex flex-col -mx-[8px] space-y-[2px]">
             {Array.from({ length: 8 }).map((_, i) => (
               <div
@@ -114,7 +96,7 @@ function CollectionPageSkeletonComponent({
               </div>
             ))}
           </div>
-        </section>
+        </div>
       </div>
     </div>
   );

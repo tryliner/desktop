@@ -36,3 +36,10 @@ export { default as UserAvatar, type UserAvatarProps } from "./UserAvatar";
 export { default as GrabberIcon } from "./GrabberIcon";
 export { default as ReorderDropPlaceholder } from "./ReorderDropPlaceholder";
 export { default as FloatingDragCard } from "./FloatingDragCard";
+export { default as StickyHeader, type StickyHeaderProps } from "./StickyHeader";
+export {
+  default as EntitySidebar,
+  SIDEBAR_TITLE_CLASS,
+  SIDEBAR_SUBTITLE_CLASS,
+  type EntitySidebarProps,
+} from "./EntitySidebar";

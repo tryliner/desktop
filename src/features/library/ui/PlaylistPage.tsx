@@ -2,25 +2,21 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useCallback, useEffect, useMemo, useRef, useState, Suspense } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import PlaylistPageSkeleton from "./PlaylistPageSkeleton";
-import { useToast, ReorderDropPlaceholder, FloatingDragCard } from "@/shared/ui";
+import { useToast, ReorderDropPlaceholder, FloatingDragCard, EntitySidebar, StickyHeader, SIDEBAR_TITLE_CLASS, SIDEBAR_SUBTITLE_CLASS } from "@/shared/ui";
 import {
   AddLine,
-  ArrowLeftLine,
   PlayFill,
-  ShareForwardLine,
   More2Line,
   HeartFill,
   PlaylistFill,
-  Upload2Line,
   CheckLine,
 } from "@mingcute/react";
 import { AnimatePresence, motion } from "framer-motion";
-import { LuPencil, LuGlobe, LuTrash2, LuText } from "react-icons/lu";
+import { LuPencil, LuGlobe, LuTrash2, LuText, LuShuffle } from "react-icons/lu";
 import Button from "@/shared/ui/Button";
 import DropdownMenu from "@/shared/ui/DropdownMenu";
 import SongCardWithMenu from "@/features/player/ui/SongCardWithMenu";
 import CoverImage from "@/features/covers/ui/CoverImage";
-import { useCoverSrc } from "@/features/covers";
 import { useModalStore } from "../store/modalStore";
 import {
   usePlaylist,
@@ -32,7 +28,6 @@ import { playerEngine } from "@/features/player";
 import type { Track } from "@/shared/types";
 import { useTranslation } from "@/languages";
 import { api } from "@/shared/api";
-import { buildShareUrl } from "@/shared/utils/share";
 
 interface TrackItemProps {
   track: Track;
@@ -104,7 +99,6 @@ function LibraryPlaylistContent() {
 
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [isEditingDescription, setIsEditingDescription] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
   const reorderTracks = useReorderPlaylistTracks();
   const titleRef = useRef<HTMLHeadingElement>(null);
   const descriptionRef = useRef<HTMLParagraphElement>(null);
@@ -131,23 +125,19 @@ function LibraryPlaylistContent() {
       return {
         title: t("playlist.liked_songs"),
         bio: "",
-        description: t("common.tracks", { count: tracks.length }),
-        showCountInMeta: false,
-        countLabel: "",
+        countLabel: t("common.tracks", { count: tracks.length }),
         coverUrl: "",
+        coverUrls: [] as string[],
         tracks,
         revision: 0,
       };
     }
     if (!playlistDetail) return null;
-    const bio = playlistDetail.description?.trim();
-    const countLabel = t("common.tracks", { count: playlistDetail.trackCount });
+    const bio = playlistDetail.description?.trim() ?? "";
     return {
       title: playlistDetail.title || t("playlist.untitled_playlist"),
-      bio: bio || "",
-      description: bio || countLabel,
-      showCountInMeta: Boolean(bio),
-      countLabel,
+      bio,
+      countLabel: t("common.tracks", { count: playlistDetail.trackCount }),
       coverUrl: playlistDetail.coverUrl || "",
       coverUrls:
         playlistDetail.coverUrls ??
@@ -156,8 +146,6 @@ function LibraryPlaylistContent() {
       revision: playlistDetail.revision,
     };
   })();
-
-  const heroCoverSrc = useCoverSrc(viewData?.coverUrl);
 
   useEffect(() => {
     if (isEditingTitle && titleRef.current) {
@@ -189,6 +177,21 @@ function LibraryPlaylistContent() {
     playerEngine.clearQueue();
     playerEngine.playTrack(
       viewData.tracks[0],
+      viewData.tracks,
+      context,
+      viewData.coverUrl,
+    );
+  }, [viewData, decodedId]);
+
+  const handleShufflePlay = useCallback(() => {
+    if (!viewData || viewData.tracks.length === 0) return;
+    const context = decodedId ? `playlist:${decodedId}` : viewData.title;
+    const randomIndex = Math.floor(Math.random() * viewData.tracks.length);
+    const startTrack = viewData.tracks[randomIndex];
+    playerEngine.clearQueue();
+    playerEngine.setShuffle(true);
+    playerEngine.playTrack(
+      startTrack,
       viewData.tracks,
       context,
       viewData.coverUrl,
@@ -275,15 +278,6 @@ function LibraryPlaylistContent() {
     overscan: 10,
   });
 
-  const handleShare = useCallback(() => {
-    if (typeof navigator !== "undefined" && navigator.clipboard && decodedId && decodedId !== "likes") {
-      navigator.clipboard.writeText(buildShareUrl("playlist", decodedId));
-      toast(t("common.link_copied"), "checkmark", {
-        description: viewData?.title || undefined,
-      });
-    }
-  }, [t, toast, decodedId, viewData?.title]);
-
   const urlsToPreload = useMemo(() => {
     if (!viewData) return [];
     const urls = new Set<string>();
@@ -360,12 +354,14 @@ function LibraryPlaylistContent() {
     }
   }, [isReady, skeletonExited]);
 
+  const [isScrolled, setIsScrolled] = useState(false);
+
   if (!isLoading && !viewData) {
     return (
       <div className="page-transition h-full w-full bg-bg-primary flex items-center justify-center">
         <span className="text-text-secondary">
-          {playlistError
-            ? t("playlist.error_loading")
+          {isLikesMode
+            ? t("playlist.likes_empty")
             : t("playlist.not_found")}
         </span>
       </div>
@@ -376,119 +372,26 @@ function LibraryPlaylistContent() {
     <div
       ref={scrollRef}
       onScroll={(e) => {
-        const container = e.currentTarget;
-        let nextScrolled = false;
-        if (trackListContainerRef.current) {
-          const relativeTrackTop =
-            trackListContainerRef.current.getBoundingClientRect().top -
-            container.getBoundingClientRect().top;
-          nextScrolled = relativeTrackTop <= 44;
-        } else {
-          nextScrolled = container.scrollTop > 260;
-        }
+        const nextScrolled = e.currentTarget.scrollTop > 180;
         setIsScrolled((prev) => (prev === nextScrolled ? prev : nextScrolled));
       }}
       className="page-transition relative h-full w-full overflow-y-auto bg-bg-primary pb-[24px]"
     >
-      <div
-        className={`sticky top-0 z-20 transition-all duration-200 ${
-          isScrolled
-            ? "opacity-100 pointer-events-auto translate-y-0"
-            : "opacity-0 pointer-events-none -translate-y-2"
-        } bg-bg-primary`}
-        style={{ height: "44px", marginBottom: "-44px" }}
-        data-window-drag
-      >
-        <div className="flex items-center justify-between pl-[21px] pr-[32px] h-[44px]">
-          <div className="flex items-center gap-[12px] min-w-0">
-            <button
-              type="button"
-              onClick={() =>
-                window.history.length > 1 ? navigate(-1) : navigate("/library")
-              }
-              className="inline-flex shrink-0 items-center justify-center gap-[5px] text-[12.5px] font-[600] text-text-secondary hover:text-text-primary active:scale-[0.96] transition-all border-0 bg-transparent p-0 cursor-pointer select-none"
-              style={{ fontFamily: "var(--font-inter), sans-serif" }}
-            >
-              <ArrowLeftLine size={15} className="shrink-0 -translate-y-[0.5px]" />
-              <span>{t("common.back")}</span>
-            </button>
-
-            {viewData && (
-              <span
-                className={`text-[14px] font-semibold text-text-primary truncate ${
-                  viewData.title && !/\p{Lu}/u.test(viewData.title)
-                    ? "-translate-y-[2px]"
-                    : "-translate-y-[1px]"
-                }`}
-                style={{
-                  fontFamily: "var(--font-inter), sans-serif",
-                  letterSpacing: "-0.01em",
-                }}
-              >
-                {viewData.title}
-              </span>
-            )}
-          </div>
-        </div>
-
-        <div className="pointer-events-none absolute inset-x-0 bottom-[-18px] h-[24px] overflow-hidden">
-          <div
-            className={`h-full w-full transition-opacity duration-200 ${
-              isScrolled ? "opacity-100" : "opacity-0"
-            }`}
-            style={{
-              background:
-                "linear-gradient(to bottom, var(--color-bg-primary) 0%, var(--color-bg-primary) 25%, transparent 100%)",
-            }}
-          />
-        </div>
-      </div>
-
+      <StickyHeader isScrolled={isScrolled} showBack={isReady} />
       <div className="relative z-1 grid grid-cols-1 items-start w-full">
         {isReady && viewData && (
           <div className="col-start-1 row-start-1 w-full">
-            {viewData.coverUrl && (
-              <div
-                className="pointer-events-none absolute left-0 top-0 z-0 w-full h-[480px]"
-                style={{
-                  backgroundImage: `url(${heroCoverSrc})`,
-                  backgroundSize: "cover",
-                  backgroundPosition: "center",
-                  filter: "blur(90px) saturate(150%)",
-                  opacity: 0.15,
-                  maskImage:
-                    "linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%)",
-                  WebkitMaskImage:
-                    "linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%)",
-                }}
-              />
-            )}
-            <div className="relative z-10 px-[32px] pt-[20px]" data-window-drag>
-              <button
-                type="button"
-                onClick={() =>
-                  window.history.length > 1 ? navigate(-1) : navigate("/library")
-                }
-                className="group inline-flex h-[32px] items-center gap-[6px] rounded-md px-[12px] text-[13px] font-[500] text-text-primary bg-black/70 hover:bg-black/85 backdrop-blur-md transition-colors cursor-pointer border-0 shadow-sm"
-                style={{ fontFamily: "var(--font-inter), sans-serif" }}
-              >
-                <ArrowLeftLine
-                  size={16}
-                  className="transition-transform duration-150 group-hover:-translate-x-0.5 translate-y-[1px]"
-                />
-                <span>{t("common.back")}</span>
-              </button>
-              <section className="mt-[20px] flex items-start gap-[24px]">
-                <div className="relative h-[180px] w-[180px] shrink-0 overflow-hidden rounded-xl bg-border-alpha-14 flex items-center justify-center">
-                  {(() => {
+            <div className="relative z-10 flex items-start gap-[32px] px-[32px] pt-[56px] pb-[24px]" data-window-drag>
+              <EntitySidebar
+                cover={(() => {
                     const urls =
                       viewData.coverUrls ??
                       (viewData.coverUrl ? [viewData.coverUrl] : []);
                     if (urls.length === 0) {
                       return isLikesMode ? (
-                        <HeartFill size={64} className="text-border-alpha-33" />
+                        <HeartFill size={48} className="text-border-alpha-33" />
                       ) : (
-                        <PlaylistFill size={64} className="text-border-alpha-33" />
+                        <PlaylistFill size={48} className="text-border-alpha-33" />
                       );
                     }
                     if (urls.length === 1) {
@@ -497,7 +400,7 @@ function LibraryPlaylistContent() {
                           src={urls[0]}
                           alt={viewData.title}
                           fill
-                          sizes="170px"
+                          sizes="280px"
                           className="object-cover"
                           draggable={false}
                           unoptimized
@@ -518,7 +421,7 @@ function LibraryPlaylistContent() {
                                 src={url}
                                 alt={`${viewData.title} cover ${i + 1}`}
                                 fill
-                                sizes="85px"
+                                sizes="140px"
                                 className="object-cover"
                                 draggable={false}
                                 unoptimized
@@ -529,17 +432,14 @@ function LibraryPlaylistContent() {
                       </div>
                     );
                   })()}
-                </div>
-
-                <div className="flex min-h-[180px] flex-1 justify-between">
-                  <div className="flex flex-col justify-center">
-                    <h1
-                      ref={titleRef}
-                      className={`m-0 text-[40px] leading-[1.0] text-text-primary ${
-                        isLikesMode
-                          ? ""
-                          : "cursor-text outline-none transition-colors"
-                      } ${isEditingTitle ? "bg-border-alpha-14 rounded-[4px] -ml-[4px] px-[4px]" : ""}`}
+                title={
+                  <h1
+                    ref={titleRef}
+                    className={`${SIDEBAR_TITLE_CLASS} ${
+                      isLikesMode
+                        ? ""
+                        : "cursor-text outline-none transition-colors"
+                    } ${isEditingTitle ? "bg-border-alpha-14 rounded-[4px] -ml-[4px] px-[4px]" : ""}`}
                       contentEditable={isLikesMode ? false : isEditingTitle}
                       suppressContentEditableWarning
                       onBlur={(e) => {
@@ -568,28 +468,17 @@ function LibraryPlaylistContent() {
                       onClick={() => {
                         if (!isLikesMode) setIsEditingTitle(true);
                       }}
-                      style={{
-                        fontFamily: "var(--font-inter), sans-serif",
-                        fontWeight: 600,
-                        letterSpacing: "-0.02em",
-                      }}
                     >
                       {viewData.title}
                     </h1>
-                    {isLikesMode ? (
-                      <p
-                        className="m-0 mt-[8px] max-w-[480px] text-[14px] leading-[1.5] text-text-secondary line-clamp-2"
-                        style={{
-                          fontFamily: "var(--font-inter), sans-serif",
-                          fontWeight: 400,
-                        }}
-                      >
-                        {viewData.description}
-                      </p>
+                  }
+                  subtitle={
+                    isLikesMode ? (
+                      undefined
                     ) : viewData.bio || isEditingDescription ? (
                       <p
                         ref={descriptionRef}
-                        className={`m-0 mt-[8px] max-w-[480px] text-[14px] leading-[1.5] text-text-secondary line-clamp-2 cursor-text outline-none transition-colors empty:min-h-[21px] ${
+                        className={`${SIDEBAR_SUBTITLE_CLASS} cursor-text outline-none transition-colors empty:min-h-[21px] ${
                           isEditingDescription ? "bg-border-alpha-14 rounded-[4px] -ml-[4px] px-[4px]" : ""
                         }`}
                         contentEditable={isEditingDescription}
@@ -618,32 +507,23 @@ function LibraryPlaylistContent() {
                           }
                         }}
                         onClick={() => setIsEditingDescription(true)}
-                        style={{
-                          fontFamily: "var(--font-inter), sans-serif",
-                          fontWeight: 400,
-                        }}
                       >
                         {viewData.bio}
                       </p>
                     ) : (
-                      <p
-                        className="m-0 mt-[8px] max-w-[480px] text-[14px] leading-[1.5] text-text-secondary line-clamp-2"
-                        style={{
-                          fontFamily: "var(--font-inter), sans-serif",
-                          fontWeight: 400,
-                        }}
+                      <button
+                        type="button"
+                        onClick={() => setIsEditingDescription(true)}
+                        className="cursor-pointer border-0 bg-transparent p-0 text-[13px] font-[400] text-text-tertiary transition-colors hover:text-text-primary"
+                        style={{ fontFamily: "var(--font-inter), sans-serif" }}
                       >
-                        {viewData.description}
-                      </p>
-                    )}
-                    <p
-                      className="m-0 mt-[6px] text-[13px] text-text-tertiary"
-                      style={{
-                        fontFamily: "var(--font-inter), sans-serif",
-                        fontWeight: 400,
-                      }}
-                    >
-                      {viewData.showCountInMeta ? `${viewData.countLabel} • ` : ""}
+                        {t("common.add_description")}
+                      </button>
+                    )
+                  }
+                  meta={
+                    <>
+                      {`${viewData.countLabel} • `}
                       {(() => {
                         const totalMs = viewData.tracks.reduce(
                           (acc, t) => acc + (t.durationMs || 0),
@@ -656,85 +536,78 @@ function LibraryPlaylistContent() {
                         const totalSecs = Math.floor((totalMs % 60000) / 1000);
                         return `${totalMins} ${t("playlist.min")} ${totalSecs} ${t("playlist.sec")}`;
                       })()}
-                    </p>
-
-                    <div className="mt-[16px] flex items-center gap-[10px]">
+                    </>
+                  }
+                  primaryAction={
+                    <div className="flex flex-col gap-[8px] w-full">
                       <Button
                         variant="primary"
                         onClick={handlePlayAll}
                         disabled={currentTracks.length === 0}
-                        className="!h-[42px] !text-[16px] !font-[500] px-[24px]"
+                        className="!h-[36px] w-full !text-[13.5px] !font-[500] px-[16px] flex items-center justify-center gap-[6px]"
                       >
                         <PlayFill size={16} />
-                        {t("playlist.play_all")}
+                        <span>{t("common.play_all")}</span>
                       </Button>
 
-                      <Button
-                        variant="outline"
-                        onClick={handleAddToQueue}
-                        disabled={currentTracks.length === 0}
-                        className="!h-[42px] !w-[42px] !p-0 flex items-center justify-center text-text-primary"
-                        title={t("playlist.add_to_queue")}
-                      >
-                        <AnimatePresence mode="wait">
-                          {addedToQueue ? (
-                            <motion.span
-                              key="check"
-                              initial={{ opacity: 0, scale: 0.5 }}
-                              animate={{ opacity: 1, scale: 1 }}
-                              exit={{ opacity: 0, scale: 0.5 }}
-                              transition={{ duration: 0.08 }}
-                              className="flex items-center justify-center text-emerald-400"
-                            >
-                              <CheckLine size={20} />
-                            </motion.span>
-                          ) : (
-                            <motion.span
-                              key="add"
-                              initial={{ opacity: 0, scale: 0.5 }}
-                              animate={{ opacity: 1, scale: 1 }}
-                              exit={{ opacity: 0, scale: 0.5 }}
-                              transition={{ duration: 0.08 }}
-                              className="flex items-center justify-center"
-                            >
-                              <AddLine size={20} />
-                            </motion.span>
-                          )}
-                        </AnimatePresence>
-                      </Button>
+                      <div className="flex items-center gap-[8px] w-full">
+                        <Button
+                          variant="outline"
+                          onClick={handleAddToQueue}
+                          disabled={currentTracks.length === 0}
+                          className="!h-[36px] flex-1 !text-[13px] !font-[500] px-[12px] flex items-center justify-center gap-[6px]"
+                          title={t("common.add_to_queue")}
+                        >
+                          <AnimatePresence mode="wait">
+                            {addedToQueue ? (
+                              <motion.span
+                                key="check"
+                                initial={{ opacity: 0, scale: 0.5 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.5 }}
+                                transition={{ duration: 0.08 }}
+                                className="flex items-center justify-center text-emerald-400"
+                              >
+                                <CheckLine size={16} />
+                              </motion.span>
+                            ) : (
+                              <motion.span
+                                key="add"
+                                initial={{ opacity: 0, scale: 0.5 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.5 }}
+                                transition={{ duration: 0.08 }}
+                                className="flex items-center justify-center"
+                              >
+                                <AddLine size={16} />
+                              </motion.span>
+                            )}
+                          </AnimatePresence>
+                          <span className="truncate">{t("common.add_to_queue")}</span>
+                        </Button>
+
+                        <Button
+                          variant="outline"
+                          onClick={handleShufflePlay}
+                          disabled={currentTracks.length === 0}
+                          className="!h-[36px] !w-[36px] shrink-0 !p-0 flex items-center justify-center text-text-primary"
+                          title={t("common.shuffle")}
+                        >
+                          <LuShuffle size={16} />
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-
-                  <div className="flex items-end gap-[10px] pb-[6px] pr-[16px]">
-                    {isLikesMode && (
-                      <Button
-                        variant="outline"
-                        onClick={() => useModalStore.getState().openImportLikes()}
-                        className="!h-[42px] px-[16px]"
-                      >
-                        <Upload2Line size={16} />
-                        {t("playlist.import")}
-                      </Button>
-                    )}
-
-                    <Button
-                      variant="outline"
-                      onClick={handleShare}
-                      className="!h-[42px] !w-[42px] !p-0 flex items-center justify-center text-text-primary"
-                      title={t("common.share")}
-                    >
-                      <ShareForwardLine size={20} />
-                    </Button>
-
-                    {!isLikesMode && (
+                  }
+                  actions={
+                    !isLikesMode ? (
                       <DropdownMenu
                         trigger={
                           <Button
                             variant="outline"
-                            className="!h-[42px] !w-[42px] !p-0 flex items-center justify-center text-text-primary"
+                            className="!h-[32px] !w-[32px] !p-0 flex items-center justify-center text-text-secondary hover:text-text-primary"
                             title={t("common.more")}
                           >
-                            <More2Line size={20} />
+                            <More2Line size={16} />
                           </Button>
                         }
                         items={[
@@ -773,13 +646,12 @@ function LibraryPlaylistContent() {
                           },
                         ]}
                       />
-                    )}
-                  </div>
-                </div>
-              </section>
-
+                    ) : undefined
+                  }
+                />
+                <div className="min-w-0 flex-1">
               {currentTracks.length === 0 ? (
-                <div className="mt-[16px] flex min-h-[50vh] flex-col items-center justify-center gap-[12px] text-center">
+                <div className="flex min-h-[50vh] flex-col items-center justify-center gap-[12px] text-center">
                   <PlaylistFill size={40} className="text-border-alpha-33" />
                   <div className="flex flex-col gap-[4px]">
                     <p
@@ -799,7 +671,7 @@ function LibraryPlaylistContent() {
               ) : (
               <div
                 ref={trackListContainerRef}
-                className="relative mt-[16px]"
+                className="relative -mx-[8px]"
                 style={{
                   height: `${rowVirtualizer.getTotalSize()}px`,
                 }}
@@ -909,8 +781,9 @@ function LibraryPlaylistContent() {
                   />
                 </FloatingDragCard>
               )}
+              </div>
+              </div>
             </div>
-          </div>
         )}
 
         {!skeletonExited && (

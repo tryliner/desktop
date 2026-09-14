@@ -1,7 +1,6 @@
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useEffect, useState, Suspense, useRef, useCallback, useMemo } from "react";
 import {
-  ArrowLeftLine,
   PlayFill,
   AddLine,
   NewFolderLine,
@@ -17,7 +16,7 @@ import CoverImage from "@/features/covers/ui/CoverImage";
 import { playerEngine } from "@/features/player";
 import { AnimatePresence, motion } from "framer-motion";
 import type { Track } from "@/shared/types";
-import { useToast } from "@/shared/ui";
+import { useToast, StickyHeader } from "@/shared/ui";
 import { useTranslation } from "@/languages";
 import { useModalStore } from "@/features/library";
 import { api, mediaUrl, toMaxQualityAvatarUrl, toClientTrack, type ApiTrack } from "@/shared/api";
@@ -215,7 +214,7 @@ function ArtistContent() {
           const relativeTrackTop =
             tracksSectionRef.current.getBoundingClientRect().top -
             container.getBoundingClientRect().top;
-          nextScrolled = relativeTrackTop <= 44;
+          nextScrolled = relativeTrackTop <= 56;
         } else {
           nextScrolled = container.scrollTop > 260;
         }
@@ -223,59 +222,30 @@ function ArtistContent() {
       }}
       className="page-transition relative h-full w-full overflow-y-auto bg-bg-primary pb-[32px]"
     >
-      <div
-        className={`sticky top-0 z-20 transition-all duration-200 ${
-          isScrolled
-            ? "opacity-100 pointer-events-auto translate-y-0"
-            : "opacity-0 pointer-events-none -translate-y-2"
-        } bg-bg-primary`}
-        style={{ height: "44px", marginBottom: "-44px" }}
-        data-window-drag
-      >
-        <div className="flex items-center justify-between pl-[21px] pr-[32px] h-[44px]">
-          <div className="flex items-center gap-[12px] min-w-0">
-            <button
-              type="button"
-              onClick={() =>
-                window.history.length > 1 ? navigate(-1) : navigate("/library")
-              }
-              className="inline-flex shrink-0 items-center justify-center gap-[5px] text-[12.5px] font-[600] text-text-secondary hover:text-text-primary active:scale-[0.96] transition-all border-0 bg-transparent p-0 cursor-pointer select-none"
-              style={{ fontFamily: "var(--font-inter), sans-serif" }}
-            >
-              <ArrowLeftLine size={15} className="shrink-0 -translate-y-[0.5px]" />
-              <span>{t("common.back")}</span>
-            </button>
+      <StickyHeader
+        isScrolled={isScrolled}
+        showBack={isReady}
+        title={data?.title}
+        thumbnail={
+          data?.coverUrl ? (
+            <div className="relative h-[24px] w-[24px] shrink-0 overflow-hidden rounded-full bg-border-alpha-14">
+              <CoverImage
+                src={data.coverUrl}
+                alt={data.title}
+                fill
+                sizes="24px"
+                className="object-cover"
+                draggable={false}
+              />
+            </div>
+          ) : (
+            <div className="flex h-[24px] w-[24px] shrink-0 items-center justify-center rounded-full bg-border-alpha-14 text-text-secondary text-[11px] font-bold">
+              {data?.title ? data.title.charAt(0) : ""}
+            </div>
+          )
+        }
+      />
 
-            {data && (
-              <span
-                className={`text-[14px] font-semibold text-text-primary truncate ${
-                  data.title && !/\p{Lu}/u.test(data.title)
-                    ? "-translate-y-[2px]"
-                    : "-translate-y-[1px]"
-                }`}
-                style={{
-                  fontFamily: "var(--font-inter), sans-serif",
-                  letterSpacing: "-0.01em",
-                }}
-              >
-                {data.title}
-              </span>
-            )}
-          </div>
-        </div>
-
-        <div className="pointer-events-none absolute inset-x-0 bottom-[-18px] h-[24px] overflow-hidden">
-          <div
-            className={`h-full w-full transition-opacity duration-200 ${
-              isScrolled ? "opacity-100" : "opacity-0"
-            }`}
-            style={{
-              background:
-                "linear-gradient(to bottom, var(--color-bg-primary) 0%, var(--color-bg-primary) 25%, transparent 100%)",
-            }}
-          />
-        </div>
-      </div>
 
       <div className="relative z-1 grid grid-cols-1 items-start w-full">
         {isReady && data && (
@@ -303,22 +273,8 @@ function ArtistContent() {
                 <div className="absolute inset-0 z-0 bg-bg-elevated" />
               )}
 
-              <div className="relative z-10 px-[32px] pt-[20px]" data-window-drag>
-                <button
-                  type="button"
-                  onClick={() =>
-                    window.history.length > 1 ? navigate(-1) : navigate("/library")
-                  }
-                  className="group inline-flex h-[32px] items-center gap-[6px] rounded-md px-[12px] text-[13px] font-[500] text-text-primary bg-black/70 hover:bg-black/85 backdrop-blur-md transition-colors cursor-pointer border-0 shadow-sm"
-                  style={{ fontFamily: "var(--font-inter), sans-serif" }}
-                >
-                  <ArrowLeftLine
-                    size={16}
-                    className="transition-transform duration-150 group-hover:-translate-x-0.5 translate-y-[1px]"
-                  />
-                  <span>{t("common.back")}</span>
-                </button>
-              </div>
+              {/* drag region above hero title */}
+              <div className="relative z-10 px-[32px] pt-[56px]" data-window-drag />
 
               <div className="relative z-10 px-[32px] pb-[20px] flex flex-col md:flex-row items-start md:items-end justify-between gap-[24px]">
                 <div className="flex flex-col min-w-0">

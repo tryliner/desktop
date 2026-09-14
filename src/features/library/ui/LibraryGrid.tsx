@@ -344,7 +344,7 @@ export default function LibraryGrid({
 
   if (viewMode === "list") {
     return (
-      <div className="flex flex-col gap-[4px] pb-[24px]">
+      <div className="flex flex-col gap-[4px] pb-[24px] -mx-[8px]">
         {prependNode && prependNode}
         {items.map((item) => (
           <LibraryItemRow key={`${item.kind}:${item.id}`} item={item} />
