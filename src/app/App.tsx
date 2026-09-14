@@ -12,9 +12,13 @@ import EnvironmentWarning from "./EnvironmentWarning";
 import { ConnectivityWall } from "@/features/connectivity";
 import "./globals.css";
 
+function AppIconSync() {
+  useAppIconSync();
+  return null;
+}
+
 export default function App() {
   useWindowDrag();
-  useAppIconSync();
 
   return (
     <HashRouter>
@@ -25,6 +29,7 @@ export default function App() {
         enableSystem={false}
         disableTransitionOnChange
       >
+        <AppIconSync />
         <AppleEmojiProvider>
           <I18nProvider>
             <ToastProvider>

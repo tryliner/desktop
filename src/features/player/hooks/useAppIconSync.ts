@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useTheme } from "next-themes";
 import { usePlayerStore, type AccentVariant } from "../store/playerStore";
 import defaultLogo from "@/assets/branding/logo-default.svg";
 import spotifyLogo from "@/assets/branding/logo-spotify.svg";
@@ -30,7 +31,18 @@ const brandingLogos: Record<AccentVariant, string> = {
   vhs: vhsLogo,
 };
 
-async function renderIconDataUrl(logoSrc: string): Promise<string> {
+const invertedLightVariants: readonly AccentVariant[] = [
+  "default",
+  "carbon",
+  "pixel",
+  "scanlines",
+];
+
+async function renderIconDataUrl(
+  logoSrc: string,
+  isLight: boolean,
+  shouldInvert: boolean,
+): Promise<string> {
   const canvas = document.createElement("canvas");
   canvas.width = 512;
   canvas.height = 512;
@@ -43,11 +55,11 @@ async function renderIconDataUrl(logoSrc: string): Promise<string> {
   } else {
     ctx.rect(0, 0, 512, 512);
   }
-  ctx.fillStyle = "#0d0d10";
+  ctx.fillStyle = isLight ? "#ffffff" : "#0d0d10";
   ctx.fill();
 
   ctx.lineWidth = 2;
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.08)";
+  ctx.strokeStyle = isLight ? "rgba(0, 0, 0, 0.08)" : "rgba(255, 255, 255, 0.08)";
   ctx.stroke();
 
   const img = new Image();
@@ -58,18 +70,25 @@ async function renderIconDataUrl(logoSrc: string): Promise<string> {
     img.src = logoSrc;
   });
 
+  if (isLight && shouldInvert) {
+    ctx.filter = "invert(1)";
+  }
+
   ctx.drawImage(img, 128.7, 107.8, 254.6, 296.4);
   return canvas.toDataURL("image/png");
 }
 
 export function useAppIconSync() {
   const accentVariant = usePlayerStore((state) => state.accentVariant);
+  const { theme, resolvedTheme } = useTheme();
 
   useEffect(() => {
+    const isLight = (resolvedTheme || theme) === "light";
+    const shouldInvert = invertedLightVariants.includes(accentVariant);
     const logoSrc = brandingLogos[accentVariant] || defaultLogo;
     let active = true;
 
-    void renderIconDataUrl(logoSrc).then((dataUrl) => {
+    void renderIconDataUrl(logoSrc, isLight, shouldInvert).then((dataUrl) => {
       if (!active || !dataUrl) return;
 
       if (window.linerElectron?.setAppIcon) {
@@ -88,5 +107,5 @@ export function useAppIconSync() {
     return () => {
       active = false;
     };
-  }, [accentVariant]);
+  }, [accentVariant, theme, resolvedTheme]);
 }
