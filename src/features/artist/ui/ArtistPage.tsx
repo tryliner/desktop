@@ -194,6 +194,49 @@ function ArtistContent() {
     }
   };
 
+  const targetScrollTopRef = useRef<number | null>(null);
+  const rafIdRef = useRef<number | null>(null);
+
+  const handleTopWheel = useCallback((e: React.WheelEvent) => {
+    const container = scrollRef.current;
+    if (!container) return;
+
+    const maxScroll = container.scrollHeight - container.clientHeight;
+    if (maxScroll <= 0) return;
+
+    const current = targetScrollTopRef.current ?? container.scrollTop;
+    const target = Math.max(0, Math.min(maxScroll, current + e.deltaY));
+    targetScrollTopRef.current = target;
+
+    if (rafIdRef.current === null) {
+      const step = () => {
+        if (!scrollRef.current || targetScrollTopRef.current === null) {
+          rafIdRef.current = null;
+          return;
+        }
+        const now = scrollRef.current.scrollTop;
+        const diff = targetScrollTopRef.current - now;
+        if (Math.abs(diff) < 0.5) {
+          scrollRef.current.scrollTop = targetScrollTopRef.current;
+          targetScrollTopRef.current = null;
+          rafIdRef.current = null;
+          return;
+        }
+        scrollRef.current.scrollTop = now + diff * 0.25;
+        rafIdRef.current = requestAnimationFrame(step);
+      };
+      rafIdRef.current = requestAnimationFrame(step);
+    }
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current);
+      }
+    };
+  }, []);
+
   if (!loading && !data) {
     return (
       <div className="page-transition h-full w-full bg-bg-primary flex items-center justify-center">
@@ -205,76 +248,89 @@ function ArtistContent() {
   }
 
   return (
-    <div
-      ref={scrollRef}
-      onScroll={(e) => {
-        const container = e.currentTarget;
-        let nextScrolled = false;
-        if (tracksSectionRef.current) {
-          const relativeTrackTop =
-            tracksSectionRef.current.getBoundingClientRect().top -
-            container.getBoundingClientRect().top;
-          nextScrolled = relativeTrackTop <= 56;
-        } else {
-          nextScrolled = container.scrollTop > 260;
-        }
-        setIsScrolled((prev) => (prev === nextScrolled ? prev : nextScrolled));
-      }}
-      className="page-transition relative h-full w-full overflow-y-auto bg-bg-primary pb-[32px]"
-    >
-      <StickyHeader
-        isScrolled={isScrolled}
-        showBack={isReady}
-        title={data?.title}
-        thumbnail={
-          data?.coverUrl ? (
-            <div className="relative h-[24px] w-[24px] shrink-0 overflow-hidden rounded-full bg-border-alpha-14">
-              <CoverImage
-                src={data.coverUrl}
-                alt={data.title}
-                fill
-                sizes="24px"
-                className="object-cover"
-                draggable={false}
-              />
-            </div>
-          ) : (
-            <div className="flex h-[24px] w-[24px] shrink-0 items-center justify-center rounded-full bg-border-alpha-14 text-text-secondary text-[11px] font-bold">
-              {data?.title ? data.title.charAt(0) : ""}
-            </div>
-          )
-        }
-      />
+    <div className="page-transition relative h-full w-full overflow-hidden bg-bg-primary">
+      <div className="absolute top-0 left-0 right-0 h-[56px] z-10 flex flex-row items-stretch select-none pointer-events-none">
+        <div
+          data-window-drag
+          onContextMenu={(e) => e.preventDefault()}
+          className="w-[328px] shrink-0 h-full pointer-events-auto"
+        />
+        <div
+          data-window-drag
+          onContextMenu={(e) => e.preventDefault()}
+          onWheel={handleTopWheel}
+          className="flex-1 min-w-0 h-full pointer-events-auto"
+        />
+      </div>
 
+      <div
+        ref={scrollRef}
+        onScroll={(e) => {
+          const container = e.currentTarget;
+          let nextScrolled = false;
+          if (tracksSectionRef.current) {
+            const relativeTrackTop =
+              tracksSectionRef.current.getBoundingClientRect().top -
+              container.getBoundingClientRect().top;
+            nextScrolled = relativeTrackTop <= 56;
+          } else {
+            nextScrolled = container.scrollTop > 260;
+          }
+          setIsScrolled((prev) => (prev === nextScrolled ? prev : nextScrolled));
+        }}
+        className="relative z-1 h-full w-full overflow-y-auto pb-[32px]"
+      >
+        <StickyHeader
+          isScrolled={isScrolled}
+          showBack={isReady}
+          title={data?.title}
+          thumbnail={
+            data?.coverUrl ? (
+              <div className="relative h-[24px] w-[24px] shrink-0 overflow-hidden rounded-full bg-border-alpha-14">
+                <CoverImage
+                  src={data.coverUrl}
+                  alt={data.title}
+                  fill
+                  sizes="24px"
+                  className="object-cover"
+                  draggable={false}
+                />
+              </div>
+            ) : (
+              <div className="flex h-[24px] w-[24px] shrink-0 items-center justify-center rounded-full bg-border-alpha-14 text-text-secondary text-[11px] font-bold">
+                {data?.title ? data.title.charAt(0) : ""}
+              </div>
+            )
+          }
+        />
 
-      <div className="relative z-1 grid grid-cols-1 items-start w-full">
-        {isReady && data && (
-          <div className="col-start-1 row-start-1 w-full pb-[32px]">
-            <div className="relative w-full min-h-[340px] md:min-h-[380px] flex flex-col justify-between overflow-hidden">
-              {data.coverUrl ? (
-                <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-                  <CoverImage
-                    src={data.coverUrl}
-                    alt={data.title}
-                    fill
-                    sizes="100vw"
-                    className="object-cover object-center"
-                    draggable={false}
-                  />
-                  <div
-                    className="absolute inset-0 pointer-events-none"
-                    style={{
-                      background:
-                        "linear-gradient(to top, var(--bg-primary) 0%, color-mix(in srgb, var(--bg-primary) 90%, transparent) 25%, color-mix(in srgb, var(--bg-primary) 60%, transparent) 50%, color-mix(in srgb, var(--bg-primary) 20%, transparent) 75%, transparent 100%)",
-                    }}
-                  />
-                </div>
-              ) : (
-                <div className="absolute inset-0 z-0 bg-bg-elevated" />
-              )}
+        <div className="relative z-1 grid grid-cols-1 items-start w-full">
+          {isReady && data && (
+            <div className="col-start-1 row-start-1 w-full pb-[32px]">
+              <div className="relative w-full min-h-[340px] md:min-h-[380px] flex flex-col justify-between overflow-hidden">
+                {data.coverUrl ? (
+                  <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+                    <CoverImage
+                      src={data.coverUrl}
+                      alt={data.title}
+                      fill
+                      sizes="100vw"
+                      className="object-cover object-center"
+                      draggable={false}
+                    />
+                    <div
+                      className="absolute inset-0 pointer-events-none"
+                      style={{
+                        background:
+                          "linear-gradient(to top, var(--bg-primary) 0%, color-mix(in srgb, var(--bg-primary) 90%, transparent) 25%, color-mix(in srgb, var(--bg-primary) 60%, transparent) 50%, color-mix(in srgb, var(--bg-primary) 20%, transparent) 75%, transparent 100%)",
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <div className="absolute inset-0 z-0 bg-bg-elevated" />
+                )}
 
-              {/* drag region above hero title */}
-              <div className="relative z-10 px-[32px] pt-[56px]" data-window-drag />
+                <div className="relative z-10 px-[32px] pt-[56px]" data-window-drag />
 
               <div className="relative z-10 px-[32px] pb-[20px] flex flex-col md:flex-row items-start md:items-end justify-between gap-[24px]">
                 <div className="flex flex-col min-w-0">
@@ -597,6 +653,7 @@ function ArtistContent() {
             <ArtistPageSkeleton />
           </div>
         )}
+      </div>
       </div>
 
       {data && (
