@@ -362,8 +362,8 @@ function MiniPlayer({
           }}
           className={`rounded-[12px] px-[8px] py-[10px] text-left transition-all duration-200 ${
             isCurrent
-              ? "bg-border-alpha-14"
-              : "bg-transparent hover:bg-border-alpha-14"
+              ? "bg-black/[0.065] dark:bg-white/[0.08]"
+              : "bg-transparent hover:bg-black/[0.035] dark:hover:bg-white/[0.04]"
           }`}
         />
       );

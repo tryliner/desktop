@@ -133,8 +133,8 @@ const QueueList = memo(function QueueList({
               }
               className={`p-[8px] rounded-[10px] transition-colors duration-150 ${
                 isCurrent
-                  ? "bg-white/[0.08]"
-                  : "bg-transparent hover:bg-border-alpha-14"
+                  ? "bg-black/[0.065] dark:bg-white/[0.08]"
+                  : "bg-transparent hover:bg-black/[0.035] dark:hover:bg-white/[0.04]"
               }`}
               imageShape="square"
               onPlay={() => {
