@@ -33,11 +33,9 @@ function PlaylistPageSkeletonComponent({
     <div
       className={`relative w-full bg-bg-primary pb-[32px] select-none ${className}`}
     >
-      <div className="flex items-start gap-[32px] px-[32px] pt-[20px] pb-[24px]">
+      <div className="flex items-start gap-[32px] px-[32px] pt-[56px] pb-[24px]">
         <aside className="w-[280px] shrink-0">
-          <div className="skeleton-shimmer h-[32px] w-[64px] rounded-md" />
-
-          <div className="relative mt-[16px] aspect-square w-full overflow-hidden rounded-md bg-border-alpha-14">
+          <div className="relative aspect-square w-full overflow-hidden rounded-md bg-border-alpha-14">
             <div className="skeleton-shimmer h-full w-full" />
           </div>
 
@@ -53,7 +51,7 @@ function PlaylistPageSkeletonComponent({
           </div>
         </aside>
 
-        <div className="min-w-0 flex-1 pt-[48px]">
+        <div className="min-w-0 flex-1">
           <div className="flex flex-col -mx-[8px] space-y-[2px]">
             {Array.from({ length: 8 }).map((_, i) => (
               <div

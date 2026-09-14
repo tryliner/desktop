@@ -2,7 +2,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useCallback, useEffect, useMemo, useRef, useState, memo, Suspense } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import PlaylistPageSkeleton from "./PlaylistPageSkeleton";
-import { useToast, ReorderDropPlaceholder, FloatingDragCard, EntitySidebar, StickyHeader, SIDEBAR_TITLE_CLASS, SIDEBAR_SUBTITLE_CLASS } from "@/shared/ui";
+import { useToast, ReorderDropPlaceholder, FloatingDragCard, EntitySidebar, SIDEBAR_TITLE_CLASS, SIDEBAR_SUBTITLE_CLASS } from "@/shared/ui";
 import {
   AddLine,
   PlayFill,
@@ -407,8 +407,6 @@ function LibraryPlaylistContent() {
     }
   }, [isReady, skeletonExited]);
 
-  const [isScrolled, setIsScrolled] = useState(false);
-
   if (!isLoading && !viewData) {
     return (
       <div className="page-transition h-full w-full bg-bg-primary flex items-center justify-center">
@@ -423,13 +421,12 @@ function LibraryPlaylistContent() {
 
   return (
     <div className="page-transition relative h-full w-full overflow-hidden bg-bg-primary">
-      <StickyHeader isScrolled={isScrolled} showBack={isReady} />
       <div className="relative z-1 grid grid-cols-1 w-full h-full min-h-0 overflow-hidden">
         {isReady && viewData && (
           <div className="col-start-1 row-start-1 w-full h-full min-h-0 overflow-hidden">
-            <div className="relative z-10 flex flex-row items-stretch gap-[16px] pl-[32px] pr-[16px] pt-[56px] pb-[24px] h-full w-full min-h-0 box-border">
+            <div className="relative z-10 flex flex-row items-stretch gap-[16px] pl-[32px] pr-[16px] h-full w-full min-h-0 box-border">
               <div
-                className="shrink-0 w-[280px] self-start"
+                className="shrink-0 w-[280px] self-start pt-[56px] pb-[24px]"
                 data-window-drag
                 onWheel={handleSidebarWheel}
               >
@@ -698,14 +695,12 @@ function LibraryPlaylistContent() {
               <div
                 ref={scrollRef}
                 data-no-window-drag
-                onScroll={(e) => {
-                  const nextScrolled = e.currentTarget.scrollTop > 56;
-                  setIsScrolled((prev) => (prev === nextScrolled ? prev : nextScrolled));
+                onScroll={() => {
                   if (rafIdRef.current === null) {
                     targetScrollTopRef.current = null;
                   }
                 }}
-                className="min-w-0 flex-1 h-full min-h-0 overflow-y-auto overflow-x-hidden px-[8px] pb-[24px] overscroll-contain"
+                className="min-w-0 flex-1 h-full min-h-0 overflow-y-auto overflow-x-hidden px-[8px] pt-[56px] pb-[24px] overscroll-contain"
                 style={{ willChange: "scroll-position" }}
               >
               {currentTracks.length === 0 ? (
