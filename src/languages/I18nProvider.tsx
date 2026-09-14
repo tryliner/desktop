@@ -43,7 +43,14 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 export function useTranslation(): I18nContextValue {
   const ctx = useContext(I18nContext);
   if (!ctx) {
-    throw new Error("useTranslation must be used within an I18nProvider");
+    // fallback gracefully so components never crash during hmr or outside provider
+    const locale = getStoredLocale();
+    return {
+      locale,
+      t: createTranslatorSync(locale),
+      setLocale: storeLocale,
+      loading: false,
+    };
   }
   return ctx;
 }
