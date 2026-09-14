@@ -1,5 +1,5 @@
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useEffect, useState, useMemo, Suspense } from "react";
+import { useEffect, useState, useMemo, useRef, Suspense } from "react";
 import CollectionPageSkeleton from "./CollectionPageSkeleton";
 import {
   AddLine,
@@ -160,6 +160,7 @@ function CollectionContent() {
     }
   };
 
+  const scrollRef = useRef<HTMLDivElement>(null);
   const [isScrolled, setIsScrolled] = useState(false);
 
   if (!loading && !data) {
@@ -173,13 +174,7 @@ function CollectionContent() {
   const isAlbum = type !== "playlist";
 
   return (
-    <div
-      onScroll={(e) => {
-        const nextScrolled = e.currentTarget.scrollTop > 180;
-        setIsScrolled((prev) => (prev === nextScrolled ? prev : nextScrolled));
-      }}
-      className="page-transition relative h-full w-full overflow-y-auto bg-bg-primary pb-[24px]"
-    >
+    <div className="page-transition relative h-full w-full overflow-hidden bg-bg-primary">
       <StickyHeader
         isScrolled={isScrolled}
         showBack={isReady}
@@ -203,12 +198,20 @@ function CollectionContent() {
           )
         }
       />
-      <div className="relative z-1 grid grid-cols-1 items-start w-full">
-        {/* Real Content Layer */}
+      <div className="relative z-1 grid grid-cols-1 items-start w-full h-full">
         {isReady && data && (
-          <div className="col-start-1 row-start-1 w-full">
-            <div className="relative z-10 flex items-start gap-[32px] px-[32px] pt-[56px] pb-[24px]" data-window-drag>
-              <EntitySidebar
+          <div className="col-start-1 row-start-1 w-full h-full">
+            <div className="relative z-10 flex items-start gap-[32px] px-[32px] pt-[56px] pb-[24px] h-full box-border">
+              <div
+                className="shrink-0 w-[280px]"
+                data-window-drag
+                onWheel={(e) => {
+                  if (scrollRef.current) {
+                    scrollRef.current.scrollTop += e.deltaY;
+                  }
+                }}
+              >
+                <EntitySidebar
                 cover={
                   data.coverUrl ? (
                     <CoverImage
@@ -318,7 +321,16 @@ function CollectionContent() {
                     </>
                   }
                 />
-                <div className="min-w-0 flex-1">
+              </div>
+
+              <div
+                ref={scrollRef}
+                onScroll={(e) => {
+                  const nextScrolled = e.currentTarget.scrollTop > 56;
+                  setIsScrolled((prev) => (prev === nextScrolled ? prev : nextScrolled));
+                }}
+                className="min-w-0 flex-1 h-full overflow-y-auto overflow-x-hidden pb-[24px]"
+              >
               <section>
                 <div className="flex flex-col -mx-[8px]">
                   {data.tracks.map((track, index) => (
@@ -362,7 +374,7 @@ function CollectionContent() {
         {/* Direct Crossfade Skeleton Layer */}
         {!skeletonExited && (
           <div
-            className={`col-start-1 row-start-1 w-full z-10 transition-opacity duration-300 ease-out ${
+            className={`col-start-1 row-start-1 w-full h-full z-10 transition-opacity duration-300 ease-out overflow-hidden ${
               isReady ? "opacity-0 pointer-events-none" : "opacity-100 pointer-events-auto"
             }`}
             onTransitionEnd={() => setSkeletonExited(true)}
