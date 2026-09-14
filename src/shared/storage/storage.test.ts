@@ -181,6 +181,21 @@ describe("linerDb storage layer", () => {
   });
 
   it("handles getLimitBytes and setLimitBytes with defaults and clamping", async () => {
+    const memStorage = new Map<string, string>();
+    const mockStorage = {
+      getItem: (key: string) => memStorage.get(key) ?? null,
+      setItem: (key: string, val: string) => memStorage.set(key, val),
+      removeItem: (key: string) => memStorage.delete(key),
+      clear: () => memStorage.clear(),
+      length: 0,
+      key: () => null,
+    };
+    Object.defineProperty(window, "localStorage", {
+      value: mockStorage,
+      writable: true,
+      configurable: true,
+    });
+
     expect(audioCache.getLimitBytes()).toBe(3 * 1024 * 1024 * 1024);
 
     await audioCache.setLimitBytes(100);

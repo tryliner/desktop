@@ -555,8 +555,8 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [activeCardHeight, setActiveCardHeight] = useState<number | null>(null);
 
   const handleMeasureActive = useCallback((w: number, h: number) => {
-    setActiveCardWidth(w);
-    setActiveCardHeight(h);
+    if (w > 0) setActiveCardWidth((prev) => (prev === w ? prev : w));
+    if (h > 0) setActiveCardHeight((prev) => (prev === h ? prev : h));
   }, []);
 
   return (
@@ -620,10 +620,12 @@ function NotificationCard({
   useLayoutEffect(() => {
     if (!isTop || !cardRef.current) return;
     const el = cardRef.current;
-    onMeasureActive(el.offsetWidth, el.offsetHeight);
+    if (el.offsetWidth > 0 || el.offsetHeight > 0) {
+      onMeasureActive(el.offsetWidth, el.offsetHeight);
+    }
     if (typeof ResizeObserver === "undefined") return;
     const ro = new ResizeObserver(() => {
-      if (cardRef.current) {
+      if (cardRef.current && (cardRef.current.offsetWidth > 0 || cardRef.current.offsetHeight > 0)) {
         onMeasureActive(cardRef.current.offsetWidth, cardRef.current.offsetHeight);
       }
     });

@@ -7,6 +7,28 @@ import { ToastProvider, showToast, useToast } from "./Toast";
 // @ts-expect-error - act support flag in vitest browserless DOM environment
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
+vi.mock("framer-motion", () => {
+  return {
+    AnimatePresence: ({ children }: any) => <>{children}</>,
+    motion: new Proxy({}, {
+      get: (_target, prop: string) => {
+        return React.forwardRef(({ children, className, style, ...props }: any, ref: any) => {
+          const cleanProps = { ...props };
+          delete cleanProps.layout;
+          delete cleanProps.initial;
+          delete cleanProps.animate;
+          delete cleanProps.exit;
+          delete cleanProps.transition;
+          delete cleanProps.whileHover;
+          delete cleanProps.whileTap;
+          delete cleanProps.whileDrag;
+          return React.createElement(prop, { ref, className, style, ...cleanProps }, children);
+        });
+      },
+    }),
+  };
+});
+
 function ToastTester() {
   const { toast } = useToast();
   return (
