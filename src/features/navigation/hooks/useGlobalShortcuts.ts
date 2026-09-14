@@ -67,25 +67,29 @@ export function useGlobalShortcuts(options: GlobalShortcutsOptions): void {
       const { code } = event;
       if (event.repeat && NON_REPEATABLE_CODES.has(code)) return;
 
-      if (code === "Escape") {
+      if (code === "Escape" || event.key === "Escape") {
         if (isBlockingOverlayOpen()) return;
         if (opts.searchOpen) {
           event.preventDefault();
+          event.stopPropagation();
           opts.closeSearch();
           return;
         }
         if (opts.rightPanelOpen) {
           event.preventDefault();
+          event.stopPropagation();
           opts.closeRightPanel();
           return;
         }
         if (opts.fullscreenOpen) {
           event.preventDefault();
+          event.stopPropagation();
           opts.closeFullscreen();
           return;
         }
         if (opts.onEscapeFallback?.()) {
           event.preventDefault();
+          event.stopPropagation();
         }
         return;
       }

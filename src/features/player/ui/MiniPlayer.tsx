@@ -443,8 +443,9 @@ function MiniPlayer({
     };
 
     const onDocumentKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        onQueueOpenChange?.(false);
+      if (event.key === "Escape" && volumeOpen) {
+        event.preventDefault();
+        event.stopPropagation();
         setVolumeOpen(false);
       }
     };
@@ -455,7 +456,7 @@ function MiniPlayer({
       document.removeEventListener("mousedown", onDocumentPointerDown, true);
       document.removeEventListener("keydown", onDocumentKeyDown, true);
     };
-  }, [onQueueOpenChange, scheduleVolumeAutoClose, volumeOpen]);
+  }, [scheduleVolumeAutoClose, volumeOpen]);
 
   const [scrubRatio, setScrubRatio] = useState<number | null>(null);
   const activeProgress = scrubRatio !== null ? scrubRatio : progress;

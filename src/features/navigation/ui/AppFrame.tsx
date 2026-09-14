@@ -242,11 +242,12 @@ export default function AppFrame({ children }: AppFrameProps) {
     pathname === "/library/playlist" ||
     pathname === "/collection";
   const handleEscapeFallback = useCallback(() => {
+    if (queuePopupOpen || searchOpen || isFullscreenPlayer) return false;
     if (!isBackNavigableRoute) return false;
     if (window.history.length > 1) navigate(-1);
     else navigate("/library");
     return true;
-  }, [isBackNavigableRoute, navigate]);
+  }, [isBackNavigableRoute, queuePopupOpen, searchOpen, isFullscreenPlayer, navigate]);
 
   useDisableButtonFocus();
 
