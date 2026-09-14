@@ -34,7 +34,8 @@ import { useCollection } from "../hooks/useCollection";
 
 function CollectionContent() {
   const [searchParams] = useSearchParams();
-  const type = searchParams.get("type");
+  const typeParam = searchParams.get("type");
+  const type = typeParam === "playlist" ? "playlist" : "album";
   const id = searchParams.get("id");
   const { t } = useTranslation();
   const navigate = useNavigate();

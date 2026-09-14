@@ -29,7 +29,7 @@ export default function DeeplinkHandler() {
               navigate(`/artist?id=${encodeURIComponent(target.id)}`);
               break;
             case "album":
-              navigate(`/collection?id=${encodeURIComponent(target.id)}`);
+              navigate(`/collection?type=album&id=${encodeURIComponent(target.id)}`);
               break;
             case "playlist":
               navigate(
