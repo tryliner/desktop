@@ -1,4 +1,5 @@
 import { telemetryConfig } from "./config";
+import { getAuthSession } from "../api/auth-session";
 
 export interface TelemetryEventDetails {
   url?: string;
@@ -124,13 +125,20 @@ class TelemetryClient {
   public trackEvent(event: ClientTelemetryEvent): void {
     if (!telemetryConfig.enabled) return;
 
+    const authSession = getAuthSession();
+    const userId = event.userId || authSession?.user?.id || undefined;
+
     const sanitizedEvent: ClientTelemetryEvent = {
       ...event,
+      userId,
       title: sanitizeString(event.title),
       summary: event.summary ? sanitizeString(event.summary) : undefined,
       source: event.source ?? "playback",
       category: event.category ?? "playback",
-      details: event.details ? sanitizeData(event.details) : undefined,
+      details: {
+        ...(event.details ? sanitizeData(event.details) : {}),
+        ...(userId ? { userId } : {}),
+      },
     };
 
     this.queue.push(sanitizedEvent);
@@ -229,13 +237,17 @@ class TelemetryClient {
     const sanitizedMessage = sanitizeString(errorObj.message);
 
     const env = getClientEnvironment();
+    const authSession = getAuthSession();
+    const userId = authSession?.user?.id || undefined;
 
     const payload = {
+      userId,
       title: sanitizeString(errorObj.name || "Client Error"),
       message: sanitizedMessage,
       stack: sanitizedStack,
       statusCode: 500,
       context: {
+        ...(userId ? { userId } : {}),
         ...sanitizeData(context || {}),
         environment: env,
       },

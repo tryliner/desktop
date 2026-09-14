@@ -170,11 +170,19 @@ async function request<T>(
       ? crypto.randomUUID()
       : `req_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`);
 
+  const currentSession = getAuthSession();
   const correlationHeaders: Record<string, string> = {
     "x-request-id": requestId,
     "x-client-version": CLIENT_VERSION,
     "x-platform": getPlatform(),
   };
+
+  if (currentSession?.user?.id) {
+    correlationHeaders["x-user-id"] = currentSession.user.id;
+  }
+  if (currentSession?.user?.username) {
+    correlationHeaders["x-user-name"] = currentSession.user.username;
+  }
 
   const activeSessionId = getActiveSessionId();
   if (activeSessionId) {
