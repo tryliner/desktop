@@ -512,74 +512,75 @@ function RightDrawer({ activeTab, onTabChange, onClose }: RightDrawerProps) {
 
   return (
     <div className="flex flex-col h-full w-full rounded-4xl border border-border-secondary bg-bg-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.035)] overflow-hidden">
-      <div className="relative px-[12px] pt-[12px] pb-[6px] shrink-0 z-20 flex items-center gap-[8px]">
-        <div className="grid grid-cols-2 flex-1 p-[3px] rounded-xl bg-bg-elevated border border-border-primary/60">
-          <button
-            type="button"
-            onClick={() => onTabChange("queue")}
-            className={`relative flex items-center justify-center py-[7px] px-[12px] rounded-lg text-[13px] font-medium transition-colors border-none bg-transparent cursor-pointer select-none active:scale-[0.98] ${
-              activeTab === "queue"
-                ? "text-text-primary"
-                : "text-text-secondary hover:text-text-primary"
-            }`}
-            style={{
-              fontFamily: "var(--font-inter), sans-serif",
-              letterSpacing: "-0.01em",
-            }}
-          >
-            {activeTab === "queue" && (
-              <motion.div
-                layoutId="activeRightDrawerTab"
-                className="absolute inset-0 rounded-lg bg-bg-primary shadow-sm border border-border-primary/30"
-                transition={{
-                  type: "spring",
-                  stiffness: 450,
-                  damping: 35,
-                }}
-              />
-            )}
-            <span className="relative z-10">{t("player.queue")}</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => onTabChange("lyrics")}
-            className={`relative flex items-center justify-center py-[7px] px-[12px] rounded-lg text-[13px] font-medium transition-colors border-none bg-transparent cursor-pointer select-none active:scale-[0.98] ${
-              activeTab === "lyrics"
-                ? "text-text-primary"
-                : "text-text-secondary hover:text-text-primary"
-            }`}
-            style={{
-              fontFamily: "var(--font-inter), sans-serif",
-              letterSpacing: "-0.01em",
-            }}
-          >
-            {activeTab === "lyrics" && (
-              <motion.div
-                layoutId="activeRightDrawerTab"
-                className="absolute inset-0 rounded-lg bg-bg-primary shadow-sm border border-border-primary/30"
-                transition={{
-                  type: "spring",
-                  stiffness: 450,
-                  damping: 35,
-                }}
-              />
-            )}
-            <span className="relative z-10">{t("player.lyrics")}</span>
-          </button>
-        </div>
+      <div className="relative px-[12px] pt-[12px] pb-[6px] shrink-0 z-20">
+        <div className="flex items-center gap-[8px]">
+          <div className="grid grid-cols-2 flex-1 p-[3px] rounded-xl bg-bg-elevated border border-border-primary/60">
+            <button
+              type="button"
+              onClick={() => onTabChange("queue")}
+              className={`relative flex items-center justify-center py-[7px] px-[12px] rounded-lg text-[13px] font-medium transition-colors border-none bg-transparent cursor-pointer select-none active:scale-[0.98] ${
+                activeTab === "queue"
+                  ? "text-text-primary"
+                  : "text-text-secondary hover:text-text-primary"
+              }`}
+              style={{
+                fontFamily: "var(--font-inter), sans-serif",
+                letterSpacing: "-0.01em",
+              }}
+            >
+              {activeTab === "queue" && (
+                <motion.div
+                  layoutId="activeRightDrawerTab"
+                  className="absolute inset-0 rounded-lg bg-bg-primary shadow-sm border border-border-primary/30"
+                  transition={{
+                    type: "spring",
+                    stiffness: 450,
+                    damping: 35,
+                  }}
+                />
+              )}
+              <span className="relative z-10">{t("player.queue")}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => onTabChange("lyrics")}
+              className={`relative flex items-center justify-center py-[7px] px-[12px] rounded-lg text-[13px] font-medium transition-colors border-none bg-transparent cursor-pointer select-none active:scale-[0.98] ${
+                activeTab === "lyrics"
+                  ? "text-text-primary"
+                  : "text-text-secondary hover:text-text-primary"
+              }`}
+              style={{
+                fontFamily: "var(--font-inter), sans-serif",
+                letterSpacing: "-0.01em",
+              }}
+            >
+              {activeTab === "lyrics" && (
+                <motion.div
+                  layoutId="activeRightDrawerTab"
+                  className="absolute inset-0 rounded-lg bg-bg-primary shadow-sm border border-border-primary/30"
+                  transition={{
+                    type: "spring",
+                    stiffness: 450,
+                    damping: 35,
+                  }}
+                />
+              )}
+              <span className="relative z-10">{t("player.lyrics")}</span>
+            </button>
+          </div>
 
-        {onClose && (
-          <button
-            type="button"
-            onClick={onClose}
-            title={t("common.close") || "Close"}
-            aria-label={t("common.close") || "Close"}
-            className="flex h-[36px] w-[36px] shrink-0 items-center justify-center rounded-xl bg-bg-elevated border border-border-primary/60 text-text-secondary hover:text-text-primary hover:bg-white/[0.08] active:scale-[0.95] transition-all border-solid cursor-pointer select-none"
-          >
-            <CloseLine size={16} />
-          </button>
-        )}
-      </div>
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              title={t("common.close") || "Close"}
+              aria-label={t("common.close") || "Close"}
+              className="flex h-[36px] w-[36px] shrink-0 items-center justify-center rounded-xl bg-bg-elevated border border-border-primary/60 text-text-secondary hover:text-text-primary hover:bg-white/[0.08] active:scale-[0.95] transition-all border-solid cursor-pointer select-none"
+            >
+              <CloseLine size={16} />
+            </button>
+          )}
+        </div>
 
         <div className="pointer-events-none absolute inset-x-0 top-full h-[24px] overflow-hidden z-20">
           <div
