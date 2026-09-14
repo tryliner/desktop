@@ -266,10 +266,12 @@ export function FullscreenPlayer({
       <button
         type="button"
         aria-label={t("player.close_fullscreen")}
+        title={t("player.close_fullscreen") || "Close"}
         onClick={onClose}
-        className="absolute top-4 left-4 z-20 inline-flex h-[36px] w-[36px] items-center justify-center rounded-full border-none bg-white/[0.08] text-white/80 transition-all duration-150 ease-out hover:bg-white/[0.14] hover:text-white active:scale-[0.92] cursor-pointer"
+        data-no-window-drag
+        className="absolute top-[12px] left-[12px] z-30 inline-flex h-[32px] w-[32px] items-center justify-center rounded-lg border-none bg-black/50 backdrop-blur-xl text-white/80 hover:text-white hover:bg-white/10 active:scale-[0.94] transition-all cursor-pointer select-none pointer-events-auto"
       >
-        <DownLine size={20} />
+        <DownLine size={18} />
       </button>
     </div>
   );

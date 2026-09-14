@@ -156,7 +156,7 @@ export function RootErrorFallback({
       <div className="flex-1 flex flex-col items-center justify-center min-h-0 w-full bg-bg-primary rounded-sm border border-border-primary/40 p-6 md:p-10 overflow-y-auto">
         <div className="flex flex-col items-center max-w-[560px] w-full text-center my-auto">
           {/* Error Icon Badge */}
-          <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-accent-primary/10 text-accent-primary border border-accent-primary/20 mb-5 shadow-sm">
+          <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-accent-primary/10 text-accent-primary border border-accent-primary/20 mb-5">
             <LuTriangleAlert size={28} />
           </div>
 

@@ -22,7 +22,7 @@ function FloatingDragCard({
 
   return createPortal(
     <div
-      className="fixed top-0 left-0 pointer-events-none z-[99999] select-none rounded-md bg-bg-primary shadow-[0_16px_40px_rgba(0,0,0,0.8)] overflow-hidden"
+      className="fixed top-0 left-0 pointer-events-none z-[99999] select-none rounded-md bg-bg-primary border border-border-primary overflow-hidden"
       style={{
         width: `${width}px`,
         transform: `translate3d(${x - offsetX}px, ${y - offsetY}px, 0)`,

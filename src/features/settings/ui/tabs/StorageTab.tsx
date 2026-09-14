@@ -342,7 +342,7 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
             transition={{ duration: 0.15 }}
             className="flex-1 flex flex-col gap-[20px] pt-[8px]"
           >
-      <div className="bg-bg-panel border border-border-primary/60 dark:border-transparent dark:bg-white/[0.035] pl-[10px] pr-[16px] py-[10px] rounded-2xl shadow-sm">
+      <div className="bg-bg-panel border border-border-primary/60 dark:border-transparent dark:bg-white/[0.035] pl-[10px] pr-[16px] py-[10px] rounded-2xl">
         <div className="flex flex-col sm:flex-row items-center gap-4">
           <div className="flex-1 w-full flex flex-col gap-0.5">
             {analytics?.categories.map((cat) => {
@@ -373,7 +373,7 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
                     <div
                       className={`w-[15px] h-[15px] rounded-[4px] flex items-center justify-center transition-all shrink-0 border ${
                         isSelected
-                          ? "bg-text-primary border-text-primary text-bg-primary shadow-sm"
+                          ? "bg-text-primary border-text-primary text-bg-primary"
                           : "border-border-secondary bg-border-alpha-14 group-hover:border-text-secondary"
                       }`}
                     >
@@ -481,7 +481,7 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
         </div>
       </div>
 
-      <div className="flex flex-col gap-[14px] bg-bg-panel border border-border-primary/60 dark:border-transparent dark:bg-white/[0.035] p-[16px] rounded-2xl shadow-sm">
+      <div className="flex flex-col gap-[14px] bg-bg-panel border border-border-primary/60 dark:border-transparent dark:bg-white/[0.035] p-[16px] rounded-2xl">
         <div className="pl-[6px]">
           <h5 className="text-text-primary text-[13.5px] font-[600] m-0">
             {t("settings.storage.cache_limit")}
@@ -514,7 +514,7 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
             })}
 
             <div
-              className="absolute w-[12px] h-[12px] rounded-full bg-text-primary shadow-[0_1px_3px_rgba(0,0,0,0.4)] -translate-x-1/2 transition-all duration-150 pointer-events-none group-hover:scale-125"
+              className="absolute w-[12px] h-[12px] rounded-full bg-text-primary -translate-x-1/2 transition-all duration-150 pointer-events-none group-hover:scale-125"
               style={{ left: `${pct}%` }}
             />
 

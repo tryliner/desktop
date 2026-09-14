@@ -131,7 +131,7 @@ export function LyricsProviderIsland() {
       ref={containerRef}
       className="relative inline-flex items-center pointer-events-auto select-none"
     >
-      <div className="inline-flex items-center h-[32px] min-h-[32px] max-h-[32px] box-border rounded-lg border border-white/10 bg-black/50 backdrop-blur-xl px-[3px] shadow-lg gap-[2px] text-white">
+      <div className="inline-flex items-center h-[32px] min-h-[32px] max-h-[32px] box-border rounded-lg bg-black/50 backdrop-blur-xl px-[3px] gap-[2px] text-white">
         {hasMultiple && (
           <button
             type="button"
@@ -244,7 +244,7 @@ export function LyricsProviderIsland() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -4 }}
             transition={{ duration: 0.12, ease: "easeOut" }}
-            className="absolute top-full left-0 mt-[6px] min-w-[140px] rounded-lg border border-white/10 bg-black/80 backdrop-blur-2xl p-[4px] shadow-2xl z-50 flex flex-col gap-[2px] text-white"
+            className="absolute top-full left-0 mt-[6px] min-w-[140px] rounded-lg border border-white/10 bg-black/80 backdrop-blur-2xl p-[4px] z-50 flex flex-col gap-[2px] text-white"
           >
             {availableProviders.map((option, idx) => {
               const isActive = option.provider === currentProvider.provider;
@@ -286,7 +286,7 @@ export function LyricsProviderIsland() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -4 }}
             transition={{ duration: 0.12, ease: "easeOut" }}
-            className="absolute top-full right-0 mt-[6px] w-[260px] rounded-xl border border-white/10 bg-black/80 backdrop-blur-2xl p-[12px] shadow-2xl z-50 flex flex-col gap-[10px] text-white"
+            className="absolute top-full right-0 mt-[6px] w-[260px] rounded-xl border border-white/10 bg-black/80 backdrop-blur-2xl p-[12px] z-50 flex flex-col gap-[10px] text-white"
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-[6px]">
@@ -359,7 +359,7 @@ export function LyricsProviderIsland() {
                   onClick={() => setUnit("ms")}
                   className={`px-[5px] py-[2px] text-[10px] font-mono rounded-[4px] border-none cursor-pointer transition-all ${
                     unit === "ms"
-                      ? "bg-white/20 text-white shadow-xs font-[600]"
+                      ? "bg-white/20 text-white font-[600]"
                       : "bg-transparent text-white/50 hover:text-white/80"
                   }`}
                 >
@@ -370,7 +370,7 @@ export function LyricsProviderIsland() {
                   onClick={() => setUnit("s")}
                   className={`px-[5px] py-[2px] text-[10px] font-mono rounded-[4px] border-none cursor-pointer transition-all ${
                     unit === "s"
-                      ? "bg-white/20 text-white shadow-xs font-[600]"
+                      ? "bg-white/20 text-white font-[600]"
                       : "bg-transparent text-white/50 hover:text-white/80"
                   }`}
                 >

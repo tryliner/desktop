@@ -42,7 +42,7 @@ export default function LibraryTabs({
             {isActive && (
               <motion.div
                 layoutId="activeLibraryTab"
-                className="absolute inset-0 rounded-lg bg-border-alpha-14 shadow-sm"
+                className="absolute inset-0 rounded-lg bg-border-alpha-14"
                 transition={{
                   type: "spring",
                   stiffness: 450,

@@ -29,7 +29,7 @@ export default function EnvironmentWarning() {
   };
 
   return (
-    <div className="fixed left-1/2 top-[12px] z-[150] w-[min(560px,calc(100vw-32px))] -translate-x-1/2 rounded-lg bg-[#221d0e] px-[14px] py-[10px] shadow-lg">
+    <div className="fixed left-1/2 top-[12px] z-[150] w-[min(560px,calc(100vw-32px))] -translate-x-1/2 rounded-lg bg-[#221d0e] px-[14px] py-[10px]">
       <div className="flex items-center gap-[10px]">
         <WarningFill size={16} className="shrink-0 text-amber-200/90" />
         <p

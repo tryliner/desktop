@@ -726,7 +726,7 @@ function NotificationCard({
       data-no-window-drag
       className={`relative flex items-center gap-[8px] rounded-[12px] border border-border-primary/60 bg-bg-elevated pl-[12px] ${
         resolvedAction ? "pr-[5px]" : "pr-[12px]"
-      } py-[5px] shadow-2xl min-h-[38px] box-border ${
+      } py-[5px] min-h-[38px] box-border ${
         index === 0
           ? "pointer-events-auto cursor-grab active:cursor-grabbing"
           : "pointer-events-none select-none"

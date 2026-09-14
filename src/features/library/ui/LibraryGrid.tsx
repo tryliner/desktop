@@ -266,7 +266,7 @@ function EmptyLibraryState({
         <button
           type="button"
           onClick={() => useModalStore.getState().openCreatePlaylist()}
-          className="inline-flex items-center gap-[6px] !h-[36px] rounded-lg px-[16px] text-[13px] font-[500] bg-btn-primary-bg text-btn-primary-text hover:opacity-90 active:scale-[0.96] transition-all border-0 cursor-pointer shadow-sm mt-[2px]"
+          className="inline-flex items-center gap-[6px] !h-[36px] rounded-lg px-[16px] text-[13px] font-[500] bg-btn-primary-bg text-btn-primary-text hover:opacity-90 active:scale-[0.96] transition-all border-0 cursor-pointer mt-[2px]"
           style={{ fontFamily: "var(--font-inter), sans-serif" }}
         >
           <AddLine size={16} />

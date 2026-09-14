@@ -84,7 +84,7 @@ export function AboutTab({ searchQuery }: { searchQuery?: string }) {
     <div className="flex w-full flex-col gap-[14px] py-[4px]">
       {/* ── Top Hero Card ── */}
       <div className="relative overflow-hidden rounded-xl bg-border-alpha-14 p-[16px] flex items-center gap-[16px] border border-border-primary/40">
-        <div className="bg-bg-elevated flex h-[58px] w-[58px] shrink-0 items-center justify-center rounded-xl shadow-sm border border-border-primary/50">
+        <div className="bg-bg-elevated flex h-[58px] w-[58px] shrink-0 items-center justify-center rounded-xl border border-border-primary/50">
           <img
             src={
               accentVariant === "default"

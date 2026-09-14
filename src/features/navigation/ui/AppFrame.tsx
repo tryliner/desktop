@@ -590,7 +590,13 @@ export default function AppFrame({ children }: AppFrameProps) {
       </aside>
 
       <div className="flex-1 flex flex-col min-w-0 h-full relative gap-1.5 overflow-hidden">
-        <main className="flex-1 min-w-0 flex flex-col relative h-full bg-bg-primary rounded-sm rounded-tr-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.035)] overflow-hidden">
+        <main
+          className={`flex-1 min-w-0 flex flex-col relative h-full bg-bg-primary rounded-sm ${
+            isFullscreenPlayer
+              ? "rounded-tr-none"
+              : "rounded-tr-xl"
+          } overflow-hidden`}
+        >
           <div
             ref={mainScrollRef}
             className={`h-full ${
@@ -698,7 +704,7 @@ export default function AppFrame({ children }: AppFrameProps) {
           >
             {/* 1. Search Input Island */}
             <div
-              className="w-[min(660px,calc(100vw-72px))] h-[54px] rounded-[8px] pointer-events-auto flex items-center px-[18px] gap-[14px] bg-bg-panel/95 border border-border-primary/50 shadow-2xl backdrop-blur-2xl"
+              className="w-[min(660px,calc(100vw-72px))] h-[54px] rounded-[8px] pointer-events-auto flex items-center px-[18px] gap-[14px] bg-bg-panel/95 border border-border-primary/50 backdrop-blur-2xl"
             >
               <span className="shrink-0 flex items-center justify-center text-text-tertiary">
                 <AnimatePresence mode="wait" initial={false}>
@@ -779,7 +785,7 @@ export default function AppFrame({ children }: AppFrameProps) {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -8, scale: 0.99 }}
                   transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-                  className="w-[min(660px,calc(100vw-72px))] mt-[8px] max-h-[500px] h-[500px] rounded-[8px] pointer-events-auto flex flex-col overflow-hidden bg-bg-panel/95 border border-border-primary/50 shadow-2xl backdrop-blur-2xl"
+                  className="w-[min(660px,calc(100vw-72px))] mt-[8px] max-h-[500px] h-[500px] rounded-[8px] pointer-events-auto flex flex-col overflow-hidden bg-bg-panel/95 border border-border-primary/50 backdrop-blur-2xl"
                 >
                   <div className="flex gap-[6px] px-[14px] pt-[12px] pb-[6px] shrink-0 overflow-x-auto">
                     {filterKeys.map((key) => {

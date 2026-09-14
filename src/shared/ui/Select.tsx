@@ -222,7 +222,7 @@ export function Select<T extends string = string>({
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.96, y: -4 }}
               transition={{ duration: 0.13, ease: "easeOut" }}
-              className="fixed z-[9999] overflow-hidden rounded-md border border-border-primary bg-bg-primary p-[6px] shadow-xl"
+              className="fixed z-[9999] overflow-hidden rounded-md border border-border-primary bg-bg-primary p-[6px]"
               style={menuStyle}
             >
               <div className="flex flex-col gap-[2px]">

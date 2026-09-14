@@ -396,7 +396,7 @@ export default function ImportReviewModal() {
                               onClick={() => toggleDecision(item.id, "approve")}
                               className={`inline-flex items-center justify-center gap-[4px] px-[10px] py-[5px] rounded-md text-[12px] font-[500] transition-all duration-150 cursor-pointer border active:scale-[0.96] ${
                                 isApproved
-                                  ? "bg-btn-primary-bg text-btn-primary-text border-transparent shadow-sm"
+                                  ? "bg-btn-primary-bg text-btn-primary-text border-transparent"
                                   : "bg-transparent text-text-secondary border-border-primary hover:bg-border-alpha-14 hover:text-text-primary"
                               }`}
                             >

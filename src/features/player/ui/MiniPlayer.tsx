@@ -476,7 +476,7 @@ function MiniPlayer({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.985 }}
             transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
-            className="absolute bottom-[74px] z-[92] w-[184px] rounded-xl bg-bg-primary border border-border-primary/50 shadow-xl px-[12px] py-[8px] prevent-seek"
+            className="absolute bottom-[74px] z-[92] w-[184px] rounded-xl bg-bg-primary border border-border-primary/50 px-[12px] py-[8px] prevent-seek"
             style={volumePopupStyle}
             onPointerDown={(e) => e.stopPropagation()}
             onMouseEnter={clearVolumeAutoCloseTimer}

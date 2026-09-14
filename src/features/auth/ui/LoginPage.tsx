@@ -188,7 +188,7 @@ export default function LoginPage() {
       <WindowControls variant="glass" />
 
       {/* Centered solid panel in new app style — bg stays visible around it */}
-      <section className="relative z-10 mx-4 my-auto flex max-h-[calc(100%-48px)] w-full max-w-[400px] flex-col overflow-y-auto rounded-xl border border-border-primary bg-bg-panel p-[28px] shadow-2xl">
+      <section className="relative z-10 mx-4 my-auto flex max-h-[calc(100%-48px)] w-full max-w-[400px] flex-col overflow-y-auto rounded-xl border border-border-primary bg-bg-panel p-[28px]">
         <div className="flex min-h-full w-full flex-col justify-between">
           {/* Top: logo + lang picker */}
           <div className="flex shrink-0 items-center gap-[10px]">
@@ -231,7 +231,7 @@ export default function LoginPage() {
                     onClick={() => selectMode(item.id)}
                     className={`h-[30px] flex-1 cursor-pointer rounded-md border-none text-[13px] font-[500] transition-all ${
                       mode === item.id
-                        ? "bg-bg-primary text-text-primary shadow-sm"
+                        ? "bg-bg-primary text-text-primary"
                         : "bg-transparent text-text-secondary hover:text-text-primary"
                     }`}
                   >

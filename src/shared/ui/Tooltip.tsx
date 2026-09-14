@@ -162,7 +162,7 @@ function Tooltip({
                   animate={{ opacity: 1, x: 0, y: 0 }}
                   exit={{ opacity: 0, ...animOffset }}
                   transition={{ duration: 0.14, ease: [0.22, 1, 0.36, 1] }}
-                  className={`rounded-md border border-border-primary bg-bg-elevated px-3 py-2 text-[13px] font-medium text-text-primary antialiased select-none shadow-lg ${
+                  className={`rounded-md border border-border-primary bg-bg-elevated px-3 py-2 text-[13px] font-medium text-text-primary antialiased select-none ${
                     multiline
                       ? "whitespace-normal min-w-[180px] max-w-[240px] leading-snug"
                       : "whitespace-nowrap leading-none"

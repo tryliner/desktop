@@ -422,7 +422,7 @@ export default function LibraryPage() {
           onClick={() => openCreatePlaylist()}
           title={t("library.create_playlist")}
           aria-label={t("library.create_playlist")}
-          className="absolute bottom-[20px] right-[24px] z-30 flex h-[44px] w-[44px] items-center justify-center rounded-[14px] bg-btn-primary-bg text-btn-primary-text shadow-[0_4px_14px_rgba(0,0,0,0.22)] hover:shadow-[0_6px_18px_rgba(0,0,0,0.3)] hover:opacity-95 active:scale-[0.92] transition-all border-0 cursor-pointer select-none"
+          className="absolute bottom-[20px] right-[24px] z-30 flex h-[44px] w-[44px] items-center justify-center rounded-[14px] bg-btn-primary-bg text-btn-primary-text hover:opacity-95 active:scale-[0.92] transition-all border-0 cursor-pointer select-none"
         >
           <AddLine size={22} />
         </button>

@@ -223,7 +223,12 @@ function RightDrawer({ activeTab, onTabChange, onClose }: RightDrawerProps) {
       if (!container || player.currentIndex < 0 || player.queue.length === 0) return;
       const targetY = Math.max(
         0,
-        Math.round(6 + player.currentIndex * QUEUE_ITEM_HEIGHT + QUEUE_ITEM_HEIGHT / 2 - (container.clientHeight || 500) / 2),
+        Math.round(
+          6 +
+            player.currentIndex * QUEUE_ITEM_HEIGHT +
+            QUEUE_ITEM_HEIGHT / 2 -
+            (container.clientHeight || 500) / 2,
+        ),
       );
       setIsQueueScrolled(targetY > 2);
       if (smooth) {
@@ -241,46 +246,18 @@ function RightDrawer({ activeTab, onTabChange, onClose }: RightDrawerProps) {
       if (node && player.currentIndex >= 0 && player.queue.length > 0) {
         const targetY = Math.max(
           0,
-          Math.round(6 + player.currentIndex * QUEUE_ITEM_HEIGHT + QUEUE_ITEM_HEIGHT / 2 - (node.clientHeight || 500) / 2),
+          Math.round(
+            6 +
+              player.currentIndex * QUEUE_ITEM_HEIGHT +
+              QUEUE_ITEM_HEIGHT / 2 -
+              (node.clientHeight || 500) / 2,
+          ),
         );
         node.scrollTop = targetY;
         setIsQueueScrolled(targetY > 2);
-        requestAnimationFrame(() => {
-          if (queueScrollRef.current) {
-            const h = queueScrollRef.current.clientHeight || 500;
-            const finalY = Math.max(
-              0,
-              Math.round(6 + player.currentIndex * QUEUE_ITEM_HEIGHT + QUEUE_ITEM_HEIGHT / 2 - h / 2),
-            );
-            queueScrollRef.current.scrollTop = finalY;
-            setIsQueueScrolled(finalY > 2);
-          }
-        });
-        setTimeout(() => {
-          if (queueScrollRef.current) {
-            const h = queueScrollRef.current.clientHeight || 500;
-            const finalY = Math.max(
-              0,
-              Math.round(6 + player.currentIndex * QUEUE_ITEM_HEIGHT + QUEUE_ITEM_HEIGHT / 2 - h / 2),
-            );
-            queueScrollRef.current.scrollTop = finalY;
-            setIsQueueScrolled(finalY > 2);
-          }
-        }, 50);
-        setTimeout(() => {
-          if (queueScrollRef.current) {
-            const h = queueScrollRef.current.clientHeight || 500;
-            const finalY = Math.max(
-              0,
-              Math.round(6 + player.currentIndex * QUEUE_ITEM_HEIGHT + QUEUE_ITEM_HEIGHT / 2 - h / 2),
-            );
-            queueScrollRef.current.scrollTop = finalY;
-            setIsQueueScrolled(finalY > 2);
-          }
-        }, 150);
       }
     },
-    [player.currentIndex, player.queue.length],
+    [], // stable ref prevents resetting scrollTop on every track change
   );
 
   const prevQueueTrackIdRef = useRef<string | null>(player.currentTrack?.id ?? null);

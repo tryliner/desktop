@@ -22,7 +22,7 @@ export function ToggleSwitch({
       aria-label={ariaLabel}
     >
       <span
-        className={`inline-block h-[16px] w-[16px] rounded-full shadow-[0_1px_2px_rgba(0,0,0,0.35)] transition-all duration-200 ease-out ${
+        className={`inline-block h-[16px] w-[16px] rounded-full transition-all duration-200 ease-out ${
           checked
             ? "translate-x-[21px] bg-bg-primary"
             : "translate-x-[3px] bg-white"

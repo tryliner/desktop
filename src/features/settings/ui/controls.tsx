@@ -166,7 +166,7 @@ export function SegmentedControl<T extends string>({
             aria-pressed={isActive}
             className={`inline-flex h-[26px] cursor-pointer items-center whitespace-nowrap rounded-md border-0 px-[11px] text-[12.5px] leading-none transition-colors ${
               isActive
-                ? "bg-bg-primary text-text-primary shadow-sm"
+                ? "bg-bg-primary text-text-primary"
                 : "bg-transparent text-text-secondary hover:text-text-primary"
             }`}
             style={{ ...font, fontWeight: isActive ? 500 : 400 }}
