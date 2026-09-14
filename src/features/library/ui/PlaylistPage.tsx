@@ -387,6 +387,11 @@ function LibraryPlaylistContent() {
 
   return (
     <div className="page-transition relative h-full w-full overflow-hidden bg-bg-primary">
+      <div
+        data-window-drag
+        onContextMenu={(e) => e.preventDefault()}
+        className="absolute top-0 left-0 right-0 h-[56px] z-10 pointer-events-auto select-none"
+      />
       {isReady && (
         <button
           type="button"
