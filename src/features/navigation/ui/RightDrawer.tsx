@@ -9,6 +9,8 @@ import { useListReorder } from "@/shared/hooks";
 import { FiMusic } from "react-icons/fi";
 import { ArrowLeftLine } from "@mingcute/react";
 
+const QUEUE_ITEM_HEIGHT = 64;
+
 const QueueList = memo(function QueueList({
   queue,
   queueLimit,
@@ -52,9 +54,9 @@ const QueueList = memo(function QueueList({
     items: visibleQueue,
     scrollContainerRef,
     listContainerRef: queueContainerRef,
-    itemHeight: 70,
+    itemHeight: QUEUE_ITEM_HEIGHT,
     onReorder: handleReorder,
-    edgeThreshold: 70,
+    edgeThreshold: QUEUE_ITEM_HEIGHT,
     maxScrollSpeed: 18,
   });
 
@@ -62,16 +64,16 @@ const QueueList = memo(function QueueList({
     <div
       ref={queueContainerRef}
       className="relative w-full"
-      style={{ height: `${visibleQueue.length * 70}px` }}
+      style={{ height: `${visibleQueue.length * QUEUE_ITEM_HEIGHT}px` }}
     >
       {isDragging && dropIndex !== null && (
         <div
           style={{
             position: "absolute",
-            top: `${dropIndex * 70}px`,
+            top: `${dropIndex * QUEUE_ITEM_HEIGHT}px`,
             left: 0,
             width: "100%",
-            height: "70px",
+            height: `${QUEUE_ITEM_HEIGHT}px`,
             pointerEvents: "none",
             zIndex: 0,
           }}
@@ -88,9 +90,9 @@ const QueueList = memo(function QueueList({
         let shiftY = 0;
         if (isDragging && dragIndex !== null && dropIndex !== null && index !== dragIndex) {
           if (dragIndex < dropIndex) {
-            if (index > dragIndex && index <= dropIndex) shiftY = -70;
+            if (index > dragIndex && index <= dropIndex) shiftY = -QUEUE_ITEM_HEIGHT;
           } else if (dragIndex > dropIndex) {
-            if (index >= dropIndex && index < dragIndex) shiftY = 70;
+            if (index >= dropIndex && index < dragIndex) shiftY = QUEUE_ITEM_HEIGHT;
           }
         }
 
@@ -99,10 +101,10 @@ const QueueList = memo(function QueueList({
             key={`${item.id}-${index}`}
             style={{
               position: "absolute",
-              top: `${index * 70}px`,
+              top: `${index * QUEUE_ITEM_HEIGHT}px`,
               left: 0,
               width: "100%",
-              height: "70px",
+              height: `${QUEUE_ITEM_HEIGHT}px`,
               transform: shiftY ? `translateY(${shiftY}px)` : undefined,
               transition: isDragging
                 ? "transform 180ms cubic-bezier(0.2, 0, 0, 1)"
@@ -110,7 +112,7 @@ const QueueList = memo(function QueueList({
               opacity: isThisDragged ? 0 : 1,
               zIndex: 1,
             }}
-            className="px-0 py-[1px]"
+            className="px-0"
           >
             <SongCardWithMenu
               id={item.id}
@@ -129,7 +131,7 @@ const QueueList = memo(function QueueList({
                   ? (e) => handleCardGrab(index, item, e)
                   : undefined
               }
-              className={`px-[12px] py-[10px] rounded-[12px] transition-colors duration-150 ${
+              className={`px-[12px] py-[8px] rounded-md transition-colors duration-150 ${
                 isCurrent
                   ? "bg-border-alpha-14"
                   : "bg-transparent hover:bg-border-alpha-14"
@@ -171,7 +173,7 @@ const QueueList = memo(function QueueList({
               (draggedItem as { cover_url?: string }).cover_url ??
               ""
             }
-            className="px-[12px] py-[10px] rounded-md bg-transparent"
+            className="px-[12px] py-[8px] rounded-md bg-transparent"
             imageShape="square"
           />
         </FloatingDragCard>
@@ -220,7 +222,7 @@ function RightDrawer({ activeTab, onTabChange, onClose }: RightDrawerProps) {
       if (!container || player.currentIndex < 0 || player.queue.length === 0) return;
       const targetY = Math.max(
         0,
-        Math.round(6 + player.currentIndex * 70 + 35 - (container.clientHeight || 500) / 2),
+        Math.round(6 + player.currentIndex * QUEUE_ITEM_HEIGHT + QUEUE_ITEM_HEIGHT / 2 - (container.clientHeight || 500) / 2),
       );
       setIsQueueScrolled(targetY > 2);
       if (smooth) {
@@ -238,7 +240,7 @@ function RightDrawer({ activeTab, onTabChange, onClose }: RightDrawerProps) {
       if (node && player.currentIndex >= 0 && player.queue.length > 0) {
         const targetY = Math.max(
           0,
-          Math.round(6 + player.currentIndex * 70 + 35 - (node.clientHeight || 500) / 2),
+          Math.round(6 + player.currentIndex * QUEUE_ITEM_HEIGHT + QUEUE_ITEM_HEIGHT / 2 - (node.clientHeight || 500) / 2),
         );
         node.scrollTop = targetY;
         setIsQueueScrolled(targetY > 2);
@@ -247,7 +249,7 @@ function RightDrawer({ activeTab, onTabChange, onClose }: RightDrawerProps) {
             const h = queueScrollRef.current.clientHeight || 500;
             const finalY = Math.max(
               0,
-              Math.round(6 + player.currentIndex * 70 + 35 - h / 2),
+              Math.round(6 + player.currentIndex * QUEUE_ITEM_HEIGHT + QUEUE_ITEM_HEIGHT / 2 - h / 2),
             );
             queueScrollRef.current.scrollTop = finalY;
             setIsQueueScrolled(finalY > 2);
@@ -258,7 +260,7 @@ function RightDrawer({ activeTab, onTabChange, onClose }: RightDrawerProps) {
             const h = queueScrollRef.current.clientHeight || 500;
             const finalY = Math.max(
               0,
-              Math.round(6 + player.currentIndex * 70 + 35 - h / 2),
+              Math.round(6 + player.currentIndex * QUEUE_ITEM_HEIGHT + QUEUE_ITEM_HEIGHT / 2 - h / 2),
             );
             queueScrollRef.current.scrollTop = finalY;
             setIsQueueScrolled(finalY > 2);
@@ -269,7 +271,7 @@ function RightDrawer({ activeTab, onTabChange, onClose }: RightDrawerProps) {
             const h = queueScrollRef.current.clientHeight || 500;
             const finalY = Math.max(
               0,
-              Math.round(6 + player.currentIndex * 70 + 35 - h / 2),
+              Math.round(6 + player.currentIndex * QUEUE_ITEM_HEIGHT + QUEUE_ITEM_HEIGHT / 2 - h / 2),
             );
             queueScrollRef.current.scrollTop = finalY;
             setIsQueueScrolled(finalY > 2);

@@ -54,7 +54,7 @@ interface AppFrameProps {
   children: React.ReactNode;
 }
 
-const RIGHT_DRAWER_WIDTH = 420;
+const RIGHT_DRAWER_WIDTH = 380;
 const SIDEBAR_WIDTH = 58;
 const SHELL_EDGE_GAP = 12;
 const SEARCH_QUERY_CACHE_TTL_MS = 60_000;
@@ -627,7 +627,8 @@ export default function AppFrame({ children }: AppFrameProps) {
                   animate={{ x: 0 }}
                   exit={{ x: RIGHT_DRAWER_WIDTH }}
                   transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-                  className="pointer-events-auto absolute inset-y-0 right-0 w-[420px] z-[50]"
+                  className="pointer-events-auto absolute inset-y-0 right-0 z-[50]"
+                  style={{ width: RIGHT_DRAWER_WIDTH }}
                 >
                   <RightDrawer
                     activeTab={rightDrawerTab}
