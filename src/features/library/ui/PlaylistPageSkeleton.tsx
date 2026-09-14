@@ -47,7 +47,7 @@ function PlaylistPageSkeletonComponent({
 
           <div className="skeleton-shimmer h-[36px] w-full rounded-md mt-[16px]" />
           <div className="mt-[8px] flex items-center gap-[8px]">
-            <div className="skeleton-shimmer h-[36px] w-[36px] rounded-md" />
+            <div className="skeleton-shimmer h-[36px] flex-1 rounded-md" />
             <div className="skeleton-shimmer h-[36px] w-[36px] rounded-md" />
             <div className="skeleton-shimmer h-[36px] w-[36px] rounded-md" />
           </div>

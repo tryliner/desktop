@@ -12,7 +12,7 @@ import {
   CheckLine,
 } from "@mingcute/react";
 import { AnimatePresence, motion } from "framer-motion";
-import { LuPencil, LuGlobe, LuTrash2, LuText, LuShuffle } from "react-icons/lu";
+import { LuPencil, LuTrash2, LuText, LuShuffle } from "react-icons/lu";
 import Button from "@/shared/ui/Button";
 import DropdownMenu from "@/shared/ui/DropdownMenu";
 import SongCardWithMenu from "@/features/player/ui/SongCardWithMenu";
@@ -555,7 +555,7 @@ function LibraryPlaylistContent() {
                           variant="outline"
                           onClick={handleAddToQueue}
                           disabled={currentTracks.length === 0}
-                          className="!h-[36px] flex-1 !text-[13px] !font-[500] px-[12px] flex items-center justify-center gap-[6px]"
+                          className="!h-[36px] flex-1 min-w-0 !text-[13px] !font-[500] px-[12px] flex items-center justify-center gap-[6px]"
                           title={t("common.add_to_queue")}
                         >
                           <AnimatePresence mode="wait">
@@ -566,7 +566,7 @@ function LibraryPlaylistContent() {
                                 animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0, scale: 0.5 }}
                                 transition={{ duration: 0.08 }}
-                                className="flex items-center justify-center text-emerald-400"
+                                className="flex items-center justify-center text-emerald-400 shrink-0"
                               >
                                 <CheckLine size={16} />
                               </motion.span>
@@ -577,7 +577,7 @@ function LibraryPlaylistContent() {
                                 animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0, scale: 0.5 }}
                                 transition={{ duration: 0.08 }}
-                                className="flex items-center justify-center"
+                                className="flex items-center justify-center shrink-0"
                               >
                                 <AddLine size={16} />
                               </motion.span>
@@ -595,58 +595,51 @@ function LibraryPlaylistContent() {
                         >
                           <LuShuffle size={16} />
                         </Button>
+
+                        {!isLikesMode && (
+                          <DropdownMenu
+                            trigger={
+                              <Button
+                                variant="outline"
+                                className="!h-[36px] !w-[36px] shrink-0 !p-0 flex items-center justify-center text-text-primary"
+                                title={t("common.more")}
+                              >
+                                <More2Line size={18} />
+                              </Button>
+                            }
+                            items={[
+                              {
+                                id: "rename",
+                                icon: <LuPencil size={15} />,
+                                label: t("common.rename"),
+                                onClick: () => setIsEditingTitle(true),
+                              },
+                              {
+                                id: "edit-description",
+                                icon: <LuText size={15} />,
+                                label: t("common.edit_description"),
+                                onClick: () => setIsEditingDescription(true),
+                              },
+                              {
+                                id: "delete",
+                                icon: <LuTrash2 size={15} />,
+                                label: t("common.delete"),
+                                danger: true,
+                                onClick: () => {
+                                  if (!decodedId) return;
+                                  useModalStore.getState().openRemoveFromLibrary({
+                                    id: decodedId,
+                                    title: viewData.title,
+                                    coverUrl: viewData.coverUrl,
+                                    type: "playlist",
+                                  });
+                                },
+                              },
+                            ]}
+                          />
+                        )}
                       </div>
                     </div>
-                  }
-                  actions={
-                    !isLikesMode ? (
-                      <DropdownMenu
-                        trigger={
-                          <Button
-                            variant="outline"
-                            className="!h-[32px] !w-[32px] !p-0 flex items-center justify-center text-text-secondary hover:text-text-primary"
-                            title={t("common.more")}
-                          >
-                            <More2Line size={16} />
-                          </Button>
-                        }
-                        items={[
-                          {
-                            id: "rename",
-                            icon: <LuPencil size={15} />,
-                            label: t("common.rename"),
-                            onClick: () => setIsEditingTitle(true),
-                          },
-                          {
-                            id: "edit-description",
-                            icon: <LuText size={15} />,
-                            label: t("common.edit_description"),
-                            onClick: () => setIsEditingDescription(true),
-                          },
-                          {
-                            id: "make-public",
-                            icon: <LuGlobe size={15} />,
-                            label: t("common.make_public"),
-                            onClick: () => {},
-                          },
-                          {
-                            id: "delete",
-                            icon: <LuTrash2 size={15} />,
-                            label: t("common.delete"),
-                            danger: true,
-                            onClick: () => {
-                              if (!decodedId) return;
-                              useModalStore.getState().openRemoveFromLibrary({
-                                id: decodedId,
-                                title: viewData.title,
-                                coverUrl: viewData.coverUrl,
-                                type: "playlist",
-                              });
-                            },
-                          },
-                        ]}
-                      />
-                    ) : undefined
                   }
                 />
                 <div className="min-w-0 flex-1">
