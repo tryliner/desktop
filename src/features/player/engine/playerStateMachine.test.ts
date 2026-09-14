@@ -190,6 +190,29 @@ describe("Player State Machine", () => {
       expect(Number(remainingUpcoming[i])).toBeLessThan(Number(remainingUpcoming[i + 1]));
     }
   });
+
+  it("does not re-shuffle queue when hand-picking a track from the queue while shuffle is enabled", async () => {
+    const tracks = Array.from({ length: 6 }, (_, i) => mockTrack(String(i + 1), `Track ${i + 1}`));
+    await playerEngine.playTrack(tracks[0], tracks, undefined, undefined, 0);
+
+    playerEngine.setShuffle(true);
+    const queueBeforePick = [...usePlayerStore.getState().queue];
+    const pickedTrack = queueBeforePick[3];
+
+    await playerEngine.playTrack(
+      pickedTrack,
+      queueBeforePick,
+      undefined,
+      undefined,
+      3,
+      true,
+    );
+
+    const state = usePlayerStore.getState();
+    expect(state.currentIndex).toBe(3);
+    expect(state.currentTrack?.id).toBe(pickedTrack.id);
+    expect(state.queue.map((t) => t.id)).toEqual(queueBeforePick.map((t) => t.id));
+  });
 });
 
 describe("Player auto-skip on playback error", () => {

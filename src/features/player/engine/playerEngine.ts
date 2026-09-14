@@ -389,6 +389,7 @@ class PlayerEngine {
     context?: string | null,
     contextCover?: string | null,
     queueIndex?: number,
+    preserveQueue?: boolean,
   ): Promise<void> {
     const store = usePlayerStore.getState();
     const nextQueue = this.normalizeQueue(queue ?? [track], track);
@@ -402,7 +403,6 @@ class PlayerEngine {
 
     this.sessionId += 1;
     const mySession = this.sessionId;
-    // explicit play starts a fresh queue, so the wave instance resets too
     this.radioWaveId = newRadioWaveId();
 
     if (context !== undefined) {
@@ -414,7 +414,14 @@ class PlayerEngine {
     let finalQueue = nextQueue;
     let finalIndex = nextIndex;
 
-    if (store.shuffle && nextQueue.length > 1) {
+    const isSelectingFromCurrentQueue =
+      preserveQueue === true ||
+      (queueIndex !== undefined &&
+        store.queue.length > 0 &&
+        store.queue.length === nextQueue.length &&
+        store.queue[queueIndex]?.id === track.id);
+
+    if (!isSelectingFromCurrentQueue && store.shuffle && nextQueue.length > 1) {
       const played = nextQueue.slice(0, nextIndex);
       const selectedTrackItem = nextQueue[nextIndex] ?? track;
       const upcoming = nextQueue.slice(nextIndex + 1);
@@ -424,7 +431,7 @@ class PlayerEngine {
 
       finalQueue = [...played, selectedTrackItem, ...shuffledUpcoming];
       finalIndex = nextIndex;
-    } else {
+    } else if (!isSelectingFromCurrentQueue) {
       this.originalUpcomingQueue = [];
     }
 

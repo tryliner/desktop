@@ -145,6 +145,7 @@ const QueueList = memo(function QueueList({
                   playbackContext,
                   playbackContextCover,
                   index,
+                  true,
                 );
               }}
             />

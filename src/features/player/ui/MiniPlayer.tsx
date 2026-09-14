@@ -357,6 +357,7 @@ function MiniPlayer({
               player.playbackContext,
               player.playbackContextCover,
               index,
+              true,
             );
           }}
           className={`rounded-[12px] px-[8px] py-[10px] text-left transition-all duration-200 ${
