@@ -378,7 +378,7 @@ function LibraryPlaylistContent() {
       <div className="relative z-1 grid grid-cols-1 w-full h-full min-h-0 overflow-hidden">
         {isReady && viewData && (
           <div className="col-start-1 row-start-1 w-full h-full min-h-0 overflow-hidden">
-            <div className="relative z-10 flex flex-row items-stretch gap-[32px] px-[32px] pt-[56px] pb-[24px] h-full w-full min-h-0 box-border">
+            <div className="relative z-10 flex flex-row items-stretch gap-[16px] pl-[32px] pr-[16px] pt-[56px] pb-[24px] h-full w-full min-h-0 box-border">
               <div
                 className="shrink-0 w-[280px] self-start"
                 data-window-drag
@@ -657,7 +657,7 @@ function LibraryPlaylistContent() {
                   const nextScrolled = e.currentTarget.scrollTop > 56;
                   setIsScrolled((prev) => (prev === nextScrolled ? prev : nextScrolled));
                 }}
-                className="min-w-0 flex-1 h-full min-h-0 overflow-y-auto overflow-x-hidden pb-[24px]"
+                className="min-w-0 flex-1 h-full min-h-0 overflow-y-auto overflow-x-hidden px-[8px] pb-[24px]"
               >
               {currentTracks.length === 0 ? (
                 <div className="flex min-h-[50vh] flex-col items-center justify-center gap-[12px] text-center">
@@ -680,7 +680,7 @@ function LibraryPlaylistContent() {
               ) : (
               <div
                 ref={trackListContainerRef}
-                className="relative -mx-[8px]"
+                className="relative"
                 style={{
                   height: `${rowVirtualizer.getTotalSize()}px`,
                 }}
