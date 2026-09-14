@@ -94,6 +94,7 @@ export interface CatalogPlaylistDetails {
   id: string;
   title: string;
   author?: string;
+  description?: string;
   year?: number;
   cover?: Cover;
   trackCount?: number;

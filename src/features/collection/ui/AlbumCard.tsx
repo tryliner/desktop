@@ -26,10 +26,6 @@ function AlbumCard({
   className = "",
   menuItems,
 }: AlbumCardProps) {
-  const subtitle = [year, trackCount ? `${trackCount} tracks` : undefined]
-    .filter(Boolean)
-    .join(" • ");
-
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuPosition, setMenuPosition] = useState<{
     x: number;
@@ -86,7 +82,11 @@ function AlbumCard({
           </span>
           <span className="flex items-center gap-[5px] truncate text-[13px] text-text-tertiary">
             {explicit && <ExplicitBadge />}
-            <span className="truncate">{subtitle}</span>
+            {year && <span>{year}</span>}
+            {year && trackCount && (
+              <span className="w-[3px] h-[3px] rounded-full bg-text-tertiary/40 shrink-0" aria-hidden />
+            )}
+            {trackCount && <span>{trackCount} tracks</span>}
           </span>
         </div>
       </Link>

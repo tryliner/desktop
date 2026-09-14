@@ -34,7 +34,7 @@ export default function WindowControls({
         className={`flex items-center h-[32px] min-h-[32px] max-h-[32px] box-border px-[3px] gap-[2px] rounded-lg backdrop-blur-xl pointer-events-auto transition-colors ${
           isFullscreen
             ? "bg-black/50 text-white"
-            : "bg-bg-panel/90 border border-border-primary/60 text-text-primary"
+            : "bg-bg-panel/90 text-text-primary"
         }`}
       >
         <button

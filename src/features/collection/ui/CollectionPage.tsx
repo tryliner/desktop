@@ -1,4 +1,4 @@
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useCallback, useEffect, useState, useMemo, useRef, Suspense } from "react";
 import CollectionPageSkeleton from "./CollectionPageSkeleton";
 import {
@@ -8,6 +8,10 @@ import {
   FolderCheckFill,
   ShareForwardLine,
   PlaylistFill,
+  PlaylistLine,
+  DiscLine,
+  MusicLine,
+  CalendarLine,
   CheckLine,
   More2Line,
   ArrowLeftLine,
@@ -309,27 +313,69 @@ function CollectionContent() {
                   <h1 className={SIDEBAR_TITLE_CLASS}>{data.title}</h1>
                 }
                 subtitle={
-                  data.description ? (
+                  data.artists && data.artists.length > 0 ? (
+                    <p className={`${SIDEBAR_SUBTITLE_CLASS} flex items-center flex-wrap gap-x-[4px]`}>
+                      {data.artists.map((artist, i) => (
+                        <span key={artist.id || i} className="inline-flex items-center">
+                          {artist.id ? (
+                            <Link
+                              to={`/artist?id=${encodeURIComponent(artist.id)}`}
+                              className="text-text-secondary hover:text-text-primary transition-colors no-underline"
+                            >
+                              {artist.name}
+                            </Link>
+                          ) : (
+                            <span>{artist.name}</span>
+                          )}
+                          {i < data.artists!.length - 1 && (
+                            <span className="text-text-tertiary ml-[2px]">,</span>
+                          )}
+                        </span>
+                      ))}
+                    </p>
+                  ) : data.author ? (
+                    <p className={SIDEBAR_SUBTITLE_CLASS}>{data.author}</p>
+                  ) : data.description ? (
                     <p className={SIDEBAR_SUBTITLE_CLASS}>{data.description}</p>
                   ) : undefined
                 }
                 meta={
-                  <>
-                    {data.tracks.length} {t("collection.tracks_count")} •{" "}
-                      {(() => {
-                        const totalMs = data.tracks.reduce(
-                          (acc, t) => acc + (t.durationMs || 0),
-                          0,
-                        );
-                        const totalMins = Math.floor(totalMs / 60000);
-                        if (totalMins > 60) {
-                          return `${Math.floor(totalMins / 60)} ${t("collection.hr")} ${totalMins % 60} ${t("collection.min")}`;
-                        }
-                        const totalSecs = Math.floor((totalMs % 60000) / 1000);
-                        return `${totalMins} ${t("collection.min")} ${totalSecs} ${t("collection.sec")}`;
-                      })()}
-                    </>
-                  }
+                  <div className="flex items-center flex-wrap gap-[6px]">
+                    {/* Year island */}
+                    {data.year && (
+                      <div className="inline-flex h-[26px] items-center gap-[5px] rounded-md px-[8px] bg-bg-panel border border-border-primary/50 text-[12px] font-[500] text-text-tertiary select-none">
+                        <CalendarLine size={12} className="text-text-tertiary shrink-0" />
+                        <span>{data.year}</span>
+                      </div>
+                    )}
+
+                    {/* Stats island */}
+                    <div className="inline-flex h-[26px] items-center gap-[6px] rounded-md px-[8px] bg-bg-panel border border-border-primary/40 text-[12px] font-[400] text-text-tertiary select-none">
+                      <MusicLine size={13} className="text-text-tertiary shrink-0" />
+                      <span>
+                        {data.tracks.length} {t("collection.tracks_count")}
+                      </span>
+                      <span
+                        className="w-[3px] h-[3px] rounded-full bg-text-tertiary/40 shrink-0"
+                        aria-hidden
+                      />
+                      <span>
+                        {(() => {
+                          const totalMs = data.tracks.reduce(
+                            (acc, t) => acc + (t.durationMs || 0),
+                            0,
+                          );
+                          const totalMins = Math.floor(totalMs / 60000);
+                          if (totalMins > 60) {
+                            return `${Math.floor(totalMins / 60)} ${t("collection.hr")} ${totalMins % 60} ${t("collection.min")}`;
+                          }
+                          const totalSecs = Math.floor((totalMs % 60000) / 1000);
+                          return `${totalMins} ${t("collection.min")} ${totalSecs} ${t("collection.sec")}`;
+                        })()}
+                      </span>
+                    </div>
+                  </div>
+                }
                   primaryAction={
                     <div className="flex flex-col gap-[8px] w-full">
                       <Button

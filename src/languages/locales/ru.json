@@ -32,6 +32,10 @@
     "unknown_owner": "Неизвестный владелец",
     "added_to_queue": "Добавлено в очередь",
     "not_found": "Не найдено",
+    "playlist": "Плейлист",
+    "album": "Альбом",
+    "ep": "EP",
+    "single": "Сингл",
     "tracks_count": "треков",
     "hr": "ч",
     "min": "мин",
@@ -359,6 +363,7 @@
     "playback_stopped_too_many_errors": "Воспроизведение остановлено — слишком много треков не удалось загрузить."
   },
   "playlist": {
+    "playlist": "Плейлист",
     "liked_songs": "Понравившиеся",
     "untitled_playlist": "Плейлист без названия",
     "play_all": "Играть все",

@@ -4,8 +4,12 @@ import { queryCache } from "@/shared/cache/queryCache";
 import type { Track } from "@/shared/types";
 
 export interface CollectionPageData {
+  type?: "playlist" | "album";
   title: string;
-  description: string;
+  author?: string;
+  artists?: { id: string; name: string }[];
+  description?: string;
+  year?: number;
   coverUrl: string;
   tracks: Track[];
 }
@@ -61,10 +65,11 @@ export function useCollection(type: string | null, id: string | null) {
               .slice(0, 4);
             const tracks: Track[] = userItems.map((item) => toClientTrack(item.track));
             const ownerName = userPlaylist.owner?.displayName || userPlaylist.owner?.username || "";
-            const description = [ownerName, userPlaylist.description].filter(Boolean).join(" • ");
             const formatted: CollectionPageData = {
+              type: "playlist",
               title: userPlaylist.title,
-              description,
+              author: ownerName || undefined,
+              description: userPlaylist.description || undefined,
               coverUrl: covers[0] || "",
               tracks,
             };
@@ -90,19 +95,14 @@ export function useCollection(type: string | null, id: string | null) {
             }
             return updated;
           });
-          const description =
-            collection.type === "album"
-              ? [
-                  collection.artists.map((artist) => artist.name).join(", "),
-                  collection.year,
-                ]
-                  .filter(Boolean)
-                  .join(" • ")
-              : [collection.author, collection.year].filter(Boolean).join(" • ");
 
           const formatted: CollectionPageData = {
+            type: collection.type,
             title: collection.title,
-            description,
+            author: collection.type === "playlist" ? collection.author : undefined,
+            artists: collection.type === "album" ? collection.artists : undefined,
+            description: (collection as any).description,
+            year: collection.year,
             coverUrl: collectionCoverUrl,
             tracks,
           };

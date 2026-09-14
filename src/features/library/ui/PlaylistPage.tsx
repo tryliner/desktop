@@ -9,6 +9,8 @@ import {
   More2Line,
   HeartFill,
   PlaylistFill,
+  PlaylistLine,
+  MusicLine,
   CheckLine,
   ArrowLeftLine,
   ShareForwardLine,
@@ -563,9 +565,7 @@ function LibraryPlaylistContent() {
                     </h1>
                   }
                   subtitle={
-                    isLikesMode ? (
-                      undefined
-                    ) : viewData.bio || isEditingDescription ? (
+                    isLikesMode ? undefined : viewData.bio || isEditingDescription ? (
                       <p
                         ref={descriptionRef}
                         className={`${SIDEBAR_SUBTITLE_CLASS} cursor-text outline-none transition-colors empty:min-h-[21px] ${
@@ -604,7 +604,7 @@ function LibraryPlaylistContent() {
                       <button
                         type="button"
                         onClick={() => setIsEditingDescription(true)}
-                        className="cursor-pointer border-0 bg-transparent p-0 text-[13px] font-[400] text-text-tertiary transition-colors hover:text-text-primary"
+                        className="cursor-pointer border-0 bg-transparent p-0 text-left text-[13px] font-[400] text-text-tertiary transition-colors hover:text-text-primary"
                         style={{ fontFamily: "var(--font-inter), sans-serif" }}
                       >
                         {t("common.add_description")}
@@ -612,21 +612,31 @@ function LibraryPlaylistContent() {
                     )
                   }
                   meta={
-                    <>
-                      {`${viewData.countLabel} • `}
-                      {(() => {
-                        const totalMs = viewData.tracks.reduce(
-                          (acc, t) => acc + (t.durationMs || 0),
-                          0,
-                        );
-                        const totalMins = Math.floor(totalMs / 60000);
-                        if (totalMins > 60) {
-                          return `${Math.floor(totalMins / 60)} ${t("playlist.hr")} ${totalMins % 60} ${t("playlist.min")}`;
-                        }
-                        const totalSecs = Math.floor((totalMs % 60000) / 1000);
-                        return `${totalMins} ${t("playlist.min")} ${totalSecs} ${t("playlist.sec")}`;
-                      })()}
-                    </>
+                    <div className="flex items-center flex-wrap gap-[6px]">
+                      {/* Stats island */}
+                      <div className="inline-flex h-[26px] items-center gap-[6px] rounded-md px-[8px] bg-bg-panel border border-border-primary/40 text-[12px] font-[400] text-text-tertiary select-none">
+                        <MusicLine size={13} className="text-text-tertiary shrink-0" />
+                        <span>{viewData.countLabel}</span>
+                        <span
+                          className="w-[3px] h-[3px] rounded-full bg-text-tertiary/40 shrink-0"
+                          aria-hidden
+                        />
+                        <span>
+                          {(() => {
+                            const totalMs = viewData.tracks.reduce(
+                              (acc, t) => acc + (t.durationMs || 0),
+                              0,
+                            );
+                            const totalMins = Math.floor(totalMs / 60000);
+                            if (totalMins > 60) {
+                              return `${Math.floor(totalMins / 60)} ${t("playlist.hr")} ${totalMins % 60} ${t("playlist.min")}`;
+                            }
+                            const totalSecs = Math.floor((totalMs % 60000) / 1000);
+                            return `${totalMins} ${t("playlist.min")} ${totalSecs} ${t("playlist.sec")}`;
+                          })()}
+                        </span>
+                      </div>
+                    </div>
                   }
                   primaryAction={
                     <div className="flex flex-col gap-[8px] w-full">

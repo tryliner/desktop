@@ -79,7 +79,13 @@ export default function ReleaseCard({
           </span>
           <span className="flex items-center gap-[5px] truncate text-[13px] text-text-tertiary">
             {explicit && <ExplicitBadge />}
-            <span>{year ? `${label} • ${year}` : label}</span>
+            <span>{label}</span>
+            {year && (
+              <>
+                <span className="w-[3px] h-[3px] rounded-full bg-text-tertiary/40 shrink-0" aria-hidden />
+                <span>{year}</span>
+              </>
+            )}
           </span>
         </div>
       </Link>

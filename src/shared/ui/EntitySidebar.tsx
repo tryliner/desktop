@@ -71,12 +71,12 @@ export function EntitySidebar({
       )}
 
       {meta && (
-        <p
+        <div
           className="m-0 mt-[8px] text-[12px] leading-[1.4] text-text-tertiary"
           style={{ fontFamily: "var(--font-inter), sans-serif", fontWeight: 400 }}
         >
           {meta}
-        </p>
+        </div>
       )}
 
       {primaryAction && <div className="mt-[16px]">{primaryAction}</div>}

@@ -32,6 +32,10 @@
     "unknown_owner": "Unknown Owner",
     "added_to_queue": "Added to queue",
     "not_found": "Not found",
+    "playlist": "Playlist",
+    "album": "Album",
+    "ep": "EP",
+    "single": "Single",
     "tracks_count": "tracks",
     "hr": "hr",
     "min": "min",
@@ -355,6 +359,7 @@
     "playback_stopped_too_many_errors": "Playback stopped — too many tracks failed to load."
   },
   "playlist": {
+    "playlist": "Playlist",
     "liked_songs": "Liked songs",
     "untitled_playlist": "Untitled Playlist",
     "play_all": "Play all",

@@ -32,6 +32,10 @@
     "unknown_owner": "Невідомий власник",
     "added_to_queue": "Додано в чергу",
     "not_found": "Не знайдено",
+    "playlist": "Плейліст",
+    "album": "Альбом",
+    "ep": "EP",
+    "single": "Сингл",
     "tracks_count": "треків",
     "hr": "год",
     "min": "хв",
@@ -359,6 +363,7 @@
     "playback_stopped_too_many_errors": "Відтворення зупинено — забагато треків не вдалося завантажити."
   },
   "playlist": {
+    "playlist": "Плейліст",
     "liked_songs": "Вподобані",
     "untitled_playlist": "Плейліст без назви",
     "play_all": "Грати все",
