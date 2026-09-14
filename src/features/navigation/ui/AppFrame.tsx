@@ -910,6 +910,7 @@ export default function AppFrame({ children }: AppFrameProps) {
       <ImportLikesModal />
       <CreatePlaylistModal />
       <ImportReviewModal />
+      <SettingsModal />
       <WindowControls
         style={{
           top: isFullscreenPlayer ? 12 : 18,
