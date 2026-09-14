@@ -55,7 +55,7 @@ async function renderIconDataUrl(
   } else {
     ctx.rect(0, 0, 512, 512);
   }
-  ctx.fillStyle = isLight ? "#ffffff" : "#0d0d10";
+  ctx.fillStyle = isLight ? "#f5f5f7" : "#0d0d10";
   ctx.fill();
 
   ctx.lineWidth = 2;
