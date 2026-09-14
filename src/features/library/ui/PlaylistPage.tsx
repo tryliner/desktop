@@ -387,11 +387,23 @@ function LibraryPlaylistContent() {
 
   return (
     <div className="page-transition relative h-full w-full overflow-hidden bg-bg-primary">
-      <div
-        data-window-drag
-        onContextMenu={(e) => e.preventDefault()}
-        className="absolute top-0 left-0 right-0 h-[56px] z-10 pointer-events-auto select-none"
-      />
+      <div className="absolute top-0 left-0 right-0 h-[56px] z-10 flex flex-row items-stretch select-none pointer-events-none">
+        <div
+          data-window-drag
+          onContextMenu={(e) => e.preventDefault()}
+          className="w-[328px] shrink-0 h-full pointer-events-auto"
+        />
+        <div
+          data-window-drag
+          onContextMenu={(e) => e.preventDefault()}
+          onWheel={(e) => {
+            if (scrollRef.current) {
+              scrollRef.current.scrollTop += e.deltaY;
+            }
+          }}
+          className="flex-1 min-w-0 h-full pointer-events-auto"
+        />
+      </div>
       {isReady && (
         <button
           type="button"
