@@ -48,7 +48,6 @@ export function StickyHeader({
     >
       <div className="relative flex items-center justify-between px-[32px] h-[56px] min-w-0">
         <div className="flex items-center gap-[8px] min-w-0">
-          {/* island 1: back button */}
           {showBack && (
             <button
               type="button"
@@ -56,7 +55,7 @@ export function StickyHeader({
               title={t("common.back")}
               aria-label={t("common.back")}
               data-no-window-drag
-              className="group inline-flex h-[32px] shrink-0 items-center gap-[6px] rounded-md px-[10px] bg-black/70 backdrop-blur-md text-text-primary hover:bg-black/85 hover:bg-white/10 active:scale-[0.94] transition-all border-0 cursor-pointer select-none pointer-events-auto text-[13px] font-[500]"
+              className="group inline-flex h-[32px] shrink-0 items-center gap-[6px] rounded-md px-[10px] bg-bg-panel/90 border border-border-primary/60 backdrop-blur-md text-text-primary hover:bg-border-alpha-14 active:scale-[0.94] transition-all cursor-pointer select-none pointer-events-auto text-[13px] font-[500]"
               style={{ fontFamily: "var(--font-inter), sans-serif" }}
             >
               <ArrowLeftLine
@@ -67,11 +66,10 @@ export function StickyHeader({
             </button>
           )}
 
-          {/* island 2: filled [cover + title] metadata card, revealed on scroll */}
           {hasMetadata && (
             <div
               data-no-window-drag
-              className={`inline-flex items-center gap-[8px] h-[32px] pl-[4px] pr-[12px] rounded-md bg-black/70 backdrop-blur-md text-text-primary min-w-0 max-w-[calc(100vw-360px)] select-none transition-all duration-200 ease-out ${
+              className={`inline-flex items-center gap-[8px] h-[32px] pl-[4px] pr-[12px] rounded-md bg-bg-panel/90 border border-border-primary/60 backdrop-blur-md text-text-primary min-w-0 max-w-[calc(100vw-360px)] select-none transition-all duration-200 ease-out ${
                 isScrolled
                   ? "opacity-100 translate-x-0 scale-100 pointer-events-auto"
                   : "opacity-0 -translate-x-2.5 scale-95 pointer-events-none"

@@ -462,7 +462,7 @@ function LibraryPlaylistContent() {
           title={t("common.back")}
           aria-label={t("common.back")}
           data-no-window-drag
-          className="absolute top-[12px] left-[32px] z-20 group inline-flex h-[32px] shrink-0 items-center gap-[6px] rounded-md px-[10px] bg-black/70 backdrop-blur-md text-text-primary hover:bg-black/85 hover:bg-white/10 active:scale-[0.94] transition-all border-0 cursor-pointer select-none pointer-events-auto text-[13px] font-[500]"
+          className="absolute top-[12px] left-[32px] z-20 group inline-flex h-[32px] shrink-0 items-center gap-[6px] rounded-md px-[10px] bg-bg-panel/90 border border-border-primary/60 backdrop-blur-md text-text-primary hover:bg-border-alpha-14 active:scale-[0.94] transition-all cursor-pointer select-none pointer-events-auto text-[13px] font-[500]"
           style={{ fontFamily: "var(--font-inter), sans-serif" }}
         >
           <ArrowLeftLine
@@ -487,7 +487,7 @@ function LibraryPlaylistContent() {
                       (viewData.coverUrl ? [viewData.coverUrl] : []);
                     if (urls.length === 0) {
                       return isLikesMode ? (
-                        <HeartFill size={48} className="text-border-alpha-33" />
+                        <HeartFill size={48} className="text-text-tertiary" />
                       ) : (
                         <PlaylistFill size={48} className="text-border-alpha-33" />
                       );

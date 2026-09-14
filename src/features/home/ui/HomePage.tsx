@@ -248,12 +248,11 @@ export default function HomePage() {
             {/* Quick Access Mix Grid */}
             {hasEnoughQuickData && (
               <div className="relative grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                {/* Liked Songs Quick Card */}
                 <SongCard
                   title={t("library.liked_songs")}
                   artists={`${likedData.total} ${likedData.total === 1 ? t("library.song") : t("library.songs")}`}
                   coverUrl=""
-                  icon={<HeartFill size={22} className="text-accent-primary" />}
+                  icon={<HeartFill size={22} className="text-text-tertiary" />}
                   onPlay={() => navigate("/library/playlist?id=likes")}
                   compact
                   className="bg-bg-elevated hover:bg-border-alpha-14"

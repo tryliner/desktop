@@ -448,7 +448,7 @@ export function SearchModal({
                       ${
                         isActive
                           ? "text-text-primary font-medium"
-                          : "text-text-secondary hover:text-text-primary hover:bg-white/[0.04]"
+                          : "text-text-secondary hover:text-text-primary hover:bg-border-alpha-14"
                       }
                     `}
                     style={{
@@ -458,7 +458,7 @@ export function SearchModal({
                     {isActive && (
                       <motion.div
                         layoutId="activeFilterPillModal"
-                        className="absolute inset-0 rounded-[6px] bg-white/15 pointer-events-none z-0"
+                        className="absolute inset-0 rounded-[6px] bg-border-alpha-14 pointer-events-none z-0"
                         transition={{
                           type: "spring",
                           stiffness: 450,

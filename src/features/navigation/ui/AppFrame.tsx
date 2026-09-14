@@ -698,14 +698,8 @@ export default function AppFrame({ children }: AppFrameProps) {
           >
             {/* 1. Search Input Island */}
             <div
-              className="w-[min(660px,calc(100vw-72px))] h-[54px] rounded-[8px] pointer-events-auto flex items-center px-[18px] gap-[14px]"
-              style={{
-                backgroundColor: "rgba(14, 14, 14, 0.98)",
-                backdropFilter: "blur(24px)",
-                WebkitBackdropFilter: "blur(24px)",
-              }}
+              className="w-[min(660px,calc(100vw-72px))] h-[54px] rounded-[8px] pointer-events-auto flex items-center px-[18px] gap-[14px] bg-bg-panel/95 border border-border-primary/50 shadow-2xl backdrop-blur-2xl"
             >
-              {/* Left search icon with loader */}
               <span className="shrink-0 flex items-center justify-center text-text-tertiary">
                 <AnimatePresence mode="wait" initial={false}>
                   {searchLoading ? (
@@ -785,14 +779,8 @@ export default function AppFrame({ children }: AppFrameProps) {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -8, scale: 0.99 }}
                   transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-                  className="w-[min(660px,calc(100vw-72px))] mt-[8px] max-h-[500px] h-[500px] rounded-[8px] pointer-events-auto flex flex-col overflow-hidden"
-                  style={{
-                    backgroundColor: "rgba(14, 14, 14, 0.98)",
-                    backdropFilter: "blur(24px)",
-                    WebkitBackdropFilter: "blur(24px)",
-                  }}
+                  className="w-[min(660px,calc(100vw-72px))] mt-[8px] max-h-[500px] h-[500px] rounded-[8px] pointer-events-auto flex flex-col overflow-hidden bg-bg-panel/95 border border-border-primary/50 shadow-2xl backdrop-blur-2xl"
                 >
-                  {/* Filter Pills Bar with Apple-style sliding pill */}
                   <div className="flex gap-[6px] px-[14px] pt-[12px] pb-[6px] shrink-0 overflow-x-auto">
                     {filterKeys.map((key) => {
                       const label = filterLabels[key];
@@ -813,7 +801,7 @@ export default function AppFrame({ children }: AppFrameProps) {
                             ${
                               isActive
                                 ? "text-text-primary font-medium"
-                                : "text-text-secondary hover:text-text-primary hover:bg-white/[0.04]"
+                                : "text-text-secondary hover:text-text-primary hover:bg-border-alpha-14"
                             }
                           `}
                           style={{
@@ -824,7 +812,7 @@ export default function AppFrame({ children }: AppFrameProps) {
                           {isActive && (
                             <motion.div
                               layoutId="activeFilterPill"
-                              className="absolute inset-0 rounded-[6px] bg-white/15 pointer-events-none z-0"
+                              className="absolute inset-0 rounded-[6px] bg-border-alpha-14 pointer-events-none z-0"
                               transition={{
                                 type: "spring",
                                 stiffness: 450,
@@ -912,6 +900,7 @@ export default function AppFrame({ children }: AppFrameProps) {
       <ImportReviewModal />
       <SettingsModal />
       <WindowControls
+        isFullscreen={isFullscreenPlayer}
         style={{
           top: isFullscreenPlayer ? 12 : 18,
           right: isFullscreenPlayer || isRightDrawerOpen || isBackNavigableRoute ? (isFullscreenPlayer ? 12 : 18) : 38,
