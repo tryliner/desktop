@@ -639,15 +639,6 @@ export default function AppFrame({ children }: AppFrameProps) {
               )}
             </AnimatePresence>
           )}
-
-          {!isFullscreenPlayer && (
-            <WindowControls
-              style={{
-                right: isRightDrawerOpen || isBackNavigableRoute ? 12 : 32,
-                transition: "right 0.28s cubic-bezier(0.22, 1, 0.36, 1)",
-              }}
-            />
-          )}
         </main>
 
         {shouldShowMiniPlayer && (
@@ -919,26 +910,14 @@ export default function AppFrame({ children }: AppFrameProps) {
       <ImportLikesModal />
       <CreatePlaylistModal />
       <ImportReviewModal />
-      <AnimatePresence>
-        {isFullscreenPlayer && (
-          <div className="pointer-events-none absolute inset-0 z-[80]">
-            <motion.div
-              initial={{ x: 20 }}
-              animate={{ x: 0 }}
-              exit={{ x: 20 }}
-              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-              className="absolute top-0 right-0 pointer-events-none"
-            >
-              <WindowControls
-                style={{
-                  right: 12,
-                  transition: "right 0.28s cubic-bezier(0.22, 1, 0.36, 1)",
-                }}
-              />
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      <WindowControls
+        style={{
+          top: isFullscreenPlayer ? 12 : 18,
+          right: isFullscreenPlayer || isRightDrawerOpen || isBackNavigableRoute ? (isFullscreenPlayer ? 12 : 18) : 38,
+          transition: "all 0.28s cubic-bezier(0.22, 1, 0.36, 1)",
+          zIndex: 80,
+        }}
+      />
     </div>
   );
 }
