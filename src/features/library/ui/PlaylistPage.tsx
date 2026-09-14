@@ -297,6 +297,49 @@ function LibraryPlaylistContent() {
     }
   }, [navigate]);
 
+  const targetScrollTopRef = useRef<number | null>(null);
+  const rafIdRef = useRef<number | null>(null);
+
+  const handleTopWheel = useCallback((e: React.WheelEvent) => {
+    const container = scrollRef.current;
+    if (!container) return;
+
+    const maxScroll = container.scrollHeight - container.clientHeight;
+    if (maxScroll <= 0) return;
+
+    const current = targetScrollTopRef.current ?? container.scrollTop;
+    const target = Math.max(0, Math.min(maxScroll, current + e.deltaY));
+    targetScrollTopRef.current = target;
+
+    if (rafIdRef.current === null) {
+      const step = () => {
+        if (!scrollRef.current || targetScrollTopRef.current === null) {
+          rafIdRef.current = null;
+          return;
+        }
+        const now = scrollRef.current.scrollTop;
+        const diff = targetScrollTopRef.current - now;
+        if (Math.abs(diff) < 0.5) {
+          scrollRef.current.scrollTop = targetScrollTopRef.current;
+          targetScrollTopRef.current = null;
+          rafIdRef.current = null;
+          return;
+        }
+        scrollRef.current.scrollTop = now + diff * 0.25;
+        rafIdRef.current = requestAnimationFrame(step);
+      };
+      rafIdRef.current = requestAnimationFrame(step);
+    }
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current);
+      }
+    };
+  }, []);
+
   const urlsToPreload = useMemo(() => {
     if (!viewData) return [];
     const urls = new Set<string>();
@@ -396,11 +439,7 @@ function LibraryPlaylistContent() {
         <div
           data-window-drag
           onContextMenu={(e) => e.preventDefault()}
-          onWheel={(e) => {
-            if (scrollRef.current) {
-              scrollRef.current.scrollTop += e.deltaY;
-            }
-          }}
+          onWheel={handleTopWheel}
           className="flex-1 min-w-0 h-full pointer-events-auto"
         />
       </div>
@@ -694,6 +733,11 @@ function LibraryPlaylistContent() {
               <div
                 ref={scrollRef}
                 data-no-window-drag
+                onScroll={() => {
+                  if (rafIdRef.current === null) {
+                    targetScrollTopRef.current = null;
+                  }
+                }}
                 className="min-w-0 flex-1 h-full min-h-0 overflow-y-auto overflow-x-hidden px-[8px] pt-[56px] pb-[24px] overscroll-contain"
                 style={{ willChange: "scroll-position" }}
               >
