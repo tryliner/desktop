@@ -737,7 +737,6 @@ function NotificationCard({
         transformOrigin: "bottom center",
         fontFamily: "var(--font-inter), sans-serif",
         maxWidth: "min(520px, calc(100vw - 32px))",
-        minWidth: "min(180px, calc(100vw - 32px))",
         minHeight: "38px",
         width: index > 0 && activeCardWidth ? `${activeCardWidth}px` : undefined,
         height: index > 0 && activeCardHeight ? `${activeCardHeight}px` : undefined,
@@ -758,12 +757,12 @@ function NotificationCard({
           />
           {item.description && (
             <>
-              <span aria-hidden className="shrink-0 text-text-tertiary text-[12.5px] leading-tight">
+              <span aria-hidden className="shrink-0 text-text-tertiary text-[12.5px] leading-tight translate-y-[1px]">
                 ·
               </span>
               <ScrollableText
                 text={item.description}
-                className="min-w-0 flex-1 text-text-tertiary text-[12.5px] leading-tight"
+                className="min-w-0 max-w-[260px] text-text-tertiary text-[12.5px] leading-tight translate-y-[1px]"
                 isParentHovered={hovered && index === 0}
               />
             </>
