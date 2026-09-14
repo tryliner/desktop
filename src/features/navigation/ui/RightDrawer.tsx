@@ -9,7 +9,7 @@ import { useListReorder } from "@/shared/hooks";
 import { FiMusic } from "react-icons/fi";
 import { ArrowLeftLine } from "@mingcute/react";
 
-const QUEUE_ITEM_HEIGHT = 64;
+const QUEUE_ITEM_HEIGHT = 68;
 
 const QueueList = memo(function QueueList({
   queue,
@@ -112,7 +112,7 @@ const QueueList = memo(function QueueList({
               opacity: isThisDragged ? 0 : 1,
               zIndex: 1,
             }}
-            className="px-0"
+            className="px-0 py-[2px]"
           >
             <SongCardWithMenu
               id={item.id}
@@ -131,7 +131,7 @@ const QueueList = memo(function QueueList({
                   ? (e) => handleCardGrab(index, item, e)
                   : undefined
               }
-              className={`px-[12px] py-[8px] rounded-md transition-colors duration-150 ${
+              className={`p-[8px] rounded-md transition-colors duration-150 ${
                 isCurrent
                   ? "bg-border-alpha-14"
                   : "bg-transparent hover:bg-border-alpha-14"
@@ -173,7 +173,7 @@ const QueueList = memo(function QueueList({
               (draggedItem as { cover_url?: string }).cover_url ??
               ""
             }
-            className="px-[12px] py-[8px] rounded-md bg-transparent"
+            className="p-[8px] rounded-md bg-transparent"
             imageShape="square"
           />
         </FloatingDragCard>
@@ -615,7 +615,7 @@ function RightDrawer({ activeTab, onTabChange, onClose }: RightDrawerProps) {
         {activeTab === "queue" && (
           <div
             ref={queueScrollCallbackRef}
-            className="absolute inset-0 overflow-y-auto px-[12px] pt-[6px] pb-[12px]"
+            className="absolute inset-0 overflow-y-auto px-[16px] pt-[6px] pb-[16px]"
             onScroll={(e) => {
               const target = e.currentTarget;
               const next = target.scrollTop > 2;
