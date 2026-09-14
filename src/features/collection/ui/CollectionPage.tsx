@@ -10,6 +10,7 @@ import {
   PlaylistFill,
   CheckLine,
   More2Line,
+  ArrowLeftLine,
 } from "@mingcute/react";
 import { LuShuffle } from "react-icons/lu";
 import Button from "@/shared/ui/Button";
@@ -20,7 +21,6 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   useToast,
   EntitySidebar,
-  StickyHeader,
   DropdownMenu,
   SIDEBAR_TITLE_CLASS,
   SIDEBAR_SUBTITLE_CLASS,
@@ -196,8 +196,56 @@ function CollectionContent() {
   };
 
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [isScrolled, setIsScrolled] = useState(false);
+  const targetScrollTopRef = useRef<number | null>(null);
+  const rafIdRef = useRef<number | null>(null);
 
+  const handleTopWheel = useCallback((e: React.WheelEvent) => {
+    const container = scrollRef.current;
+    if (!container) return;
+
+    const maxScroll = container.scrollHeight - container.clientHeight;
+    if (maxScroll <= 0) return;
+
+    const current = targetScrollTopRef.current ?? container.scrollTop;
+    const target = Math.max(0, Math.min(maxScroll, current + e.deltaY));
+    targetScrollTopRef.current = target;
+
+    if (rafIdRef.current === null) {
+      const step = () => {
+        if (!scrollRef.current || targetScrollTopRef.current === null) {
+          rafIdRef.current = null;
+          return;
+        }
+        const now = scrollRef.current.scrollTop;
+        const diff = targetScrollTopRef.current - now;
+        if (Math.abs(diff) < 0.5) {
+          scrollRef.current.scrollTop = targetScrollTopRef.current;
+          targetScrollTopRef.current = null;
+          rafIdRef.current = null;
+          return;
+        }
+        scrollRef.current.scrollTop = now + diff * 0.25;
+        rafIdRef.current = requestAnimationFrame(step);
+      };
+      rafIdRef.current = requestAnimationFrame(step);
+    }
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current);
+      }
+    };
+  }, []);
+
+  const handleBack = useCallback(() => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate("/library");
+    }
+  }, [navigate]);
 
   if (!loading && !data) {
     return (
@@ -211,35 +259,42 @@ function CollectionContent() {
 
   return (
     <div className="page-transition relative h-full w-full overflow-hidden bg-bg-primary">
-      <StickyHeader
-        isScrolled={isScrolled}
-        showBack={isReady}
-        title={data?.title}
-        thumbnail={
-          data?.coverUrl ? (
-            <div className="relative h-[24px] w-[24px] shrink-0 overflow-hidden rounded-[4px] bg-border-alpha-14">
-              <CoverImage
-                src={data.coverUrl}
-                alt={data.title}
-                fill
-                sizes="24px"
-                className="object-cover"
-                draggable={false}
-              />
-            </div>
-          ) : (
-            <div className="flex h-[24px] w-[24px] shrink-0 items-center justify-center rounded-[4px] bg-border-alpha-14 text-text-secondary">
-              <PlaylistFill size={13} />
-            </div>
-          )
-        }
-      />
+      <div className="absolute top-0 left-0 right-0 h-[56px] z-10 flex flex-row items-stretch select-none pointer-events-none">
+        <div
+          data-window-drag
+          onContextMenu={(e) => e.preventDefault()}
+          className="w-[328px] shrink-0 h-full pointer-events-auto"
+        />
+        <div
+          data-window-drag
+          onContextMenu={(e) => e.preventDefault()}
+          onWheel={handleTopWheel}
+          className="flex-1 min-w-0 h-full pointer-events-auto"
+        />
+      </div>
+      {isReady && (
+        <button
+          type="button"
+          onClick={handleBack}
+          title={t("common.back")}
+          aria-label={t("common.back")}
+          data-no-window-drag
+          className="absolute top-[12px] left-[32px] z-20 group inline-flex h-[32px] shrink-0 items-center gap-[6px] rounded-md px-[10px] bg-black/70 backdrop-blur-md text-text-primary hover:bg-black/85 hover:bg-white/10 active:scale-[0.94] transition-all border-0 cursor-pointer select-none pointer-events-auto text-[13px] font-[500]"
+          style={{ fontFamily: "var(--font-inter), sans-serif" }}
+        >
+          <ArrowLeftLine
+            size={16}
+            className="transition-transform duration-150 group-hover:-translate-x-0.5"
+          />
+          <span className="relative -left-[1.5px] top-[1px]">{t("common.back")}</span>
+        </button>
+      )}
       <div className="relative z-1 grid grid-cols-1 w-full h-full min-h-0 overflow-hidden">
         {isReady && data && (
           <div className="col-start-1 row-start-1 w-full h-full min-h-0 overflow-hidden">
-            <div className="relative z-10 flex flex-row items-stretch gap-[16px] pl-[32px] pr-[16px] pt-[56px] pb-[24px] h-full w-full min-h-0 box-border">
+            <div className="relative z-10 flex flex-row items-stretch gap-[16px] pl-[32px] pr-[16px] h-full w-full min-h-0 box-border">
               <div
-                className="shrink-0 w-[280px] self-start"
+                className="shrink-0 w-[280px] self-start pt-[56px] pb-[24px]"
                 data-window-drag
               >
                 <EntitySidebar
@@ -381,11 +436,12 @@ function CollectionContent() {
               <div
                 ref={scrollRef}
                 data-no-window-drag
-                onScroll={(e) => {
-                  const nextScrolled = e.currentTarget.scrollTop > 56;
-                  setIsScrolled((prev) => (prev === nextScrolled ? prev : nextScrolled));
+                onScroll={() => {
+                  if (rafIdRef.current === null) {
+                    targetScrollTopRef.current = null;
+                  }
                 }}
-                className="min-w-0 flex-1 h-full min-h-0 overflow-y-auto overflow-x-hidden px-[8px] pb-[24px] overscroll-contain"
+                className="min-w-0 flex-1 h-full min-h-0 overflow-y-auto overflow-x-hidden px-[8px] pt-[56px] pb-[24px] overscroll-contain"
                 style={{ willChange: "scroll-position" }}
               >
               <section>
