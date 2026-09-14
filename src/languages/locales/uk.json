@@ -640,7 +640,7 @@
       "check_updates": "Перевірити оновлення",
       "checking_updates": "Перевірка…",
       "up_to_date": "Актуальна версія",
-      "latest_version_toast": "У вас встановлена остання версія (v0.1.24)",
+      "latest_version_toast": "У вас встановлена остання версія (v0.1.25)",
       "build_info": "Production-збірка · Electron 44 · React 19",
       "tech_stack_title": "Технологічний стек",
       "tech_electron": "Electron 44 та Web Audio",
