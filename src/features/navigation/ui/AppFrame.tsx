@@ -591,7 +591,6 @@ export default function AppFrame({ children }: AppFrameProps) {
 
       <div className="flex-1 flex flex-col min-w-0 h-full relative gap-1.5 overflow-hidden">
         <main className="flex-1 min-w-0 flex flex-col relative h-full bg-bg-primary rounded-sm rounded-tr-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.035)] overflow-hidden">
-          {!isFullscreenPlayer && <WindowControls />}
           <div
             ref={mainScrollRef}
             className={`h-full ${
@@ -617,34 +616,31 @@ export default function AppFrame({ children }: AppFrameProps) {
               />
             )}
           </AnimatePresence>
-        </main>
 
-        {!isFullscreenPlayer && (
-          <AnimatePresence initial={false}>
-            {isRightDrawerOpen && (
-              <motion.aside
-                key="right-drawer"
-                ref={queueDrawerRef}
-                initial={{ x: RIGHT_DRAWER_WIDTH, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                exit={{ x: RIGHT_DRAWER_WIDTH, opacity: 0 }}
-                transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                className="pointer-events-auto absolute right-0 top-[32px] w-[420px] z-[35]"
-                style={{
-                  bottom: shouldShowMiniPlayer ? 70 : 0,
-                }}
-              >
-                <div className="absolute inset-y-[12px] right-[12px] w-[408px]">
+          {!isFullscreenPlayer && (
+            <AnimatePresence initial={false}>
+              {isRightDrawerOpen && (
+                <motion.aside
+                  key="right-drawer"
+                  ref={queueDrawerRef}
+                  initial={{ x: RIGHT_DRAWER_WIDTH }}
+                  animate={{ x: 0 }}
+                  exit={{ x: RIGHT_DRAWER_WIDTH }}
+                  transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                  className="pointer-events-auto absolute inset-y-0 right-0 w-[420px] z-[50]"
+                >
                   <RightDrawer
                     activeTab={rightDrawerTab}
                     onTabChange={setRightDrawerTab}
                     onClose={closeRightPanel}
                   />
-                </div>
-              </motion.aside>
-            )}
-          </AnimatePresence>
-        )}
+                </motion.aside>
+              )}
+            </AnimatePresence>
+          )}
+
+          {!isFullscreenPlayer && <WindowControls />}
+        </main>
 
         {shouldShowMiniPlayer && (
           <div

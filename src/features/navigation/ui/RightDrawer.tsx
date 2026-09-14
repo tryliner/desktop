@@ -7,7 +7,7 @@ import { useTranslation } from "@/languages";
 import { useToast, ReorderDropPlaceholder, FloatingDragCard } from "@/shared/ui";
 import { useListReorder } from "@/shared/hooks";
 import { FiMusic } from "react-icons/fi";
-import { CloseLine } from "@mingcute/react";
+import { ArrowLeftLine } from "@mingcute/react";
 
 const QueueList = memo(function QueueList({
   queue,
@@ -511,10 +511,36 @@ function RightDrawer({ activeTab, onTabChange, onClose }: RightDrawerProps) {
     lastLine?.text;
 
   return (
-    <div className="flex flex-col h-full w-full rounded-4xl border border-border-secondary bg-bg-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.035)] overflow-hidden">
-      <div className="relative px-[12px] pt-[12px] pb-[6px] shrink-0 z-20">
-        <div className="flex items-center gap-[8px]">
-          <div className="h-[36px] grid grid-cols-2 flex-1 p-[3px] box-border rounded-xl bg-bg-elevated border border-border-primary/60">
+    <div className="flex flex-col h-full w-full bg-bg-primary border-l border-border-secondary/60 shadow-[-16px_0_36px_rgba(0,0,0,0.45)] overflow-hidden select-none">
+      <div className="relative shrink-0 z-20">
+        <div
+          data-window-drag
+          className="relative flex items-center justify-between px-[16px] h-[56px] select-none"
+        >
+          <div className="flex items-center min-w-0">
+            {onClose && (
+              <button
+                type="button"
+                onClick={onClose}
+                title={t("common.back") || "Back"}
+                aria-label={t("common.back") || "Back"}
+                data-no-window-drag
+                className="group inline-flex h-[32px] shrink-0 items-center gap-[6px] rounded-md px-[10px] bg-black/70 backdrop-blur-md text-text-primary hover:bg-white/10 active:scale-[0.94] transition-all border-0 cursor-pointer select-none pointer-events-auto text-[13px] font-[500]"
+                style={{ fontFamily: "var(--font-inter), sans-serif" }}
+              >
+                <ArrowLeftLine
+                  size={16}
+                  className="transition-transform duration-150 group-hover:-translate-x-0.5"
+                />
+                <span>{t("common.back") || "Back"}</span>
+              </button>
+            )}
+          </div>
+          <div className="w-[120px] h-[32px] shrink-0" />
+        </div>
+
+        <div className="px-[16px] pb-[10px]">
+          <div className="h-[36px] grid grid-cols-2 w-full p-[3px] box-border rounded-xl bg-bg-elevated border border-border-primary/60">
             <button
               type="button"
               onClick={() => onTabChange("queue")}
@@ -568,18 +594,6 @@ function RightDrawer({ activeTab, onTabChange, onClose }: RightDrawerProps) {
               <span className="relative z-10">{t("player.lyrics")}</span>
             </button>
           </div>
-
-          {onClose && (
-            <button
-              type="button"
-              onClick={onClose}
-              title={t("common.close") || "Close"}
-              aria-label={t("common.close") || "Close"}
-              className="flex h-[36px] w-[36px] shrink-0 items-center justify-center rounded-xl bg-bg-elevated border border-border-primary/60 text-text-secondary hover:text-text-primary hover:bg-white/[0.08] active:scale-[0.95] transition-all border-solid cursor-pointer select-none"
-            >
-              <CloseLine size={16} />
-            </button>
-          )}
         </div>
 
         <div className="pointer-events-none absolute inset-x-0 top-full h-[24px] overflow-hidden z-20">
