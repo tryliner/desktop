@@ -10,6 +10,7 @@ import {
   HeartFill,
   PlaylistFill,
   CheckLine,
+  ArrowLeftLine,
 } from "@mingcute/react";
 import { AnimatePresence, motion } from "framer-motion";
 import { LuPencil, LuTrash2, LuText, LuShuffle } from "react-icons/lu";
@@ -288,48 +289,13 @@ function LibraryPlaylistContent() {
       index,
   });
 
-  const targetScrollTopRef = useRef<number | null>(null);
-  const rafIdRef = useRef<number | null>(null);
-
-  const handleSidebarWheel = useCallback((e: React.WheelEvent) => {
-    const container = scrollRef.current;
-    if (!container) return;
-
-    const maxScroll = container.scrollHeight - container.clientHeight;
-    if (maxScroll <= 0) return;
-
-    const current = targetScrollTopRef.current ?? container.scrollTop;
-    const target = Math.max(0, Math.min(maxScroll, current + e.deltaY));
-    targetScrollTopRef.current = target;
-
-    if (rafIdRef.current === null) {
-      const step = () => {
-        if (!scrollRef.current || targetScrollTopRef.current === null) {
-          rafIdRef.current = null;
-          return;
-        }
-        const now = scrollRef.current.scrollTop;
-        const diff = targetScrollTopRef.current - now;
-        if (Math.abs(diff) < 0.5) {
-          scrollRef.current.scrollTop = targetScrollTopRef.current;
-          targetScrollTopRef.current = null;
-          rafIdRef.current = null;
-          return;
-        }
-        scrollRef.current.scrollTop = now + diff * 0.25;
-        rafIdRef.current = requestAnimationFrame(step);
-      };
-      rafIdRef.current = requestAnimationFrame(step);
+  const handleBack = useCallback(() => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate("/library");
     }
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (rafIdRef.current !== null) {
-        cancelAnimationFrame(rafIdRef.current);
-      }
-    };
-  }, []);
+  }, [navigate]);
 
   const urlsToPreload = useMemo(() => {
     if (!viewData) return [];
@@ -421,6 +387,23 @@ function LibraryPlaylistContent() {
 
   return (
     <div className="page-transition relative h-full w-full overflow-hidden bg-bg-primary">
+      {isReady && (
+        <button
+          type="button"
+          onClick={handleBack}
+          title={t("common.back")}
+          aria-label={t("common.back")}
+          data-no-window-drag
+          className="absolute top-[12px] left-[32px] z-20 group inline-flex h-[32px] shrink-0 items-center gap-[6px] rounded-md px-[10px] bg-black/70 backdrop-blur-md text-text-primary hover:bg-black/85 hover:bg-white/10 active:scale-[0.94] transition-all border-0 cursor-pointer select-none pointer-events-auto text-[13px] font-[500]"
+          style={{ fontFamily: "var(--font-inter), sans-serif" }}
+        >
+          <ArrowLeftLine
+            size={16}
+            className="transition-transform duration-150 group-hover:-translate-x-0.5"
+          />
+          <span className="relative -left-[1.5px] top-[1px]">{t("common.back")}</span>
+        </button>
+      )}
       <div className="relative z-1 grid grid-cols-1 w-full h-full min-h-0 overflow-hidden">
         {isReady && viewData && (
           <div className="col-start-1 row-start-1 w-full h-full min-h-0 overflow-hidden">
@@ -428,7 +411,6 @@ function LibraryPlaylistContent() {
               <div
                 className="shrink-0 w-[280px] self-start pt-[56px] pb-[24px]"
                 data-window-drag
-                onWheel={handleSidebarWheel}
               >
                 <EntitySidebar
                 cover={(() => {
@@ -695,11 +677,6 @@ function LibraryPlaylistContent() {
               <div
                 ref={scrollRef}
                 data-no-window-drag
-                onScroll={() => {
-                  if (rafIdRef.current === null) {
-                    targetScrollTopRef.current = null;
-                  }
-                }}
                 className="min-w-0 flex-1 h-full min-h-0 overflow-y-auto overflow-x-hidden px-[8px] pt-[56px] pb-[24px] overscroll-contain"
                 style={{ willChange: "scroll-position" }}
               >

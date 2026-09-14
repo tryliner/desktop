@@ -33,6 +33,7 @@ function PlaylistPageSkeletonComponent({
     <div
       className={`relative w-full bg-bg-primary pb-[32px] select-none ${className}`}
     >
+      <div className="absolute top-[12px] left-[32px] skeleton-shimmer h-[32px] w-[64px] rounded-md" />
       <div className="flex items-start gap-[32px] px-[32px] pt-[56px] pb-[24px]">
         <aside className="w-[280px] shrink-0">
           <div className="relative aspect-square w-full overflow-hidden rounded-md bg-border-alpha-14">
