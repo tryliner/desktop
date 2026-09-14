@@ -33,7 +33,7 @@ export function EntitySidebar({
   backLabel = "Back",
 }: EntitySidebarProps) {
   return (
-    <aside className="sticky top-[20px] w-[280px] shrink-0 self-start">
+    <aside className="sticky top-[20px] w-[280px] shrink-0 self-start" data-no-window-drag>
       {onBack && (
         <button
           type="button"

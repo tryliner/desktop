@@ -472,7 +472,7 @@ function LibraryPlaylistContent() {
             <div className="relative z-10 flex flex-row items-stretch gap-[16px] pl-[32px] pr-[16px] h-full w-full min-h-0 box-border">
               <div
                 className="shrink-0 w-[280px] self-start pt-[56px] pb-[24px]"
-                data-window-drag
+                data-no-window-drag
               >
                 <EntitySidebar
                 cover={(() => {
