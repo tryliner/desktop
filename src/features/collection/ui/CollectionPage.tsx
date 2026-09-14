@@ -198,12 +198,12 @@ function CollectionContent() {
           )
         }
       />
-      <div className="relative z-1 grid grid-cols-1 items-start w-full h-full">
+      <div className="relative z-1 grid grid-cols-1 w-full h-full min-h-0 overflow-hidden">
         {isReady && data && (
-          <div className="col-start-1 row-start-1 w-full h-full">
-            <div className="relative z-10 flex items-start gap-[32px] px-[32px] pt-[56px] pb-[24px] h-full box-border">
+          <div className="col-start-1 row-start-1 w-full h-full min-h-0 overflow-hidden">
+            <div className="relative z-10 flex flex-row items-stretch gap-[32px] px-[32px] pt-[56px] pb-[24px] h-full w-full min-h-0 box-border">
               <div
-                className="shrink-0 w-[280px]"
+                className="shrink-0 w-[280px] self-start"
                 data-window-drag
                 onWheel={(e) => {
                   if (scrollRef.current) {
@@ -325,11 +325,12 @@ function CollectionContent() {
 
               <div
                 ref={scrollRef}
+                data-no-window-drag
                 onScroll={(e) => {
                   const nextScrolled = e.currentTarget.scrollTop > 56;
                   setIsScrolled((prev) => (prev === nextScrolled ? prev : nextScrolled));
                 }}
-                className="min-w-0 flex-1 h-full overflow-y-auto overflow-x-hidden pb-[24px]"
+                className="min-w-0 flex-1 h-full min-h-0 overflow-y-auto overflow-x-hidden pb-[24px]"
               >
               <section>
                 <div className="flex flex-col -mx-[8px]">
