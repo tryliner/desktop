@@ -127,13 +127,13 @@ export function LyricsProviderIsland() {
       ref={containerRef}
       className="relative inline-flex items-center pointer-events-auto select-none"
     >
-      <div className="inline-flex items-center h-[32px] rounded-lg border border-white/10 bg-black/50 backdrop-blur-xl px-[4px] py-[2px] shadow-lg gap-[2px] text-white">
+      <div className="inline-flex items-center h-[32px] min-h-[32px] max-h-[32px] box-border rounded-lg border border-white/10 bg-black/50 backdrop-blur-xl px-[3px] shadow-lg gap-[2px] text-white">
         {hasMultiple && (
           <button
             type="button"
             onClick={handlePrev}
             aria-label="Previous provider"
-            className="w-[26px] h-[26px] rounded-md flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 active:scale-95 transition-all border-none bg-transparent cursor-pointer"
+            className="w-[26px] h-[26px] min-w-[26px] min-h-[26px] max-h-[26px] rounded-md flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 active:scale-95 transition-all border-none bg-transparent cursor-pointer"
           >
             <LeftLine size={14} />
           </button>
@@ -147,7 +147,7 @@ export function LyricsProviderIsland() {
               setDropdownOpen((v) => !v);
             }
           }}
-          className={`flex items-center gap-[6px] h-[26px] px-[8px] rounded-md text-[12px] font-[500] text-white transition-all border-none bg-transparent ${
+          className={`flex items-center gap-[6px] h-[26px] min-h-[26px] max-h-[26px] px-[8px] rounded-md text-[12px] font-[500] text-white transition-all border-none bg-transparent ${
             hasMultiple
               ? "hover:bg-white/10 cursor-pointer"
               : "cursor-default"
@@ -177,13 +177,13 @@ export function LyricsProviderIsland() {
             type="button"
             onClick={handleNext}
             aria-label="Next provider"
-            className="w-[26px] h-[26px] rounded-md flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 active:scale-95 transition-all border-none bg-transparent cursor-pointer"
+            className="w-[26px] h-[26px] min-w-[26px] min-h-[26px] max-h-[26px] rounded-md flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 active:scale-95 transition-all border-none bg-transparent cursor-pointer"
           >
             <RightLine size={14} />
           </button>
         )}
 
-        <div className="w-[1px] h-[14px] bg-white/15 mx-[2px]" />
+        <div className="w-[1px] h-[14px] bg-white/15 mx-[1px]" />
 
         <button
           type="button"
@@ -193,7 +193,7 @@ export function LyricsProviderIsland() {
           }}
           aria-label="Lyrics earlier (-0.1s)"
           title="Lyrics earlier (-0.1s)"
-          className="w-[26px] h-[26px] rounded-md flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 active:scale-95 transition-all border-none bg-transparent cursor-pointer"
+          className="w-[26px] h-[26px] min-w-[26px] min-h-[26px] max-h-[26px] rounded-md flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 active:scale-95 transition-all border-none bg-transparent cursor-pointer"
         >
           <MinimizeLine size={12} />
         </button>
@@ -204,7 +204,7 @@ export function LyricsProviderIsland() {
             setDropdownOpen(false);
             setOffsetOpen((v) => !v);
           }}
-          className={`flex items-center gap-[4px] h-[26px] px-[6px] rounded-md text-[12px] font-mono transition-all border-none bg-transparent hover:bg-white/10 cursor-pointer ${
+          className={`flex items-center gap-[4px] h-[26px] min-h-[26px] max-h-[26px] px-[6px] rounded-md text-[12px] font-mono transition-all border-none bg-transparent hover:bg-white/10 cursor-pointer ${
             offsetMs !== 0
               ? "text-white font-[600]"
               : "text-white/80 font-[500]"
@@ -227,7 +227,7 @@ export function LyricsProviderIsland() {
           }}
           aria-label="Lyrics later (+0.1s)"
           title="Lyrics later (+0.1s)"
-          className="w-[26px] h-[26px] rounded-md flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 active:scale-95 transition-all border-none bg-transparent cursor-pointer"
+          className="w-[26px] h-[26px] min-w-[26px] min-h-[26px] max-h-[26px] rounded-md flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 active:scale-95 transition-all border-none bg-transparent cursor-pointer"
         >
           <AddLine size={12} />
         </button>
