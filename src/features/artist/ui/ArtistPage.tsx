@@ -194,49 +194,6 @@ function ArtistContent() {
     }
   };
 
-  const targetScrollTopRef = useRef<number | null>(null);
-  const rafIdRef = useRef<number | null>(null);
-
-  const handleTopWheel = useCallback((e: React.WheelEvent) => {
-    const container = scrollRef.current;
-    if (!container) return;
-
-    const maxScroll = container.scrollHeight - container.clientHeight;
-    if (maxScroll <= 0) return;
-
-    const current = targetScrollTopRef.current ?? container.scrollTop;
-    const target = Math.max(0, Math.min(maxScroll, current + e.deltaY));
-    targetScrollTopRef.current = target;
-
-    if (rafIdRef.current === null) {
-      const step = () => {
-        if (!scrollRef.current || targetScrollTopRef.current === null) {
-          rafIdRef.current = null;
-          return;
-        }
-        const now = scrollRef.current.scrollTop;
-        const diff = targetScrollTopRef.current - now;
-        if (Math.abs(diff) < 0.5) {
-          scrollRef.current.scrollTop = targetScrollTopRef.current;
-          targetScrollTopRef.current = null;
-          rafIdRef.current = null;
-          return;
-        }
-        scrollRef.current.scrollTop = now + diff * 0.25;
-        rafIdRef.current = requestAnimationFrame(step);
-      };
-      rafIdRef.current = requestAnimationFrame(step);
-    }
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (rafIdRef.current !== null) {
-        cancelAnimationFrame(rafIdRef.current);
-      }
-    };
-  }, []);
-
   if (!loading && !data) {
     return (
       <div className="page-transition h-full w-full bg-bg-primary flex items-center justify-center">
@@ -249,20 +206,6 @@ function ArtistContent() {
 
   return (
     <div className="page-transition relative h-full w-full overflow-hidden bg-bg-primary">
-      <div className="absolute top-0 left-0 right-0 h-[56px] z-10 flex flex-row items-stretch select-none pointer-events-none">
-        <div
-          data-window-drag
-          onContextMenu={(e) => e.preventDefault()}
-          className="w-[328px] shrink-0 h-full pointer-events-auto"
-        />
-        <div
-          data-window-drag
-          onContextMenu={(e) => e.preventDefault()}
-          onWheel={handleTopWheel}
-          className="flex-1 min-w-0 h-full pointer-events-auto"
-        />
-      </div>
-
       <div
         ref={scrollRef}
         onScroll={(e) => {
@@ -278,7 +221,7 @@ function ArtistContent() {
           }
           setIsScrolled((prev) => (prev === nextScrolled ? prev : nextScrolled));
         }}
-        className="relative z-1 h-full w-full overflow-y-auto pb-[32px]"
+        className="relative h-full w-full overflow-y-auto pb-[32px]"
       >
         <StickyHeader
           isScrolled={isScrolled}

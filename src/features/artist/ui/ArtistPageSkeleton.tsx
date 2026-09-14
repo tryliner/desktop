@@ -28,13 +28,10 @@ interface ArtistPageSkeletonProps {
   className?: string;
 }
 
-// matches widescreen hero header and catalog layout of artist page
 function ArtistPageSkeleton({ className = "" }: ArtistPageSkeletonProps) {
   return (
     <div className={`relative w-full bg-bg-primary pb-[32px] select-none ${className}`}>
-      {/* hero header skeleton */}
       <div className="relative min-h-[340px] md:min-h-[380px] w-full flex flex-col justify-between overflow-hidden bg-bg-elevated/40">
-        {/* soft gradient fade matching actual header */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
@@ -43,31 +40,23 @@ function ArtistPageSkeleton({ className = "" }: ArtistPageSkeletonProps) {
           }}
         />
 
-        {/* top row: back button */}
-        <div className="relative z-10 pt-[20px] px-[32px]">
-          <div className="skeleton-shimmer h-[34px] w-[34px] rounded-full" />
+        <div className="relative z-10 h-[56px] flex items-center px-[32px]">
+          <div className="skeleton-shimmer h-[32px] w-[64px] rounded-md" />
         </div>
 
-        {/* bottom row: artist info & action buttons + bio card */}
         <div className="relative z-10 px-[32px] pb-[16px] flex flex-col md:flex-row md:items-end justify-between gap-[24px]">
-          {/* left: title, listeners, buttons */}
           <div className="flex flex-col">
             <div className="skeleton-shimmer h-[36px] md:h-[44px] w-[260px] md:w-[320px] rounded-[8px]" />
             <div className="skeleton-shimmer h-[14px] w-[140px] rounded-[4px] mt-[10px]" />
 
             <div className="mt-[20px] flex items-center gap-[10px]">
-              {/* play button */}
               <div className="skeleton-shimmer h-[38px] w-[96px] rounded-full" />
-              {/* add to queue */}
               <div className="skeleton-shimmer h-[38px] w-[38px] rounded-md" />
-              {/* save to library */}
               <div className="skeleton-shimmer h-[38px] w-[38px] rounded-md" />
-              {/* share */}
               <div className="skeleton-shimmer h-[38px] w-[38px] rounded-md" />
             </div>
           </div>
 
-          {/* right: bio card */}
           <div className="w-full md:w-[340px] lg:w-[380px] shrink-0 rounded-md bg-bg-panel/90 p-[16px] backdrop-blur-md flex flex-col gap-[8px]">
             <div className="skeleton-shimmer h-[15px] w-[80px] rounded-[4px]" />
             <div className="skeleton-shimmer h-[13px] w-[96%] rounded-[4px] mt-[2px]" />
@@ -78,10 +67,8 @@ function ArtistPageSkeleton({ className = "" }: ArtistPageSkeletonProps) {
         </div>
       </div>
 
-      {/* content sections skeleton */}
       <div className="relative z-10 px-[32px] pt-[24px]">
         <div className="flex flex-col gap-[40px]">
-          {/* popular tracks section */}
           <section>
             <div className="skeleton-shimmer h-[22px] w-[160px] rounded-[5px] mb-[16px]" />
             <div className="space-y-[4px]">
@@ -106,13 +93,11 @@ function ArtistPageSkeleton({ className = "" }: ArtistPageSkeletonProps) {
             </div>
           </section>
 
-          {/* albums section */}
           <section>
             <div className="skeleton-shimmer h-[22px] w-[130px] rounded-[5px] mb-[16px]" />
             <CardRowSkeleton count={6} />
           </section>
 
-          {/* singles & eps section */}
           <section>
             <div className="skeleton-shimmer h-[22px] w-[150px] rounded-[5px] mb-[16px]" />
             <CardRowSkeleton count={6} />
