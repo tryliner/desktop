@@ -25,8 +25,8 @@ export default function App() {
       <CoverSwRegistrar />
       <ThemeProvider
         attribute="data-theme"
-        defaultTheme="dark"
-        enableSystem={false}
+        defaultTheme="system"
+        enableSystem={true}
         disableTransitionOnChange
       >
         <AppIconSync />
