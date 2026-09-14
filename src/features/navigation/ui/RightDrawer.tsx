@@ -131,10 +131,10 @@ const QueueList = memo(function QueueList({
                   ? (e) => handleCardGrab(index, item, e)
                   : undefined
               }
-              className={`p-[8px] rounded-[10px] transition-colors duration-150 border ${
+              className={`p-[8px] rounded-[10px] transition-colors duration-150 ${
                 isCurrent
-                  ? "bg-white/[0.08] border-white/[0.08] shadow-[0_2px_8px_rgba(0,0,0,0.2)]"
-                  : "bg-transparent border-transparent hover:bg-border-alpha-14"
+                  ? "bg-white/[0.08]"
+                  : "bg-transparent hover:bg-border-alpha-14"
               }`}
               imageShape="square"
               onPlay={() => {
@@ -174,7 +174,7 @@ const QueueList = memo(function QueueList({
               (draggedItem as { cover_url?: string }).cover_url ??
               ""
             }
-            className="p-[8px] rounded-[10px] bg-bg-elevated border border-white/10 shadow-lg"
+            className="p-[8px] rounded-[10px] bg-bg-elevated border border-white/10"
             imageShape="square"
           />
         </FloatingDragCard>
@@ -514,7 +514,7 @@ function RightDrawer({ activeTab, onTabChange, onClose }: RightDrawerProps) {
     lastLine?.text;
 
   return (
-    <div className="flex flex-col h-full w-full bg-bg-primary border-l border-border-secondary/60 shadow-[-16px_0_36px_rgba(0,0,0,0.45)] overflow-hidden select-none">
+    <div className="flex flex-col h-full w-full bg-bg-primary border-l border-border-secondary/60 overflow-hidden select-none">
       <div className="relative shrink-0 z-20">
         <div
           data-window-drag
@@ -560,7 +560,7 @@ function RightDrawer({ activeTab, onTabChange, onClose }: RightDrawerProps) {
               {activeTab === "queue" && (
                 <motion.div
                   layoutId="activeRightDrawerTab"
-                  className="absolute inset-0 rounded-lg bg-bg-primary shadow-sm border border-border-primary/30"
+                  className="absolute inset-0 rounded-lg bg-bg-primary border border-border-primary/30"
                   transition={{
                     type: "spring",
                     stiffness: 450,
@@ -586,7 +586,7 @@ function RightDrawer({ activeTab, onTabChange, onClose }: RightDrawerProps) {
               {activeTab === "lyrics" && (
                 <motion.div
                   layoutId="activeRightDrawerTab"
-                  className="absolute inset-0 rounded-lg bg-bg-primary shadow-sm border border-border-primary/30"
+                  className="absolute inset-0 rounded-lg bg-bg-primary border border-border-primary/30"
                   transition={{
                     type: "spring",
                     stiffness: 450,
@@ -680,7 +680,7 @@ function RightDrawer({ activeTab, onTabChange, onClose }: RightDrawerProps) {
                     <div
                       className={`relative text-[25px] font-[700] transition-all duration-300 ${
                         activeLineIndices.length === 0
-                          ? "text-text-primary drop-shadow-[0_0_16px_rgba(255,255,255,0.25)]"
+                          ? "text-text-primary"
                           : "text-text-tertiary"
                       }`}
                     >

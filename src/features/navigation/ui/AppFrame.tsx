@@ -54,7 +54,7 @@ interface AppFrameProps {
   children: React.ReactNode;
 }
 
-const RIGHT_DRAWER_WIDTH = 380;
+const RIGHT_DRAWER_WIDTH = 440;
 const SIDEBAR_WIDTH = 58;
 const SHELL_EDGE_GAP = 12;
 const SEARCH_QUERY_CACHE_TTL_MS = 60_000;
