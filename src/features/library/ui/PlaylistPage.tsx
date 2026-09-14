@@ -184,19 +184,23 @@ function LibraryPlaylistContent() {
   }, [viewData, decodedId]);
 
   const handleShufflePlay = useCallback(() => {
-    if (!viewData || viewData.tracks.length === 0) return;
+    if (!currentTracks.length || !viewData) return;
     const context = decodedId ? `playlist:${decodedId}` : viewData.title;
-    const randomIndex = Math.floor(Math.random() * viewData.tracks.length);
-    const startTrack = viewData.tracks[randomIndex];
+    const shuffled = [...currentTracks];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
     playerEngine.clearQueue();
     playerEngine.setShuffle(true);
     playerEngine.playTrack(
-      startTrack,
-      viewData.tracks,
+      shuffled[0],
+      shuffled,
       context,
       viewData.coverUrl,
+      0,
     );
-  }, [viewData, decodedId]);
+  }, [currentTracks, viewData, decodedId]);
 
   const { toast } = useToast();
   const [addedToQueue, setAddedToQueue] = useState(false);
