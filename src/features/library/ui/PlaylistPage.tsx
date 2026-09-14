@@ -487,7 +487,7 @@ function LibraryPlaylistContent() {
                       (viewData.coverUrl ? [viewData.coverUrl] : []);
                     if (urls.length === 0) {
                       return isLikesMode ? (
-                        <HeartFill size={48} className="text-text-tertiary" />
+                        <HeartFill size={48} className="text-zinc-400 dark:text-zinc-500" />
                       ) : (
                         <PlaylistFill size={48} className="text-border-alpha-33" />
                       );
