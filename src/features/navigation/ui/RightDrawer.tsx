@@ -131,10 +131,10 @@ const QueueList = memo(function QueueList({
                   ? (e) => handleCardGrab(index, item, e)
                   : undefined
               }
-              className={`p-[8px] rounded-md transition-colors duration-150 ${
+              className={`p-[8px] rounded-[10px] transition-colors duration-150 border ${
                 isCurrent
-                  ? "bg-border-alpha-14"
-                  : "bg-transparent hover:bg-border-alpha-14"
+                  ? "bg-white/[0.08] border-white/[0.08] shadow-[0_2px_8px_rgba(0,0,0,0.2)]"
+                  : "bg-transparent border-transparent hover:bg-border-alpha-14"
               }`}
               imageShape="square"
               onPlay={() => {
@@ -173,7 +173,7 @@ const QueueList = memo(function QueueList({
               (draggedItem as { cover_url?: string }).cover_url ??
               ""
             }
-            className="p-[8px] rounded-md bg-transparent"
+            className="p-[8px] rounded-[10px] bg-bg-elevated border border-white/10 shadow-lg"
             imageShape="square"
           />
         </FloatingDragCard>
@@ -615,7 +615,7 @@ function RightDrawer({ activeTab, onTabChange, onClose }: RightDrawerProps) {
         {activeTab === "queue" && (
           <div
             ref={queueScrollCallbackRef}
-            className="absolute inset-0 overflow-y-auto px-[16px] pt-[6px] pb-[16px]"
+            className="absolute inset-0 overflow-y-auto px-[10px] pt-[6px] pb-[16px]"
             onScroll={(e) => {
               const target = e.currentTarget;
               const next = target.scrollTop > 2;
