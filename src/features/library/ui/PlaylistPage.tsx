@@ -1,5 +1,5 @@
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useCallback, useEffect, useMemo, useRef, useState, Suspense } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, memo, Suspense } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import PlaylistPageSkeleton from "./PlaylistPageSkeleton";
 import { useToast, ReorderDropPlaceholder, FloatingDragCard, EntitySidebar, StickyHeader, SIDEBAR_TITLE_CLASS, SIDEBAR_SUBTITLE_CLASS } from "@/shared/ui";
@@ -40,7 +40,7 @@ interface TrackItemProps {
   onGrabStart?: (e: React.PointerEvent<HTMLDivElement>) => void;
 }
 
-function TrackItem({
+const TrackItem = memo(function TrackItem({
   track,
   playlistId,
   playlistTitle,
@@ -50,6 +50,17 @@ function TrackItem({
   showReorderHandle,
   onGrabStart,
 }: TrackItemProps) {
+  const handlePlay = useCallback(() => {
+    if (typeof window !== "undefined" && window.__linerWasDragging) return;
+    const context = playlistId ? `playlist:${playlistId}` : playlistTitle;
+    playerEngine.playTrack(
+      track,
+      allTracks,
+      context,
+      playlistCoverUrl,
+    );
+  }, [track, allTracks, playlistId, playlistTitle, playlistCoverUrl]);
+
   return (
     <div style={style} data-reorder-item>
       <SongCardWithMenu
@@ -73,20 +84,11 @@ function TrackItem({
         }
         durationMs={track.durationMs}
         explicit={track.explicit}
-        onPlay={() => {
-          if (typeof window !== "undefined" && window.__linerWasDragging) return;
-          const context = playlistId ? `playlist:${playlistId}` : playlistTitle;
-          playerEngine.playTrack(
-            track,
-            allTracks,
-            context,
-            playlistCoverUrl,
-          );
-        }}
+        onPlay={handlePlay}
       />
     </div>
   );
-}
+});
 
 function LibraryPlaylistContent() {
   const navigate = useNavigate();
@@ -279,8 +281,55 @@ function LibraryPlaylistContent() {
     count: currentTracks.length,
     getScrollElement: () => scrollRef.current,
     estimateSize: () => 64,
-    overscan: 10,
+    overscan: 25,
+    getItemKey: (index) =>
+      currentTracks[index]?.playlistItemId ??
+      currentTracks[index]?.id ??
+      index,
   });
+
+  const targetScrollTopRef = useRef<number | null>(null);
+  const rafIdRef = useRef<number | null>(null);
+
+  const handleSidebarWheel = useCallback((e: React.WheelEvent) => {
+    const container = scrollRef.current;
+    if (!container) return;
+
+    const maxScroll = container.scrollHeight - container.clientHeight;
+    if (maxScroll <= 0) return;
+
+    const current = targetScrollTopRef.current ?? container.scrollTop;
+    const target = Math.max(0, Math.min(maxScroll, current + e.deltaY));
+    targetScrollTopRef.current = target;
+
+    if (rafIdRef.current === null) {
+      const step = () => {
+        if (!scrollRef.current || targetScrollTopRef.current === null) {
+          rafIdRef.current = null;
+          return;
+        }
+        const now = scrollRef.current.scrollTop;
+        const diff = targetScrollTopRef.current - now;
+        if (Math.abs(diff) < 0.5) {
+          scrollRef.current.scrollTop = targetScrollTopRef.current;
+          targetScrollTopRef.current = null;
+          rafIdRef.current = null;
+          return;
+        }
+        scrollRef.current.scrollTop = now + diff * 0.25;
+        rafIdRef.current = requestAnimationFrame(step);
+      };
+      rafIdRef.current = requestAnimationFrame(step);
+    }
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current);
+      }
+    };
+  }, []);
 
   const urlsToPreload = useMemo(() => {
     if (!viewData) return [];
@@ -382,11 +431,7 @@ function LibraryPlaylistContent() {
               <div
                 className="shrink-0 w-[280px] self-start"
                 data-window-drag
-                onWheel={(e) => {
-                  if (scrollRef.current) {
-                    scrollRef.current.scrollTop += e.deltaY;
-                  }
-                }}
+                onWheel={handleSidebarWheel}
               >
                 <EntitySidebar
                 cover={(() => {
@@ -656,8 +701,12 @@ function LibraryPlaylistContent() {
                 onScroll={(e) => {
                   const nextScrolled = e.currentTarget.scrollTop > 56;
                   setIsScrolled((prev) => (prev === nextScrolled ? prev : nextScrolled));
+                  if (rafIdRef.current === null) {
+                    targetScrollTopRef.current = null;
+                  }
                 }}
-                className="min-w-0 flex-1 h-full min-h-0 overflow-y-auto overflow-x-hidden px-[8px] pb-[24px]"
+                className="min-w-0 flex-1 h-full min-h-0 overflow-y-auto overflow-x-hidden px-[8px] pb-[24px] overscroll-contain"
+                style={{ willChange: "scroll-position" }}
               >
               {currentTracks.length === 0 ? (
                 <div className="flex min-h-[50vh] flex-col items-center justify-center gap-[12px] text-center">

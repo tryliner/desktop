@@ -1,4 +1,4 @@
-import { memo, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import { More2Fill, RepeatFill } from "@mingcute/react";
 import DropdownMenu from "@/shared/ui/DropdownMenu";
 import type { DropdownMenuItem } from "@/shared/ui/DropdownMenu";
@@ -6,6 +6,7 @@ import { useTranslation } from "@/languages";
 import { ArtistLink } from "@/features/artist";
 import ExplicitBadge from "@/shared/ui/ExplicitBadge";
 import CoverImage from "@/features/covers/ui/CoverImage";
+import { isCoverReady } from "@/features/covers/lib/coverArt";
 import type { TrackArtist } from "@/shared/types";
 
 export interface SongCardProps {
@@ -63,8 +64,12 @@ function SongCard({
   onGrabStart,
 }: SongCardProps) {
   const { t } = useTranslation();
-  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(() => isCoverReady(coverUrl));
   const clickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    setImageLoaded(isCoverReady(coverUrl));
+  }, [coverUrl]);
 
   const imageSizeClass = compact ? "h-[40px] w-[40px]" : "h-[48px] w-[48px]";
   const titleSizeClass = compact ? "text-[14px]" : "text-[16px]";
@@ -163,7 +168,7 @@ function SongCard({
                 fill
                 sizes={compact ? "40px" : "48px"}
                 placeholder="empty"
-                onLoadStart={() => setImageLoaded(false)}
+                onLoadStart={() => setImageLoaded(isCoverReady(coverUrl))}
                 onLoad={() => setImageLoaded(true)}
                 className={`object-cover pointer-events-none transition-opacity duration-300 ${
                   imageLoaded ? "opacity-100" : "opacity-0"
