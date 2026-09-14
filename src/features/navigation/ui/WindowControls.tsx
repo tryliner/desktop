@@ -3,11 +3,12 @@ import { LuMinus, LuSquare, LuX } from "react-icons/lu";
 export interface WindowControlsProps {
   className?: string;
   variant?: "default" | "glass" | "island";
+  style?: React.CSSProperties;
 }
 
-// unified dark matte glass floating island with 3 window control buttons
 export default function WindowControls({
   className = "",
+  style,
 }: WindowControlsProps) {
   const handleMinimize = () => {
     window.linerElectron?.minimize();
@@ -23,6 +24,7 @@ export default function WindowControls({
 
   return (
     <div
+      style={style}
       className={`absolute top-[12px] right-[32px] h-[32px] z-[62] flex items-center justify-end pointer-events-none select-none ${className}`.trim()}
     >
       <div

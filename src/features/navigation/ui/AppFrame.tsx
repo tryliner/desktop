@@ -639,7 +639,14 @@ export default function AppFrame({ children }: AppFrameProps) {
             </AnimatePresence>
           )}
 
-          {!isFullscreenPlayer && <WindowControls />}
+          {!isFullscreenPlayer && (
+            <WindowControls
+              style={{
+                right: isRightDrawerOpen ? 16 : 32,
+                transition: "right 0.28s cubic-bezier(0.22, 1, 0.36, 1)",
+              }}
+            />
+          )}
         </main>
 
         {shouldShowMiniPlayer && (
