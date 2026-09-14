@@ -297,7 +297,7 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
             </p>
             <div className="w-[200px] h-[4px] bg-border-alpha-14 rounded-full overflow-hidden mt-5">
               <div
-                className="h-full bg-white transition-all duration-200 ease-out rounded-full"
+                className="h-full bg-text-primary transition-all duration-200 ease-out rounded-full"
                 style={{ width: `${clearingProgress}%` }}
               />
             </div>
@@ -342,7 +342,7 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
             transition={{ duration: 0.15 }}
             className="flex-1 flex flex-col gap-[20px] pt-[8px]"
           >
-      <div className="bg-white/[0.035] dark:bg-white/[0.035] pl-[10px] pr-[16px] py-[10px] rounded-2xl">
+      <div className="bg-bg-panel border border-border-primary/60 dark:border-transparent dark:bg-white/[0.035] pl-[10px] pr-[16px] py-[10px] rounded-2xl shadow-sm">
         <div className="flex flex-col sm:flex-row items-center gap-4">
           <div className="flex-1 w-full flex flex-col gap-0.5">
             {analytics?.categories.map((cat) => {
@@ -362,10 +362,10 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
                   className={`group w-full flex items-center justify-between px-[10px] py-[8px] rounded-lg transition-all border-0 cursor-pointer text-left ${
                     isSelected
                       ? isHovered
-                        ? "bg-white/[0.05] opacity-100"
+                        ? "bg-border-alpha-14 opacity-100"
                         : "bg-transparent opacity-100"
                       : isHovered
-                      ? "bg-white/[0.03] opacity-65"
+                      ? "bg-border-alpha-14/60 opacity-65"
                       : "bg-transparent opacity-40"
                   }`}
                 >
@@ -373,8 +373,8 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
                     <div
                       className={`w-[15px] h-[15px] rounded-[4px] flex items-center justify-center transition-all shrink-0 border ${
                         isSelected
-                          ? "bg-white border-white text-black shadow-sm"
-                          : "border-white/20 bg-white/[0.03] group-hover:border-white/40"
+                          ? "bg-text-primary border-text-primary text-bg-primary shadow-sm"
+                          : "border-border-secondary bg-border-alpha-14 group-hover:border-text-secondary"
                       }`}
                     >
                       {isSelected && (
@@ -399,7 +399,7 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
                       {t(cat.labelKey)}
                     </span>
 
-                    <span className="text-[10px] font-[600] px-[5px] py-[0.5px] rounded bg-white/[0.06] text-text-tertiary">
+                    <span className="text-[10px] font-[600] px-[5px] py-[0.5px] rounded bg-border-alpha-14 text-text-tertiary">
                       {pctLabel}
                     </span>
                   </div>
@@ -428,7 +428,7 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
                     fill="none"
                     stroke="currentColor"
                     strokeWidth="24"
-                    className="text-white/[0.08]"
+                    className="text-border-alpha-14"
                   />
 
                   <AnimatePresence>
@@ -481,7 +481,7 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
         </div>
       </div>
 
-      <div className="flex flex-col gap-[14px] bg-white/[0.035] dark:bg-white/[0.035] p-[16px] rounded-2xl">
+      <div className="flex flex-col gap-[14px] bg-bg-panel border border-border-primary/60 dark:border-transparent dark:bg-white/[0.035] p-[16px] rounded-2xl shadow-sm">
         <div className="pl-[6px]">
           <h5 className="text-text-primary text-[13.5px] font-[600] m-0">
             {t("settings.storage.cache_limit")}
@@ -493,7 +493,7 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
 
         <div className="flex flex-col gap-2 pt-2 pb-1 px-6">
           <div className="relative w-full h-[18px] flex items-center select-none group">
-            <div className="absolute left-0 right-0 h-[2px] rounded-full bg-white/15 dark:bg-white/15 pointer-events-none" />
+            <div className="absolute left-0 right-0 h-[2px] rounded-full bg-border-alpha-33 dark:bg-white/15 pointer-events-none" />
             <div
               className="absolute left-0 h-[2px] rounded-full bg-text-primary transition-all duration-150 pointer-events-none"
               style={{ width: `${pct}%` }}
@@ -506,7 +506,7 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
                 <div
                   key={s.bytes}
                   className={`absolute w-[2px] h-[6px] rounded-full -translate-x-1/2 transition-colors pointer-events-none ${
-                    isPassed ? "bg-text-primary opacity-80" : "bg-white/35 dark:bg-white/35"
+                    isPassed ? "bg-text-primary opacity-80" : "bg-border-alpha-33 dark:bg-white/35"
                   }`}
                   style={{ left: `${tickPct}%` }}
                 />
