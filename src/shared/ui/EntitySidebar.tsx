@@ -42,7 +42,7 @@ export function EntitySidebar({
           style={{ fontFamily: "var(--font-inter), sans-serif" }}
         >
           <ArrowLeftLine size={16} />
-          <span>{backLabel}</span>
+          <span className="relative -left-[1.5px] top-[1px]">{backLabel}</span>
         </button>
       )}
 

@@ -588,7 +588,7 @@ export default function LoginPage() {
                           className="w-[110px] shrink-0"
                         >
                           <ArrowLeftLine className="h-4 w-4" />
-                          <span>{t("login.btn_back")}</span>
+                          <span className="relative -left-[1.5px] top-[1px]">{t("login.btn_back")}</span>
                         </Button>
                         <Button
                           type="submit"
