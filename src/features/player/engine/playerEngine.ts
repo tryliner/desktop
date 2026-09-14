@@ -37,18 +37,21 @@ function shuffleArray<T>(array: T[]): T[] {
   return result;
 }
 
-function restoreOriginalRelativeOrder<T>(currentUpcoming: T[], originalUpcoming: T[]): T[] {
-  if (originalUpcoming.length === 0) return currentUpcoming;
-  const originalPosMap = new Map<T, number>();
-  originalUpcoming.forEach((item, idx) => {
-    if (!originalPosMap.has(item)) {
-      originalPosMap.set(item, idx);
+function restoreOriginalRelativeOrder<T>(currentUpcoming: T[], referenceList: T[]): T[] {
+  if (referenceList.length === 0) return currentUpcoming;
+  const originalPosMap = new Map<unknown, number>();
+  referenceList.forEach((item: unknown, idx) => {
+    const key = (item as { id?: string })?.id ?? item;
+    if (!originalPosMap.has(key)) {
+      originalPosMap.set(key, idx);
     }
   });
 
-  return [...currentUpcoming].sort((a, b) => {
-    const posA = originalPosMap.has(a) ? originalPosMap.get(a)! : Number.MAX_SAFE_INTEGER;
-    const posB = originalPosMap.has(b) ? originalPosMap.get(b)! : Number.MAX_SAFE_INTEGER;
+  return [...currentUpcoming].sort((a: unknown, b: unknown) => {
+    const keyA = (a as { id?: string })?.id ?? a;
+    const keyB = (b as { id?: string })?.id ?? b;
+    const posA = originalPosMap.has(keyA) ? originalPosMap.get(keyA)! : Number.MAX_SAFE_INTEGER;
+    const posB = originalPosMap.has(keyB) ? originalPosMap.get(keyB)! : Number.MAX_SAFE_INTEGER;
     return posA - posB;
   });
 }
@@ -250,6 +253,7 @@ class PlayerEngine {
   private lyricsLoadToken = 0;
   private lyricsAbort: AbortController | null = null;
   private currentLyricsTrackId: string | null = null;
+  private masterPlaylist: Track[] = [];
   private originalUpcomingQueue: Track[] = [];
   private telemetry = new PlaybackTelemetryTracker();
   private radioAppendTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -421,6 +425,10 @@ class PlayerEngine {
         store.queue.length === nextQueue.length &&
         store.queue[queueIndex]?.id === track.id);
 
+    if (!isSelectingFromCurrentQueue) {
+      this.masterPlaylist = [...nextQueue];
+    }
+
     if (!isSelectingFromCurrentQueue && store.shuffle && nextQueue.length > 1) {
       const played = nextQueue.slice(0, nextIndex);
       const selectedTrackItem = nextQueue[nextIndex] ?? track;
@@ -449,6 +457,56 @@ class PlayerEngine {
 
     if (finalIndex === finalQueue.length - 1) {
       this.scheduleAppendSimilarTracks(mySession, selectedTrack.id);
+    }
+  }
+
+  public async playShuffled(
+    tracks: Track[],
+    context?: string | null,
+    contextCover?: string | null,
+    startIndex?: number,
+  ): Promise<void> {
+    if (!tracks || tracks.length === 0) return;
+    const store = usePlayerStore.getState();
+    const seedIndex =
+      startIndex !== undefined && startIndex >= 0 && startIndex < tracks.length
+        ? startIndex
+        : Math.floor(Math.random() * tracks.length);
+    const seedTrack = tracks[seedIndex];
+    const remaining = [
+      ...tracks.slice(0, seedIndex),
+      ...tracks.slice(seedIndex + 1),
+    ];
+    const shuffledRemaining = shuffleArray(remaining);
+    const finalQueue = [seedTrack, ...shuffledRemaining];
+
+    this.masterPlaylist = [...tracks];
+    this.originalUpcomingQueue = [...remaining];
+
+    store.setShuffle(true);
+    if (context !== undefined) {
+      store.setPlaybackContext(context);
+    }
+    if (contextCover !== undefined) {
+      store.setPlaybackContextCover(contextCover);
+    }
+
+    this.sessionId += 1;
+    const mySession = this.sessionId;
+    this.radioWaveId = newRadioWaveId();
+
+    store.setQueue(finalQueue);
+    store.setCurrentTrack(seedTrack, 0);
+    store.setPosition(0);
+    store.setDuration(seedTrack.durationMs ?? 0);
+    store.setStatus("loading", null);
+
+    if (playerRuntime) {
+      void playerRuntime.loadAndPlay(seedTrack);
+    }
+
+    if (finalQueue.length === 1) {
+      this.scheduleAppendSimilarTracks(mySession, seedTrack.id);
     }
   }
 
@@ -639,9 +697,13 @@ class PlayerEngine {
         const shuffledUpcoming = shuffleArray(upcoming);
         store.setQueue([...played, current, ...shuffledUpcoming]);
       } else {
+        const referenceList =
+          this.masterPlaylist.length > 0
+            ? this.masterPlaylist
+            : this.originalUpcomingQueue;
         const unshuffledUpcoming = restoreOriginalRelativeOrder(
           upcoming,
-          this.originalUpcomingQueue,
+          referenceList,
         );
         store.setQueue([...played, current, ...unshuffledUpcoming]);
         this.originalUpcomingQueue = [];
@@ -687,6 +749,9 @@ class PlayerEngine {
     const store = usePlayerStore.getState();
     const newQueue = [...store.queue, track];
     store.setQueue(newQueue);
+    if (this.masterPlaylist.length > 0) {
+      this.masterPlaylist.push(track);
+    }
     if (store.shuffle) {
       this.originalUpcomingQueue.push(track);
     }
@@ -709,6 +774,17 @@ class PlayerEngine {
       ...currentQueue.slice(currentIndex + 1),
     ];
     store.setQueue(nextQueue);
+    if (this.masterPlaylist.length > 0) {
+      const currentTrack = store.currentTrack;
+      const masterIdx = currentTrack
+        ? this.masterPlaylist.findIndex((t) => t.id === currentTrack.id)
+        : -1;
+      if (masterIdx >= 0) {
+        this.masterPlaylist.splice(masterIdx + 1, 0, track);
+      } else {
+        this.masterPlaylist.push(track);
+      }
+    }
     if (store.shuffle) {
       this.originalUpcomingQueue.unshift(track);
     }
@@ -717,6 +793,7 @@ class PlayerEngine {
 
   public clearQueue(): void {
     usePlayerStore.getState().clearQueue();
+    this.masterPlaylist = [];
     this.originalUpcomingQueue = [];
   }
 

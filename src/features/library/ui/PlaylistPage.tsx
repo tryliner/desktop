@@ -202,19 +202,11 @@ function LibraryPlaylistContent() {
   const handleShufflePlay = useCallback(() => {
     if (!currentTracks.length || !viewData) return;
     const context = decodedId ? `playlist:${decodedId}` : viewData.title;
-    const shuffled = [...currentTracks];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
     playerEngine.clearQueue();
-    playerEngine.setShuffle(true);
-    playerEngine.playTrack(
-      shuffled[0],
-      shuffled,
+    void playerEngine.playShuffled(
+      currentTracks,
       context,
       viewData.coverUrl,
-      0,
     );
   }, [currentTracks, viewData, decodedId]);
 

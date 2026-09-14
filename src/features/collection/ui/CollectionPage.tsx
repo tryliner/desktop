@@ -134,19 +134,11 @@ function CollectionContent() {
 
   const handleShufflePlay = useCallback(() => {
     if (!data || data.tracks.length === 0) return;
-    const shuffled = [...data.tracks];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
     playerEngine.clearQueue();
-    playerEngine.setShuffle(true);
-    playerEngine.playTrack(
-      shuffled[0],
-      shuffled,
+    void playerEngine.playShuffled(
+      data.tracks,
       playbackContext,
       data.coverUrl,
-      0,
     );
   }, [data, playbackContext]);
 
