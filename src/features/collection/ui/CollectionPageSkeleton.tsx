@@ -53,11 +53,8 @@ function CollectionPageSkeletonComponent({
 
           <div className="skeleton-shimmer h-[36px] w-full rounded-md mt-[16px]" />
           <div className="mt-[8px] flex items-center gap-[8px]">
-            {/* add to queue */}
+            <div className="skeleton-shimmer h-[36px] flex-1 rounded-md" />
             <div className="skeleton-shimmer h-[36px] w-[36px] rounded-md" />
-            {/* save to library */}
-            <div className="skeleton-shimmer h-[36px] w-[36px] rounded-md" />
-            {/* share */}
             <div className="skeleton-shimmer h-[36px] w-[36px] rounded-md" />
           </div>
         </aside>

@@ -8,13 +8,23 @@ import {
   FolderCheckFill,
   ShareForwardLine,
   PlaylistFill,
+  CheckLine,
+  More2Line,
 } from "@mingcute/react";
+import { LuShuffle } from "react-icons/lu";
 import Button from "@/shared/ui/Button";
 import SongCardWithMenu from "@/features/player/ui/SongCardWithMenu";
 import CoverImage from "@/features/covers/ui/CoverImage";
 import { playerEngine } from "@/features/player";
 import { AnimatePresence, motion } from "framer-motion";
-import { useToast, EntitySidebar, StickyHeader, SIDEBAR_TITLE_CLASS, SIDEBAR_SUBTITLE_CLASS } from "@/shared/ui";
+import {
+  useToast,
+  EntitySidebar,
+  StickyHeader,
+  DropdownMenu,
+  SIDEBAR_TITLE_CLASS,
+  SIDEBAR_SUBTITLE_CLASS,
+} from "@/shared/ui";
 import type { Track } from "@/shared/types";
 import { useTranslation } from "@/languages";
 import { useModalStore } from "@/features/library";
@@ -111,6 +121,9 @@ function CollectionContent() {
 
   const playbackContext = id ? `${entityType}:${decodedId}` : (data?.title || null);
 
+  const { toast } = useToast();
+  const [addedToQueue, setAddedToQueue] = useState(false);
+
   const handlePlayAll = () => {
     if (!data || data.tracks.length === 0) return;
     const [first] = data.tracks;
@@ -118,9 +131,25 @@ function CollectionContent() {
     playerEngine.playTrack(first, data.tracks, playbackContext, data.coverUrl);
   };
 
-  const { toast } = useToast();
+  const handleShufflePlay = useCallback(() => {
+    if (!data || data.tracks.length === 0) return;
+    const shuffled = [...data.tracks];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    playerEngine.clearQueue();
+    playerEngine.setShuffle(true);
+    playerEngine.playTrack(
+      shuffled[0],
+      shuffled,
+      playbackContext,
+      data.coverUrl,
+      0,
+    );
+  }, [data, playbackContext]);
 
-  const handleAddToQueue = () => {
+  const handleAddToQueue = useCallback(() => {
     if (!data || data.tracks.length === 0) return;
     for (const track of data.tracks) {
       playerEngine.addToQueue(track);
@@ -128,7 +157,12 @@ function CollectionContent() {
     toast(t("collection.added_to_queue"), "info", {
       description: data.title || undefined,
     });
-  };
+    setAddedToQueue(true);
+    const timer = setTimeout(() => {
+      setAddedToQueue(false);
+    }, 1200);
+    return () => clearTimeout(timer);
+  }, [data, toast, t]);
 
   const handleSaveToLibrary = () => {
     if (!data || !id) return;
@@ -249,72 +283,96 @@ function CollectionContent() {
                     </>
                   }
                   primaryAction={
-                    <>
+                    <div className="flex flex-col gap-[8px] w-full">
                       <Button
                         variant="primary"
                         onClick={handlePlayAll}
-                        className="!h-[36px] w-full !text-[14px] !font-[500] px-[16px]"
+                        disabled={!data || data.tracks.length === 0}
+                        className="!h-[36px] w-full !text-[13.5px] !font-[500] px-[16px] flex items-center justify-center gap-[6px]"
                       >
                         <PlayFill size={16} />
-                        {t("common.play_all")}
-                      </Button>
-                    </>
-                  }
-                  actions={
-                    <>
-                      <Button
-                        variant="outline"
-                        onClick={handleAddToQueue}
-                        className="!h-[36px] !w-[36px] !p-0 flex items-center justify-center text-text-primary"
-                        title={t("common.add_to_queue")}
-                      >
-                        <AddLine size={18} />
+                        <span>{t("common.play_all")}</span>
                       </Button>
 
-                      <Button
-                        variant="outline"
-                        onClick={handleSaveToLibrary}
-                        className="!h-[36px] !w-[36px] !p-0 flex items-center justify-center text-text-primary"
-                        title={
-                          inLibrary
-                            ? t("common.remove_from_library")
-                            : t("common.save_to_library")
-                        }
-                      >
-                        <AnimatePresence mode="wait">
-                          {inLibrary ? (
-                            <motion.span
-                              key="saved"
-                              initial={{ scale: 0.5, rotate: -20 }}
-                              animate={{ scale: 1, rotate: 0 }}
-                              exit={{ scale: 0.5, rotate: 20 }}
-                              className="flex"
-                            >
-                              <FolderCheckFill size={18} />
-                            </motion.span>
-                          ) : (
-                            <motion.span
-                              key="unsaved"
-                              initial={{ scale: 0.5, rotate: -20 }}
-                              animate={{ scale: 1, rotate: 0 }}
-                              exit={{ scale: 0.5, rotate: 20 }}
-                              className="flex"
-                            >
-                              <NewFolderLine size={18} />
-                            </motion.span>
-                          )}
-                        </AnimatePresence>
-                      </Button>
+                      <div className="flex items-center gap-[8px] w-full">
+                        <Button
+                          variant="outline"
+                          onClick={handleAddToQueue}
+                          disabled={!data || data.tracks.length === 0}
+                          className="!h-[36px] flex-1 min-w-0 !text-[13px] !font-[500] px-[12px] flex items-center justify-center gap-[6px]"
+                          title={t("common.add_to_queue")}
+                        >
+                          <AnimatePresence mode="wait">
+                            {addedToQueue ? (
+                              <motion.span
+                                key="check"
+                                initial={{ opacity: 0, scale: 0.5 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.5 }}
+                                transition={{ duration: 0.08 }}
+                                className="flex items-center justify-center text-emerald-400 shrink-0"
+                              >
+                                <CheckLine size={16} />
+                              </motion.span>
+                            ) : (
+                              <motion.span
+                                key="add"
+                                initial={{ opacity: 0, scale: 0.5 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.5 }}
+                                transition={{ duration: 0.08 }}
+                                className="flex items-center justify-center shrink-0"
+                              >
+                                <AddLine size={16} />
+                              </motion.span>
+                            )}
+                          </AnimatePresence>
+                          <span className="truncate">{t("common.add_to_queue")}</span>
+                        </Button>
 
-                      <Button
-                        variant="outline"
-                        onClick={handleShare}
-                        className="!h-[36px] !w-[36px] !p-0 flex items-center justify-center text-text-primary"
-                        title={t("common.share")}
-                      >
-                        <ShareForwardLine size={18} />
-                      </Button>
-                    </>
+                        <Button
+                          variant="outline"
+                          onClick={handleShufflePlay}
+                          disabled={!data || data.tracks.length === 0}
+                          className="!h-[36px] !w-[36px] shrink-0 !p-0 flex items-center justify-center text-text-primary"
+                          title={t("common.shuffle")}
+                        >
+                          <LuShuffle size={16} />
+                        </Button>
+
+                        <DropdownMenu
+                          trigger={
+                            <Button
+                              variant="outline"
+                              className="!h-[36px] !w-[36px] shrink-0 !p-0 flex items-center justify-center text-text-primary"
+                              title={t("common.more")}
+                            >
+                              <More2Line size={18} />
+                            </Button>
+                          }
+                          items={[
+                            {
+                              id: "library",
+                              icon: inLibrary ? (
+                                <FolderCheckFill size={16} />
+                              ) : (
+                                <NewFolderLine size={16} />
+                              ),
+                              label: inLibrary
+                                ? t("common.remove_from_library")
+                                : t("common.save_to_library"),
+                              onClick: handleSaveToLibrary,
+                            },
+                            {
+                              id: "share",
+                              icon: <ShareForwardLine size={16} />,
+                              label: t("common.share"),
+                              onClick: handleShare,
+                            },
+                          ]}
+                        />
+                      </div>
+                    </div>
                   }
                 />
               </div>
