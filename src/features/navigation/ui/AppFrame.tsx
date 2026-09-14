@@ -643,7 +643,7 @@ export default function AppFrame({ children }: AppFrameProps) {
           {!isFullscreenPlayer && (
             <WindowControls
               style={{
-                right: isRightDrawerOpen ? 16 : 32,
+                right: isRightDrawerOpen || isBackNavigableRoute ? 12 : 32,
                 transition: "right 0.28s cubic-bezier(0.22, 1, 0.36, 1)",
               }}
             />
