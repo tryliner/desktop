@@ -282,11 +282,10 @@ function ArtistContent() {
       >
         <StickyHeader
           isScrolled={isScrolled}
-          showBack={isReady}
           title={data?.title}
           thumbnail={
             data?.coverUrl ? (
-              <div className="relative h-[24px] w-[24px] shrink-0 overflow-hidden rounded-full bg-border-alpha-14">
+              <div className="relative h-[24px] w-[24px] shrink-0 overflow-hidden rounded-full bg-white/10">
                 <CoverImage
                   src={data.coverUrl}
                   alt={data.title}
@@ -297,7 +296,7 @@ function ArtistContent() {
                 />
               </div>
             ) : (
-              <div className="flex h-[24px] w-[24px] shrink-0 items-center justify-center rounded-full bg-border-alpha-14 text-text-secondary text-[11px] font-bold">
+              <div className="flex h-[24px] w-[24px] shrink-0 items-center justify-center rounded-full bg-white/10 text-white/70 text-[11px] font-bold">
                 {data?.title ? data.title.charAt(0) : ""}
               </div>
             )

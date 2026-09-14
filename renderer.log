@@ -3497,3 +3497,95 @@ once the app is packaged.
 [1] lyrics  skip worse candidate Genius q=59 background:#eab308;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
 [1] lyrics  done, best=Liner Atlas q=90 background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
 [1] preload  preloaded audio: "самое худшее интро" (1398 KB) background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] audio  paused background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] audio  ended — skipping to next background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] playback  audio cache hit for "самое худшее интро" (1398 KB) background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] lyrics  fetching for "самое худшее интро" background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] audio  playing background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] playback  started (cached): самое худшее интро in 27ms background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] lyrics  candidate LRCLIB q=93 sync=line_level background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] lyrics  done, best=LRCLIB q=93 background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] preload  preloaded audio: "showdown" (1990 KB) background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[3] Received `%s` for a non-boolean attribute `%s`.
+
+If you want to write it to the DOM, pass a string instead: %s="%s" or %s={value.toString()}. true unoptimized unoptimized true unoptimized
+[1] audio  paused background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] audio  ended — skipping to next background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] lyrics  cache hit for "showdown" (age: 380s) background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] playback  audio cache hit for "showdown" (1990 KB) background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] audio  playing background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] playback  started (cached): showdown in 28ms background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] preload  preloaded audio: "щ" (1855 KB) background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[0] [vite] connecting...
+[0] [vite] connected.
+[1] Download the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[1] boot  volume 0.03356926721711391 background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] boot  player runtime initialized background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] lyrics  cache hit for "showdown" (age: 4768s) background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[2] Electron Security Warning (Insecure Content-Security-Policy) font-weight: bold; This renderer process has either no Content Security
+  Policy set or a policy with "unsafe-eval" enabled. This exposes users of
+  this app to unnecessary security risks.
+
+For more information and help, consult
+https://electronjs.org/docs/tutorial/security.
+This warning will not show up
+once the app is packaged.
+[0] [vite] hot updated: /src/app/globals.css
+[0] [vite] hot updated: /src/features/navigation/ui/WindowControls.tsx
+[0] [vite] hot updated: /src/shared/ui/StickyHeader.tsx
+[0] [vite] hot updated: /src/app/globals.css
+[0] [vite] hot updated: /src/shared/ui/StickyHeader.tsx
+[0] [vite] hot updated: /src/app/globals.css
+[0] [vite] hot updated: /src/shared/ui/StickyHeader.tsx
+[0] [vite] hot updated: /src/app/globals.css
+[1] boot  volume 0.03356926721711391 background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] boot  player runtime initialized background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] lyrics  cache hit for "showdown" (age: 5161s) background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[0] [vite] hot updated: /src/app/globals.css
+[0] [vite] hot updated: /src/features/library/ui/PlaylistPage.tsx
+[0] [vite] hot updated: /src/app/globals.css
+[0] [vite] hot updated: /src/features/artist/ui/ArtistPage.tsx
+[0] [vite] hot updated: /src/app/globals.css
+[0] [vite] hot updated: /src/features/artist/ui/ArtistPage.tsx
+[0] [vite] hot updated: /src/app/globals.css
+[0] [vite] hot updated: /src/features/collection/ui/CollectionPage.tsx
+[0] [vite] hot updated: /src/app/globals.css
+[0] [vite] hot updated: /src/features/collection/ui/CollectionPage.tsx
+[0] [vite] hot updated: /src/app/globals.css
+[0] [vite] hot updated: /src/features/navigation/ui/AppFrame.tsx
+[0] [vite] hot updated: /src/app/globals.css
+[0] [vite] hot updated: /src/features/navigation/ui/AppFrame.tsx
+[0] [vite] hot updated: /src/app/globals.css
+[0] [vite] hot updated: /src/features/navigation/ui/AppFrame.tsx
+[0] [vite] hot updated: /src/app/globals.css
+[0] [vite] hot updated: /src/features/navigation/ui/AppFrame.tsx
+[0] [vite] hot updated: /src/app/globals.css
+[0] [vite] hot updated: /src/app/globals.css
+[0] [vite] connecting...
+[0] [vite] connected.
+[1] Download the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[1] boot  volume 0.03356926721711391 background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] boot  player runtime initialized background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] lyrics  cache hit for "showdown" (age: 70910s) background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[2] Electron Security Warning (Insecure Content-Security-Policy) font-weight: bold; This renderer process has either no Content Security
+  Policy set or a policy with "unsafe-eval" enabled. This exposes users of
+  this app to unnecessary security risks.
+
+For more information and help, consult
+https://electronjs.org/docs/tutorial/security.
+This warning will not show up
+once the app is packaged.
+[0] [vite] connecting...
+[0] [vite] connected.
+[1] Download the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[1] boot  volume 0.03356926721711391 background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] boot  player runtime initialized background:#22c55e;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[1] lyrics  cache hit for "showdown" (age: 70942s) background:#06b6d4;color:#000000;font-weight:700;font-size:10px;padding:2px 6px;border-radius:4px; color:inherit;font-weight:normal;
+[2] Electron Security Warning (Insecure Content-Security-Policy) font-weight: bold; This renderer process has either no Content Security
+  Policy set or a policy with "unsafe-eval" enabled. This exposes users of
+  this app to unnecessary security risks.
+
+For more information and help, consult
+https://electronjs.org/docs/tutorial/security.
+This warning will not show up
+once the app is packaged.
