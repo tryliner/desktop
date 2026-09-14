@@ -127,14 +127,13 @@ export function LyricsProviderIsland() {
       ref={containerRef}
       className="relative inline-flex items-center pointer-events-auto select-none"
     >
-      <div className="inline-flex items-center h-[32px] rounded-lg border border-border-primary/80 bg-bg-panel/95 backdrop-blur-md px-[4px] py-[2px] shadow-lg gap-[2px]">
-        {/* Provider Switcher */}
+      <div className="inline-flex items-center h-[32px] rounded-lg border border-white/10 bg-black/50 backdrop-blur-xl px-[4px] py-[2px] shadow-lg gap-[2px] text-white">
         {hasMultiple && (
           <button
             type="button"
             onClick={handlePrev}
             aria-label="Previous provider"
-            className="w-[24px] h-[24px] rounded-md flex items-center justify-center text-text-secondary hover:text-text-primary hover:bg-border-alpha-14 active:scale-90 transition-all border-none bg-transparent cursor-pointer"
+            className="w-[26px] h-[26px] rounded-md flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 active:scale-95 transition-all border-none bg-transparent cursor-pointer"
           >
             <LeftLine size={14} />
           </button>
@@ -148,9 +147,9 @@ export function LyricsProviderIsland() {
               setDropdownOpen((v) => !v);
             }
           }}
-          className={`flex items-center gap-[6px] h-[24px] px-[8px] rounded-md text-[12px] font-[500] text-text-primary transition-all border-none bg-transparent ${
+          className={`flex items-center gap-[6px] h-[26px] px-[8px] rounded-md text-[12px] font-[500] text-white transition-all border-none bg-transparent ${
             hasMultiple
-              ? "hover:bg-border-alpha-14 cursor-pointer"
+              ? "hover:bg-white/10 cursor-pointer"
               : "cursor-default"
           }`}
           style={{ fontFamily: "var(--font-inter), sans-serif" }}
@@ -159,14 +158,14 @@ export function LyricsProviderIsland() {
             {currentProvider.provider}
           </span>
           {hasMultiple && (
-            <span className="text-[10px] font-mono text-text-tertiary">
+            <span className="text-[10px] font-mono text-white/50">
               {currentIndex + 1}/{availableProviders.length}
             </span>
           )}
           {hasMultiple && (
             <DownLine
               size={12}
-              className={`text-text-tertiary transition-transform duration-150 ${
+              className={`text-white/50 transition-transform duration-150 ${
                 dropdownOpen ? "rotate-180" : ""
               }`}
             />
@@ -178,16 +177,14 @@ export function LyricsProviderIsland() {
             type="button"
             onClick={handleNext}
             aria-label="Next provider"
-            className="w-[24px] h-[24px] rounded-md flex items-center justify-center text-text-secondary hover:text-text-primary hover:bg-border-alpha-14 active:scale-90 transition-all border-none bg-transparent cursor-pointer"
+            className="w-[26px] h-[26px] rounded-md flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 active:scale-95 transition-all border-none bg-transparent cursor-pointer"
           >
             <RightLine size={14} />
           </button>
         )}
 
-        {/* Divider */}
-        <div className="w-[1px] h-[14px] bg-border-primary/80 mx-[2px]" />
+        <div className="w-[1px] h-[14px] bg-white/15 mx-[2px]" />
 
-        {/* Offset Controls */}
         <button
           type="button"
           onClick={(e) => {
@@ -196,7 +193,7 @@ export function LyricsProviderIsland() {
           }}
           aria-label="Lyrics earlier (-0.1s)"
           title="Lyrics earlier (-0.1s)"
-          className="w-[24px] h-[24px] rounded-md flex items-center justify-center text-text-secondary hover:text-text-primary hover:bg-border-alpha-14 active:scale-90 transition-all border-none bg-transparent cursor-pointer"
+          className="w-[26px] h-[26px] rounded-md flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 active:scale-95 transition-all border-none bg-transparent cursor-pointer"
         >
           <MinimizeLine size={12} />
         </button>
@@ -207,17 +204,17 @@ export function LyricsProviderIsland() {
             setDropdownOpen(false);
             setOffsetOpen((v) => !v);
           }}
-          className={`flex items-center gap-[4px] h-[24px] px-[6px] rounded-md text-[12px] font-mono transition-all border-none bg-transparent hover:bg-border-alpha-14 cursor-pointer ${
+          className={`flex items-center gap-[4px] h-[26px] px-[6px] rounded-md text-[12px] font-mono transition-all border-none bg-transparent hover:bg-white/10 cursor-pointer ${
             offsetMs !== 0
-              ? "text-text-primary font-[600]"
-              : "text-text-secondary font-[500]"
+              ? "text-white font-[600]"
+              : "text-white/80 font-[500]"
           }`}
           style={{ fontFamily: "var(--font-inter), sans-serif" }}
           title={t("player.lyrics_offset")}
         >
           <TimeLine
             size={12}
-            className={offsetMs !== 0 ? "text-text-primary" : "text-text-tertiary"}
+            className={offsetMs !== 0 ? "text-white" : "text-white/50"}
           />
           <span>{formatOffsetBadge(offsetMs)}</span>
         </button>
@@ -230,7 +227,7 @@ export function LyricsProviderIsland() {
           }}
           aria-label="Lyrics later (+0.1s)"
           title="Lyrics later (+0.1s)"
-          className="w-[24px] h-[24px] rounded-md flex items-center justify-center text-text-secondary hover:text-text-primary hover:bg-border-alpha-14 active:scale-90 transition-all border-none bg-transparent cursor-pointer"
+          className="w-[26px] h-[26px] rounded-md flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 active:scale-95 transition-all border-none bg-transparent cursor-pointer"
         >
           <AddLine size={12} />
         </button>
@@ -243,7 +240,7 @@ export function LyricsProviderIsland() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -4 }}
             transition={{ duration: 0.12, ease: "easeOut" }}
-            className="absolute top-full left-0 mt-[6px] min-w-[140px] rounded-lg border border-border-primary bg-bg-panel/95 backdrop-blur-md p-[4px] shadow-2xl z-50 flex flex-col gap-[2px]"
+            className="absolute top-full left-0 mt-[6px] min-w-[140px] rounded-lg border border-white/10 bg-black/80 backdrop-blur-2xl p-[4px] shadow-2xl z-50 flex flex-col gap-[2px] text-white"
           >
             {availableProviders.map((option, idx) => {
               const isActive = option.provider === currentProvider.provider;
@@ -257,8 +254,8 @@ export function LyricsProviderIsland() {
                   }}
                   className={`flex items-center justify-between gap-[8px] w-full px-[8px] py-[6px] rounded-md text-[12px] transition-colors border-none cursor-pointer text-left ${
                     isActive
-                      ? "bg-border-alpha-14 text-text-primary font-[500]"
-                      : "bg-transparent text-text-secondary hover:bg-border-alpha-14 hover:text-text-primary font-[400]"
+                      ? "bg-white/15 text-white font-[500]"
+                      : "bg-transparent text-white/70 hover:bg-white/10 hover:text-white font-[400]"
                   }`}
                   style={{ fontFamily: "var(--font-inter), sans-serif" }}
                 >
@@ -266,10 +263,10 @@ export function LyricsProviderIsland() {
                   {isActive ? (
                     <CheckFill
                       size={14}
-                      className="text-text-primary shrink-0"
+                      className="text-white shrink-0"
                     />
                   ) : (
-                    <span className="text-[10px] font-mono text-text-tertiary shrink-0">
+                    <span className="text-[10px] font-mono text-white/40 shrink-0">
                       {idx + 1}
                     </span>
                   )}
@@ -285,14 +282,13 @@ export function LyricsProviderIsland() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -4 }}
             transition={{ duration: 0.12, ease: "easeOut" }}
-            className="absolute top-full right-0 mt-[6px] w-[260px] rounded-xl border border-border-primary bg-bg-panel/95 backdrop-blur-xl p-[12px] shadow-2xl z-50 flex flex-col gap-[10px]"
+            className="absolute top-full right-0 mt-[6px] w-[260px] rounded-xl border border-white/10 bg-black/80 backdrop-blur-2xl p-[12px] shadow-2xl z-50 flex flex-col gap-[10px] text-white"
           >
-            {/* Header */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-[6px]">
-                <TimeLine size={14} className="text-text-primary" />
+                <TimeLine size={14} className="text-white" />
                 <span
-                  className="text-[12px] font-[600] text-text-primary"
+                  className="text-[12px] font-[600] text-white"
                   style={{ fontFamily: "var(--font-inter), sans-serif" }}
                 >
                   {t("player.lyrics_offset")}
@@ -302,7 +298,7 @@ export function LyricsProviderIsland() {
                 <button
                   type="button"
                   onClick={resetOffset}
-                  className="inline-flex items-center gap-[4px] px-[6px] py-[2px] rounded-md text-[11px] font-[500] text-text-secondary hover:text-text-primary hover:bg-border-alpha-14 border-none bg-transparent cursor-pointer transition-colors"
+                  className="inline-flex items-center gap-[4px] px-[6px] py-[2px] rounded-md text-[11px] font-[500] text-white/70 hover:text-white hover:bg-white/10 border-none bg-transparent cursor-pointer transition-colors"
                   style={{ fontFamily: "var(--font-inter), sans-serif" }}
                 >
                   <Refresh1Line size={11} />
@@ -311,13 +307,12 @@ export function LyricsProviderIsland() {
               )}
             </div>
 
-            {/* Manual Input & Unit Switcher & Stepper */}
-            <div className="flex items-center gap-[6px] bg-border-alpha-10 rounded-lg p-[4px] border border-border-primary/50">
+            <div className="flex items-center gap-[6px] bg-white/[0.06] rounded-lg p-[4px] border border-white/10">
               <button
                 type="button"
                 onClick={() => adjustOffset(unit === "ms" ? -50 : -100)}
                 aria-label="Decrease offset"
-                className="w-[26px] h-[26px] rounded-md flex items-center justify-center text-text-secondary hover:text-text-primary hover:bg-border-alpha-14 active:scale-90 transition-all border-none bg-transparent cursor-pointer shrink-0"
+                className="w-[26px] h-[26px] rounded-md flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 active:scale-95 transition-all border-none bg-transparent cursor-pointer shrink-0"
               >
                 <MinimizeLine size={12} />
               </button>
@@ -350,18 +345,18 @@ export function LyricsProviderIsland() {
                     }
                   }}
                   placeholder="0"
-                  className="w-full text-center text-[13px] font-mono font-[600] text-text-primary bg-transparent border-none outline-none p-0"
+                  className="w-full text-center text-[13px] font-mono font-[600] text-white bg-transparent border-none outline-none p-0"
                 />
               </div>
 
-              <div className="flex items-center bg-border-alpha-14 rounded-md p-[2px] shrink-0">
+              <div className="flex items-center bg-white/10 rounded-md p-[2px] shrink-0">
                 <button
                   type="button"
                   onClick={() => setUnit("ms")}
                   className={`px-[5px] py-[2px] text-[10px] font-mono rounded-[4px] border-none cursor-pointer transition-all ${
                     unit === "ms"
-                      ? "bg-bg-panel text-text-primary shadow-xs font-[600]"
-                      : "bg-transparent text-text-tertiary hover:text-text-secondary"
+                      ? "bg-white/20 text-white shadow-xs font-[600]"
+                      : "bg-transparent text-white/50 hover:text-white/80"
                   }`}
                 >
                   ms
@@ -371,8 +366,8 @@ export function LyricsProviderIsland() {
                   onClick={() => setUnit("s")}
                   className={`px-[5px] py-[2px] text-[10px] font-mono rounded-[4px] border-none cursor-pointer transition-all ${
                     unit === "s"
-                      ? "bg-bg-panel text-text-primary shadow-xs font-[600]"
-                      : "bg-transparent text-text-tertiary hover:text-text-secondary"
+                      ? "bg-white/20 text-white shadow-xs font-[600]"
+                      : "bg-transparent text-white/50 hover:text-white/80"
                   }`}
                 >
                   s
@@ -383,15 +378,14 @@ export function LyricsProviderIsland() {
                 type="button"
                 onClick={() => adjustOffset(unit === "ms" ? 50 : 100)}
                 aria-label="Increase offset"
-                className="w-[26px] h-[26px] rounded-md flex items-center justify-center text-text-secondary hover:text-text-primary hover:bg-border-alpha-14 active:scale-90 transition-all border-none bg-transparent cursor-pointer shrink-0"
+                className="w-[26px] h-[26px] rounded-md flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 active:scale-95 transition-all border-none bg-transparent cursor-pointer shrink-0"
               >
                 <AddLine size={12} />
               </button>
             </div>
 
-            {/* Quick Adjustments */}
             <div className="flex flex-col gap-[6px]">
-              <div className="flex items-center justify-between text-[10px] font-[500] text-text-tertiary px-[2px]">
+              <div className="flex items-center justify-between text-[10px] font-[500] text-white/50 px-[2px]">
                 <span>{t("player.earlier")} (-)</span>
                 <span>{t("player.later")} (+)</span>
               </div>
@@ -401,7 +395,7 @@ export function LyricsProviderIsland() {
                     key={delta}
                     type="button"
                     onClick={() => adjustOffset(delta)}
-                    className="py-[4px] text-[11px] font-mono rounded-md bg-border-alpha-10 hover:bg-border-alpha-20 text-text-secondary hover:text-text-primary transition-all active:scale-95 text-center border-none cursor-pointer"
+                    className="py-[4px] text-[11px] font-mono rounded-md bg-white/[0.08] hover:bg-white/15 text-white/70 hover:text-white transition-all active:scale-95 text-center border-none cursor-pointer"
                   >
                     {delta / 1000}s
                   </button>
@@ -411,7 +405,7 @@ export function LyricsProviderIsland() {
                     key={delta}
                     type="button"
                     onClick={() => adjustOffset(delta)}
-                    className="py-[4px] text-[11px] font-mono rounded-md bg-border-alpha-10 hover:bg-border-alpha-20 text-text-secondary hover:text-text-primary transition-all active:scale-95 text-center border-none cursor-pointer"
+                    className="py-[4px] text-[11px] font-mono rounded-md bg-white/[0.08] hover:bg-white/15 text-white/70 hover:text-white transition-all active:scale-95 text-center border-none cursor-pointer"
                   >
                     +{delta / 1000}s
                   </button>
@@ -419,8 +413,7 @@ export function LyricsProviderIsland() {
               </div>
             </div>
 
-            {/* Hint Footer */}
-            <div className="text-[10px] text-text-tertiary leading-[1.3] text-center pt-[2px] border-t border-border-primary/40">
+            <div className="text-[10px] text-white/40 leading-[1.3] text-center pt-[2px] border-t border-white/10">
               {t("player.offset_hint")}
             </div>
           </motion.div>

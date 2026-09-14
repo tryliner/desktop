@@ -185,7 +185,7 @@ export function FullscreenPlayer({
         </div>
 
         <div className="flex-1 h-full min-h-0 pl-2 pr-6 flex flex-col relative">
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30 pointer-events-none flex justify-center">
+          <div className="absolute top-[12px] left-1/2 -translate-x-1/2 z-30 pointer-events-none flex justify-center">
             <LyricsProviderIsland />
           </div>
 

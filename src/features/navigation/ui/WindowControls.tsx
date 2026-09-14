@@ -31,18 +31,18 @@ export default function WindowControls({
     >
       <div
         data-no-window-drag
-        className={`flex items-center h-[32px] px-[3px] gap-[2px] rounded-md backdrop-blur-md pointer-events-auto transition-colors ${
+        className={`flex items-center h-[32px] px-[3px] gap-[2px] rounded-lg backdrop-blur-xl pointer-events-auto transition-colors ${
           isFullscreen
-            ? "bg-black/70 text-white"
+            ? "bg-black/50 border border-white/10 text-white shadow-lg"
             : "bg-bg-panel/90 border border-border-primary/60 text-text-primary shadow-sm"
         }`}
       >
         <button
           type="button"
           onClick={handleMinimize}
-          className={`flex items-center justify-center w-[28px] h-[26px] rounded-sm cursor-pointer border-none bg-transparent transition-colors active:scale-95 ${
+          className={`flex items-center justify-center w-[26px] h-[26px] rounded-md cursor-pointer border-none bg-transparent transition-colors active:scale-95 ${
             isFullscreen
-              ? "text-white hover:bg-white/10"
+              ? "text-white/70 hover:text-white hover:bg-white/10"
               : "text-text-primary hover:bg-border-alpha-14"
           }`}
           aria-label="Minimize"
@@ -53,9 +53,9 @@ export default function WindowControls({
         <button
           type="button"
           onClick={handleMaximize}
-          className={`flex items-center justify-center w-[28px] h-[26px] rounded-sm cursor-pointer border-none bg-transparent transition-colors active:scale-95 ${
+          className={`flex items-center justify-center w-[26px] h-[26px] rounded-md cursor-pointer border-none bg-transparent transition-colors active:scale-95 ${
             isFullscreen
-              ? "text-white hover:bg-white/10"
+              ? "text-white/70 hover:text-white hover:bg-white/10"
               : "text-text-primary hover:bg-border-alpha-14"
           }`}
           aria-label="Maximize"
@@ -66,8 +66,8 @@ export default function WindowControls({
         <button
           type="button"
           onClick={handleClose}
-          className={`flex items-center justify-center w-[28px] h-[26px] rounded-sm cursor-pointer border-none bg-transparent transition-colors hover:bg-[#E81123] hover:text-white active:scale-95 ${
-            isFullscreen ? "text-white" : "text-text-primary"
+          className={`flex items-center justify-center w-[26px] h-[26px] rounded-md cursor-pointer border-none bg-transparent transition-colors hover:bg-[#E81123] hover:text-white active:scale-95 ${
+            isFullscreen ? "text-white/70 hover:text-white" : "text-text-primary"
           }`}
           aria-label="Close"
           title="Close"
