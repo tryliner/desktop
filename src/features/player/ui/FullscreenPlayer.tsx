@@ -134,27 +134,6 @@ export function FullscreenPlayer({
     !lyricsError &&
     plainLyrics === "[INSTRUMENTAL]";
 
-  const [lyricsVersion, setLyricsVersion] = useState(0);
-  const prevProviderRef = useRef(activeProvider);
-  const prevTrackIdRef = useRef(currentTrackId);
-
-  useEffect(() => {
-    if (prevTrackIdRef.current !== currentTrackId) {
-      prevTrackIdRef.current = currentTrackId;
-      prevProviderRef.current = activeProvider;
-      setLyricsVersion(0);
-    } else if (
-      activeProvider &&
-      prevProviderRef.current &&
-      prevProviderRef.current !== activeProvider
-    ) {
-      prevProviderRef.current = activeProvider;
-      setLyricsVersion((v) => v + 1);
-    } else {
-      prevProviderRef.current = activeProvider;
-    }
-  }, [activeProvider, currentTrackId]);
-
   return (
     <div
       data-theme="dark"
@@ -198,7 +177,7 @@ export function FullscreenPlayer({
             <AnimatePresence initial={false}>
               {hasLyrics && (
                 <motion.div
-                  key={`lyrics-${currentTrackId}-${lyricsVersion}`}
+                  key={`lyrics-${currentTrackId}`}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0, pointerEvents: "none" }}

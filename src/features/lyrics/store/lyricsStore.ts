@@ -122,27 +122,41 @@ export const useLyricsStore = create<LyricsState>()(
         const option = availableProviders.find((p) => p.provider === providerName);
         if (!option) return;
 
-        const parsed = parseRawLyrics(
-          option.candidate.lyrics.content,
-          option.candidate.lyrics.format,
-        );
+        try {
+          const parsed = parseRawLyrics(
+            option.candidate.lyrics.content,
+            option.candidate.lyrics.format,
+          );
 
-        const adjusted = applyLyricsOffset(
-          { braccatoLyrics: parsed.braccatoLyrics, syncedLines: parsed.syncedLines },
-          offsetMs,
-        );
+          const adjusted = applyLyricsOffset(
+            { braccatoLyrics: parsed.braccatoLyrics, syncedLines: parsed.syncedLines },
+            offsetMs,
+          );
 
-        set({
-          activeProvider: option.provider,
-          rawLyrics: option.candidate.lyrics.content,
-          rawFormat: option.candidate.lyrics.format,
-          baseBraccatoLyrics: parsed.braccatoLyrics,
-          baseSyncedLines: parsed.syncedLines,
-          braccatoLyrics: adjusted.braccatoLyrics,
-          syncedLines: adjusted.syncedLines,
-          plainLyrics: parsed.plainLyrics,
-          lyricsQuality: option.quality,
-        });
+          set({
+            activeProvider: option.provider,
+            rawLyrics: option.candidate.lyrics.content,
+            rawFormat: option.candidate.lyrics.format,
+            baseBraccatoLyrics: parsed.braccatoLyrics,
+            baseSyncedLines: parsed.syncedLines,
+            braccatoLyrics: adjusted.braccatoLyrics,
+            syncedLines: adjusted.syncedLines,
+            plainLyrics: parsed.plainLyrics,
+            lyricsQuality: option.quality,
+          });
+        } catch {
+          set({
+            activeProvider: option.provider,
+            rawLyrics: option.candidate.lyrics.content,
+            rawFormat: option.candidate.lyrics.format,
+            baseBraccatoLyrics: [],
+            baseSyncedLines: [],
+            braccatoLyrics: [],
+            syncedLines: [],
+            plainLyrics: option.candidate.lyrics.content,
+            lyricsQuality: option.quality,
+          });
+        }
       },
 
       setOffset: (offsetMs: number) => {

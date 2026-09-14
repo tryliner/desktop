@@ -106,8 +106,10 @@ export function LyricsProviderIsland() {
     availableProviders[currentIndex] ?? availableProviders[0];
   const hasMultiple = availableProviders.length > 1;
 
-  const handlePrev = (e: React.MouseEvent) => {
+  const handlePrev = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
     e.stopPropagation();
+    e.currentTarget?.blur();
     if (!hasMultiple) return;
     const nextIdx =
       (currentIndex - 1 + availableProviders.length) %
@@ -115,8 +117,10 @@ export function LyricsProviderIsland() {
     selectProvider(availableProviders[nextIdx].provider);
   };
 
-  const handleNext = (e: React.MouseEvent) => {
+  const handleNext = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
     e.stopPropagation();
+    e.currentTarget?.blur();
     if (!hasMultiple) return;
     const nextIdx = (currentIndex + 1) % availableProviders.length;
     selectProvider(availableProviders[nextIdx].provider);
