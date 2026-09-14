@@ -50,8 +50,29 @@ export function useCollection(type: string | null, id: string | null) {
             type === "playlist"
               ? await api.getPlaylist(id)
               : await api.getAlbum(id);
+
+          if ((collection as any).playlist && Array.isArray((collection as any).items)) {
+            const userPlaylist = (collection as any).playlist;
+            const userItems = (collection as any).items as any[];
+            const covers = userItems
+              .map((i) => (i.track?.cover ? mediaUrl(i.track.cover.url) : ""))
+              .filter(Boolean)
+              .filter((url, idx, arr) => arr.indexOf(url) === idx)
+              .slice(0, 4);
+            const tracks: Track[] = userItems.map((item) => toClientTrack(item.track));
+            const ownerName = userPlaylist.owner?.displayName || userPlaylist.owner?.username || "";
+            const description = [ownerName, userPlaylist.description].filter(Boolean).join(" • ");
+            const formatted: CollectionPageData = {
+              title: userPlaylist.title,
+              description,
+              coverUrl: covers[0] || "",
+              tracks,
+            };
+            return formatted;
+          }
+
           const collectionCoverUrl = collection.cover ? mediaUrl(collection.cover.url) : "";
-          const tracks = collection.tracks.map((t) => {
+          const tracks = (collection.tracks || []).map((t) => {
             const clientTrack = toClientTrack(t);
             let updated = clientTrack;
             if (collection.type === "album") {

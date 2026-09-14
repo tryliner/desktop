@@ -32,11 +32,7 @@ export default function DeeplinkHandler() {
               navigate(`/collection?type=album&id=${encodeURIComponent(target.id)}`);
               break;
             case "playlist":
-              navigate(
-                isUserPlaylistId(target.id)
-                  ? `/library/playlist?id=${encodeURIComponent(target.id)}`
-                  : `/collection?type=playlist&id=${encodeURIComponent(target.id)}`,
-              );
+              navigate(`/collection?type=playlist&id=${encodeURIComponent(target.id)}`);
               break;
             case "track": {
               const track = toClientTrack(await api.getTrack(target.id));

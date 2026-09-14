@@ -240,6 +240,7 @@ function LibraryPlaylistContent() {
   const handleShare = useCallback(() => {
     if (typeof navigator !== "undefined" && navigator.clipboard && decodedId) {
       navigator.clipboard.writeText(buildShareUrl("playlist", decodedId));
+      void api.updatePlaylist(decodedId, { isPublic: true }).catch(() => {});
       toast(t("common.link_copied"), "checkmark", {
         description: viewData?.title || undefined,
       });

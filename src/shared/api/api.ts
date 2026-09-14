@@ -639,6 +639,7 @@ export const api = {
   createPlaylist(input: {
     title: string;
     description?: string;
+    isPublic?: boolean;
   }): Promise<ApiUserPlaylist> {
     return request<ApiUserPlaylist>("/v1/me/playlists", {
       method: "POST",
@@ -648,7 +649,7 @@ export const api = {
 
   updatePlaylist(
     id: string,
-    input: { title?: string; description?: string | null },
+    input: { title?: string; description?: string | null; isPublic?: boolean },
   ): Promise<ApiUserPlaylist> {
     return request<ApiUserPlaylist>(
       `/v1/me/playlists/${encodeURIComponent(id)}`,
