@@ -638,6 +638,7 @@ export default function AppFrame({ children }: AppFrameProps) {
                   <RightDrawer
                     activeTab={rightDrawerTab}
                     onTabChange={setRightDrawerTab}
+                    onClose={closeRightPanel}
                   />
                 </div>
               </motion.aside>

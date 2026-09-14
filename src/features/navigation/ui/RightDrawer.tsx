@@ -7,6 +7,7 @@ import { useTranslation } from "@/languages";
 import { useToast, ReorderDropPlaceholder, FloatingDragCard } from "@/shared/ui";
 import { useListReorder } from "@/shared/hooks";
 import { FiMusic } from "react-icons/fi";
+import { CloseLine } from "@mingcute/react";
 
 const QueueList = memo(function QueueList({
   queue,
@@ -182,9 +183,10 @@ const QueueList = memo(function QueueList({
 export interface RightDrawerProps {
   activeTab: "queue" | "lyrics";
   onTabChange: (tab: "queue" | "lyrics") => void;
+  onClose?: () => void;
 }
 
-function RightDrawer({ activeTab, onTabChange }: RightDrawerProps) {
+function RightDrawer({ activeTab, onTabChange, onClose }: RightDrawerProps) {
   const player = usePlayerState();
   const { t } = useTranslation();
   const { toast } = useToast();
@@ -510,8 +512,8 @@ function RightDrawer({ activeTab, onTabChange }: RightDrawerProps) {
 
   return (
     <div className="flex flex-col h-full w-full rounded-4xl border border-border-secondary bg-bg-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.035)] overflow-hidden">
-      <div className="relative px-[12px] pt-[12px] pb-[6px] shrink-0 z-20">
-        <div className="grid grid-cols-2 p-[3px] rounded-xl bg-bg-elevated border border-border-primary/60">
+      <div className="relative px-[12px] pt-[12px] pb-[6px] shrink-0 z-20 flex items-center gap-[8px]">
+        <div className="grid grid-cols-2 flex-1 p-[3px] rounded-xl bg-bg-elevated border border-border-primary/60">
           <button
             type="button"
             onClick={() => onTabChange("queue")}
@@ -565,6 +567,19 @@ function RightDrawer({ activeTab, onTabChange }: RightDrawerProps) {
             <span className="relative z-10">{t("player.lyrics")}</span>
           </button>
         </div>
+
+        {onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            title={t("common.close") || "Close"}
+            aria-label={t("common.close") || "Close"}
+            className="flex h-[36px] w-[36px] shrink-0 items-center justify-center rounded-xl bg-bg-elevated border border-border-primary/60 text-text-secondary hover:text-text-primary hover:bg-white/[0.08] active:scale-[0.95] transition-all border-solid cursor-pointer select-none"
+          >
+            <CloseLine size={16} />
+          </button>
+        )}
+      </div>
 
         <div className="pointer-events-none absolute inset-x-0 top-full h-[24px] overflow-hidden z-20">
           <div
