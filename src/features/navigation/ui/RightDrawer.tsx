@@ -514,11 +514,11 @@ function RightDrawer({ activeTab, onTabChange, onClose }: RightDrawerProps) {
     <div className="flex flex-col h-full w-full rounded-4xl border border-border-secondary bg-bg-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.035)] overflow-hidden">
       <div className="relative px-[12px] pt-[12px] pb-[6px] shrink-0 z-20">
         <div className="flex items-center gap-[8px]">
-          <div className="grid grid-cols-2 flex-1 p-[3px] rounded-xl bg-bg-elevated border border-border-primary/60">
+          <div className="h-[36px] grid grid-cols-2 flex-1 p-[3px] box-border rounded-xl bg-bg-elevated border border-border-primary/60">
             <button
               type="button"
               onClick={() => onTabChange("queue")}
-              className={`relative flex items-center justify-center py-[7px] px-[12px] rounded-lg text-[13px] font-medium transition-colors border-none bg-transparent cursor-pointer select-none active:scale-[0.98] ${
+              className={`relative h-full flex items-center justify-center px-[12px] rounded-lg text-[13px] font-medium transition-colors border-none bg-transparent cursor-pointer select-none active:scale-[0.98] ${
                 activeTab === "queue"
                   ? "text-text-primary"
                   : "text-text-secondary hover:text-text-primary"
@@ -544,7 +544,7 @@ function RightDrawer({ activeTab, onTabChange, onClose }: RightDrawerProps) {
             <button
               type="button"
               onClick={() => onTabChange("lyrics")}
-              className={`relative flex items-center justify-center py-[7px] px-[12px] rounded-lg text-[13px] font-medium transition-colors border-none bg-transparent cursor-pointer select-none active:scale-[0.98] ${
+              className={`relative h-full flex items-center justify-center px-[12px] rounded-lg text-[13px] font-medium transition-colors border-none bg-transparent cursor-pointer select-none active:scale-[0.98] ${
                 activeTab === "lyrics"
                   ? "text-text-primary"
                   : "text-text-secondary hover:text-text-primary"
