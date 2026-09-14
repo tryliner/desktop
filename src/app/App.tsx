@@ -21,8 +21,8 @@ export default function App() {
       <CoverSwRegistrar />
       <ThemeProvider
         attribute="data-theme"
-        defaultTheme="system"
-        enableSystem
+        defaultTheme="dark"
+        enableSystem={false}
         disableTransitionOnChange
       >
         <AppleEmojiProvider>
