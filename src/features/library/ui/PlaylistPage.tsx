@@ -171,17 +171,28 @@ function LibraryPlaylistContent() {
     }
   }, [isEditingDescription]);
 
+  const trackListContainerRef = useRef<HTMLDivElement>(null);
+  const [optimisticTracks, setOptimisticTracks] = useState<Track[] | null>(null);
+
+  useEffect(() => {
+    setOptimisticTracks(null);
+  }, [viewData?.revision, decodedId]);
+
+  const currentTracks = useMemo(() => {
+    return optimisticTracks ?? viewData?.tracks ?? [];
+  }, [optimisticTracks, viewData?.tracks]);
+
   const handlePlayAll = useCallback(() => {
-    if (!viewData || viewData.tracks.length === 0) return;
+    if (!currentTracks.length || !viewData) return;
     const context = decodedId ? `playlist:${decodedId}` : viewData.title;
     playerEngine.clearQueue();
     playerEngine.playTrack(
-      viewData.tracks[0],
-      viewData.tracks,
+      currentTracks[0],
+      currentTracks,
       context,
       viewData.coverUrl,
     );
-  }, [viewData, decodedId]);
+  }, [currentTracks, viewData, decodedId]);
 
   const handleShufflePlay = useCallback(() => {
     if (!currentTracks.length || !viewData) return;
@@ -206,8 +217,8 @@ function LibraryPlaylistContent() {
   const [addedToQueue, setAddedToQueue] = useState(false);
 
   const handleAddToQueue = useCallback(() => {
-    if (!viewData || viewData.tracks.length === 0) return;
-    for (const track of viewData.tracks) {
+    if (!currentTracks.length || !viewData) return;
+    for (const track of currentTracks) {
       playerEngine.addToQueue(track);
     }
     const playlistTitle = viewData.title || t("playlist.untitled_playlist");
@@ -219,18 +230,7 @@ function LibraryPlaylistContent() {
       setAddedToQueue(false);
     }, 1200);
     return () => clearTimeout(timer);
-  }, [viewData, toast, t]);
-
-  const trackListContainerRef = useRef<HTMLDivElement>(null);
-  const [optimisticTracks, setOptimisticTracks] = useState<Track[] | null>(null);
-
-  useEffect(() => {
-    setOptimisticTracks(null);
-  }, [viewData?.revision, decodedId]);
-
-  const currentTracks = useMemo(() => {
-    return optimisticTracks ?? viewData?.tracks ?? [];
-  }, [optimisticTracks, viewData?.tracks]);
+  }, [currentTracks, viewData, toast, t]);
 
   const handleReorderCommit = useCallback(
     (fromIndex: number, toIndex: number, movingTrack: Track) => {
