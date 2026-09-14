@@ -505,7 +505,7 @@ function RightDrawer({ activeTab, onTabChange, onClose }: RightDrawerProps) {
                 title={t("common.back") || "Back"}
                 aria-label={t("common.back") || "Back"}
                 data-no-window-drag
-                className="group inline-flex h-[32px] shrink-0 items-center gap-[6px] rounded-md px-[10px] bg-bg-panel/90 border border-border-primary/60 backdrop-blur-md text-text-primary hover:bg-border-alpha-14 active:scale-[0.94] transition-all cursor-pointer select-none pointer-events-auto text-[13px] font-[500]"
+                className="group inline-flex h-[32px] shrink-0 items-center gap-[6px] rounded-md px-[10px] bg-black/70 backdrop-blur-xl text-white hover:bg-black/85 active:scale-[0.94] transition-all cursor-pointer select-none pointer-events-auto text-[13px] font-[500]"
                 style={{ fontFamily: "var(--font-inter), sans-serif" }}
               >
                 <ArrowLeftLine
