@@ -479,26 +479,11 @@ export class PlayerRuntime {
       }
 
       const url = mediaUrl(session.streamUrl);
-      const response = await fetch(url, {
-        headers: { Range: "bytes=0-" },
-        signal: controller.signal,
-      });
-
-      if (!response.ok && response.status !== 206) {
-        throw new Error(`Failed to fetch media stream: ${response.status}`);
+      if (this.activeBlobUrl) {
+        URL.revokeObjectURL(this.activeBlobUrl);
+        this.activeBlobUrl = null;
       }
-
-      const arrayBuffer = await response.arrayBuffer();
-      if (epoch !== this.loadEpoch || controller.signal.aborted) return;
-
-      const mimeType = session.mimeType || response.headers.get("content-type") || "audio/webm";
-      const blob = new Blob([arrayBuffer], { type: mimeType });
-      void linerDb.putAudio(track.id, blob, mimeType);
-      void linerDb.putTrack(track);
-
-      const blobUrl = URL.createObjectURL(blob);
-      this.activeBlobUrl = blobUrl;
-      this.audio.src = blobUrl;
+      this.audio.src = url;
       this.audio.volume = 0;
       this.audio.load();
 
@@ -506,8 +491,11 @@ export class PlayerRuntime {
       log(
         "green",
         "playback",
-        `stream downloaded & cached: ${session.codec} ${session.bitrate} bps (${Math.round(blob.size / 1024)} KB)`,
+        `stream attached: ${session.codec} ${session.bitrate} bps (${track.title})`,
       );
+
+      // eagerly cache audio in background for offline playback
+      this.cacheAudioInBackground(track, url, session.mimeType);
 
       if (this.audio.readyState < 3) {
         await new Promise<void>((resolve) => {
@@ -687,6 +675,21 @@ export class PlayerRuntime {
     } catch {
       // Ignore seek error if media not yet ready
     }
+  }
+
+  private cacheAudioInBackground(track: Track, url: string, preferredMimeType?: string) {
+    if (track.durationMs && track.durationMs > 20 * 60 * 1000) return;
+    fetch(url, { headers: { Range: "bytes=0-" } })
+      .then(async (res) => {
+        if (!res.ok && res.status !== 206) return;
+        const arrayBuffer = await res.arrayBuffer();
+        const mimeType = preferredMimeType || res.headers.get("content-type") || "audio/webm";
+        const blob = new Blob([arrayBuffer], { type: mimeType });
+        await linerDb.putAudio(track.id, blob, mimeType);
+        await linerDb.putTrack(track);
+        log("green", "playback", `background cached: ${track.title} (${Math.round(blob.size / 1024)} KB)`);
+      })
+      .catch(() => {});
   }
 }
 
