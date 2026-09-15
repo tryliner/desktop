@@ -726,7 +726,7 @@ function NotificationCard({
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       data-no-window-drag
-      className={`relative flex items-center gap-[8px] rounded-[12px] border border-border-primary/60 bg-bg-elevated pl-[12px] ${
+      className={`relative flex items-center gap-[8px] rounded-[12px] bg-bg-elevated pl-[12px] ${
         resolvedAction ? "pr-[5px]" : "pr-[12px]"
       } py-[5px] min-h-[38px] box-border ${
         index === 0

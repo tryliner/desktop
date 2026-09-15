@@ -24,6 +24,7 @@ function detectSourceLabel(raw: string): string | null {
     if (host === "soundcloud.com" || host.endsWith(".soundcloud.com")) return "SoundCloud";
     if (host === "open.spotify.com") return "Spotify";
     if (host === "deezer.com" || host.endsWith(".deezer.com")) return "Deezer";
+    if (["music.apple.com", "geo.music.apple.com", "itunes.apple.com"].includes(host) || host.endsWith(".music.apple.com")) return "Apple Music";
   } catch {
     // not a url yet
   }

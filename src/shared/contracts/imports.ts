@@ -1,6 +1,6 @@
 import type { Track } from './track';
 
-export const IMPORT_SOURCES = ['youtube', 'soundcloud', 'spotify', 'deezer'] as const;
+export const IMPORT_SOURCES = ['youtube', 'soundcloud', 'spotify', 'deezer', 'apple_music'] as const;
 
 export type ImportSource = typeof IMPORT_SOURCES[number];
 
