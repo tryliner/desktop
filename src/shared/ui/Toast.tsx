@@ -322,16 +322,6 @@ function ImportToastBridge({
   const isCompleted = job?.status === "completed";
   const isFailed = job?.status === "failed";
 
-  useEffect(() => {
-    if (
-      isAwaiting &&
-      job?.id &&
-      (dismissedProgressId === job.id || dismissedQueuedId === job.id)
-    ) {
-      void finalizeWithMatches(job.id);
-    }
-  }, [isAwaiting, job?.id, dismissedProgressId, dismissedQueuedId, finalizeWithMatches]);
-
   const getSubtitle = useCallback(() => {
     if (!job) return "";
     if (isFailed) return t("import.status_failed");
@@ -404,7 +394,7 @@ function ImportToastBridge({
           onClick: () => void handleOpenReview(),
         },
         onDismiss: () => {
-          void finalizeWithMatches(job.id);
+          setDismissedProgressId(job.id);
         },
       });
       return;
