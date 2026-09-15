@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeEach } from "vitest";
+import { describe, expect, it, beforeEach, vi } from "vitest";
 import { playerEngine, usePlayerStore } from "./playerEngine";
 import { playerRuntime } from "./playerRuntime";
 import type { Track } from "@/shared/types";
@@ -351,6 +351,32 @@ describe("Player auto-skip on playback error", () => {
 
       expect(usePlayerStore.getState().queue.map((t) => t.id)).toEqual(["1", "2"]);
       expect(usePlayerStore.getState().currentIndex).toBe(0);
+    });
+  });
+
+  describe("Queue Preload Behavior", () => {
+    it("preloads strictly only 1 next track in queue without spamming upcoming tracks", async () => {
+      if (!playerRuntime) return;
+      const preloadSpy = vi.spyOn(playerRuntime, "preloadTrack");
+      const tracks = Array.from({ length: 10 }, (_, i) =>
+        mockTrack(`queue-${i + 1}`, `Song ${i + 1}`),
+      );
+
+      await playerEngine.playTrack(tracks[0], tracks);
+      expect(usePlayerStore.getState().currentIndex).toBe(0);
+
+      // should preload only track 1 (index 1), not tracks 2, 3, 4, etc.
+      expect(preloadSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ id: "queue-2" }),
+      );
+      expect(preloadSpy).not.toHaveBeenCalledWith(
+        expect.objectContaining({ id: "queue-3" }),
+      );
+      expect(preloadSpy).not.toHaveBeenCalledWith(
+        expect.objectContaining({ id: "queue-4" }),
+      );
+
+      preloadSpy.mockRestore();
     });
   });
 });

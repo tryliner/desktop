@@ -25,6 +25,7 @@ import type { Track } from "@/shared/types";
 
 const MAX_CONSECUTIVE_AUTO_SKIPS = 3;
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
 
 export { usePlayerStore, type PlayerStatus, type RepeatMode, type PlayerState };
 
@@ -259,6 +260,9 @@ class PlayerEngine {
   private radioAppendTimeout: ReturnType<typeof setTimeout> | null = null;
   private radioWaveId: string | null = null;
   private consecutiveAutoSkips = 0;
+  private lastPreloadKey: string | null = null;
+  private inFlightLyricsPrefetches = new Map<string, Promise<void>>();
+  private negativeLyricsCache = new Map<string, number>();
 
   constructor() {
     usePlayerStore.setState({
@@ -292,6 +296,7 @@ class PlayerEngine {
         if (trackId !== prevTrackId) {
           prevTrackId = trackId;
           newTrack = true;
+          this.lastPreloadKey = null;
           if (state.currentTrack) {
             this.telemetry.startTrack(state.currentTrack, state.playbackContext);
           } else {
@@ -311,7 +316,6 @@ class PlayerEngine {
           if (state.status === "playing") {
             this.telemetry.onPlaying();
             this.consecutiveAutoSkips = 0;
-            this.preloadNextTrack(state);
           } else if (state.status === "paused" || state.status === "idle") {
             this.telemetry.onPausedOrStopped();
           }
@@ -970,7 +974,18 @@ class PlayerEngine {
       nextTrack = queue[0];
     }
 
-    if (!nextTrack) return;
+    if (!nextTrack) {
+      this.lastPreloadKey = null;
+      return;
+    }
+
+    // deduplicate preload for the same current/next pair
+    const currentId = state.currentTrack?.id || "none";
+    const preloadKey = `${currentId}->${nextTrack.id}`;
+    if (this.lastPreloadKey === preloadKey) {
+      return;
+    }
+    this.lastPreloadKey = preloadKey;
 
     if (nextTrack.coverUrl) {
       void preloadCoverArt(nextTrack.coverUrl);
@@ -985,73 +1000,84 @@ class PlayerEngine {
     if (playerRuntime) {
       void playerRuntime.preloadTrack(nextTrack);
     }
-
-    const upcomingSlice =
-      currentIndex >= 0
-        ? queue.slice(currentIndex + 2, currentIndex + 4)
-        : queue.slice(1, 3);
-    for (const upcoming of upcomingSlice) {
-      if (upcoming.coverUrl) {
-        void preloadCoverArt(upcoming.coverUrl);
-      }
-      if (!lyricsCache.has(upcoming.id)) {
-        void this.prefetchLyrics(upcoming.id);
-      }
-    }
   }
 
   private async prefetchLyrics(trackId: string): Promise<void> {
-    try {
-      const existing = await linerDb.getLyrics(trackId);
-      if (existing && isWordLevelLyrics(existing.candidate)) {
-        const lastChecked = existing.lastCheckedAt || 0;
-        if (Date.now() - lastChecked < SEVEN_DAYS_MS) {
-          return;
-        }
-      }
+    if (!trackId) return;
 
-      let bestCandidate: LyricsCandidate | null = null;
-      const providers: {
-        provider: string;
-        syncLevel: LyricsSyncLevel;
-        quality: number;
-        candidate: LyricsCandidate;
-      }[] = [];
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 8000);
-      for await (const event of api.streamLyrics(trackId, controller.signal)) {
-        if (event.type === "provider" && event.status === "found") {
-          const candidate = event.candidate;
-          providers.push({
-            provider: candidate.provider,
-            syncLevel: candidate.syncLevel,
-            quality: candidate.quality.total,
-            candidate,
-          });
-          if (!bestCandidate || isBetterLyricsCandidate(candidate, bestCandidate)) {
-            bestCandidate = candidate;
+    if (lyricsCache.has(trackId)) return;
+    if (this.inFlightLyricsPrefetches.has(trackId)) {
+      return this.inFlightLyricsPrefetches.get(trackId);
+    }
+
+    const negTimestamp = this.negativeLyricsCache.get(trackId);
+    if (negTimestamp && Date.now() - negTimestamp < TWENTY_FOUR_HOURS_MS) {
+      return;
+    }
+
+    const prefetchPromise = (async () => {
+      try {
+        const existing = await linerDb.getLyrics(trackId);
+        if (existing) {
+          const lastChecked = existing.lastCheckedAt || 0;
+          if (Date.now() - lastChecked < SEVEN_DAYS_MS) {
+            return;
           }
-        } else if (event.type === "done") {
-          break;
         }
+
+        let bestCandidate: LyricsCandidate | null = null;
+        const providers: {
+          provider: string;
+          syncLevel: LyricsSyncLevel;
+          quality: number;
+          candidate: LyricsCandidate;
+        }[] = [];
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 8000);
+        for await (const event of api.streamLyrics(trackId, controller.signal)) {
+          if (event.type === "provider" && event.status === "found") {
+            const candidate = event.candidate;
+            providers.push({
+              provider: candidate.provider,
+              syncLevel: candidate.syncLevel,
+              quality: candidate.quality.total,
+              candidate,
+            });
+            if (!bestCandidate || isBetterLyricsCandidate(candidate, bestCandidate)) {
+              bestCandidate = candidate;
+            }
+          } else if (event.type === "done") {
+            break;
+          }
+        }
+        clearTimeout(timeout);
+
+        if (bestCandidate) {
+          lyricsCache.set(trackId, bestCandidate, providers);
+          void linerDb.putLyrics({
+            trackId,
+            syncLevel: bestCandidate.syncLevel,
+            quality: bestCandidate.quality.total,
+            activeProvider: bestCandidate.provider,
+            availableProviders: providers,
+            rawLyrics: bestCandidate.lyrics.content,
+            rawFormat: bestCandidate.lyrics.format,
+            candidate: bestCandidate,
+            lastCheckedAt: Date.now(),
+            updatedAt: Date.now(),
+          });
+        } else {
+          // negative cache so client stops repeating queries for lyricless tracks
+          this.negativeLyricsCache.set(trackId, Date.now());
+        }
+      } catch {
+      } finally {
+        this.inFlightLyricsPrefetches.delete(trackId);
       }
-      clearTimeout(timeout);
-      if (bestCandidate && isWordLevelLyrics(bestCandidate)) {
-        lyricsCache.set(trackId, bestCandidate, providers);
-        void linerDb.putLyrics({
-          trackId,
-          syncLevel: bestCandidate.syncLevel,
-          quality: bestCandidate.quality.total,
-          activeProvider: bestCandidate.provider,
-          availableProviders: providers,
-          rawLyrics: bestCandidate.lyrics.content,
-          rawFormat: bestCandidate.lyrics.format,
-          candidate: bestCandidate,
-          lastCheckedAt: Date.now(),
-          updatedAt: Date.now(),
-        });
-      }
-    } catch {}
+    })();
+
+    this.inFlightLyricsPrefetches.set(trackId, prefetchPromise);
+    return prefetchPromise;
   }
 
   private async fetchLyricsForTrack(track: Track | null): Promise<void> {
@@ -1087,9 +1113,8 @@ class PlayerEngine {
         cached = null;
       }
     }
-    const isWordLevel = cached && isWordLevelLyrics(cached.candidate);
 
-    if (cached && isWordLevel) {
+    if (cached && cached.candidate) {
       bestCandidate = cached.candidate;
       const parsed = parseRawLyrics(
         cached.candidate.lyrics.content,
@@ -1125,6 +1150,24 @@ class PlayerEngine {
 
       void linerDb.updateLyricsChecked(trackId);
     } else {
+      const negTimestamp = this.negativeLyricsCache.get(trackId);
+      if (negTimestamp && Date.now() - negTimestamp < TWENTY_FOUR_HOURS_MS) {
+        lyricsStore.setLyricsState({
+          lyricsLoading: false,
+          lyricsError: null,
+          rawLyrics: null,
+          rawFormat: null,
+          braccatoLyrics: [],
+          syncedLines: [],
+          plainLyrics: null,
+          lyricsQuality: 0,
+          currentLyricsTrackId: trackId,
+          activeProvider: null,
+          availableProviders: [],
+        });
+        return;
+      }
+
       lyricsStore.setLyricsState({
         lyricsLoading: true,
         lyricsError: null,
@@ -1138,6 +1181,35 @@ class PlayerEngine {
         activeProvider: null,
         availableProviders: [],
       });
+    }
+
+    // reuse any in-flight prefetch before opening a new streaming connection
+    if (this.inFlightLyricsPrefetches.has(trackId)) {
+      try {
+        await this.inFlightLyricsPrefetches.get(trackId);
+        if (token !== this.lyricsLoadToken || controller.signal.aborted) return;
+        const freshCached = lyricsCache.get(trackId) || (await linerDb.getLyrics(trackId));
+        if (freshCached && freshCached.candidate) {
+          const parsed = parseRawLyrics(
+            freshCached.candidate.lyrics.content,
+            freshCached.candidate.lyrics.format,
+          );
+          lyricsStore.setLyricsState({
+            lyricsLoading: false,
+            lyricsError: null,
+            rawLyrics: freshCached.candidate.lyrics.content,
+            rawFormat: freshCached.candidate.lyrics.format,
+            braccatoLyrics: parsed.braccatoLyrics,
+            syncedLines: parsed.syncedLines,
+            plainLyrics: parsed.plainLyrics,
+            lyricsQuality: freshCached.candidate.quality.total,
+            currentLyricsTrackId: trackId,
+            activeProvider: freshCached.candidate.provider,
+            availableProviders: freshCached.availableProviders || [],
+          });
+          return;
+        }
+      } catch {}
     }
 
     log("cyan", "lyrics", `fetching for "${track.title}"`);
@@ -1184,21 +1256,19 @@ class PlayerEngine {
               plainLyrics: parsed.plainLyrics,
               lyricsQuality: candidate.quality.total,
             });
-            if (isWordLevelLyrics(candidate)) {
-              lyricsCache.set(trackId, candidate, updatedProviders);
-              void linerDb.putLyrics({
-                trackId,
-                syncLevel: candidate.syncLevel,
-                quality: candidate.quality.total,
-                activeProvider: candidate.provider,
-                availableProviders: updatedProviders,
-                rawLyrics: candidate.lyrics.content,
-                rawFormat: candidate.lyrics.format,
-                candidate,
-                lastCheckedAt: Date.now(),
-                updatedAt: Date.now(),
-              });
-            }
+            lyricsCache.set(trackId, candidate, updatedProviders);
+            void linerDb.putLyrics({
+              trackId,
+              syncLevel: candidate.syncLevel,
+              quality: candidate.quality.total,
+              activeProvider: candidate.provider,
+              availableProviders: updatedProviders,
+              rawLyrics: candidate.lyrics.content,
+              rawFormat: candidate.lyrics.format,
+              candidate,
+              lastCheckedAt: Date.now(),
+              updatedAt: Date.now(),
+            });
             log(
               "green",
               "lyrics",
@@ -1221,7 +1291,7 @@ class PlayerEngine {
             `provider ${event.provider} error: ${event.message}`,
           );
         } else if (event.type === "done") {
-          if (bestCandidate && isWordLevelLyrics(bestCandidate)) {
+          if (bestCandidate) {
             const currentProviders = useLyricsStore.getState().availableProviders;
             lyricsCache.set(trackId, bestCandidate, currentProviders);
             void linerDb.putLyrics({
@@ -1236,6 +1306,8 @@ class PlayerEngine {
               lastCheckedAt: Date.now(),
               updatedAt: Date.now(),
             });
+          } else {
+            this.negativeLyricsCache.set(trackId, Date.now());
           }
           log(
             "cyan",

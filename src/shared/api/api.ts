@@ -148,7 +148,9 @@ export function toMaxQualityAvatarUrl(url: string | undefined): string {
   return `${url}=s0`;
 }
 
-async function request<T>(
+const inFlightGetRequests = new Map<string, Promise<unknown>>();
+
+async function executeRequest<T>(
   path: string,
   init?: RequestInit,
   allowRefresh = true,
@@ -314,6 +316,29 @@ async function request<T>(
 
   if (res.status === 204) return undefined as unknown as T;
   return res.json() as Promise<T>;
+}
+
+async function request<T>(
+  path: string,
+  init?: RequestInit,
+  allowRefresh = true,
+  timeoutMs = DEFAULT_TIMEOUT_MS,
+): Promise<T> {
+  const method = (init?.method ?? "GET").toUpperCase();
+  // deduplicate identical concurrent in-flight get requests
+  if (method === "GET" && !init?.signal) {
+    const key = `${path}::${allowRefresh}`;
+    const inFlight = inFlightGetRequests.get(key);
+    if (inFlight) {
+      return inFlight as Promise<T>;
+    }
+    const promise = executeRequest<T>(path, init, allowRefresh, timeoutMs).finally(() => {
+      inFlightGetRequests.delete(key);
+    });
+    inFlightGetRequests.set(key, promise);
+    return promise;
+  }
+  return executeRequest<T>(path, init, allowRefresh, timeoutMs);
 }
 
 export class ApiError extends Error {

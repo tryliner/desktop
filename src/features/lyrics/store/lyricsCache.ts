@@ -67,9 +67,6 @@ class LyricsCache {
       item = this.loadFromStorage(trackId);
     }
     if (!item) return null;
-    if (item.candidate.syncLevel !== "word_level" && item.candidate.syncLevel !== "syllable_level") {
-      return null;
-    }
     this.touch(trackId);
     return item;
   }
@@ -83,9 +80,6 @@ class LyricsCache {
     candidate: LyricsCandidate,
     availableProviders?: LyricsProviderOption[],
   ) {
-    if (candidate.syncLevel !== "word_level" && candidate.syncLevel !== "syllable_level") {
-      return;
-    }
     const item: CachedLyricsItem = {
       trackId,
       candidate,
