@@ -26,18 +26,20 @@ export interface LinerElectronApi {
   dragStart: () => void;
   dragMove: (deltaX: number, deltaY: number) => void;
   dragEnd: () => void;
-  signRequest: (input: { method: string; path: string; body?: string | null }) => Promise<{
+  signRequest: (input: { method: string; path: string; body?: string | null; timestamp?: number }) => Promise<{
     signature?: string;
     timestamp?: number;
     nonce?: string;
     error?: string;
   }>;
-  signMonitorRequest: (input: { method: string; path: string; body?: string | null }) => Promise<{
+  signMonitorRequest: (input: { method: string; path: string; body?: string | null; timestamp?: number }) => Promise<{
     signature?: string;
     timestamp?: number;
     nonce?: string;
     error?: string;
   }>;
+  syncServerTime: (dateHeaderOrMs: string | number) => Promise<number>;
+  getServerTimeOffset: () => Promise<number>;
   signCoverUrl: (payload: string) => Promise<string>;
   signRawPayload: (payload: number[] | Uint8Array) => Promise<string>;
   onDeeplink: (cb: (target: DeeplinkTarget) => void) => () => void;
@@ -77,6 +79,8 @@ const api: LinerElectronApi = {
   },
   signRequest: (input) => ipcRenderer.invoke("signer:sign-request", input),
   signMonitorRequest: (input) => ipcRenderer.invoke("signer:sign-monitor-request", input),
+  syncServerTime: (dateHeaderOrMs) => ipcRenderer.invoke("signer:sync-time", dateHeaderOrMs),
+  getServerTimeOffset: () => ipcRenderer.invoke("signer:get-time-offset"),
   signCoverUrl: (payload) => ipcRenderer.invoke("signer:sign-cover-url", payload),
   signRawPayload: (payload) => ipcRenderer.invoke("signer:sign-raw-payload", payload),
   diagnoseNetwork: (hosts) => ipcRenderer.invoke("net:diagnose", hosts),

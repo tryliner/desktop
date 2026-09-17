@@ -7,7 +7,7 @@ import {
   type AuthTokens,
   type AuthUser,
 } from "./auth-session";
-import { signApiRequest } from "./requestSigner";
+import { signApiRequest, syncServerTime } from "./requestSigner";
 import { telemetry } from "@/shared/telemetry";
 import type {
   PublicUser,
@@ -244,6 +244,12 @@ async function executeRequest<T>(
     throw err;
   }
 
+  // sync server time offset from response Date header
+  const dateHeader = res.headers?.get?.("date");
+  if (dateHeader) {
+    syncServerTime(dateHeader);
+  }
+
   if (res.status === 401 && allowRefresh && !path.startsWith("/v1/auth/")) {
     const currentSession = getAuthSession();
     // If the token in session store was already rotated by another parallel request,
@@ -253,45 +259,48 @@ async function executeRequest<T>(
         ? currentSession.accessToken
         : null;
 
-    if (!nextToken) {
+    if (!nextToken && currentSession?.refreshToken) {
       const refreshed = await refreshAuthSession();
       nextToken = refreshed?.accessToken ?? null;
     }
 
-    if (nextToken) {
-      const refreshedSignedHeaders = await signApiRequest(
-        method,
-        path,
-        rawBody,
-      );
-      try {
-        res = await fetchWithTimeout(
-          BASE + path,
-          {
-            ...init,
-            headers: {
-              ...(hasBody ? { "Content-Type": "application/json" } : {}),
-              ...correlationHeaders,
-              ...restHeaders,
-              ...refreshedSignedHeaders,
-              Authorization: `Bearer ${nextToken}`,
-            },
+    // Retry request with newly signed headers (synced server clock + fresh token if available)
+    const refreshedSignedHeaders = await signApiRequest(
+      method,
+      path,
+      rawBody,
+    );
+    try {
+      res = await fetchWithTimeout(
+        BASE + path,
+        {
+          ...init,
+          headers: {
+            ...(hasBody ? { "Content-Type": "application/json" } : {}),
+            ...correlationHeaders,
+            ...restHeaders,
+            ...refreshedSignedHeaders,
+            ...(nextToken ? { Authorization: `Bearer ${nextToken}` } : {}),
           },
-          timeoutMs,
-        );
-      } catch (err) {
-        const durationMs = Math.round(performance.now() - startTime);
-        telemetry.trackNetwork(method, path, 0, durationMs, requestId);
-        if (isConnectivityFailure(err)) {
-          recordConnectivityFailure({
-            method,
-            path: stripQuery(path),
-            status: statusOf(err),
-            latencyMs: durationMs,
-          });
-        }
-        throw err;
+        },
+        timeoutMs,
+      );
+      const retryDateHeader = res.headers?.get?.("date");
+      if (retryDateHeader) {
+        syncServerTime(retryDateHeader);
       }
+    } catch (err) {
+      const durationMs = Math.round(performance.now() - startTime);
+      telemetry.trackNetwork(method, path, 0, durationMs, requestId);
+      if (isConnectivityFailure(err)) {
+        recordConnectivityFailure({
+          method,
+          path: stripQuery(path),
+          status: statusOf(err),
+          latencyMs: durationMs,
+        });
+      }
+      throw err;
     }
   }
 
@@ -304,7 +313,7 @@ async function executeRequest<T>(
       unknown
     >;
     const resRequestId =
-      res.headers.get("x-request-id") ||
+      res.headers?.get?.("x-request-id") ||
       (typeof body.reqId === "string"
         ? body.reqId
         : typeof body.requestId === "string"
@@ -855,8 +864,13 @@ export const api = {
       },
     );
 
+    const lyricsDateHeader = res.headers?.get?.("date");
+    if (lyricsDateHeader) {
+      syncServerTime(lyricsDateHeader);
+    }
+
     if (!res.ok || !res.body) {
-      const respReqId = res.headers.get("x-request-id") || requestId;
+      const respReqId = res.headers?.get?.("x-request-id") || requestId;
       throw new ApiError(res.status, res.statusText, undefined, respReqId);
     }
 
@@ -924,6 +938,11 @@ export const api = {
         ...signedHeaders,
       },
     });
+
+    const importDateHeader = res.headers?.get?.("date");
+    if (importDateHeader) {
+      syncServerTime(importDateHeader);
+    }
 
     if (!res.ok || !res.body) {
       throw new ApiError(res.status, res.statusText);

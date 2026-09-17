@@ -13,14 +13,37 @@ export interface ActiveImportState {
   // this import (see CreatePlaylistModal); added once the job completes
   pendingTrack: TrackDetail | null;
   startImport: (url: string, pendingTrack?: TrackDetail | null) => Promise<ImportJob>;
+  listenToWebSocketWorker: (job: ImportJob) => void;
   listenToJob: (jobId: string) => Promise<void>;
   pollJob: (jobId: string) => Promise<void>;
   cancelPolling: () => void;
   reset: () => void;
 }
 
+let activeWebSocket: WebSocket | null = null;
 let activeAbortController: AbortController | null = null;
 let pollTimer: ReturnType<typeof setTimeout> | null = null;
+
+function cleanupActiveConnections() {
+  if (activeWebSocket) {
+    try {
+      activeWebSocket.onopen = null;
+      activeWebSocket.onmessage = null;
+      activeWebSocket.onerror = null;
+      activeWebSocket.onclose = null;
+      activeWebSocket.close();
+    } catch {}
+    activeWebSocket = null;
+  }
+  if (activeAbortController) {
+    activeAbortController.abort();
+    activeAbortController = null;
+  }
+  if (pollTimer) {
+    clearTimeout(pollTimer);
+    pollTimer = null;
+  }
+}
 
 export const useImportStore = create<ActiveImportState>((set, get) => ({
   job: null,
@@ -29,20 +52,12 @@ export const useImportStore = create<ActiveImportState>((set, get) => ({
   pendingTrack: null,
 
   reset: () => {
-    if (activeAbortController) {
-      activeAbortController.abort();
-      activeAbortController = null;
-    }
-    if (pollTimer) clearTimeout(pollTimer);
+    cleanupActiveConnections();
     set({ job: null, isPolling: false, error: null, pendingTrack: null });
   },
 
   cancelPolling: () => {
-    if (activeAbortController) {
-      activeAbortController.abort();
-      activeAbortController = null;
-    }
-    if (pollTimer) clearTimeout(pollTimer);
+    cleanupActiveConnections();
     set({ isPolling: false });
   },
 
@@ -52,7 +67,13 @@ export const useImportStore = create<ActiveImportState>((set, get) => ({
     try {
       const job = await api.createPlaylistImport(url);
       set({ job, isPolling: true });
-      void get().listenToJob(job.id);
+
+      // prefer direct websocket worker stream if returned by backend
+      if (job.workerWsUrl && job.importToken) {
+        get().listenToWebSocketWorker(job);
+      } else {
+        void get().listenToJob(job.id);
+      }
       return job;
     } catch (err) {
       // store stays generic, callers map the raw error to a friendly message
@@ -61,12 +82,109 @@ export const useImportStore = create<ActiveImportState>((set, get) => ({
     }
   },
 
-  listenToJob: async (jobId: string) => {
-    if (activeAbortController) {
-      activeAbortController.abort();
-      activeAbortController = null;
+  listenToWebSocketWorker: (job: ImportJob) => {
+    cleanupActiveConnections();
+    set({ isPolling: true });
+
+    let isFinished = false;
+    let ws: WebSocket;
+
+    try {
+      const wsUrl = new URL(job.workerWsUrl!);
+      wsUrl.searchParams.set("token", job.importToken!);
+      const protocol = wsUrl.protocol === "https:" ? "wss:" : wsUrl.protocol === "http:" ? "ws:" : wsUrl.protocol;
+      const targetUrl = `${protocol}//${wsUrl.host}${wsUrl.pathname}${wsUrl.search}`;
+
+      ws = new WebSocket(targetUrl);
+      activeWebSocket = ws;
+    } catch {
+      // fallback to sse if ws url construction fails
+      void get().listenToJob(job.id);
+      return;
     }
-    if (pollTimer) clearTimeout(pollTimer);
+
+    ws.onmessage = (event) => {
+      try {
+        const msg = JSON.parse(event.data);
+        if (!msg || typeof msg !== "object") return;
+
+        if (msg.type === "job") {
+          const current: ImportJob = {
+            id: msg.id || job.id,
+            source: msg.source || job.source,
+            sourceUrl: msg.sourceUrl || job.sourceUrl,
+            status: msg.status,
+            requiresDecision: Boolean(msg.requiresDecision),
+            playlistId: msg.playlistId,
+            result: msg.result,
+            error: msg.error,
+            createdAt: msg.createdAt || job.createdAt,
+          };
+
+          set({ job: current });
+
+          if (current.status === "awaiting_decision") {
+            isFinished = true;
+            set({ isPolling: false, job: current });
+            cleanupActiveConnections();
+            return;
+          }
+
+          if (current.status === "completed") {
+            isFinished = true;
+            cleanupActiveConnections();
+
+            // sync final playlist id from backend if created asynchronously via redis
+            if (!current.playlistId) {
+              void (async () => {
+                for (let i = 0; i < 5; i++) {
+                  try {
+                    const synced = await api.getPlaylistImport(job.id);
+                    if (synced.playlistId || synced.status === "completed") {
+                      set({ isPolling: false, job: synced });
+                      notifyLibraryChanged();
+                      return;
+                    }
+                  } catch {}
+                  await new Promise((r) => setTimeout(r, 600));
+                }
+                set({ isPolling: false, job: current });
+                notifyLibraryChanged();
+              })();
+            } else {
+              set({ isPolling: false, job: current });
+              notifyLibraryChanged();
+            }
+            return;
+          }
+
+          if (current.status === "failed") {
+            isFinished = true;
+            set({ isPolling: false, job: current, error: current.error?.message || "Import failed" });
+            cleanupActiveConnections();
+            return;
+          }
+        }
+      } catch {}
+    };
+
+    ws.onerror = () => {
+      if (isFinished) return;
+      cleanupActiveConnections();
+      // fallback to sse on websocket error
+      void get().listenToJob(job.id);
+    };
+
+    ws.onclose = () => {
+      if (isFinished) return;
+      cleanupActiveConnections();
+      // fallback to sse if connection drops prematurely
+      void get().listenToJob(job.id);
+    };
+  },
+
+  listenToJob: async (jobId: string) => {
+    cleanupActiveConnections();
 
     const controller = new AbortController();
     activeAbortController = controller;
@@ -95,7 +213,7 @@ export const useImportStore = create<ActiveImportState>((set, get) => ({
       }
     } catch {
       if (controller.signal.aborted) return;
-      // If SSE stream disconnected, fallback to safe polling
+      // if sse stream disconnected, fallback to safe polling
       void get().pollJob(jobId);
     }
   },
@@ -118,10 +236,10 @@ export const useImportStore = create<ActiveImportState>((set, get) => ({
         return;
       }
 
-        if (current.status === "failed") {
-          set({ isPolling: false, job: current, error: "Import failed" });
-          return;
-        }
+      if (current.status === "failed") {
+        set({ isPolling: false, job: current, error: "Import failed" });
+        return;
+      }
 
       pollTimer = setTimeout(() => {
         void get().pollJob(jobId);

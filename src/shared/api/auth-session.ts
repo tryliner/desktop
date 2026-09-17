@@ -1,5 +1,5 @@
 import type { AuthTokens, AuthUser } from "../contracts";
-import { signApiRequest } from "./requestSigner";
+import { signApiRequest, syncServerTime } from "./requestSigner";
 
 export type { AuthTokens, AuthUser };
 
@@ -131,6 +131,11 @@ export function refreshAuthSession(): Promise<AuthTokens | null> {
         body,
       });
 
+      const dateHeader = response.headers?.get?.("date");
+      if (dateHeader) {
+        syncServerTime(dateHeader);
+      }
+
       if (!response.ok) {
         // If the server explicitly rejected the refresh token (401 / 403 / 400),
         // only clear the stored session if it hasn't already been rotated by another process
@@ -174,7 +179,7 @@ export async function clearAuthSession(): Promise<void> {
   if (!current?.refreshToken) return;
   const body = JSON.stringify({ refreshToken: current.refreshToken });
   const signedHeaders = await signApiRequest("POST", "/v1/auth/logout", body);
-  await fetch(`${API_BASE}/v1/auth/logout`, {
+  const response = await fetch(`${API_BASE}/v1/auth/logout`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -183,4 +188,8 @@ export async function clearAuthSession(): Promise<void> {
     },
     body,
   }).catch(() => undefined);
+  if (response?.headers) {
+    const logoutDate = response.headers?.get?.("date");
+    if (logoutDate) syncServerTime(logoutDate);
+  }
 }

@@ -5,12 +5,45 @@ export interface SignRequestInput {
   method: string;
   path: string;
   body?: string | null;
+  timestamp?: number;
 }
 
 export interface SignedRequestHeaders {
   signature: string;
   timestamp: number;
   nonce: string;
+}
+
+// maintains clock delta between client and server (ms)
+let serverTimeOffsetMs = 0;
+
+export function setServerTimeOffset(offsetMs: number): void {
+  if (Number.isFinite(offsetMs)) {
+    serverTimeOffsetMs = offsetMs;
+  }
+}
+
+// parses date header from server response and calculates clock delta
+export function syncServerTime(dateHeaderOrMs: string | number | Date): number {
+  const serverMs =
+    typeof dateHeaderOrMs === "number"
+      ? dateHeaderOrMs
+      : typeof dateHeaderOrMs === "string"
+        ? Date.parse(dateHeaderOrMs)
+        : dateHeaderOrMs.getTime();
+
+  if (!Number.isNaN(serverMs) && serverMs > 0) {
+    serverTimeOffsetMs = serverMs - Date.now();
+  }
+  return serverTimeOffsetMs;
+}
+
+export function getServerTimeOffset(): number {
+  return serverTimeOffsetMs;
+}
+
+export function getAdjustedTimestamp(): number {
+  return Math.floor((Date.now() + serverTimeOffsetMs) / 1000);
 }
 
 interface WasmSignerExports {
@@ -95,10 +128,10 @@ export function signCoverUrl(payload: string): string {
   }
 }
 
-// signs api request with canonical string and hmac-sha256
+// signs api request with canonical string and hmac-sha256 using server-adjusted timestamp
 export function signRequest(input: SignRequestInput): SignedRequestHeaders {
   const wasm = getWasmExports();
-  const timestamp = Math.floor(Date.now() / 1000);
+  const timestamp = input.timestamp ?? getAdjustedTimestamp();
   const nonce = crypto.randomBytes(8).toString("hex");
 
   const methodBuf = passStringToWasm(wasm, input.method);
@@ -137,10 +170,10 @@ export function signRequest(input: SignRequestInput): SignedRequestHeaders {
   }
 }
 
-// signs monitor telemetry request
+// signs monitor telemetry request using server-adjusted timestamp
 export function signMonitorRequest(input: SignRequestInput): SignedRequestHeaders {
   const wasm = getWasmExports();
-  const timestamp = Math.floor(Date.now() / 1000);
+  const timestamp = input.timestamp ?? getAdjustedTimestamp();
   const nonce = crypto.randomBytes(8).toString("hex");
 
   const methodBuf = passStringToWasm(wasm, input.method);

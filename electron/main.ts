@@ -12,6 +12,8 @@ import {
   signRequest,
   signMonitorRequest,
   signRawPayload,
+  syncServerTime,
+  getServerTimeOffset,
   type SignRequestInput,
 } from "./crypto.js";
 import {
@@ -512,6 +514,22 @@ if (!gotTheLock) {
         }
       },
     );
+
+    ipcMain.handle(
+      "signer:sync-time",
+      (_event, dateHeaderOrMs: string | number) => {
+        try {
+          return syncServerTime(dateHeaderOrMs);
+        } catch (err) {
+          console.error("\x1b[41;37m signer \x1b[0m syncServerTime error:", err);
+          return 0;
+        }
+      },
+    );
+
+    ipcMain.handle("signer:get-time-offset", () => {
+      return getServerTimeOffset();
+    });
 
     createWindow();
 

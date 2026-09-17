@@ -1,5 +1,6 @@
 import { telemetryConfig } from "./config";
 import { getAuthSession } from "../api/auth-session";
+import { syncServerTime } from "../api/requestSigner";
 
 export interface TelemetryEventDetails {
   url?: string;
@@ -291,6 +292,11 @@ class TelemetryClient {
         body: bodyStr,
       });
 
+      const dateHeader = res.headers?.get?.("date");
+      if (dateHeader) {
+        syncServerTime(dateHeader);
+      }
+
       if (!res.ok && (res.status === 429 || res.status === 403)) {
         this.backoffUntil = Date.now() + 30000;
       }
@@ -345,6 +351,11 @@ class TelemetryClient {
         headers,
         body: bodyStr,
       });
+
+      const dateHeader = res.headers?.get?.("date");
+      if (dateHeader) {
+        syncServerTime(dateHeader);
+      }
 
       if (!res.ok) {
         if (res.status === 429 || res.status === 403 || res.status >= 500) {

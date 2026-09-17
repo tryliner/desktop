@@ -457,7 +457,10 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   const idRef = useRef(0);
 
   const remove = useCallback((id: string | number) => {
-    setToasts((current) => current.filter((t) => t.id !== id));
+    setToasts((current) => {
+      if (!current.some((t) => t.id === id)) return current;
+      return current.filter((t) => t.id !== id);
+    });
   }, []);
 
   const toastCore = useCallback(
@@ -496,6 +499,17 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
           inSettings,
         };
         if (idx >= 0) {
+          const prev = current[idx];
+          if (
+            prev.message === item.message &&
+            prev.description === item.description &&
+            prev.variant === item.variant &&
+            prev.duration === item.duration &&
+            prev.errorCode === item.errorCode &&
+            prev.requestId === item.requestId
+          ) {
+            return current;
+          }
           const next = [...current];
           next[idx] = {
             ...item,
@@ -729,6 +743,7 @@ function NotificationCard({
         transformOrigin: "bottom center",
         fontFamily: "var(--font-inter), sans-serif",
         maxWidth: "min(520px, calc(100vw - 32px))",
+        minWidth: "180px",
         minHeight: "38px",
         width: index > 0 && activeCardWidth ? `${activeCardWidth}px` : undefined,
         height: index > 0 && activeCardHeight ? `${activeCardHeight}px` : undefined,

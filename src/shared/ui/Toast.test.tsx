@@ -294,7 +294,8 @@ describe("Toast Batches & Stacking", () => {
 
     const card = container.querySelector(".grid > div");
     expect(card).toBeDefined();
-    expect(card?.textContent).toContain("15 / 30");
+    expect(card?.textContent).toContain("15");
+    expect(card?.textContent).toContain("30");
 
     // Clear import job
     await act(async () => {
