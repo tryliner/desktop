@@ -218,13 +218,19 @@ class TelemetryClient {
     });
   }
 
-  /**
-   * Report an uncaught error, React rendering crash, or runtime exception.
-   */
   public async reportError(
     error: Error | string | unknown,
     context?: Record<string, unknown>,
   ): Promise<void> {
+    const isDevEnv =
+      Boolean(import.meta.env.DEV) ||
+      (typeof window !== "undefined" &&
+        (window.location.hostname === "localhost" ||
+          window.location.hostname === "127.0.0.1" ||
+          window.location.port === "5173" ||
+          window.location.protocol === "http:"));
+    if (isDevEnv) return;
+
     if (!telemetryConfig.enabled || Date.now() < this.backoffUntil) return;
 
     const errorObj =
