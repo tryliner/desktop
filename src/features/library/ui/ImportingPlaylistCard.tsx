@@ -64,7 +64,7 @@ export default function ImportingPlaylistCard({
           <div className="relative h-[48px] w-[48px] shrink-0 overflow-hidden rounded-md bg-bg-panel border border-border-primary/40 flex items-center justify-center">
             <PlaylistFill size={24} className="text-text-tertiary/60" />
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className="h-[20px] w-[20px] animate-spin rounded-full border-[2px] border-text-tertiary/20 border-t-accent-primary" />
+              <div className="h-[20px] w-[20px] animate-spin rounded-full border-[2px] border-text-tertiary/20 border-t-text-primary" />
             </div>
           </div>
 
@@ -85,14 +85,14 @@ export default function ImportingPlaylistCard({
                 fontWeight: 350,
               }}
             >
-              <span className="inline-block h-[6px] w-[6px] rounded-full bg-accent-primary animate-pulse shrink-0" />
+              <span className="inline-block h-[6px] w-[6px] rounded-full bg-text-primary animate-pulse shrink-0" />
               <span className="truncate">{displaySubtitle}</span>
             </p>
           </div>
         </div>
 
         {isAwaiting && (
-          <span className="shrink-0 text-[11px] px-[8px] py-[3px] rounded-md bg-accent-secondary/20 text-accent-secondary font-medium">
+          <span className="shrink-0 text-[11px] px-[8px] py-[3px] rounded-md bg-white/10 text-text-primary border border-white/10 font-medium">
             {t("import.review_action")}
           </span>
         )}
@@ -114,7 +114,7 @@ export default function ImportingPlaylistCard({
         <div className="relative flex items-center justify-center">
           <PlaylistFill size={44} className="text-text-tertiary/50" />
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="h-[28px] w-[28px] animate-spin rounded-full border-[2px] border-text-tertiary/20 border-t-accent-primary" />
+            <div className="h-[28px] w-[28px] animate-spin rounded-full border-[2px] border-text-tertiary/20 border-t-text-primary" />
           </div>
         </div>
 
@@ -122,7 +122,7 @@ export default function ImportingPlaylistCard({
           <div className="absolute bottom-[8px] left-[8px] right-[8px]">
             <div className="h-[3px] w-full rounded-full bg-border-alpha-14 overflow-hidden">
               <div
-                className="h-full bg-accent-primary transition-all duration-300 rounded-full"
+                className="h-full bg-text-primary transition-all duration-300 rounded-full"
                 style={{
                   width: `${Math.min(
                     100,
@@ -135,7 +135,7 @@ export default function ImportingPlaylistCard({
         ) : null}
 
         {isAwaiting && (
-          <span className="absolute top-[8px] right-[8px] text-[10px] px-[6px] py-[2px] rounded-md bg-accent-secondary/20 text-accent-secondary font-medium">
+          <span className="absolute top-[8px] right-[8px] text-[10px] px-[6px] py-[2px] rounded-md bg-white/10 text-text-primary border border-white/10 font-medium">
             {t("import.status_awaiting_decision")}
           </span>
         )}
@@ -146,7 +146,7 @@ export default function ImportingPlaylistCard({
           {displayTitle}
         </span>
         <span className="truncate text-[13px] text-text-tertiary flex items-center gap-[5px]">
-          <span className="inline-block h-[6px] w-[6px] rounded-full bg-accent-primary animate-pulse shrink-0" />
+          <span className="inline-block h-[6px] w-[6px] rounded-full bg-text-primary animate-pulse shrink-0" />
           <span className="truncate">{displaySubtitle}</span>
         </span>
       </div>

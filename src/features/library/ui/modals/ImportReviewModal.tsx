@@ -356,8 +356,8 @@ export default function ImportReviewModal() {
                       <span
                         className={`inline-flex items-center gap-[4px] text-[11px] px-[8px] py-[3px] rounded-md font-[450] ${
                           isAutoMatched
-                            ? "bg-accent-primary/15 text-accent-primary"
-                            : "bg-accent-secondary/15 text-accent-secondary"
+                            ? "bg-white/10 text-text-primary border border-white/10"
+                            : "bg-border-alpha-14 text-text-secondary"
                         }`}
                       >
                         {isAutoMatched ? (
@@ -430,10 +430,8 @@ export default function ImportReviewModal() {
                                   <span
                                     className={`shrink-0 font-medium ${
                                       score >= 80
-                                        ? "text-accent-primary"
-                                        : score >= 50
-                                          ? "text-accent-secondary"
-                                          : "text-text-tertiary"
+                                        ? "text-text-primary"
+                                        : "text-text-secondary"
                                     }`}
                                   >
                                     {score}%
