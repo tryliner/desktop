@@ -230,7 +230,7 @@ class TelemetryClient {
           window.location.hostname === "127.0.0.1" ||
           window.location.port === "5173" ||
           window.location.protocol === "http:"));
-    if (isDevEnv) return;
+    if (isDevEnv && import.meta.env.MODE !== "test") return;
 
     if (!telemetryConfig.enabled || Date.now() < this.backoffUntil) return;
 

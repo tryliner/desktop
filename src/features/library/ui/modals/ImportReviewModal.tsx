@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import {
   CheckLine,
   CloseLine,
@@ -34,6 +35,22 @@ function formatDuration(ms?: number): string {
   return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
 }
 
+
+function deduplicateReviewItems(reviewItems: ImportReview[]): ImportReview[] {
+  const seen = new Set<string>();
+  const unique: ImportReview[] = [];
+  for (const it of reviewItems) {
+    const trackKey = it.sourceTrack?.sourceId
+      ? `${it.sourceTrack.sourceId}:${it.position}`
+      : `${it.sourceTrack?.title ?? ""}:${it.sourceTrack?.artists?.join(",") ?? ""}:${it.position}`;
+    const key = it.id ? `${it.id}` : trackKey;
+    if (!seen.has(key)) {
+      seen.add(key);
+      unique.push(it);
+    }
+  }
+  return unique;
+}
 
 function deriveInitialDecisions(
   reviewItems: ImportReview[],
@@ -95,6 +112,18 @@ export default function ImportReviewModal() {
   const [items, setItems] = useState<ImportReview[]>([]);
   const [decisions, setDecisions] = useState<Record<string, "approve" | "deny">>({});
 
+  const listRef = useRef<HTMLDivElement>(null);
+
+  // estimate size with 10px gap matches card height + spacing
+  const rowVirtualizer = useVirtualizer({
+    count: items.length,
+    getScrollElement: () => listRef.current,
+    estimateSize: () => 124,
+    getItemKey: (index) => items[index]?.id || index,
+    gap: 10,
+    overscan: 5,
+  });
+
   const handleTogglePlay = (proposedTrack: any) => {
     const isThisCurrent = currentTrack?.id === proposedTrack.id;
     if (isThisCurrent) {
@@ -121,8 +150,9 @@ export default function ImportReviewModal() {
     const prefetched = useModalStore.getState().importReviewPrefetched;
     if (prefetched && prefetched.length > 0) {
       useModalStore.setState({ importReviewPrefetched: null });
-      setItems(prefetched);
-      setDecisions(deriveInitialDecisions(prefetched));
+      const unique = deduplicateReviewItems(prefetched);
+      setItems(unique);
+      setDecisions(deriveInitialDecisions(unique));
       return;
     }
 
@@ -133,7 +163,7 @@ export default function ImportReviewModal() {
       .getPlaylistImportReview(jobId)
       .then(async (res) => {
         if (!active) return;
-        const allItems = res.items || [];
+        const allItems = deduplicateReviewItems(res.items || []);
         if (allItems.length === 0) {
           const r = await api.skipPlaylistImportReview(jobId).catch(() => null);
           if (!active) return;
@@ -255,34 +285,58 @@ export default function ImportReviewModal() {
         </div>
 
         {/* Content list */}
-        <div className="flex-1 min-h-[140px] max-h-[460px] overflow-y-auto overscroll-contain -mx-[8px] px-[8px]">
+        <div
+          ref={listRef}
+          className="flex-1 min-h-[140px] max-h-[460px] overflow-y-auto overscroll-contain -mx-[8px] px-[8px]"
+        >
           {!loading && items.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-[48px] gap-[10px] text-text-tertiary">
               <PlaylistFill size={28} className="opacity-70" />
               <span className="text-[13px]">{t("common.no_results")}</span>
             </div>
-          ) : (
+          ) : loading ? (
             <div className="flex flex-col gap-[10px]">
-              {loading ? (
-                <ImportReviewSkeletonRows />
-              ) : (
-                items.map((item) => {
-              const currentDecision = decisions[item.id] || "deny";
-              const isApproved = currentDecision === "approve";
-              const proposed = item.proposedTrack;
-              const isAutoMatched = item.reason === "auto_matched";
+              <ImportReviewSkeletonRows />
+            </div>
+          ) : (
+            <div
+              className="relative w-full"
+              style={{
+                height: `${rowVirtualizer.getTotalSize()}px`,
+              }}
+            >
+              {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                const item = items[virtualRow.index];
+                if (!item) return null;
 
-              const score = item.score !== undefined ? Math.max(0, Math.min(100, Math.round(item.score))) : undefined;
+                const currentDecision = decisions[item.id] || "deny";
+                const isApproved = currentDecision === "approve";
+                const proposed = item.proposedTrack;
+                const isAutoMatched = item.reason === "auto_matched";
 
-              return (
-                <div
-                  key={item.id}
-                  className={`flex flex-col gap-[10px] p-[12px] rounded-lg border transition-all ${
-                    isApproved
-                      ? "bg-bg-elevated border-border-primary/80"
-                      : "bg-bg-elevated/50 border-border-primary/40 opacity-75 hover:opacity-100"
-                  }`}
-                >
+                const score =
+                  item.score !== undefined
+                    ? Math.max(0, Math.min(100, Math.round(item.score)))
+                    : undefined;
+
+                return (
+                  <div
+                    key={virtualRow.key}
+                    ref={rowVirtualizer.measureElement}
+                    data-index={virtualRow.index}
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      width: "100%",
+                      transform: `translateY(${virtualRow.start}px)`,
+                    }}
+                    className={`flex flex-col gap-[10px] p-[12px] rounded-lg border transition-all ${
+                      isApproved
+                        ? "bg-bg-elevated border-border-primary/80"
+                        : "bg-bg-elevated/50 border-border-primary/40 opacity-75 hover:opacity-100"
+                    }`}
+                  >
                   {/* Original track row */}
                   <div className="flex items-start justify-between gap-[10px]">
                     <div className="flex flex-col min-w-0 flex-1">
