@@ -48,17 +48,6 @@ jobs:
             release/*.deb
           if-no-files-found: error
 
-      - name: Upload to GitHub Release
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            release/*.AppImage
-            release/*.deb
-          fail_on_unmatched_files: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
   build-windows:
     name: Build Windows
     runs-on: windows-latest
@@ -94,15 +83,6 @@ jobs:
           path: |
             release/*.exe
           if-no-files-found: error
-
-      - name: Upload to GitHub Release
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            release/*.exe
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   build-macos:
     name: Build macOS
@@ -142,13 +122,26 @@ jobs:
             release/*.zip
           if-no-files-found: error
 
-      - name: Upload to GitHub Release
-        if: startsWith(github.ref, 'refs/tags/')
+  publish-release:
+    name: Publish Release
+    needs: [build-linux, build-windows, build-macos]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Publish to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            release/*.dmg
-            release/*.zip
+            artifacts/linux-packages/*.AppImage
+            artifacts/linux-packages/*.deb
+            artifacts/windows-installer/*.exe
+            artifacts/macos-packages/*.dmg
+            artifacts/macos-packages/*.zip
           fail_on_unmatched_files: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
