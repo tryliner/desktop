@@ -1,5 +1,4 @@
 import { useTranslation } from "@/languages";
-import { PlaylistFill } from "@mingcute/react";
 import type { ImportJob } from "@/shared/contracts/imports";
 import type { LibraryViewMode } from "../types";
 import { useModalStore } from "../store/modalStore";
@@ -62,10 +61,7 @@ export default function ImportingPlaylistCard({
       >
         <div className="flex items-center gap-[16px] min-w-0 flex-1">
           <div className="relative h-[48px] w-[48px] shrink-0 overflow-hidden rounded-md bg-bg-panel border border-border-primary/40 flex items-center justify-center">
-            <PlaylistFill size={24} className="text-text-tertiary/60" />
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="h-[20px] w-[20px] animate-spin rounded-full border-[2px] border-text-tertiary/20 border-t-text-primary" />
-            </div>
+            <div className="h-[20px] w-[20px] animate-spin rounded-full border-[2px] border-text-tertiary/20 border-t-text-primary" />
           </div>
 
           <div className="min-w-0 flex flex-col gap-[2px] flex-1">
@@ -85,14 +81,18 @@ export default function ImportingPlaylistCard({
                 fontWeight: 350,
               }}
             >
-              <span className="inline-block h-[6px] w-[6px] rounded-full bg-text-primary animate-pulse shrink-0" />
+              <span
+                className={`inline-block h-[6px] w-[6px] rounded-full bg-text-primary shrink-0 ${
+                  isAwaiting ? "" : "animate-pulse"
+                }`}
+              />
               <span className="truncate">{displaySubtitle}</span>
             </p>
           </div>
         </div>
 
         {isAwaiting && (
-          <span className="shrink-0 text-[11px] px-[8px] py-[3px] rounded-md bg-white/10 text-text-primary border border-white/10 font-medium">
+          <span className="shrink-0 text-[11px] px-[8px] py-[3px] rounded-[3px] bg-white/10 text-text-primary font-medium">
             {t("import.review_action")}
           </span>
         )}
@@ -111,12 +111,7 @@ export default function ImportingPlaylistCard({
       draggable={false}
     >
       <div className="relative aspect-square w-full overflow-hidden rounded-md flex flex-col items-center justify-center bg-bg-panel border border-border-primary/40">
-        <div className="relative flex items-center justify-center">
-          <PlaylistFill size={44} className="text-text-tertiary/50" />
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="h-[28px] w-[28px] animate-spin rounded-full border-[2px] border-text-tertiary/20 border-t-text-primary" />
-          </div>
-        </div>
+        <div className="h-[28px] w-[28px] animate-spin rounded-full border-[2px] border-text-tertiary/20 border-t-text-primary" />
 
         {isRunning && job.result?.total ? (
           <div className="absolute bottom-[8px] left-[8px] right-[8px]">
@@ -135,7 +130,7 @@ export default function ImportingPlaylistCard({
         ) : null}
 
         {isAwaiting && (
-          <span className="absolute top-[8px] right-[8px] text-[10px] px-[6px] py-[2px] rounded-md bg-white/10 text-text-primary border border-white/10 font-medium">
+          <span className="absolute top-[8px] right-[8px] text-[10px] px-[6px] py-[2px] rounded-[3px] bg-white/10 text-text-primary font-medium">
             {t("import.status_awaiting_decision")}
           </span>
         )}
@@ -146,7 +141,11 @@ export default function ImportingPlaylistCard({
           {displayTitle}
         </span>
         <span className="truncate text-[13px] text-text-tertiary flex items-center gap-[5px]">
-          <span className="inline-block h-[6px] w-[6px] rounded-full bg-text-primary animate-pulse shrink-0" />
+          <span
+            className={`inline-block h-[6px] w-[6px] rounded-full bg-text-primary shrink-0 ${
+              isAwaiting ? "" : "animate-pulse"
+            }`}
+          />
           <span className="truncate">{displaySubtitle}</span>
         </span>
       </div>
