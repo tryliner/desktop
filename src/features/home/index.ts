@@ -4,6 +4,7 @@ export {
   default as PopularTracksSection,
   type PopularTracksSectionProps,
 } from "./ui/PopularTracksSection";
+export { default as DailyMixesSection, type DailyMixesSectionProps } from "./ui/DailyMixesSection";
 export {
   usePopular,
   usePopularTracksOnly,
@@ -20,3 +21,4 @@ export {
   useRecentlyPlayed,
   recentlyPlayedKeys,
 } from "./hooks/useRecentlyPlayed";
+export { useDailyMixes, type DailyMix } from "./hooks/useDailyMixes";

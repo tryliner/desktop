@@ -1,6 +1,7 @@
 import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import PopularTracksSection from "./PopularTracksSection";
+import DailyMixesSection from "./DailyMixesSection";
 import HomePageSkeleton from "./HomePageSkeleton";
 import {
   usePopular,
@@ -8,6 +9,7 @@ import {
   usePopularTracksAllTime,
 } from "../hooks/usePopularTracks";
 import { useRecentlyPlayed } from "../hooks/useRecentlyPlayed";
+import { useDailyMixes } from "../hooks/useDailyMixes";
 import { useLikedTracks } from "@/features/library/hooks/useLikedTracks";
 import { useAuthStore } from "@/features/auth/store/authStore";
 import { playerEngine } from "@/features/player";
@@ -40,6 +42,7 @@ export default function HomePage() {
     usePopularTracksAllTime(20);
   const { data: recentlyPlayed, isLoading: recentLoading } =
     useRecentlyPlayed(20);
+  const { data: dailyMixes } = useDailyMixes();
 
   const isDataLoading =
     tracksLoading ||
@@ -106,6 +109,9 @@ export default function HomePage() {
         }
       }
     }
+    for (const mix of (dailyMixes || []).slice(0, 5)) {
+      if (mix.coverUrl) urls.add(mix.coverUrl);
+    }
     for (const item of (popularTracksOnly || []).slice(0, 8)) {
       if (item.type === "track" && item.item?.coverUrl) {
         urls.add(item.item.coverUrl);
@@ -132,6 +138,7 @@ export default function HomePage() {
   }, [
     isDataLoading,
     quickRecentItems,
+    dailyMixes,
     popularTracksOnly,
     recentlyPlayed,
     popularTracksAllTime,
@@ -311,13 +318,21 @@ export default function HomePage() {
             )}
           </div>
 
+          {/* Daily Mixes (Made For You) */}
+          {dailyMixes && dailyMixes.length > 0 && (
+            <DailyMixesSection
+              mixes={dailyMixes}
+              headingMarginTop={hasEnoughQuickData ? "mt-[18px]" : "mt-[14px]"}
+            />
+          )}
+
           {/* Listening Right Now (Trending Chart) */}
           {popularTracksOnly && popularTracksOnly.length > 0 && (
             <PopularTracksSection
               title={t("home.whatEveryonesOn")}
               icon={<FireFill className="w-5 h-5 text-amber-500" />}
               items={popularTracksOnly}
-              headingMarginTop="mt-[18px]"
+              headingMarginTop="mt-[22px]"
             />
           )}
 

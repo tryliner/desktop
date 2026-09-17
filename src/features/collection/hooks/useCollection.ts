@@ -50,6 +50,32 @@ export function useCollection(type: string | null, id: string | null) {
         cacheKey,
         async () => {
           const decodedId = id ? decodeURIComponent(id) : "";
+          const isDailyMix =
+            decodedId.startsWith("daily-mix") ||
+            decodedId.startsWith("mix-") ||
+            id.startsWith("daily-mix") ||
+            id.startsWith("mix-");
+
+          if (type === "playlist" && isDailyMix) {
+            const mixesRes = await api.getDailyMixes();
+            const found = mixesRes.items?.find((m) => m.id === id || m.id === decodedId);
+            if (found) {
+              const clientTracks = (found.tracks || []).map((t) => toClientTrack(t));
+              const primaryCover = found.cover?.url
+                ? mediaUrl(found.cover.url)
+                : (clientTracks[0]?.coverUrl || clientTracks[1]?.coverUrl || "");
+              const formatted: CollectionPageData = {
+                type: "playlist",
+                title: found.title,
+                author: found.clusterArtists && found.clusterArtists.length > 0 ? found.clusterArtists.join(", ") : "Daily Mix",
+                description: found.description,
+                coverUrl: primaryCover,
+                tracks: clientTracks,
+              };
+              return formatted;
+            }
+          }
+
           const collection =
             type === "playlist"
               ? await api.getPlaylist(id)
@@ -77,7 +103,7 @@ export function useCollection(type: string | null, id: string | null) {
           }
 
           const collectionCoverUrl = collection.cover ? mediaUrl(collection.cover.url) : "";
-          const tracks = (collection.tracks || []).map((t) => {
+          const tracks = (collection.tracks || []).map((t: any) => {
             const clientTrack = toClientTrack(t);
             let updated = clientTrack;
             if (collection.type === "album") {

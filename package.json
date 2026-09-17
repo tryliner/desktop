@@ -19,7 +19,8 @@
     "test:watch": "vitest",
     "electron:build": "tsc -b && vite build && electron-builder",
     "electron:build:linux": "tsc -b && vite build && electron-builder --linux",
-    "electron:build:win": "tsc -b && vite build && electron-builder --win"
+    "electron:build:win": "tsc -b && vite build && electron-builder --win",
+    "electron:build:mac": "tsc -b && vite build && electron-builder --mac"
   },
   "build": {
     "appId": "com.hkamori.liner",
@@ -73,8 +74,22 @@
     },
     "mac": {
       "icon": "build/icon.png",
+      "category": "public.app-category.music",
       "target": [
-        "dmg"
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
       ]
     }
   },

@@ -9,3 +9,4 @@ export * from './auth';
 export * from './history';
 export * from './users';
 export * from './leaderboards';
+export * from './recommendations';

@@ -193,7 +193,9 @@
     "jumpBackIn": "Продовжити прослуховування",
     "popularAlbums": "Топ альбомів",
     "popularArtists": "Популярні артисти",
-    "popularPlaylists": "Популярні плейлисти"
+    "popularPlaylists": "Популярні плейлисти",
+    "dailyMixes": "Дейлі мікси",
+    "dailyMixesSubtitle": "Свіжі мікси на основі улюблених артистів та жанрів"
   },
   "library": {
     "title": "Бібліотека",

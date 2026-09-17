@@ -189,7 +189,9 @@
     "jumpBackIn": "Jump back in",
     "popularAlbums": "Top Albums",
     "popularArtists": "Trending Artists",
-    "popularPlaylists": "Popular Playlists"
+    "popularPlaylists": "Popular Playlists",
+    "dailyMixes": "Daily Mixes",
+    "dailyMixesSubtitle": "Fresh playlists curated around your favorite artists and genres"
   },
   "library": {
     "title": "Library",
