@@ -3,10 +3,9 @@ import { signApiRequest, syncServerTime } from "./requestSigner";
 
 export type { AuthTokens, AuthUser };
 
+import { getApiBaseUrl, switchToFallbackEdge } from "./baseUrl";
+ 
 const STORAGE_KEY = "liner_auth_session";
-const API_BASE =
-  (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/+$/, "") ||
-  "https://api.tryliner.fun";
 
 let session: AuthTokens | null = null;
 let refreshPromise: Promise<AuthTokens | null> | null = null;
@@ -120,16 +119,34 @@ export function refreshAuthSession(): Promise<AuthTokens | null> {
   refreshPromise = (async () => {
     try {
       const body = JSON.stringify({ refreshToken: current.refreshToken });
-      const signedHeaders = await signApiRequest("POST", "/v1/auth/refresh", body);
+      let signedHeaders = await signApiRequest("POST", "/v1/auth/refresh", body);
 
-      const response = await fetch(`${API_BASE}/v1/auth/refresh`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...signedHeaders,
-        },
-        body,
-      });
+      let response: Response;
+      try {
+        response = await fetch(`${getApiBaseUrl()}/v1/auth/refresh`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...signedHeaders,
+          },
+          body,
+        });
+      } catch (networkErr) {
+        // fast failover to polish edge relay if cloudflare is throttled by tspu
+        if (switchToFallbackEdge()) {
+          signedHeaders = await signApiRequest("POST", "/v1/auth/refresh", body);
+          response = await fetch(`${getApiBaseUrl()}/v1/auth/refresh`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              ...signedHeaders,
+            },
+            body,
+          });
+        } else {
+          throw networkErr;
+        }
+      }
 
       const dateHeader = response.headers?.get?.("date");
       if (dateHeader) {
@@ -179,7 +196,7 @@ export async function clearAuthSession(): Promise<void> {
   if (!current?.refreshToken) return;
   const body = JSON.stringify({ refreshToken: current.refreshToken });
   const signedHeaders = await signApiRequest("POST", "/v1/auth/logout", body);
-  const response = await fetch(`${API_BASE}/v1/auth/logout`, {
+  const response = await fetch(`${getApiBaseUrl()}/v1/auth/logout`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

@@ -38,9 +38,7 @@ function translate(key: string, vars?: Record<string, string | number>) {
   }
 }
 
-const BASE =
-  (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/+$/, "") ||
-  "https://api.tryliner.fun";
+import { getApiBaseUrl, switchToFallbackEdge } from "./baseUrl";
 
 const CLIENT_VERSION =
   (import.meta.env.VITE_CLIENT_VERSION as string | undefined) || "1.0.4-desktop";
@@ -152,7 +150,7 @@ function extractSubFromToken(token: string): string | undefined {
 export function mediaUrl(path: string): string {
   if (!path) return "";
   if (path.startsWith("http://") || path.startsWith("https://")) return path;
-  return BASE + (path.startsWith("/") ? path : "/" + path);
+  return getApiBaseUrl() + (path.startsWith("/") ? path : "/" + path);
 }
 
 // upgrades youtube/google avatar artwork to maximum native resolution (=s0)
@@ -217,7 +215,7 @@ async function executeRequest<T>(
   let res: Response;
   try {
     res = await fetchWithTimeout(
-      BASE + path,
+      getApiBaseUrl() + path,
       {
         ...init,
         headers: {
@@ -231,17 +229,50 @@ async function executeRequest<T>(
       timeoutMs,
     );
   } catch (err) {
-    const durationMs = Math.round(performance.now() - startTime);
-    telemetry.trackNetwork(method, path, 0, durationMs, requestId);
-    if (isConnectivityFailure(err)) {
-      recordConnectivityFailure({
-        method,
-        path: stripQuery(path),
-        status: statusOf(err),
-        latencyMs: durationMs,
-      });
+    // fast failover to polish edge relay if cloudflare is throttled by tspu
+    if (switchToFallbackEdge()) {
+      try {
+        const fallbackSigned = await signApiRequest(method, path, rawBody);
+        res = await fetchWithTimeout(
+          getApiBaseUrl() + path,
+          {
+            ...init,
+            headers: {
+              ...(hasBody ? { "Content-Type": "application/json" } : {}),
+              ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+              ...correlationHeaders,
+              ...fallbackSigned,
+              ...restHeaders,
+            },
+          },
+          timeoutMs,
+        );
+      } catch (fallbackErr) {
+        const durationMs = Math.round(performance.now() - startTime);
+        telemetry.trackNetwork(method, path, 0, durationMs, requestId);
+        if (isConnectivityFailure(fallbackErr)) {
+          recordConnectivityFailure({
+            method,
+            path: stripQuery(path),
+            status: statusOf(fallbackErr),
+            latencyMs: durationMs,
+          });
+        }
+        throw fallbackErr;
+      }
+    } else {
+      const durationMs = Math.round(performance.now() - startTime);
+      telemetry.trackNetwork(method, path, 0, durationMs, requestId);
+      if (isConnectivityFailure(err)) {
+        recordConnectivityFailure({
+          method,
+          path: stripQuery(path),
+          status: statusOf(err),
+          latencyMs: durationMs,
+        });
+      }
+      throw err;
     }
-    throw err;
   }
 
   // sync server time offset from response Date header
@@ -272,7 +303,7 @@ async function executeRequest<T>(
     );
     try {
       res = await fetchWithTimeout(
-        BASE + path,
+        getApiBaseUrl() + path,
         {
           ...init,
           headers: {
@@ -853,7 +884,7 @@ export const api = {
     };
 
     const res = await fetch(
-      `${BASE}${path}`,
+      `${getApiBaseUrl()}${path}`,
       {
         signal,
         headers: {
@@ -930,7 +961,7 @@ export const api = {
     const path = `/v1/me/playlist-imports/${encodeURIComponent(importId)}/events`;
     const signedHeaders = await signApiRequest("GET", path);
     const accessToken = await getValidAccessToken();
-    const res = await fetch(`${BASE}${path}`, {
+    const res = await fetch(`${getApiBaseUrl()}${path}`, {
       signal,
       headers: {
         Accept: "text/event-stream",

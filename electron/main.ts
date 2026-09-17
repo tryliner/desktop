@@ -44,6 +44,8 @@ app.commandLine.appendSwitch("enable-gpu-rasterization");
 app.commandLine.appendSwitch("enable-zero-copy");
 app.commandLine.appendSwitch("ignore-gpu-blocklist");
 app.commandLine.appendSwitch("enable-native-gpu-memory-buffers");
+// forces resilient http/1.1 to prevent chromium err_http2_ping_failed on dropped network frames
+app.commandLine.appendSwitch("disable-http2");
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 

@@ -1,4 +1,11 @@
 export { api, mediaUrl, toMaxQualityAvatarUrl, ApiError, resolveApiErrorMessage } from "./api";
+export {
+  DEFAULT_PRIMARY_API,
+  FALLBACK_EDGE_API,
+  getApiBaseUrl,
+  setApiBaseUrl,
+  switchToFallbackEdge,
+} from "./baseUrl";
 export type {
   SearchType,
   ApiCover,
