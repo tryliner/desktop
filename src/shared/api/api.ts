@@ -127,6 +127,24 @@ function getActiveSessionId(): string | undefined {
   }
 }
 
+function extractSubFromToken(token: string): string | undefined {
+  try {
+    const parts = token.split(".");
+    if (parts.length < 2) return undefined;
+    const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const json = decodeURIComponent(
+      atob(base64)
+        .split("")
+        .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+        .join("")
+    );
+    const payload = JSON.parse(json);
+    return typeof payload.sub === "string" && payload.sub.trim().length > 0 ? payload.sub.trim() : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export function mediaUrl(path: string): string {
   if (!path) return "";
   if (path.startsWith("http://") || path.startsWith("https://")) return path;
@@ -177,8 +195,9 @@ async function request<T>(
     "x-platform": getPlatform(),
   };
 
-  if (currentSession?.user?.id) {
-    correlationHeaders["x-user-id"] = currentSession.user.id;
+  const userId = currentSession?.user?.id || (accessToken ? extractSubFromToken(accessToken) : undefined);
+  if (userId) {
+    correlationHeaders["x-user-id"] = userId;
   }
   if (currentSession?.user?.username) {
     correlationHeaders["x-user-name"] = currentSession.user.username;
