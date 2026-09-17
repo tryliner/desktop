@@ -1,4 +1,5 @@
 import { useTranslation } from "@/languages";
+import { PlaylistFill } from "@mingcute/react";
 import type { ImportJob } from "@/shared/contracts/imports";
 import type { LibraryViewMode } from "../types";
 import { useModalStore } from "../store/modalStore";
@@ -61,7 +62,11 @@ export default function ImportingPlaylistCard({
       >
         <div className="flex items-center gap-[16px] min-w-0 flex-1">
           <div className="relative h-[48px] w-[48px] shrink-0 overflow-hidden rounded-md bg-bg-panel border border-border-primary/40 flex items-center justify-center">
-            <div className="h-[20px] w-[20px] animate-spin rounded-full border-[2px] border-text-tertiary/20 border-t-text-primary" />
+            {isAwaiting ? (
+              <PlaylistFill size={22} className="text-text-tertiary/60" />
+            ) : (
+              <div className="h-[20px] w-[20px] animate-spin rounded-full border-[2px] border-text-tertiary/20 border-t-text-primary" />
+            )}
           </div>
 
           <div className="min-w-0 flex flex-col gap-[2px] flex-1">
@@ -111,7 +116,11 @@ export default function ImportingPlaylistCard({
       draggable={false}
     >
       <div className="relative aspect-square w-full overflow-hidden rounded-md flex flex-col items-center justify-center bg-bg-panel border border-border-primary/40">
-        <div className="h-[28px] w-[28px] animate-spin rounded-full border-[2px] border-text-tertiary/20 border-t-text-primary" />
+        {isAwaiting ? (
+          <PlaylistFill size={44} className="text-text-tertiary/50" />
+        ) : (
+          <div className="h-[28px] w-[28px] animate-spin rounded-full border-[2px] border-text-tertiary/20 border-t-text-primary" />
+        )}
 
         {isRunning && job.result?.total ? (
           <div className="absolute bottom-[8px] left-[8px] right-[8px]">
