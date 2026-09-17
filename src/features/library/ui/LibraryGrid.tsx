@@ -323,6 +323,18 @@ function EmptyLibraryState({
   );
 }
 
+interface LibraryGridProps {
+  items: LibraryItemViewModel[];
+  loadingMore: boolean;
+  hasMore: boolean;
+  hasSearchQuery: boolean;
+  activeTab: LibraryTab;
+  viewMode?: LibraryViewMode;
+  sentinelRef: (node: HTMLDivElement | null) => void;
+  prependNode?: React.ReactNode;
+  prependNodes?: React.ReactNode[];
+}
+
 export default function LibraryGrid({
   items,
   loadingMore,
@@ -332,8 +344,15 @@ export default function LibraryGrid({
   viewMode = "grid",
   sentinelRef,
   prependNode,
+  prependNodes,
 }: LibraryGridProps) {
-  if (items.length === 0 && !prependNode) {
+  const prepends = useMemo(() => {
+    if (prependNodes && prependNodes.length > 0) return prependNodes;
+    if (prependNode) return [prependNode];
+    return [];
+  }, [prependNode, prependNodes]);
+
+  if (items.length === 0 && prepends.length === 0) {
     return (
       <EmptyLibraryState
         activeTab={activeTab}
@@ -345,7 +364,11 @@ export default function LibraryGrid({
   if (viewMode === "list") {
     return (
       <div className="flex flex-col gap-[4px] pb-[24px] -mx-[8px]">
-        {prependNode && prependNode}
+        {prepends.map((node, index) => (
+          <div key={`prepend-${index}`} className="w-full">
+            {node}
+          </div>
+        ))}
         {items.map((item) => (
           <LibraryItemRow key={`${item.kind}:${item.id}`} item={item} />
         ))}
@@ -365,11 +388,14 @@ export default function LibraryGrid({
 
   return (
     <div className="grid grid-cols-[repeat(auto-fill,minmax(165px,1fr))] gap-[24px] pb-[24px]">
-      {prependNode && (
-        <div className="w-full transition-transform duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]">
-          {prependNode}
+      {prepends.map((node, index) => (
+        <div
+          key={`prepend-${index}`}
+          className="w-full transition-transform duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]"
+        >
+          {node}
         </div>
-      )}
+      ))}
       {items.map((item) => (
         <div
           key={`${item.kind}:${item.id}`}

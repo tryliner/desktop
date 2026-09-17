@@ -113,6 +113,8 @@ export const useImportStore = create<ActiveImportState>((set, get) => ({
             id: msg.id || job.id,
             source: msg.source || job.source,
             sourceUrl: msg.sourceUrl || job.sourceUrl,
+            title: msg.title || job.title,
+            description: msg.description || job.description,
             status: msg.status,
             queuePosition: typeof msg.queuePosition === "number" ? msg.queuePosition : undefined,
             requiresDecision: Boolean(msg.requiresDecision),

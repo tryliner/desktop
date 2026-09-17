@@ -17,6 +17,8 @@ import {
 import { HeartFill, AddLine } from "@mingcute/react";
 import { useTranslation } from "@/languages";
 import { useModalStore } from "../store/modalStore";
+import { useImportStore } from "../store/importStore";
+import ImportingPlaylistCard from "./ImportingPlaylistCard";
 
 const PAGE_SIZE = 24;
 
@@ -321,6 +323,14 @@ export default function LibraryPage() {
     };
   }, []);
 
+  const importJob = useImportStore((state) => state.job);
+  const isImporting =
+    Boolean(importJob) &&
+    (importJob?.status === "queued" ||
+      importJob?.status === "running" ||
+      importJob?.status === "finalizing" ||
+      importJob?.status === "awaiting_decision");
+
   return (
     <div className="relative h-full w-full overflow-hidden">
       <div
@@ -397,17 +407,29 @@ export default function LibraryPage() {
                   activeTab={activeTab}
                   viewMode={viewMode}
                   sentinelRef={sentinelRef}
-                  prependNode={
-                    activeTab === "playlists" && !hasSearchQuery ? (
-                      <LikesPlaylistCard
-                        count={likedCount}
-                        isLoading={likedCountLoading}
-                        viewMode={viewMode}
-                        onClick={() =>
-                          navigate("/library/playlist?id=likes")
-                        }
-                      />
-                    ) : undefined
+                  prependNodes={
+                    activeTab === "playlists" && !hasSearchQuery
+                      ? [
+                          <LikesPlaylistCard
+                            key="likes-playlist-card"
+                            count={likedCount}
+                            isLoading={likedCountLoading}
+                            viewMode={viewMode}
+                            onClick={() =>
+                              navigate("/library/playlist?id=likes")
+                            }
+                          />,
+                          ...(isImporting && importJob
+                            ? [
+                                <ImportingPlaylistCard
+                                  key={`importing-playlist-${importJob.id}`}
+                                  job={importJob}
+                                  viewMode={viewMode}
+                                />,
+                              ]
+                            : []),
+                        ]
+                      : undefined
                   }
                 />
               </motion.div>

@@ -16,6 +16,8 @@ export interface ImportJob {
   id: string;
   source: ImportSource;
   sourceUrl: string;
+  title?: string;
+  description?: string;
   status: ImportJobStatus;
   requiresDecision: boolean;
   playlistId?: string;
