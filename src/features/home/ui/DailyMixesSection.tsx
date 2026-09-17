@@ -4,7 +4,7 @@ import ScrollableRow from "@/shared/ui/ScrollableRow";
 import CoverImage from "@/features/covers/ui/CoverImage";
 import { playerEngine } from "@/features/player";
 import { usePlayerStore } from "@/features/player/store/playerStore";
-import { useToast } from "@/shared/ui";
+import { useToast, ScrollableText } from "@/shared/ui";
 import { useTranslation } from "@/languages";
 import { api } from "@/shared/api";
 import { notifyLibraryChanged } from "@/features/library/hooks/usePlaylists";
@@ -18,6 +18,7 @@ interface DailyMixCardProps {
 
 function DailyMixCard({ mix }: DailyMixCardProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [isCardHovered, setIsCardHovered] = useState(false);
   const { t } = useTranslation();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -143,6 +144,8 @@ function DailyMixCard({ mix }: DailyMixCardProps) {
       className="group flex-shrink-0 w-[175px] cursor-pointer select-none"
       onClick={handleClick}
       onContextMenu={handleContextMenu}
+      onMouseEnter={() => setIsCardHovered(true)}
+      onMouseLeave={() => setIsCardHovered(false)}
     >
       <div className="relative aspect-square w-full overflow-hidden rounded-md bg-border-alpha-14">
         {mix.coverUrl && (
@@ -163,9 +166,12 @@ function DailyMixCard({ mix }: DailyMixCardProps) {
         <span className="truncate text-[14px] font-[500] text-text-primary">
           {mix.title}
         </span>
-        <span className="truncate text-[13px] text-text-tertiary">
-          {subtitleText}
-        </span>
+        <ScrollableText
+          text={subtitleText}
+          isParentHovered={isCardHovered}
+          className="text-[13px] text-text-tertiary"
+          fadeColorClass="from-bg-primary"
+        />
       </div>
 
       {menuItems.length > 0 && (
@@ -196,21 +202,16 @@ function DailyMixesSection({ mixes, headingMarginTop = "mt-[22px]" }: DailyMixes
   return (
     <div className="flex flex-col">
       <div className={`${headingMarginTop} px-8 flex items-center justify-between`}>
-        <div className="flex flex-col gap-0.5">
-          <div className="flex items-center gap-2.5">
-            <div className="flex items-center shrink-0">
-              <SparklesFill className="w-5 h-5 text-amber-400" />
-            </div>
-            <h2
-              className="text-text-primary text-[21px] font-semibold m-0 leading-tight tracking-tight"
-              style={{ fontFamily: "var(--font-inter), sans-serif" }}
-            >
-              {t("home.dailyMixes") || "Daily Mixes"}
-            </h2>
+        <div className="flex items-center gap-2.5">
+          <div className="flex items-center shrink-0">
+            <SparklesFill className="w-5 h-5 text-amber-400" />
           </div>
-          <p className="text-[13px] text-text-tertiary m-0 mt-0.5 font-normal">
-            {t("home.dailyMixesSubtitle") || "Fresh playlists curated around your favorite artists and genres"}
-          </p>
+          <h2
+            className="text-text-primary text-[21px] font-semibold m-0 leading-tight tracking-tight"
+            style={{ fontFamily: "var(--font-inter), sans-serif" }}
+          >
+            {t("home.dailyMixes") || "Daily Mixes"}
+          </h2>
         </div>
       </div>
 
