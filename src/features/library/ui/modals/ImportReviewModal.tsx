@@ -483,11 +483,10 @@ export default function ImportReviewModal() {
                   )}
                 </div>
               );
-              })
-              )}
-            </div>
-          )}
-        </div>
+            })}
+          </div>
+        )}
+      </div>
 
         {/* Footer actions */}
         <div className="flex items-center justify-between pt-[8px] border-t border-border-primary mt-[4px]">
