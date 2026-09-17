@@ -114,6 +114,7 @@ export const useImportStore = create<ActiveImportState>((set, get) => ({
             source: msg.source || job.source,
             sourceUrl: msg.sourceUrl || job.sourceUrl,
             status: msg.status,
+            queuePosition: typeof msg.queuePosition === "number" ? msg.queuePosition : undefined,
             requiresDecision: Boolean(msg.requiresDecision),
             playlistId: msg.playlistId,
             result: msg.result,

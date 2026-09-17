@@ -325,7 +325,12 @@ function ImportToastBridge({
   const getSubtitle = useCallback(() => {
     if (!job) return "";
     if (isFailed) return t("import.status_failed");
-    if (isQueued) return t("import.status_queued_sub");
+    if (isQueued) {
+      if (job.queuePosition && job.queuePosition > 0) {
+        return t("import.status_queued_position_sub", { position: job.queuePosition });
+      }
+      return t("import.status_queued_sub");
+    }
     if (isRunning) {
       if (job.result?.total) {
         return t("import.status_running_progress", {
@@ -347,13 +352,18 @@ function ImportToastBridge({
   }, [job, isFailed, isQueued, isRunning, isAwaiting, isFinalizing, isCompleted, t]);
 
   const getTitle = useCallback(() => {
-    if (isQueued) return t("import.status_queued");
+    if (isQueued) {
+      if (job?.queuePosition && job.queuePosition > 0) {
+        return t("import.status_queued_position", { position: job.queuePosition });
+      }
+      return t("import.status_queued");
+    }
     if (isRunning) return t("import.status_running");
     if (isAwaiting) return t("import.status_awaiting_decision");
     if (isFinalizing) return t("import.status_finalizing");
     if (isCompleted) return t("import.status_completed");
     return t("import.status_failed");
-  }, [isQueued, isRunning, isAwaiting, isFinalizing, isCompleted, t]);
+  }, [job?.queuePosition, isQueued, isRunning, isAwaiting, isFinalizing, isCompleted, t]);
 
   useEffect(() => {
     if (!shouldShow || !job) {
@@ -365,10 +375,10 @@ function ImportToastBridge({
     const subtitle = getSubtitle();
 
     if (isQueued) {
-      onToast(title, "checkmark", {
+      onToast(title, "loader", {
         id: "import-job-card",
         description: subtitle,
-        duration: 3500,
+        duration: 999999,
         onDismiss: () => setDismissedQueuedId(job.id),
       });
       return;
@@ -431,6 +441,7 @@ function ImportToastBridge({
     shouldShow,
     job,
     job?.status,
+    job?.queuePosition,
     job?.result?.imported,
     job?.result?.total,
     isQueued,

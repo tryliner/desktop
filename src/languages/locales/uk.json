@@ -727,6 +727,8 @@
     "applying": "Імпорт…",
     "status_queued": "Імпорт додано до черги",
     "status_queued_sub": "Обробка розпочнеться найближчим часом",
+    "status_queued_position": "Черга: #{position}",
+    "status_queued_position_sub": "Ваш плейліст #{position} у черзі",
     "status_searching": "Пошук треків",
     "status_searching_sub": "Аналіз вихідного плейліста…",
     "status_running": "Пошук треків",

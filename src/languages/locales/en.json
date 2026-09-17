@@ -723,6 +723,8 @@
     "applying": "Importing…",
     "status_queued": "Import added to queue",
     "status_queued_sub": "Processing will begin shortly",
+    "status_queued_position": "Queue: #{position}",
+    "status_queued_position_sub": "Your playlist is #{position} in queue",
     "status_searching": "Matching tracks",
     "status_searching_sub": "Analyzing playlist…",
     "status_running": "Matching tracks",
