@@ -286,7 +286,7 @@ export function LyricsProviderIsland() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -4 }}
             transition={{ duration: 0.12, ease: "easeOut" }}
-            className="absolute top-full right-0 mt-[6px] w-[260px] rounded-xl border border-white/10 bg-black/80 backdrop-blur-2xl p-[12px] z-50 flex flex-col gap-[10px] text-white"
+            className="absolute top-full right-0 mt-[6px] w-[260px] rounded-xl bg-black/80 backdrop-blur-2xl p-[12px] z-50 flex flex-col gap-[10px] text-white"
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-[6px]">
@@ -311,7 +311,7 @@ export function LyricsProviderIsland() {
               )}
             </div>
 
-            <div className="flex items-center gap-[6px] bg-white/[0.06] rounded-lg p-[4px] border border-white/10">
+            <div className="flex items-center gap-[6px] bg-white/[0.06] rounded-lg p-[4px]">
               <button
                 type="button"
                 onClick={() => adjustOffset(unit === "ms" ? -50 : -100)}
@@ -353,6 +353,15 @@ export function LyricsProviderIsland() {
                 />
               </div>
 
+              <button
+                type="button"
+                onClick={() => adjustOffset(unit === "ms" ? 50 : 100)}
+                aria-label="Increase offset"
+                className="w-[26px] h-[26px] rounded-md flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 active:scale-95 transition-all border-none bg-transparent cursor-pointer shrink-0"
+              >
+                <AddLine size={12} />
+              </button>
+
               <div className="flex items-center bg-white/10 rounded-md p-[2px] shrink-0">
                 <button
                   type="button"
@@ -377,15 +386,6 @@ export function LyricsProviderIsland() {
                   s
                 </button>
               </div>
-
-              <button
-                type="button"
-                onClick={() => adjustOffset(unit === "ms" ? 50 : 100)}
-                aria-label="Increase offset"
-                className="w-[26px] h-[26px] rounded-md flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 active:scale-95 transition-all border-none bg-transparent cursor-pointer shrink-0"
-              >
-                <AddLine size={12} />
-              </button>
             </div>
 
             <div className="flex flex-col gap-[6px]">
@@ -415,10 +415,6 @@ export function LyricsProviderIsland() {
                   </button>
                 ))}
               </div>
-            </div>
-
-            <div className="text-[10px] text-white/40 leading-[1.3] text-center pt-[2px] border-t border-white/10">
-              {t("player.offset_hint")}
             </div>
           </motion.div>
         )}
