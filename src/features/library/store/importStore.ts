@@ -3,7 +3,7 @@ import { api, type ImportJob } from "@/shared/api";
 import { showToast } from "@/shared/ui";
 import { createTranslatorSync, getStoredLocale } from "@/languages";
 import { notifyLibraryChanged } from "../hooks/usePlaylists";
-import type { TrackDetail } from "./modalStore";
+import { useModalStore, type TrackDetail } from "./modalStore";
 
 export interface ActiveImportState {
   job: ImportJob | null;
@@ -123,6 +123,10 @@ export const useImportStore = create<ActiveImportState>((set, get) => ({
           };
 
           set({ job: current });
+
+          if (Array.isArray(msg.reviewItems) && msg.reviewItems.length > 0) {
+            useModalStore.setState({ importReviewPrefetched: msg.reviewItems });
+          }
 
           if (current.status === "awaiting_decision") {
             isFinished = true;

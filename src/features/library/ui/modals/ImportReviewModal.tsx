@@ -159,35 +159,40 @@ export default function ImportReviewModal() {
     let active = true;
     setLoading(true);
 
-    api
-      .getPlaylistImportReview(jobId)
-      .then(async (res) => {
-        if (!active) return;
-        const allItems = deduplicateReviewItems(res.items || []);
-        if (allItems.length === 0) {
-          const r = await api.skipPlaylistImportReview(jobId).catch(() => null);
+    const loadItems = async () => {
+      let attempts = 0;
+      while (active && attempts < 6) {
+        attempts++;
+        try {
+          const res = await api.getPlaylistImportReview(jobId);
           if (!active) return;
-          if (r?.finalized) {
-            const finalJob = await api.getPlaylistImport(jobId).catch(() => null);
-            useImportStore.setState({ job: finalJob ?? null, isPolling: false });
-            notifyLibraryChanged();
-            close();
+          const allItems = deduplicateReviewItems(res.items || []);
+          if (allItems.length > 0) {
+            setItems(allItems);
+            setDecisions(deriveInitialDecisions(allItems));
+            setLoading(false);
+            return;
           }
-          return;
+        } catch {}
+        if (attempts < 6) {
+          await new Promise((r) => setTimeout(r, 400));
         }
+      }
 
-        setItems(allItems);
-        setDecisions(deriveInitialDecisions(allItems));
-      })
-      .catch((err) => {
-        if (!active) return;
-        const msg = resolveApiErrorMessage(err, t, "import.status_failed");
-        toast(msg, "error");
+      if (!active) return;
+      setLoading(false);
+
+      const r = await api.skipPlaylistImportReview(jobId).catch(() => null);
+      if (!active) return;
+      if (r?.finalized) {
+        const finalJob = await api.getPlaylistImport(jobId).catch(() => null);
+        useImportStore.setState({ job: finalJob ?? null, isPolling: false });
+        notifyLibraryChanged();
         close();
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
+      }
+    };
+
+    void loadItems();
 
     return () => {
       active = false;
