@@ -215,12 +215,13 @@ export default function ImportReviewModal() {
 
       const res = await api.decidePlaylistImportReview(jobId, decisionList);
 
-      if (res.finalized) {
-        const finalJob = await api.getPlaylistImport(jobId).catch(() => null);
+      const finalJob = await api.getPlaylistImport(jobId).catch(() => null);
+      if (res.finalized || finalJob?.status === "completed") {
         useImportStore.setState({ job: finalJob ?? null, isPolling: false });
         notifyLibraryChanged();
         close();
       } else {
+        useImportStore.setState({ job: finalJob ?? null, isPolling: true });
         close();
         void pollJob(jobId);
       }
@@ -239,12 +240,13 @@ export default function ImportReviewModal() {
     try {
       const res = await api.skipPlaylistImportReview(jobId);
 
-      if (res.finalized) {
-        const finalJob = await api.getPlaylistImport(jobId).catch(() => null);
+      const finalJob = await api.getPlaylistImport(jobId).catch(() => null);
+      if (res.finalized || finalJob?.status === "completed") {
         useImportStore.setState({ job: finalJob ?? null, isPolling: false });
         notifyLibraryChanged();
         close();
       } else {
+        useImportStore.setState({ job: finalJob ?? null, isPolling: true });
         close();
         void pollJob(jobId);
       }
