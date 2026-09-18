@@ -484,10 +484,11 @@ export function SearchModal({
         </AnimatePresence>
       </div>
 
-      {/* 2. Separate Floating Results Window Island (Only when query is present) */}
+      {/* 2. Separate Floating Results Window Island */}
       <AnimatePresence>
-        {hasSearchQuery ? (
+        {hasSearchQuery || historyItems.length > 0 ? (
           <motion.div
+            key="search-modal-dropdown-island"
             initial={{ opacity: 0, y: -6, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -6, scale: 0.98 }}
@@ -497,126 +498,132 @@ export function SearchModal({
             }}
             className="w-[min(660px,calc(100vw-90px))] mt-[8px] max-h-[500px] h-[500px] rounded-[8px] bg-bg-panel/98 backdrop-blur-2xl flex flex-col overflow-hidden"
           >
-            {/* Filter Pills Bar */}
-            <div className="flex items-center gap-[6px] px-[14px] pt-[12px] pb-[6px] shrink-0 overflow-x-auto">
-              {filterKeys.map((key) => {
-                const label = filterLabels[key];
-                const isActive = activeFilter === key;
-                let Icon = GridFill;
-                if (key === "tracks") Icon = Music2Fill;
-                else if (key === "artists") Icon = User2Fill;
-                else if (key === "albums") Icon = AlbumFill;
-                else if (key === "playlists") Icon = PlaylistFill;
+            <AnimatePresence mode="wait" initial={false}>
+              {hasSearchQuery ? (
+                <motion.div
+                  key="search-modal-results-content"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.12 }}
+                  className="flex flex-col h-full overflow-hidden"
+                >
+                  <div className="flex items-center gap-[6px] px-[14px] pt-[12px] pb-[6px] shrink-0 overflow-x-auto">
+                    {filterKeys.map((key) => {
+                      const label = filterLabels[key];
+                      const isActive = activeFilter === key;
+                      let Icon = GridFill;
+                      if (key === "tracks") Icon = Music2Fill;
+                      else if (key === "artists") Icon = User2Fill;
+                      else if (key === "albums") Icon = AlbumFill;
+                      else if (key === "playlists") Icon = PlaylistFill;
 
-                return (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => setActiveFilter(key)}
-                    className={`
-                      relative flex items-center gap-[7px] px-[13px] py-[7px] rounded-[6px] text-[13.5px] font-normal transition-colors border-none bg-transparent cursor-pointer select-none shrink-0
-                      ${
-                        isActive
-                          ? "text-text-primary font-medium"
-                          : "text-text-secondary hover:text-text-primary hover:bg-border-alpha-14"
-                      }
-                    `}
-                    style={{
-                      fontFamily: "var(--font-inter), sans-serif",
+                      return (
+                        <button
+                          key={key}
+                          type="button"
+                          onClick={() => setActiveFilter(key)}
+                          className={`
+                            relative flex items-center gap-[7px] px-[13px] py-[7px] rounded-[6px] text-[13.5px] font-normal transition-colors border-none bg-transparent cursor-pointer select-none shrink-0
+                            ${
+                              isActive
+                                ? "text-text-primary font-medium"
+                                : "text-text-secondary hover:text-text-primary hover:bg-border-alpha-14"
+                            }
+                          `}
+                          style={{
+                            fontFamily: "var(--font-inter), sans-serif",
+                          }}
+                        >
+                          {isActive && (
+                            <motion.div
+                              layoutId="activeFilterPillModal"
+                              className="absolute inset-0 rounded-[6px] bg-border-alpha-14 pointer-events-none z-0"
+                              transition={{
+                                type: "spring",
+                                stiffness: 450,
+                                damping: 35,
+                              }}
+                            />
+                          )}
+                          <span className="relative z-[1] flex items-center gap-[7px]">
+                            <Icon size={15} />
+                            <span>{label}</span>
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div className="relative flex-1 min-h-0 overflow-hidden">
+                    <AnimatePresence mode="wait">
+                      {isSearchEmpty ? (
+                        <motion.div
+                          key="search-modal-empty"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ duration: 0.08 }}
+                          className="flex h-full flex-col items-center justify-center gap-[6px] px-[20px] text-center"
+                        >
+                          <p className="m-0 text-[14px] text-text-primary font-medium">
+                            {t("common.no_results")}
+                          </p>
+                          <p className="m-0 text-[12px] text-text-tertiary">
+                            {t("common.try_another_search")}
+                          </p>
+                        </motion.div>
+                      ) : searchResults.length > 0 ? (
+                        <motion.div
+                          key={`search-modal-results-${activeFilter}`}
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ duration: 0.08 }}
+                          className="h-full w-full"
+                        >
+                          <SearchResultsList
+                            items={searchResults}
+                            isArtistSearchFilter={isArtistSearchFilter}
+                            isPlaylistSearchFilter={isPlaylistSearchFilter}
+                            onPlayFromSearch={onPlayTrack}
+                            onNavigateItem={handleItemClick}
+                            onScroll={updateSearchMask}
+                            scrollRef={searchScrollRef}
+                            maskStyle={{
+                              WebkitMaskImage: searchScrollMask,
+                              maskImage: searchScrollMask,
+                            }}
+                            partialWarning={partialWarning}
+                          />
+                        </motion.div>
+                      ) : null}
+                    </AnimatePresence>
+                  </div>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="search-modal-history-content"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.12 }}
+                  className="relative flex-1 min-h-0 overflow-hidden"
+                >
+                  <SearchHistoryList
+                    onSelectQuery={handleSelectHistoryQuery}
+                    onPlayTrack={onPlayTrack}
+                    onNavigateItem={handleItemClick}
+                    onScroll={updateSearchMask}
+                    scrollRef={searchScrollRef}
+                    maskStyle={{
+                      WebkitMaskImage: searchScrollMask,
+                      maskImage: searchScrollMask,
                     }}
-                  >
-                    {isActive && (
-                      <motion.div
-                        layoutId="activeFilterPillModal"
-                        className="absolute inset-0 rounded-[6px] bg-border-alpha-14 pointer-events-none z-0"
-                        transition={{
-                          type: "spring",
-                          stiffness: 450,
-                          damping: 35,
-                        }}
-                      />
-                    )}
-                    <span className="relative z-[1] flex items-center gap-[7px]">
-                      <Icon size={15} />
-                      <span>{label}</span>
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Results Content Area */}
-            <div className="relative flex-1 min-h-0 overflow-hidden">
-              <AnimatePresence mode="wait">
-                {isSearchEmpty ? (
-                  <motion.div
-                    key="search-modal-empty"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.08 }}
-                    className="flex h-full flex-col items-center justify-center gap-[6px] px-[20px] text-center"
-                  >
-                    <p className="m-0 text-[14px] text-text-primary font-medium">
-                      {t("common.no_results")}
-                    </p>
-                    <p className="m-0 text-[12px] text-text-tertiary">
-                      {t("common.try_another_search")}
-                    </p>
-                  </motion.div>
-                ) : searchResults.length > 0 ? (
-                  <motion.div
-                    key={`search-modal-results-${activeFilter}`}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.08 }}
-                    className="h-full w-full"
-                  >
-                    <SearchResultsList
-                      items={searchResults}
-                      isArtistSearchFilter={isArtistSearchFilter}
-                      isPlaylistSearchFilter={isPlaylistSearchFilter}
-                      onPlayFromSearch={onPlayTrack}
-                      onNavigateItem={handleItemClick}
-                      onScroll={updateSearchMask}
-                      scrollRef={searchScrollRef}
-                      maskStyle={{
-                        WebkitMaskImage: searchScrollMask,
-                        maskImage: searchScrollMask,
-                      }}
-                      partialWarning={partialWarning}
-                    />
-                  </motion.div>
-                ) : null}
-              </AnimatePresence>
-            </div>
-          </motion.div>
-        ) : historyItems.length > 0 ? (
-          <motion.div
-            key="search-modal-history-island"
-            initial={{ opacity: 0, y: -6, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -6, scale: 0.98 }}
-            transition={{
-              duration: 0.18,
-              ease: [0.16, 1, 0.3, 1],
-            }}
-            className="w-[min(660px,calc(100vw-90px))] mt-[8px] max-h-[480px] h-auto rounded-[8px] bg-bg-panel/98 backdrop-blur-2xl flex flex-col overflow-hidden"
-          >
-            <div className="relative flex-1 min-h-0 overflow-hidden">
-              <SearchHistoryList
-                onSelectQuery={handleSelectHistoryQuery}
-                onPlayTrack={onPlayTrack}
-                onNavigateItem={handleItemClick}
-                onScroll={updateSearchMask}
-                scrollRef={searchScrollRef}
-                maskStyle={{
-                  WebkitMaskImage: searchScrollMask,
-                  maskImage: searchScrollMask,
-                }}
-              />
-            </div>
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
         ) : null}
       </AnimatePresence>

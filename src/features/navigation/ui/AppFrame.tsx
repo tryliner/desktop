@@ -848,107 +848,143 @@ export default function AppFrame({ children }: AppFrameProps) {
               </AnimatePresence>
             </div>
 
-            {/* 2. Separate Results Island (slightly below input) */}
+            {/* 2. Separate Results / History Island (slightly below input) */}
             <AnimatePresence>
-              {hasSearchQuery ? (
+              {hasSearchQuery || historyItems.length > 0 ? (
                 <motion.div
-                  key="search-results-island"
+                  key="search-dropdown-island"
                   initial={{ opacity: 0, y: -8, scale: 0.99 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -8, scale: 0.99 }}
                   transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
                   className="w-[min(660px,calc(100vw-72px))] mt-[8px] max-h-[500px] h-[500px] rounded-[8px] pointer-events-auto flex flex-col overflow-hidden bg-bg-panel/95 border border-border-primary/50 backdrop-blur-2xl"
                 >
-                  <div className="flex gap-[6px] px-[14px] pt-[12px] pb-[6px] shrink-0 overflow-x-auto">
-                    {filterKeys.map((key) => {
-                      const label = filterLabels[key];
-                      const isActive = activeFilter === key;
-                      let Icon = GridFill;
-                      if (key === "tracks") Icon = Music2Fill;
-                      else if (key === "artists") Icon = User2Fill;
-                      else if (key === "albums") Icon = AlbumFill;
-                      else if (key === "playlists") Icon = PlaylistFill;
-
-                      return (
-                        <button
-                          key={key}
-                          type="button"
-                          onClick={() => setActiveFilter(key)}
-                          className={`
-                            relative flex items-center gap-[7px] px-[13px] py-[7px] rounded-[6px] text-[13.5px] font-normal transition-colors border-none bg-transparent cursor-pointer select-none shrink-0
-                            ${
-                              isActive
-                                ? "text-text-primary font-medium"
-                                : "text-text-secondary hover:text-text-primary hover:bg-border-alpha-14"
-                            }
-                          `}
-                          style={{
-                            fontFamily: "var(--font-inter), sans-serif",
-                            lineHeight: "1.2",
-                          }}
-                        >
-                          {isActive && (
-                            <motion.div
-                              layoutId="activeFilterPill"
-                              className="absolute inset-0 rounded-[6px] bg-border-alpha-14 pointer-events-none z-0"
-                              transition={{
-                                type: "spring",
-                                stiffness: 450,
-                                damping: 35,
-                              }}
-                            />
-                          )}
-                          <span className="relative z-[1] flex items-center gap-[7px]">
-                            <Icon size={15} />
-                            <span>{label}</span>
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                <div className="relative flex-1 min-h-0 overflow-hidden">
-                  <AnimatePresence mode="wait">
-                    {isSearchEmpty ? (
+                  <AnimatePresence mode="wait" initial={false}>
+                    {hasSearchQuery ? (
                       <motion.div
-                        key="search-empty"
+                        key="search-results-content"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        transition={{ duration: 0.08 }}
-                        className="flex h-full flex-col items-center justify-center gap-[6px] px-[20px] text-center"
+                        transition={{ duration: 0.12 }}
+                        className="flex flex-col h-full overflow-hidden"
                       >
-                        <p
-                          className="m-0 text-[14px] text-text-primary font-medium"
-                          style={{
-                            fontFamily: "var(--font-inter), sans-serif",
-                          }}
-                        >
-                          {t("common.no_results")}
-                        </p>
-                        <p
-                          className="m-0 text-[12px] text-text-tertiary"
-                          style={{
-                            fontFamily: "var(--font-inter), sans-serif",
-                          }}
-                        >
-                          {t("common.try_another_search")}
-                        </p>
+                        <div className="flex gap-[6px] px-[14px] pt-[12px] pb-[6px] shrink-0 overflow-x-auto">
+                          {filterKeys.map((key) => {
+                            const label = filterLabels[key];
+                            const isActive = activeFilter === key;
+                            let Icon = GridFill;
+                            if (key === "tracks") Icon = Music2Fill;
+                            else if (key === "artists") Icon = User2Fill;
+                            else if (key === "albums") Icon = AlbumFill;
+                            else if (key === "playlists") Icon = PlaylistFill;
+
+                            return (
+                              <button
+                                key={key}
+                                type="button"
+                                onClick={() => setActiveFilter(key)}
+                                className={`
+                                  relative flex items-center gap-[7px] px-[13px] py-[7px] rounded-[6px] text-[13.5px] font-normal transition-colors border-none bg-transparent cursor-pointer select-none shrink-0
+                                  ${
+                                    isActive
+                                      ? "text-text-primary font-medium"
+                                      : "text-text-secondary hover:text-text-primary hover:bg-border-alpha-14"
+                                  }
+                                `}
+                                style={{
+                                  fontFamily: "var(--font-inter), sans-serif",
+                                  lineHeight: "1.2",
+                                }}
+                              >
+                                {isActive && (
+                                  <motion.div
+                                    layoutId="activeFilterPill"
+                                    className="absolute inset-0 rounded-[6px] bg-border-alpha-14 pointer-events-none z-0"
+                                    transition={{
+                                      type: "spring",
+                                      stiffness: 450,
+                                      damping: 35,
+                                    }}
+                                  />
+                                )}
+                                <span className="relative z-[1] flex items-center gap-[7px]">
+                                  <Icon size={15} />
+                                  <span>{label}</span>
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        <div className="relative flex-1 min-h-0 overflow-hidden">
+                          <AnimatePresence mode="wait">
+                            {isSearchEmpty ? (
+                              <motion.div
+                                key="search-empty"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                transition={{ duration: 0.08 }}
+                                className="flex h-full flex-col items-center justify-center gap-[6px] px-[20px] text-center"
+                              >
+                                <p
+                                  className="m-0 text-[14px] text-text-primary font-medium"
+                                  style={{
+                                    fontFamily: "var(--font-inter), sans-serif",
+                                  }}
+                                >
+                                  {t("common.no_results")}
+                                </p>
+                                <p
+                                  className="m-0 text-[12px] text-text-tertiary"
+                                  style={{
+                                    fontFamily: "var(--font-inter), sans-serif",
+                                  }}
+                                >
+                                  {t("common.try_another_search")}
+                                </p>
+                              </motion.div>
+                            ) : searchResults.length > 0 ? (
+                              <motion.div
+                                key={`search-results-${activeFilter}`}
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                transition={{ duration: 0.08 }}
+                                className="h-full w-full"
+                              >
+                                <SearchResultsList
+                                  items={searchResults}
+                                  isArtistSearchFilter={isArtistSearchFilter}
+                                  isPlaylistSearchFilter={isPlaylistSearchFilter}
+                                  onPlayFromSearch={handlePlayFromSearch}
+                                  onNavigateItem={handleNavigateItem}
+                                  onScroll={updateSearchMask}
+                                  scrollRef={searchScrollRef}
+                                  maskStyle={{
+                                    WebkitMaskImage: searchScrollMask,
+                                    maskImage: searchScrollMask,
+                                  }}
+                                  partialWarning={partialWarning}
+                                />
+                              </motion.div>
+                            ) : null}
+                          </AnimatePresence>
+                        </div>
                       </motion.div>
-                    ) : searchResults.length > 0 ? (
+                    ) : (
                       <motion.div
-                        key={`search-results-${activeFilter}`}
+                        key="search-history-content"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        transition={{ duration: 0.08 }}
-                        className="h-full w-full"
+                        transition={{ duration: 0.12 }}
+                        className="relative flex-1 min-h-0 overflow-hidden"
                       >
-                        <SearchResultsList
-                          items={searchResults}
-                          isArtistSearchFilter={isArtistSearchFilter}
-                          isPlaylistSearchFilter={isPlaylistSearchFilter}
-                          onPlayFromSearch={handlePlayFromSearch}
+                        <SearchHistoryList
+                          onSelectQuery={handleSelectHistoryQuery}
+                          onPlayTrack={handlePlayFromSearch}
                           onNavigateItem={handleNavigateItem}
                           onScroll={updateSearchMask}
                           scrollRef={searchScrollRef}
@@ -956,38 +992,13 @@ export default function AppFrame({ children }: AppFrameProps) {
                             WebkitMaskImage: searchScrollMask,
                             maskImage: searchScrollMask,
                           }}
-                          partialWarning={partialWarning}
                         />
                       </motion.div>
-                    ) : null}
+                    )}
                   </AnimatePresence>
-                </div>
-              </motion.div>
-            ) : historyItems.length > 0 ? (
-              <motion.div
-                key="search-history-island"
-                initial={{ opacity: 0, y: -8, scale: 0.99 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -8, scale: 0.99 }}
-                transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-                className="w-[min(660px,calc(100vw-72px))] mt-[8px] max-h-[480px] h-auto rounded-[8px] pointer-events-auto flex flex-col overflow-hidden bg-bg-panel/95 border border-border-primary/50 backdrop-blur-2xl"
-              >
-                <div className="relative flex-1 min-h-0 overflow-hidden">
-                  <SearchHistoryList
-                    onSelectQuery={handleSelectHistoryQuery}
-                    onPlayTrack={handlePlayFromSearch}
-                    onNavigateItem={handleNavigateItem}
-                    onScroll={updateSearchMask}
-                    scrollRef={searchScrollRef}
-                    maskStyle={{
-                      WebkitMaskImage: searchScrollMask,
-                      maskImage: searchScrollMask,
-                    }}
-                  />
-                </div>
-              </motion.div>
-            ) : null}
-          </AnimatePresence>
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
         </motion.div>
       )}
     </AnimatePresence>
