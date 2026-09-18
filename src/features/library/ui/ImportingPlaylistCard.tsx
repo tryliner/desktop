@@ -30,8 +30,9 @@ export default function ImportingPlaylistCard({
     }
     if (isRunning) {
       if (job.result?.total) {
+        const processed = (job.result.imported ?? 0) + (job.result.skipped ?? 0);
         return t("import.status_running_progress", {
-          count: job.result.imported ?? 0,
+          count: processed,
           total: job.result.total,
         });
       }
@@ -130,7 +131,11 @@ export default function ImportingPlaylistCard({
                 style={{
                   width: `${Math.min(
                     100,
-                    Math.round(((job.result.imported ?? 0) / job.result.total) * 100),
+                    Math.round(
+                      (((job.result.imported ?? 0) + (job.result.skipped ?? 0)) /
+                        job.result.total) *
+                        100,
+                    ),
                   )}%`,
                 }}
               />

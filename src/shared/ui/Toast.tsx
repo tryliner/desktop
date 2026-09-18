@@ -344,8 +344,9 @@ function ImportToastBridge({
     }
     if (isRunning) {
       if (job.result?.total) {
+        const processed = (job.result.imported ?? 0) + (job.result.skipped ?? 0);
         return t("import.status_running_progress", {
-          count: job.result.imported ?? 0,
+          count: processed,
           total: job.result.total,
         });
       }
