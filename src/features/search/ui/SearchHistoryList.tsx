@@ -36,7 +36,7 @@ export const SearchHistoryList = memo(function SearchHistoryList({
     <div
       ref={containerRef}
       onScroll={onScroll}
-      className="h-full overflow-y-auto px-[14px] pt-[8px] pb-[14px]"
+      className="max-h-[480px] overflow-y-auto px-[14px] pt-[8px] pb-[14px]"
       style={maskStyle}
     >
       <div className="flex items-center justify-between px-[6px] pt-[4px] pb-[10px]">
