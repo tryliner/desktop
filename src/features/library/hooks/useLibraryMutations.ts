@@ -77,16 +77,34 @@ export function useDeletePlaylist() {
 }
 
 export function useSaveExternalItem() {
-  return useMutation(({ type, id }: { type: "album" | "artist"; id: string }) =>
-    api.saveCollection(`${type}s` as "albums" | "artists", id)
+  return useMutation(({ type, id }: { type: "album" | "artist" | "playlist"; id: string }) =>
+    api.saveCollection(`${type}s` as "albums" | "artists" | "playlists", id)
   );
 }
 
 export function useRemoveExternalItem() {
-  return useMutation(({ type, id }: { type: "album" | "artist" | "playlist"; id: string }) =>
-    type === "playlist"
-      ? api.deletePlaylist(id)
-      : api.removeCollection(`${type}s` as "albums" | "artists", id)
+  return useMutation(
+    async ({
+      type,
+      id,
+      isOwned,
+    }: {
+      type: "album" | "artist" | "playlist";
+      id: string;
+      isOwned?: boolean;
+    }) => {
+      if (type === "playlist") {
+        if (isOwned) {
+          return api.deletePlaylist(id);
+        }
+        try {
+          return await api.removeCollection("playlists", id);
+        } catch {
+          return api.deletePlaylist(id);
+        }
+      }
+      return api.removeCollection(`${type}s` as "albums" | "artists", id);
+    },
   );
 }
 

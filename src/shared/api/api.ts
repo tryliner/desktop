@@ -699,19 +699,19 @@ export const api = {
   },
 
   listSavedCollections(
-    type: "albums" | "artists",
+    type: "albums" | "artists" | "playlists",
   ): Promise<{ items: unknown[] }> {
     return request<{ items: unknown[] }>(`/v1/me/library/${type}`);
   },
 
-  saveCollection(type: "albums" | "artists", id: string): Promise<void> {
+  saveCollection(type: "albums" | "artists" | "playlists", id: string): Promise<void> {
     return request<void>(
       `/v1/me/library/${type}/${encodeURIComponent(id)}`,
       { method: "PUT" },
     );
   },
 
-  removeCollection(type: "albums" | "artists", id: string): Promise<void> {
+  removeCollection(type: "albums" | "artists" | "playlists", id: string): Promise<void> {
     return request<void>(
       `/v1/me/library/${type}/${encodeURIComponent(id)}`,
       { method: "DELETE" },

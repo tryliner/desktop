@@ -49,9 +49,11 @@ function CollectionContent() {
   const decodedId = id ? decodeURIComponent(id) : "";
 
   const { data: savedAlbums } = useExternalItems("album");
+  const { data: savedPlaylists } = useExternalItems("playlist");
   const inLibrary =
-    entityType === "album" &&
-    savedAlbums.some((album) => album.id === decodedId);
+    entityType === "album"
+      ? savedAlbums.some((album) => album.id === decodedId)
+      : savedPlaylists.some((playlist) => playlist.id === decodedId);
 
   const [imagesLoaded, setImagesLoaded] = useState(false);
   const [skeletonExited, setSkeletonExited] = useState(false);

@@ -20,11 +20,6 @@ export default function AddToLibraryModal() {
   const handleAdd = useCallback(() => {
     if (!item) return;
 
-    if (item.type === "playlist") {
-      close();
-      return;
-    }
-
     saveExternal.mutate(
       { type: item.type, id: item.id },
       {
