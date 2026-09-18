@@ -132,6 +132,7 @@ export const useImportStore = create<ActiveImportState>((set, get) => ({
             isFinished = true;
             set({ isPolling: false, job: current });
             cleanupActiveConnections();
+            useModalStore.getState().openImportReview(current.id, msg.reviewItems);
             return;
           }
 

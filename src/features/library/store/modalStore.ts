@@ -160,11 +160,11 @@ export const useModalStore = create<ModalState>((set) => ({
   importReviewJobId: null,
   importReviewPrefetched: null,
   openImportReview: (jobId, prefetchedItems) =>
-    set({
+    set((state) => ({
       importReviewOpen: true,
       importReviewJobId: jobId,
-      importReviewPrefetched: prefetchedItems?.length ? prefetchedItems : null,
-    }),
+      importReviewPrefetched: prefetchedItems?.length ? prefetchedItems : state.importReviewPrefetched,
+    })),
   closeImportReview: () =>
     set({
       importReviewOpen: false,
