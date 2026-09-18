@@ -746,6 +746,8 @@
     "match_score": "{score}% збіг",
     "approve": "Додати",
     "deny": "Пропустити",
+    "select_all": "Вибрати всі",
+    "deselect_all": "Зняти всі",
     "skip_all": "Пропустити все",
     "skipped": "Пропущено",
     "apply_decisions": "Імпортувати вибрані",

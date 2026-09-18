@@ -742,6 +742,8 @@
     "match_score": "{score}% match",
     "approve": "Add",
     "deny": "Skip",
+    "select_all": "Select all",
+    "deselect_all": "Deselect all",
     "skip_all": "Skip all",
     "skipped": "Skipped",
     "apply_decisions": "Import selected",

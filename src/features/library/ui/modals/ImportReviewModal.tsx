@@ -57,10 +57,7 @@ function deriveInitialDecisions(
 ): Record<string, "approve" | "deny"> {
   const initialDecisions: Record<string, "approve" | "deny"> = {};
   for (const it of reviewItems) {
-    if (
-      it.proposedTrack &&
-      (it.score === undefined || it.score >= 50 || it.reason === "auto_matched")
-    ) {
+    if (it.proposedTrack) {
       initialDecisions[it.id] = "approve";
     } else {
       initialDecisions[it.id] = "deny";
@@ -259,6 +256,26 @@ export default function ImportReviewModal() {
     }
   };
 
+  const handleSelectAll = () => {
+    const next: Record<string, "approve" | "deny"> = {};
+    for (const it of items) {
+      if (it.proposedTrack) {
+        next[it.id] = "approve";
+      } else {
+        next[it.id] = "deny";
+      }
+    }
+    setDecisions(next);
+  };
+
+  const handleDeselectAll = () => {
+    const next: Record<string, "approve" | "deny"> = {};
+    for (const it of items) {
+      next[it.id] = "deny";
+    }
+    setDecisions(next);
+  };
+
   const approvedCount = Object.values(decisions).filter((d) => d === "approve").length;
 
   return (
@@ -269,24 +286,46 @@ export default function ImportReviewModal() {
     >
       <div className="flex flex-col gap-[16px] px-[20px] pb-[20px] min-h-0">
         {/* Header */}
-        <div className="flex flex-col gap-[4px]">
-          <h2
-            className="m-0 text-[18px] font-[500] text-text-primary flex items-center gap-[8px]"
-            style={{ fontFamily: "var(--font-inter), sans-serif" }}
-          >
-            {t("import.review_title")}
-            {items.length > 0 && (
-              <span className="text-[12px] px-[8px] py-[2px] rounded-full bg-border-alpha-14 text-text-secondary font-normal">
-                {items.length}
-              </span>
-            )}
-          </h2>
-          <p
-            className="m-0 text-[13px] text-text-tertiary"
-            style={{ fontFamily: "var(--font-inter), sans-serif" }}
-          >
-            {t("import.review_description")}
-          </p>
+        <div className="flex items-start justify-between gap-[12px]">
+          <div className="flex flex-col gap-[4px] min-w-0 flex-1">
+            <h2
+              className="m-0 text-[18px] font-[500] text-text-primary flex items-center gap-[8px]"
+              style={{ fontFamily: "var(--font-inter), sans-serif" }}
+            >
+              {t("import.review_title")}
+              {items.length > 0 && (
+                <span className="text-[12px] px-[8px] py-[2px] rounded-full bg-border-alpha-14 text-text-secondary font-normal">
+                  {items.length}
+                </span>
+              )}
+            </h2>
+            <p
+              className="m-0 text-[13px] text-text-tertiary"
+              style={{ fontFamily: "var(--font-inter), sans-serif" }}
+            >
+              {t("import.review_description")}
+            </p>
+          </div>
+
+          {items.length > 0 && !loading && (
+            <div className="flex items-center gap-[6px] shrink-0 pt-[2px]">
+              <button
+                type="button"
+                onClick={handleSelectAll}
+                className="text-[12px] font-[500] text-text-secondary hover:text-text-primary px-[8px] py-[4px] rounded-md hover:bg-border-alpha-14 transition-colors cursor-pointer border border-transparent hover:border-border-primary"
+              >
+                {t("import.select_all")}
+              </button>
+              <span className="text-text-tertiary text-[11px]">•</span>
+              <button
+                type="button"
+                onClick={handleDeselectAll}
+                className="text-[12px] font-[500] text-text-secondary hover:text-text-primary px-[8px] py-[4px] rounded-md hover:bg-border-alpha-14 transition-colors cursor-pointer border border-transparent hover:border-border-primary"
+              >
+                {t("import.deselect_all")}
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Content list */}

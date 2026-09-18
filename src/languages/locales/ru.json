@@ -746,6 +746,8 @@
     "match_score": "{score}% совпадение",
     "approve": "Добавить",
     "deny": "Пропустить",
+    "select_all": "Выбрать все",
+    "deselect_all": "Снять все",
     "skip_all": "Пропустить все",
     "skipped": "Пропущен",
     "apply_decisions": "Импортировать выбранные",
