@@ -37,6 +37,7 @@ import {
   MiniPlayer,
 } from "@/features/player";
 import SearchResultsList from "@/features/search/ui/SearchResultsList";
+import { SearchHistoryList, useSearchHistoryStore } from "@/features/search";
 import { useTranslation } from "@/languages";
 import {
   AddToPlaylistModal,
@@ -267,6 +268,8 @@ export default function AppFrame({ children }: AppFrameProps) {
   const [searchScrollMask, setSearchScrollMask] = useState(
     "linear-gradient(to bottom, black 0%, black 100%)",
   );
+  const addHistoryItem = useSearchHistoryStore((state) => state.addItem);
+  const historyItems = useSearchHistoryStore((state) => state.items);
   const {
     items: allResults,
     loading: allLoading,
@@ -530,18 +533,40 @@ export default function AppFrame({ children }: AppFrameProps) {
     toggleSearch();
   }, [toggleSearch]);
 
-  const handlePlayFromSearch = useCallback((track: any) => {
-    playerEngine.primeUserGesture();
-    if (!track) {
-      return;
-    }
-    void playerEngine.playTrack(
-      track,
-      [track],
-      `${track.title} Radio`,
-      track.coverUrl,
-    );
-  }, []);
+  const handlePlayFromSearch = useCallback(
+    (track: any) => {
+      playerEngine.primeUserGesture();
+      if (!track) {
+        return;
+      }
+      const durationMs = track.durationMs ?? track.duration_ms;
+      const durationStr = durationMs
+        ? `${Math.floor(durationMs / 60000)}:${Math.floor(
+            (durationMs % 60000) / 1000,
+          )
+            .toString()
+            .padStart(2, "0")}`
+        : "";
+      addHistoryItem({
+        id: track.id,
+        type: "track",
+        title: track.title,
+        subtitle: track.artists,
+        coverUrl: track.coverUrl,
+        explicit: track.explicit,
+        duration: durationStr,
+        durationMs,
+        itemData: track,
+      });
+      void playerEngine.playTrack(
+        track,
+        [track],
+        `${track.title} Radio`,
+        track.coverUrl,
+      );
+    },
+    [addHistoryItem],
+  );
 
   const handleNavigateItem = useCallback(
     (it: any) => {
@@ -551,12 +576,28 @@ export default function AppFrame({ children }: AppFrameProps) {
         it.followers !== undefined ||
         activeFilter === "artists"
       ) {
+        addHistoryItem({
+          id: it.id,
+          type: "artist",
+          title: it.name || it.title,
+          subtitle: t("common.artists"),
+          coverUrl: it.coverUrl,
+          itemData: it,
+        });
         navigate(`/artist?id=${encodeURIComponent(it.id)}`);
       } else if (
         it._type === "playlist" ||
         it.owner !== undefined ||
         activeFilter === "playlists"
       ) {
+        addHistoryItem({
+          id: it.id,
+          type: "playlist",
+          title: it.name || it.title,
+          subtitle: it.author || it.owner || t("common.playlists"),
+          coverUrl: it.coverUrl,
+          itemData: it,
+        });
         navigate(`/collection?type=playlist&id=${encodeURIComponent(it.id)}`);
       } else if (
         it._type === "album" ||
@@ -564,10 +605,40 @@ export default function AppFrame({ children }: AppFrameProps) {
         it.total_tracks !== undefined ||
         activeFilter === "albums"
       ) {
+        addHistoryItem({
+          id: it.id,
+          type: "album",
+          title: it.name || it.title,
+          subtitle: it.artists || it.artist || t("common.albums"),
+          coverUrl: it.coverUrl,
+          itemData: it,
+        });
         navigate(`/collection?type=album&id=${encodeURIComponent(it.id)}`);
       }
     },
-    [activeFilter, closeSearch, navigate],
+    [activeFilter, closeSearch, navigate, addHistoryItem, t],
+  );
+
+  const submitSearchQuery = useCallback(
+    (queryToSubmit: string) => {
+      const trimmed = queryToSubmit.trim();
+      if (!trimmed) return;
+      addHistoryItem({
+        id: `query:${trimmed.toLowerCase()}`,
+        type: "query",
+        title: trimmed,
+      });
+    },
+    [addHistoryItem],
+  );
+
+  const handleSelectHistoryQuery = useCallback(
+    (queryText: string) => {
+      setSearchQuery(queryText);
+      submitSearchQuery(queryText);
+      searchInputRef.current?.focus();
+    },
+    [submitSearchQuery],
   );
 
   return (
@@ -743,6 +814,7 @@ export default function AppFrame({ children }: AppFrameProps) {
                 onKeyDown={(event) => {
                   if (event.key === "Enter") {
                     event.preventDefault();
+                    submitSearchQuery(searchQuery);
                     runSearchNow();
                   }
                 }}
@@ -778,7 +850,7 @@ export default function AppFrame({ children }: AppFrameProps) {
 
             {/* 2. Separate Results Island (slightly below input) */}
             <AnimatePresence>
-              {hasSearchQuery && (
+              {hasSearchQuery ? (
                 <motion.div
                   key="search-results-island"
                   initial={{ opacity: 0, y: -8, scale: 0.99 }}
@@ -891,7 +963,30 @@ export default function AppFrame({ children }: AppFrameProps) {
                   </AnimatePresence>
                 </div>
               </motion.div>
-            )}
+            ) : historyItems.length > 0 ? (
+              <motion.div
+                key="search-history-island"
+                initial={{ opacity: 0, y: -8, scale: 0.99 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -8, scale: 0.99 }}
+                transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+                className="w-[min(660px,calc(100vw-72px))] mt-[8px] max-h-[480px] h-auto rounded-[8px] pointer-events-auto flex flex-col overflow-hidden bg-bg-panel/95 border border-border-primary/50 backdrop-blur-2xl"
+              >
+                <div className="relative flex-1 min-h-0 overflow-hidden">
+                  <SearchHistoryList
+                    onSelectQuery={handleSelectHistoryQuery}
+                    onPlayTrack={handlePlayFromSearch}
+                    onNavigateItem={handleNavigateItem}
+                    onScroll={updateSearchMask}
+                    scrollRef={searchScrollRef}
+                    maskStyle={{
+                      WebkitMaskImage: searchScrollMask,
+                      maskImage: searchScrollMask,
+                    }}
+                  />
+                </div>
+              </motion.div>
+            ) : null}
           </AnimatePresence>
         </motion.div>
       )}

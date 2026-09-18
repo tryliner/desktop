@@ -26,6 +26,8 @@ import {
 } from "../hooks";
 import { mediaUrl, toClientTrack, toMaxQualityAvatarUrl } from "@/shared/api";
 import SearchResultsList from "./SearchResultsList";
+import SearchHistoryList from "./SearchHistoryList";
+import { useSearchHistoryStore } from "../store/searchHistoryStore";
 import { useTranslation } from "@/languages";
 
 export interface SearchModalProps {
@@ -59,6 +61,8 @@ export function SearchModal({
   const [searchScrollMask, setSearchScrollMask] = useState(
     "linear-gradient(to bottom, black 0%, black 100%)",
   );
+  const addHistoryItem = useSearchHistoryStore((state) => state.addItem);
+  const historyItems = useSearchHistoryStore((state) => state.items);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchScrollRef = useRef<HTMLDivElement>(null);
@@ -306,12 +310,39 @@ export function SearchModal({
 
   const handleItemClick = (it: any) => {
     if ((it as any)._type === "track") {
+      const durationMs = it.durationMs ?? it.duration_ms;
+      const durationStr = durationMs
+        ? `${Math.floor(durationMs / 60000)}:${Math.floor(
+            (durationMs % 60000) / 1000,
+          )
+            .toString()
+            .padStart(2, "0")}`
+        : "";
+      addHistoryItem({
+        id: it.id,
+        type: "track",
+        title: it.title,
+        subtitle: it.artists,
+        coverUrl: it.coverUrl,
+        explicit: it.explicit,
+        duration: durationStr,
+        durationMs,
+        itemData: it,
+      });
       onPlayTrack(it);
     } else if (
       (it as any)._type === "artist" ||
       it.followers !== undefined ||
       activeFilter === "artists"
     ) {
+      addHistoryItem({
+        id: it.id,
+        type: "artist",
+        title: it.name || it.title,
+        subtitle: t("common.artists"),
+        coverUrl: it.coverUrl,
+        itemData: it,
+      });
       onClose();
       navigate(`/artist?id=${encodeURIComponent(it.id)}`);
     } else if (
@@ -319,6 +350,14 @@ export function SearchModal({
       it.owner !== undefined ||
       activeFilter === "playlists"
     ) {
+      addHistoryItem({
+        id: it.id,
+        type: "playlist",
+        title: it.name || it.title,
+        subtitle: it.author || it.owner || t("common.playlists"),
+        coverUrl: it.coverUrl,
+        itemData: it,
+      });
       onClose();
       navigate(`/collection?type=playlist&id=${encodeURIComponent(it.id)}`);
     } else if (
@@ -327,10 +366,40 @@ export function SearchModal({
       it.total_tracks !== undefined ||
       activeFilter === "albums"
     ) {
+      addHistoryItem({
+        id: it.id,
+        type: "album",
+        title: it.name || it.title,
+        subtitle: it.artists || it.artist || t("common.albums"),
+        coverUrl: it.coverUrl,
+        itemData: it,
+      });
       onClose();
       navigate(`/collection?type=album&id=${encodeURIComponent(it.id)}`);
     }
   };
+
+  const submitSearchQuery = useCallback(
+    (queryToSubmit: string) => {
+      const trimmed = queryToSubmit.trim();
+      if (!trimmed) return;
+      addHistoryItem({
+        id: `query:${trimmed.toLowerCase()}`,
+        type: "query",
+        title: trimmed,
+      });
+    },
+    [addHistoryItem],
+  );
+
+  const handleSelectHistoryQuery = useCallback(
+    (queryText: string) => {
+      setSearchQuery(queryText);
+      submitSearchQuery(queryText);
+      searchInputRef.current?.focus();
+    },
+    [submitSearchQuery],
+  );
 
   return (
     <AnimatePresence>
@@ -382,6 +451,7 @@ export function SearchModal({
           onKeyDown={(e) => {
             if (e.key === "Enter") {
               e.preventDefault();
+              submitSearchQuery(searchQuery);
               runSearchNow();
             }
           }}
@@ -416,7 +486,7 @@ export function SearchModal({
 
       {/* 2. Separate Floating Results Window Island (Only when query is present) */}
       <AnimatePresence>
-        {hasSearchQuery && (
+        {hasSearchQuery ? (
           <motion.div
             initial={{ opacity: 0, y: -6, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -522,7 +592,33 @@ export function SearchModal({
               </AnimatePresence>
             </div>
           </motion.div>
-        )}
+        ) : historyItems.length > 0 ? (
+          <motion.div
+            key="search-modal-history-island"
+            initial={{ opacity: 0, y: -6, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -6, scale: 0.98 }}
+            transition={{
+              duration: 0.18,
+              ease: [0.16, 1, 0.3, 1],
+            }}
+            className="w-[min(660px,calc(100vw-90px))] mt-[8px] max-h-[480px] h-auto rounded-[8px] bg-bg-panel/98 backdrop-blur-2xl flex flex-col overflow-hidden"
+          >
+            <div className="relative flex-1 min-h-0 overflow-hidden">
+              <SearchHistoryList
+                onSelectQuery={handleSelectHistoryQuery}
+                onPlayTrack={onPlayTrack}
+                onNavigateItem={handleItemClick}
+                onScroll={updateSearchMask}
+                scrollRef={searchScrollRef}
+                maskStyle={{
+                  WebkitMaskImage: searchScrollMask,
+                  maskImage: searchScrollMask,
+                }}
+              />
+            </div>
+          </motion.div>
+        ) : null}
       </AnimatePresence>
         </motion.div>
       )}

@@ -582,21 +582,18 @@ function MiniPlayer({
           </div>
         )}
         <div
-          className={`relative grid h-full ${
+          className={`relative grid h-full pointer-events-none ${
             embedded
               ? "grid-cols-[280px_minmax(0,1fr)_260px]"
               : "grid-cols-[286px_minmax(0,1fr)]"
           } ${!usesRoundedStyle && !embedded ? "pb-[4px]" : ""}`}
         >
-          <div
-            className="flex h-full items-center gap-[16px] px-[18px] pt-[1px] prevent-seek cursor-default"
-            onPointerDown={(e) => e.stopPropagation()}
-          >
+          <div className="flex h-full items-center gap-[16px] px-[18px] pt-[1px] pointer-events-none cursor-default">
             <div
               role="button"
               tabIndex={0}
               aria-label="Open player"
-              className={`relative h-[38px] w-[38px] shrink-0 overflow-hidden rounded-[8px] bg-bg-elevated cursor-pointer prevent-seek ${
+              className={`relative h-[38px] w-[38px] shrink-0 overflow-hidden rounded-[8px] bg-bg-elevated cursor-pointer pointer-events-auto prevent-seek ${
                 !isCoverLoaded ? "animate-pulse" : ""
               }`}
               onClick={onFullscreenOpen}
@@ -618,9 +615,9 @@ function MiniPlayer({
                 } rounded-[8px]`}
               />
             </div>
-            <div className="flex min-w-0 flex-col prevent-seek">
+            <div className="flex min-w-0 flex-col pointer-events-none">
               <p
-                className="m-0 truncate text-[16px] font-[400] text-text-primary flex items-center gap-[6px]"
+                className="m-0 truncate text-[16px] font-[400] text-text-primary flex items-center gap-[6px] pointer-events-none"
                 style={{
                   fontFamily: "var(--font-inter), sans-serif",
                   lineHeight: "18px",
@@ -631,8 +628,9 @@ function MiniPlayer({
                   role="button"
                   tabIndex={0}
                   aria-label="Open player"
-                  className="min-w-0 truncate cursor-pointer"
+                  className="min-w-0 truncate cursor-pointer pointer-events-auto prevent-seek"
                   onClick={onFullscreenOpen}
+                  onPointerDown={(e) => e.stopPropagation()}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" || e.key === " ") {
                       e.preventDefault();
@@ -644,7 +642,7 @@ function MiniPlayer({
                 </span>
               </p>
               <p
-                className="m-0 mt-[4px] flex min-w-0 items-center gap-[5px] text-[13px] font-[300] text-text-tertiary"
+                className="m-0 mt-[4px] flex min-w-0 items-center gap-[5px] text-[13px] font-[300] text-text-tertiary pointer-events-none"
                 style={{
                   fontFamily: "var(--font-inter), sans-serif",
                   lineHeight: "15px",
@@ -655,14 +653,14 @@ function MiniPlayer({
                   name={trackArtists}
                   artistId={player.currentTrack?.artistId}
                   artistList={player.currentTrack?.artistList}
-                  className="text-text-tertiary"
+                  className="text-text-tertiary pointer-events-auto"
                 />
               </p>
             </div>
             <button
               type="button"
               aria-label={isLiked ? "Unlike" : "Like"}
-              className={`${iconButtonClass} shrink-0 transition-colors duration-150 prevent-seek ${
+              className={`${iconButtonClass} shrink-0 transition-colors duration-150 pointer-events-auto prevent-seek ${
                 isLiked ? "text-[#ff4d4d]" : "text-text-secondary"
               }`}
               onPointerDown={(e) => e.stopPropagation()}
@@ -674,12 +672,12 @@ function MiniPlayer({
           </div>
 
           <div
-            className={`flex h-full items-center pl-[10px] pr-[18px] ${
+            className={`flex h-full items-center pl-[10px] pr-[18px] pointer-events-none ${
               embedded ? "col-start-3" : ""
             }`}
           >
             <div
-              className="ml-auto flex items-center gap-[2px] rounded-lg bg-bg-toolbox p-[3px] prevent-seek cursor-default"
+              className="ml-auto flex items-center gap-[2px] rounded-lg bg-bg-toolbox p-[3px] pointer-events-auto prevent-seek cursor-default"
               onPointerDown={(e) => e.stopPropagation()}
             >
               <button

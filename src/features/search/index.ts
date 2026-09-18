@@ -22,3 +22,13 @@ export {
   type UseSearchPlaylistsOptions,
   type UseSearchPlaylistsResult,
 } from "./hooks/useSearchPlaylists";
+export {
+  useSearchHistoryStore,
+  type SearchHistoryItem,
+  type SearchHistoryItemType,
+  type SearchHistoryState,
+} from "./store/searchHistoryStore";
+export {
+  SearchHistoryList,
+  type SearchHistoryListProps,
+} from "./ui/SearchHistoryList";
