@@ -19,7 +19,11 @@ const TITLE_MAX = 20;
 // mirrors backend detectImportSource, labels only
 function detectSourceLabel(raw: string): string | null {
   try {
-    const host = new URL(raw.trim()).hostname.toLowerCase().replace(/^www\./, "");
+    let text = raw.trim();
+    if (!text.startsWith("http://") && !text.startsWith("https://")) {
+      text = `https://${text}`;
+    }
+    const host = new URL(text).hostname.toLowerCase().replace(/^www\./, "");
     if (["youtube.com", "music.youtube.com", "m.youtube.com", "youtu.be"].includes(host)) return "YouTube";
     if (host === "soundcloud.com" || host.endsWith(".soundcloud.com")) return "SoundCloud";
     if (host === "open.spotify.com") return "Spotify";
@@ -109,10 +113,14 @@ export default function CreatePlaylistModal() {
 
   async function handleImport(overrideUrl?: string) {
     if (importing) return;
-    const target = (overrideUrl ?? importUrl).trim();
+    let target = (overrideUrl ?? importUrl).trim();
     if (!target) {
       setImportError(t("common.paste_link_first"));
       return;
+    }
+
+    if (!target.startsWith("http://") && !target.startsWith("https://")) {
+      target = `https://${target}`;
     }
 
     try {
