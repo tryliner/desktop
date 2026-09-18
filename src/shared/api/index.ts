@@ -5,6 +5,8 @@ export {
   getApiBaseUrl,
   setApiBaseUrl,
   switchToFallbackEdge,
+  initApiEndpointProbe,
+  resetEndpointProbe,
 } from "./baseUrl";
 export type {
   SearchType,
