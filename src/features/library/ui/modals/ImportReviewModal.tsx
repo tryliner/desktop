@@ -179,7 +179,14 @@ export default function ImportReviewModal() {
       if (!active) return;
       setLoading(false);
 
-      const r = await api.skipPlaylistImportReview(jobId).catch(() => null);
+      const autoMatchedTracks = useModalStore.getState().importReviewApprovedTracks || [];
+      const jobMeta = useImportStore.getState().job;
+      const r = await api.skipPlaylistImportReview(
+        jobId,
+        autoMatchedTracks,
+        jobMeta?.title,
+        jobMeta?.description,
+      ).catch(() => null);
       if (!active) return;
       if (r?.finalized) {
         const finalJob = await api.getPlaylistImport(jobId).catch(() => null);
@@ -213,15 +220,18 @@ export default function ImportReviewModal() {
         decision: decisions[item.id] || "deny",
       }));
 
-      const approvedTracks = items
+      const userApprovedTracks = items
         .filter((item) => (decisions[item.id] || "deny") === "approve" && Boolean(item.proposedTrack))
         .map((item) => item.proposedTrack!);
+
+      const autoMatchedTracks = useModalStore.getState().importReviewApprovedTracks || [];
+      const allApprovedTracks = [...autoMatchedTracks, ...userApprovedTracks];
 
       const jobMeta = useImportStore.getState().job;
       const res = await api.decidePlaylistImportReview(
         jobId,
         decisionList,
-        approvedTracks,
+        allApprovedTracks,
         jobMeta?.title,
         jobMeta?.description,
       );
@@ -249,7 +259,14 @@ export default function ImportReviewModal() {
     setSubmitting(true);
 
     try {
-      const res = await api.skipPlaylistImportReview(jobId);
+      const autoMatchedTracks = useModalStore.getState().importReviewApprovedTracks || [];
+      const jobMeta = useImportStore.getState().job;
+      const res = await api.skipPlaylistImportReview(
+        jobId,
+        autoMatchedTracks,
+        jobMeta?.title,
+        jobMeta?.description,
+      );
 
       const finalJob = await api.getPlaylistImport(jobId).catch(() => null);
       if (res.finalized || finalJob?.status === "completed") {

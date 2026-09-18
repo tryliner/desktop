@@ -839,12 +839,20 @@ export const api = {
 
   skipPlaylistImportReview(
     importId: string,
+    tracks?: any[],
+    title?: string,
+    description?: string,
   ): Promise<{ denied: "all"; finalized: boolean }> {
     return request<{ denied: "all"; finalized: boolean }>(
       `/v1/me/playlist-imports/${encodeURIComponent(importId)}/review`,
       {
         method: "POST",
-        body: JSON.stringify({ action: "skip" }),
+        body: JSON.stringify({
+          action: "skip",
+          ...(tracks?.length ? { tracks } : {}),
+          ...(title ? { title } : {}),
+          ...(description ? { description } : {}),
+        }),
       },
     );
   },

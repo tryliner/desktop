@@ -311,7 +311,14 @@ function ImportToastBridge({
 
   const finalizeWithMatches = useCallback(async (jobId: string) => {
     try {
-      const res = await api.skipPlaylistImportReview(jobId);
+      const autoMatchedTracks = useModalStore.getState().importReviewApprovedTracks || [];
+      const jobMeta = useImportStore.getState().job;
+      const res = await api.skipPlaylistImportReview(
+        jobId,
+        autoMatchedTracks,
+        jobMeta?.title,
+        jobMeta?.description,
+      );
       if (res.finalized) {
         const finalJob = await api.getPlaylistImport(jobId).catch(() => null);
         useImportStore.setState({ job: finalJob ?? null, isPolling: false });

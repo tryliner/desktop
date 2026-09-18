@@ -88,7 +88,8 @@ interface ModalState {
   importReviewOpen: boolean;
   importReviewJobId: string | null;
   importReviewPrefetched: ImportReview[] | null;
-  openImportReview: (jobId: string, prefetchedItems?: ImportReview[]) => void;
+  importReviewApprovedTracks: any[] | null;
+  openImportReview: (jobId: string, prefetchedItems?: ImportReview[], approvedTracks?: any[]) => void;
   closeImportReview: () => void;
 
   // Search modal / panel
@@ -159,17 +160,20 @@ export const useModalStore = create<ModalState>((set) => ({
   importReviewOpen: false,
   importReviewJobId: null,
   importReviewPrefetched: null,
-  openImportReview: (jobId, prefetchedItems) =>
+  importReviewApprovedTracks: null,
+  openImportReview: (jobId, prefetchedItems, approvedTracks) =>
     set((state) => ({
       importReviewOpen: true,
       importReviewJobId: jobId,
       importReviewPrefetched: prefetchedItems?.length ? prefetchedItems : state.importReviewPrefetched,
+      importReviewApprovedTracks: approvedTracks?.length ? approvedTracks : state.importReviewApprovedTracks,
     })),
   closeImportReview: () =>
     set({
       importReviewOpen: false,
       importReviewJobId: null,
       importReviewPrefetched: null,
+      importReviewApprovedTracks: null,
     }),
 
   searchOpen: false,

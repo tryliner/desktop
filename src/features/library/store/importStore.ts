@@ -125,14 +125,17 @@ export const useImportStore = create<ActiveImportState>((set, get) => ({
           set({ job: current });
 
           if (Array.isArray(msg.reviewItems) && msg.reviewItems.length > 0) {
-            useModalStore.setState({ importReviewPrefetched: msg.reviewItems });
+            useModalStore.setState({
+              importReviewPrefetched: msg.reviewItems,
+              importReviewApprovedTracks: Array.isArray(msg.approvedTracks) ? msg.approvedTracks : null,
+            });
           }
 
           if (current.status === "awaiting_decision") {
             isFinished = true;
             set({ isPolling: false, job: current });
             cleanupActiveConnections();
-            useModalStore.getState().openImportReview(current.id, msg.reviewItems);
+            useModalStore.getState().openImportReview(current.id, msg.reviewItems, msg.approvedTracks);
             return;
           }
 
