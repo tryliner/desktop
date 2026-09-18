@@ -14,7 +14,6 @@ export interface ActiveImportState {
   pendingTrack: TrackDetail | null;
   startImport: (url: string, pendingTrack?: TrackDetail | null) => Promise<ImportJob>;
   listenToWebSocketWorker: (job: ImportJob) => void;
-  listenToJob: (jobId: string) => Promise<void>;
   pollJob: (jobId: string) => Promise<void>;
   cancelPolling: () => void;
   reset: () => void;
@@ -68,11 +67,10 @@ export const useImportStore = create<ActiveImportState>((set, get) => ({
       const job = await api.createPlaylistImport(url);
       set({ job, isPolling: true });
 
-      // prefer direct websocket worker stream if returned by backend
       if (job.workerWsUrl && job.importToken) {
         get().listenToWebSocketWorker(job);
       } else {
-        void get().listenToJob(job.id);
+        set({ error: "Import worker unavailable", isPolling: false, pendingTrack: null });
       }
       return job;
     } catch (err) {
@@ -98,8 +96,8 @@ export const useImportStore = create<ActiveImportState>((set, get) => ({
       ws = new WebSocket(targetUrl);
       activeWebSocket = ws;
     } catch {
-      // fallback to sse if ws url construction fails
-      void get().listenToJob(job.id);
+      set({ error: "Failed to connect to import service", isPolling: false });
+      cleanupActiveConnections();
       return;
     }
 
@@ -174,51 +172,14 @@ export const useImportStore = create<ActiveImportState>((set, get) => ({
     ws.onerror = () => {
       if (isFinished) return;
       cleanupActiveConnections();
-      // fallback to sse on websocket error
-      void get().listenToJob(job.id);
+      set({ isPolling: false, error: "Import service connection error" });
     };
 
     ws.onclose = () => {
       if (isFinished) return;
       cleanupActiveConnections();
-      // fallback to sse if connection drops prematurely
-      void get().listenToJob(job.id);
+      set({ isPolling: false, error: "Import service disconnected" });
     };
-  },
-
-  listenToJob: async (jobId: string) => {
-    cleanupActiveConnections();
-
-    const controller = new AbortController();
-    activeAbortController = controller;
-    set({ isPolling: true });
-
-    try {
-      for await (const current of api.streamPlaylistImport(jobId, controller.signal)) {
-        if (controller.signal.aborted) return;
-        set({ job: current });
-
-        if (current.status === "awaiting_decision") {
-          set({ isPolling: false, job: current });
-          return;
-        }
-
-        if (current.status === "completed") {
-          set({ isPolling: false, job: current });
-          notifyLibraryChanged();
-          return;
-        }
-
-        if (current.status === "failed") {
-          set({ isPolling: false, job: current, error: "Import failed" });
-          return;
-        }
-      }
-    } catch {
-      if (controller.signal.aborted) return;
-      // if sse stream disconnected, fallback to safe polling
-      void get().pollJob(jobId);
-    }
   },
 
   pollJob: async (jobId: string) => {
