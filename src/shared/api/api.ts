@@ -824,12 +824,15 @@ export const api = {
   decidePlaylistImportReview(
     importId: string,
     decisions: ImportReviewDecision[],
+    tracks?: any[],
+    title?: string,
+    description?: string,
   ): Promise<{ approved: string[]; denied: string[]; finalized?: boolean }> {
     return request<{ approved: string[]; denied: string[]; finalized?: boolean }>(
       `/v1/me/playlist-imports/${encodeURIComponent(importId)}/review`,
       {
         method: "POST",
-        body: JSON.stringify({ decisions }),
+        body: JSON.stringify({ decisions, tracks, title, description }),
       },
     );
   },

@@ -213,7 +213,18 @@ export default function ImportReviewModal() {
         decision: decisions[item.id] || "deny",
       }));
 
-      const res = await api.decidePlaylistImportReview(jobId, decisionList);
+      const approvedTracks = items
+        .filter((item) => (decisions[item.id] || "deny") === "approve" && Boolean(item.proposedTrack))
+        .map((item) => item.proposedTrack!);
+
+      const jobMeta = useImportStore.getState().job;
+      const res = await api.decidePlaylistImportReview(
+        jobId,
+        decisionList,
+        approvedTracks,
+        jobMeta?.title,
+        jobMeta?.description,
+      );
 
       const finalJob = await api.getPlaylistImport(jobId).catch(() => null);
       if (res.finalized || finalJob?.status === "completed") {
