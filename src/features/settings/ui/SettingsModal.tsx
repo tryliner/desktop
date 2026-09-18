@@ -4,6 +4,7 @@ import { CloseLine, Search2Line, CloseCircleFill, ExitLine } from "@mingcute/rea
 import {
   Play,
   Palette,
+  Gallery,
   HeadphonesRound,
   ShieldCheck,
   InfoCircle,
@@ -19,17 +20,19 @@ import { useAuthStore } from "@/features/auth";
 import {
   PlaybackTab,
   AppearanceTab,
+  CustomizationTab,
   AudioTab,
   StorageTab,
   PrivacyTab,
   AboutTab,
 } from "./tabs";
 
-type TabId = "Playback" | "Appearance" | "Audio" | "Storage" | "Privacy" | "About";
+type TabId = "Playback" | "Appearance" | "Customization" | "Audio" | "Storage" | "Privacy" | "About";
 
 const TAB_ICONS: Record<TabId, typeof Play> = {
   Playback: Play,
   Appearance: Palette,
+  Customization: Gallery,
   Audio: HeadphonesRound,
   Storage: Database,
   Privacy: ShieldCheck,
@@ -37,9 +40,10 @@ const TAB_ICONS: Record<TabId, typeof Play> = {
 };
 
 const TAB_GROUPS: { labelKey: "preferences" | "application"; ids: TabId[] }[] = [
-  { labelKey: "preferences", ids: ["Playback", "Audio", "Appearance"] },
+  { labelKey: "preferences", ids: ["Playback", "Audio", "Appearance", "Customization"] },
   { labelKey: "application", ids: ["Storage", "Privacy", "About"] },
 ];
+
 
 const SETTING_ITEMS: { tabId: TabId; titleKey: string; descKey?: string }[] = [
   // Playback
@@ -52,6 +56,11 @@ const SETTING_ITEMS: { tabId: TabId; titleKey: string; descKey?: string }[] = [
   { tabId: "Appearance", titleKey: "settings.language.label", descKey: "settings.language.description" },
   { tabId: "Appearance", titleKey: "settings.theme.title", descKey: "settings.theme.description" },
   { tabId: "Appearance", titleKey: "settings.branding.title", descKey: "settings.branding.description" },
+
+  // Customization
+  { tabId: "Customization", titleKey: "settings.customization.wallpaper_title", descKey: "settings.customization.wallpaper_description" },
+  { tabId: "Customization", titleKey: "settings.customization.blocks_title", descKey: "settings.customization.blocks_description" },
+  { tabId: "Customization", titleKey: "settings.customization.reset_all", descKey: "settings.customization.reset_all_desc" },
 
   // Audio
   { tabId: "Audio", titleKey: "settings.audio.title", descKey: "settings.audio.description" },
@@ -88,6 +97,7 @@ export default function SettingsModal() {
   const tabLabels: Record<TabId, string> = {
     Playback: t("settings.tabs.playback"),
     Appearance: t("settings.tabs.appearance"),
+    Customization: t("settings.tabs.customization") || "Customization",
     Audio: t("settings.tabs.audio"),
     Storage: t("settings.tabs.storage"),
     Privacy: t("settings.tabs.privacy"),
@@ -97,6 +107,7 @@ export default function SettingsModal() {
   const tabDescriptions: Record<TabId, string> = {
     Playback: t("settings.playback.description"),
     Appearance: t("settings.theme.description"),
+    Customization: t("settings.customization.description") || "Window background wallpaper, transparency and block blur effects.",
     Audio: t("settings.audio.description"),
     Storage: t("settings.storage.description"),
     Privacy: t("settings.privacy.description"),
@@ -111,6 +122,7 @@ export default function SettingsModal() {
     const TAB_LABEL_KEYS: Record<TabId, string> = {
       Playback: "settings.tabs.playback",
       Appearance: "settings.theme.title",
+      Customization: "settings.tabs.customization",
       Audio: "settings.tabs.audio",
       Storage: "settings.tabs.storage",
       Privacy: "settings.tabs.privacy",
@@ -120,11 +132,13 @@ export default function SettingsModal() {
     const TAB_DESC_KEYS: Record<TabId, string> = {
       Playback: "settings.playback.description",
       Appearance: "settings.theme.description",
+      Customization: "settings.customization.description",
       Audio: "settings.audio.description",
       Storage: "settings.storage.description",
       Privacy: "settings.privacy.description",
       About: "settings.about.tagline",
     };
+
 
     (Object.keys(TAB_LABEL_KEYS) as TabId[]).forEach((tabId) => {
       const texts = [
@@ -364,10 +378,12 @@ export default function SettingsModal() {
           >
             {activeTab === "Playback" && <PlaybackTab searchQuery={searchQuery} />}
             {activeTab === "Appearance" && <AppearanceTab searchQuery={searchQuery} />}
+            {activeTab === "Customization" && <CustomizationTab searchQuery={searchQuery} />}
             {activeTab === "Audio" && <AudioTab searchQuery={searchQuery} />}
             {activeTab === "Storage" && <StorageTab searchQuery={searchQuery} />}
             {activeTab === "Privacy" && <PrivacyTab searchQuery={searchQuery} />}
             {activeTab === "About" && <AboutTab searchQuery={searchQuery} />}
+
           </motion.div>
         </div>
         </div>

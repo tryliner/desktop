@@ -1,4 +1,4 @@
-import { useRef, useState, useLayoutEffect, useCallback, useEffect, type CSSProperties } from "react";
+import { useRef, useState, useLayoutEffect, useCallback, useEffect, useMemo, type CSSProperties } from "react";
 
 export interface ScrollableTextProps {
   text: string;
@@ -8,13 +8,12 @@ export interface ScrollableTextProps {
   fadeColorClass?: string;
 }
 
-// scrolls horizontally on hover when text overflows container
+// scrolls horizontally on hover when text overflows container with adaptive alpha mask fading
 export default function ScrollableText({
   text,
   className = "",
   style,
   isParentHovered = false,
-  fadeColorClass = "from-bg-elevated",
 }: ScrollableTextProps) {
   const outerRef = useRef<HTMLSpanElement>(null);
   const innerRef = useRef<HTMLSpanElement>(null);
@@ -38,31 +37,37 @@ export default function ScrollableText({
 
   const isHovered = isParentHovered || selfHovered;
 
+  const maskStyle = useMemo<CSSProperties>(() => {
+    if (delta <= 0) return {};
+    if (isHovered) {
+      return {
+        maskImage:
+          "linear-gradient(to right, transparent 0px, black 14px, black calc(100% - 14px), transparent 100%)",
+        WebkitMaskImage:
+          "linear-gradient(to right, transparent 0px, black 14px, black calc(100% - 14px), transparent 100%)",
+        transition: "mask-image 200ms ease, -webkit-mask-image 200ms ease",
+      };
+    }
+    return {
+      maskImage:
+        "linear-gradient(to right, black 0px, black calc(100% - 14px), transparent 100%)",
+      WebkitMaskImage:
+        "linear-gradient(to right, black 0px, black calc(100% - 14px), transparent 100%)",
+      transition: "mask-image 200ms ease, -webkit-mask-image 200ms ease",
+    };
+  }, [delta, isHovered]);
+
   return (
     <span
       ref={outerRef}
       className={`relative block min-w-0 overflow-hidden text-left ${className}`}
-      style={style}
+      style={{ ...style, ...maskStyle }}
       onMouseEnter={() => {
         measure();
         setSelfHovered(true);
       }}
       onMouseLeave={() => setSelfHovered(false)}
     >
-      {/* left shadow fade in on scroll */}
-      <span
-        aria-hidden="true"
-        className={`pointer-events-none absolute left-0 top-0 bottom-0 w-[14px] z-10 bg-gradient-to-r ${fadeColorClass} to-transparent transition-opacity duration-300 ease-out`}
-        style={{ opacity: isHovered && delta > 0 ? 1 : 0 }}
-      />
-
-      {/* right shadow fade when truncated */}
-      <span
-        aria-hidden="true"
-        className={`pointer-events-none absolute right-0 top-0 bottom-0 w-[14px] z-10 bg-gradient-to-l ${fadeColorClass} to-transparent transition-opacity duration-300 ease-out`}
-        style={{ opacity: delta > 0 ? 1 : 0 }}
-      />
-
       <span
         ref={innerRef}
         className="inline-block whitespace-nowrap"
@@ -80,3 +85,4 @@ export default function ScrollableText({
 }
 
 export { ScrollableText };
+

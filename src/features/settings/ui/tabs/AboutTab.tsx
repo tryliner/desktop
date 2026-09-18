@@ -1,10 +1,11 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { FaTelegramPlane, FaGithub, FaGlobe } from "react-icons/fa";
-import { Refresh1Line, CheckLine } from "@mingcute/react";
+import { Refresh1Line, CheckLine, SparklesFill } from "@mingcute/react";
 import { QuestionCircle } from "@solar-icons/react";
 import Button from "@/shared/ui/Button";
 import { useToast } from "@/shared/ui";
 import { useTranslation, getTranslationsForAllLocales } from "@/languages";
+import { APP_VERSION } from "@/shared/config/version";
 import logo from "@/assets/logo.svg";
 import spotifyLogo from "@/assets/branding/logo-spotify.svg";
 import discordLogo from "@/assets/branding/logo-discord.svg";
@@ -19,8 +20,7 @@ import pixelLogo from "@/assets/branding/logo-pixel.svg";
 import scanlinesLogo from "@/assets/branding/logo-scanlines.svg";
 import vhsLogo from "@/assets/branding/logo-vhs.svg";
 import { usePlayerStore, type AccentVariant } from "@/features/player";
-
-const APP_VERSION = "0.1.26";
+import { useUpdaterStore } from "@/features/updater";
 
 const brandingLogos: Record<Exclude<AccentVariant, "default">, string> = {
   spotify: spotifyLogo,
@@ -44,8 +44,19 @@ export function AboutTab({ searchQuery }: { searchQuery?: string }) {
   const { toast } = useToast();
   const accentVariant = usePlayerStore((state) => state.accentVariant);
 
+  const [appVersion, setAppVersion] = useState(APP_VERSION);
   const [checkingUpdate, setCheckingUpdate] = useState(false);
   const [lastCheckedTime, setLastCheckedTime] = useState<string | null>(null);
+
+  useEffect(() => {
+    // dynamically query electron runtime version if running in desktop shell
+    window.linerElectron
+      ?.getAppVersion?.()
+      .then((ver) => {
+        if (ver) setAppVersion(ver);
+      })
+      .catch(() => {});
+  }, []);
 
   const openUrl = (url: string) => {
     window.open(url, "_blank", "noopener,noreferrer");
@@ -54,13 +65,23 @@ export function AboutTab({ searchQuery }: { searchQuery?: string }) {
   const handleCheckUpdates = async () => {
     if (checkingUpdate) return;
     setCheckingUpdate(true);
-    // brief delay to simulate network check against releases
-    await new Promise((resolve) => setTimeout(resolve, 600));
-    setCheckingUpdate(false);
-    const now = new Date();
-    const timeStr = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-    setLastCheckedTime(timeStr);
-    toast(t("settings.about.latest_version_toast"), "info");
+    try {
+      await useUpdaterStore.getState().checkForUpdates();
+      const status = useUpdaterStore.getState().status;
+      const updateInfo = useUpdaterStore.getState().updateInfo;
+      if (status === "available" && updateInfo) {
+        useUpdaterStore.getState().openDialog();
+      } else {
+        toast(t("settings.about.latest_version_toast", { version: appVersion }), "info");
+      }
+    } catch {
+      toast(t("settings.about.latest_version_toast", { version: appVersion }), "info");
+    } finally {
+      setCheckingUpdate(false);
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      setLastCheckedTime(timeStr);
+    }
   };
 
   // search query filter matching
@@ -120,7 +141,7 @@ export function AboutTab({ searchQuery }: { searchQuery?: string }) {
               style={font}
             >
               <span className="h-[5px] w-[5px] rounded-full bg-emerald-400" />
-              <span>v{APP_VERSION}</span>
+              <span>v{appVersion}</span>
             </div>
           </div>
 
@@ -189,21 +210,34 @@ export function AboutTab({ searchQuery }: { searchQuery?: string }) {
           </span>
         </div>
 
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={handleCheckUpdates}
-          disabled={checkingUpdate}
-          className="!h-[30px] !px-[12px] !text-[12px] shrink-0 gap-[6px]"
-        >
-          <Refresh1Line
-            size={13}
-            className={checkingUpdate ? "animate-spin text-text-primary" : "text-text-tertiary"}
-          />
-          {checkingUpdate
-            ? t("settings.about.checking_updates")
-            : t("settings.about.check_updates")}
-        </Button>
+        <div className="flex items-center gap-[6px] shrink-0">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => useUpdaterStore.getState().triggerTestUpdate()}
+            className="!h-[30px] !px-[10px] !text-[12px] !gap-[5px] text-text-tertiary hover:text-text-primary"
+            title={t("settings.about.test_update") || "Test update"}
+          >
+            <SparklesFill size={13} className="text-amber-400" />
+            {t("settings.about.test_update") || "Test update"}
+          </Button>
+
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleCheckUpdates}
+            disabled={checkingUpdate}
+            className="!h-[30px] !px-[12px] !text-[12px] !gap-[6px]"
+          >
+            <Refresh1Line
+              size={13}
+              className={checkingUpdate ? "animate-spin text-text-primary" : "text-text-tertiary"}
+            />
+            {checkingUpdate
+              ? t("settings.about.checking_updates")
+              : t("settings.about.check_updates")}
+          </Button>
+        </div>
       </div>
     </div>
   );

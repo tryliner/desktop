@@ -43,3 +43,5 @@ export {
   SIDEBAR_SUBTITLE_CLASS,
   type EntitySidebarProps,
 } from "./EntitySidebar";
+export { default as Slider, type SliderProps } from "./Slider";
+

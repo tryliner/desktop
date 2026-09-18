@@ -75,6 +75,7 @@ export interface ToastCallable {
 
 interface ToastContextValue {
   toast: ToastCallable;
+  dismiss: (id: string | number) => void;
 }
 
 const ToastContext = createContext<ToastContextValue | null>(null);
@@ -116,6 +117,16 @@ export function showToast(
   );
 }
 
+export function dismissToast(id: string | number) {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(
+    new CustomEvent("liner:toast-dismiss", {
+      detail: { id },
+    }),
+  );
+}
+
+showToast.dismiss = dismissToast;
 showToast.success = (message: string, options?: ToastOptions) =>
   showToast(message, "success", options);
 showToast.checkmark = (message: string, options?: ToastOptions) =>
@@ -564,6 +575,17 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener("liner:toast", handleCustomToast);
   }, [toastCore]);
 
+  useEffect(() => {
+    const handleDismissToast = (e: Event) => {
+      const detail = (e as CustomEvent<{ id: string | number }>).detail;
+      if (detail && detail.id !== undefined) {
+        remove(detail.id);
+      }
+    };
+    window.addEventListener("liner:toast-dismiss", handleDismissToast);
+    return () => window.removeEventListener("liner:toast-dismiss", handleDismissToast);
+  }, [remove]);
+
   // Keep up to 3 cards in the visible stack (active + 2 in the batch deck)
   const visibleToasts = toasts.slice(0, 3);
   const [activeCardWidth, setActiveCardWidth] = useState<number | null>(null);
@@ -575,7 +597,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <ToastContext.Provider value={{ toast: toastCallable }}>
+    <ToastContext.Provider value={{ toast: toastCallable, dismiss: remove }}>
       {children}
       {/* top-center notification batch deck - positioned below window drag area */}
       <div className="fixed top-[44px] left-1/2 -translate-x-1/2 z-[9999] pointer-events-none">
@@ -881,6 +903,7 @@ export function useToast() {
   if (!ctx) {
     return {
       toast: showToast as ToastCallable,
+      dismiss: dismissToast,
     };
   }
   return ctx;

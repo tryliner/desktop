@@ -57,35 +57,25 @@ function HomePageSkeletonComponent({
   showQuickGrid = false,
 }: HomePageSkeletonProps) {
   return (
-    <div className="relative min-h-full w-full bg-bg-primary pb-[16px] select-none overflow-hidden">
+    <div className="relative min-h-full w-full bg-transparent pb-[16px] select-none overflow-hidden">
+
       {/* Ambient time-of-day gradient glow matching actual page */}
       <div
         aria-hidden="true"
         className={`pointer-events-none absolute top-0 left-0 right-0 h-[360px] bg-gradient-to-b ${glowClass} blur-3xl opacity-80`}
       />
 
-      {/* Hero Greeting Section */}
-      <div className={`relative px-8 pt-4 ${showQuickGrid ? "pb-2" : "pb-0"}`}>
-        {/* Greeting Header */}
-        <div
-          className={`relative inline-flex items-center gap-3 px-4 py-2 rounded-2xl rounded-tl-[3px] bg-bg-canvas/45 ${
-            showQuickGrid ? "mb-5" : "mb-2"
-          }`}
-        >
-          <svg
-            viewBox="0 0 10 16"
-            className="absolute -left-[10px] top-0 w-[10px] h-[16px] text-bg-canvas/45 fill-current pointer-events-none"
-            aria-hidden="true"
-          >
-            <path d="M10 0 H2 C0.5 0 0 0.8 0 1.8 C0 3.2 1.5 5.5 3.5 7.8 C6 10.5 8.5 13.2 10 16 Z" />
-          </svg>
-          <div className="skeleton-shimmer w-6 h-6 rounded-[6px] shrink-0" />
-          <div className="skeleton-shimmer h-[22px] w-[220px] sm:w-[280px] rounded-[6px]" />
-        </div>
+      {/* Speed Dial Section Skeleton */}
+      {showQuickGrid && (
+        <div className="flex flex-col select-none">
+          <div className="mt-[20px] px-8 flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="skeleton-shimmer w-5 h-5 rounded-[4px] shrink-0" />
+              <div className="skeleton-shimmer h-[22px] w-[120px] rounded-[5px]" />
+            </div>
+          </div>
 
-        {/* Quick Access Mix Grid */}
-        {showQuickGrid && (
-          <div className="relative grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+          <div className="px-8 mt-[12px] relative grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
             {/* Liked Songs Quick Card */}
             <div className="flex h-[56px] items-center gap-3 overflow-hidden rounded-[6px] bg-bg-elevated pr-4 select-none">
               <div className="skeleton-shimmer h-[56px] w-[56px] shrink-0" />
@@ -113,12 +103,12 @@ function HomePageSkeletonComponent({
               </div>
             ))}
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Section 1: Listening Right Now */}
       <SectionSkeleton
-        headingMarginTop={showQuickGrid ? "mt-[18px]" : "mt-[14px]"}
+        headingMarginTop="mt-[22px]"
         titleWidth="w-[190px]"
         cardsCount={7}
       />

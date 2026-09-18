@@ -1,0 +1,76 @@
+import { describe, it, expect, beforeEach } from "vitest";
+import {
+  useCustomizationStore,
+  clampBlockConfig,
+  getBlockStyle,
+  MIN_OPACITY,
+  MAX_OPACITY,
+  MIN_BLUR,
+  MAX_BLUR,
+  MIN_DIM,
+  MAX_DIM,
+} from "./customizationStore";
+
+describe("customizationStore", () => {
+  beforeEach(() => {
+    useCustomizationStore.getState().resetAll();
+  });
+
+  it("clamps block values within safe limits", () => {
+    const clampedUnder = clampBlockConfig({ opacity: 5, blur: -10, dim: -5 });
+    expect(clampedUnder.opacity).toBe(25);
+    expect(clampedUnder.blur).toBe(10);
+    expect(clampedUnder.dim).toBe(8);
+
+    const clampedOver = clampBlockConfig({ opacity: 150, blur: 100, dim: 200 });
+    expect(clampedOver.opacity).toBe(100);
+    expect(clampedOver.blur).toBe(40);
+    expect(clampedOver.dim).toBe(85);
+  });
+
+  it("updates and resets logic blocks individually", () => {
+    const store = useCustomizationStore.getState();
+    store.setBlockConfig("sidebar", { opacity: 50, blur: 15, dim: 10 });
+    store.setBlockConfig("contentView", { opacity: 60, blur: 20, dim: 25 });
+
+    let state = useCustomizationStore.getState();
+    expect(state.sidebar.opacity).toBe(50);
+    expect(state.sidebar.blur).toBe(15);
+    expect(state.sidebar.dim).toBe(10);
+    expect(state.contentView.opacity).toBe(60);
+
+    store.resetBlock("sidebar");
+    state = useCustomizationStore.getState();
+    expect(state.sidebar.opacity).toBe(100);
+    expect(state.sidebar.blur).toBe(0);
+    expect(state.contentView.opacity).toBe(60);
+  });
+
+  it("applies one block configuration to all blocks", () => {
+    const store = useCustomizationStore.getState();
+    store.setBlockConfig("sidebar", { opacity: 45, blur: 28, dim: 35 });
+    store.applyToAllBlocks("sidebar");
+
+    const state = useCustomizationStore.getState();
+    expect(state.sidebar).toEqual({ opacity: 45, blur: 28, dim: 35 });
+    expect(state.contentView).toEqual({ opacity: 45, blur: 28, dim: 35 });
+    expect(state.miniplayer).toEqual({ opacity: 45, blur: 28, dim: 35 });
+  });
+
+  it("calculates composite glassmorphism block style accurately", () => {
+    const withoutBg = getBlockStyle({ opacity: 50, blur: 15, dim: 20 }, true, false);
+    expect(withoutBg).toEqual({});
+
+    const defaultWithBg = getBlockStyle({ opacity: 100, blur: 0, dim: 0 }, true, true);
+    expect(defaultWithBg.background).toBe("var(--color-bg-primary, #0a0a0a)");
+
+    const darkGlass = getBlockStyle({ opacity: 70, blur: 18, dim: 20 }, true, true);
+    expect(darkGlass.backdropFilter).toBe("blur(18px)");
+    expect(darkGlass.background).toContain("rgba(0, 0, 0, 0.2)");
+    expect(darkGlass.background).toContain("rgba(10, 10, 10, 0.7)");
+
+    const lightGlass = getBlockStyle({ opacity: 50, blur: 12, dim: 0 }, false, true);
+    expect(lightGlass.backdropFilter).toBe("blur(12px)");
+    expect(lightGlass.background).toBe("rgba(245, 245, 247, 0.5)");
+  });
+});

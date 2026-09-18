@@ -27,6 +27,13 @@
     "productName": "Liner",
     "executableName": "liner",
     "artifactName": "${productName}-${version}-${arch}.${ext}",
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "tryliner",
+        "repo": "desktop"
+      }
+    ],
     "directories": {
       "output": "release"
     },
@@ -99,6 +106,7 @@
     "@mingcute/react": "^1.4.1",
     "@solar-icons/react": "^1.1.1",
     "@tanstack/react-virtual": "^3.13.23",
+    "electron-updater": "^6.8.9",
     "framer-motion": "^12.38.0",
     "gsap": "^3.15.0",
     "lottie-web": "^5.13.0",

@@ -245,7 +245,7 @@ function CollectionContent() {
 
   if (!loading && !data) {
     return (
-      <div className="page-transition h-full w-full bg-bg-primary flex items-center justify-center">
+      <div className="page-transition h-full w-full bg-transparent flex items-center justify-center">
         <span className="text-text-secondary">{t("collection.not_found")}</span>
       </div>
     );
@@ -254,7 +254,8 @@ function CollectionContent() {
   const isAlbum = type !== "playlist";
 
   return (
-    <div className="page-transition relative h-full w-full overflow-hidden bg-bg-primary">
+    <div className="page-transition relative h-full w-full overflow-hidden bg-transparent">
+
       <div className="absolute top-0 left-0 right-0 h-[56px] z-10 flex flex-row items-stretch select-none pointer-events-none">
         <div
           data-window-drag
@@ -275,7 +276,7 @@ function CollectionContent() {
           title={t("common.back")}
           aria-label={t("common.back")}
           data-no-window-drag
-          className="absolute top-[12px] left-[32px] z-20 group inline-flex h-[32px] shrink-0 items-center gap-[6px] rounded-md px-[10px] bg-black/70 backdrop-blur-xl text-white hover:bg-black/85 active:scale-[0.94] transition-all cursor-pointer select-none pointer-events-auto text-[13px] font-[500]"
+          className="absolute top-[12px] left-[32px] z-20 group inline-flex h-[32px] shrink-0 items-center gap-[6px] rounded-md px-[10px] bg-bg-panel/85 backdrop-blur-xl text-text-primary hover:bg-bg-panel active:scale-[0.94] transition-all cursor-pointer select-none pointer-events-auto text-[13px] font-[500]"
           style={{ fontFamily: "var(--font-inter), sans-serif" }}
         >
           <ArrowLeftLine

@@ -339,9 +339,10 @@ export default function LibraryPage() {
           const next = event.currentTarget.scrollTop > 2;
           setShowTopFog((prev) => (prev === next ? prev : next));
         }}
-        className="page-transition h-full w-full overflow-y-auto bg-bg-primary pb-[80px]"
+        className="page-transition h-full w-full overflow-y-auto bg-transparent pb-[80px]"
       >
-        <div className="sticky top-0 z-20 bg-bg-primary">
+        <div className="sticky top-0 z-20 bg-transparent">
+
           <div className="px-[32px] pt-[20px] pb-[10px]">
             <h1
               className="text-[26px] font-bold text-text-primary tracking-tight m-0 leading-tight"
@@ -367,18 +368,8 @@ export default function LibraryPage() {
               onViewModeChange={handleViewModeChange}
             />
           </div>
-          <div className="pointer-events-none absolute inset-x-0 bottom-[-20px] h-[28px] overflow-hidden">
-            <div
-              className={`h-full w-full transition-opacity duration-200 ${
-                showTopFog ? "opacity-100" : "opacity-0"
-              }`}
-              style={{
-                background:
-                  "linear-gradient(to bottom, var(--color-bg-primary) 0%, var(--color-bg-primary) 35%, transparent 100%)",
-              }}
-            />
-          </div>
         </div>
+
 
         <div className="px-[32px] pt-[4px] pb-[20px]">
           {activeTab === "playlists" && playlistsError ? (

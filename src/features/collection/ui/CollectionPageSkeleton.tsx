@@ -34,8 +34,9 @@ function CollectionPageSkeletonComponent({
 }: CollectionPageSkeletonProps) {
   return (
     <div
-      className={`relative w-full bg-bg-primary pb-[32px] select-none ${className}`}
+      className={`relative w-full bg-transparent pb-[32px] select-none ${className}`}
     >
+
       <div className="flex items-start gap-[32px] px-[32px] pt-[20px] pb-[24px]">
         <aside className="w-[280px] shrink-0">
           {/* back link */}

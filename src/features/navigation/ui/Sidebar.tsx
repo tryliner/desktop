@@ -16,9 +16,12 @@ import pixelLogo from "@/assets/branding/logo-pixel.svg";
 import scanlinesLogo from "@/assets/branding/logo-scanlines.svg";
 import vhsLogo from "@/assets/branding/logo-vhs.svg";
 import { useTranslation } from "@/languages";
+import { useTheme } from "next-themes";
 import { usePlayerStore, type AccentVariant } from "@/features/player";
 import { useModalStore } from "@/features/library";
+import { useCustomizationStore, getBlockStyle } from "@/features/settings";
 import { Tooltip } from "@/shared/ui";
+
 
 const brandingLogos: Record<Exclude<AccentVariant, "default">, string> = {
   spotify: spotifyLogo,
@@ -148,10 +151,22 @@ function Sidebar({ searchOpen, onSearchToggle }: SidebarProps) {
     );
   };
 
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
+  const backgroundImage = useCustomizationStore((state) => state.backgroundImage);
+  const sidebarConfig = useCustomizationStore((state) => state.sidebar);
+  const sidebarStyle = getBlockStyle(sidebarConfig, isDark, !!backgroundImage);
+
   return (
     <aside className="h-full">
-      <div className="h-full w-[58px] rounded-l-xl rounded-r-sm bg-bg-primary flex flex-col">
+      <div
+        className={`h-full w-[58px] rounded-l-xl rounded-r-sm ${
+          backgroundImage ? "" : "bg-bg-primary"
+        } flex flex-col overflow-hidden`}
+        style={sidebarStyle}
+      >
         <div className="flex justify-center items-center pt-[16px] pb-[16px] shrink-0">
+
           <AppImage
             src={
               accentVariant === "default"

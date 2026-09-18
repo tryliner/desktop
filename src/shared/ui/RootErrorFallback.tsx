@@ -13,6 +13,7 @@ import WindowControls from "@/features/navigation/ui/WindowControls";
 import Button from "./Button";
 import { createTranslatorSync, getStoredLocale } from "@/languages";
 import { useWindowDrag } from "@/shared/hooks";
+import { APP_VERSION } from "@/shared/config/version";
 
 export interface RootErrorFallbackProps {
   error: Error | null;
@@ -65,7 +66,7 @@ export function RootErrorFallback({
       `Time: ${new Date().toISOString()}`,
       `URL: ${typeof window !== "undefined" ? window.location.href : "unknown"}`,
       `User Agent: ${typeof navigator !== "undefined" ? navigator.userAgent : "unknown"}`,
-      `App Version: 0.1.8`,
+      `App Version: ${APP_VERSION}`,
       "",
       `Error Name: ${error?.name ?? "Error"}`,
       `Error Message: ${error?.message ?? "Unknown error"}`,

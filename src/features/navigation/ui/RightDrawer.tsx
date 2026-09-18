@@ -505,7 +505,7 @@ function RightDrawer({ activeTab, onTabChange, onClose }: RightDrawerProps) {
                 title={t("common.back") || "Back"}
                 aria-label={t("common.back") || "Back"}
                 data-no-window-drag
-                className="group inline-flex h-[32px] shrink-0 items-center gap-[6px] rounded-md px-[10px] bg-black/70 backdrop-blur-xl text-white hover:bg-black/85 active:scale-[0.94] transition-all cursor-pointer select-none pointer-events-auto text-[13px] font-[500]"
+                className="group inline-flex h-[32px] shrink-0 items-center gap-[6px] rounded-md px-[10px] bg-bg-panel/85 backdrop-blur-xl text-text-primary hover:bg-bg-panel active:scale-[0.94] transition-all cursor-pointer select-none pointer-events-auto text-[13px] font-[500]"
                 style={{ fontFamily: "var(--font-inter), sans-serif" }}
               >
                 <ArrowLeftLine
@@ -575,18 +575,6 @@ function RightDrawer({ activeTab, onTabChange, onClose }: RightDrawerProps) {
             </button>
           </div>
         </div>
-
-        <div className="pointer-events-none absolute inset-x-0 top-full h-[24px] overflow-hidden z-20">
-          <div
-            className={`h-full w-full transition-opacity duration-200 ${
-              isScrolled ? "opacity-100" : "opacity-0"
-            }`}
-            style={{
-              background:
-                "linear-gradient(to bottom, var(--color-bg-primary) 0%, var(--color-bg-primary) 20%, transparent 100%)",
-            }}
-          />
-        </div>
       </div>
 
       <div className="flex-1 overflow-hidden relative">
@@ -594,7 +582,20 @@ function RightDrawer({ activeTab, onTabChange, onClose }: RightDrawerProps) {
           <div
             ref={queueScrollCallbackRef}
             className="absolute inset-0 overflow-y-auto px-[10px] pt-[6px] pb-[16px]"
+            style={
+              isQueueScrolled
+                ? {
+                    maskImage:
+                      "linear-gradient(to bottom, transparent 0px, black 18px, black 100%)",
+                    WebkitMaskImage:
+                      "linear-gradient(to bottom, transparent 0px, black 18px, black 100%)",
+                    transition:
+                      "mask-image 200ms ease, -webkit-mask-image 200ms ease",
+                  }
+                : undefined
+            }
             onScroll={(e) => {
+
               const target = e.currentTarget;
               const next = target.scrollTop > 2;
               setIsQueueScrolled((prev) => (prev === next ? prev : next));

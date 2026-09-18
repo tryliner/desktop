@@ -17,6 +17,19 @@ export interface ElectronCacheStats {
   cachePath: string;
 }
 
+export interface UpdateInfo {
+  version: string;
+  releaseNotes?: string;
+  releaseDate?: string;
+}
+
+export interface UpdateDownloadProgress {
+  percent: number;
+  transferred: number;
+  total: number;
+  bytesPerSecond: number;
+}
+
 export interface LinerElectronApi {
   minimize: () => Promise<void>;
   toggleMaximize: () => Promise<void>;
@@ -53,11 +66,19 @@ export interface LinerElectronApi {
     error?: string;
   }>;
   setAppIcon: (dataUrl: string) => Promise<void>;
+  getAppVersion: () => Promise<string>;
   getCacheStats: () => Promise<ElectronCacheStats>;
   openCacheFolder: () => Promise<boolean>;
   clearCoversCache: () => Promise<boolean>;
   clearAudioCache: () => Promise<boolean>;
   clearHttpCache: () => Promise<boolean>;
+  checkForUpdates: () => Promise<{ available: boolean; version?: string; releaseNotes?: string; error?: string }>;
+  downloadUpdate: () => Promise<{ success: boolean; error?: string }>;
+  quitAndInstall: () => Promise<boolean>;
+  onUpdateAvailable: (cb: (info: UpdateInfo) => void) => () => void;
+  onUpdateDownloadProgress: (cb: (progress: UpdateDownloadProgress) => void) => () => void;
+  onUpdateDownloaded: (cb: (info: { version: string }) => void) => () => void;
+  onUpdateError: (cb: (err: { message: string }) => void) => () => void;
 }
 
 const api: LinerElectronApi = {
@@ -88,11 +109,43 @@ const api: LinerElectronApi = {
   openExportFolder: (customPath) => ipcRenderer.invoke("shell:open-export-folder", customPath),
   saveDump: (input) => ipcRenderer.invoke("dialog:save-dump", input),
   setAppIcon: (dataUrl) => ipcRenderer.invoke("app:set-icon", dataUrl),
+  getAppVersion: () => ipcRenderer.invoke("app:get-version"),
   getCacheStats: () => ipcRenderer.invoke("storage:get-cache-stats"),
   openCacheFolder: () => ipcRenderer.invoke("shell:open-cache-folder"),
   clearCoversCache: () => ipcRenderer.invoke("storage:clear-covers-cache"),
   clearAudioCache: () => ipcRenderer.invoke("storage:clear-audio-cache"),
   clearHttpCache: () => ipcRenderer.invoke("storage:clear-http-cache"),
+  checkForUpdates: () => ipcRenderer.invoke("updater:check-for-updates"),
+  downloadUpdate: () => ipcRenderer.invoke("updater:download-update"),
+  quitAndInstall: () => ipcRenderer.invoke("updater:quit-and-install"),
+  onUpdateAvailable: (cb) => {
+    const listener = (_event: unknown, info: UpdateInfo) => cb(info);
+    ipcRenderer.on("updater:update-available", listener);
+    return () => {
+      ipcRenderer.removeListener("updater:update-available", listener);
+    };
+  },
+  onUpdateDownloadProgress: (cb) => {
+    const listener = (_event: unknown, progress: UpdateDownloadProgress) => cb(progress);
+    ipcRenderer.on("updater:download-progress", listener);
+    return () => {
+      ipcRenderer.removeListener("updater:download-progress", listener);
+    };
+  },
+  onUpdateDownloaded: (cb) => {
+    const listener = (_event: unknown, info: { version: string }) => cb(info);
+    ipcRenderer.on("updater:update-downloaded", listener);
+    return () => {
+      ipcRenderer.removeListener("updater:update-downloaded", listener);
+    };
+  },
+  onUpdateError: (cb) => {
+    const listener = (_event: unknown, err: { message: string }) => cb(err);
+    ipcRenderer.on("updater:error", listener);
+    return () => {
+      ipcRenderer.removeListener("updater:error", listener);
+    };
+  },
   onDeeplink: (cb) => {
     const listener = (_event: unknown, target: DeeplinkTarget) => cb(target);
     ipcRenderer.on("deeplink:open", listener);

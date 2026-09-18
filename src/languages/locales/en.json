@@ -180,6 +180,7 @@
     "env_skip": "Skip"
   },
   "home": {
+    "speedDial": "Speed dial",
     "goodMorning": "Good morning",
     "goodAfternoon": "Good afternoon",
     "goodEvening": "Good evening",
@@ -407,6 +408,7 @@
     "tabs": {
       "general": "General",
       "appearance": "Appearance",
+      "customization": "Customization",
       "audio": "Audio",
       "storage": "Cache & Storage",
       "system": "System",
@@ -418,6 +420,42 @@
     "playback": {
       "description": "Queue behavior, click actions and audio output."
     },
+    "customization": {
+      "description": "Window background wallpaper, transparency and block blur effects.",
+      "wallpaper_title": "Window Wallpaper",
+      "wallpaper_description": "Set a custom image or animated GIF as the full window background.",
+      "upload_title": "Select image or animated GIF",
+      "upload_hint": "PNG, JPEG, GIF, WebP (up to 30MB)",
+      "change_button": "Change",
+      "remove_button": "Remove",
+      "wallpaper_blur": "Wallpaper blur",
+      "wallpaper_dim": "Wallpaper dimming",
+      "blocks_title": "Interface Blocks Glassmorphism",
+      "blocks_description": "Adjust transparency, backdrop blur and dimming for each interface area.",
+      "block_sidebar": "Sidebar",
+      "block_content": "Content View",
+      "block_miniplayer": "Miniplayer",
+      "opacity": "Opacity (transparency)",
+      "opacity_desc": "Background opacity level (min. 25%)",
+      "blur": "Backdrop blur",
+      "blur_desc": "Frosted glass blur intensity",
+      "dim": "Dimming",
+      "dim_desc": "Dark overlay for enhanced readability",
+      "apply_all": "To all",
+      "apply_all_title": "Apply settings to all blocks",
+      "applied_to_all": "Settings applied to all blocks",
+      "reset_block": "Reset",
+      "block_reset": "Block settings reset",
+      "reset_all": "Reset all customization",
+      "reset_all_desc": "Restore default appearance, clear background image and block glass effects.",
+      "all_reset": "All customization reset",
+      "applied": "Wallpaper applied",
+      "removed": "Wallpaper removed",
+      "invalid_file_type": "Please select an image or GIF file",
+      "file_too_large": "File size must be under 30 MB",
+      "read_error": "Failed to read image file"
+    },
+
     "audio_data": {
       "description": "Streaming quality, offline cache and connection diagnostics."
     },
@@ -541,22 +579,6 @@
       "scanlines": "Scanlines",
       "vhs": "Chrome"
     },
-    "customization": {
-      "mini_player_style": {
-        "title": "Mini Player Style",
-        "description": "Choose how the mini player looks.",
-        "default": "Default",
-        "rounded": "Rounded"
-      },
-      "sidebar_position": {
-        "title": "Sidebar position",
-        "description": "Choose which side the navigation sidebar sits on.",
-        "left": "Left",
-        "right": "Right",
-        "top": "Top",
-        "bottom": "Bottom"
-      }
-    },
     "audio": {
       "title": "Streaming Quality",
       "description": "Select the default audio quality for playback.",
@@ -637,10 +659,11 @@
       "website": "Website",
       "tagline": "Modern desktop music streaming player with syllable-synced lyrics",
       "updates_title": "Updates & Build",
+      "test_update": "Test update",
       "check_updates": "Check for updates",
       "checking_updates": "Checking…",
       "up_to_date": "Up to date",
-      "latest_version_toast": "You are running the latest version (v0.1.26)",
+      "latest_version_toast": "You are running the latest version (v{version})",
       "build_info": "Production release · Electron 44 · React 19",
       "tech_stack_title": "Technology & Engine",
       "tech_electron": "Electron 44 & Web Audio",
@@ -803,5 +826,17 @@
     "download_dump": "Save report",
     "support": "Contact support",
     "support_hint": "Attach the saved report file so support sees the full picture."
+  },
+  "updater": {
+    "modal_title": "New Update Available",
+    "modal_desc": "A new version of Liner (v{version}) is ready to download.",
+    "view_changelog": "Changelog",
+    "skip_button": "Skip",
+    "update_button": "Update",
+    "downloading_title": "Downloading update…",
+    "downloaded_title": "Update downloaded",
+    "downloaded_desc": "Restart Liner to install version {version}.",
+    "install_button": "Install",
+    "error_title": "Update failed"
   }
 }

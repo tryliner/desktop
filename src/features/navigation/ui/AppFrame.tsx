@@ -39,6 +39,7 @@ import {
 import SearchResultsList from "@/features/search/ui/SearchResultsList";
 import { SearchHistoryList, useSearchHistoryStore } from "@/features/search";
 import { useTranslation } from "@/languages";
+import { useTheme } from "next-themes";
 import {
   AddToPlaylistModal,
   AddToLibraryModal,
@@ -49,7 +50,9 @@ import {
   CreatePlaylistModal,
   useModalStore,
 } from "@/features/library";
-import { SettingsModal } from "@/features/settings";
+import { SettingsModal, useCustomizationStore, getBlockStyle } from "@/features/settings";
+import { UpdateModal, UpdateToastBridge } from "@/features/updater";
+
 
 interface AppFrameProps {
   children: React.ReactNode;
@@ -641,6 +644,18 @@ export default function AppFrame({ children }: AppFrameProps) {
     [submitSearchQuery],
   );
 
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
+  const backgroundImage = useCustomizationStore((s) => s.backgroundImage);
+  const backgroundBlur = useCustomizationStore((s) => s.backgroundBlur);
+  const backgroundDim = useCustomizationStore((s) => s.backgroundDim);
+  const contentViewConfig = useCustomizationStore((s) => s.contentView);
+
+  const mainStyle = useMemo(
+    () => getBlockStyle(contentViewConfig, isDark, !!backgroundImage),
+    [contentViewConfig, isDark, backgroundImage],
+  );
+
   return (
     <div
       ref={appFrameRef}
@@ -650,6 +665,30 @@ export default function AppFrame({ children }: AppFrameProps) {
         if (e.currentTarget.scrollTop !== 0) e.currentTarget.scrollTop = 0;
       }}
     >
+      {/* ── Full Window Custom Wallpaper ── */}
+      {backgroundImage && (
+        <div
+          className="absolute inset-0 z-0 pointer-events-none overflow-hidden rounded-5xl"
+          aria-hidden="true"
+        >
+          <img
+            src={backgroundImage}
+            alt=""
+            className="w-full h-full object-cover select-none"
+            style={{
+              filter: backgroundBlur > 0 ? `blur(${backgroundBlur}px)` : undefined,
+              transform: backgroundBlur > 0 ? "scale(1.05)" : undefined,
+            }}
+          />
+          {backgroundDim > 0 && (
+            <div
+              className="absolute inset-0 bg-black"
+              style={{ opacity: backgroundDim / 100 }}
+            />
+          )}
+        </div>
+      )}
+
       <aside
         ref={sidebarRef}
         className="w-[58px] h-full shrink-0 z-[45] relative"
@@ -662,11 +701,14 @@ export default function AppFrame({ children }: AppFrameProps) {
 
       <div className="flex-1 flex flex-col min-w-0 h-full relative gap-1.5 overflow-hidden">
         <main
-          className={`flex-1 min-w-0 flex flex-col relative h-full bg-bg-primary rounded-sm ${
+          className={`flex-1 min-w-0 flex flex-col relative h-full ${
+            backgroundImage ? "" : "bg-bg-primary"
+          } rounded-sm ${
             isFullscreenPlayer
               ? "rounded-tr-none"
               : "rounded-tr-xl"
           } overflow-hidden`}
+          style={mainStyle}
         >
           <div
             ref={mainScrollRef}
@@ -676,6 +718,7 @@ export default function AppFrame({ children }: AppFrameProps) {
                 : "overflow-y-auto"
             }`}
           >
+
             <PageTransition>
               {isFullscreenRoute ? shellChildrenRef.current : children}
             </PageTransition>
@@ -997,6 +1040,8 @@ export default function AppFrame({ children }: AppFrameProps) {
       <CreatePlaylistModal />
       <ImportReviewModal />
       <SettingsModal />
+      <UpdateModal />
+      <UpdateToastBridge />
       <WindowControls
         isFullscreen={isFullscreenPlayer}
         style={{

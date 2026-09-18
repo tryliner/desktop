@@ -196,7 +196,7 @@ function ArtistContent() {
 
   if (!loading && !data) {
     return (
-      <div className="page-transition h-full w-full bg-bg-primary flex items-center justify-center">
+      <div className="page-transition h-full w-full bg-transparent flex items-center justify-center">
         <span className="text-text-secondary">
           {t("artist.artist_not_found")}
         </span>
@@ -205,7 +205,8 @@ function ArtistContent() {
   }
 
   return (
-    <div className="page-transition relative h-full w-full overflow-hidden bg-bg-primary">
+    <div className="page-transition relative h-full w-full overflow-hidden bg-transparent">
+
       <div
         ref={scrollRef}
         onScroll={(e) => {
@@ -251,7 +252,15 @@ function ArtistContent() {
             <div className="col-start-1 row-start-1 w-full pb-[32px]">
               <div className="relative w-full min-h-[340px] md:min-h-[380px] flex flex-col justify-between overflow-hidden">
                 {data.coverUrl ? (
-                  <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+                  <div
+                    className="absolute inset-0 z-0 overflow-hidden pointer-events-none"
+                    style={{
+                      maskImage:
+                        "linear-gradient(to bottom, black 0%, black 35%, transparent 100%)",
+                      WebkitMaskImage:
+                        "linear-gradient(to bottom, black 0%, black 35%, transparent 100%)",
+                    }}
+                  >
                     <CoverImage
                       src={data.coverUrl}
                       alt={data.title}
@@ -260,17 +269,19 @@ function ArtistContent() {
                       className="object-cover object-center"
                       draggable={false}
                     />
-                    <div
-                      className="absolute inset-0 pointer-events-none"
-                      style={{
-                        background:
-                          "linear-gradient(to top, var(--bg-primary) 0%, color-mix(in srgb, var(--bg-primary) 90%, transparent) 25%, color-mix(in srgb, var(--bg-primary) 60%, transparent) 50%, color-mix(in srgb, var(--bg-primary) 20%, transparent) 75%, transparent 100%)",
-                      }}
-                    />
                   </div>
                 ) : (
-                  <div className="absolute inset-0 z-0 bg-bg-elevated" />
+                  <div
+                    className="absolute inset-0 z-0 bg-bg-elevated"
+                    style={{
+                      maskImage:
+                        "linear-gradient(to bottom, black 0%, black 35%, transparent 100%)",
+                      WebkitMaskImage:
+                        "linear-gradient(to bottom, black 0%, black 35%, transparent 100%)",
+                    }}
+                  />
                 )}
+
 
                 <div className="relative z-10 px-[32px] pt-[56px]" data-window-drag />
 

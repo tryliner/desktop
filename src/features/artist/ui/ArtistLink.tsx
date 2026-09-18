@@ -207,20 +207,24 @@ export default function ArtistLink({
     }
   }
 
+  const maskStyle = delta > 0
+    ? {
+        maskImage: hovered
+          ? "linear-gradient(to right, transparent 0px, black 12px, black calc(100% - 14px), transparent 100%)"
+          : "linear-gradient(to right, black 0px, black calc(100% - 14px), transparent 100%)",
+        WebkitMaskImage: hovered
+          ? "linear-gradient(to right, transparent 0px, black 12px, black calc(100% - 14px), transparent 100%)"
+          : "linear-gradient(to right, black 0px, black calc(100% - 14px), transparent 100%)",
+        transition: "mask-image 200ms ease, -webkit-mask-image 200ms ease",
+      }
+    : undefined;
+
   return (
     <span
       ref={outerRef}
       className={`relative inline-flex items-center min-w-0 max-w-full overflow-hidden text-left ${className}`}
-      style={
-        delta > 0 && !hovered
-          ? {
-              maskImage:
-                "linear-gradient(to right, black calc(100% - 16px), transparent 100%)",
-              WebkitMaskImage:
-                "linear-gradient(to right, black calc(100% - 16px), transparent 100%)",
-            }
-          : undefined
-      }
+      style={maskStyle}
+
       onMouseEnter={() => {
         measure();
         setHovered(true);

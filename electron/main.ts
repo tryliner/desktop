@@ -1,4 +1,5 @@
 import { app, BrowserWindow, ipcMain, shell, screen, dialog, session, nativeImage } from "electron";
+import { autoUpdater } from "electron-updater";
 import path from "node:path";
 import fs from "node:fs";
 import dns from "node:dns";
@@ -220,6 +221,10 @@ if (!gotTheLock) {
 
     ipcMain.handle("window:is-maximized", () => {
       return mainWindow?.isMaximized() ?? false;
+    });
+
+    ipcMain.handle("app:get-version", () => {
+      return app.getVersion();
     });
 
     ipcMain.handle("app:set-icon", async (_event, dataUrl: string) => {
@@ -751,6 +756,86 @@ if (!gotTheLock) {
         platform: `${process.platform} ${process.arch}`,
       };
     });
+
+    // updater config: production github releases only, no prereleases or auto-install on close
+    autoUpdater.autoDownload = false;
+    autoUpdater.autoInstallOnAppQuit = false;
+    autoUpdater.allowPrerelease = false;
+    autoUpdater.allowDowngrade = false;
+
+    autoUpdater.on("update-available", (info) => {
+      mainWindow?.webContents.send("updater:update-available", {
+        version: info.version,
+        releaseDate: info.releaseDate,
+        releaseNotes: typeof info.releaseNotes === "string" ? info.releaseNotes : undefined,
+      });
+    });
+
+    autoUpdater.on("download-progress", (progressObj) => {
+      mainWindow?.webContents.send("updater:download-progress", {
+        percent: Math.round(progressObj.percent * 10) / 10,
+        transferred: progressObj.transferred,
+        total: progressObj.total,
+        bytesPerSecond: progressObj.bytesPerSecond,
+      });
+    });
+
+    autoUpdater.on("update-downloaded", (info) => {
+      mainWindow?.webContents.send("updater:update-downloaded", {
+        version: info.version,
+      });
+    });
+
+    autoUpdater.on("error", (err) => {
+      console.error("\x1b[31m updater \x1b[0m autoUpdater error:", err?.message || err);
+      mainWindow?.webContents.send("updater:error", {
+        message: err?.message || "Update check failed",
+      });
+    });
+
+    ipcMain.handle("updater:check-for-updates", async () => {
+      if (!app.isPackaged) {
+        return { available: false, error: "Updater is disabled in dev mode" };
+      }
+      try {
+        const result = await autoUpdater.checkForUpdates();
+        return {
+          available: Boolean(result?.updateInfo?.version && result.updateInfo.version !== app.getVersion()),
+          version: result?.updateInfo?.version,
+          releaseNotes: typeof result?.updateInfo?.releaseNotes === "string" ? result.updateInfo.releaseNotes : undefined,
+        };
+      } catch (err: any) {
+        return { available: false, error: err?.message || "Failed to check for updates" };
+      }
+    });
+
+    ipcMain.handle("updater:download-update", async () => {
+      if (!app.isPackaged) {
+        return { success: false, error: "Updater is disabled in dev mode" };
+      }
+      try {
+        await autoUpdater.downloadUpdate();
+        return { success: true };
+      } catch (err: any) {
+        return { success: false, error: err?.message || "Failed to download update" };
+      }
+    });
+
+    ipcMain.handle("updater:quit-and-install", () => {
+      setImmediate(() => {
+        autoUpdater.quitAndInstall(false, true);
+      });
+      return true;
+    });
+
+    // automatic update check after window initialization (packaged app only)
+    if (app.isPackaged) {
+      setTimeout(() => {
+        autoUpdater.checkForUpdates().catch((err) => {
+          console.error("\x1b[31m updater \x1b[0m background check error:", err?.message || err);
+        });
+      }, 4000);
+    }
 
     app.on("activate", () => {
       if (BrowserWindow.getAllWindows().length === 0) {

@@ -72,21 +72,27 @@ function ScrollingLabel({ text }: { text: string }) {
     setDelta(Math.max(0, d));
   });
 
+  const maskStyle = delta > 0
+    ? {
+        maskImage: hovered
+          ? "linear-gradient(to right, transparent 0px, black 10px, black calc(100% - 12px), transparent 100%)"
+          : "linear-gradient(to right, black 0px, black calc(100% - 12px), transparent 100%)",
+        WebkitMaskImage: hovered
+          ? "linear-gradient(to right, transparent 0px, black 10px, black calc(100% - 12px), transparent 100%)"
+          : "linear-gradient(to right, black 0px, black calc(100% - 12px), transparent 100%)",
+        transition: "mask-image 200ms ease, -webkit-mask-image 200ms ease",
+      }
+    : undefined;
+
   return (
     <span
       ref={outerRef}
       className="relative flex-1 overflow-hidden text-left"
-      style={
-        delta > 0
-          ? {
-              maskImage:
-                "linear-gradient(to right, black 70%, transparent 100%)",
-            }
-          : undefined
-      }
+      style={maskStyle}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
+
       <span
         ref={innerRef}
         className="inline-block whitespace-nowrap"

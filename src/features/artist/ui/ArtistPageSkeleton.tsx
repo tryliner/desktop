@@ -30,15 +30,18 @@ interface ArtistPageSkeletonProps {
 
 function ArtistPageSkeleton({ className = "" }: ArtistPageSkeletonProps) {
   return (
-    <div className={`relative w-full bg-bg-primary pb-[32px] select-none ${className}`}>
-      <div className="relative min-h-[340px] md:min-h-[380px] w-full flex flex-col justify-between overflow-hidden bg-bg-elevated/40">
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background:
-              "linear-gradient(to top, var(--bg-primary) 0%, color-mix(in srgb, var(--bg-primary) 90%, transparent) 25%, color-mix(in srgb, var(--bg-primary) 60%, transparent) 50%, color-mix(in srgb, var(--bg-primary) 20%, transparent) 75%, transparent 100%)",
-          }}
-        />
+    <div className={`relative w-full bg-transparent pb-[32px] select-none ${className}`}>
+
+      <div
+        className="relative min-h-[340px] md:min-h-[380px] w-full flex flex-col justify-between overflow-hidden bg-bg-elevated/40"
+        style={{
+          maskImage:
+            "linear-gradient(to bottom, black 0%, black 35%, transparent 100%)",
+          WebkitMaskImage:
+            "linear-gradient(to bottom, black 0%, black 35%, transparent 100%)",
+        }}
+      >
+
 
         <div className="relative z-10 h-[56px] flex items-center px-[32px]">
           <div className="skeleton-shimmer h-[32px] w-[64px] rounded-md" />

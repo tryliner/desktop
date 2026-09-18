@@ -32,8 +32,10 @@ import { VolumePicker } from "./VolumePicker";
 import { TimelineSlider } from "./TimelineSlider";
 import { useTheme } from "next-themes";
 import { useCoverReady, CoverImage } from "@/features/covers";
+import { useCustomizationStore, getBlockStyle } from "@/features/settings";
 import ExplicitBadge from "@/shared/ui/ExplicitBadge";
 import { ArtistLink } from "@/features/artist";
+
 
 function rgbToHsl(r: number, g: number, b: number): [number, number, number] {
   r /= 255;
@@ -200,9 +202,13 @@ function MiniPlayer({
   const miniPlayerStyle = usePlayerStore((state) => state.miniPlayerStyle);
   const usesRoundedStyle = !embedded && miniPlayerStyle === "rounded";
   const usesBackgroundProgress = true;
+  const backgroundImage = useCustomizationStore((state) => state.backgroundImage);
+  const miniplayerConfig = useCustomizationStore((state) => state.miniplayer);
+  const miniplayerCustomStyle = getBlockStyle(miniplayerConfig, !isLight, !!backgroundImage);
   const [accentColor, setAccentColor] = useState(
     isLight ? "rgba(0, 0, 0, 0.06)" : "rgba(255, 255, 255, 0.12)",
   );
+
   const [accentColorSolid, setAccentColorSolid] = useState(
     isLight ? "rgb(23, 23, 23)" : "rgb(255, 255, 255)",
   );
@@ -499,12 +505,20 @@ function MiniPlayer({
       <div
         className={`relative h-[64px] w-full overflow-hidden cursor-pointer ${
           usesRoundedStyle
-            ? "rounded-full border-[0.5px] border-border-tertiary bg-bg-primary"
+            ? `rounded-full border-[0.5px] border-border-tertiary ${
+                backgroundImage ? "" : "bg-bg-primary"
+              }`
             : embedded
-              ? "rounded-sm rounded-br-xl bg-bg-primary"
-              : "rounded-3xl border-[0.5px] border-border-tertiary bg-bg-primary"
+              ? `rounded-sm rounded-br-xl ${
+                  backgroundImage ? "" : "bg-bg-primary"
+                }`
+              : `rounded-3xl border-[0.5px] border-border-tertiary ${
+                  backgroundImage ? "" : "bg-bg-primary"
+                }`
         }`}
+        style={miniplayerCustomStyle}
         onPointerDown={(e) => {
+
           if (e.button !== 0) return;
           const target = e.target as Element | null;
           if (
