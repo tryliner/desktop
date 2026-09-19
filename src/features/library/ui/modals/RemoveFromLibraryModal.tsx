@@ -57,12 +57,31 @@ function RemoveFromLibraryModalContent() {
   }, [detail, pathname, searchParams, navigate, removeExternal, toast, t, close]);
 
   return (
-    <Dialog open={open} onOpenChange={(next) => (!next ? close() : undefined)} maxWidth={400}>
-      <div className="px-[20px] pb-[20px]">
+    <Dialog open={open} onOpenChange={(next) => (!next ? close() : undefined)} maxWidth={380}>
+      <div className="flex flex-col px-[20px] pb-[20px]">
+        {/* Header */}
+        <div className="flex flex-col gap-[2px] mb-[16px]">
+          <h3
+            className="text-[16px] font-[600] text-text-primary m-0"
+            style={{ fontFamily: "var(--font-inter), sans-serif", letterSpacing: "-0.01em" }}
+          >
+            {t("common.are_you_sure")}
+          </h3>
+          <p
+            className="text-[13px] text-text-tertiary m-0 leading-normal"
+            style={{ fontFamily: "var(--font-inter), sans-serif" }}
+          >
+            {detail?.isOwned && detail?.type === "playlist"
+              ? t("common.delete_playlist_desc")
+              : t("common.remove_from_library_desc")}
+          </p>
+        </div>
+
+        {/* Target item preview */}
         {detail && (
-          <div className="flex items-center gap-[16px] mb-[20px]">
+          <div className="flex items-center gap-[14px] p-[10px] rounded-lg bg-border-alpha-14 mb-[20px]">
             <div
-              className={`relative h-[80px] w-[80px] shrink-0 overflow-hidden ${
+              className={`relative h-[52px] w-[52px] shrink-0 overflow-hidden ${
                 detail.type === "artist" ? "rounded-full" : "rounded-md"
               } bg-border-alpha-14`}
             >
@@ -71,38 +90,50 @@ function RemoveFromLibraryModalContent() {
                   src={detail.coverUrl}
                   alt={detail.title}
                   fill
-                  sizes="80px"
+                  sizes="52px"
                   className="object-cover"
                   unoptimized
                 />
               )}
             </div>
-            <div className="flex flex-col min-w-0">
-              <span className="text-[16px] font-[500] text-text-primary truncate">
+            <div className="flex flex-col min-w-0 gap-[2px]">
+              <span className="text-[14px] font-[500] text-text-primary truncate">
                 {detail.title}
               </span>
-              <span className="text-[14px] text-text-tertiary capitalize">
-                {detail.type}
+              <span className="text-[12px] text-text-tertiary capitalize">
+                {detail.subtitle || detail.type}
               </span>
             </div>
           </div>
         )}
 
-        <Button
-          variant="primary"
-          onClick={handleRemove}
-          disabled={removeExternal.isPending}
-          className="w-full !bg-accent-secondary !text-bg-primary hover:!opacity-90"
-        >
-          {removeExternal.isPending ? (
-            <span className="inline-flex items-center gap-[8px]">
-              <span className="inline-block h-[16px] w-[16px] rounded-full border-[2px] border-white/30 border-t-white animate-spin" />
-              {t("common.removing")}
-            </span>
-          ) : (
-            t("common.remove_from_library")
-          )}
-        </Button>
+        {/* 1-row actions: cancel + confirm */}
+        <div className="flex items-center gap-[10px]">
+          <Button
+            variant="secondary"
+            onClick={close}
+            disabled={removeExternal.isPending}
+            className="flex-1"
+          >
+            {t("common.cancel")}
+          </Button>
+
+          <Button
+            variant="primary"
+            onClick={handleRemove}
+            disabled={removeExternal.isPending}
+            className="flex-1 !bg-accent-secondary !text-bg-primary hover:!opacity-90"
+          >
+            {removeExternal.isPending ? (
+              <span className="inline-flex items-center gap-[6px]">
+                <span className="inline-block h-[14px] w-[14px] rounded-full border-[2px] border-white/30 border-t-white animate-spin" />
+                {t("common.removing")}
+              </span>
+            ) : (
+              t("common.confirm")
+            )}
+          </Button>
+        </div>
       </div>
     </Dialog>
   );
