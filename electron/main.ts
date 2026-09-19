@@ -101,6 +101,7 @@ function createWindow() {
     transparent: true,
     backgroundColor: "#00000000",
     hasShadow: false,
+    fullscreenable: true,
     webPreferences: {
       preload: path.join(__dirname, "preload.cjs"),
       nodeIntegration: false,
@@ -110,6 +111,20 @@ function createWindow() {
       backgroundThrottling: false, // keeps audio timer and playback ticks running when app is in background or another workspace
     },
   });
+
+  // sync window state changes to renderer
+  const broadcastWindowState = () => {
+    if (!mainWindow || mainWindow.isDestroyed()) return;
+    mainWindow.webContents.send("window:state-changed", {
+      isMaximized: mainWindow.isMaximized(),
+      isFullScreen: mainWindow.isFullScreen(),
+    });
+  };
+
+  mainWindow.on("maximize", broadcastWindowState);
+  mainWindow.on("unmaximize", broadcastWindowState);
+  mainWindow.on("enter-full-screen", broadcastWindowState);
+  mainWindow.on("leave-full-screen", broadcastWindowState);
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     if (url.startsWith("https:") || url.startsWith("http:")) {
@@ -201,18 +216,38 @@ if (!gotTheLock) {
     } else {
       app.setAsDefaultProtocolClient(DEEP_LINK_SCHEME);
     }
+    const isHyprland = Boolean(
+      process.env.HYPRLAND_INSTANCE_SIGNATURE ||
+      process.env.XDG_CURRENT_DESKTOP?.toLowerCase().includes("hyprland") ||
+      process.env.XDG_SESSION_DESKTOP?.toLowerCase().includes("hyprland"),
+    );
+
     // window controls
     ipcMain.handle("window:minimize", () => {
-      mainWindow?.minimize();
+      // cannot minimize a native fullscreen window or under hyprland tiling wm
+      if (!mainWindow || mainWindow.isFullScreen() || isHyprland) return;
+      mainWindow.minimize();
     });
 
     ipcMain.handle("window:toggle-maximize", () => {
       if (!mainWindow) return;
-      if (mainWindow.isMaximized()) {
-        mainWindow.unmaximize();
+      // on macos, frameless windows enter native fullscreen mode
+      if (process.platform === "darwin") {
+        mainWindow.setFullScreen(!mainWindow.isFullScreen());
       } else {
-        mainWindow.maximize();
+        if (mainWindow.isFullScreen()) {
+          mainWindow.setFullScreen(false);
+        } else if (mainWindow.isMaximized()) {
+          mainWindow.unmaximize();
+        } else {
+          mainWindow.maximize();
+        }
       }
+    });
+
+    ipcMain.handle("window:toggle-fullscreen", () => {
+      if (!mainWindow) return;
+      mainWindow.setFullScreen(!mainWindow.isFullScreen());
     });
 
     ipcMain.handle("window:close", () => {
@@ -221,6 +256,10 @@ if (!gotTheLock) {
 
     ipcMain.handle("window:is-maximized", () => {
       return mainWindow?.isMaximized() ?? false;
+    });
+
+    ipcMain.handle("window:is-fullscreen", () => {
+      return mainWindow?.isFullScreen() ?? false;
     });
 
     ipcMain.handle("app:get-version", () => {
@@ -417,7 +456,7 @@ if (!gotTheLock) {
     let dragStartWinPos: { x: number; y: number } | null = null;
 
     ipcMain.on("window:start-drag", () => {
-      if (!mainWindow) return;
+      if (!mainWindow || mainWindow.isFullScreen()) return;
       try {
         if (typeof (mainWindow as any).startWindowMove === "function") {
           (mainWindow as any).startWindowMove();
@@ -434,7 +473,7 @@ if (!gotTheLock) {
     });
 
     ipcMain.on("window:drag-start", () => {
-      if (!mainWindow) return;
+      if (!mainWindow || mainWindow.isFullScreen()) return;
       if (mainWindow.isMaximized()) {
         mainWindow.unmaximize();
       }
@@ -449,7 +488,7 @@ if (!gotTheLock) {
     });
 
     ipcMain.on("window:drag-move", (_event, { deltaX, deltaY }: { deltaX: number; deltaY: number }) => {
-      if (!mainWindow) return;
+      if (!mainWindow || mainWindow.isFullScreen()) return;
       if (mainWindow.isMaximized()) {
         mainWindow.unmaximize();
         const [wx, wy] = mainWindow.getPosition();

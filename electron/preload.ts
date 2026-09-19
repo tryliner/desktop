@@ -30,11 +30,21 @@ export interface UpdateDownloadProgress {
   bytesPerSecond: number;
 }
 
+export interface WindowState {
+  isMaximized: boolean;
+  isFullScreen: boolean;
+}
+
 export interface LinerElectronApi {
+  platform: string;
+  isHyprland: boolean;
   minimize: () => Promise<void>;
   toggleMaximize: () => Promise<void>;
+  toggleFullScreen: () => Promise<void>;
   close: () => Promise<void>;
   isMaximized: () => Promise<boolean>;
+  isFullScreen: () => Promise<boolean>;
+  onWindowStateChange: (cb: (state: WindowState) => void) => () => void;
   startWindowMove: () => void;
   dragStart: () => void;
   dragMove: (deltaX: number, deltaY: number) => void;
@@ -81,11 +91,28 @@ export interface LinerElectronApi {
   onUpdateError: (cb: (err: { message: string }) => void) => () => void;
 }
 
+const isHyprland = Boolean(
+  process.env.HYPRLAND_INSTANCE_SIGNATURE ||
+  process.env.XDG_CURRENT_DESKTOP?.toLowerCase().includes("hyprland") ||
+  process.env.XDG_SESSION_DESKTOP?.toLowerCase().includes("hyprland"),
+);
+
 const api: LinerElectronApi = {
+  platform: process.platform,
+  isHyprland,
   minimize: () => ipcRenderer.invoke("window:minimize"),
   toggleMaximize: () => ipcRenderer.invoke("window:toggle-maximize"),
+  toggleFullScreen: () => ipcRenderer.invoke("window:toggle-fullscreen"),
   close: () => ipcRenderer.invoke("window:close"),
   isMaximized: () => ipcRenderer.invoke("window:is-maximized"),
+  isFullScreen: () => ipcRenderer.invoke("window:is-fullscreen"),
+  onWindowStateChange: (cb) => {
+    const listener = (_event: unknown, state: WindowState) => cb(state);
+    ipcRenderer.on("window:state-changed", listener);
+    return () => {
+      ipcRenderer.removeListener("window:state-changed", listener);
+    };
+  },
   startWindowMove: () => {
     ipcRenderer.send("window:start-drag");
   },
