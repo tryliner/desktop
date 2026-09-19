@@ -302,4 +302,52 @@ describe("Toast Batches & Stacking", () => {
       useImportStore.getState().reset();
     });
   });
+
+  it("auto-clears multiple toasts sequentially without freezing when 3 or more are shown", async () => {
+    vi.useFakeTimers();
+    try {
+      await act(async () => {
+        root.render(
+          <MemoryRouter>
+            <ToastProvider>
+              <div>app</div>
+            </ToastProvider>
+          </MemoryRouter>,
+        );
+      });
+
+      await act(async () => {
+        showToast("Toast 1", "info", { duration: 1000 });
+        showToast("Toast 2", "info", { duration: 1000 });
+        showToast("Toast 3", "info", { duration: 1000 });
+      });
+
+      expect(container.textContent).toContain("Toast 3");
+      expect(container.textContent).toContain("Toast 2");
+      expect(container.textContent).toContain("Toast 1");
+
+      // Advance time for top toast (Toast 3)
+      await act(async () => {
+        vi.advanceTimersByTime(1100);
+      });
+      expect(container.textContent).not.toContain("Toast 3");
+      expect(container.textContent).toContain("Toast 2");
+
+      // Advance time for next toast (Toast 2)
+      await act(async () => {
+        vi.advanceTimersByTime(1100);
+      });
+      expect(container.textContent).not.toContain("Toast 2");
+      expect(container.textContent).toContain("Toast 1");
+
+      // Advance time for last toast (Toast 1)
+      await act(async () => {
+        vi.advanceTimersByTime(1100);
+      });
+      expect(container.textContent).not.toContain("Toast 1");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });
+

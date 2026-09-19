@@ -142,7 +142,6 @@ showToast.info = (message: string, options?: ToastOptions) =>
 
 const DURATION = 3000;
 
-const BATCH_FREEZE_COUNT = 3;
 const MAX_BATCH_SIZE = 6;
 const SWIPE_DISMISS_OFFSET_Y = -12;
 const SWIPE_DISMISS_VELOCITY_Y = -120;
@@ -682,11 +681,15 @@ function NotificationCard({
   const dismissRef = useRef(onDismiss);
   dismissRef.current = onDismiss;
 
-  // deck cards stay frozen until promoted to top slot
-  const paused =
-    index !== 0 || hovered || dragging || batchSize >= BATCH_FREEZE_COUNT;
+  // deck cards stay frozen until promoted to top slot; top card pauses on hover or drag
+  const paused = index !== 0 || hovered || dragging;
   const remainingRef = useRef(item.duration);
   const startedAtRef = useRef(0);
+
+  // sync remaining duration if toast item is updated in place
+  useEffect(() => {
+    remainingRef.current = item.duration;
+  }, [item.duration]);
 
   useEffect(() => {
     if (paused) return;
