@@ -139,7 +139,7 @@ describe("Toast Batches & Stacking", () => {
   });
 
   it("promotes background batch card to main slot when top card action is triggered", async () => {
-    const onAction2 = vi.fn();
+    const onAction1 = vi.fn();
 
     await act(async () => {
       root.render(
@@ -152,31 +152,31 @@ describe("Toast Batches & Stacking", () => {
     });
 
     await act(async () => {
-      showToast("First Title", "info", { description: "First Description" });
+      showToast("First Title", "info", {
+        description: "First Description",
+        action: { label: "Dismiss Top", onClick: onAction1 },
+      });
     });
 
     await act(async () => {
       showToast("Second Title", "success", {
         description: "Second Description",
-        action: { label: "Dismiss Top", onClick: onAction2 },
       });
     });
 
-    // Top card has the action button "Dismiss Top"
     const actionBtn = Array.from(container.querySelectorAll("button")).find(
       (b) => b.textContent === "Dismiss Top",
     );
     expect(actionBtn).toBeDefined();
 
-    // Clicking action dismisses the top card
     await act(async () => {
       actionBtn?.click();
     });
 
-    expect(onAction2).toHaveBeenCalledTimes(1);
+    expect(onAction1).toHaveBeenCalledTimes(1);
 
-    // After dismissal, First Title remains and becomes the active card
-    expect(container.textContent).toContain("First Title");
+    expect(container.textContent).toContain("Second Title");
+    expect(container.textContent).not.toContain("First Title");
   });
 
   it("supports custom callable with checkmark and loader helper methods", async () => {
@@ -322,29 +322,27 @@ describe("Toast Batches & Stacking", () => {
         showToast("Toast 3", "info", { duration: 1000 });
       });
 
+      expect(container.textContent).toContain("Toast 1");
+      expect(container.textContent).toContain("Toast 2");
       expect(container.textContent).toContain("Toast 3");
-      expect(container.textContent).toContain("Toast 2");
-      expect(container.textContent).toContain("Toast 1");
 
-      // Advance time for top toast (Toast 3)
-      await act(async () => {
-        vi.advanceTimersByTime(1100);
-      });
-      expect(container.textContent).not.toContain("Toast 3");
-      expect(container.textContent).toContain("Toast 2");
-
-      // Advance time for next toast (Toast 2)
-      await act(async () => {
-        vi.advanceTimersByTime(1100);
-      });
-      expect(container.textContent).not.toContain("Toast 2");
-      expect(container.textContent).toContain("Toast 1");
-
-      // Advance time for last toast (Toast 1)
       await act(async () => {
         vi.advanceTimersByTime(1100);
       });
       expect(container.textContent).not.toContain("Toast 1");
+      expect(container.textContent).toContain("Toast 2");
+      expect(container.textContent).toContain("Toast 3");
+
+      await act(async () => {
+        vi.advanceTimersByTime(1100);
+      });
+      expect(container.textContent).not.toContain("Toast 2");
+      expect(container.textContent).toContain("Toast 3");
+
+      await act(async () => {
+        vi.advanceTimersByTime(1100);
+      });
+      expect(container.textContent).not.toContain("Toast 3");
     } finally {
       vi.useRealTimers();
     }

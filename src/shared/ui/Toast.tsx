@@ -546,7 +546,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
           };
           return next;
         }
-        return [item, ...current].slice(0, MAX_BATCH_SIZE);
+        return [...current, item].slice(0, MAX_BATCH_SIZE);
       });
     },
     [],
