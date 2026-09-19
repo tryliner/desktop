@@ -260,137 +260,14 @@ class TelemetryClient {
       },
       url: typeof window !== "undefined" ? window.location.href : undefined,
     };
-
-    const bodyStr = JSON.stringify(payload);
-
-    try {
-      let headers: Record<string, string> = {
-        "Content-Type": "application/json",
-      };
-
-      // Sign with dedicated Monitor HMAC Key via Electron native signer if available
-      if (typeof window !== "undefined" && window.linerElectron?.signMonitorRequest) {
-        const signed = await window.linerElectron.signMonitorRequest({
-          method: "POST",
-          path: "/v1/client/error",
-          body: bodyStr,
-        });
-
-        if (signed && signed.signature && signed.nonce) {
-          headers = {
-            ...headers,
-            "x-liner-signature": signed.signature,
-            "x-liner-timestamp": String(signed.timestamp),
-            "x-liner-nonce": signed.nonce,
-          };
-        }
-      }
-
-      const res = await fetch(telemetryConfig.errorUrl, {
-        method: "POST",
-        headers,
-        body: bodyStr,
-      });
-
-      const dateHeader = res.headers?.get?.("date");
-      if (dateHeader) {
-        syncServerTime(dateHeader);
-      }
-
-      if (!res.ok && (res.status === 429 || res.status === 403)) {
-        this.backoffUntil = Date.now() + 30000;
-      }
-    } catch {
-      // Fail silently to never break the application UI
-    }
   }
 
-  /**
-   * Flush queued events in background with HMAC signature.
-   */
   public async flush(): Promise<void> {
-    if (!telemetryConfig.enabled || this.queue.length === 0 || this.isFlushing) {
-      return;
-    }
-
-    if (Date.now() < this.backoffUntil) {
-      return;
-    }
-
-    this.isFlushing = true;
-    const batch = this.queue.splice(0, telemetryConfig.batchSize);
-
-    try {
-      const payload = { events: batch };
-      const bodyStr = JSON.stringify(payload);
-
-      let headers: Record<string, string> = {
-        "Content-Type": "application/json",
-      };
-
-      // Sign batch using Monitor HMAC secret via native signer
-      if (typeof window !== "undefined" && window.linerElectron?.signMonitorRequest) {
-        const signed = await window.linerElectron.signMonitorRequest({
-          method: "POST",
-          path: "/v1/ingest",
-          body: bodyStr,
-        });
-
-        if (signed && signed.signature && signed.nonce) {
-          headers = {
-            ...headers,
-            "x-liner-signature": signed.signature,
-            "x-liner-timestamp": String(signed.timestamp),
-            "x-liner-nonce": signed.nonce,
-          };
-        }
-      }
-
-      const res = await fetch(telemetryConfig.ingestUrl, {
-        method: "POST",
-        headers,
-        body: bodyStr,
-      });
-
-      const dateHeader = res.headers?.get?.("date");
-      if (dateHeader) {
-        syncServerTime(dateHeader);
-      }
-
-      if (!res.ok) {
-        if (res.status === 429 || res.status === 403 || res.status >= 500) {
-          this.backoffUntil = Date.now() + 30000;
-        }
-        // Do NOT re-queue 401/403 authorization rejects to prevent infinite loop
-        if (res.status !== 401 && res.status !== 403 && this.queue.length < 50) {
-          this.queue.unshift(...batch);
-        }
-      } else {
-        this.backoffUntil = 0;
-      }
-    } catch {
-      this.backoffUntil = Date.now() + 10000;
-      if (this.queue.length < 50) {
-        this.queue.unshift(...batch);
-      }
-    } finally {
-      this.isFlushing = false;
-    }
+    this.queue = [];
   }
 
-  /**
-   * Synchronous flush for window unload.
-   */
   private flushSync(): void {
-    if (!telemetryConfig.enabled || this.queue.length === 0) return;
-    const batch = this.queue.splice(0, telemetryConfig.batchSize);
-    try {
-      const payload = JSON.stringify({ events: batch });
-      if (navigator.sendBeacon) {
-        const blob = new Blob([payload], { type: "application/json" });
-        navigator.sendBeacon(telemetryConfig.ingestUrl, blob);
-      }
-    } catch {}
+    this.queue = [];
   }
 
   public destroy(): void {

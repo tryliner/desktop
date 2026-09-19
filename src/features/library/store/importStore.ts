@@ -180,13 +180,21 @@ export const useImportStore = create<ActiveImportState>((set, get) => ({
     ws.onerror = () => {
       if (isFinished) return;
       cleanupActiveConnections();
-      set({ isPolling: false, error: "Import service connection error" });
+      set((prev) => ({
+        isPolling: false,
+        error: "Import service connection error",
+        job: prev.job ? { ...prev.job, status: "failed", error: { code: "CONNECTION_ERROR", message: "Import service connection error" } } : null,
+      }));
     };
 
     ws.onclose = () => {
       if (isFinished) return;
       cleanupActiveConnections();
-      set({ isPolling: false, error: "Import service disconnected" });
+      set((prev) => ({
+        isPolling: false,
+        error: "Import service disconnected",
+        job: prev.job ? { ...prev.job, status: "failed", error: { code: "DISCONNECTED", message: "Import service disconnected" } } : null,
+      }));
     };
   },
 

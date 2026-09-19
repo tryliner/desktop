@@ -27,19 +27,10 @@ const DEFAULT_ERROR_URL =
 const STORAGE_KEY = "liner_telemetry_opt_in";
 
 function getInitialOptIn(): boolean {
-  if (typeof window === "undefined") return false;
-  if (import.meta.env.MODE === "test") return false;
-  if (import.meta.env.VITE_TELEMETRY_ENABLED === "false" || import.meta.env.VITE_DISABLE_TELEMETRY === "true") {
-    return false;
-  }
-  const stored = localStorage.getItem(STORAGE_KEY);
-  if (stored !== null) {
-    return stored === "true";
-  }
-  return true; // Default opt-in on first launch
+  return false;
 }
 
-let isEnabled = getInitialOptIn();
+let isEnabled = false;
 
 export const telemetryConfig: TelemetryConfig = {
   get enabled() {
