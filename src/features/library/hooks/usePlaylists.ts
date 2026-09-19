@@ -59,6 +59,15 @@ export function notifyLibraryChanged() {
   window.dispatchEvent(new Event("library:changed"));
 }
 
+// optimistically drop playlist from store so ui reacts instantly without waiting on network
+export function evictPlaylistFromCache(id: string) {
+  cache = {
+    playlists: cache.playlists.filter((p) => p.id !== id),
+    total: Math.max(0, cache.total - 1),
+  };
+  emit();
+}
+
 function emit() {
   view = { data: cache, error: undefined, isLoading: false };
   listeners.forEach((l) => l());

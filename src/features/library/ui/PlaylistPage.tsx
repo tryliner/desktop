@@ -739,6 +739,7 @@ function LibraryPlaylistContent() {
                                     title: viewData.title,
                                     coverUrl: viewData.coverUrl,
                                     type: "playlist",
+                                    isOwned: true,
                                   });
                                 },
                               },

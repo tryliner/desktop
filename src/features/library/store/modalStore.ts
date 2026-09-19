@@ -34,6 +34,7 @@ export interface RemoveLibraryDetail {
   coverUrl: string;
   type: "album" | "artist" | "playlist";
   subtitle?: string;
+  isOwned?: boolean;
 }
 
 export interface RemovePlaylistDetail {

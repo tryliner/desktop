@@ -81,11 +81,12 @@ function useItemMenuItems(item: LibraryItemViewModel): DropdownMenuItem[] {
             coverUrl: item.imageUrl,
             type: entityType,
             subtitle: item.subtitle,
+            isOwned: item.isOwned ?? (item.kind === "playlist" ? item.href.startsWith("/library/playlist") : false),
           });
         },
       },
     ];
-  }, [item.id, item.title, item.imageUrl, item.subtitle, item.kind, t]);
+  }, [item.id, item.title, item.imageUrl, item.subtitle, item.kind, item.isOwned, item.href, t]);
 }
 
 function LibraryItemCard({ item }: { item: LibraryItemViewModel }) {

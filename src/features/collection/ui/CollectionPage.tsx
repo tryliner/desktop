@@ -172,6 +172,7 @@ function CollectionContent() {
         title: data.title,
         coverUrl: data.coverUrl,
         type: entityType,
+        isOwned: false,
       });
     } else {
       useModalStore.getState().openAddToLibrary({

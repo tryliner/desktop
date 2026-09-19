@@ -44,7 +44,7 @@ function RemoveFromLibraryModalContent() {
     }
 
     removeExternal.mutate(
-      { type: targetType, id: targetId },
+      { type: targetType, id: targetId, isOwned: detail.isOwned },
       {
         onSuccess: () =>
           toast(t("common.removed_from_library_success"), "info", {

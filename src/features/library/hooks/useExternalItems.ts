@@ -37,6 +37,7 @@ export function useExternalItems(type: EntityType) {
                   : `/collection?type=album&id=${encodeURIComponent(value.id)}`,
             addedAt: entry.savedAt,
             trackCount: value.trackCount,
+            isOwned: false,
           };
         }));
       } catch { if (active) setData([]); }

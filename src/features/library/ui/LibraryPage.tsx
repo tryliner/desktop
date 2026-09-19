@@ -181,6 +181,7 @@ export default function LibraryPage() {
       imageUrl: playlist.coverUrl || "",
       coverUrls: playlist.coverUrls,
       kind: "playlist" as const,
+      isOwned: true,
       href: `/library/playlist?id=${encodeURIComponent(playlist.id)}`,
       addedAt:
         playlist.updatedAt || playlist.createdAt || new Date().toISOString(),

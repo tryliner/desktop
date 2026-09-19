@@ -13,6 +13,7 @@ export interface LibraryItemViewModel {
   href: string;
   addedAt: string;
   trackCount?: number;
+  isOwned?: boolean;
 }
 export type LibrarySortOption = "recent" | "title" | "creator";
 

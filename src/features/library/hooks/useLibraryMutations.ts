@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import { api } from "@/shared/api";
-import { notifyLibraryChanged } from "./usePlaylists";
+import { notifyLibraryChanged, evictPlaylistFromCache } from "./usePlaylists";
 import { applyOptimisticLike, applyOptimisticUnlike } from "./useLikedTracks";
 
 type Options = {
@@ -71,9 +71,10 @@ export function useCreatePlaylist() {
 }
 
 export function useDeletePlaylist() {
-  return useMutation(({ playlistId }: { playlistId: string }) =>
-    api.deletePlaylist(playlistId)
-  );
+  return useMutation(async ({ playlistId }: { playlistId: string }) => {
+    evictPlaylistFromCache(playlistId);
+    return api.deletePlaylist(playlistId);
+  });
 }
 
 export function useSaveExternalItem() {
@@ -94,13 +95,21 @@ export function useRemoveExternalItem() {
       isOwned?: boolean;
     }) => {
       if (type === "playlist") {
-        if (isOwned) {
-          return api.deletePlaylist(id);
+        evictPlaylistFromCache(id);
+        if (isOwned === false) {
+          return api.removeCollection("playlists", id);
         }
         try {
-          return await api.removeCollection("playlists", id);
-        } catch {
-          return api.deletePlaylist(id);
+          const res = await api.deletePlaylist(id);
+          // purge any saved collection reference in case it was both created and saved
+          await api.removeCollection("playlists", id).catch(() => {});
+          return res;
+        } catch (err: unknown) {
+          if (isOwned === true) {
+            throw err;
+          }
+          // fall back to removing from saved collections if playlist was not owned
+          return api.removeCollection("playlists", id);
         }
       }
       return api.removeCollection(`${type}s` as "albums" | "artists", id);
