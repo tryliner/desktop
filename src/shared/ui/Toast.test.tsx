@@ -337,20 +337,20 @@ describe("Toast Batches & Stacking", () => {
       expect(container.textContent).toContain("Toast 3");
 
       await act(async () => {
-        vi.advanceTimersByTime(650);
+        vi.advanceTimersByTime(400);
       });
       expect(container.textContent).not.toContain("Toast 1");
       expect(container.textContent).toContain("Toast 2");
       expect(container.textContent).toContain("Toast 3");
 
       await act(async () => {
-        vi.advanceTimersByTime(1050);
+        vi.advanceTimersByTime(350);
       });
       expect(container.textContent).not.toContain("Toast 2");
       expect(container.textContent).toContain("Toast 3");
 
       await act(async () => {
-        vi.advanceTimersByTime(1050);
+        vi.advanceTimersByTime(300);
       });
       expect(container.textContent).not.toContain("Toast 3");
     } finally {
@@ -400,6 +400,68 @@ describe("Toast Batches & Stacking", () => {
       });
 
       expect(container.textContent).not.toContain("Transient 1");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("expires stacked toasts within the single toast duration of the newest top toast", async () => {
+    vi.useFakeTimers();
+    try {
+      await act(async () => {
+        root.render(
+          <MemoryRouter>
+            <ToastProvider>
+              <div>app</div>
+            </ToastProvider>
+          </MemoryRouter>,
+        );
+      });
+
+      await act(async () => {
+        showToast("Toast 1", "info", { duration: 3000 });
+        showToast("Toast 2", "info", { duration: 3000 });
+        showToast("Toast 3", "info", { duration: 3000 });
+        showToast("Toast 4", "info", { duration: 3000 });
+        showToast("Toast 5", "info", { duration: 3000 });
+      });
+
+      await act(async () => {
+        vi.advanceTimersByTime(500);
+        showToast("Toast 6", "info", { duration: 3000 });
+      });
+
+      expect(container.textContent).toContain("Toast 6");
+
+      await act(async () => {
+        vi.advanceTimersByTime(600);
+      });
+      expect(container.textContent).not.toContain("Toast 1");
+
+      await act(async () => {
+        vi.advanceTimersByTime(600);
+      });
+      expect(container.textContent).not.toContain("Toast 2");
+
+      await act(async () => {
+        vi.advanceTimersByTime(600);
+      });
+      expect(container.textContent).not.toContain("Toast 3");
+
+      await act(async () => {
+        vi.advanceTimersByTime(600);
+      });
+      expect(container.textContent).not.toContain("Toast 4");
+
+      await act(async () => {
+        vi.advanceTimersByTime(600);
+      });
+      expect(container.textContent).not.toContain("Toast 5");
+
+      await act(async () => {
+        vi.advanceTimersByTime(600);
+      });
+      expect(container.textContent).not.toContain("Toast 6");
     } finally {
       vi.useRealTimers();
     }

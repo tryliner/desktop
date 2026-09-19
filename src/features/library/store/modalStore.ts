@@ -166,15 +166,20 @@ export const useModalStore = create<ModalState>((set) => ({
     set((state) => ({
       importReviewOpen: true,
       importReviewJobId: jobId,
-      importReviewPrefetched: prefetchedItems?.length ? prefetchedItems : state.importReviewPrefetched,
-      importReviewApprovedTracks: approvedTracks?.length ? approvedTracks : state.importReviewApprovedTracks,
+      importReviewPrefetched: prefetchedItems?.length
+        ? prefetchedItems
+        : state.importReviewJobId === jobId
+          ? state.importReviewPrefetched
+          : null,
+      importReviewApprovedTracks: approvedTracks?.length
+        ? approvedTracks
+        : state.importReviewJobId === jobId
+          ? state.importReviewApprovedTracks
+          : null,
     })),
   closeImportReview: () =>
     set({
       importReviewOpen: false,
-      importReviewJobId: null,
-      importReviewPrefetched: null,
-      importReviewApprovedTracks: null,
     }),
 
   searchOpen: false,

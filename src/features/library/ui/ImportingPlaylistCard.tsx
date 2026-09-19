@@ -3,6 +3,7 @@ import { PlaylistFill } from "@mingcute/react";
 import type { ImportJob } from "@/shared/contracts/imports";
 import type { LibraryViewMode } from "../types";
 import { useModalStore } from "../store/modalStore";
+import { useImportStore } from "../store/importStore";
 
 interface ImportingPlaylistCardProps {
   job: ImportJob;
@@ -47,7 +48,10 @@ export default function ImportingPlaylistCard({
 
   const handleClick = () => {
     if (isAwaiting) {
-      useModalStore.getState().openImportReview(job.id);
+      const { reviewItems, approvedTracks } = useImportStore.getState();
+      useModalStore
+        .getState()
+        .openImportReview(job.id, reviewItems ?? undefined, approvedTracks ?? undefined);
     }
   };
 

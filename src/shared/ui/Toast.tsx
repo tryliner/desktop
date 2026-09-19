@@ -299,10 +299,16 @@ function ImportToastBridge({
     if (!job || openingReview) return;
     setOpeningReview(true);
     try {
+      const { reviewItems, approvedTracks } = useImportStore.getState();
+      if (reviewItems && reviewItems.length > 0) {
+        openImportReview(job.id, reviewItems, approvedTracks ?? undefined);
+        return;
+      }
       const res = await api.getPlaylistImportReview(job.id);
-      openImportReview(job.id, res.items);
+      openImportReview(job.id, res.items, approvedTracks ?? undefined);
     } catch {
-      openImportReview(job.id);
+      const { reviewItems, approvedTracks } = useImportStore.getState();
+      openImportReview(job.id, reviewItems ?? undefined, approvedTracks ?? undefined);
     } finally {
       setOpeningReview(false);
     }
@@ -310,7 +316,11 @@ function ImportToastBridge({
 
   const finalizeWithMatches = useCallback(async (jobId: string) => {
     try {
-      const autoMatchedTracks = useModalStore.getState().importReviewApprovedTracks || [];
+      const autoMatchedTracks =
+        useModalStore.getState().importReviewApprovedTracks ||
+        (useImportStore.getState().job?.id === jobId ? useImportStore.getState().approvedTracks : null) ||
+        [];
+      if (autoMatchedTracks.length === 0) return;
       const jobMeta = useImportStore.getState().job;
       const res = await api.skipPlaylistImportReview(
         jobId,
@@ -320,7 +330,7 @@ function ImportToastBridge({
       );
       if (res.finalized) {
         const finalJob = await api.getPlaylistImport(jobId).catch(() => null);
-        useImportStore.setState({ job: finalJob ?? null, isPolling: false });
+        useImportStore.setState({ job: finalJob ?? null, isPolling: false, reviewItems: null, approvedTracks: null });
         notifyLibraryChanged();
       }
     } catch {}
@@ -604,46 +614,72 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 
   const [deckHovered, setDeckHovered] = useState(false);
 
+  const topToast = toasts.length > 0 ? toasts[0] : null;
+  const topId = topToast?.id;
+  const topDuration = topToast?.duration ?? 0;
+
   const bottomToast = toasts.length > 0 ? toasts[toasts.length - 1] : null;
   const bottomId = bottomToast?.id;
   const bottomDuration = bottomToast?.duration ?? 0;
   const isBottomPermanent = bottomDuration >= 999999;
-  const isPipelinePaused = deckHovered || isBottomPermanent || !bottomToast;
 
-  const remainingRef = useRef(bottomDuration);
-  const startedAtRef = useRef(0);
-  const currentBottomIdRef = useRef<string | number | null>(null);
+  const targetTimeRef = useRef<number | null>(null);
+  const lastTopIdRef = useRef<string | number | null>(null);
+  const pausedRemainingRef = useRef<number | null>(null);
 
-  if (currentBottomIdRef.current !== bottomId) {
-    currentBottomIdRef.current = bottomId ?? null;
-    remainingRef.current = bottomDuration;
-    startedAtRef.current = 0;
+  if (lastTopIdRef.current !== topId) {
+    lastTopIdRef.current = topId ?? null;
+    if (topToast && topDuration < 999999) {
+      targetTimeRef.current = Date.now() + topDuration;
+      pausedRemainingRef.current = null;
+    } else if (!topToast) {
+      targetTimeRef.current = null;
+      pausedRemainingRef.current = null;
+    }
   }
 
   useEffect(() => {
-    if (isPipelinePaused || !bottomToast) return;
-    if (remainingRef.current <= 0) {
-      bottomToast.onDismiss?.();
-      remove(bottomToast.id);
-      return;
+    if (deckHovered) {
+      if (targetTimeRef.current !== null) {
+        pausedRemainingRef.current = Math.max(0, targetTimeRef.current - Date.now());
+      }
+    } else {
+      if (pausedRemainingRef.current !== null) {
+        targetTimeRef.current = Date.now() + pausedRemainingRef.current;
+        pausedRemainingRef.current = null;
+      }
     }
-    startedAtRef.current = Date.now();
+  }, [deckHovered]);
+
+  let timedCount = 0;
+  for (let i = toasts.length - 1; i >= 0; i--) {
+    if (toasts[i].duration < 999999) {
+      timedCount++;
+    } else {
+      break;
+    }
+  }
+
+  const isPipelinePaused = deckHovered || isBottomPermanent || !bottomToast || timedCount === 0;
+
+  useEffect(() => {
+    if (isPipelinePaused || !bottomToast) return;
+
+    let delay = bottomDuration;
+    if (targetTimeRef.current !== null && timedCount > 0) {
+      const remainingTotal = Math.max(50, targetTimeRef.current - Date.now());
+      delay = Math.max(50, Math.round(remainingTotal / timedCount));
+    }
+
     const timer = setTimeout(() => {
       bottomToast.onDismiss?.();
       remove(bottomToast.id);
-    }, remainingRef.current);
+    }, delay);
 
     return () => {
       clearTimeout(timer);
-      if (startedAtRef.current) {
-        remainingRef.current = Math.max(
-          0,
-          remainingRef.current - (Date.now() - startedAtRef.current),
-        );
-        startedAtRef.current = 0;
-      }
     };
-  }, [isPipelinePaused, bottomId, bottomDuration, bottomToast, remove]);
+  }, [isPipelinePaused, bottomId, bottomDuration, bottomToast, timedCount, topId, remove]);
 
   return (
     <ToastContext.Provider value={{ toast: toastCallable, dismiss: remove }}>

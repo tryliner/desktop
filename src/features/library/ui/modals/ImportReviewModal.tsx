@@ -144,12 +144,17 @@ export default function ImportReviewModal() {
       return;
     }
 
-    const prefetched = useModalStore.getState().importReviewPrefetched;
+    const modalState = useModalStore.getState();
+    const importState = useImportStore.getState();
+    const prefetched =
+      modalState.importReviewPrefetched ||
+      (importState.job?.id === jobId ? importState.reviewItems : null);
+
     if (prefetched && prefetched.length > 0) {
-      useModalStore.setState({ importReviewPrefetched: null });
       const unique = deduplicateReviewItems(prefetched);
       setItems(unique);
       setDecisions(deriveInitialDecisions(unique));
+      setLoading(false);
       return;
     }
 
@@ -179,20 +184,25 @@ export default function ImportReviewModal() {
       if (!active) return;
       setLoading(false);
 
-      const autoMatchedTracks = useModalStore.getState().importReviewApprovedTracks || [];
+      const autoMatchedTracks =
+        useModalStore.getState().importReviewApprovedTracks ||
+        (useImportStore.getState().job?.id === jobId ? useImportStore.getState().approvedTracks : null) ||
+        [];
       const jobMeta = useImportStore.getState().job;
-      const r = await api.skipPlaylistImportReview(
-        jobId,
-        autoMatchedTracks,
-        jobMeta?.title,
-        jobMeta?.description,
-      ).catch(() => null);
-      if (!active) return;
-      if (r?.finalized) {
-        const finalJob = await api.getPlaylistImport(jobId).catch(() => null);
-        useImportStore.setState({ job: finalJob ?? null, isPolling: false });
-        notifyLibraryChanged();
-        close();
+      if (autoMatchedTracks.length > 0 && jobMeta?.status === "awaiting_decision") {
+        const r = await api.skipPlaylistImportReview(
+          jobId,
+          autoMatchedTracks,
+          jobMeta?.title,
+          jobMeta?.description,
+        ).catch(() => null);
+        if (!active) return;
+        if (r?.finalized) {
+          const finalJob = await api.getPlaylistImport(jobId).catch(() => null);
+          useImportStore.setState({ job: finalJob ?? null, isPolling: false, reviewItems: null, approvedTracks: null });
+          notifyLibraryChanged();
+          close();
+        }
       }
     };
 
@@ -224,7 +234,10 @@ export default function ImportReviewModal() {
         .filter((item) => (decisions[item.id] || "deny") === "approve" && Boolean(item.proposedTrack))
         .map((item) => item.proposedTrack!);
 
-      const autoMatchedTracks = useModalStore.getState().importReviewApprovedTracks || [];
+      const autoMatchedTracks =
+        useModalStore.getState().importReviewApprovedTracks ||
+        (useImportStore.getState().job?.id === jobId ? useImportStore.getState().approvedTracks : null) ||
+        [];
       const allApprovedTracks = [...autoMatchedTracks, ...userApprovedTracks];
 
       const jobMeta = useImportStore.getState().job;
@@ -238,7 +251,7 @@ export default function ImportReviewModal() {
 
       const finalJob = await api.getPlaylistImport(jobId).catch(() => null);
       if (res.finalized || finalJob?.status === "completed") {
-        useImportStore.setState({ job: finalJob ?? null, isPolling: false });
+        useImportStore.setState({ job: finalJob ?? null, isPolling: false, reviewItems: null, approvedTracks: null });
         notifyLibraryChanged();
         close();
       } else {
@@ -259,7 +272,10 @@ export default function ImportReviewModal() {
     setSubmitting(true);
 
     try {
-      const autoMatchedTracks = useModalStore.getState().importReviewApprovedTracks || [];
+      const autoMatchedTracks =
+        useModalStore.getState().importReviewApprovedTracks ||
+        (useImportStore.getState().job?.id === jobId ? useImportStore.getState().approvedTracks : null) ||
+        [];
       const jobMeta = useImportStore.getState().job;
       const res = await api.skipPlaylistImportReview(
         jobId,
@@ -270,7 +286,7 @@ export default function ImportReviewModal() {
 
       const finalJob = await api.getPlaylistImport(jobId).catch(() => null);
       if (res.finalized || finalJob?.status === "completed") {
-        useImportStore.setState({ job: finalJob ?? null, isPolling: false });
+        useImportStore.setState({ job: finalJob ?? null, isPolling: false, reviewItems: null, approvedTracks: null });
         notifyLibraryChanged();
         close();
       } else {

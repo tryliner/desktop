@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { api, type ImportJob } from "@/shared/api";
+import { api, type ImportJob, type ImportReview } from "@/shared/api";
 import { showToast } from "@/shared/ui";
 import { createTranslatorSync, getStoredLocale } from "@/languages";
 import { notifyLibraryChanged } from "../hooks/usePlaylists";
@@ -9,9 +9,9 @@ export interface ActiveImportState {
   job: ImportJob | null;
   isPolling: boolean;
   error: string | null;
-  // track the caller wanted added to a playlist that is being created via
-  // this import (see CreatePlaylistModal); added once the job completes
   pendingTrack: TrackDetail | null;
+  reviewItems: ImportReview[] | null;
+  approvedTracks: any[] | null;
   startImport: (url: string, pendingTrack?: TrackDetail | null) => Promise<ImportJob>;
   listenToWebSocketWorker: (job: ImportJob) => void;
   pollJob: (jobId: string) => Promise<void>;
@@ -49,10 +49,19 @@ export const useImportStore = create<ActiveImportState>((set, get) => ({
   isPolling: false,
   error: null,
   pendingTrack: null,
+  reviewItems: null,
+  approvedTracks: null,
 
   reset: () => {
     cleanupActiveConnections();
-    set({ job: null, isPolling: false, error: null, pendingTrack: null });
+    set({
+      job: null,
+      isPolling: false,
+      error: null,
+      pendingTrack: null,
+      reviewItems: null,
+      approvedTracks: null,
+    });
   },
 
   cancelPolling: () => {
@@ -62,7 +71,13 @@ export const useImportStore = create<ActiveImportState>((set, get) => ({
 
   startImport: async (url: string, pendingTrack: TrackDetail | null = null) => {
     get().cancelPolling();
-    set({ error: null, isPolling: true, pendingTrack });
+    set({
+      error: null,
+      isPolling: true,
+      pendingTrack,
+      reviewItems: null,
+      approvedTracks: null,
+    });
     try {
       const job = await api.createPlaylistImport(url);
       set({ job, isPolling: true });
@@ -74,7 +89,6 @@ export const useImportStore = create<ActiveImportState>((set, get) => ({
       }
       return job;
     } catch (err) {
-      // store stays generic, callers map the raw error to a friendly message
       set({ error: "Failed to start import", isPolling: false, pendingTrack: null });
       throw err;
     }
@@ -122,20 +136,31 @@ export const useImportStore = create<ActiveImportState>((set, get) => ({
             createdAt: msg.createdAt || job.createdAt,
           };
 
-          set({ job: current });
+          const reviewItems =
+            Array.isArray(msg.reviewItems) && msg.reviewItems.length > 0
+              ? msg.reviewItems
+              : get().reviewItems;
+          const approvedTracks =
+            Array.isArray(msg.approvedTracks) && msg.approvedTracks.length > 0
+              ? msg.approvedTracks
+              : get().approvedTracks;
 
-          if (Array.isArray(msg.reviewItems) && msg.reviewItems.length > 0) {
+          set({ job: current, reviewItems, approvedTracks });
+
+          if (reviewItems && reviewItems.length > 0) {
             useModalStore.setState({
-              importReviewPrefetched: msg.reviewItems,
-              importReviewApprovedTracks: Array.isArray(msg.approvedTracks) ? msg.approvedTracks : null,
+              importReviewPrefetched: reviewItems,
+              importReviewApprovedTracks: approvedTracks,
             });
           }
 
           if (current.status === "awaiting_decision") {
             isFinished = true;
-            set({ isPolling: false, job: current });
+            set({ isPolling: false, job: current, reviewItems, approvedTracks });
             cleanupActiveConnections();
-            useModalStore.getState().openImportReview(current.id, msg.reviewItems, msg.approvedTracks);
+            useModalStore
+              .getState()
+              .openImportReview(current.id, reviewItems ?? undefined, approvedTracks ?? undefined);
             return;
           }
 
