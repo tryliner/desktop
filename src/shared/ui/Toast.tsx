@@ -546,7 +546,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
           };
           return next;
         }
-        return [...current, item].slice(0, MAX_BATCH_SIZE);
+        return [item, ...current].slice(0, MAX_BATCH_SIZE);
       });
     },
     [],
@@ -593,7 +593,6 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener("liner:toast-dismiss", handleDismissToast);
   }, [remove]);
 
-  // Keep up to 3 cards in the visible stack (active + 2 in the batch deck)
   const visibleToasts = toasts.slice(0, 3);
   const [activeCardWidth, setActiveCardWidth] = useState<number | null>(null);
   const [activeCardHeight, setActiveCardHeight] = useState<number | null>(null);
@@ -603,10 +602,52 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     if (h > 0) setActiveCardHeight((prev) => (prev === h ? prev : h));
   }, []);
 
+  const [deckHovered, setDeckHovered] = useState(false);
+
+  const bottomToast = toasts.length > 0 ? toasts[toasts.length - 1] : null;
+  const bottomId = bottomToast?.id;
+  const bottomDuration = bottomToast?.duration ?? 0;
+  const isBottomPermanent = bottomDuration >= 999999;
+  const isPipelinePaused = deckHovered || isBottomPermanent || !bottomToast;
+
+  const remainingRef = useRef(bottomDuration);
+  const startedAtRef = useRef(0);
+  const currentBottomIdRef = useRef<string | number | null>(null);
+
+  if (currentBottomIdRef.current !== bottomId) {
+    currentBottomIdRef.current = bottomId ?? null;
+    remainingRef.current = bottomDuration;
+    startedAtRef.current = 0;
+  }
+
+  useEffect(() => {
+    if (isPipelinePaused || !bottomToast) return;
+    if (remainingRef.current <= 0) {
+      bottomToast.onDismiss?.();
+      remove(bottomToast.id);
+      return;
+    }
+    startedAtRef.current = Date.now();
+    const timer = setTimeout(() => {
+      bottomToast.onDismiss?.();
+      remove(bottomToast.id);
+    }, remainingRef.current);
+
+    return () => {
+      clearTimeout(timer);
+      if (startedAtRef.current) {
+        remainingRef.current = Math.max(
+          0,
+          remainingRef.current - (Date.now() - startedAtRef.current),
+        );
+        startedAtRef.current = 0;
+      }
+    };
+  }, [isPipelinePaused, bottomId, bottomDuration, bottomToast, remove]);
+
   return (
     <ToastContext.Provider value={{ toast: toastCallable, dismiss: remove }}>
       {children}
-      {/* top-center notification batch deck - positioned below window drag area */}
       <div className="fixed top-[44px] left-1/2 -translate-x-1/2 z-[9999] pointer-events-none">
         <motion.div
           layout
@@ -623,6 +664,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                 isTop={index === 0}
                 activeCardWidth={activeCardWidth}
                 activeCardHeight={activeCardHeight}
+                onDeckHover={setDeckHovered}
                 onMeasureActive={handleMeasureActive}
                 onDismiss={() => remove(item.id)}
               />
@@ -642,6 +684,7 @@ function NotificationCard({
   isTop,
   activeCardWidth,
   activeCardHeight,
+  onDeckHover,
   onMeasureActive,
   onDismiss,
 }: {
@@ -651,6 +694,7 @@ function NotificationCard({
   isTop: boolean;
   activeCardWidth: number | null;
   activeCardHeight: number | null;
+  onDeckHover?: (hovered: boolean) => void;
   onMeasureActive: (w: number, h: number) => void;
   onDismiss: () => void;
 }) {
@@ -660,7 +704,6 @@ function NotificationCard({
   const [copiedId, setCopiedId] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
-  // measure active card dimensions so background deck cards can match its width exactly
   useLayoutEffect(() => {
     if (!isTop || !cardRef.current) return;
     const el = cardRef.current;
@@ -677,45 +720,10 @@ function NotificationCard({
     return () => ro.disconnect();
   }, [isTop, onMeasureActive]);
 
-  // mirror the dismiss callback so timer bookkeeping survives re-renders
-  const dismissRef = useRef(onDismiss);
-  dismissRef.current = onDismiss;
-
-  // deck cards stay frozen until promoted to top slot; top card pauses on hover or drag
-  const paused = index !== 0 || hovered || dragging;
-  const remainingRef = useRef(item.duration);
-  const startedAtRef = useRef(0);
-
-  // sync remaining duration if toast item is updated in place
-  useEffect(() => {
-    remainingRef.current = item.duration;
-  }, [item.duration]);
-
-  useEffect(() => {
-    if (paused) return;
-    if (!(item.duration < 999999)) return;
-    if (remainingRef.current <= 0) {
-      dismissRef.current();
-      return;
-    }
-    startedAtRef.current = Date.now();
-    const timer = setTimeout(() => dismissRef.current(), remainingRef.current);
-    return () => {
-      clearTimeout(timer);
-      if (startedAtRef.current) {
-        remainingRef.current = Math.max(
-          0,
-          remainingRef.current - (Date.now() - startedAtRef.current),
-        );
-        startedAtRef.current = 0;
-      }
-    };
-  }, [paused, item.duration]);
-
   const dismiss = useCallback(() => {
     item.onDismiss?.();
-    dismissRef.current();
-  }, [item]);
+    onDismiss();
+  }, [item, onDismiss]);
 
   const handleCopyRequestId = (reqId: string) => {
     if (typeof navigator !== "undefined" && navigator.clipboard) {
@@ -761,9 +769,13 @@ function NotificationCard({
       drag={index === 0 ? "y" : false}
       dragConstraints={{ top: 0, bottom: 0 }}
       dragElastic={{ top: 0.85, bottom: 0.08 }}
-      onDragStart={() => setDragging(true)}
+      onDragStart={() => {
+        setDragging(true);
+        onDeckHover?.(true);
+      }}
       onDragEnd={(_, info) => {
         setDragging(false);
+        onDeckHover?.(false);
         if (
           info.offset.y < SWIPE_DISMISS_OFFSET_Y ||
           info.velocity.y < SWIPE_DISMISS_VELOCITY_Y
@@ -771,8 +783,14 @@ function NotificationCard({
           dismiss();
         }
       }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onMouseEnter={() => {
+        setHovered(true);
+        onDeckHover?.(true);
+      }}
+      onMouseLeave={() => {
+        setHovered(false);
+        onDeckHover?.(false);
+      }}
       data-no-window-drag
       className={`relative flex items-center gap-[8px] rounded-[12px] bg-bg-elevated pl-[12px] ${
         resolvedAction ? "pr-[5px]" : "pr-[12px]"

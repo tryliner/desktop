@@ -8,22 +8,26 @@ import { ToastProvider, showToast, useToast } from "./Toast";
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
 vi.mock("framer-motion", () => {
+  const cache: Record<string, any> = {};
   return {
     AnimatePresence: ({ children }: any) => <>{children}</>,
     motion: new Proxy({}, {
       get: (_target, prop: string) => {
-        return React.forwardRef(({ children, className, style, ...props }: any, ref: any) => {
-          const cleanProps = { ...props };
-          delete cleanProps.layout;
-          delete cleanProps.initial;
-          delete cleanProps.animate;
-          delete cleanProps.exit;
-          delete cleanProps.transition;
-          delete cleanProps.whileHover;
-          delete cleanProps.whileTap;
-          delete cleanProps.whileDrag;
-          return React.createElement(prop, { ref, className, style, ...cleanProps }, children);
-        });
+        if (!cache[prop]) {
+          cache[prop] = React.forwardRef(({ children, className, style, ...props }: any, ref: any) => {
+            const cleanProps = { ...props };
+            delete cleanProps.layout;
+            delete cleanProps.initial;
+            delete cleanProps.animate;
+            delete cleanProps.exit;
+            delete cleanProps.transition;
+            delete cleanProps.whileHover;
+            delete cleanProps.whileTap;
+            delete cleanProps.whileDrag;
+            return React.createElement(prop, { ref, className, style, ...cleanProps }, children);
+          });
+        }
+        return cache[prop];
       },
     }),
   };
@@ -139,7 +143,7 @@ describe("Toast Batches & Stacking", () => {
   });
 
   it("promotes background batch card to main slot when top card action is triggered", async () => {
-    const onAction1 = vi.fn();
+    const onAction2 = vi.fn();
 
     await act(async () => {
       root.render(
@@ -154,13 +158,13 @@ describe("Toast Batches & Stacking", () => {
     await act(async () => {
       showToast("First Title", "info", {
         description: "First Description",
-        action: { label: "Dismiss Top", onClick: onAction1 },
       });
     });
 
     await act(async () => {
       showToast("Second Title", "success", {
         description: "Second Description",
+        action: { label: "Dismiss Top", onClick: onAction2 },
       });
     });
 
@@ -173,10 +177,10 @@ describe("Toast Batches & Stacking", () => {
       actionBtn?.click();
     });
 
-    expect(onAction1).toHaveBeenCalledTimes(1);
+    expect(onAction2).toHaveBeenCalledTimes(1);
 
-    expect(container.textContent).toContain("Second Title");
-    expect(container.textContent).not.toContain("First Title");
+    expect(container.textContent).toContain("First Title");
+    expect(container.textContent).not.toContain("Second Title");
   });
 
   it("supports custom callable with checkmark and loader helper methods", async () => {
@@ -318,7 +322,13 @@ describe("Toast Batches & Stacking", () => {
 
       await act(async () => {
         showToast("Toast 1", "info", { duration: 1000 });
+      });
+      await act(async () => {
+        vi.advanceTimersByTime(200);
         showToast("Toast 2", "info", { duration: 1000 });
+      });
+      await act(async () => {
+        vi.advanceTimersByTime(200);
         showToast("Toast 3", "info", { duration: 1000 });
       });
 
@@ -327,22 +337,69 @@ describe("Toast Batches & Stacking", () => {
       expect(container.textContent).toContain("Toast 3");
 
       await act(async () => {
-        vi.advanceTimersByTime(1100);
+        vi.advanceTimersByTime(650);
       });
       expect(container.textContent).not.toContain("Toast 1");
       expect(container.textContent).toContain("Toast 2");
       expect(container.textContent).toContain("Toast 3");
 
       await act(async () => {
-        vi.advanceTimersByTime(1100);
+        vi.advanceTimersByTime(1050);
       });
       expect(container.textContent).not.toContain("Toast 2");
       expect(container.textContent).toContain("Toast 3");
 
       await act(async () => {
-        vi.advanceTimersByTime(1100);
+        vi.advanceTimersByTime(1050);
       });
       expect(container.textContent).not.toContain("Toast 3");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("blocks newer toasts from auto-expiring while a permanent toast is at the bottom", async () => {
+    vi.useFakeTimers();
+    try {
+      await act(async () => {
+        root.render(
+          <MemoryRouter>
+            <ToastProvider>
+              <div>app</div>
+            </ToastProvider>
+          </MemoryRouter>,
+        );
+      });
+
+      await act(async () => {
+        showToast("Sticky loader", "loader", { id: "sticky-bottom", duration: 999999 });
+      });
+      await act(async () => {
+        showToast("Transient 1", "info", { duration: 1000 });
+      });
+
+      expect(container.textContent).toContain("Sticky loader");
+      expect(container.textContent).toContain("Transient 1");
+
+      await act(async () => {
+        vi.advanceTimersByTime(5000);
+      });
+
+      expect(container.textContent).toContain("Sticky loader");
+      expect(container.textContent).toContain("Transient 1");
+
+      await act(async () => {
+        showToast.dismiss("sticky-bottom");
+      });
+
+      expect(container.textContent).not.toContain("Sticky loader");
+      expect(container.textContent).toContain("Transient 1");
+
+      await act(async () => {
+        vi.advanceTimersByTime(1050);
+      });
+
+      expect(container.textContent).not.toContain("Transient 1");
     } finally {
       vi.useRealTimers();
     }
