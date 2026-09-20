@@ -30,6 +30,8 @@ export class PresenceClient {
   private isRunning = false;
   private isDestroyed = false;
 
+  private isConnecting = false;
+
   constructor(private readonly pingIntervalMs = DEFAULT_PING_INTERVAL_MS) {}
 
   // starts presence background lifecycle and registers system listeners
@@ -50,6 +52,7 @@ export class PresenceClient {
   // stops presence client and tears down active socket and timers
   stop(): void {
     this.isRunning = false;
+    this.isConnecting = false;
     this.clearTimers();
     this.disconnectSocket();
 
@@ -65,7 +68,7 @@ export class PresenceClient {
     if (!session?.accessToken) {
       this.disconnectSocket();
       this.clearTimers();
-    } else if (this.isRunning && (!this.ws || this.ws.readyState !== WebSocket.OPEN)) {
+    } else if (this.isRunning && (!this.ws || this.ws.readyState === WebSocket.CLOSED)) {
       void this.connect();
     }
   };
@@ -98,39 +101,53 @@ export class PresenceClient {
 
   private disconnectSocket(): void {
     if (this.ws) {
-      this.ws.onopen = null;
-      this.ws.onclose = null;
-      this.ws.onerror = null;
-      this.ws.onmessage = null;
-      try {
-        this.ws.close();
-      } catch {}
+      const socket = this.ws;
       this.ws = null;
+      socket.onopen = null;
+      socket.onclose = null;
+      socket.onerror = null;
+      socket.onmessage = null;
+      try {
+        socket.close();
+      } catch {}
     }
   }
 
   // establishes websocket connection and sends initial auth payload
   async connect(): Promise<void> {
-    if (!this.isRunning || typeof window === "undefined" || typeof WebSocket === "undefined") {
+    if (
+      !this.isRunning ||
+      this.isConnecting ||
+      typeof window === "undefined" ||
+      typeof WebSocket === "undefined"
+    ) {
       return;
     }
 
-    // verify we have an active session
-    const accessToken = await getValidAccessToken();
-    if (!accessToken) {
+    // avoid closing in-flight handshake or active socket
+    if (this.ws && (this.ws.readyState === WebSocket.CONNECTING || this.ws.readyState === WebSocket.OPEN)) {
       return;
     }
 
-    this.disconnectSocket();
-    this.clearTimers();
-
-    const wsUrl = getWsEndpointUrl();
+    this.isConnecting = true;
 
     try {
+      // verify we have an active session
+      const accessToken = await getValidAccessToken();
+      if (!accessToken || !this.isRunning) {
+        this.isConnecting = false;
+        return;
+      }
+
+      this.disconnectSocket();
+      this.clearTimers();
+
+      const wsUrl = getWsEndpointUrl();
       const ws = new WebSocket(wsUrl);
       this.ws = ws;
 
       ws.onopen = () => {
+        this.isConnecting = false;
         if (this.ws !== ws) return;
         this.reconnectDelay = INITIAL_RECONNECT_DELAY_MS;
 
@@ -164,6 +181,7 @@ export class PresenceClient {
       };
 
       ws.onclose = () => {
+        this.isConnecting = false;
         if (this.ws !== ws) return;
         this.clearTimers();
         this.ws = null;
@@ -171,6 +189,7 @@ export class PresenceClient {
       };
 
       ws.onerror = () => {
+        this.isConnecting = false;
         if (this.ws !== ws) return;
         // try failover edge if cloudflare blocks websocket in russia
         switchToFallbackEdge();
@@ -179,6 +198,7 @@ export class PresenceClient {
         this.scheduleReconnect();
       };
     } catch {
+      this.isConnecting = false;
       this.scheduleReconnect();
     }
   }

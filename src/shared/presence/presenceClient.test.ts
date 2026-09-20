@@ -34,6 +34,8 @@ describe("PresenceClient", () => {
     }
   }
 
+  const originalWebSocket = globalThis.WebSocket;
+
   beforeEach(() => {
     mockSockets = [];
     (globalThis as any).WebSocket = MockWebSocket;
@@ -53,6 +55,7 @@ describe("PresenceClient", () => {
   });
 
   afterEach(() => {
+    globalThis.WebSocket = originalWebSocket;
     vi.restoreAllMocks();
   });
 
