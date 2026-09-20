@@ -80,9 +80,17 @@ export const useImportStore = create<ActiveImportState>((set, get) => ({
     });
     try {
       const job = await api.createPlaylistImport(url);
-      set({ job, isPolling: true });
+      set({ job });
+
+      // direct imports (e.g. soundcloud) complete immediately on backend without external worker
+      if (job.status === "completed") {
+        set({ isPolling: false, pendingTrack: null });
+        notifyLibraryChanged();
+        return job;
+      }
 
       if (job.workerWsUrl && job.importToken) {
+        set({ isPolling: true });
         get().listenToWebSocketWorker(job);
       } else {
         set({ error: "Import worker unavailable", isPolling: false, pendingTrack: null });
