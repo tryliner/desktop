@@ -6,6 +6,7 @@ import { useAppIconSync } from "@/features/player";
 import { I18nProvider } from "@/languages";
 import { AuthLock } from "@/features/auth";
 import { CoverSwRegistrar } from "@/features/covers";
+import { usePresenceSync } from "@/shared/presence";
 import { AppRoutes } from "./routes";
 import DeeplinkHandler from "./DeeplinkHandler";
 import EnvironmentWarning from "./EnvironmentWarning";
@@ -14,6 +15,11 @@ import "./globals.css";
 
 function AppIconSync() {
   useAppIconSync();
+  return null;
+}
+
+function PresenceSync() {
+  usePresenceSync();
   return null;
 }
 
@@ -30,6 +36,7 @@ export default function App() {
         disableTransitionOnChange
       >
         <AppIconSync />
+        <PresenceSync />
         <AppleEmojiProvider>
           <I18nProvider>
             <ToastProvider>

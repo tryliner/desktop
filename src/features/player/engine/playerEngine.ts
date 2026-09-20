@@ -615,6 +615,7 @@ class PlayerEngine {
       store.setPosition(0);
       store.setDuration(0);
       store.setCurrentTrack(null, -1);
+      store.setFullscreen(false);
       return;
     }
 

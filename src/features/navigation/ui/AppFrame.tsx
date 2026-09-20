@@ -121,6 +121,12 @@ export default function AppFrame({ children }: AppFrameProps) {
     () => false,
   );
 
+  const hasCurrentTrack = useSyncExternalStore(
+    playerEngine.subscribe,
+    () => playerEngine.getSnapshot().currentTrack !== null,
+    () => false,
+  );
+
   const appFrameRef = useRef<HTMLDivElement>(null);
   const queueDrawerRef = useRef<HTMLDivElement>(null);
   const searchPopupRef = useRef<HTMLDivElement>(null);
@@ -226,6 +232,13 @@ export default function AppFrame({ children }: AppFrameProps) {
       navigate("/", { replace: true });
     }
   }, [fullscreenPlayerOpen, isFullscreenRoute, navigate]);
+
+  useEffect(() => {
+    // dismiss fullscreen player when queue ends with no active track
+    if (isFullscreenPlayer && !hasCurrentTrack) {
+      handleCloseFullscreen();
+    }
+  }, [isFullscreenPlayer, hasCurrentTrack, handleCloseFullscreen]);
 
   const setRightDrawerTab = useCallback((tab: "queue" | "lyrics") => {
     setRightDrawerTabState(tab);

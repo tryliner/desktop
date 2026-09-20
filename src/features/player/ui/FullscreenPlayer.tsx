@@ -105,6 +105,13 @@ export function FullscreenPlayer({
   const coverUrl = player.currentTrack?.coverUrl;
   const kawarpSrc = useCoverSrc(coverUrl);
 
+  useEffect(() => {
+    // dismiss fullscreen when playback ends with no active track
+    if (!player.currentTrack) {
+      onClose();
+    }
+  }, [player.currentTrack, onClose]);
+
   const {
     braccatoLyrics,
     lyricsLoading,

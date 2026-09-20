@@ -192,6 +192,7 @@ export const usePlayerStore = create<PlayerStore>()(
             currentTrack: null,
             playbackContext: null,
             playbackContextCover: null,
+            fullscreen: false,
           });
         }
       },
