@@ -1,4 +1,5 @@
 import { memo } from "react";
+import { useIsContentTransparent } from "@/features/settings/store/customizationStore";
 
 interface HomePageSkeletonProps {
   glowClass?: string;
@@ -56,14 +57,17 @@ function HomePageSkeletonComponent({
   glowClass = "from-amber-500/20 via-orange-500/10 to-transparent",
   showQuickGrid = false,
 }: HomePageSkeletonProps) {
+  const hasCustomBg = useIsContentTransparent();
+
   return (
     <div className="relative min-h-full w-full bg-transparent pb-[16px] select-none overflow-hidden">
 
-      {/* Ambient time-of-day gradient glow matching actual page */}
-      <div
-        aria-hidden="true"
-        className={`pointer-events-none absolute top-0 left-0 right-0 h-[360px] bg-gradient-to-b ${glowClass} blur-3xl opacity-80`}
-      />
+      {!hasCustomBg && (
+        <div
+          aria-hidden="true"
+          className={`pointer-events-none absolute top-0 left-0 right-0 h-[360px] bg-gradient-to-b ${glowClass} blur-3xl opacity-80`}
+        />
+      )}
 
       {/* Speed Dial Section Skeleton */}
       {showQuickGrid && (
@@ -77,7 +81,7 @@ function HomePageSkeletonComponent({
 
           <div className="px-8 mt-[12px] relative grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
             {/* Liked Songs Quick Card */}
-            <div className="flex h-[56px] items-center gap-3 overflow-hidden rounded-[6px] bg-bg-elevated pr-4 select-none">
+            <div className={`flex h-[56px] items-center gap-3 overflow-hidden rounded-[6px] ${hasCustomBg ? "apple-glass-action" : "bg-bg-elevated"} pr-4 select-none`}>
               <div className="skeleton-shimmer h-[56px] w-[56px] shrink-0" />
               <div className="flex min-w-0 flex-1 flex-col gap-2">
                 <div className="skeleton-shimmer h-[14px] w-[95px] rounded-[4px]" />
@@ -89,7 +93,7 @@ function HomePageSkeletonComponent({
             {[1, 2, 3, 4, 5].map((i) => (
               <div
                 key={i}
-                className="flex h-[56px] items-center gap-3 overflow-hidden rounded-[6px] bg-bg-elevated pr-4 select-none"
+                className={`flex h-[56px] items-center gap-3 overflow-hidden rounded-[6px] ${hasCustomBg ? "apple-glass-action" : "bg-bg-elevated"} pr-4 select-none`}
               >
                 <div className="skeleton-shimmer h-[56px] w-[56px] shrink-0" />
                 <div className="flex min-w-0 flex-1 flex-col gap-2">

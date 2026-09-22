@@ -2,7 +2,7 @@ import { forwardRef } from "react";
 
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "primary" | "ghost" | "secondary" | "outline";
+  variant?: "primary" | "ghost" | "secondary" | "outline" | "glass" | "glass-primary" | "glass-action";
   size?: "default" | "sm" | "lg" | "icon";
 }
 
@@ -15,6 +15,12 @@ const variantClasses: Record<NonNullable<ButtonProps["variant"]>, string> = {
     "border border-border-alpha-14 bg-transparent text-text-primary hover:bg-border-alpha-14 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-text-primary/70 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary",
   ghost:
     "bg-transparent text-text-secondary hover:text-text-primary border border-transparent hover:bg-border-alpha-14 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-text-primary/70 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary",
+  glass:
+    "apple-glass-pill focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-text-primary/70 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary",
+  "glass-primary":
+    "apple-glass-prominent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-text-primary/70 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary",
+  "glass-action":
+    "apple-glass-action focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-text-primary/70 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary",
 };
 
 const sizeClasses: Record<NonNullable<ButtonProps["size"]>, string> = {
@@ -37,7 +43,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ) => (
     <button
       ref={ref}
-      className={`inline-flex items-center justify-center gap-[8px] rounded-md text-[14px] font-[500] transition-all duration-150 active:scale-[0.96] disabled:pointer-events-none disabled:opacity-50 cursor-pointer ${
+      className={`inline-flex items-center justify-center gap-[8px] rounded-md text-[14px] font-[500] transition-colors duration-150 active:scale-[0.96] disabled:pointer-events-none disabled:opacity-50 cursor-pointer ${
         variantClasses[variant]
       } ${sizeClasses[size]} ${className}`.trim()}
       style={{

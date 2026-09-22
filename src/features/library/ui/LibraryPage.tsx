@@ -18,6 +18,7 @@ import { HeartFill, AddLine } from "@mingcute/react";
 import { useTranslation } from "@/languages";
 import { useModalStore } from "../store/modalStore";
 import { useImportStore } from "../store/importStore";
+import { useIsContentTransparent } from "@/features/settings/store/customizationStore";
 import ImportingPlaylistCard from "./ImportingPlaylistCard";
 
 const PAGE_SIZE = 24;
@@ -170,6 +171,7 @@ export default function LibraryPage() {
   const { data: likedCount, isLoading: likedCountLoading } =
     useLikedTrackCount();
   const openCreatePlaylist = useModalStore((state) => state.openCreatePlaylist);
+  const hasCustomBg = useIsContentTransparent();
 
   const playlistItems: LibraryItemViewModel[] = useMemo(() => {
     if (!playlistsData) return [];
@@ -340,7 +342,7 @@ export default function LibraryPage() {
           const next = event.currentTarget.scrollTop > 2;
           setShowTopFog((prev) => (prev === next ? prev : next));
         }}
-        className="page-transition h-full w-full overflow-y-auto bg-transparent pb-[80px]"
+        className="h-full w-full overflow-y-auto bg-transparent pb-[80px]"
       >
         <div className="sticky top-0 z-20 bg-transparent">
 
@@ -383,7 +385,7 @@ export default function LibraryPage() {
               <div className="h-[24px] w-[24px] animate-spin rounded-full border-[2px] border-text-tertiary border-t-text-secondary" />
             </div>
           ) : (
-            <AnimatePresence mode="wait">
+            <AnimatePresence mode="wait" initial={false}>
               <motion.div
                 key={`${activeTab}:${debouncedQuery || "all"}:${viewMode}`}
                 initial={{ opacity: 0, filter: "blur(4px)", y: 6 }}
@@ -436,7 +438,11 @@ export default function LibraryPage() {
           onClick={() => openCreatePlaylist()}
           title={t("library.create_playlist")}
           aria-label={t("library.create_playlist")}
-          className="absolute bottom-[20px] right-[24px] z-30 flex h-[44px] w-[44px] items-center justify-center rounded-[14px] bg-btn-primary-bg text-btn-primary-text hover:opacity-95 active:scale-[0.92] transition-all border-0 cursor-pointer select-none"
+          className={`absolute bottom-[20px] right-[24px] z-30 flex h-[44px] w-[44px] items-center justify-center rounded-[14px] ${
+            hasCustomBg
+              ? "apple-glass-prominent"
+              : "bg-btn-primary-bg text-btn-primary-text"
+          } hover:opacity-95 active:scale-[0.92] transition-all border-0 cursor-pointer select-none`}
         >
           <AddLine size={22} />
         </button>

@@ -8,6 +8,12 @@ import { useToast, ReorderDropPlaceholder, FloatingDragCard } from "@/shared/ui"
 import { useListReorder } from "@/shared/hooks";
 import { FiMusic } from "react-icons/fi";
 import { ArrowLeftLine } from "@mingcute/react";
+import { useTheme } from "next-themes";
+import {
+  useIsContentTransparent,
+  useCustomizationStore,
+  getBlockStyle,
+} from "@/features/settings/store/customizationStore";
 
 const QUEUE_ITEM_HEIGHT = 68;
 
@@ -193,6 +199,30 @@ function RightDrawer({ activeTab, onTabChange, onClose }: RightDrawerProps) {
   const player = usePlayerState();
   const { t } = useTranslation();
   const { toast } = useToast();
+  const hasCustomBg = useIsContentTransparent();
+  const { resolvedTheme } = useTheme();
+  const isDark =
+    resolvedTheme
+      ? resolvedTheme === "dark"
+      : typeof document !== "undefined" &&
+        (document.documentElement.getAttribute("data-theme") === "dark" ||
+          (!document.documentElement.getAttribute("data-theme") &&
+            window.matchMedia?.("(prefers-color-scheme: dark)")?.matches));
+  const backgroundImage = useCustomizationStore((s) => s.backgroundImage);
+  const backgroundBlur = useCustomizationStore((s) => s.backgroundBlur);
+  const backgroundDim = useCustomizationStore((s) => s.backgroundDim);
+  const contentViewConfig = useCustomizationStore((s) => s.contentView);
+
+  const drawerStyle = useMemo(
+    () => getBlockStyle(contentViewConfig, isDark, hasCustomBg),
+    [contentViewConfig, isDark, hasCustomBg],
+  );
+
+  const drawerVarsStyle = useMemo(() => {
+    const { background, backdropFilter, WebkitBackdropFilter, ...vars } = drawerStyle;
+    return vars;
+  }, [drawerStyle]);
+
   const queueScrollRef = useRef<HTMLDivElement>(null);
   const activeTabRef = useRef<"queue" | "lyrics">(activeTab);
 
@@ -257,7 +287,7 @@ function RightDrawer({ activeTab, onTabChange, onClose }: RightDrawerProps) {
         setIsQueueScrolled(targetY > 2);
       }
     },
-    [], // stable ref prevents resetting scrollTop on every track change
+    [],
   );
 
   const prevQueueTrackIdRef = useRef<string | null>(player.currentTrack?.id ?? null);
@@ -319,11 +349,125 @@ function RightDrawer({ activeTab, onTabChange, onClose }: RightDrawerProps) {
 
   const [activeLineIndices, setActiveLineIndices] = useState<number[]>([]);
   const activeLineIndicesRef = useRef<number[]>([]);
+  const isInFreeSearchRef = useRef(false);
+  const isAutoScrollingRef = useRef(false);
+  const autoScrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const currentFollowedIndexRef = useRef<number | null>(null);
+  const freeScrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastWheelTimeRef = useRef(0);
 
-  const handleActiveLineChange = useCallback((indices: number[]) => {
-    activeLineIndicesRef.current = indices;
-    setActiveLineIndices(indices);
-  }, []);
+  const scrollToActiveLine = useCallback(
+    (index: number, behavior: ScrollBehavior = "smooth") => {
+      if (isInFreeSearchRef.current) return;
+      const container = lyricsContainerRef.current;
+      if (!container) return;
+      const activeEl = container.querySelector<HTMLElement>(
+        `[data-line-index="${index}"]`,
+      );
+      if (!activeEl) return;
+
+      const containerRect = container.getBoundingClientRect();
+      const elRect = activeEl.getBoundingClientRect();
+      if (containerRect.height === 0 || elRect.height === 0) return;
+      const offset = elRect.top - containerRect.top + container.scrollTop;
+      const targetScrollTop =
+        offset - container.clientHeight / 2 + elRect.height / 2;
+
+      isAutoScrollingRef.current = true;
+      if (autoScrollTimeoutRef.current) {
+        clearTimeout(autoScrollTimeoutRef.current);
+      }
+      autoScrollTimeoutRef.current = setTimeout(() => {
+        isAutoScrollingRef.current = false;
+        autoScrollTimeoutRef.current = null;
+      }, 1000);
+
+      container.scrollTo({
+        top: Math.max(0, targetScrollTop),
+        behavior,
+      });
+    },
+    [],
+  );
+
+  const returnToFollowingMode = useCallback(
+    (targetIndex?: number, behavior: ScrollBehavior = "smooth") => {
+      if (freeScrollTimerRef.current) {
+        clearTimeout(freeScrollTimerRef.current);
+        freeScrollTimerRef.current = null;
+      }
+      if (autoScrollTimeoutRef.current) {
+        clearTimeout(autoScrollTimeoutRef.current);
+        autoScrollTimeoutRef.current = null;
+      }
+      isAutoScrollingRef.current = false;
+      isInFreeSearchRef.current = false;
+      lastWheelTimeRef.current = 0;
+
+      const idxToScroll =
+        targetIndex !== undefined
+          ? targetIndex
+          : activeLineIndicesRef.current.length > 0
+            ? activeLineIndicesRef.current[activeLineIndicesRef.current.length - 1]
+            : null;
+
+      if (idxToScroll !== null && idxToScroll !== undefined) {
+        currentFollowedIndexRef.current = idxToScroll;
+        scrollToActiveLine(idxToScroll, behavior);
+      }
+    },
+    [scrollToActiveLine],
+  );
+
+  const handleUserScroll = useCallback(() => {
+    if (isAutoScrollingRef.current) {
+      isAutoScrollingRef.current = false;
+      if (autoScrollTimeoutRef.current) {
+        clearTimeout(autoScrollTimeoutRef.current);
+        autoScrollTimeoutRef.current = null;
+      }
+      const container = lyricsContainerRef.current;
+      if (container) {
+        container.scrollTo({ top: container.scrollTop, behavior: "auto" });
+      }
+    }
+
+    lastWheelTimeRef.current = Date.now();
+    isInFreeSearchRef.current = true;
+
+    if (freeScrollTimerRef.current) {
+      clearTimeout(freeScrollTimerRef.current);
+      freeScrollTimerRef.current = null;
+    }
+
+    freeScrollTimerRef.current = setTimeout(() => {
+      const elapsed = Date.now() - lastWheelTimeRef.current;
+      if (elapsed < 5900) return;
+
+      returnToFollowingMode();
+    }, 6000);
+  }, [returnToFollowingMode]);
+
+  const handleActiveLineChange = useCallback(
+    (indices: number[]) => {
+      activeLineIndicesRef.current = indices;
+      setActiveLineIndices(indices);
+
+      const latestIndex =
+        indices.length > 0 ? indices[indices.length - 1] : -1;
+      if (latestIndex < 0) return;
+
+      if (isInFreeSearchRef.current) {
+        return;
+      }
+
+      if (latestIndex !== currentFollowedIndexRef.current) {
+        currentFollowedIndexRef.current = latestIndex;
+        scrollToActiveLine(latestIndex, "smooth");
+      }
+    },
+    [scrollToActiveLine],
+  );
 
   const isActuallySynced = effectiveSyncedLines.some((line) => line.timeMs > 0);
 
@@ -336,17 +480,68 @@ function RightDrawer({ activeTab, onTabChange, onClose }: RightDrawerProps) {
     onActiveLineChange: handleActiveLineChange,
   });
 
-  // Track changed: instant scroll to top & reset active lines
   useEffect(() => {
+    const container = lyricsContainerRef.current;
+    if (!container || activeTab !== "lyrics") return;
+
+    const onNativeUserInteraction = () => {
+      handleUserScroll();
+    };
+
+    container.addEventListener("wheel", onNativeUserInteraction, {
+      passive: true,
+      capture: true,
+    });
+    container.addEventListener("touchmove", onNativeUserInteraction, {
+      passive: true,
+      capture: true,
+    });
+    return () => {
+      container.removeEventListener("wheel", onNativeUserInteraction, {
+        capture: true,
+      });
+      container.removeEventListener("touchmove", onNativeUserInteraction, {
+        capture: true,
+      });
+    };
+  }, [activeTab, handleUserScroll]);
+
+  useEffect(() => {
+    return () => {
+      if (freeScrollTimerRef.current) {
+        clearTimeout(freeScrollTimerRef.current);
+      }
+      if (autoScrollTimeoutRef.current) {
+        clearTimeout(autoScrollTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    returnToFollowingMode();
+    currentFollowedIndexRef.current = null;
     setActiveLineIndices([]);
     activeLineIndicesRef.current = [];
     if (lyricsContainerRef.current) {
       lyricsContainerRef.current.scrollTop = 0;
       setIsLyricsScrolled(false);
     }
-  }, [player.currentTrack?.id]);
+  }, [player.currentTrack?.id, returnToFollowingMode]);
 
-  // Feed word timings whenever effectiveSyncedLines changes (not inside render)
+  useEffect(() => {
+    if (activeTab === "lyrics") {
+      returnToFollowingMode(undefined, "auto");
+      const timer = setTimeout(() => {
+        const latest =
+          activeLineIndicesRef.current[activeLineIndicesRef.current.length - 1];
+        if (latest !== undefined) {
+          scrollToActiveLine(latest, "auto");
+        }
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [activeTab, returnToFollowingMode, scrollToActiveLine]);
+
   useEffect(() => {
     effectiveSyncedLines.forEach((line, i) => {
       const words = line.words || [];
@@ -361,33 +556,6 @@ function RightDrawer({ activeTab, onTabChange, onClose }: RightDrawerProps) {
       }
     });
   }, [effectiveSyncedLines, setWordData, clearWordSpans]);
-
-  // Active line scrolling during playback
-  useEffect(() => {
-    if (
-      activeTab === "lyrics" &&
-      activeLineIndices.length > 0 &&
-      lyricsContainerRef.current &&
-      player.status === "playing"
-    ) {
-      const container = lyricsContainerRef.current;
-      const latestActiveIndex = activeLineIndices[activeLineIndices.length - 1];
-      const activeEl = container.querySelector<HTMLElement>(
-        `[data-line-index="${latestActiveIndex}"]`,
-      );
-      if (activeEl) {
-        const containerRect = container.getBoundingClientRect();
-        const elRect = activeEl.getBoundingClientRect();
-        const offset = elRect.top - containerRect.top + container.scrollTop;
-        const targetScrollTop =
-          offset - container.clientHeight / 2 + elRect.height / 2;
-        container.scrollTo({
-          top: Math.max(0, targetScrollTop),
-          behavior: "smooth",
-        });
-      }
-    }
-  }, [activeLineIndices, activeTab, player.status]);
 
   const renderWordLevel = (
     line: { timeMs: number; text: string; words?: WordData[] },
@@ -491,7 +659,50 @@ function RightDrawer({ activeTab, onTabChange, onClose }: RightDrawerProps) {
     lastLine?.text;
 
   return (
-    <div className="flex flex-col h-full w-full bg-bg-primary border-l border-border-secondary/60 overflow-hidden select-none">
+    <div
+      className={`relative flex flex-col h-full w-full overflow-hidden select-none shadow-[-16px_0_36px_rgba(0,0,0,0.3)] ${
+        hasCustomBg
+          ? ""
+          : "bg-bg-primary"
+      }`}
+      style={drawerVarsStyle}
+    >
+      {hasCustomBg && backgroundImage ? (
+        <div
+          className="absolute inset-0 z-0 pointer-events-none overflow-hidden"
+          aria-hidden="true"
+        >
+          <img
+            src={backgroundImage}
+            alt=""
+            className="absolute select-none pointer-events-none max-w-none"
+            style={{
+              top: "-6px",
+              right: "-6px",
+              width: "100vw",
+              height: "100vh",
+              objectFit: "cover",
+              filter: backgroundBlur > 0 ? `blur(${backgroundBlur}px)` : undefined,
+              transform: backgroundBlur > 0 ? "scale(1.05)" : undefined,
+            }}
+          />
+          {backgroundDim > 0 && (
+            <div
+              className="absolute inset-0 bg-black pointer-events-none"
+              style={{ opacity: backgroundDim / 100 }}
+            />
+          )}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background: drawerStyle.background,
+              backdropFilter: drawerStyle.backdropFilter,
+              WebkitBackdropFilter: drawerStyle.WebkitBackdropFilter,
+            }}
+          />
+        </div>
+      ) : null}
+
       <div className="relative shrink-0 z-20">
         <div
           data-window-drag
@@ -505,7 +716,11 @@ function RightDrawer({ activeTab, onTabChange, onClose }: RightDrawerProps) {
                 title={t("common.back") || "Back"}
                 aria-label={t("common.back") || "Back"}
                 data-no-window-drag
-                className="group inline-flex h-[32px] shrink-0 items-center gap-[6px] rounded-md px-[10px] bg-bg-panel/85 backdrop-blur-xl text-text-primary hover:bg-bg-panel active:scale-[0.94] transition-all cursor-pointer select-none pointer-events-auto text-[13px] font-[500]"
+                className={`group inline-flex h-[32px] shrink-0 items-center gap-[6px] rounded-md px-[10px] active:scale-[0.94] transition-all cursor-pointer select-none pointer-events-auto text-[13px] font-[500] border-0 !border-none ${
+                  hasCustomBg
+                    ? "apple-glass-pill !border-none"
+                    : "bg-bg-panel/85 backdrop-blur-xl text-text-primary hover:bg-bg-panel border-0 !border-none"
+                }`}
                 style={{ fontFamily: "var(--font-inter), sans-serif" }}
               >
                 <ArrowLeftLine
@@ -520,24 +735,38 @@ function RightDrawer({ activeTab, onTabChange, onClose }: RightDrawerProps) {
         </div>
 
         <div className="px-[16px] pb-[10px]">
-          <div className="h-[36px] grid grid-cols-2 w-full p-[3px] box-border rounded-xl bg-bg-elevated border border-border-primary/60">
+          <div
+            className={`grid grid-cols-2 w-full items-center gap-[4px] rounded-xl p-[4px] ${
+              hasCustomBg
+                ? "apple-glass-pill"
+                : "bg-bg-elevated"
+            }`}
+          >
             <button
               type="button"
               onClick={() => onTabChange("queue")}
-              className={`relative h-full flex items-center justify-center px-[12px] rounded-lg text-[13px] font-medium transition-colors border-none bg-transparent cursor-pointer select-none active:scale-[0.98] ${
+              className={`relative inline-flex items-center justify-center rounded-lg px-[16px] py-[7px] text-[13px] leading-none transition-colors duration-150 border-0 bg-transparent cursor-pointer select-none active:scale-[0.97] ${
                 activeTab === "queue"
-                  ? "text-text-primary"
-                  : "text-text-secondary hover:text-text-primary"
+                  ? hasCustomBg
+                    ? "text-white dark:text-black font-semibold"
+                    : "text-text-primary"
+                  : hasCustomBg
+                    ? "text-black/70 dark:text-white/70 hover:text-black dark:hover:text-white"
+                    : "text-text-secondary hover:text-text-primary"
               }`}
               style={{
                 fontFamily: "var(--font-inter), sans-serif",
-                letterSpacing: "-0.01em",
+                fontWeight: activeTab === "queue" ? 500 : 400,
               }}
             >
               {activeTab === "queue" && (
                 <motion.div
                   layoutId="activeRightDrawerTab"
-                  className="absolute inset-0 rounded-lg bg-bg-primary border border-border-primary/30"
+                  className={`absolute inset-0 rounded-lg ${
+                    hasCustomBg
+                      ? "apple-glass-prominent"
+                      : "bg-border-alpha-14"
+                  }`}
                   transition={{
                     type: "spring",
                     stiffness: 450,
@@ -550,20 +779,28 @@ function RightDrawer({ activeTab, onTabChange, onClose }: RightDrawerProps) {
             <button
               type="button"
               onClick={() => onTabChange("lyrics")}
-              className={`relative h-full flex items-center justify-center px-[12px] rounded-lg text-[13px] font-medium transition-colors border-none bg-transparent cursor-pointer select-none active:scale-[0.98] ${
+              className={`relative inline-flex items-center justify-center rounded-lg px-[16px] py-[7px] text-[13px] leading-none transition-colors duration-150 border-0 bg-transparent cursor-pointer select-none active:scale-[0.97] ${
                 activeTab === "lyrics"
-                  ? "text-text-primary"
-                  : "text-text-secondary hover:text-text-primary"
+                  ? hasCustomBg
+                    ? "text-white dark:text-black font-semibold"
+                    : "text-text-primary"
+                  : hasCustomBg
+                    ? "text-black/70 dark:text-white/70 hover:text-black dark:hover:text-white"
+                    : "text-text-secondary hover:text-text-primary"
               }`}
               style={{
                 fontFamily: "var(--font-inter), sans-serif",
-                letterSpacing: "-0.01em",
+                fontWeight: activeTab === "lyrics" ? 500 : 400,
               }}
             >
               {activeTab === "lyrics" && (
                 <motion.div
                   layoutId="activeRightDrawerTab"
-                  className="absolute inset-0 rounded-lg bg-bg-primary border border-border-primary/30"
+                  className={`absolute inset-0 rounded-lg ${
+                    hasCustomBg
+                      ? "apple-glass-prominent"
+                      : "bg-border-alpha-14"
+                  }`}
                   transition={{
                     type: "spring",
                     stiffness: 450,
@@ -577,7 +814,7 @@ function RightDrawer({ activeTab, onTabChange, onClose }: RightDrawerProps) {
         </div>
       </div>
 
-      <div className="flex-1 overflow-hidden relative">
+      <div className="flex-1 overflow-hidden relative z-10">
         {activeTab === "queue" && (
           <div
             ref={queueScrollCallbackRef}
@@ -628,7 +865,7 @@ function RightDrawer({ activeTab, onTabChange, onClose }: RightDrawerProps) {
 
         {activeTab === "lyrics" && (
           <div
-            className="absolute inset-0 overflow-y-auto p-[32px] scroll-smooth"
+            className="absolute inset-0 overflow-y-auto p-[32px]"
             style={{
               maskImage:
                 "linear-gradient(to bottom, transparent, black 5%, black 95%, transparent)",
@@ -636,8 +873,11 @@ function RightDrawer({ activeTab, onTabChange, onClose }: RightDrawerProps) {
                 "linear-gradient(to bottom, transparent, black 5%, black 95%, transparent)",
             }}
             ref={lyricsContainerCallbackRef}
+            onWheelCapture={handleUserScroll}
+            onTouchMoveCapture={handleUserScroll}
             onScroll={(e) => {
-              const next = e.currentTarget.scrollTop > 2;
+              const target = e.currentTarget;
+              const next = target.scrollTop > 2;
               setIsLyricsScrolled((prev) => (prev === next ? prev : next));
             }}
           >
@@ -656,11 +896,12 @@ function RightDrawer({ activeTab, onTabChange, onClose }: RightDrawerProps) {
                 <>
                   {effectiveSyncedLines[0].timeMs > 5000 && effectiveSyncedLines[0].text && (
                     <div
-                      className={`relative text-[25px] font-[700] transition-all duration-300 ${
+                      className={`relative text-[25px] font-[700] lyric-line ${
                         activeLineIndices.length === 0
-                          ? "text-text-primary"
+                          ? "lyric-line--active text-text-primary"
                           : "text-text-tertiary"
                       }`}
+                      style={{ transformOrigin: "left center" }}
                     >
                       {activeLineIndices.length === 0 ? (
                         <span className="inline-flex">
@@ -725,20 +966,17 @@ function RightDrawer({ activeTab, onTabChange, onClose }: RightDrawerProps) {
                       dotsActivateMs != null &&
                       player.positionMs >= dotsActivateMs;
                     const lineIsActive = isActive && !isLastLineDone;
-                    const lineIsPassed = isPassed || isLastLineDone;
-
-                    let stateClass = lineIsActive
-                      ? ""
-                      : lineIsPassed
-                        ? ""
-                        : "hover:opacity-50 cursor-pointer";
 
                     const customStyle: React.CSSProperties = {
-                      opacity: lineIsActive ? 1 : 0.35,
+                      transformOrigin: isRight
+                        ? "right center"
+                        : isCenter
+                          ? "center center"
+                          : "left center",
                       color:
                         customColor && lineIsActive
                           ? customColor
-                          : "var(--color-text-primary)",
+                          : "var(--text-primary)",
                     };
 
                     if (isRight) {
@@ -753,9 +991,12 @@ function RightDrawer({ activeTab, onTabChange, onClose }: RightDrawerProps) {
                       <div
                         key={i}
                         data-line-index={i}
-                        className={`relative text-[25px] font-[700] ${lineIsActive ? "" : "transition-opacity duration-200"} ${stateClass}`}
+                        className={`relative text-[25px] font-[700] lyric-line ${
+                          lineIsActive ? "lyric-line--active" : ""
+                        }`}
                         style={customStyle}
                         onClick={() => {
+                          returnToFollowingMode(i, "smooth");
                           playerEngine.seek(line.timeMs, true);
                         }}
                       >
@@ -785,14 +1026,15 @@ function RightDrawer({ activeTab, onTabChange, onClose }: RightDrawerProps) {
                   })}
                   {showOutroDots && (
                     <div
-                      className={`relative text-[25px] font-[700] transition-all duration-300 ${
+                      className={`relative text-[25px] font-[700] lyric-line ${
                         activeLineIndices.length > 0 &&
                         activeLineIndices[0] === lastIdx &&
                         dotsActivateMs != null &&
                         player.positionMs >= dotsActivateMs
-                          ? "text-text-primary"
+                          ? "lyric-line--active text-text-primary"
                           : "text-text-tertiary"
                       }`}
+                      style={{ transformOrigin: "left center" }}
                     >
                       {activeLineIndices.length > 0 &&
                       activeLineIndices[0] === lastIdx &&

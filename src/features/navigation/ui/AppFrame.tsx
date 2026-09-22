@@ -234,7 +234,6 @@ export default function AppFrame({ children }: AppFrameProps) {
   }, [fullscreenPlayerOpen, isFullscreenRoute, navigate]);
 
   useEffect(() => {
-    // dismiss fullscreen player when queue ends with no active track
     if (isFullscreenPlayer && !hasCurrentTrack) {
       handleCloseFullscreen();
     }
@@ -658,28 +657,36 @@ export default function AppFrame({ children }: AppFrameProps) {
   );
 
   const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
+  const isDark =
+    resolvedTheme
+      ? resolvedTheme === "dark"
+      : typeof document !== "undefined" &&
+        (document.documentElement.getAttribute("data-theme") === "dark" ||
+          (!document.documentElement.getAttribute("data-theme") &&
+            window.matchMedia?.("(prefers-color-scheme: dark)")?.matches));
   const backgroundImage = useCustomizationStore((s) => s.backgroundImage);
   const backgroundBlur = useCustomizationStore((s) => s.backgroundBlur);
   const backgroundDim = useCustomizationStore((s) => s.backgroundDim);
   const contentViewConfig = useCustomizationStore((s) => s.contentView);
 
+  const hasCustomBg = Boolean(backgroundImage && isDark);
+
   const mainStyle = useMemo(
-    () => getBlockStyle(contentViewConfig, isDark, !!backgroundImage),
-    [contentViewConfig, isDark, backgroundImage],
+    () => getBlockStyle(contentViewConfig, isDark, hasCustomBg),
+    [contentViewConfig, isDark, hasCustomBg],
   );
 
   return (
     <div
       ref={appFrameRef}
+      data-custom-bg={hasCustomBg ? "true" : undefined}
       className="relative flex flex-row h-full w-full overflow-hidden rounded-5xl bg-bg-canvas p-1.5 gap-1.5"
       onScroll={(e) => {
         if (e.currentTarget.scrollLeft !== 0) e.currentTarget.scrollLeft = 0;
         if (e.currentTarget.scrollTop !== 0) e.currentTarget.scrollTop = 0;
       }}
     >
-      {/* ── Full Window Custom Wallpaper ── */}
-      {backgroundImage && (
+      {hasCustomBg && backgroundImage && (
         <div
           className="absolute inset-0 z-0 pointer-events-none overflow-hidden rounded-5xl"
           aria-hidden="true"
@@ -714,8 +721,9 @@ export default function AppFrame({ children }: AppFrameProps) {
 
       <div className="flex-1 flex flex-col min-w-0 h-full relative gap-1.5 overflow-hidden">
         <main
+          data-custom-bg={hasCustomBg ? "true" : undefined}
           className={`flex-1 min-w-0 flex flex-col relative h-full ${
-            backgroundImage ? "" : "bg-bg-primary"
+            hasCustomBg ? "" : "bg-bg-primary"
           } rounded-sm ${
             isFullscreenPlayer
               ? "rounded-tr-none"

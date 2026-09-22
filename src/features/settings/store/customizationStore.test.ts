@@ -70,7 +70,18 @@ describe("customizationStore", () => {
     expect(darkGlass.background).toContain("rgba(10, 10, 10, 0.7)");
 
     const lightGlass = getBlockStyle({ opacity: 50, blur: 12, dim: 0 }, false, true);
-    expect(lightGlass.backdropFilter).toBe("blur(12px)");
-    expect(lightGlass.background).toBe("rgba(245, 245, 247, 0.5)");
+    expect(lightGlass).toEqual({});
+  });
+
+  it("scales glass transparency progressively as opacity decreases", () => {
+    const styleHighOpacity = getBlockStyle({ opacity: 90, blur: 10, dim: 10 }, true, true);
+    const styleLowOpacity = getBlockStyle({ opacity: 25, blur: 25, dim: 10 }, true, true);
+
+    expect((styleHighOpacity as Record<string, string>)["--glass-pill-bg"]).toBeDefined();
+    expect((styleLowOpacity as Record<string, string>)["--glass-pill-bg"]).toBeDefined();
+    expect((styleHighOpacity as Record<string, string>)["--glass-pill-bg"]).not.toEqual(
+      (styleLowOpacity as Record<string, string>)["--glass-pill-bg"]
+    );
+    expect((styleLowOpacity as Record<string, string>)["--glass-pill-border"]).toBe("none");
   });
 });

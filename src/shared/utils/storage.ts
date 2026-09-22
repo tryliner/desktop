@@ -1,36 +1,37 @@
-// Buffer writes and flush every 3s so rapid setPosition calls don't reset the timer.
-let pendingWrite: { name: string; value: string } | null = null;
+const pendingWrites = new Map<string, string>();
+
+function flushPendingWrites() {
+  if (typeof localStorage === "undefined" || pendingWrites.size === 0) return;
+  for (const [name, value] of pendingWrites.entries()) {
+    try {
+      localStorage.setItem(name, value);
+    } catch {}
+  }
+  pendingWrites.clear();
+}
 
 if (typeof window !== "undefined") {
-  setInterval(() => {
-    if (pendingWrite && typeof localStorage !== "undefined") {
-      try {
-        localStorage.setItem(pendingWrite.name, pendingWrite.value);
-      } catch {}
-      pendingWrite = null;
-    }
-  }, 3000);
+  setInterval(flushPendingWrites, 1000);
 
-  // Flush on page close so the last position isn't lost.
-  window.addEventListener("beforeunload", () => {
-    if (pendingWrite) {
-      localStorage.setItem(pendingWrite.name, pendingWrite.value);
-      pendingWrite = null;
-    }
-  });
+  window.addEventListener("beforeunload", flushPendingWrites);
 }
 
 export const debouncedStorage = {
   getItem: (name: string) => {
     if (typeof window === "undefined") return null;
+    if (pendingWrites.has(name)) {
+      return pendingWrites.get(name)!;
+    }
     return localStorage.getItem(name);
   },
   setItem: (name: string, value: string) => {
     if (typeof window === "undefined") return;
-    pendingWrite = { name, value };
+    pendingWrites.set(name, value);
   },
   removeItem: (name: string) => {
     if (typeof window === "undefined") return;
+    pendingWrites.delete(name);
     localStorage.removeItem(name);
   },
+  flush: flushPendingWrites,
 };

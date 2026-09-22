@@ -427,6 +427,7 @@
     },
     "customization": {
       "description": "Window background wallpaper, transparency and block blur effects.",
+      "dark_theme_only": "Customization is only available for dark theme",
       "wallpaper_title": "Window Wallpaper",
       "wallpaper_description": "Set a custom image or animated GIF as the full window background.",
       "upload_title": "Select image or animated GIF",

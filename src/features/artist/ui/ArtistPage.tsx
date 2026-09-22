@@ -24,6 +24,7 @@ import { buildShareUrl } from "@/shared/utils/share";
 import { useExternalItems } from "@/features/library/hooks";
 import ArtistProfileModal from "./ArtistProfileModal";
 import ArtistPageSkeleton from "./ArtistPageSkeleton";
+import { useIsContentTransparent } from "@/features/settings/store/customizationStore";
 
 interface ArtistAlbumViewModel {
   id: string;
@@ -54,6 +55,7 @@ function stripMarkdown(text: string): string {
 function ArtistContent() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const hasCustomBg = useIsContentTransparent();
   const [searchParams] = useSearchParams();
   const id = searchParams.get("id");
 
@@ -196,7 +198,7 @@ function ArtistContent() {
 
   if (!loading && !data) {
     return (
-      <div className="page-transition h-full w-full bg-transparent flex items-center justify-center">
+      <div className="h-full w-full bg-transparent flex items-center justify-center">
         <span className="text-text-secondary">
           {t("artist.artist_not_found")}
         </span>
@@ -205,7 +207,7 @@ function ArtistContent() {
   }
 
   return (
-    <div className="page-transition relative h-full w-full overflow-hidden bg-transparent">
+    <div className="relative h-full w-full overflow-hidden bg-transparent">
 
       <div
         ref={scrollRef}
@@ -339,7 +341,7 @@ function ArtistContent() {
 
                   <div className="mt-[16px] flex items-center gap-[8px]">
                     <Button
-                      variant="primary"
+                      variant={hasCustomBg ? "glass-primary" : "primary"}
                       onClick={handlePlayAll}
                       className="!h-[38px] !text-[13px] !font-[500] px-[20px] flex items-center gap-[6px]"
                     >
@@ -348,18 +350,26 @@ function ArtistContent() {
                     </Button>
 
                     <Button
-                      variant="outline"
+                      variant={hasCustomBg ? "glass-action" : "outline"}
                       onClick={handleAddToQueue}
-                      className="!h-[38px] !w-[38px] !p-0 flex items-center justify-center text-text-secondary hover:text-text-primary transition-colors bg-bg-panel/40 backdrop-blur-sm"
+                      className={`!h-[38px] !w-[38px] !p-0 flex items-center justify-center transition-colors ${
+                        hasCustomBg
+                          ? ""
+                          : "text-text-secondary hover:text-text-primary bg-bg-panel/40 backdrop-blur-sm"
+                      }`}
                       title={t("artist.add_to_queue")}
                     >
                       <AddLine size={18} />
                     </Button>
 
                     <Button
-                      variant="outline"
+                      variant={hasCustomBg ? "glass-action" : "outline"}
                       onClick={handleSaveToLibrary}
-                      className="!h-[38px] !w-[38px] !p-0 flex items-center justify-center text-text-secondary hover:text-text-primary transition-colors bg-bg-panel/40 backdrop-blur-sm"
+                      className={`!h-[38px] !w-[38px] !p-0 flex items-center justify-center transition-colors ${
+                        hasCustomBg
+                          ? ""
+                          : "text-text-secondary hover:text-text-primary bg-bg-panel/40 backdrop-blur-sm"
+                      }`}
                       title={
                         inLibrary
                           ? t("artist.remove_from_library")
@@ -392,9 +402,13 @@ function ArtistContent() {
                     </Button>
 
                     <Button
-                      variant="outline"
+                      variant={hasCustomBg ? "glass-action" : "outline"}
                       onClick={handleShare}
-                      className="!h-[38px] !w-[38px] !p-0 flex items-center justify-center text-text-secondary hover:text-text-primary transition-colors bg-bg-panel/40 backdrop-blur-sm"
+                      className={`!h-[38px] !w-[38px] !p-0 flex items-center justify-center transition-colors ${
+                        hasCustomBg
+                          ? ""
+                          : "text-text-secondary hover:text-text-primary bg-bg-panel/40 backdrop-blur-sm"
+                      }`}
                       title={t("artist.share")}
                     >
                       <ShareForwardLine size={18} />
@@ -403,7 +417,13 @@ function ArtistContent() {
                 </div>
 
                 {data.description && (
-                  <div className="w-full md:w-[340px] lg:w-[380px] shrink-0 rounded-md bg-bg-panel/90 p-[16px] backdrop-blur-md flex flex-col gap-[6px]">
+                  <div
+                    className={`w-full md:w-[340px] lg:w-[380px] shrink-0 rounded-md p-[16px] flex flex-col gap-[6px] ${
+                      hasCustomBg
+                        ? "apple-glass-pill text-text-primary"
+                        : "bg-bg-panel/90 text-text-primary backdrop-blur-md"
+                    }`}
+                  >
                     <span
                       className="text-[15px] font-[600] tracking-[-0.01em] text-text-primary"
                       style={{ fontFamily: "var(--font-inter), sans-serif" }}

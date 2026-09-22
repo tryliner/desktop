@@ -7,6 +7,7 @@ import {
 import { Upload2Line, CopyLine } from "@mingcute/react";
 
 import { useTranslation } from "@/languages";
+import { useTheme } from "next-themes";
 import { Button, Slider, useToast } from "@/shared/ui";
 import {
   SettingBlock,
@@ -50,13 +51,21 @@ export function CustomizationTab({ searchQuery }: { searchQuery?: string }) {
   const resetBlock = useCustomizationStore((s) => s.resetBlock);
   const resetAll = useCustomizationStore((s) => s.resetAll);
 
+  const { resolvedTheme } = useTheme();
+  const isDark =
+    resolvedTheme
+      ? resolvedTheme === "dark"
+      : typeof document !== "undefined" &&
+        (document.documentElement.getAttribute("data-theme") === "dark" ||
+          (!document.documentElement.getAttribute("data-theme") &&
+            window.matchMedia?.("(prefers-color-scheme: dark)")?.matches));
+
   const handleFileChange = useCallback(
     (file: File) => {
       if (!file.type.startsWith("image/")) {
         toast(t("settings.customization.invalid_file_type") || "Please select an image or GIF file", "error");
         return;
       }
-      // 30mb upper limit to avoid excessive memory allocations
       if (file.size > 30 * 1024 * 1024) {
         toast(t("settings.customization.file_too_large") || "File size must be under 30 MB", "error");
         return;
@@ -67,7 +76,15 @@ export function CustomizationTab({ searchQuery }: { searchQuery?: string }) {
         const result = reader.result as string;
         if (result) {
           setBackgroundImage(result);
-          toast(t("settings.customization.applied") || "Wallpaper applied", "success");
+          if (!isDark) {
+            toast(
+              t("settings.customization.dark_theme_only") ||
+                "Customization is only available for dark theme",
+              "info",
+            );
+          } else {
+            toast(t("settings.customization.applied") || "Wallpaper applied", "success");
+          }
         }
       };
       reader.onerror = () => {
@@ -75,7 +92,7 @@ export function CustomizationTab({ searchQuery }: { searchQuery?: string }) {
       };
       reader.readAsDataURL(file);
     },
-    [setBackgroundImage, toast, t],
+    [setBackgroundImage, toast, t, isDark],
   );
 
   const onFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {

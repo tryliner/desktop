@@ -29,6 +29,89 @@ interface BraccatoLyricsViewProps {
 function BraccatoLyricsView({ lyrics }: BraccatoLyricsViewProps) {
   const elementRef = useRef<any>(null);
   const latestLyricsRef = useRef(lyrics);
+  const freeScrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastWheelTimeRef = useRef(0);
+  const isInFreeSearchRef = useRef(false);
+
+  const scrollToActiveLine = useCallback(
+    (behavior: ScrollBehavior = "smooth") => {
+      const el = elementRef.current;
+      if (!el) return false;
+
+      const activeEls = (el as HTMLElement).querySelectorAll<HTMLElement>(
+        ".blyrics--active",
+      );
+      if (activeEls.length === 0) return false;
+      const activeEl = activeEls[activeEls.length - 1];
+
+      const containerRect = el.getBoundingClientRect();
+      const elRect = activeEl.getBoundingClientRect();
+      if (containerRect.height === 0 || elRect.height === 0) return false;
+
+      const offset = elRect.top - containerRect.top + el.scrollTop;
+      const targetScrollTop =
+        offset - containerRect.height / 2 + elRect.height / 2;
+
+      if (behavior === "auto") {
+        el.scrollTop = Math.max(0, targetScrollTop);
+      } else {
+        el.scrollTo({
+          top: Math.max(0, targetScrollTop),
+          behavior,
+        });
+      }
+      return true;
+    },
+    [],
+  );
+
+  const returnToFollowingMode = useCallback(() => {
+    if (freeScrollTimerRef.current) {
+      clearTimeout(freeScrollTimerRef.current);
+      freeScrollTimerRef.current = null;
+    }
+    isInFreeSearchRef.current = false;
+    lastWheelTimeRef.current = 0;
+
+    const el = elementRef.current;
+    if (!el) return;
+
+    if (el.renderer) {
+      el.renderer.resumeAutoscroll?.();
+      const engine = (el.renderer as any)?.engine;
+      if (engine) {
+        engine.scrollResumeTime = 0;
+        engine.nextScrollAllowedTime = 0;
+        engine.queuedScroll = true;
+      }
+    }
+
+    scrollToActiveLine("smooth");
+  }, [scrollToActiveLine]);
+
+  const handleUserInteraction = useCallback(() => {
+    lastWheelTimeRef.current = Date.now();
+    isInFreeSearchRef.current = true;
+
+    const el = elementRef.current;
+    if (el?.renderer) {
+      el.renderer.noteUserScroll?.();
+      el.renderer.noteUserScroll?.();
+      el.renderer.noteUserScroll?.();
+    }
+
+    if (freeScrollTimerRef.current) {
+      clearTimeout(freeScrollTimerRef.current);
+      freeScrollTimerRef.current = null;
+    }
+
+    freeScrollTimerRef.current = setTimeout(() => {
+      const elapsed = Date.now() - lastWheelTimeRef.current;
+      if (elapsed < 5900) return;
+
+      returnToFollowingMode();
+    }, 6000);
+  }, [returnToFollowingMode]);
 
   const setElement = useCallback((el: any) => {
     elementRef.current = el;
@@ -38,6 +121,8 @@ function BraccatoLyricsView({ lyrics }: BraccatoLyricsViewProps) {
     el.source = "#liner-audio";
 
     const handleBraccatoLineClick = (e: Event) => {
+      returnToFollowingMode();
+
       const detail = (e as CustomEvent).detail as
         | { timeS?: number; time?: number }
         | undefined;
@@ -54,25 +139,59 @@ function BraccatoLyricsView({ lyrics }: BraccatoLyricsViewProps) {
       }
     };
 
-    const handleBraccatoScroll = (e: Event) => {
-      (e.currentTarget as any)?.renderer?.noteUserScroll();
+    const onUserScroll = () => {
+      handleUserInteraction();
     };
 
+    const onLyricsLoaded = () => {
+      requestAnimationFrame(() => {
+        scrollToActiveLine("auto");
+      });
+    };
+
+    el.addEventListener("braccato:lyrics-loaded", onLyricsLoaded);
     el.addEventListener("braccato:line-click", handleBraccatoLineClick);
-    el.addEventListener("scroll", handleBraccatoScroll, { passive: true });
+    el.addEventListener("wheel", onUserScroll, { passive: true, capture: true });
+    el.addEventListener("touchmove", onUserScroll, { passive: true, capture: true });
 
     return () => {
+      el.removeEventListener("braccato:lyrics-loaded", onLyricsLoaded);
       el.removeEventListener("braccato:line-click", handleBraccatoLineClick);
-      el.removeEventListener("scroll", handleBraccatoScroll);
+      el.removeEventListener("wheel", onUserScroll, { capture: true });
+      el.removeEventListener("touchmove", onUserScroll, { capture: true });
+      if (freeScrollTimerRef.current) {
+        clearTimeout(freeScrollTimerRef.current);
+        freeScrollTimerRef.current = null;
+      }
       elementRef.current = null;
     };
-  }, []);
+  }, [handleUserInteraction, scrollToActiveLine]);
 
   useEffect(() => {
     latestLyricsRef.current = lyrics;
     const element = elementRef.current;
     if (element) element.lyrics = lyrics;
   }, [lyrics]);
+
+  useEffect(() => {
+    let cancelled = false;
+    let attempts = 0;
+
+    const checkAndScroll = () => {
+      if (cancelled) return;
+      attempts++;
+      const success = scrollToActiveLine("auto");
+      if (!success && attempts < 30) {
+        requestAnimationFrame(checkAndScroll);
+      }
+    };
+
+    const rafId = requestAnimationFrame(checkAndScroll);
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(rafId);
+    };
+  }, [lyrics, scrollToActiveLine]);
 
   return (
     <div className="relative flex flex-col flex-1 w-full h-full min-h-0">
@@ -106,7 +225,6 @@ export function FullscreenPlayer({
   const kawarpSrc = useCoverSrc(coverUrl);
 
   useEffect(() => {
-    // dismiss fullscreen when playback ends with no active track
     if (!player.currentTrack) {
       onClose();
     }

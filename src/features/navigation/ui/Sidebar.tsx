@@ -152,16 +152,23 @@ function Sidebar({ searchOpen, onSearchToggle }: SidebarProps) {
   };
 
   const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
+  const isDark =
+    resolvedTheme
+      ? resolvedTheme === "dark"
+      : typeof document !== "undefined" &&
+        (document.documentElement.getAttribute("data-theme") === "dark" ||
+          (!document.documentElement.getAttribute("data-theme") &&
+            window.matchMedia?.("(prefers-color-scheme: dark)")?.matches));
   const backgroundImage = useCustomizationStore((state) => state.backgroundImage);
   const sidebarConfig = useCustomizationStore((state) => state.sidebar);
-  const sidebarStyle = getBlockStyle(sidebarConfig, isDark, !!backgroundImage);
+  const hasCustomBg = Boolean(backgroundImage && isDark);
+  const sidebarStyle = getBlockStyle(sidebarConfig, isDark, hasCustomBg);
 
   return (
     <aside className="h-full">
       <div
         className={`h-full w-[58px] rounded-l-xl rounded-r-sm ${
-          backgroundImage ? "" : "bg-bg-primary"
+          hasCustomBg ? "" : "bg-bg-primary"
         } flex flex-col overflow-hidden`}
         style={sidebarStyle}
       >

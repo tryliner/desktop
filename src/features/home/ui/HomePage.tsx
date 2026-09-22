@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import PopularTracksSection from "./PopularTracksSection";
 import DailyMixesSection from "./DailyMixesSection";
@@ -15,6 +15,7 @@ import { playerEngine } from "@/features/player";
 import SongCard from "@/features/player/ui/SongCard";
 import SongCardWithMenu from "@/features/player/ui/SongCardWithMenu";
 import { useTranslation } from "@/languages";
+import { useIsContentTransparent } from "@/features/settings/store/customizationStore";
 import {
   FireFill,
   TrophyFill,
@@ -28,6 +29,7 @@ import {
 export default function HomePage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const hasCustomBg = useIsContentTransparent();
   const { data: likedData, isLoading: likedLoading } = useLikedTracks();
 
   const { data: popularItems, isLoading: popularLoading } = usePopular(100);
@@ -71,118 +73,7 @@ export default function HomePage() {
 
   const hasEnoughQuickData = quickRecentItems.length >= 5;
 
-  // Collect above-the-fold images to preload so everything displays ready at once
-  const urlsToPreload = useMemo(() => {
-    if (isDataLoading) return [];
-    const urls = new Set<string>();
-
-    if (hasEnoughQuickData) {
-      for (const item of quickRecentItems) {
-        if ("coverUrl" in item.item && item.item.coverUrl) {
-          urls.add(item.item.coverUrl);
-        }
-      }
-    }
-    for (const mix of (dailyMixes || []).slice(0, 5)) {
-      if (mix.coverUrl) urls.add(mix.coverUrl);
-    }
-    for (const item of (popularTracksOnly || []).slice(0, 8)) {
-      if (item.type === "track" && item.item?.coverUrl) {
-        urls.add(item.item.coverUrl);
-      }
-    }
-    for (const item of (recentlyPlayed || []).slice(0, 8)) {
-      if ("coverUrl" in item.item && item.item.coverUrl) {
-        urls.add(item.item.coverUrl);
-      }
-    }
-    for (const item of (popularTracksAllTime || []).slice(0, 8)) {
-      if (item.type === "track" && item.item?.coverUrl) {
-        urls.add(item.item.coverUrl);
-      }
-    }
-    for (const item of popularAlbums.slice(0, 8)) {
-      if (item.item?.coverUrl) urls.add(item.item.coverUrl);
-    }
-    for (const item of popularPlaylists.slice(0, 8)) {
-      if (item.item?.coverUrl) urls.add(item.item.coverUrl);
-    }
-
-    return Array.from(urls);
-  }, [
-    isDataLoading,
-    quickRecentItems,
-    dailyMixes,
-    popularTracksOnly,
-    recentlyPlayed,
-    popularTracksAllTime,
-    popularAlbums,
-    popularPlaylists,
-  ]);
-
-  const [imagesLoaded, setImagesLoaded] = useState(() => !isDataLoading);
-
-  useEffect(() => {
-    if (isDataLoading) {
-      setImagesLoaded(false);
-      return;
-    }
-
-    if (urlsToPreload.length === 0) {
-      setImagesLoaded(true);
-      return;
-    }
-
-    let active = true;
-    let settled = false;
-
-    // Safety timeout: max 1200ms for images so slow network doesn't indefinitely block page
-    const timer = setTimeout(() => {
-      if (active && !settled) {
-        settled = true;
-        setImagesLoaded(true);
-      }
-    }, 1200);
-
-    const promises = urlsToPreload.map(
-      (url) =>
-        new Promise<void>((resolve) => {
-          const img = new Image();
-          img.src = url;
-          if (img.complete) {
-            resolve();
-            return;
-          }
-          img.onload = () => resolve();
-          img.onerror = () => resolve();
-        }),
-    );
-
-    Promise.all(promises).then(() => {
-      if (active && !settled) {
-        settled = true;
-        clearTimeout(timer);
-        setImagesLoaded(true);
-      }
-    });
-
-    return () => {
-      active = false;
-      clearTimeout(timer);
-    };
-  }, [isDataLoading, urlsToPreload]);
-
-  const isReady = !isDataLoading && imagesLoaded;
-  const [skeletonExited, setSkeletonExited] = useState(() => !isDataLoading);
-
-  useEffect(() => {
-    if (isReady && !skeletonExited) {
-      const timer = setTimeout(() => {
-        setSkeletonExited(true);
-      }, 400);
-      return () => clearTimeout(timer);
-    }
-  }, [isReady, skeletonExited]);
+  const isReady = !isDataLoading;
 
   return (
     <div className="relative h-full w-full overflow-y-auto overflow-x-hidden bg-transparent">
@@ -193,22 +84,23 @@ export default function HomePage() {
         style={{ marginBottom: "-32px" }}
         aria-hidden="true"
       />
-      <div
-        aria-hidden="true"
-        className={`pointer-events-none absolute -top-8 -left-8 w-[380px] h-[200px] bg-gradient-to-br ${glowClass} blur-3xl opacity-60`}
-      />
+      {!hasCustomBg && (
+        <div
+          aria-hidden="true"
+          className={`pointer-events-none absolute -top-8 -left-8 w-[380px] h-[200px] bg-gradient-to-br ${glowClass} blur-3xl opacity-60`}
+        />
+      )}
 
-      <div className="relative z-1 grid grid-cols-1 items-start w-full">
-        {/* Real Content Layer */}
-        {isReady && (
-          <div className="col-start-1 row-start-1 w-full pb-[16px]">
-            {/* Speed Dial Section */}
-            {hasEnoughQuickData && (
-              <div className="flex flex-col">
-                <div className="mt-[20px] px-8 flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <div className="flex items-center shrink-0">
-                      <FlashCircleFill className="w-5 h-5 text-amber-400" />
+      {!isReady ? (
+        <HomePageSkeleton glowClass={glowClass} showQuickGrid={hasEnoughQuickData} />
+      ) : (
+        <div className="relative z-1 w-full pb-[16px]">
+          {hasEnoughQuickData && (
+            <div className="flex flex-col">
+              <div className="mt-[20px] px-8 flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex items-center shrink-0">
+                    <FlashCircleFill className="w-5 h-5 text-amber-400" />
                     </div>
                     <h2
                       className="text-text-primary text-[21px] font-semibold m-0 leading-tight tracking-tight"
@@ -224,10 +116,10 @@ export default function HomePage() {
                     title={t("library.liked_songs")}
                     artists={`${likedData.total} ${likedData.total === 1 ? t("library.song") : t("library.songs")}`}
                     coverUrl=""
-                    icon={<HeartFill size={22} className="text-zinc-400 dark:text-zinc-500" />}
+                    icon={<HeartFill size={22} className={hasCustomBg ? "text-white/80" : "text-zinc-400 dark:text-zinc-500"} />}
                     onPlay={() => navigate("/library/playlist?id=likes")}
                     compact
-                    className="bg-bg-elevated hover:bg-border-alpha-14"
+                    className={hasCustomBg ? "apple-glass-action" : "bg-bg-elevated hover:bg-border-alpha-14"}
                   />
 
                   {/* Recently Played Quick Cards */}
@@ -248,7 +140,7 @@ export default function HomePage() {
                           }
                           searchType="album"
                           compact
-                          className="bg-bg-elevated hover:bg-border-alpha-14"
+                          className={hasCustomBg ? "apple-glass-action" : "bg-bg-elevated hover:bg-border-alpha-14"}
                         />
                       );
                     }
@@ -273,7 +165,7 @@ export default function HomePage() {
                           }}
                           searchType="track"
                           compact
-                          className="bg-bg-elevated hover:bg-border-alpha-14"
+                          className={hasCustomBg ? "apple-glass-action" : "bg-bg-elevated hover:bg-border-alpha-14"}
                         />
                       );
                     }
@@ -342,19 +234,6 @@ export default function HomePage() {
           )}
         </div>
       )}
-
-      {/* Direct Crossfade Skeleton Layer */}
-      {!skeletonExited && (
-        <div
-          className={`col-start-1 row-start-1 w-full z-10 transition-opacity duration-300 ease-out ${
-            isReady ? "opacity-0 pointer-events-none" : "opacity-100 pointer-events-auto"
-          }`}
-          onTransitionEnd={() => setSkeletonExited(true)}
-        >
-          <HomePageSkeleton glowClass={glowClass} showQuickGrid={hasEnoughQuickData} />
-        </div>
-      )}
     </div>
-  </div>
   );
 }

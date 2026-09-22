@@ -12,10 +12,6 @@ export interface SyncedLine {
   words?: LyricsWord[];
 }
 
-/**
- * Drives lyrics word-fill animation through direct DOM writes and precision
- * clock anchor extrapolation, eliminating drift and jumping during loading/start.
- */
 export function useLyricsAnimator({
   syncedLines,
   isActuallySynced,
@@ -38,7 +34,6 @@ export function useLyricsAnimator({
   const isActuallySyncedRef = useRef(isActuallySynced);
   const onActiveLineChangeRef = useRef(onActiveLineChange);
 
-  // Clock Anchor to prevent ghost forward-drift and snap-back glitches
   const anchorPosRef = useRef(positionMs);
   const anchorTimeRef = useRef(performance.now());
   const activeLineIndicesRef = useRef<number[]>([]);
@@ -52,7 +47,6 @@ export function useLyricsAnimator({
     const prevPlaying = isPlayingRef.current;
     isPlayingRef.current = isPlaying;
 
-    // Reset clock anchor when transitioning playback state
     if (!prevPlaying && isPlaying) {
       anchorPosRef.current = positionMsRef.current;
       anchorTimeRef.current = performance.now();
@@ -69,7 +63,6 @@ export function useLyricsAnimator({
       anchorPosRef.current = positionMs;
       anchorTimeRef.current = performance.now();
     } else {
-      // Resynchronize anchor if audio clock deviated significantly (> 150ms)
       const now = performance.now();
       const currentExtrapolated =
         anchorPosRef.current + (now - anchorTimeRef.current);

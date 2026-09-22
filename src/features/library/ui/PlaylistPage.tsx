@@ -33,6 +33,7 @@ import { playerEngine } from "@/features/player";
 import type { Track } from "@/shared/types";
 import { useTranslation } from "@/languages";
 import { api } from "@/shared/api";
+import { useIsContentTransparent } from "@/features/settings/store/customizationStore";
 
 interface TrackItemProps {
   track: Track;
@@ -103,6 +104,7 @@ function LibraryPlaylistContent() {
   const decodedId = id ? decodeURIComponent(id) : null;
   const scrollRef = useRef<HTMLDivElement>(null);
   const { t } = useTranslation();
+  const hasCustomBg = useIsContentTransparent();
 
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [isEditingDescription, setIsEditingDescription] = useState(false);
@@ -424,7 +426,7 @@ function LibraryPlaylistContent() {
 
   if (!isLoading && !viewData) {
     return (
-      <div className="page-transition h-full w-full bg-transparent flex items-center justify-center">
+      <div className="h-full w-full bg-transparent flex items-center justify-center">
         <span className="text-text-secondary">
           {isLikesMode
             ? t("playlist.likes_empty")
@@ -435,7 +437,7 @@ function LibraryPlaylistContent() {
   }
 
   return (
-    <div className="page-transition relative h-full w-full overflow-hidden bg-transparent">
+    <div className="relative h-full w-full overflow-hidden bg-transparent">
 
       <div className="absolute top-0 left-0 right-0 h-[56px] z-10 flex flex-row items-stretch select-none pointer-events-none">
         <div
@@ -457,7 +459,11 @@ function LibraryPlaylistContent() {
           title={t("common.back")}
           aria-label={t("common.back")}
           data-no-window-drag
-          className="absolute top-[12px] left-[32px] z-20 group inline-flex h-[32px] shrink-0 items-center gap-[6px] rounded-md px-[10px] bg-bg-panel/85 backdrop-blur-xl text-text-primary hover:bg-bg-panel active:scale-[0.94] transition-all cursor-pointer select-none pointer-events-auto text-[13px] font-[500]"
+          className={`absolute top-[12px] left-[32px] z-20 group inline-flex h-[32px] shrink-0 items-center gap-[6px] rounded-md px-[10px] active:scale-[0.94] transition-all cursor-pointer select-none pointer-events-auto text-[13px] font-[500] border-0 !border-none ${
+            hasCustomBg
+              ? "apple-glass-pill !border-none"
+              : "bg-bg-panel/85 backdrop-blur-xl text-text-primary hover:bg-bg-panel border-0 !border-none"
+          }`}
           style={{ fontFamily: "var(--font-inter), sans-serif" }}
         >
           <ArrowLeftLine
@@ -614,12 +620,17 @@ function LibraryPlaylistContent() {
                   }
                   meta={
                     <div className="flex items-center flex-wrap gap-[6px]">
-                      {/* Stats island */}
-                      <div className="inline-flex h-[26px] items-center gap-[6px] rounded-md px-[8px] bg-bg-panel border border-border-primary/40 text-[12px] font-[400] text-text-tertiary select-none">
-                        <MusicLine size={13} className="text-text-tertiary shrink-0" />
+                      <div
+                        className={`inline-flex h-[26px] items-center gap-[6px] rounded-md px-[8px] text-[12px] font-[400] select-none ${
+                          hasCustomBg
+                            ? "apple-glass-pill"
+                            : "bg-bg-panel border border-border-primary/40 text-text-tertiary"
+                        }`}
+                      >
+                        <MusicLine size={13} className={hasCustomBg ? "text-white shrink-0" : "text-text-tertiary shrink-0"} />
                         <span>{viewData.countLabel}</span>
                         <span
-                          className="w-[3px] h-[3px] rounded-full bg-text-tertiary/40 shrink-0"
+                          className={`w-[3px] h-[3px] rounded-full shrink-0 ${hasCustomBg ? "bg-white/50" : "bg-text-tertiary/40"}`}
                           aria-hidden
                         />
                         <span>
@@ -642,7 +653,7 @@ function LibraryPlaylistContent() {
                   primaryAction={
                     <div className="flex flex-col gap-[8px] w-full">
                       <Button
-                        variant="primary"
+                        variant={hasCustomBg ? "glass-primary" : "primary"}
                         onClick={handlePlayAll}
                         disabled={currentTracks.length === 0}
                         className="!h-[36px] w-full !text-[13.5px] !font-[500] px-[16px] flex items-center justify-center gap-[6px]"
@@ -653,7 +664,7 @@ function LibraryPlaylistContent() {
 
                       <div className="flex items-center gap-[8px] w-full">
                         <Button
-                          variant="outline"
+                          variant={hasCustomBg ? "glass-action" : "outline"}
                           onClick={handleAddToQueue}
                           disabled={currentTracks.length === 0}
                           className="!h-[36px] flex-1 min-w-0 !text-[13px] !font-[500] px-[12px] flex items-center justify-center gap-[6px]"
@@ -688,7 +699,7 @@ function LibraryPlaylistContent() {
                         </Button>
 
                         <Button
-                          variant="outline"
+                          variant={hasCustomBg ? "glass-action" : "outline"}
                           onClick={handleShufflePlay}
                           disabled={currentTracks.length === 0}
                           className="!h-[36px] !w-[36px] shrink-0 !p-0 flex items-center justify-center text-text-primary"
@@ -701,7 +712,7 @@ function LibraryPlaylistContent() {
                           <DropdownMenu
                             trigger={
                               <Button
-                                variant="outline"
+                                variant={hasCustomBg ? "glass-action" : "outline"}
                                 className="!h-[36px] !w-[36px] shrink-0 !p-0 flex items-center justify-center text-text-primary"
                                 title={t("common.more")}
                               >

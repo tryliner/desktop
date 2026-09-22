@@ -35,6 +35,7 @@ import { useModalStore } from "@/features/library";
 import { buildShareUrl } from "@/shared/utils/share";
 import { useExternalItems } from "@/features/library/hooks";
 import { useCollection } from "../hooks/useCollection";
+import { useIsContentTransparent } from "@/features/settings/store/customizationStore";
 
 function CollectionContent() {
   const [searchParams] = useSearchParams();
@@ -43,6 +44,7 @@ function CollectionContent() {
   const id = searchParams.get("id");
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const hasCustomBg = useIsContentTransparent();
 
   const { data, loading } = useCollection(type, id);
   const entityType = type === "playlist" ? "playlist" : "album";
@@ -248,7 +250,7 @@ function CollectionContent() {
 
   if (!loading && !data) {
     return (
-      <div className="page-transition h-full w-full bg-transparent flex items-center justify-center">
+      <div className="h-full w-full bg-transparent flex items-center justify-center">
         <span className="text-text-secondary">{t("collection.not_found")}</span>
       </div>
     );
@@ -257,7 +259,7 @@ function CollectionContent() {
   const isAlbum = type !== "playlist";
 
   return (
-    <div className="page-transition relative h-full w-full overflow-hidden bg-transparent">
+    <div className="relative h-full w-full overflow-hidden bg-transparent">
 
       <div className="absolute top-0 left-0 right-0 h-[56px] z-10 flex flex-row items-stretch select-none pointer-events-none">
         <div
@@ -279,7 +281,11 @@ function CollectionContent() {
           title={t("common.back")}
           aria-label={t("common.back")}
           data-no-window-drag
-          className="absolute top-[12px] left-[32px] z-20 group inline-flex h-[32px] shrink-0 items-center gap-[6px] rounded-md px-[10px] bg-bg-panel/85 backdrop-blur-xl text-text-primary hover:bg-bg-panel active:scale-[0.94] transition-all cursor-pointer select-none pointer-events-auto text-[13px] font-[500]"
+          className={`absolute top-[12px] left-[32px] z-20 group inline-flex h-[32px] shrink-0 items-center gap-[6px] rounded-md px-[10px] active:scale-[0.94] transition-all cursor-pointer select-none pointer-events-auto text-[13px] font-[500] border-0 !border-none ${
+            hasCustomBg
+              ? "apple-glass-pill !border-none"
+              : "bg-bg-panel/85 backdrop-blur-xl text-text-primary hover:bg-bg-panel border-0 !border-none"
+          }`}
           style={{ fontFamily: "var(--font-inter), sans-serif" }}
         >
           <ArrowLeftLine
@@ -345,22 +351,32 @@ function CollectionContent() {
                 }
                 meta={
                   <div className="flex items-center flex-wrap gap-[6px]">
-                    {/* Year island */}
                     {data.year && (
-                      <div className="inline-flex h-[26px] items-center gap-[5px] rounded-md px-[8px] bg-bg-panel border border-border-primary/50 text-[12px] font-[500] text-text-tertiary select-none">
-                        <CalendarLine size={12} className="text-text-tertiary shrink-0" />
+                      <div
+                        className={`inline-flex h-[26px] items-center gap-[5px] rounded-md px-[8px] text-[12px] font-[500] select-none ${
+                          hasCustomBg
+                            ? "apple-glass-pill"
+                            : "bg-bg-panel border border-border-primary/50 text-text-tertiary"
+                        }`}
+                      >
+                        <CalendarLine size={12} className={hasCustomBg ? "text-white shrink-0" : "text-text-tertiary shrink-0"} />
                         <span>{data.year}</span>
                       </div>
                     )}
 
-                    {/* Stats island */}
-                    <div className="inline-flex h-[26px] items-center gap-[6px] rounded-md px-[8px] bg-bg-panel border border-border-primary/40 text-[12px] font-[400] text-text-tertiary select-none">
-                      <MusicLine size={13} className="text-text-tertiary shrink-0" />
+                    <div
+                      className={`inline-flex h-[26px] items-center gap-[6px] rounded-md px-[8px] text-[12px] font-[400] select-none ${
+                        hasCustomBg
+                          ? "apple-glass-pill"
+                          : "bg-bg-panel border border-border-primary/40 text-text-tertiary"
+                      }`}
+                    >
+                      <MusicLine size={13} className={hasCustomBg ? "text-white shrink-0" : "text-text-tertiary shrink-0"} />
                       <span>
                         {data.tracks.length} {t("collection.tracks_count")}
                       </span>
                       <span
-                        className="w-[3px] h-[3px] rounded-full bg-text-tertiary/40 shrink-0"
+                        className={`w-[3px] h-[3px] rounded-full shrink-0 ${hasCustomBg ? "bg-white/50" : "bg-text-tertiary/40"}`}
                         aria-hidden
                       />
                       <span>
@@ -383,7 +399,7 @@ function CollectionContent() {
                   primaryAction={
                     <div className="flex flex-col gap-[8px] w-full">
                       <Button
-                        variant="primary"
+                        variant={hasCustomBg ? "glass-primary" : "primary"}
                         onClick={handlePlayAll}
                         disabled={!data || data.tracks.length === 0}
                         className="!h-[36px] w-full !text-[13.5px] !font-[500] px-[16px] flex items-center justify-center gap-[6px]"
@@ -394,7 +410,7 @@ function CollectionContent() {
 
                       <div className="flex items-center gap-[8px] w-full">
                         <Button
-                          variant="outline"
+                          variant={hasCustomBg ? "glass-action" : "outline"}
                           onClick={handleAddToQueue}
                           disabled={!data || data.tracks.length === 0}
                           className="!h-[36px] flex-1 min-w-0 !text-[13px] !font-[500] px-[12px] flex items-center justify-center gap-[6px]"
@@ -429,7 +445,7 @@ function CollectionContent() {
                         </Button>
 
                         <Button
-                          variant="outline"
+                          variant={hasCustomBg ? "glass-action" : "outline"}
                           onClick={handleShufflePlay}
                           disabled={!data || data.tracks.length === 0}
                           className="!h-[36px] !w-[36px] shrink-0 !p-0 flex items-center justify-center text-text-primary"
@@ -441,7 +457,7 @@ function CollectionContent() {
                         <DropdownMenu
                           trigger={
                             <Button
-                              variant="outline"
+                              variant={hasCustomBg ? "glass-action" : "outline"}
                               className="!h-[36px] !w-[36px] shrink-0 !p-0 flex items-center justify-center text-text-primary"
                               title={t("common.more")}
                             >

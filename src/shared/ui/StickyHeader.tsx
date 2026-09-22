@@ -2,6 +2,7 @@ import { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeftLine } from "@mingcute/react";
 import { useTranslation } from "@/languages";
+import { useIsContentTransparent } from "@/features/settings/store/customizationStore";
 
 export interface StickyHeaderProps {
   isScrolled: boolean;
@@ -14,7 +15,6 @@ export interface StickyHeaderProps {
   className?: string;
 }
 
-// unified header bar with back island and scroll-revealed metadata island
 export function StickyHeader({
   isScrolled,
   title,
@@ -27,6 +27,7 @@ export function StickyHeader({
 }: StickyHeaderProps) {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const hasCustomBg = useIsContentTransparent();
 
   const handleBack = () => {
     if (onBack) {
@@ -55,7 +56,11 @@ export function StickyHeader({
               title={t("common.back")}
               aria-label={t("common.back")}
               data-no-window-drag
-              className="group inline-flex h-[32px] shrink-0 items-center gap-[6px] rounded-md px-[10px] bg-bg-panel/85 backdrop-blur-xl text-text-primary hover:bg-bg-panel active:scale-[0.94] transition-all cursor-pointer select-none pointer-events-auto text-[13px] font-[500]"
+              className={`group inline-flex h-[32px] shrink-0 items-center gap-[6px] rounded-md px-[10px] active:scale-[0.94] transition-all cursor-pointer select-none pointer-events-auto text-[13px] font-[500] border-0 !border-none ${
+                hasCustomBg
+                  ? "apple-glass-pill !border-none"
+                  : "bg-bg-panel/85 backdrop-blur-xl text-text-primary hover:bg-bg-panel border-0 !border-none"
+              }`}
               style={{ fontFamily: "var(--font-inter), sans-serif" }}
             >
               <ArrowLeftLine
@@ -69,7 +74,11 @@ export function StickyHeader({
           {hasMetadata && (
             <div
               data-no-window-drag
-              className={`inline-flex items-center gap-[8px] h-[32px] pl-[4px] pr-[12px] rounded-md bg-bg-panel/85 backdrop-blur-xl text-text-primary min-w-0 max-w-[calc(100vw-360px)] select-none transition-all duration-200 ease-out ${
+              className={`inline-flex items-center gap-[8px] h-[32px] pl-[4px] pr-[12px] rounded-md min-w-0 max-w-[calc(100vw-360px)] select-none transition-all duration-200 ease-out ${
+                hasCustomBg
+                  ? "apple-glass-pill"
+                  : "bg-bg-panel/85 backdrop-blur-xl text-text-primary"
+              } ${
                 isScrolled
                   ? "opacity-100 translate-x-0 scale-100 pointer-events-auto"
                   : "opacity-0 -translate-x-2.5 scale-95 pointer-events-none"

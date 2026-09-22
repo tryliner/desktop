@@ -169,8 +169,7 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="page-transition relative flex h-full w-full items-center justify-center overflow-hidden rounded-5xl border border-border-primary bg-bg-primary">
-      {/* Full background circle-dither canvas */}
+    <main className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-5xl border border-border-primary bg-bg-primary">
       <div className="absolute inset-0 z-0 select-none overflow-hidden rounded-5xl">
         <CircleDitherCanvas
           src={cloudsBanner}
