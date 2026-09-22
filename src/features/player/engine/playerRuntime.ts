@@ -20,6 +20,7 @@ export class PlayerRuntime {
   private preloadingTrackId: string | null = null;
   private preloadingPromise: Promise<void> | null = null;
   private preloadAbortController: AbortController | null = null;
+  private backgroundCacheAbortController: AbortController | null = null;
   public onEnded?: () => void;
   public onError?: (info: { trackId: string; message: string }) => void;
 
@@ -318,6 +319,8 @@ export class PlayerRuntime {
     this.loadEpoch += 1;
     this.loadAbortController?.abort();
     this.loadAbortController = null;
+    this.backgroundCacheAbortController?.abort();
+    this.backgroundCacheAbortController = null;
     this.currentTrackId = null;
     this.safeResetAudioElement();
     usePlayerStore.getState().setStatus("paused");
@@ -398,6 +401,10 @@ export class PlayerRuntime {
     this.loadAbortController?.abort();
     const controller = new AbortController();
     this.loadAbortController = controller;
+
+    this.backgroundCacheAbortController?.abort();
+    const bgCacheController = new AbortController();
+    this.backgroundCacheAbortController = bgCacheController;
 
     this.currentTrackId = track.id;
     this.loadStartTime = performance.now();
@@ -494,7 +501,7 @@ export class PlayerRuntime {
         `stream attached: ${session.codec} ${session.bitrate} bps (${track.title})`,
       );
 
-      this.cacheAudioInBackground(track, url, session.mimeType);
+      this.cacheAudioInBackground(track, url, session.mimeType, bgCacheController.signal);
 
       if (this.audio.readyState < 3) {
         await new Promise<void>((resolve) => {
@@ -676,12 +683,18 @@ export class PlayerRuntime {
     }
   }
 
-  private cacheAudioInBackground(track: Track, url: string, preferredMimeType?: string) {
+  private cacheAudioInBackground(
+    track: Track,
+    url: string,
+    preferredMimeType?: string,
+    signal?: AbortSignal,
+  ) {
     if (track.durationMs && track.durationMs > 20 * 60 * 1000) return;
-    fetch(url, { headers: { Range: "bytes=0-" } })
+    fetch(url, { headers: { Range: "bytes=0-" }, signal })
       .then(async (res) => {
         if (!res.ok && res.status !== 206) return;
         const arrayBuffer = await res.arrayBuffer();
+        if (signal?.aborted) return;
         const mimeType = preferredMimeType || res.headers.get("content-type") || "audio/webm";
         const blob = new Blob([arrayBuffer], { type: mimeType });
         await linerDb.putAudio(track.id, blob, mimeType);

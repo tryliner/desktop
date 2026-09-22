@@ -7,6 +7,7 @@ import { I18nProvider } from "@/languages";
 import { AuthLock } from "@/features/auth";
 import { CoverSwRegistrar } from "@/features/covers";
 import { usePresenceSync } from "@/shared/presence";
+import { useThemeCustomizationSync } from "@/features/settings";
 import { AppRoutes } from "./routes";
 import DeeplinkHandler from "./DeeplinkHandler";
 import EnvironmentWarning from "./EnvironmentWarning";
@@ -23,6 +24,11 @@ function PresenceSync() {
   return null;
 }
 
+function ThemeSync() {
+  useThemeCustomizationSync();
+  return null;
+}
+
 export default function App() {
   useWindowDrag();
 
@@ -35,6 +41,7 @@ export default function App() {
         enableSystem={true}
         disableTransitionOnChange
       >
+        <ThemeSync />
         <AppIconSync />
         <PresenceSync />
         <AppleEmojiProvider>

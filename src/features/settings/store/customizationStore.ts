@@ -313,3 +313,19 @@ export function getBlockStyle(
     ["--glass-prominent-bg" as any]: glassProminentBg,
   };
 }
+
+// checks if custom wallpaper is set and at least one interface block has transparent blur
+export function isGlassThemeActive(state: {
+  backgroundImage: string | null;
+  sidebar: BlockCustomization;
+  contentView: BlockCustomization;
+  miniplayer: BlockCustomization;
+}): boolean {
+  if (!state.backgroundImage) return false;
+  return [state.sidebar, state.contentView, state.miniplayer].some(
+    (b) => b.opacity < 100 && b.blur > 0,
+  );
+}
+
+export const selectIsGlassThemeActive = (state: CustomizationState): boolean =>
+  isGlassThemeActive(state);

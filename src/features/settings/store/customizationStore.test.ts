@@ -3,6 +3,7 @@ import {
   useCustomizationStore,
   clampBlockConfig,
   getBlockStyle,
+  isGlassThemeActive,
   MIN_OPACITY,
   MAX_OPACITY,
   MIN_BLUR,
@@ -83,5 +84,30 @@ describe("customizationStore", () => {
       (styleLowOpacity as Record<string, string>)["--glass-pill-bg"]
     );
     expect((styleLowOpacity as Record<string, string>)["--glass-pill-border"]).toBe("none");
+  });
+
+  it("determines when glass theme is active with custom wallpaper and transparent blur", () => {
+    const store = useCustomizationStore.getState();
+
+    // without wallpaper, glass is not active
+    expect(isGlassThemeActive(store)).toBe(false);
+
+    // adding wallpaper activates default glass preset
+    store.setBackgroundImage("data:image/png;base64,mock");
+    expect(isGlassThemeActive(useCustomizationStore.getState())).toBe(true);
+
+    // if all blocks are opaque, glass is inactive
+    store.setBlockConfig("sidebar", { opacity: 100, blur: 0 });
+    store.setBlockConfig("contentView", { opacity: 100, blur: 0 });
+    store.setBlockConfig("miniplayer", { opacity: 100, blur: 0 });
+    expect(isGlassThemeActive(useCustomizationStore.getState())).toBe(false);
+
+    // if only one block has transparency and blur, glass is active
+    store.setBlockConfig("contentView", { opacity: 70, blur: 15 });
+    expect(isGlassThemeActive(useCustomizationStore.getState())).toBe(true);
+
+    // resetting all clears wallpaper and deactivates glass
+    store.resetAll();
+    expect(isGlassThemeActive(useCustomizationStore.getState())).toBe(false);
   });
 });

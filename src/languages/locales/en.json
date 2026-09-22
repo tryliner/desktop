@@ -564,6 +564,7 @@
     "theme": {
       "title": "Theme",
       "description": "Choose the overall appearance of the app.",
+      "disabled_for_glass": "Light theme is disabled when using custom wallpaper glassmorphism.",
       "light": "Light",
       "dark": "Dark",
       "system": "System"

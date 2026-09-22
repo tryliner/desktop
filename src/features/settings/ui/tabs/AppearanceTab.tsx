@@ -6,6 +6,10 @@ import {
 } from "@/features/player";
 import { useTranslation, LOCALE_OPTIONS } from "@/languages";
 import { Select } from "@/shared/ui";
+import {
+  useCustomizationStore,
+  selectIsGlassThemeActive,
+} from "../../store/customizationStore";
 import { SettingBlock, SettingRow, SettingSection } from "../controls";
 import defaultLogo from "@/assets/branding/logo-default.svg";
 import spotifyLogo from "@/assets/branding/logo-spotify.svg";
@@ -94,25 +98,36 @@ function ThemeCard({
   mode,
   label,
   active,
+  disabled = false,
+  disabledReason,
   onSelect,
 }: {
   mode: "light" | "dark" | "system";
   label: string;
   active: boolean;
+  disabled?: boolean;
+  disabledReason?: string;
   onSelect: () => void;
 }) {
   return (
     <button
       type="button"
-      onClick={onSelect}
+      disabled={disabled}
+      onClick={disabled ? undefined : onSelect}
       aria-pressed={active}
-      className="group flex cursor-pointer flex-col gap-[6px] border-0 bg-transparent p-0 text-left"
+      aria-disabled={disabled}
+      title={disabled ? disabledReason : undefined}
+      className={`group flex flex-col gap-[6px] border-0 bg-transparent p-0 text-left ${
+        disabled ? "cursor-not-allowed opacity-40 select-none" : "cursor-pointer"
+      }`}
     >
       <span
         className={`relative block h-[76px] w-full overflow-hidden rounded-lg border transition-colors ${
-          active
-            ? "border-text-primary ring-1 ring-text-primary"
-            : "border-border-primary group-hover:border-text-tertiary"
+          disabled
+            ? "border-border-primary"
+            : active
+              ? "border-text-primary ring-1 ring-text-primary"
+              : "border-border-primary group-hover:border-text-tertiary"
         }`}
       >
         {mode === "system" ? (
@@ -142,7 +157,13 @@ function ThemeCard({
         ) : null}
       </span>
       <span
-        className={`text-[12.5px] leading-none ${active ? "text-text-primary" : "text-text-secondary"}`}
+        className={`text-[12.5px] leading-none ${
+          disabled
+            ? "text-text-tertiary"
+            : active
+              ? "text-text-primary"
+              : "text-text-secondary"
+        }`}
         style={{ ...font, fontWeight: active ? 500 : 400 }}
       >
         {label}
@@ -157,10 +178,16 @@ export function AppearanceTab({ searchQuery }: { searchQuery?: string }) {
   const { theme, setTheme } = useTheme();
   const accentVariant = usePlayerStore((state) => state.accentVariant);
   const setAccentVariant = usePlayerStore((state) => state.setAccentVariant);
+  const isGlassActive = useCustomizationStore(selectIsGlassThemeActive);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  const systemIsLight =
+    mounted &&
+    typeof window !== "undefined" &&
+    !window.matchMedia("(prefers-color-scheme: dark)").matches;
 
   return (
     <SettingSection>
@@ -187,9 +214,14 @@ export function AppearanceTab({ searchQuery }: { searchQuery?: string }) {
 
       <SettingBlock
         title={t("settings.theme.title")}
-        description={t("settings.theme.description")}
+        description={
+          isGlassActive
+            ? t("settings.theme.disabled_for_glass") ||
+              "Light theme is disabled when using custom wallpaper glassmorphism."
+            : t("settings.theme.description")
+        }
         titleKey="settings.theme.title"
-        descKey="settings.theme.description"
+        descKey={isGlassActive ? undefined : "settings.theme.description"}
         searchQuery={searchQuery}
       >
         {mounted ? (
@@ -200,15 +232,28 @@ export function AppearanceTab({ searchQuery }: { searchQuery?: string }) {
                 { value: "light", label: t("settings.theme.light") },
                 { value: "dark", label: t("settings.theme.dark") },
               ] as const
-            ).map((item) => (
-              <ThemeCard
-                key={item.value}
-                mode={item.value}
-                label={item.label}
-                active={theme === item.value}
-                onSelect={() => setTheme(item.value)}
-              />
-            ))}
+            ).map((item) => {
+              const isLightOpt = item.value === "light";
+              const isSystemLightOpt = item.value === "system" && systemIsLight;
+              const disabled = isGlassActive && (isLightOpt || isSystemLightOpt);
+
+              return (
+                <ThemeCard
+                  key={item.value}
+                  mode={item.value}
+                  label={item.label}
+                  active={theme === item.value}
+                  disabled={disabled}
+                  disabledReason={
+                    disabled
+                      ? t("settings.theme.disabled_for_glass") ||
+                        "Light theme is disabled when using custom wallpaper glassmorphism."
+                      : undefined
+                  }
+                  onSelect={() => setTheme(item.value)}
+                />
+              );
+            })}
           </div>
         ) : null}
       </SettingBlock>
