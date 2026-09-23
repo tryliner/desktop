@@ -6,7 +6,14 @@ export {
 } from "./engine/lyricsParser";
 export { braccatoThemeCss } from "./engine/braccatoTheme";
 export { useLyricsStore } from "./store/lyricsStore";
-export { lyricsCache, type CachedLyricsItem } from "./store/lyricsCache";
+export {
+  lyricsCache,
+  shouldCacheLyricsCandidate,
+  compareLyricsCandidates,
+  isBetterLyricsCandidate,
+  isWordLevelSync,
+  type CachedLyricsItem,
+} from "./store/lyricsCache";
 export {
   useLyricsAnimator,
   type LyricsWord,

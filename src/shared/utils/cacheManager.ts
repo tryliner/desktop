@@ -251,7 +251,12 @@ export async function getStorageAnalytics(): Promise<StorageAnalytics> {
         k.startsWith("liner_lyrics_") ||
         k.startsWith("lyrics-storage")
       ) {
-        if (!k.startsWith("liner_lyrics_item_") && k !== "liner_lyrics_lru_index") {
+        if (
+          !k.startsWith("liner_lyrics_v2_item_") &&
+          k !== "liner_lyrics_v2_index" &&
+          !k.startsWith("liner_lyrics_item_") &&
+          k !== "liner_lyrics_lru_index"
+        ) {
           lyricsBytes += size;
         }
       }

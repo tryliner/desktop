@@ -16,7 +16,15 @@ import {
 } from "@/shared/api";
 import { toClientTrack } from "@/shared/api/track";
 import { log } from "@/shared/utils/logger";
-import { parseRawLyrics, useLyricsStore, lyricsCache, type CachedLyricsItem } from "@/features/lyrics";
+import {
+  parseRawLyrics,
+  useLyricsStore,
+  lyricsCache,
+  shouldCacheLyricsCandidate,
+  compareLyricsCandidates,
+  isBetterLyricsCandidate,
+  type CachedLyricsItem,
+} from "@/features/lyrics";
 import { preloadCoverArt } from "@/features/covers";
 import { linerDb, type CachedLyricsRecord } from "@/shared/storage";
 import { showToast } from "@/shared/ui";
@@ -25,7 +33,6 @@ import type { Track } from "@/shared/types";
 
 const MAX_CONSECUTIVE_AUTO_SKIPS = 3;
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
-const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
 
 export { usePlayerStore, type PlayerStatus, type RepeatMode, type PlayerState };
 
@@ -55,37 +62,6 @@ function restoreOriginalRelativeOrder<T>(currentUpcoming: T[], referenceList: T[
     const posB = originalPosMap.has(keyB) ? originalPosMap.get(keyB)! : Number.MAX_SAFE_INTEGER;
     return posA - posB;
   });
-}
-
-const SYNC_RANK: Record<LyricsSyncLevel, number> = {
-  plain: 0,
-  line_level: 1,
-  syllable_level: 2,
-  word_level: 3,
-};
-
-function compareLyricsCandidates(a: LyricsCandidate, b: LyricsCandidate): number {
-  if (a.topPriority !== b.topPriority) return a.topPriority ? -1 : 1;
-  const rankA = SYNC_RANK[a.syncLevel] ?? 0;
-  const rankB = SYNC_RANK[b.syncLevel] ?? 0;
-  if (rankA !== rankB) return rankB - rankA;
-  if (b.quality.total !== a.quality.total) return b.quality.total - a.quality.total;
-
-  const isWordA = a.syncLevel === "word_level" || a.syncLevel === "syllable_level";
-  const isWordB = b.syncLevel === "word_level" || b.syncLevel === "syllable_level";
-  if (isWordA && isWordB) {
-    if (a.provider === "Polaris Mono" || a.provider === "binimum") return -1;
-    if (b.provider === "Polaris Mono" || b.provider === "binimum") return 1;
-  }
-  return 0;
-}
-
-function isBetterLyricsCandidate(next: LyricsCandidate, current: LyricsCandidate): boolean {
-  return compareLyricsCandidates(next, current) < 0;
-}
-
-function isWordLevelLyrics(candidate: LyricsCandidate): boolean {
-  return candidate.syncLevel === "word_level" || candidate.syncLevel === "syllable_level";
 }
 
 function parsePlaybackContext(context: string | null): PlaybackContext | undefined {
@@ -262,7 +238,6 @@ class PlayerEngine {
   private consecutiveAutoSkips = 0;
   private lastPreloadKey: string | null = null;
   private inFlightLyricsPrefetches = new Map<string, Promise<void>>();
-  private negativeLyricsCache = new Map<string, number>();
 
   constructor() {
     usePlayerStore.setState({
@@ -1010,11 +985,6 @@ class PlayerEngine {
       return this.inFlightLyricsPrefetches.get(trackId);
     }
 
-    const negTimestamp = this.negativeLyricsCache.get(trackId);
-    if (negTimestamp && Date.now() - negTimestamp < TWENTY_FOUR_HOURS_MS) {
-      return;
-    }
-
     const prefetchPromise = (async () => {
       try {
         const existing = await linerDb.getLyrics(trackId);
@@ -1037,6 +1007,9 @@ class PlayerEngine {
         for await (const event of api.streamLyrics(trackId, controller.signal)) {
           if (event.type === "provider" && event.status === "found") {
             const candidate = event.candidate;
+            if (shouldCacheLyricsCandidate(candidate)) {
+              lyricsCache.setProvider(trackId, candidate);
+            }
             providers.push({
               provider: candidate.provider,
               syncLevel: candidate.syncLevel,
@@ -1052,7 +1025,7 @@ class PlayerEngine {
         }
         clearTimeout(timeout);
 
-        if (bestCandidate) {
+        if (bestCandidate && shouldCacheLyricsCandidate(bestCandidate)) {
           lyricsCache.set(trackId, bestCandidate, providers);
           void linerDb.putLyrics({
             trackId,
@@ -1066,8 +1039,6 @@ class PlayerEngine {
             lastCheckedAt: Date.now(),
             updatedAt: Date.now(),
           });
-        } else {
-          this.negativeLyricsCache.set(trackId, Date.now());
         }
       } catch {
       } finally {
@@ -1149,24 +1120,6 @@ class PlayerEngine {
 
       void linerDb.updateLyricsChecked(trackId);
     } else {
-      const negTimestamp = this.negativeLyricsCache.get(trackId);
-      if (negTimestamp && Date.now() - negTimestamp < TWENTY_FOUR_HOURS_MS) {
-        lyricsStore.setLyricsState({
-          lyricsLoading: false,
-          lyricsError: null,
-          rawLyrics: null,
-          rawFormat: null,
-          braccatoLyrics: [],
-          syncedLines: [],
-          plainLyrics: null,
-          lyricsQuality: 0,
-          currentLyricsTrackId: trackId,
-          activeProvider: null,
-          availableProviders: [],
-        });
-        return;
-      }
-
       lyricsStore.setLyricsState({
         lyricsLoading: true,
         lyricsError: null,
@@ -1232,6 +1185,11 @@ class PlayerEngine {
             option,
           ].sort((a, b) => compareLyricsCandidates(a.candidate, b.candidate));
 
+          // cache provider individually if it satisfies provider rules
+          if (shouldCacheLyricsCandidate(candidate)) {
+            lyricsCache.setProvider(trackId, candidate);
+          }
+
           if (
             !bestCandidate ||
             isBetterLyricsCandidate(candidate, bestCandidate)
@@ -1254,19 +1212,21 @@ class PlayerEngine {
               plainLyrics: parsed.plainLyrics,
               lyricsQuality: candidate.quality.total,
             });
-            lyricsCache.set(trackId, candidate, updatedProviders);
-            void linerDb.putLyrics({
-              trackId,
-              syncLevel: candidate.syncLevel,
-              quality: candidate.quality.total,
-              activeProvider: candidate.provider,
-              availableProviders: updatedProviders,
-              rawLyrics: candidate.lyrics.content,
-              rawFormat: candidate.lyrics.format,
-              candidate,
-              lastCheckedAt: Date.now(),
-              updatedAt: Date.now(),
-            });
+            if (shouldCacheLyricsCandidate(candidate)) {
+              lyricsCache.set(trackId, candidate, updatedProviders);
+              void linerDb.putLyrics({
+                trackId,
+                syncLevel: candidate.syncLevel,
+                quality: candidate.quality.total,
+                activeProvider: candidate.provider,
+                availableProviders: updatedProviders,
+                rawLyrics: candidate.lyrics.content,
+                rawFormat: candidate.lyrics.format,
+                candidate,
+                lastCheckedAt: Date.now(),
+                updatedAt: Date.now(),
+              });
+            }
             log(
               "green",
               "lyrics",
@@ -1289,7 +1249,7 @@ class PlayerEngine {
             `provider ${event.provider} error: ${event.message}`,
           );
         } else if (event.type === "done") {
-          if (bestCandidate) {
+          if (bestCandidate && shouldCacheLyricsCandidate(bestCandidate)) {
             const currentProviders = useLyricsStore.getState().availableProviders;
             lyricsCache.set(trackId, bestCandidate, currentProviders);
             void linerDb.putLyrics({
@@ -1304,8 +1264,6 @@ class PlayerEngine {
               lastCheckedAt: Date.now(),
               updatedAt: Date.now(),
             });
-          } else {
-            this.negativeLyricsCache.set(trackId, Date.now());
           }
           log(
             "cyan",
