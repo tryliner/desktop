@@ -21,6 +21,8 @@ export class PlayerRuntime {
   private preloadingPromise: Promise<void> | null = null;
   private preloadAbortController: AbortController | null = null;
   private backgroundCacheAbortController: AbortController | null = null;
+  private currentSessionExpiresAt: number | null = null;
+  private recoveryAttempts = 0;
   public onEnded?: () => void;
   public onError?: (info: { trackId: string; message: string }) => void;
 
@@ -216,7 +218,6 @@ export class PlayerRuntime {
     });
 
     audioEl.addEventListener("error", () => {
-      // Discard teardown / abort / reset errors
       if (this.isResetting || audioEl !== this.audio) return;
       if (!this.currentTrackId || !audioEl.src || audioEl.src === window.location.href) return;
 
@@ -224,7 +225,6 @@ export class PlayerRuntime {
       const code = audioEl.error?.code;
       console.error("[AudioElementError]", this.currentTrackId, code, message, audioEl.src);
       log("red", "audio", `error (code ${code}): ${message}`);
-      usePlayerStore.getState().setStatus("error", message);
 
       const isDecode =
         code === (typeof MediaError !== "undefined" ? MediaError.MEDIA_ERR_DECODE : 3) ||
@@ -238,6 +238,21 @@ export class PlayerRuntime {
         });
       }
 
+      const store = usePlayerStore.getState();
+      const currentTrack = store.currentTrack;
+      if (
+        currentTrack &&
+        currentTrack.id === this.currentTrackId &&
+        this.recoveryAttempts < 1
+      ) {
+        this.recoveryAttempts++;
+        const posMs = store.positionMs;
+        log("yellow", "playback", `audio error encountered — recovering via cache/stream at ${posMs}ms`);
+        void this.loadAndPlay(currentTrack, posMs);
+        return;
+      }
+
+      usePlayerStore.getState().setStatus("error", message);
       this.onError?.({ trackId: this.currentTrackId, message });
     });
   }
@@ -247,10 +262,15 @@ export class PlayerRuntime {
   }
 
   public hasLoadedSourceFor(trackId: string): boolean {
+    const isExpired =
+      this.currentSessionExpiresAt !== null &&
+      Date.now() >= this.currentSessionExpiresAt - 15_000;
     return (
       this.currentTrackId === trackId &&
       Boolean(this.audio.currentSrc || this.audio.src) &&
-      this.audio.src !== window.location.href
+      this.audio.src !== window.location.href &&
+      !this.audio.error &&
+      !isExpired
     );
   }
 
@@ -300,6 +320,7 @@ export class PlayerRuntime {
 
   private safeResetAudioElement() {
     this.isResetting = true;
+    this.currentSessionExpiresAt = null;
     try {
       this.cancelFade();
       this.audio.pause();
@@ -322,6 +343,8 @@ export class PlayerRuntime {
     this.backgroundCacheAbortController?.abort();
     this.backgroundCacheAbortController = null;
     this.currentTrackId = null;
+    this.currentSessionExpiresAt = null;
+    this.recoveryAttempts = 0;
     this.safeResetAudioElement();
     usePlayerStore.getState().setStatus("paused");
     log("cyan", "playback", "pending load cancelled");
@@ -414,6 +437,10 @@ export class PlayerRuntime {
     this.pendingStartPositionMs = startPositionMs;
     const epoch = ++this.loadEpoch;
 
+    if (this.currentTrackId !== track.id) {
+      this.recoveryAttempts = 0;
+    }
+
     if (this.preloadingTrackId === track.id && this.preloadingPromise) {
       await this.preloadingPromise;
     } else if (this.preloadingTrackId && this.preloadingTrackId !== track.id) {
@@ -448,6 +475,8 @@ export class PlayerRuntime {
       }
 
       if (cachedAudio) {
+        this.currentSessionExpiresAt = null;
+        this.recoveryAttempts = 0;
         void linerDb.putTrack(track);
         const blobUrl = URL.createObjectURL(cachedAudio.blob);
         this.activeBlobUrl = blobUrl;
@@ -513,6 +542,9 @@ export class PlayerRuntime {
         log("yellow", "playback", `superseded before stream ready (${track.title})`);
         return;
       }
+
+      const expiry = session.expiresAt ? new Date(session.expiresAt).getTime() : null;
+      this.currentSessionExpiresAt = Number.isFinite(expiry) ? expiry : null;
 
       const url = mediaUrl(session.streamUrl);
       if (this.activeBlobUrl) {
@@ -657,15 +689,23 @@ export class PlayerRuntime {
     usePlayerStore.getState().setStatus("playing");
     log("cyan", "audio", "resume requested (fading in)");
 
-    if (!this.audio.src || this.audio.src === window.location.href) {
-      const currentTrack = usePlayerStore.getState().currentTrack;
-      if (currentTrack) {
-        void this.loadAndPlay(
-          currentTrack,
-          usePlayerStore.getState().positionMs,
-        );
-        return;
-      }
+    const currentTrack = usePlayerStore.getState().currentTrack;
+    const isExpired =
+      this.currentSessionExpiresAt !== null &&
+      Date.now() >= this.currentSessionExpiresAt - 15_000;
+    const hasMediaError = Boolean(this.audio.error);
+    const hasValidSource =
+      Boolean(this.audio.src) &&
+      this.audio.src !== window.location.href &&
+      !isExpired &&
+      !hasMediaError;
+
+    if (!hasValidSource && currentTrack) {
+      void this.loadAndPlay(
+        currentTrack,
+        usePlayerStore.getState().positionMs,
+      );
+      return;
     }
 
     if (this.audio.paused) {
@@ -684,6 +724,12 @@ export class PlayerRuntime {
             usePlayerStore.getState().setStatus("paused");
           } else if (error.name !== "AbortError") {
             log("red", "audio", `play failed: ${String(error)}`);
+            if (currentTrack && this.recoveryAttempts < 1) {
+              this.recoveryAttempts++;
+              log("yellow", "playback", "resume failed — attempting cache/stream recovery");
+              void this.loadAndPlay(currentTrack, usePlayerStore.getState().positionMs);
+              return;
+            }
             usePlayerStore.getState().setStatus("paused");
           }
         })
