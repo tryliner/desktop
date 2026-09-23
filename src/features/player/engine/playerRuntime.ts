@@ -385,8 +385,33 @@ export class PlayerRuntime {
     await promise;
   }
 
+  private pendingStartPositionMs = 0;
+
+  public setPendingSeek(positionMs: number): void {
+    this.pendingStartPositionMs = positionMs;
+    usePlayerStore.getState().setPosition(positionMs);
+    if (this.audio.src && this.audio.src !== window.location.href) {
+      try {
+        if (this.audio.readyState >= 1) {
+          this.audio.currentTime = positionMs / 1000;
+        } else {
+          this.audio.addEventListener(
+            "loadedmetadata",
+            () => {
+              try {
+                this.audio.currentTime = positionMs / 1000;
+              } catch {}
+            },
+            { once: true },
+          );
+        }
+      } catch {}
+    }
+  }
+
   public async loadAndPlay(track: Track, startPositionMs: number = 0) {
     this.cancelFade();
+    this.pendingStartPositionMs = startPositionMs;
     const epoch = ++this.loadEpoch;
 
     if (this.preloadingTrackId === track.id && this.preloadingPromise) {
@@ -430,7 +455,11 @@ export class PlayerRuntime {
         this.audio.volume = 0;
         this.audio.load();
 
-        this.seekWhenReady(epoch, startPositionMs);
+        const targetPosition =
+          this.pendingStartPositionMs > 0
+            ? this.pendingStartPositionMs
+            : startPositionMs;
+        this.seekWhenReady(epoch, targetPosition);
         log(
           "cyan",
           "playback",
@@ -494,7 +523,11 @@ export class PlayerRuntime {
       this.audio.volume = 0;
       this.audio.load();
 
-      this.seekWhenReady(epoch, startPositionMs);
+      const targetPosition =
+        this.pendingStartPositionMs > 0
+          ? this.pendingStartPositionMs
+          : startPositionMs;
+      this.seekWhenReady(epoch, targetPosition);
       log(
         "green",
         "playback",

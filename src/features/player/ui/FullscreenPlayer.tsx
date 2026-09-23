@@ -27,11 +27,13 @@ interface BraccatoLyricsViewProps {
 }
 
 function BraccatoLyricsView({ lyrics }: BraccatoLyricsViewProps) {
+  const player = usePlayerState();
   const elementRef = useRef<any>(null);
   const latestLyricsRef = useRef(lyrics);
   const freeScrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastWheelTimeRef = useRef(0);
   const isInFreeSearchRef = useRef(false);
+  const waitingForAudioAfterClickRef = useRef(false);
 
   const scrollToActiveLine = useCallback(
     (behavior: ScrollBehavior = "smooth") => {
@@ -89,6 +91,9 @@ function BraccatoLyricsView({ lyrics }: BraccatoLyricsViewProps) {
     scrollToActiveLine("smooth");
   }, [scrollToActiveLine]);
 
+  const returnToFollowingModeRef = useRef(returnToFollowingMode);
+  returnToFollowingModeRef.current = returnToFollowingMode;
+
   const handleUserInteraction = useCallback(() => {
     lastWheelTimeRef.current = Date.now();
     isInFreeSearchRef.current = true;
@@ -113,6 +118,9 @@ function BraccatoLyricsView({ lyrics }: BraccatoLyricsViewProps) {
     }, 6000);
   }, [returnToFollowingMode]);
 
+  const handleUserInteractionRef = useRef(handleUserInteraction);
+  handleUserInteractionRef.current = handleUserInteraction;
+
   const setElement = useCallback((el: any) => {
     elementRef.current = el;
     if (!el) return;
@@ -121,7 +129,22 @@ function BraccatoLyricsView({ lyrics }: BraccatoLyricsViewProps) {
     el.source = "#liner-audio";
 
     const handleBraccatoLineClick = (e: Event) => {
-      returnToFollowingMode();
+      const isAudioLoading = playerEngine.getSnapshot().status === "loading";
+      if (isAudioLoading) {
+        waitingForAudioAfterClickRef.current = true;
+        isInFreeSearchRef.current = true;
+        if (freeScrollTimerRef.current) {
+          clearTimeout(freeScrollTimerRef.current);
+          freeScrollTimerRef.current = null;
+        }
+        if (el.renderer) {
+          el.renderer.noteUserScroll?.();
+          el.renderer.noteUserScroll?.();
+          el.renderer.noteUserScroll?.();
+        }
+      } else {
+        returnToFollowingModeRef.current();
+      }
 
       const detail = (e as CustomEvent).detail as
         | { timeS?: number; time?: number }
@@ -140,12 +163,15 @@ function BraccatoLyricsView({ lyrics }: BraccatoLyricsViewProps) {
     };
 
     const onUserScroll = () => {
-      handleUserInteraction();
+      handleUserInteractionRef.current();
     };
 
     const onLyricsLoaded = () => {
+      if (waitingForAudioAfterClickRef.current) return;
       requestAnimationFrame(() => {
-        scrollToActiveLine("auto");
+        if (!waitingForAudioAfterClickRef.current) {
+          scrollToActiveLine("auto");
+        }
       });
     };
 
@@ -165,7 +191,7 @@ function BraccatoLyricsView({ lyrics }: BraccatoLyricsViewProps) {
       }
       elementRef.current = null;
     };
-  }, [handleUserInteraction, scrollToActiveLine]);
+  }, [scrollToActiveLine]);
 
   useEffect(() => {
     latestLyricsRef.current = lyrics;
@@ -174,11 +200,21 @@ function BraccatoLyricsView({ lyrics }: BraccatoLyricsViewProps) {
   }, [lyrics]);
 
   useEffect(() => {
+    if (
+      (player.status === "playing" || player.status === "paused") &&
+      waitingForAudioAfterClickRef.current
+    ) {
+      waitingForAudioAfterClickRef.current = false;
+      returnToFollowingMode();
+    }
+  }, [player.status, returnToFollowingMode]);
+
+  useEffect(() => {
     let cancelled = false;
     let attempts = 0;
 
     const checkAndScroll = () => {
-      if (cancelled) return;
+      if (cancelled || waitingForAudioAfterClickRef.current) return;
       attempts++;
       const success = scrollToActiveLine("auto");
       if (!success && attempts < 30) {

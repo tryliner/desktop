@@ -734,6 +734,13 @@ class PlayerEngine {
         store.currentTrack &&
         !playerRuntime.hasLoadedSourceFor(store.currentTrack.id)
       ) {
+        if (
+          playerRuntime.getCurrentTrackId() === store.currentTrack.id &&
+          store.status === "loading"
+        ) {
+          playerRuntime.setPendingSeek(nextMs);
+          return;
+        }
         if (autoPlay || store.status === "playing") {
           void playerRuntime.loadAndPlay(store.currentTrack, nextMs);
         }
