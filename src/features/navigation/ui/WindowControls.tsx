@@ -64,7 +64,7 @@ export default function WindowControls({
   return (
     <div
       style={style}
-      className={`absolute top-[12px] right-[32px] z-[62] flex items-center justify-end pointer-events-none select-none ${className}`.trim()}
+      className={`absolute top-[12px] right-[12px] z-[62] flex items-center justify-end pointer-events-none select-none ${className}`.trim()}
     >
       <div
         data-no-window-drag

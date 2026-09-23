@@ -1067,7 +1067,7 @@ export default function AppFrame({ children }: AppFrameProps) {
         isFullscreen={isFullscreenPlayer}
         style={{
           top: isFullscreenPlayer ? 12 : 18,
-          right: isFullscreenPlayer || isRightDrawerOpen || isBackNavigableRoute ? (isFullscreenPlayer ? 12 : 18) : 38,
+          right: isFullscreenPlayer ? 12 : 18,
           transition: "all 0.28s cubic-bezier(0.22, 1, 0.36, 1)",
           zIndex: 80,
         }}

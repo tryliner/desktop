@@ -8,6 +8,7 @@ import {
   type PublicUser,
   type UpdateProfileInput,
 } from "@/shared/api";
+import { usePlayerStore, playerRuntime } from "@/features/player";
 
 export type AuthStatus = "initializing" | "authenticated" | "anonymous";
 export type AuthState = {
@@ -82,6 +83,10 @@ export const useAuthStore = create<AuthState>((set) => ({
     return updated;
   },
   logout: async () => {
+    try {
+      usePlayerStore.getState().dispatch({ type: "PAUSE_REQUESTED" });
+      playerRuntime?.pause();
+    } catch {}
     await clearAuthSession();
     set({ status: "anonymous", user: null });
   },
