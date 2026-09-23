@@ -482,15 +482,20 @@ function LibraryPlaylistContent() {
                 data-no-window-drag
               >
                 <EntitySidebar
+                coverClassName={
+                  hasCustomBg && (viewData.coverUrls?.length ?? (viewData.coverUrl ? 1 : 0)) === 0
+                    ? "apple-glass-static pointer-events-none"
+                    : undefined
+                }
                 cover={(() => {
                     const urls =
                       viewData.coverUrls ??
                       (viewData.coverUrl ? [viewData.coverUrl] : []);
                     if (urls.length === 0) {
                       return isLikesMode ? (
-                        <HeartFill size={48} className="text-zinc-400 dark:text-zinc-500" />
+                        <HeartFill size={48} className={hasCustomBg ? "text-white" : "text-zinc-400 dark:text-zinc-500"} />
                       ) : (
-                        <PlaylistFill size={48} className="text-border-alpha-33" />
+                        <PlaylistFill size={48} className={hasCustomBg ? "text-white" : "text-border-alpha-33"} />
                       );
                     }
                     if (urls.length === 1) {

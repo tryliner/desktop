@@ -64,6 +64,7 @@ function LikesPlaylistCard({
   viewMode?: LibraryViewMode;
 }) {
   const { t } = useTranslation();
+  const hasCustomBg = useIsContentTransparent();
 
   if (viewMode === "list") {
     return (
@@ -72,8 +73,15 @@ function LikesPlaylistCard({
         className="w-full flex items-center justify-between rounded-md p-[8px] outline-none transition-colors duration-150 ease-out cursor-pointer hover:bg-border-alpha-14 select-none"
       >
         <div className="flex items-center gap-[16px] min-w-0">
-          <div className="relative h-[48px] w-[48px] shrink-0 overflow-hidden rounded-md bg-bg-panel flex items-center justify-center">
-            <HeartFill size={26} className="text-zinc-400 dark:text-zinc-500" />
+          <div
+            className={`relative h-[48px] w-[48px] shrink-0 overflow-hidden rounded-md flex items-center justify-center ${
+              hasCustomBg ? "apple-glass-static" : "bg-bg-panel"
+            }`}
+          >
+            <HeartFill
+              size={26}
+              className={hasCustomBg ? "text-white" : "text-zinc-400 dark:text-zinc-500"}
+            />
           </div>
 
           <div className="min-w-0 flex flex-col gap-[2px]">
@@ -111,8 +119,15 @@ function LikesPlaylistCard({
       className="group flex flex-col gap-[8px] cursor-pointer"
       draggable={false}
     >
-      <div className="relative aspect-square w-full overflow-hidden rounded-md flex items-center justify-center bg-bg-panel">
-        <HeartFill size={52} className="text-zinc-400 dark:text-zinc-500" />
+      <div
+        className={`relative aspect-square w-full overflow-hidden rounded-md flex items-center justify-center ${
+          hasCustomBg ? "apple-glass-static" : "bg-bg-panel"
+        }`}
+      >
+        <HeartFill
+          size={52}
+          className={hasCustomBg ? "text-white" : "text-zinc-400 dark:text-zinc-500"}
+        />
       </div>
       <div className="flex flex-col gap-[4px]">
         <span className="truncate text-[14px] font-[500] text-text-primary">

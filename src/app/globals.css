@@ -232,6 +232,7 @@ img {
 
 .apple-glass-pill,
 .apple-glass-action,
+.apple-glass-static,
 .apple-glass-pill-dark {
   background: var(--glass-pill-bg, linear-gradient(135deg, rgba(0, 0, 0, 0.45) 0%, rgba(0, 0, 0, 0.35) 100%)) !important;
   backdrop-filter: blur(var(--glass-blur, 20px)) saturate(160%) !important;

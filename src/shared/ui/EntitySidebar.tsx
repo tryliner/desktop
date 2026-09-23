@@ -9,6 +9,7 @@ export const SIDEBAR_SUBTITLE_CLASS =
 
 export interface EntitySidebarProps {
   cover: ReactNode;
+  coverClassName?: string;
   title: ReactNode;
   subtitle?: ReactNode;
   meta?: ReactNode;
@@ -18,12 +19,9 @@ export interface EntitySidebarProps {
   backLabel?: string;
 }
 
-// Sticky metadata sidebar used next to the track list on
-// playlist / album / collection pages. Flat, no shadows or glows.
-// Subtitle is omitted entirely when missing so empty data
-// doesn't leave a hole in the layout.
 export function EntitySidebar({
   cover,
+  coverClassName,
   title,
   subtitle,
   meta,
@@ -47,9 +45,9 @@ export function EntitySidebar({
       )}
 
       <div
-        className={`relative flex aspect-square w-full items-center justify-center overflow-hidden rounded-md bg-border-alpha-14 ${
-          onBack ? "mt-[16px]" : ""
-        }`}
+        className={`relative flex aspect-square w-full items-center justify-center overflow-hidden rounded-md ${
+          coverClassName || "bg-border-alpha-14"
+        } ${onBack ? "mt-[16px]" : ""}`}
       >
         {cover}
       </div>

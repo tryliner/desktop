@@ -304,6 +304,11 @@ function CollectionContent() {
                 data-no-window-drag
               >
                 <EntitySidebar
+                coverClassName={
+                  hasCustomBg && !data.coverUrl
+                    ? "apple-glass-static pointer-events-none"
+                    : undefined
+                }
                 cover={
                   data.coverUrl ? (
                     <CoverImage
@@ -315,7 +320,7 @@ function CollectionContent() {
                       draggable={false}
                     />
                   ) : (
-                    <PlaylistFill size={48} className="text-border-alpha-33" />
+                    <PlaylistFill size={48} className={hasCustomBg ? "text-white" : "text-border-alpha-33"} />
                   )
                 }
 
