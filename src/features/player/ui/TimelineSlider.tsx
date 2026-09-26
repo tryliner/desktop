@@ -157,7 +157,7 @@ export const TimelineSlider = memo(function TimelineSlider({
       onMouseLeave={() => setIsHovered(false)}
     >
       {showTime && (
-        <span className="text-[11px] tabular-nums text-white/50 w-[36px] text-right shrink-0 pr-[8px]">
+        <span className="text-[11px] tabular-nums text-text-tertiary w-[36px] text-right shrink-0 pr-[8px]">
           {formatPlaybackTime(currentPosition)}
         </span>
       )}
@@ -191,7 +191,7 @@ export const TimelineSlider = memo(function TimelineSlider({
           <div
             className={`absolute inset-y-0 left-0 rounded-full transition-[width] ease-out ${
               isDragging ? "duration-0" : "duration-100"
-            } ${fillClassName || "bg-white"}`}
+            } ${fillClassName || "bg-text-primary"}`}
             style={{
               width: `${percentage}%`,
               ...(fillColor ? { backgroundColor: fillColor } : {}),
@@ -201,7 +201,7 @@ export const TimelineSlider = memo(function TimelineSlider({
       </div>
 
       {showTime && (
-        <span className="text-[11px] tabular-nums text-white/50 w-[36px] shrink-0 pl-[8px]">
+        <span className="text-[11px] tabular-nums text-text-tertiary w-[36px] shrink-0 pl-[8px]">
           {formatPlaybackTime(duration)}
         </span>
       )}

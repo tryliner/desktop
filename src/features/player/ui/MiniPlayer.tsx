@@ -394,7 +394,7 @@ function MiniPlayer({
   }, [player.repeat]);
 
   const iconButtonClass =
-    "inline-flex h-[30px] w-[30px] items-center justify-center rounded-md text-white/50 transition-colors duration-150 hover:bg-white/[0.09] hover:text-white active:scale-[0.96] border-none bg-transparent cursor-pointer";
+    "inline-flex h-[30px] w-[30px] items-center justify-center rounded-md text-text-secondary transition-colors duration-150 hover:bg-black/[0.05] dark:hover:bg-white/[0.09] hover:text-text-primary active:scale-[0.96] border-none bg-transparent cursor-pointer";
 
   const clearVolumeAutoCloseTimer = useCallback(() => {
     if (volumeAutoCloseTimerRef.current) {
@@ -679,7 +679,7 @@ function MiniPlayer({
               type="button"
               aria-label={isLiked ? "Unlike" : "Like"}
               className={`${iconButtonClass} shrink-0 transition-colors duration-150 pointer-events-auto prevent-seek ${
-                isLiked ? "text-[#ff4d4d]" : "text-white/70 hover:text-white"
+                isLiked ? "text-accent-primary" : "text-text-secondary hover:text-text-primary"
               }`}
               onPointerDown={(e) => e.stopPropagation()}
               onClick={handleLikeToggle}
@@ -695,7 +695,7 @@ function MiniPlayer({
             }`}
           >
             <div
-              className="ml-auto flex items-center gap-[2px] rounded-lg bg-white/[0.04] p-[3px] pointer-events-auto prevent-seek cursor-default"
+              className="ml-auto flex items-center gap-[2px] rounded-lg bg-bg-toolbox p-[3px] pointer-events-auto prevent-seek cursor-default"
               onPointerDown={(e) => e.stopPropagation()}
             >
               <button
@@ -703,7 +703,7 @@ function MiniPlayer({
                 aria-label="Shuffle"
                 title={player.shuffle ? t("player.shuffle_on") : t("player.shuffle_off")}
                 className={`${iconButtonClass} ${
-                  player.shuffle ? "bg-white/[0.09] text-white" : ""
+                  player.shuffle ? "bg-bg-toolbox-active text-text-primary" : ""
                 }`}
                 onPointerDown={(e) => e.stopPropagation()}
                 onClick={() => playerEngine.setShuffle(!player.shuffle)}
@@ -715,7 +715,7 @@ function MiniPlayer({
                 aria-label="Repeat"
                 title="Repeat"
                 className={`${iconButtonClass} ${
-                  player.repeat !== "off" ? "bg-white/[0.09] text-white" : ""
+                  player.repeat !== "off" ? "bg-bg-toolbox-active text-text-primary" : ""
                 }`}
                 onPointerDown={(e) => e.stopPropagation()}
                 onClick={() =>
@@ -732,7 +732,7 @@ function MiniPlayer({
                 aria-label="Volume"
                 title="Volume"
                 className={`${iconButtonClass} ${
-                  volumeOpen ? "bg-white/[0.09] text-white" : ""
+                  volumeOpen ? "bg-bg-toolbox-active text-text-primary" : ""
                 }`}
                 onPointerDown={(e) => e.stopPropagation()}
                 onClick={() => {
@@ -761,7 +761,7 @@ function MiniPlayer({
                 <MaximizeSquare3 size={18} weight="Outline" />
               </button>
               <span
-                className="mx-[3px] h-[16px] w-px bg-white/10"
+                className="mx-[3px] h-[16px] w-px bg-border-toolbox-divider"
                 aria-hidden="true"
               />
               <button
@@ -791,7 +791,7 @@ function MiniPlayer({
             <button
               type="button"
               aria-label="Previous track"
-              className={`${iconButtonClass} text-white/70 hover:text-white`}
+              className={`${iconButtonClass} text-text-secondary hover:text-text-primary`}
               onPointerDown={(e) => e.stopPropagation()}
               onClick={() => {
                 void playerEngine.skipPrevious();
@@ -803,7 +803,7 @@ function MiniPlayer({
             <button
               type="button"
               aria-label={isPlaying ? "Pause" : "Play"}
-              className="inline-flex h-[34px] w-[34px] items-center justify-center rounded-full bg-[#F4F4F4] text-[#000000] transition-all duration-150 ease-out active:scale-[0.96] border-none cursor-pointer"
+              className="inline-flex h-[34px] w-[34px] items-center justify-center rounded-full bg-btn-primary-bg text-btn-primary-text transition-all duration-150 ease-out hover:scale-105 active:scale-[0.96] border-none cursor-pointer shadow-sm"
               onPointerDown={(e) => e.stopPropagation()}
               onClick={() => {
                 void playerEngine.togglePlayPause();
@@ -818,13 +818,13 @@ function MiniPlayer({
               ) : isPlaying ? (
                 <Pause size={16} weight="Bold" />
               ) : (
-                <Play size={16} weight="Bold" />
+                <Play size={16} weight="Bold" className="translate-x-[0.5px]" />
               )}
             </button>
             <button
               type="button"
               aria-label="Next track"
-              className={`${iconButtonClass} text-white/70 hover:text-white`}
+              className={`${iconButtonClass} text-text-secondary hover:text-text-primary`}
               onPointerDown={(e) => e.stopPropagation()}
               onClick={() => {
                 void playerEngine.skipNext();

@@ -9,9 +9,9 @@
   --bg-elevated: #f0f0f2; 
   --bg-panel: #ebebec; 
   --bg-overlay: rgba(245, 245, 247, 0.96);
-  --bg-toolbox: rgba(255, 255, 255, 0.04);
-  --bg-toolbox-active: rgba(255, 255, 255, 0.09);
-  --border-toolbox-divider: rgba(255, 255, 255, 0.10);
+  --bg-toolbox: rgba(0, 0, 0, 0.04);
+  --bg-toolbox-active: rgba(0, 0, 0, 0.08);
+  --border-toolbox-divider: rgba(0, 0, 0, 0.10);
   
   --border-primary: #e4e4e7; 
   --border-secondary: #d4d4d8; 
@@ -49,9 +49,9 @@
   --bg-elevated: #f0f0f2; 
   --bg-panel: #ebebec; 
   --bg-overlay: rgba(245, 245, 247, 0.96);
-  --bg-toolbox: rgba(255, 255, 255, 0.04);
-  --bg-toolbox-active: rgba(255, 255, 255, 0.09);
-  --border-toolbox-divider: rgba(255, 255, 255, 0.10);
+  --bg-toolbox: rgba(0, 0, 0, 0.04);
+  --bg-toolbox-active: rgba(0, 0, 0, 0.08);
+  --border-toolbox-divider: rgba(0, 0, 0, 0.10);
   
   --border-primary: #e4e4e7; 
   --border-secondary: #d4d4d8; 
