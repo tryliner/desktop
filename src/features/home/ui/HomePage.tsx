@@ -75,6 +75,10 @@ export default function HomePage() {
 
   const isReady = !isDataLoading;
 
+  const quickCardClass = hasCustomBg
+    ? "apple-glass-action"
+    : "bg-bg-elevated hover:bg-[#dedee3] dark:hover:bg-border-alpha-14 transition-colors duration-150 ease-out";
+
   return (
     <div className="relative h-full w-full overflow-y-auto overflow-x-hidden bg-transparent">
 
@@ -119,7 +123,7 @@ export default function HomePage() {
                     icon={<HeartFill size={22} className={hasCustomBg ? "text-white/80" : "text-zinc-400 dark:text-zinc-500"} />}
                     onPlay={() => navigate("/library/playlist?id=likes")}
                     compact
-                    className={hasCustomBg ? "apple-glass-action" : "bg-bg-elevated hover:bg-bg-panel"}
+                    className={quickCardClass}
                   />
 
                   {/* Recently Played Quick Cards */}
@@ -140,7 +144,7 @@ export default function HomePage() {
                           }
                           searchType="album"
                           compact
-                          className={hasCustomBg ? "apple-glass-action" : "bg-bg-elevated hover:bg-bg-panel"}
+                          className={quickCardClass}
                         />
                       );
                     }
@@ -165,7 +169,7 @@ export default function HomePage() {
                           }}
                           searchType="track"
                           compact
-                          className={hasCustomBg ? "apple-glass-action" : "bg-bg-elevated hover:bg-bg-panel"}
+                          className={quickCardClass}
                         />
                       );
                     }

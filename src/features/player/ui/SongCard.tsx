@@ -110,7 +110,7 @@ function SongCard({
     <div
       className={`group w-full flex items-center justify-between rounded-md ${paddingClass} outline-none transition-colors duration-150 ease-out ${
         className ?? ""
-      } ${onPlay ? "cursor-pointer hover:bg-border-alpha-14" : ""}`}
+      } ${onPlay ? "cursor-pointer" : ""} ${onPlay && !className?.includes("hover:bg-") ? "hover:bg-border-alpha-14" : ""}`}
       onClick={handleClick}
       onPointerDown={(e) => {
         if (clickTimerRef.current) {
