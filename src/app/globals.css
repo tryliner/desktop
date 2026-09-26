@@ -6,8 +6,8 @@
   --bg-canvas: #e4e4e7;
   --bg-surface: #ffffff;
   --bg-primary: #f5f5f7; 
-  --bg-elevated: #f0f0f2; 
-  --bg-panel: #ebebec; 
+  --bg-elevated: #e6e6eb; 
+  --bg-panel: #dedee3; 
   --bg-overlay: rgba(245, 245, 247, 0.96);
   --bg-toolbox: rgba(0, 0, 0, 0.04);
   --bg-toolbox-active: rgba(0, 0, 0, 0.08);
@@ -46,8 +46,8 @@
   --bg-canvas: #e4e4e7;
   --bg-surface: #ffffff;
   --bg-primary: #f5f5f7; 
-  --bg-elevated: #f0f0f2; 
-  --bg-panel: #ebebec; 
+  --bg-elevated: #e6e6eb; 
+  --bg-panel: #dedee3; 
   --bg-overlay: rgba(245, 245, 247, 0.96);
   --bg-toolbox: rgba(0, 0, 0, 0.04);
   --bg-toolbox-active: rgba(0, 0, 0, 0.08);

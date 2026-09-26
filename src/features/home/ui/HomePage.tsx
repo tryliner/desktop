@@ -119,7 +119,7 @@ export default function HomePage() {
                     icon={<HeartFill size={22} className={hasCustomBg ? "text-white/80" : "text-zinc-400 dark:text-zinc-500"} />}
                     onPlay={() => navigate("/library/playlist?id=likes")}
                     compact
-                    className={hasCustomBg ? "apple-glass-action" : "bg-bg-elevated hover:bg-border-alpha-14"}
+                    className={hasCustomBg ? "apple-glass-action" : "bg-bg-elevated hover:bg-bg-panel"}
                   />
 
                   {/* Recently Played Quick Cards */}
@@ -140,7 +140,7 @@ export default function HomePage() {
                           }
                           searchType="album"
                           compact
-                          className={hasCustomBg ? "apple-glass-action" : "bg-bg-elevated hover:bg-border-alpha-14"}
+                          className={hasCustomBg ? "apple-glass-action" : "bg-bg-elevated hover:bg-bg-panel"}
                         />
                       );
                     }
@@ -165,7 +165,7 @@ export default function HomePage() {
                           }}
                           searchType="track"
                           compact
-                          className={hasCustomBg ? "apple-glass-action" : "bg-bg-elevated hover:bg-border-alpha-14"}
+                          className={hasCustomBg ? "apple-glass-action" : "bg-bg-elevated hover:bg-bg-panel"}
                         />
                       );
                     }
