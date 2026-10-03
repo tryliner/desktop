@@ -394,25 +394,27 @@ export function TouchBarSimulator() {
         {state.isFullscreen ? (
           <div
             onClick={() => sendAction({ type: "toggleFullscreen" })}
-            className="relative flex h-full w-full cursor-pointer flex-col items-center justify-center overflow-hidden text-center py-0.5"
+            className="relative flex h-full w-full cursor-pointer flex-col items-center justify-center overflow-hidden text-center"
           >
-            <AnimatePresence mode="popLayout" initial={false}>
-              <motion.div
-                key={displayLine?.timeMs !== undefined ? `${displayLine.timeMs}-${displayLine.text}` : displayLineText}
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -12 }}
-                transition={{ duration: 0.24, ease: [0.25, 1, 0.5, 1] }}
-                className="flex w-full flex-col items-center justify-center text-center overflow-hidden"
-              >
-                <div className="flex max-w-full items-center justify-center gap-1 px-2 text-center">
+            <div className="relative flex items-center justify-center w-full min-h-[16px]">
+              <AnimatePresence mode="popLayout" initial={false}>
+                <motion.div
+                  key={displayLine?.timeMs !== undefined ? `${displayLine.timeMs}-${displayLine.text}` : displayLineText}
+                  initial={{ y: 13, scale: 0.82, opacity: 0.6 }}
+                  animate={{ y: 0, scale: 1, opacity: 1 }}
+                  exit={{ y: -13, scale: 0.96, opacity: 0 }}
+                  transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+                  className="flex max-w-full items-center justify-center gap-1 px-2 text-center origin-center"
+                >
                   {displayLine?.words && displayLine.words.length > 0 ? (
                     displayLine.words.map((w: TouchBarWordData, idx: number) => {
                       return (
                         <span
                           key={`${w.timeMs}-${idx}`}
                           ref={(el) => {
-                            wordSpanRefs.current[idx] = el;
+                            if (el) {
+                              wordSpanRefs.current[idx] = el;
+                            }
                           }}
                           className="bg-clip-text text-transparent font-medium inline"
                           style={{
@@ -426,19 +428,35 @@ export function TouchBarSimulator() {
                       );
                     })
                   ) : (
-                    <span className="text-[11.5px] font-medium text-white truncate max-w-full">
+                    <motion.span
+                      initial={{ color: "#636366" }}
+                      animate={{ color: "#ffffff" }}
+                      transition={{ duration: 0.32, ease: "easeOut" }}
+                      className="text-[11.5px] font-medium truncate max-w-full"
+                    >
                       {displayLineText}
-                    </span>
+                    </motion.span>
                   )}
-                </div>
+                </motion.div>
+              </AnimatePresence>
+            </div>
 
+            <div className="relative flex items-center justify-center w-full min-h-[11px] mt-0.5 overflow-hidden">
+              <AnimatePresence mode="popLayout" initial={false}>
                 {state.nextLyricText && state.nextLyricText !== displayLineText && (
-                  <p className="max-w-full truncate text-[8.5px] text-[#636366] mt-0.5 leading-none">
+                  <motion.p
+                    key={state.nextLyricText}
+                    initial={{ y: 8, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    exit={{ y: -8, opacity: 0 }}
+                    transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                    className="max-w-full truncate text-[8.5px] text-[#636366] leading-none"
+                  >
                     {state.nextLyricText}
-                  </p>
+                  </motion.p>
                 )}
-              </motion.div>
-            </AnimatePresence>
+              </AnimatePresence>
+            </div>
           </div>
         ) : (
           <div className="flex h-6 w-full items-center gap-1.5 px-0.5">
