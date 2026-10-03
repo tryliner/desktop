@@ -400,6 +400,12 @@ export function TouchBarSimulator() {
 
   const handleWaveformPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!waveformRef.current) return;
+    const targetEl = e.currentTarget;
+    const pointerId = e.pointerId;
+    try {
+      targetEl.setPointerCapture(pointerId);
+    } catch {}
+
     const rect = waveformRef.current.getBoundingClientRect();
     const waveformPad = Math.round(8 * scale);
     const trackWidth = Math.max(1, rect.width - waveformPad * 2);
@@ -411,6 +417,7 @@ export function TouchBarSimulator() {
 
     const startClientX = e.clientX;
     const initialMs = getMsFromClientX(startClientX);
+    let latestMs = initialMs;
     let isDragSeeking = false;
 
     const startSeeking = (targetMs: number) => {
@@ -425,7 +432,9 @@ export function TouchBarSimulator() {
     }, 120);
 
     const onPointerMove = (moveEvent: PointerEvent) => {
+      if (moveEvent.pointerId !== pointerId) return;
       const currentMs = getMsFromClientX(moveEvent.clientX);
+      latestMs = currentMs;
       if (!isDragSeeking) {
         if (Math.abs(moveEvent.clientX - startClientX) > 3) {
           window.clearTimeout(holdTimer);
@@ -437,24 +446,32 @@ export function TouchBarSimulator() {
     };
 
     const onPointerUp = (upEvent: PointerEvent) => {
+      if (upEvent.pointerId !== pointerId) return;
       window.clearTimeout(holdTimer);
+      try {
+        if (targetEl.hasPointerCapture(pointerId)) {
+          targetEl.releasePointerCapture(pointerId);
+        }
+      } catch {}
       window.removeEventListener("pointermove", onPointerMove);
       window.removeEventListener("pointerup", onPointerUp);
+      window.removeEventListener("pointercancel", onPointerUp);
 
-      const finalMs = getMsFromClientX(upEvent.clientX);
-      if (isDragSeeking) {
-        setIsSeeking(false);
-        sendAction({ type: "seek", payload: { positionMs: finalMs } });
-      } else {
-        anchorPosRef.current = finalMs;
-        anchorTimeRef.current = performance.now();
-        setState((prev) => ({ ...prev, positionMs: finalMs }));
-        sendAction({ type: "seek", payload: { positionMs: finalMs } });
-      }
+      const finalMs =
+        typeof upEvent.clientX === "number" && !Number.isNaN(upEvent.clientX)
+          ? getMsFromClientX(upEvent.clientX)
+          : latestMs;
+
+      setIsSeeking(false);
+      anchorPosRef.current = finalMs;
+      anchorTimeRef.current = performance.now();
+      setState((prev) => ({ ...prev, positionMs: finalMs }));
+      sendAction({ type: "seek", payload: { positionMs: finalMs } });
     };
 
     window.addEventListener("pointermove", onPointerMove);
     window.addEventListener("pointerup", onPointerUp);
+    window.addEventListener("pointercancel", onPointerUp);
   };
 
   const lastActiveLineRef = useRef<TouchBarActiveLine | null>(null);
@@ -899,7 +916,7 @@ export function TouchBarSimulator() {
                 <div
                   ref={setWaveformRef}
                   onPointerDown={handleWaveformPointerDown}
-                  className="relative flex h-full flex-1 min-w-[60px] cursor-pointer items-center bg-[#161618] hover:bg-[#19191c] transition-colors overflow-hidden select-none py-1"
+                  className="relative flex h-full flex-1 min-w-[60px] cursor-pointer items-center bg-[#161618] hover:bg-[#19191c] transition-colors overflow-hidden select-none py-1 touch-none"
                   style={{ borderRadius: buttonRadius }}
                 >
                   <div
