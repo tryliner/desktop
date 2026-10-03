@@ -8,6 +8,7 @@ import { AuthLock } from "@/features/auth";
 import { CoverSwRegistrar } from "@/features/covers";
 import { usePresenceSync } from "@/shared/presence";
 import { useThemeCustomizationSync } from "@/features/settings";
+import { TouchBarSimulator, useTouchBarSync } from "@/features/touchbar";
 import { AppRoutes } from "./routes";
 import DeeplinkHandler from "./DeeplinkHandler";
 import EnvironmentWarning from "./EnvironmentWarning";
@@ -29,7 +30,27 @@ function ThemeSync() {
   return null;
 }
 
+function TouchBarSync() {
+  useTouchBarSync();
+  return null;
+}
+
 export default function App() {
+  const isTouchBar = window.location.hash.startsWith("#/touchbar");
+
+  if (isTouchBar) {
+    return (
+      <ThemeProvider
+        attribute="data-theme"
+        defaultTheme="dark"
+        enableSystem={false}
+        forcedTheme="dark"
+      >
+        <TouchBarSimulator />
+      </ThemeProvider>
+    );
+  }
+
   useWindowDrag();
 
   return (
@@ -44,6 +65,7 @@ export default function App() {
         <ThemeSync />
         <AppIconSync />
         <PresenceSync />
+        <TouchBarSync />
         <AppleEmojiProvider>
           <I18nProvider>
             <ToastProvider>

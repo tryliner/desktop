@@ -30,6 +30,7 @@ import {
   parseTraceOutput,
   type MainNetResult,
 } from "./netdiag.js";
+import { TouchBarManager } from "./touchbar.js";
 
 // root error handling for main process
 process.on("uncaughtException", (error) => {
@@ -60,6 +61,7 @@ process.env.VITE_PUBLIC = process.env.VITE_DEV_SERVER_URL
   : RENDERER_DIST;
 
 let mainWindow: BrowserWindow | null = null;
+let touchBarManager: TouchBarManager | null = null;
 
 // liner:// deeplink support (share links bounce here from link.tryliner.fun)
 
@@ -183,6 +185,8 @@ function createWindow() {
   mainWindow.webContents.on("did-finish-load", () => {
     flushPendingDeeplink();
   });
+
+  touchBarManager?.setMainWindow(mainWindow);
 }
 
 // Single instance lock
@@ -216,6 +220,12 @@ if (!gotTheLock) {
     } else {
       app.setAsDefaultProtocolClient(DEEP_LINK_SCHEME);
     }
+    touchBarManager = new TouchBarManager(
+      path.join(__dirname, "preload.cjs"),
+      RENDERER_DIST,
+    );
+    touchBarManager.registerShortcut();
+
     const isHyprland = Boolean(
       process.env.HYPRLAND_INSTANCE_SIGNATURE ||
       process.env.XDG_CURRENT_DESKTOP?.toLowerCase().includes("hyprland") ||
@@ -888,4 +898,8 @@ app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
     app.quit();
   }
+});
+
+app.on("will-quit", () => {
+  touchBarManager?.unregisterShortcut();
 });

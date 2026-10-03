@@ -89,6 +89,13 @@ export interface LinerElectronApi {
   onUpdateDownloadProgress: (cb: (progress: UpdateDownloadProgress) => void) => () => void;
   onUpdateDownloaded: (cb: (info: { version: string }) => void) => () => void;
   onUpdateError: (cb: (err: { message: string }) => void) => () => void;
+  touchbarUpdateState: (state: any) => void;
+  onTouchBarAction: (cb: (action: any) => void) => () => void;
+  toggleTouchBarSimulator: () => Promise<boolean>;
+  isTouchBarSimulatorOpen: () => Promise<boolean>;
+  onTouchBarSimulatorState: (cb: (state: any) => void) => () => void;
+  sendTouchBarAction: (action: any) => void;
+  closeTouchBarSimulator: () => void;
 }
 
 const isHyprland = Boolean(
@@ -179,6 +186,31 @@ const api: LinerElectronApi = {
     return () => {
       ipcRenderer.removeListener("deeplink:open", listener);
     };
+  },
+  touchbarUpdateState: (state) => {
+    ipcRenderer.send("touchbar:update-state", state);
+  },
+  onTouchBarAction: (cb) => {
+    const listener = (_event: unknown, action: any) => cb(action);
+    ipcRenderer.on("touchbar:action", listener);
+    return () => {
+      ipcRenderer.removeListener("touchbar:action", listener);
+    };
+  },
+  toggleTouchBarSimulator: () => ipcRenderer.invoke("touchbar:toggle-simulator"),
+  isTouchBarSimulatorOpen: () => ipcRenderer.invoke("touchbar:is-simulator-open"),
+  onTouchBarSimulatorState: (cb) => {
+    const listener = (_event: unknown, state: any) => cb(state);
+    ipcRenderer.on("touchbar:simulator-state", listener);
+    return () => {
+      ipcRenderer.removeListener("touchbar:simulator-state", listener);
+    };
+  },
+  sendTouchBarAction: (action) => {
+    ipcRenderer.send("touchbar:send-action", action);
+  },
+  closeTouchBarSimulator: () => {
+    ipcRenderer.send("touchbar:close-simulator");
   },
 };
 
