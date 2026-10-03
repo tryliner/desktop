@@ -185,7 +185,14 @@ function BraccatoLyricsView({ lyrics }: BraccatoLyricsViewProps) {
         const lines = useLyricsStore.getState().syncedLines;
         let idx = -1;
         for (let i = 0; i < lines.length; i++) {
-          if (lines[i].timeMs <= currentMs) {
+          const prevEnd =
+            i > 0 && lines[i - 1].words && lines[i - 1].words!.length > 0
+              ? lines[i - 1].words![lines[i - 1].words!.length - 1].endMs
+              : i > 0
+                ? lines[i - 1].timeMs
+                : 0;
+          const targetEarlyMs = Math.max(prevEnd, lines[i].timeMs - 600);
+          if (targetEarlyMs <= currentMs) {
             idx = i;
           } else {
             break;

@@ -765,7 +765,7 @@ export function TouchBarSimulator() {
                       ) : (
                         <motion.span
                           initial={{ color: "#636366" }}
-                          animate={{ color: "#ffffff" }}
+                          animate={{ color: currentPosMs >= (displayLine?.timeMs ?? 0) ? "#ffffff" : "#636366" }}
                           transition={{ duration: 0.32, ease: "easeOut" }}
                           className="font-medium truncate max-w-full"
                           style={{
@@ -784,7 +784,7 @@ export function TouchBarSimulator() {
                   className="relative flex items-center justify-center w-full overflow-hidden"
                   style={{
                     minHeight: `${Math.round(10 * scale)}px`,
-                    transform: `translateY(${(-1.5 * scale).toFixed(1)}px)`,
+                    transform: `translateY(${(-1.0 * scale).toFixed(1)}px)`,
                   }}
                 >
                   <AnimatePresence mode="popLayout" initial={false}>

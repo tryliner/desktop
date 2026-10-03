@@ -141,7 +141,14 @@ export function useTouchBarSync() {
         activeIndex = activeLineIndex;
       } else {
         for (let i = 0; i < syncedLines.length; i++) {
-          if (syncedLines[i].timeMs <= currentAudioMs) {
+          const prevEnd =
+            i > 0 && syncedLines[i - 1].words && syncedLines[i - 1].words!.length > 0
+              ? syncedLines[i - 1].words![syncedLines[i - 1].words!.length - 1].endMs
+              : i > 0
+                ? syncedLines[i - 1].timeMs
+                : 0;
+          const targetEarlyMs = Math.max(prevEnd, syncedLines[i].timeMs - 600);
+          if (targetEarlyMs <= currentAudioMs) {
             activeIndex = i;
           } else {
             break;
