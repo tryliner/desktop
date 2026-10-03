@@ -140,10 +140,8 @@ export function useTouchBarSync() {
       ) {
         activeIndex = activeLineIndex;
       } else {
-        const earlyLeadMs = 600;
-        const effectiveTimeMs = currentAudioMs + offsetMs + earlyLeadMs;
         for (let i = 0; i < syncedLines.length; i++) {
-          if (syncedLines[i].timeMs <= effectiveTimeMs) {
+          if (syncedLines[i].timeMs <= currentAudioMs) {
             activeIndex = i;
           } else {
             break;

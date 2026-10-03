@@ -179,55 +179,27 @@ function BraccatoLyricsView({ lyrics }: BraccatoLyricsViewProps) {
     let lastReportedIndex = -1;
 
     const checkActiveLine = () => {
-      const engine = (el.renderer as any)?.engine;
-      if (engine && typeof engine.selectedElementIndex === "number") {
-        const idx = engine.selectedElementIndex;
-        if (idx !== lastReportedIndex && idx >= 0) {
-          lastReportedIndex = idx;
-          useLyricsStore.getState().setActiveLineIndex(idx);
-        }
-      } else {
-        const activeEls = el.querySelectorAll(".blyrics--active");
-        if (activeEls.length > 0) {
-          const lastActive = activeEls[activeEls.length - 1] as HTMLElement;
-          const lineNum = lastActive?.dataset?.lineNumber;
-          if (lineNum !== undefined) {
-            const idx = parseInt(lineNum, 10);
-            if (!Number.isNaN(idx) && idx !== lastReportedIndex) {
-              lastReportedIndex = idx;
-              useLyricsStore.getState().setActiveLineIndex(idx);
-            }
+      const audioEl = document.getElementById("liner-audio") as HTMLAudioElement | null;
+      if (audioEl && !Number.isNaN(audioEl.currentTime)) {
+        const currentMs = audioEl.currentTime * 1000;
+        const lines = useLyricsStore.getState().syncedLines;
+        let idx = -1;
+        for (let i = 0; i < lines.length; i++) {
+          if (lines[i].timeMs <= currentMs) {
+            idx = i;
+          } else {
+            break;
           }
+        }
+        if (idx !== lastReportedIndex) {
+          lastReportedIndex = idx;
+          useLyricsStore.getState().setActiveLineIndex(idx >= 0 ? idx : null);
         }
       }
       syncRafId = requestAnimationFrame(checkActiveLine);
     };
 
     syncRafId = requestAnimationFrame(checkActiveLine);
-
-    const observer = new MutationObserver((mutations) => {
-      for (const m of mutations) {
-        if (m.type === "attributes" && m.attributeName === "class") {
-          const target = m.target as HTMLElement;
-          if (target.classList?.contains("blyrics--active")) {
-            const lineNum = target.dataset.lineNumber;
-            if (lineNum !== undefined) {
-              const idx = parseInt(lineNum, 10);
-              if (!Number.isNaN(idx) && idx !== lastReportedIndex) {
-                lastReportedIndex = idx;
-                useLyricsStore.getState().setActiveLineIndex(idx);
-              }
-            }
-          }
-        }
-      }
-    });
-
-    observer.observe(el, {
-      attributes: true,
-      subtree: true,
-      attributeFilter: ["class"],
-    });
 
     el.addEventListener("braccato:lyrics-loaded", onLyricsLoaded);
     el.addEventListener("braccato:line-click", handleBraccatoLineClick);
@@ -236,7 +208,6 @@ function BraccatoLyricsView({ lyrics }: BraccatoLyricsViewProps) {
 
     return () => {
       cancelAnimationFrame(syncRafId);
-      observer.disconnect();
       useLyricsStore.getState().setActiveLineIndex(null);
       el.removeEventListener("braccato:lyrics-loaded", onLyricsLoaded);
       el.removeEventListener("braccato:line-click", handleBraccatoLineClick);

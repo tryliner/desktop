@@ -265,7 +265,7 @@ export function TouchBarSimulator() {
           ? anchorPosRef.current + (now - anchorTimeRef.current)
           : state.positionMs;
 
-      const effectiveTime = currentPos + (state.offsetMs || 0);
+      const effectiveTime = currentPos;
 
       const words = displayLine?.words;
       if (words && words.length > 0) {
@@ -387,7 +387,7 @@ export function TouchBarSimulator() {
             title={isPlaying ? "Pause" : "Play"}
           >
             {isPlaying ? (
-              <Pause size={13} weight="Bold" />
+              <Pause size={13} weight="Bold" className="translate-x-[1px]" />
             ) : (
               <Play size={13} weight="Bold" />
             )}
