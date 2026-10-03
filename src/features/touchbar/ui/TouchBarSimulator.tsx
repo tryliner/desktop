@@ -13,7 +13,12 @@ import {
 import { HeartFill, HeartLine } from "@mingcute/react";
 import { toVolumeLevel, toVolumeGain } from "@/features/player/engine/volume";
 import { useDisableButtonFocus } from "@/features/navigation/hooks/useDisableButtonFocus";
-import type { TouchBarAction, TouchBarStatePayload } from "../contracts";
+import type {
+  TouchBarAction,
+  TouchBarStatePayload,
+  TouchBarActiveLine,
+  TouchBarWordData,
+} from "../contracts";
 
 function formatTime(ms: number): string {
   const totalSeconds = Math.max(0, Math.floor(ms / 1000));
@@ -167,7 +172,31 @@ export function TouchBarSimulator() {
     }
   };
 
+  const lastActiveLineRef = useRef<TouchBarActiveLine | null>(null);
+  const lastActiveLyricTextRef = useRef<string>("");
+  const currentTrackId = state.track?.id;
+  const prevTrackIdRef = useRef<string | undefined>(currentTrackId);
+  if (prevTrackIdRef.current !== currentTrackId) {
+    prevTrackIdRef.current = currentTrackId;
+    lastActiveLineRef.current = null;
+    lastActiveLyricTextRef.current = "";
+  }
+
+  if (state.activeLine) {
+    lastActiveLineRef.current = state.activeLine;
+    lastActiveLyricTextRef.current = state.activeLine.text;
+  } else if (state.activeLyricText) {
+    lastActiveLyricTextRef.current = state.activeLyricText;
+  }
+
   const effectiveLyricsTimeMs = currentPosMs + (state.offsetMs || 0);
+  const displayLine = state.activeLine || lastActiveLineRef.current;
+  const displayLineText =
+    state.activeLine?.text ||
+    state.activeLyricText ||
+    lastActiveLyricTextRef.current ||
+    state.nextLyricText ||
+    "•••";
   const volumeLevel = toVolumeLevel(state.volume);
   const volumePercent = Math.round(volumeLevel * 100);
 
@@ -265,15 +294,15 @@ export function TouchBarSimulator() {
           >
             <AnimatePresence mode="wait">
               <motion.div
-                key={state.activeLine?.timeMs ?? (state.activeLyricText || "idle")}
+                key={displayLine?.timeMs ?? displayLineText}
                 initial={{ opacity: 0, y: 3 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -3 }}
                 transition={{ duration: 0.15, ease: "easeOut" }}
                 className="flex max-w-full items-center justify-center gap-1 px-2 text-center"
               >
-                {state.activeLine?.words && state.activeLine.words.length > 0 ? (
-                  state.activeLine.words.map((w, idx) => {
+                {displayLine?.words && displayLine.words.length > 0 ? (
+                  displayLine.words.map((w: TouchBarWordData, idx: number) => {
                     const isSung = effectiveLyricsTimeMs >= w.endMs;
                     const isActive =
                       effectiveLyricsTimeMs >= w.timeMs &&
@@ -297,13 +326,13 @@ export function TouchBarSimulator() {
                   })
                 ) : (
                   <span className="text-[11.5px] font-medium text-white truncate max-w-full">
-                    {state.activeLine?.text || state.activeLyricText || state.track?.title || "Lyrics"}
+                    {displayLineText}
                   </span>
                 )}
               </motion.div>
             </AnimatePresence>
 
-            {state.nextLyricText && (
+            {state.nextLyricText && state.nextLyricText !== displayLineText && (
               <p className="max-w-full truncate text-[8.5px] text-[#48484a] mt-0.5">
                 {state.nextLyricText}
               </p>
