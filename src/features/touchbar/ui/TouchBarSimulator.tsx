@@ -94,8 +94,30 @@ export function TouchBarSimulator() {
   const currentPosMs = isSeeking ? localSeekMs : state.positionMs;
   const progressRatio = Math.min(1, Math.max(0, currentPosMs / durationMs));
 
+  const [waveformWidth, setWaveformWidth] = useState(300);
+
+  useEffect(() => {
+    if (!waveformRef.current) return;
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const width = entry.contentRect.width;
+        if (width > 0) {
+          setWaveformWidth(Math.round(width));
+        }
+      }
+    });
+    observer.observe(waveformRef.current);
+    return () => observer.disconnect();
+  }, []);
+
+  const barSlotWidth = 5;
+  const padding = 16;
+  const barsCount = Math.max(16, Math.floor((waveformWidth - padding) / barSlotWidth));
   const waveformSeed = state.track ? `${state.track.id || state.track.title}-${durationMs}` : "default";
-  const waveformBars = useMemo(() => generateWaveform(waveformSeed, 52), [waveformSeed]);
+  const waveformBars = useMemo(
+    () => generateWaveform(waveformSeed, barsCount),
+    [waveformSeed, barsCount]
+  );
 
   const handleWaveformPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!waveformRef.current) return;
