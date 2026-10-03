@@ -99,25 +99,72 @@ export function TouchBarSimulator() {
   const currentPosMs = isSeeking ? localSeekMs : state.positionMs;
   const progressRatio = Math.min(1, Math.max(0, currentPosMs / durationMs));
 
-  const [waveformWidth, setWaveformWidth] = useState(300);
+  const [waveformWidth, setWaveformWidth] = useState(0);
+  const observerRef = useRef<ResizeObserver | null>(null);
+
+  const updateWaveformWidth = useCallback((element: HTMLDivElement | null) => {
+    if (!element) return;
+    const rect = element.getBoundingClientRect();
+    if (rect.width > 0) {
+      setWaveformWidth(Math.round(rect.width));
+    }
+  }, []);
+
+  const setWaveformRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      waveformRef.current = node;
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+        observerRef.current = null;
+      }
+      if (node) {
+        updateWaveformWidth(node);
+        const observer = new ResizeObserver((entries) => {
+          for (const entry of entries) {
+            const width = entry.contentRect.width;
+            if (width > 0) {
+              setWaveformWidth(Math.round(width));
+            }
+          }
+        });
+        observer.observe(node);
+        observerRef.current = observer;
+      }
+    },
+    [updateWaveformWidth]
+  );
 
   useEffect(() => {
-    if (!waveformRef.current) return;
-    const observer = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        const width = entry.contentRect.width;
-        if (width > 0) {
-          setWaveformWidth(Math.round(width));
-        }
+    const handleResize = () => {
+      if (waveformRef.current) {
+        updateWaveformWidth(waveformRef.current);
       }
-    });
-    observer.observe(waveformRef.current);
-    return () => observer.disconnect();
+    };
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [updateWaveformWidth]);
+
+  useEffect(() => {
+    return () => {
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+        observerRef.current = null;
+      }
+    };
   }, []);
+
+  const effectiveWidth =
+    waveformWidth > 0
+      ? waveformWidth
+      : typeof window !== "undefined"
+      ? Math.max(300, window.innerWidth - 260)
+      : 300;
 
   const barSlotWidth = 5;
   const padding = 16;
-  const barsCount = Math.max(16, Math.floor((waveformWidth - padding) / barSlotWidth));
+  const barsCount = Math.max(16, Math.floor((effectiveWidth - padding) / barSlotWidth));
   const waveformSeed = state.track ? `${state.track.id || state.track.title}-${durationMs}` : "default";
   const waveformBars = useMemo(
     () => generateWaveform(waveformSeed, barsCount),
@@ -403,7 +450,7 @@ export function TouchBarSimulator() {
             </span>
 
             <div
-              ref={waveformRef}
+              ref={setWaveformRef}
               onPointerDown={handleWaveformPointerDown}
               onPointerMove={handleWaveformPointerMove}
               onPointerLeave={handleWaveformPointerLeave}
