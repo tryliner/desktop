@@ -10,7 +10,7 @@ import {
   VolumeLoud,
   MaximizeSquare3,
 } from "@solar-icons/react";
-import { HeartFill, HeartLine } from "@mingcute/react";
+import { HeartFill, HeartLine, DownLine } from "@mingcute/react";
 import { toVolumeLevel, toVolumeGain } from "@/features/player/engine/volume";
 import { useDisableButtonFocus } from "@/features/navigation/hooks/useDisableButtonFocus";
 import type {
@@ -1208,15 +1208,15 @@ export function TouchBarSimulator() {
                 tabIndex={-1}
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => sendAction({ type: "toggleFullscreen" })}
-                className={`flex h-full aspect-square items-center justify-center transition-colors outline-none focus:outline-none focus-visible:outline-none focus:ring-0 ${
-                  state.isFullscreen
-                    ? "bg-white text-black hover:bg-[#e5e5ea]"
-                    : "bg-[#1c1c1e] text-[#8e8e93] hover:bg-[#2c2c2e] hover:text-white active:bg-[#3a3a3c]"
-                }`}
+                className="flex h-full aspect-square items-center justify-center bg-[#1c1c1e] text-[#8e8e93] hover:bg-[#2c2c2e] hover:text-white active:bg-[#3a3a3c] transition-colors outline-none focus:outline-none focus-visible:outline-none focus:ring-0"
                 style={{ borderRadius: buttonRadius }}
-                title="Fullscreen / Lyrics"
+                title={state.isFullscreen ? "Exit Fullscreen" : "Fullscreen / Lyrics"}
               >
-                <MaximizeSquare3 size={iconSize} weight="Bold" />
+                {state.isFullscreen ? (
+                  <DownLine size={iconSize} />
+                ) : (
+                  <MaximizeSquare3 size={iconSize} weight="Bold" />
+                )}
               </button>
             </motion.div>
           )}
