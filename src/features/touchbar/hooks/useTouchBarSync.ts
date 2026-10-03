@@ -22,6 +22,7 @@ export function useTouchBarSync() {
   const player = usePlayerState();
   const syncedLines = useLyricsStore((s) => s.syncedLines);
   const offsetMs = useLyricsStore((s) => s.offsetMs);
+  const activeLineIndex = useLyricsStore((s) => s.activeLineIndex);
   const currentTrack = player.currentTrack;
   const isLiked = useIsTrackLiked(currentTrack?.id);
   const likeMutation = useLikeTrack();
@@ -120,17 +121,36 @@ export function useTouchBarSync() {
 
     let activeLine: TouchBarActiveLine | null = null;
     let nextLyricText = "";
+    let activeIndex = -1;
+
+    const audioEl =
+      typeof document !== "undefined"
+        ? (document.getElementById("liner-audio") as HTMLAudioElement | null)
+        : null;
+    const currentAudioMs =
+      audioEl && !Number.isNaN(audioEl.currentTime)
+        ? Math.round(audioEl.currentTime * 1000)
+        : player.positionMs;
 
     if (syncedLines.length > 0) {
-      const effectiveTimeMs = player.positionMs + offsetMs;
-      let activeIndex = -1;
-      for (let i = 0; i < syncedLines.length; i++) {
-        if (syncedLines[i].timeMs <= effectiveTimeMs) {
-          activeIndex = i;
-        } else {
-          break;
+      if (
+        typeof activeLineIndex === "number" &&
+        activeLineIndex >= 0 &&
+        activeLineIndex < syncedLines.length
+      ) {
+        activeIndex = activeLineIndex;
+      } else {
+        const earlyLeadMs = 600;
+        const effectiveTimeMs = currentAudioMs + offsetMs + earlyLeadMs;
+        for (let i = 0; i < syncedLines.length; i++) {
+          if (syncedLines[i].timeMs <= effectiveTimeMs) {
+            activeIndex = i;
+          } else {
+            break;
+          }
         }
       }
+
       if (activeIndex >= 0) {
         const line = syncedLines[activeIndex];
         const nextLine = syncedLines[activeIndex + 1];
@@ -174,7 +194,7 @@ export function useTouchBarSync() {
             durationMs: currentTrack.durationMs,
           }
         : null,
-      positionMs: player.positionMs,
+      positionMs: currentAudioMs,
       durationMs: player.durationMs || currentTrack?.durationMs || 0,
       volume: player.volume,
       isLiked,
@@ -196,6 +216,7 @@ export function useTouchBarSync() {
       l: payload.isLiked,
       sh: payload.shuffle,
       ly: payload.activeLyricText,
+      li: activeIndex,
       fs: payload.isFullscreen,
       r: payload.currentRoute,
     });
@@ -216,6 +237,7 @@ export function useTouchBarSync() {
     isLiked,
     syncedLines,
     offsetMs,
+    activeLineIndex,
     location.pathname,
   ]);
 }

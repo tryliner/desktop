@@ -32,6 +32,7 @@ export interface LyricsState {
   availableProviders: LyricsProviderOption[];
   offsetMs: number;
   trackOffsets: Record<string, number>;
+  activeLineIndex: number | null;
 
   setLyricsState: (
     state: Partial<
@@ -43,9 +44,11 @@ export interface LyricsState {
         | "setOffset"
         | "adjustOffset"
         | "resetOffset"
+        | "setActiveLineIndex"
       >
     >,
   ) => void;
+  setActiveLineIndex: (index: number | null) => void;
   selectProvider: (providerName: string) => void;
   setOffset: (offsetMs: number) => void;
   adjustOffset: (deltaMs: number) => void;
@@ -73,6 +76,12 @@ export const useLyricsStore = create<LyricsState>()(
       availableProviders: [],
       offsetMs: 0,
       trackOffsets: {},
+      activeLineIndex: null,
+
+      setActiveLineIndex: (index) => {
+        if (get().activeLineIndex === index) return;
+        set({ activeLineIndex: index });
+      },
 
       setLyricsState: (state) => {
         const current = get();
@@ -214,6 +223,7 @@ export const useLyricsStore = create<LyricsState>()(
           activeProvider: null,
           availableProviders: [],
           offsetMs: 0,
+          activeLineIndex: null,
         }),
     }),
     {
