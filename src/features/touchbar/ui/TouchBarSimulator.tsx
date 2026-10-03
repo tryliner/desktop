@@ -319,12 +319,16 @@ export function TouchBarSimulator() {
             tabIndex={-1}
             onMouseDown={(e) => e.preventDefault()}
             onClick={() => sendAction({ type: "togglePlay" })}
-            className="flex h-6 w-7 items-center justify-center rounded-[6px] bg-[#1c1c1e] text-white hover:bg-[#2c2c2e] active:bg-[#3a3a3c] transition-colors outline-none focus:outline-none focus-visible:outline-none focus:ring-0"
+            className="flex h-6 w-6 items-center justify-center rounded-[6px] bg-[#1c1c1e] text-white hover:bg-[#2c2c2e] active:bg-[#3a3a3c] transition-colors outline-none focus:outline-none focus-visible:outline-none focus:ring-0"
+            title={isPlaying ? "Pause" : "Play"}
           >
             {isPlaying ? (
-              <Pause size={13} weight="Bold" />
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" className="block">
+                <rect x="5.5" y="4" width="4" height="16" rx="1.5" />
+                <rect x="14.5" y="4" width="4" height="16" rx="1.5" />
+              </svg>
             ) : (
-              <Play size={13} weight="Bold" />
+              <Play size={13} weight="Bold" className="ml-0.5" />
             )}
           </button>
           <button
