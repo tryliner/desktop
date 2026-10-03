@@ -285,7 +285,7 @@ export function TouchBarSimulator() {
   const waveformRef = useRef<HTMLDivElement>(null);
   const lastNonZeroVolumeRef = useRef<number>(0.7);
 
-  const estimatedExpandedVolumeWidth = containerHeight + Math.round(230 * scale);
+  const estimatedExpandedVolumeWidth = containerHeight + Math.round(240 * scale);
   const effectiveLeftWidth = leftControlsWidth || Math.round(280 * scale);
   const availableCenterWidthWhenVolumeOpen =
     containerWidth - effectiveLeftWidth - estimatedExpandedVolumeWidth - Math.round(16 * scale);
@@ -956,10 +956,10 @@ export function TouchBarSimulator() {
                 className="flex h-full items-center bg-[#1c1c1e] overflow-hidden"
                 style={{
                   borderRadius: buttonRadius,
-                  width: `${Math.round(220 * scale)}px`,
-                  paddingLeft: `${Math.round(10 * scale)}px`,
-                  paddingRight: `${Math.round(10 * scale)}px`,
-                  gap: `${Math.round(8 * scale)}px`,
+                  width: `${Math.round(240 * scale)}px`,
+                  paddingLeft: `${Math.round(6 * scale)}px`,
+                  paddingRight: `${Math.round(8 * scale)}px`,
+                  gap: `${Math.round(4 * scale)}px`,
                 }}
               >
                 <button
@@ -1029,7 +1029,19 @@ export function TouchBarSimulator() {
                   />
                 </div>
 
-                <VolumeLoud size={iconSize} className="text-[#8e8e93] shrink-0" />
+                <button
+                  type="button"
+                  tabIndex={-1}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => {
+                    setLocalVolumeLevel(1);
+                    sendAction({ type: "volume", payload: { volume: 1 } });
+                  }}
+                  className="flex h-full aspect-square shrink-0 items-center justify-center text-[#8e8e93] hover:text-white transition-colors outline-none focus:outline-none focus-visible:outline-none focus:ring-0"
+                  title="Full volume"
+                >
+                  <VolumeLoud size={iconSize} />
+                </button>
 
                 <span
                   className="shrink-0 font-mono tabular-nums text-[#8e8e93] text-right select-none leading-none flex items-center justify-end h-full"
