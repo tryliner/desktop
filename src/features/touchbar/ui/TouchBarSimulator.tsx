@@ -216,6 +216,7 @@ export function TouchBarSimulator() {
   const scale = Math.max(0.6, Math.min(3, containerHeight / 24));
   const iconSize = Math.round(13 * scale);
   const volumeIconSize = Math.round(14 * scale);
+  const volumeSliderIconSize = Math.round(15.5 * scale);
   const buttonRadius = `${Math.round(6 * scale)}px`;
   const minTimelineWidth = Math.round(180 * scale);
 
@@ -286,10 +287,10 @@ export function TouchBarSimulator() {
   const lastNonZeroVolumeRef = useRef<number>(0.7);
 
   const maxVolumePillWidth = Math.max(
-    Math.round(110 * scale),
+    Math.round(130 * scale),
     Math.min(
-      Math.round(240 * scale),
-      containerWidth - (leftControlsWidth || Math.round(280 * scale)) - containerHeight - Math.round(32 * scale)
+      Math.round(260 * scale),
+      containerWidth - (leftControlsWidth || Math.round(280 * scale)) - containerHeight - Math.round(36 * scale)
     )
   );
   const volumePillWidth = Math.round(maxVolumePillWidth);
@@ -944,20 +945,25 @@ export function TouchBarSimulator() {
                 style={{ borderRadius: buttonRadius }}
                 title="Close"
               >
-                <svg
-                  width={Math.round(10 * scale)}
-                  height={Math.round(10 * scale)}
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="block"
+                <span
+                  className="flex items-center justify-center"
+                  style={{ transform: `translateX(${(-0.5 * scale).toFixed(2)}px)` }}
                 >
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                  <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
+                  <svg
+                    width={Math.round(13 * scale)}
+                    height={Math.round(13 * scale)}
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="3.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="block"
+                  >
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </span>
               </button>
 
               <motion.div
@@ -968,9 +974,9 @@ export function TouchBarSimulator() {
                 className="flex h-full items-center bg-[#1c1c1e] overflow-hidden origin-right shrink-0"
                 style={{
                   borderRadius: buttonRadius,
-                  paddingLeft: `${Math.round(6 * scale)}px`,
-                  paddingRight: `${Math.round(8 * scale)}px`,
-                  gap: `${Math.round(4 * scale)}px`,
+                  paddingLeft: `${Math.round(10 * scale)}px`,
+                  paddingRight: `${Math.round(12 * scale)}px`,
+                  gap: `${Math.round(7 * scale)}px`,
                 }}
               >
                 <button
@@ -981,7 +987,7 @@ export function TouchBarSimulator() {
                   className="flex h-full aspect-square shrink-0 items-center justify-center text-[#8e8e93] hover:text-white transition-colors outline-none focus:outline-none focus-visible:outline-none focus:ring-0"
                   title={activeVolumePercent === 0 ? "Unmute" : "Mute"}
                 >
-                  <VolumeIcon percent={activeVolumePercent} size={iconSize} />
+                  <VolumeIcon percent={activeVolumePercent} size={volumeSliderIconSize} />
                 </button>
 
                 <div className="relative flex flex-1 items-center h-full min-w-0">
@@ -1051,14 +1057,14 @@ export function TouchBarSimulator() {
                   className="flex h-full aspect-square shrink-0 items-center justify-center text-[#8e8e93] hover:text-white transition-colors outline-none focus:outline-none focus-visible:outline-none focus:ring-0"
                   title="Full volume"
                 >
-                  <VolumeLoud size={iconSize} />
+                  <VolumeLoud size={volumeSliderIconSize} />
                 </button>
 
                 <span
                   className="shrink-0 font-mono tabular-nums text-[#8e8e93] text-right select-none leading-none flex items-center justify-end h-full"
                   style={{
-                    width: `${Math.round(24 * scale)}px`,
-                    fontSize: `${(9 * scale).toFixed(1)}px`,
+                    width: `${Math.round(26 * scale)}px`,
+                    fontSize: `${(9.5 * scale).toFixed(1)}px`,
                   }}
                 >
                   {activeVolumePercent}%
