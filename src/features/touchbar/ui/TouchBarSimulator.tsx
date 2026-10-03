@@ -1,5 +1,16 @@
 import { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import {
+  Play,
+  Pause,
+  SkipNext,
+  SkipPrevious,
+  VolumeCross,
+  VolumeSmall,
+  VolumeLoud,
+  MaximizeSquare3,
+} from "@solar-icons/react";
+import { HeartFill, HeartLine } from "@mingcute/react";
 import { toVolumeLevel, toVolumeGain } from "@/features/player/engine/volume";
 import { useDisableButtonFocus } from "@/features/navigation/hooks/useDisableButtonFocus";
 import type { TouchBarAction, TouchBarStatePayload } from "../contracts";
@@ -29,6 +40,16 @@ function generateWaveform(seed: string, count = 52): number[] {
   return result;
 }
 
+function VolumeIcon({ percent, size = 13 }: { percent: number; size?: number }) {
+  if (percent === 0) {
+    return <VolumeCross size={size} weight="Bold" />;
+  }
+  if (percent < 45) {
+    return <VolumeSmall size={size} weight="Bold" />;
+  }
+  return <VolumeLoud size={size} weight="Bold" />;
+}
+
 export function TouchBarSimulator() {
   useDisableButtonFocus();
 
@@ -54,6 +75,7 @@ export function TouchBarSimulator() {
   const [isVolumeOpen, setIsVolumeOpen] = useState(false);
   const [hoverPositionMs, setHoverPositionMs] = useState<number | null>(null);
   const waveformRef = useRef<HTMLDivElement>(null);
+  const lastNonZeroVolumeRef = useRef<number>(0.7);
 
   useEffect(() => {
     if (!window.linerElectron?.onTouchBarSimulatorState) return;
@@ -127,6 +149,19 @@ export function TouchBarSimulator() {
   const volumeLevel = toVolumeLevel(state.volume);
   const volumePercent = Math.round(volumeLevel * 100);
 
+  const handleToggleMute = useCallback(() => {
+    if (volumeLevel > 0) {
+      lastNonZeroVolumeRef.current = volumeLevel;
+      sendAction({ type: "volume", payload: { volume: 0 } });
+    } else {
+      const restoreLevel = lastNonZeroVolumeRef.current || 0.7;
+      sendAction({
+        type: "volume",
+        payload: { volume: toVolumeGain(restoreLevel) },
+      });
+    }
+  }, [volumeLevel, sendAction]);
+
   return (
     <div className="flex h-full w-full select-none items-center justify-between bg-black px-2 text-white antialiased overflow-hidden">
       <div
@@ -170,10 +205,7 @@ export function TouchBarSimulator() {
             onClick={() => sendAction({ type: "prev" })}
             className="flex h-6 w-6 items-center justify-center rounded-[6px] bg-[#1c1c1e] text-[#8e8e93] hover:bg-[#2c2c2e] hover:text-white active:bg-[#3a3a3c] transition-colors outline-none focus:outline-none focus-visible:outline-none focus:ring-0"
           >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-              <rect x="3.5" y="4.5" width="2.5" height="15" rx="1" />
-              <path d="M20 5.2v13.6c0 .8-.9 1.3-1.6.8L8.6 12.8c-.6-.4-.6-1.3 0-1.7l9.8-6.7c.7-.5 1.6 0 1.6.8z" />
-            </svg>
+            <SkipPrevious size={13} weight="Bold" />
           </button>
           <button
             type="button"
@@ -183,14 +215,9 @@ export function TouchBarSimulator() {
             className="flex h-6 w-7 items-center justify-center rounded-[6px] bg-[#1c1c1e] text-white hover:bg-[#2c2c2e] active:bg-[#3a3a3c] transition-colors outline-none focus:outline-none focus-visible:outline-none focus:ring-0"
           >
             {isPlaying ? (
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
-                <rect x="5.5" y="4" width="4" height="16" rx="1.5" />
-                <rect x="14.5" y="4" width="4" height="16" rx="1.5" />
-              </svg>
+              <Pause size={13} weight="Bold" />
             ) : (
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M6 4.5v15c0 .8.9 1.3 1.6.9l12-7.5c.7-.4.7-1.4 0-1.8l-12-7.5c-.7-.4-1.6.1-1.6.9z" />
-              </svg>
+              <Play size={13} weight="Bold" />
             )}
           </button>
           <button
@@ -200,10 +227,7 @@ export function TouchBarSimulator() {
             onClick={() => sendAction({ type: "next" })}
             className="flex h-6 w-6 items-center justify-center rounded-[6px] bg-[#1c1c1e] text-[#8e8e93] hover:bg-[#2c2c2e] hover:text-white active:bg-[#3a3a3c] transition-colors outline-none focus:outline-none focus-visible:outline-none focus:ring-0"
           >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M4 5.2v13.6c0 .8.9 1.3 1.6.8l9.8-6.8c.6-.4.6-1.3 0-1.7L5.6 4.4c-.7-.5-1.6 0-1.6.8z" />
-              <rect x="18" y="4.5" width="2.5" height="15" rx="1" />
-            </svg>
+            <SkipNext size={13} weight="Bold" />
           </button>
         </div>
       </div>
@@ -340,50 +364,42 @@ export function TouchBarSimulator() {
           title={state.isLiked ? "Unlike" : "Like"}
         >
           {state.isLiked ? (
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-            </svg>
+            <HeartFill size={13} />
           ) : (
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-            </svg>
+            <HeartLine size={13} />
           )}
         </button>
 
-        <AnimatePresence initial={false} mode="wait">
+        <AnimatePresence initial={false}>
           {isVolumeOpen ? (
             <motion.div
               key="inline-volume"
               initial={{ width: 24, opacity: 0 }}
               animate={{ width: 172, opacity: 1 }}
               exit={{ width: 24, opacity: 0 }}
-              transition={{ type: "spring", damping: 28, stiffness: 350 }}
+              transition={{ duration: 0.12, ease: "easeOut" }}
               className="flex h-6 items-center rounded-[6px] bg-[#1c1c1e] px-1.5 gap-1.5 overflow-hidden"
             >
               <button
                 type="button"
                 tabIndex={-1}
                 onMouseDown={(e) => e.preventDefault()}
-                onClick={() => sendAction({ type: "volume", payload: { volume: 0 } })}
+                onClick={handleToggleMute}
                 className="flex h-5 w-5 shrink-0 items-center justify-center rounded-[4px] text-[#8e8e93] hover:text-white transition-colors outline-none focus:outline-none focus-visible:outline-none focus:ring-0"
-                title="Mute"
+                title={volumePercent === 0 ? "Unmute" : "Mute"}
               >
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polygon points="10 5 5 9 2 9 2 15 5 15 10 19 10 5" fill="currentColor" stroke="none" />
-                  <line x1="22" y1="9" x2="16" y2="15" />
-                  <line x1="16" y1="9" x2="22" y2="15" />
-                </svg>
+                <VolumeIcon percent={volumePercent} size={13} />
               </button>
 
-              <div className="relative flex flex-1 items-center h-full">
-                <div className="relative h-1 w-full rounded-full bg-[#2c2c2e] overflow-hidden">
+              <div className="relative flex flex-1 items-center h-full min-w-0">
+                <div className="relative h-[4px] w-full rounded-full bg-[#2c2c2e] overflow-hidden my-auto">
                   <div
-                    className="h-full bg-white rounded-full"
+                    className="h-full bg-white rounded-full transition-all duration-75"
                     style={{ width: `${volumePercent}%` }}
                   />
                 </div>
                 <div
-                  className="pointer-events-none absolute top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.6)]"
+                  className="pointer-events-none absolute top-1/2 h-[10px] w-[10px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.6)]"
                   style={{ left: `${volumePercent}%` }}
                 />
                 <input
@@ -403,7 +419,7 @@ export function TouchBarSimulator() {
                 />
               </div>
 
-              <span className="w-6 shrink-0 font-mono text-[9px] tabular-nums text-[#8e8e93] text-right select-none">
+              <span className="w-7 shrink-0 font-mono text-[9.5px] tabular-nums text-[#8e8e93] text-right select-none leading-none flex items-center justify-end h-full">
                 {volumePercent}%
               </span>
 
@@ -415,7 +431,7 @@ export function TouchBarSimulator() {
                 className="flex h-5 w-5 shrink-0 items-center justify-center rounded-[4px] text-[#8e8e93] hover:bg-[#2c2c2e] hover:text-white transition-colors outline-none focus:outline-none focus-visible:outline-none focus:ring-0"
                 title="Close Volume"
               >
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="block">
                   <line x1="18" y1="6" x2="6" y2="18" />
                   <line x1="6" y1="6" x2="18" y2="18" />
                 </svg>
@@ -427,19 +443,15 @@ export function TouchBarSimulator() {
               type="button"
               tabIndex={-1}
               onMouseDown={(e) => e.preventDefault()}
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              transition={{ duration: 0.12 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.08, ease: "easeOut" }}
               onClick={() => setIsVolumeOpen(true)}
               className="flex h-6 w-6 items-center justify-center rounded-[6px] bg-[#1c1c1e] text-[#8e8e93] hover:bg-[#2c2c2e] hover:text-white active:bg-[#3a3a3c] transition-colors outline-none focus:outline-none focus-visible:outline-none focus:ring-0"
               title="Volume"
             >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polygon points="10 5 5 9 2 9 2 15 5 15 10 19 10 5" fill="currentColor" stroke="none" />
-                <path d="M14.5 9a4 4 0 0 1 0 6" />
-                <path d="M17.5 6a8 8 0 0 1 0 12" />
-              </svg>
+              <VolumeIcon percent={volumePercent} size={14} />
             </motion.button>
           )}
         </AnimatePresence>
@@ -456,12 +468,7 @@ export function TouchBarSimulator() {
           }`}
           title="Fullscreen / Lyrics"
         >
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M15 3h6v6" />
-            <path d="M9 21H3v-6" />
-            <path d="M21 3l-7 7" />
-            <path d="M3 21l7-7" />
-          </svg>
+          <MaximizeSquare3 size={13} weight="Bold" />
         </button>
       </div>
     </div>
