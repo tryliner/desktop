@@ -300,21 +300,38 @@ export function TouchBarSimulator() {
     return () => cancelAnimationFrame(rafId);
   }, [state.status, state.positionMs, state.offsetMs, isSeeking, localSeekMs, displayLine]);
 
-  const volumeLevel = toVolumeLevel(state.volume);
-  const volumePercent = Math.round(volumeLevel * 100);
+  const [localVolumeLevel, setLocalVolumeLevel] = useState<number | null>(null);
+  const [isDraggingVolume, setIsDraggingVolume] = useState(false);
+
+  useEffect(() => {
+    if (!isDraggingVolume) return;
+    const handleUp = () => {
+      setIsDraggingVolume(false);
+      setLocalVolumeLevel(null);
+    };
+    window.addEventListener("pointerup", handleUp);
+    return () => window.removeEventListener("pointerup", handleUp);
+  }, [isDraggingVolume]);
+
+  const baseVolumeLevel = toVolumeLevel(state.volume);
+  const activeVolumeLevel =
+    isDraggingVolume && localVolumeLevel !== null ? localVolumeLevel : baseVolumeLevel;
+  const activeVolumePercent = Math.round(activeVolumeLevel * 100);
 
   const handleToggleMute = useCallback(() => {
-    if (volumeLevel > 0) {
-      lastNonZeroVolumeRef.current = volumeLevel;
+    if (activeVolumeLevel > 0) {
+      lastNonZeroVolumeRef.current = activeVolumeLevel;
+      setLocalVolumeLevel(0);
       sendAction({ type: "volume", payload: { volume: 0 } });
     } else {
       const restoreLevel = lastNonZeroVolumeRef.current || 0.7;
+      setLocalVolumeLevel(restoreLevel);
       sendAction({
         type: "volume",
         payload: { volume: toVolumeGain(restoreLevel) },
       });
     }
-  }, [volumeLevel, sendAction]);
+  }, [activeVolumeLevel, sendAction]);
 
   return (
     <div className="flex h-full w-full select-none items-center justify-between bg-black px-2 text-white antialiased overflow-hidden">
@@ -557,21 +574,25 @@ export function TouchBarSimulator() {
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={handleToggleMute}
                 className="flex h-5 w-5 shrink-0 items-center justify-center rounded-[4px] text-[#8e8e93] hover:text-white transition-colors outline-none focus:outline-none focus-visible:outline-none focus:ring-0"
-                title={volumePercent === 0 ? "Unmute" : "Mute"}
+                title={activeVolumePercent === 0 ? "Unmute" : "Mute"}
               >
-                <VolumeIcon percent={volumePercent} size={13} />
+                <VolumeIcon percent={activeVolumePercent} size={13} />
               </button>
 
               <div className="relative flex flex-1 items-center h-full min-w-0">
-                <div className="relative h-[4px] w-full rounded-full bg-[#2c2c2e] overflow-hidden my-auto">
+                <div className="relative h-[5px] w-full rounded-full bg-[#2c2c2e] overflow-hidden my-auto">
                   <div
-                    className="h-full bg-white rounded-full transition-all duration-75"
-                    style={{ width: `${volumePercent}%` }}
+                    className={`h-full bg-white rounded-full ${
+                      isDraggingVolume ? "" : "transition-all duration-150 ease-out"
+                    }`}
+                    style={{ width: `${activeVolumePercent}%` }}
                   />
                 </div>
                 <div
-                  className="pointer-events-none absolute top-1/2 h-[10px] w-[10px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.6)]"
-                  style={{ left: `${volumePercent}%` }}
+                  className={`pointer-events-none absolute top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.6)] ${
+                    isDraggingVolume ? "h-3 w-3 shadow-[0_2px_5px_rgba(0,0,0,0.8)]" : "h-[10px] w-[10px]"
+                  } ${isDraggingVolume ? "" : "transition-all duration-150 ease-out"}`}
+                  style={{ left: `${activeVolumePercent}%` }}
                 />
                 <input
                   type="range"
@@ -579,19 +600,26 @@ export function TouchBarSimulator() {
                   min={0}
                   max={1}
                   step={0.01}
-                  value={volumeLevel}
-                  onChange={(e) =>
+                  value={activeVolumeLevel}
+                  onPointerDown={() => setIsDraggingVolume(true)}
+                  onPointerUp={() => {
+                    setIsDraggingVolume(false);
+                    setLocalVolumeLevel(null);
+                  }}
+                  onChange={(e) => {
+                    const val = Number(e.target.value);
+                    setLocalVolumeLevel(val);
                     sendAction({
                       type: "volume",
-                      payload: { volume: toVolumeGain(Number(e.target.value)) },
-                    })
-                  }
+                      payload: { volume: toVolumeGain(val) },
+                    });
+                  }}
                   className="absolute inset-0 h-full w-full opacity-0 cursor-pointer outline-none focus:outline-none focus-visible:outline-none focus:ring-0"
                 />
               </div>
 
               <span className="w-7 shrink-0 font-mono text-[9.5px] tabular-nums text-[#8e8e93] text-right select-none leading-none flex items-center justify-end h-full">
-                {volumePercent}%
+                {activeVolumePercent}%
               </span>
 
               <button
@@ -622,7 +650,7 @@ export function TouchBarSimulator() {
               className="flex h-6 w-6 items-center justify-center rounded-[6px] bg-[#1c1c1e] text-[#8e8e93] hover:bg-[#2c2c2e] hover:text-white active:bg-[#3a3a3c] transition-colors outline-none focus:outline-none focus-visible:outline-none focus:ring-0"
               title="Volume"
             >
-              <VolumeIcon percent={volumePercent} size={14} />
+              <VolumeIcon percent={activeVolumePercent} size={14} />
             </motion.button>
           )}
         </AnimatePresence>
