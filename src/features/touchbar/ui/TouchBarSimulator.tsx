@@ -347,27 +347,27 @@ export function TouchBarSimulator() {
   }, [activeVolumeLevel, sendAction]);
 
   return (
-    <div className="flex h-full w-full select-none items-center justify-between bg-black px-2 text-white antialiased overflow-hidden">
+    <div className="flex h-full w-full select-none items-center justify-between bg-black px-1 text-white antialiased overflow-hidden">
       <div
-        className="flex items-center gap-1.5 shrink-0"
+        className="flex h-full items-center gap-1.5 shrink-0"
         style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
       >
         <div
-          className="flex h-6 w-2.5 cursor-grab items-center justify-center text-[#38383a] hover:text-[#8e8e93] active:cursor-grabbing"
+          className="flex h-full w-2.5 cursor-grab items-center justify-center text-[#38383a] hover:text-[#8e8e93] active:cursor-grabbing"
           style={{ WebkitAppRegion: "drag" } as React.CSSProperties}
         >
           <span className="text-[10px] leading-none">⠿</span>
         </div>
 
-        <div className="flex items-center gap-2 pl-0.5 pr-1">
+        <div className="flex h-full items-center gap-2 pl-0.5 pr-1">
           {state.track?.cover ? (
             <img
               src={state.track.cover}
               alt=""
-              className="h-6 w-6 shrink-0 rounded-[5px] object-cover ring-1 ring-white/10"
+              className="h-full aspect-square shrink-0 rounded-[5px] object-cover ring-1 ring-white/10"
             />
           ) : (
-            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-[5px] bg-[#1c1c1e] text-[#8e8e93] text-[10px]">
+            <div className="flex h-full aspect-square shrink-0 items-center justify-center rounded-[5px] bg-[#1c1c1e] text-[#8e8e93] text-[10px]">
               ♪
             </div>
           )}
@@ -381,13 +381,13 @@ export function TouchBarSimulator() {
           </div>
         </div>
 
-        <div className="flex items-center gap-1">
+        <div className="flex h-full items-center gap-1">
           <button
             type="button"
             tabIndex={-1}
             onMouseDown={(e) => e.preventDefault()}
             onClick={() => sendAction({ type: "prev" })}
-            className="flex h-6 w-6 items-center justify-center rounded-[6px] bg-[#1c1c1e] text-[#8e8e93] hover:bg-[#2c2c2e] hover:text-white active:bg-[#3a3a3c] transition-colors outline-none focus:outline-none focus-visible:outline-none focus:ring-0"
+            className="flex h-full aspect-square items-center justify-center rounded-[6px] bg-[#1c1c1e] text-[#8e8e93] hover:bg-[#2c2c2e] hover:text-white active:bg-[#3a3a3c] transition-colors outline-none focus:outline-none focus-visible:outline-none focus:ring-0"
           >
             <SkipPrevious size={13} weight="Bold" />
           </button>
@@ -396,7 +396,7 @@ export function TouchBarSimulator() {
             tabIndex={-1}
             onMouseDown={(e) => e.preventDefault()}
             onClick={() => sendAction({ type: "togglePlay" })}
-            className="flex h-6 w-6 items-center justify-center rounded-[6px] bg-[#1c1c1e] text-white hover:bg-[#2c2c2e] active:bg-[#3a3a3c] transition-colors outline-none focus:outline-none focus-visible:outline-none focus:ring-0"
+            className="flex h-full aspect-square items-center justify-center rounded-[6px] bg-[#1c1c1e] text-white hover:bg-[#2c2c2e] active:bg-[#3a3a3c] transition-colors outline-none focus:outline-none focus-visible:outline-none focus:ring-0"
             title={isPlaying ? "Pause" : "Play"}
           >
             {isPlaying ? (
@@ -414,7 +414,7 @@ export function TouchBarSimulator() {
             tabIndex={-1}
             onMouseDown={(e) => e.preventDefault()}
             onClick={() => sendAction({ type: "next" })}
-            className="flex h-6 w-6 items-center justify-center rounded-[6px] bg-[#1c1c1e] text-[#8e8e93] hover:bg-[#2c2c2e] hover:text-white active:bg-[#3a3a3c] transition-colors outline-none focus:outline-none focus-visible:outline-none focus:ring-0"
+            className="flex h-full aspect-square items-center justify-center rounded-[6px] bg-[#1c1c1e] text-[#8e8e93] hover:bg-[#2c2c2e] hover:text-white active:bg-[#3a3a3c] transition-colors outline-none focus:outline-none focus-visible:outline-none focus:ring-0"
           >
             <SkipNext size={13} weight="Bold" />
           </button>
@@ -422,13 +422,13 @@ export function TouchBarSimulator() {
       </div>
 
       <div
-        className="relative mx-1.5 flex flex-1 min-w-0 items-center justify-center overflow-hidden"
+        className="relative mx-1.5 flex h-full flex-1 min-w-0 items-center justify-center overflow-hidden"
         style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
       >
         {state.isFullscreen ? (
           <div
             onClick={() => sendAction({ type: "toggleFullscreen" })}
-            className="relative flex h-full w-full cursor-pointer flex-col items-center justify-center overflow-hidden text-center"
+            className="relative flex h-full w-full cursor-pointer flex-col items-center justify-center overflow-hidden text-center py-0.5"
           >
             <div className="relative flex items-center justify-center w-full min-h-[16px]">
               <AnimatePresence mode="popLayout" initial={false}>
@@ -493,7 +493,7 @@ export function TouchBarSimulator() {
             </div>
           </div>
         ) : (
-          <div className="flex h-6 w-full items-center gap-1.5 px-0.5">
+          <div className="flex h-full w-full items-center gap-1.5 px-0.5">
             <span className="w-7 shrink-0 font-mono text-[9.5px] tabular-nums text-[#8e8e93] text-right">
               {formatTime(hoverPositionMs !== null ? hoverPositionMs : currentPosMs)}
             </span>
@@ -503,13 +503,13 @@ export function TouchBarSimulator() {
               onPointerDown={handleWaveformPointerDown}
               onPointerMove={handleWaveformPointerMove}
               onPointerLeave={handleWaveformPointerLeave}
-              className="relative flex h-6 flex-1 min-w-[60px] cursor-pointer items-center rounded-[6px] bg-[#161618] hover:bg-[#19191c] transition-colors overflow-hidden select-none"
+              className="relative flex h-full flex-1 min-w-[60px] cursor-pointer items-center rounded-[6px] bg-[#161618] hover:bg-[#19191c] transition-colors overflow-hidden select-none py-1"
             >
-              <div className="absolute inset-x-2 inset-y-0 flex items-center">
+              <div className="absolute inset-x-2 inset-y-1 flex items-center">
                 {waveformBars.map((heightRatio, i) => {
                   const barRatio = i / (waveformBars.length - 1);
                   const isPlayed = barRatio <= activeTimelineRatio;
-                  const pixelHeight = Math.max(3, Math.round(heightRatio * 16));
+                  const pixelHeight = Math.max(3, Math.round(heightRatio * 18));
 
                   return (
                     <div
@@ -578,143 +578,151 @@ export function TouchBarSimulator() {
       </div>
 
       <div
-        className="flex items-center gap-1 pl-0.5 shrink-0"
+        className="flex h-full items-center gap-1 pl-0.5 shrink-0"
         style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
       >
-        <button
-          type="button"
-          tabIndex={-1}
-          onMouseDown={(e) => e.preventDefault()}
-          onClick={() => sendAction({ type: "like" })}
-          className={`flex h-6 w-6 items-center justify-center rounded-[6px] bg-[#1c1c1e] transition-colors outline-none focus:outline-none focus-visible:outline-none focus:ring-0 ${
-            state.isLiked
-              ? "text-red-500 hover:text-red-400"
-              : "text-[#8e8e93] hover:text-white"
-          }`}
-          title={state.isLiked ? "Unlike" : "Like"}
-        >
-          {state.isLiked ? (
-            <span className="flex items-center justify-center" style={{ transform: "translateX(-0.5px)" }}>
-              <HeartFill size={13} />
-            </span>
-          ) : (
-            <span className="flex items-center justify-center" style={{ transform: "translateX(-0.5px)" }}>
-              <HeartLine size={13} />
-            </span>
-          )}
-        </button>
-
-        <AnimatePresence initial={false}>
+        <AnimatePresence mode="popLayout" initial={false}>
           {isVolumeOpen ? (
             <motion.div
-              key="inline-volume"
-              initial={{ width: 24, opacity: 0 }}
-              animate={{ width: 172, opacity: 1 }}
-              exit={{ width: 24, opacity: 0 }}
-              transition={{ duration: 0.12, ease: "easeOut" }}
-              className="flex h-6 items-center rounded-[6px] bg-[#1c1c1e] px-1.5 gap-1.5 overflow-hidden"
+              key="expanded-volume"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.15, ease: "easeOut" }}
+              className="flex h-full items-center gap-1.5"
             >
               <button
                 type="button"
                 tabIndex={-1}
                 onMouseDown={(e) => e.preventDefault()}
-                onClick={handleToggleMute}
-                className="flex h-5 w-5 shrink-0 items-center justify-center rounded-[4px] text-[#8e8e93] hover:text-white transition-colors outline-none focus:outline-none focus-visible:outline-none focus:ring-0"
-                title={activeVolumePercent === 0 ? "Unmute" : "Mute"}
-              >
-                <VolumeIcon percent={activeVolumePercent} size={13} />
-              </button>
-
-              <div className="relative flex flex-1 items-center h-full min-w-0">
-                <div className="relative h-[5px] w-full rounded-full bg-[#2c2c2e] overflow-hidden my-auto">
-                  <div
-                    className={`h-full bg-white rounded-full ${
-                      isDraggingVolume ? "" : "transition-all duration-150 ease-out"
-                    }`}
-                    style={{ width: `${activeVolumePercent}%` }}
-                  />
-                </div>
-                <div
-                  className={`pointer-events-none absolute top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.6)] ${
-                    isDraggingVolume ? "h-3 w-3 shadow-[0_2px_5px_rgba(0,0,0,0.8)]" : "h-[10px] w-[10px]"
-                  } ${isDraggingVolume ? "" : "transition-all duration-150 ease-out"}`}
-                  style={{ left: `${activeVolumePercent}%` }}
-                />
-                <input
-                  type="range"
-                  tabIndex={-1}
-                  min={0}
-                  max={1}
-                  step={0.01}
-                  value={activeVolumeLevel}
-                  onPointerDown={() => setIsDraggingVolume(true)}
-                  onPointerUp={() => {
-                    setIsDraggingVolume(false);
-                    setLocalVolumeLevel(null);
-                  }}
-                  onChange={(e) => {
-                    const val = Number(e.target.value);
-                    setLocalVolumeLevel(val);
-                    sendAction({
-                      type: "volume",
-                      payload: { volume: toVolumeGain(val) },
-                    });
-                  }}
-                  className="absolute inset-0 h-full w-full opacity-0 cursor-pointer outline-none focus:outline-none focus-visible:outline-none focus:ring-0"
-                />
-              </div>
-
-              <span className="w-7 shrink-0 font-mono text-[9.5px] tabular-nums text-[#8e8e93] text-right select-none leading-none flex items-center justify-end h-full">
-                {activeVolumePercent}%
-              </span>
-
-              <button
-                type="button"
-                tabIndex={-1}
-                onMouseDown={(e) => e.preventDefault()}
                 onClick={() => setIsVolumeOpen(false)}
-                className="flex h-5 w-5 shrink-0 items-center justify-center rounded-[4px] text-[#8e8e93] hover:bg-[#2c2c2e] hover:text-white transition-colors outline-none focus:outline-none focus-visible:outline-none focus:ring-0"
-                title="Close Volume"
+                className="flex h-full aspect-square shrink-0 items-center justify-center rounded-full bg-[#1c1c1e] text-[#8e8e93] hover:bg-[#2c2c2e] hover:text-white transition-colors outline-none focus:outline-none focus-visible:outline-none focus:ring-0"
+                title="Close"
               >
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="block">
                   <line x1="18" y1="6" x2="6" y2="18" />
                   <line x1="6" y1="6" x2="18" y2="18" />
                 </svg>
               </button>
+
+              <div className="flex h-full w-[220px] items-center rounded-full bg-[#1c1c1e] px-2.5 gap-2 overflow-hidden">
+                <button
+                  type="button"
+                  tabIndex={-1}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={handleToggleMute}
+                  className="flex h-full aspect-square shrink-0 items-center justify-center text-[#8e8e93] hover:text-white transition-colors outline-none focus:outline-none focus-visible:outline-none focus:ring-0"
+                  title={activeVolumePercent === 0 ? "Unmute" : "Mute"}
+                >
+                  <VolumeIcon percent={activeVolumePercent} size={13} />
+                </button>
+
+                <div className="relative flex flex-1 items-center h-full min-w-0">
+                  <div className="relative h-[4px] w-full rounded-full bg-[#2c2c2e] overflow-hidden my-auto">
+                    <div
+                      className={`h-full bg-[#0a84ff] rounded-full ${
+                        isDraggingVolume ? "" : "transition-all duration-150 ease-out"
+                      }`}
+                      style={{ width: `${activeVolumePercent}%` }}
+                    />
+                  </div>
+                  <div
+                    className={`pointer-events-none absolute top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-[3.5px] bg-white shadow-[0_1px_4px_rgba(0,0,0,0.6)] ${
+                      isDraggingVolume ? "h-3.5 w-3.5 shadow-[0_2px_6px_rgba(0,0,0,0.9)] scale-110" : "h-3 w-3"
+                    } ${isDraggingVolume ? "" : "transition-all duration-150 ease-out"}`}
+                    style={{ left: `${activeVolumePercent}%` }}
+                  />
+                  <input
+                    type="range"
+                    tabIndex={-1}
+                    min={0}
+                    max={1}
+                    step={0.01}
+                    value={activeVolumeLevel}
+                    onPointerDown={() => setIsDraggingVolume(true)}
+                    onPointerUp={() => {
+                      setIsDraggingVolume(false);
+                      setLocalVolumeLevel(null);
+                    }}
+                    onChange={(e) => {
+                      const val = Number(e.target.value);
+                      setLocalVolumeLevel(val);
+                      sendAction({
+                        type: "volume",
+                        payload: { volume: toVolumeGain(val) },
+                      });
+                    }}
+                    className="absolute inset-0 h-full w-full opacity-0 cursor-pointer outline-none focus:outline-none focus-visible:outline-none focus:ring-0"
+                  />
+                </div>
+
+                <VolumeLoud size={13} className="text-[#8e8e93] shrink-0" />
+
+                <span className="w-6 shrink-0 font-mono text-[9px] tabular-nums text-[#8e8e93] text-right select-none leading-none flex items-center justify-end h-full">
+                  {activeVolumePercent}%
+                </span>
+              </div>
             </motion.div>
           ) : (
-            <motion.button
-              key="volume-icon"
-              type="button"
-              tabIndex={-1}
-              onMouseDown={(e) => e.preventDefault()}
+            <motion.div
+              key="compact-controls"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.08, ease: "easeOut" }}
-              onClick={() => setIsVolumeOpen(true)}
-              className="flex h-6 w-6 items-center justify-center rounded-[6px] bg-[#1c1c1e] text-[#8e8e93] hover:bg-[#2c2c2e] hover:text-white active:bg-[#3a3a3c] transition-colors outline-none focus:outline-none focus-visible:outline-none focus:ring-0"
-              title="Volume"
+              transition={{ duration: 0.12, ease: "easeOut" }}
+              className="flex h-full items-center gap-1"
             >
-              <VolumeIcon percent={activeVolumePercent} size={14} />
-            </motion.button>
+              <button
+                type="button"
+                tabIndex={-1}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => sendAction({ type: "like" })}
+                className={`flex h-full aspect-square items-center justify-center rounded-[6px] bg-[#1c1c1e] transition-colors outline-none focus:outline-none focus-visible:outline-none focus:ring-0 ${
+                  state.isLiked
+                    ? "text-red-500 hover:text-red-400"
+                    : "text-[#8e8e93] hover:text-white"
+                }`}
+                title={state.isLiked ? "Unlike" : "Like"}
+              >
+                {state.isLiked ? (
+                  <span className="flex items-center justify-center" style={{ transform: "translateX(-0.5px)" }}>
+                    <HeartFill size={13} />
+                  </span>
+                ) : (
+                  <span className="flex items-center justify-center" style={{ transform: "translateX(-0.5px)" }}>
+                    <HeartLine size={13} />
+                  </span>
+                )}
+              </button>
+
+              <button
+                type="button"
+                tabIndex={-1}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => setIsVolumeOpen(true)}
+                className="flex h-full aspect-square items-center justify-center rounded-[6px] bg-[#1c1c1e] text-[#8e8e93] hover:bg-[#2c2c2e] hover:text-white active:bg-[#3a3a3c] transition-colors outline-none focus:outline-none focus-visible:outline-none focus:ring-0"
+                title="Volume"
+              >
+                <VolumeIcon percent={activeVolumePercent} size={14} />
+              </button>
+
+              <button
+                type="button"
+                tabIndex={-1}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => sendAction({ type: "toggleFullscreen" })}
+                className={`flex h-full aspect-square items-center justify-center rounded-[6px] transition-colors outline-none focus:outline-none focus-visible:outline-none focus:ring-0 ${
+                  state.isFullscreen
+                    ? "bg-white text-black hover:bg-[#e5e5ea]"
+                    : "bg-[#1c1c1e] text-[#8e8e93] hover:bg-[#2c2c2e] hover:text-white active:bg-[#3a3a3c]"
+                }`}
+                title="Fullscreen / Lyrics"
+              >
+                <MaximizeSquare3 size={13} weight="Bold" />
+              </button>
+            </motion.div>
           )}
         </AnimatePresence>
-
-        <button
-          type="button"
-          tabIndex={-1}
-          onMouseDown={(e) => e.preventDefault()}
-          onClick={() => sendAction({ type: "toggleFullscreen" })}
-          className={`flex h-6 w-6 items-center justify-center rounded-[6px] transition-colors outline-none focus:outline-none focus-visible:outline-none focus:ring-0 ${
-            state.isFullscreen
-              ? "bg-white text-black hover:bg-[#e5e5ea]"
-              : "bg-[#1c1c1e] text-[#8e8e93] hover:bg-[#2c2c2e] hover:text-white active:bg-[#3a3a3c]"
-          }`}
-          title="Fullscreen / Lyrics"
-        >
-          <MaximizeSquare3 size={13} weight="Bold" />
-        </button>
       </div>
     </div>
   );
