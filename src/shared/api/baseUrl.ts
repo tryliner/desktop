@@ -3,7 +3,7 @@ export const DEFAULT_PRIMARY_API = "https://api.tryliner.fun";
 export const FALLBACK_EDGE_API = "http://edge.tryliner.fun:10518";
 
 const STORAGE_KEY = "liner_active_api_base";
-const HEALTH_TIMEOUT_MS = 2000;
+const HEALTH_TIMEOUT_MS = 6000;
 
 function isExplicitCustomOverride(url?: string): boolean {
   if (!url) return false;
@@ -16,13 +16,6 @@ function loadStoredBaseUrl(): string {
   if (isExplicitCustomOverride(envUrl)) {
     return envUrl!.replace(/\/+$/, "");
   }
-  if (typeof window === "undefined") return DEFAULT_PRIMARY_API;
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved === DEFAULT_PRIMARY_API || saved === FALLBACK_EDGE_API) {
-      return saved;
-    }
-  } catch {}
   return DEFAULT_PRIMARY_API;
 }
 

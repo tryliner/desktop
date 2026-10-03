@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { DIAG_ENDPOINTS, runAllChecks, type DiagnosticsResult } from "../lib/diagnostics";
 import { buildOfflineDump, downloadDump, type SaveDumpResult } from "../lib/dump";
+import { DEFAULT_PRIMARY_API, setApiBaseUrl } from "@/shared/api/baseUrl";
 
 export const TRIP_COUNT = 3;
 export const TRIP_WINDOW_MS = 60_000;
@@ -69,6 +70,7 @@ export const useConnectivityStore = create<ConnectivityState>((set, get) => ({
     await get().runDiagnostics();
     const apiOk = get().checks.some((c) => c.id === "api" && c.status === "ok");
     if (apiOk) {
+      setApiBaseUrl(DEFAULT_PRIMARY_API);
       set({ tripped: false, visible: false, failures: [] });
     }
   },
