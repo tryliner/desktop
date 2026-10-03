@@ -147,14 +147,6 @@ export function useTouchBarSync() {
             timeMs: w.timeMs,
             endMs: w.endMs,
           }));
-        } else if (line.text.trim()) {
-          const tokens = line.text.trim().split(/\s+/);
-          const perWordDuration = lineDurationMs / tokens.length;
-          words = tokens.map((token, i) => ({
-            text: token + (i < tokens.length - 1 ? " " : ""),
-            timeMs: line.timeMs + i * perWordDuration,
-            endMs: line.timeMs + (i + 1) * perWordDuration,
-          }));
         }
 
         activeLine = {
