@@ -36,6 +36,7 @@ export interface TouchBarStatePayload {
   offsetMs?: number;
   currentRoute?: string;
   isFullscreen?: boolean;
+  hasSyncedLyrics?: boolean;
 }
 
 export interface TouchBarAction {

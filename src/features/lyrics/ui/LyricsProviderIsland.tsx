@@ -30,6 +30,7 @@ export function LyricsProviderIsland() {
     activeProvider,
     selectProvider,
     braccatoLyrics,
+    rawFormat,
     offsetMs,
     setOffset,
     adjustOffset,
@@ -94,7 +95,14 @@ export function LyricsProviderIsland() {
     [unit, setOffset],
   );
 
-  if (availableProviders.length === 0 || braccatoLyrics.length === 0) {
+  const isOnlyPlainText =
+    rawFormat === "plain" ||
+    (braccatoLyrics.length > 0 &&
+      braccatoLyrics.every(
+        (l) => (l.startTimeMs ?? 0) === 0 && (l.durationMs ?? 0) === 0,
+      ));
+
+  if (availableProviders.length === 0 || braccatoLyrics.length === 0 || isOnlyPlainText) {
     return null;
   }
 

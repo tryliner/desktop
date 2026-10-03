@@ -251,6 +251,12 @@ export function useTouchBarSync() {
       }
     }
 
+    const hasSyncedLyrics =
+      syncedLines.length > 0 &&
+      syncedLines.some(
+        (l) => (l.timeMs ?? 0) > 0 || Boolean((l.durationMs ?? 0) > 0 && l.isInstrumental),
+      );
+
     const isFullscreen = location.pathname === "/player" || Boolean(player.fullscreen);
 
     const payload: TouchBarStatePayload = {
@@ -271,12 +277,13 @@ export function useTouchBarSync() {
       isLiked,
       shuffle: player.shuffle,
       repeat: player.repeat,
-      activeLine,
-      activeLyricText: activeLine?.text || "",
-      nextLyricText,
+      activeLine: hasSyncedLyrics ? activeLine : null,
+      activeLyricText: hasSyncedLyrics ? (activeLine?.text || "") : "",
+      nextLyricText: hasSyncedLyrics ? nextLyricText : "",
       offsetMs,
       currentRoute: location.pathname,
       isFullscreen,
+      hasSyncedLyrics,
     };
 
     const serialized = JSON.stringify({
@@ -289,6 +296,7 @@ export function useTouchBarSync() {
       ly: payload.activeLyricText,
       li: activeIndex,
       fs: payload.isFullscreen,
+      sl: payload.hasSyncedLyrics,
       r: payload.currentRoute,
     });
 

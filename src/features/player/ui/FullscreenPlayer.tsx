@@ -11,7 +11,7 @@ import { playerEngine } from "../engine/playerEngine";
 import { useLyricsStore, LyricsProviderIsland, braccatoThemeCss } from "@/features/lyrics";
 import { AnimatePresence, motion } from "framer-motion";
 import { PlayerUiElements } from "./PlayerUiElements";
-import { DownLine } from "@mingcute/react";
+import { DownFill } from "@mingcute/react";
 import { preloadCoverArt, useCoverSrc } from "@/features/covers";
 import "@braccato/core/element";
 import "@braccato/core/styles/variables.css";
@@ -303,6 +303,7 @@ export function FullscreenPlayer({
 
   const {
     braccatoLyrics,
+    rawFormat,
     lyricsLoading,
     lyricsError,
     plainLyrics,
@@ -323,6 +324,13 @@ export function FullscreenPlayer({
   const currentTrackId = player.currentTrack?.id;
   const isMatchingTrack = Boolean(currentTrackId && currentLyricsTrackId === currentTrackId);
   const hasLyrics = isMatchingTrack && braccatoLyrics.length > 0;
+  const isOnlyPlainText =
+    rawFormat === "plain" ||
+    (braccatoLyrics.length > 0 &&
+      braccatoLyrics.every(
+        (l) => (l.startTimeMs ?? 0) === 0 && (l.durationMs ?? 0) === 0,
+      ));
+  const hasSyncedLyrics = hasLyrics && !isOnlyPlainText;
   const isInstrumental =
     isMatchingTrack &&
     !lyricsLoading &&
@@ -360,9 +368,11 @@ export function FullscreenPlayer({
         </div>
 
         <div className="flex-1 h-full min-h-0 pl-2 pr-6 flex flex-col relative">
-          <div className="absolute top-[12px] left-1/2 -translate-x-1/2 z-30 pointer-events-none flex justify-center">
-            <LyricsProviderIsland />
-          </div>
+          {hasSyncedLyrics && (
+            <div className="absolute top-[12px] left-1/2 -translate-x-1/2 z-30 pointer-events-none flex justify-center">
+              <LyricsProviderIsland />
+            </div>
+          )}
 
           <div
             className="flex-1 min-h-0 relative w-full h-full"
@@ -465,9 +475,9 @@ export function FullscreenPlayer({
         title={t("player.close_fullscreen") || "Close"}
         onClick={onClose}
         data-no-window-drag
-        className="absolute top-[12px] left-[12px] z-30 inline-flex h-[32px] w-[32px] items-center justify-center rounded-lg border-none bg-black/50 backdrop-blur-xl text-white/80 hover:text-white hover:bg-white/10 active:scale-[0.94] transition-all cursor-pointer select-none pointer-events-auto"
+        className="absolute top-[12px] left-[11.8px] z-30 inline-flex h-[32px] w-[32px] items-center justify-center rounded-lg border-none bg-black/50 backdrop-blur-xl text-white/80 hover:text-white hover:bg-white/10 active:scale-[0.94] transition-all cursor-pointer select-none pointer-events-auto"
       >
-        <DownLine size={18} />
+        <DownFill size={19} />
       </button>
     </div>
   );

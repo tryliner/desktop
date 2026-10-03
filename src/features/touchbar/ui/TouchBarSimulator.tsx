@@ -10,7 +10,7 @@ import {
   VolumeLoud,
   MaximizeSquare3,
 } from "@solar-icons/react";
-import { HeartFill, HeartLine, DownLine } from "@mingcute/react";
+import { HeartFill, HeartLine, DownFill } from "@mingcute/react";
 import { toVolumeLevel, toVolumeGain } from "@/features/player/engine/volume";
 import { useDisableButtonFocus } from "@/features/navigation/hooks/useDisableButtonFocus";
 import type {
@@ -484,7 +484,8 @@ export function TouchBarSimulator() {
     anchorTimeRef.current = performance.now();
   }, [state.positionMs, state.status]);
 
-  const displayLine = state.activeLine || lastActiveLineRef.current;
+  const showFullscreenLyrics = Boolean(state.isFullscreen && state.hasSyncedLyrics);
+  const displayLine = showFullscreenLyrics ? (state.activeLine || lastActiveLineRef.current) : null;
   const displayLineText =
     displayLine?.isInstrumental
       ? ""
@@ -745,10 +746,9 @@ export function TouchBarSimulator() {
               WebkitAppRegion: "no-drag",
             } as React.CSSProperties}
           >
-            {state.isFullscreen ? (
+            {showFullscreenLyrics ? (
               <div
-                onClick={() => sendAction({ type: "toggleFullscreen" })}
-                className="relative flex h-full w-full cursor-pointer flex-col items-center justify-center overflow-hidden text-center"
+                className="relative flex h-full w-full flex-col items-center justify-center overflow-hidden text-center select-none"
               >
                 <div
                   className="relative flex items-center justify-center w-full"
@@ -1213,7 +1213,7 @@ export function TouchBarSimulator() {
                 title={state.isFullscreen ? "Exit Fullscreen" : "Fullscreen / Lyrics"}
               >
                 {state.isFullscreen ? (
-                  <DownLine size={iconSize} />
+                  <DownFill size={iconSize} />
                 ) : (
                   <MaximizeSquare3 size={iconSize} weight="Bold" />
                 )}
