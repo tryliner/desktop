@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toVolumeLevel, toVolumeGain } from "@/features/player/engine/volume";
+import { useDisableButtonFocus } from "@/features/navigation/hooks/useDisableButtonFocus";
 import type { TouchBarAction, TouchBarStatePayload } from "../contracts";
 
 function formatTime(ms: number): string {
@@ -29,6 +30,8 @@ function generateWaveform(seed: string, count = 52): number[] {
 }
 
 export function TouchBarSimulator() {
+  useDisableButtonFocus();
+
   const [state, setState] = useState<TouchBarStatePayload>({
     status: "idle",
     track: null,
@@ -161,8 +164,11 @@ export function TouchBarSimulator() {
 
         <div className="flex items-center gap-1">
           <button
+            type="button"
+            tabIndex={-1}
+            onMouseDown={(e) => e.preventDefault()}
             onClick={() => sendAction({ type: "prev" })}
-            className="flex h-6 w-6 items-center justify-center rounded-[6px] bg-[#1c1c1e] text-[#8e8e93] hover:bg-[#2c2c2e] hover:text-white active:bg-[#3a3a3c] transition-colors"
+            className="flex h-6 w-6 items-center justify-center rounded-[6px] bg-[#1c1c1e] text-[#8e8e93] hover:bg-[#2c2c2e] hover:text-white active:bg-[#3a3a3c] transition-colors outline-none focus:outline-none focus-visible:outline-none focus:ring-0"
           >
             <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
               <rect x="3.5" y="4.5" width="2.5" height="15" rx="1" />
@@ -170,8 +176,11 @@ export function TouchBarSimulator() {
             </svg>
           </button>
           <button
+            type="button"
+            tabIndex={-1}
+            onMouseDown={(e) => e.preventDefault()}
             onClick={() => sendAction({ type: "togglePlay" })}
-            className="flex h-6 w-7 items-center justify-center rounded-[6px] bg-[#1c1c1e] text-white hover:bg-[#2c2c2e] active:bg-[#3a3a3c] transition-colors"
+            className="flex h-6 w-7 items-center justify-center rounded-[6px] bg-[#1c1c1e] text-white hover:bg-[#2c2c2e] active:bg-[#3a3a3c] transition-colors outline-none focus:outline-none focus-visible:outline-none focus:ring-0"
           >
             {isPlaying ? (
               <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
@@ -185,8 +194,11 @@ export function TouchBarSimulator() {
             )}
           </button>
           <button
+            type="button"
+            tabIndex={-1}
+            onMouseDown={(e) => e.preventDefault()}
             onClick={() => sendAction({ type: "next" })}
-            className="flex h-6 w-6 items-center justify-center rounded-[6px] bg-[#1c1c1e] text-[#8e8e93] hover:bg-[#2c2c2e] hover:text-white active:bg-[#3a3a3c] transition-colors"
+            className="flex h-6 w-6 items-center justify-center rounded-[6px] bg-[#1c1c1e] text-[#8e8e93] hover:bg-[#2c2c2e] hover:text-white active:bg-[#3a3a3c] transition-colors outline-none focus:outline-none focus-visible:outline-none focus:ring-0"
           >
             <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
               <path d="M4 5.2v13.6c0 .8.9 1.3 1.6.8l9.8-6.8c.6-.4.6-1.3 0-1.7L5.6 4.4c-.7-.5-1.6 0-1.6.8z" />
@@ -316,8 +328,11 @@ export function TouchBarSimulator() {
         style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
       >
         <button
+          type="button"
+          tabIndex={-1}
+          onMouseDown={(e) => e.preventDefault()}
           onClick={() => sendAction({ type: "like" })}
-          className={`flex h-6 w-6 items-center justify-center rounded-[6px] bg-[#1c1c1e] transition-colors ${
+          className={`flex h-6 w-6 items-center justify-center rounded-[6px] bg-[#1c1c1e] transition-colors outline-none focus:outline-none focus-visible:outline-none focus:ring-0 ${
             state.isLiked
               ? "text-red-500 hover:text-red-400"
               : "text-[#8e8e93] hover:text-white"
@@ -346,8 +361,11 @@ export function TouchBarSimulator() {
               className="flex h-6 items-center rounded-[6px] bg-[#1c1c1e] px-1.5 gap-1.5 overflow-hidden"
             >
               <button
+                type="button"
+                tabIndex={-1}
+                onMouseDown={(e) => e.preventDefault()}
                 onClick={() => sendAction({ type: "volume", payload: { volume: 0 } })}
-                className="flex h-5 w-5 shrink-0 items-center justify-center rounded-[4px] text-[#8e8e93] hover:text-white transition-colors"
+                className="flex h-5 w-5 shrink-0 items-center justify-center rounded-[4px] text-[#8e8e93] hover:text-white transition-colors outline-none focus:outline-none focus-visible:outline-none focus:ring-0"
                 title="Mute"
               >
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -370,6 +388,7 @@ export function TouchBarSimulator() {
                 />
                 <input
                   type="range"
+                  tabIndex={-1}
                   min={0}
                   max={1}
                   step={0.01}
@@ -380,7 +399,7 @@ export function TouchBarSimulator() {
                       payload: { volume: toVolumeGain(Number(e.target.value)) },
                     })
                   }
-                  className="absolute inset-0 h-full w-full opacity-0 cursor-pointer"
+                  className="absolute inset-0 h-full w-full opacity-0 cursor-pointer outline-none focus:outline-none focus-visible:outline-none focus:ring-0"
                 />
               </div>
 
@@ -389,8 +408,11 @@ export function TouchBarSimulator() {
               </span>
 
               <button
+                type="button"
+                tabIndex={-1}
+                onMouseDown={(e) => e.preventDefault()}
                 onClick={() => setIsVolumeOpen(false)}
-                className="flex h-5 w-5 shrink-0 items-center justify-center rounded-[4px] text-[#8e8e93] hover:bg-[#2c2c2e] hover:text-white transition-colors"
+                className="flex h-5 w-5 shrink-0 items-center justify-center rounded-[4px] text-[#8e8e93] hover:bg-[#2c2c2e] hover:text-white transition-colors outline-none focus:outline-none focus-visible:outline-none focus:ring-0"
                 title="Close Volume"
               >
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -402,12 +424,15 @@ export function TouchBarSimulator() {
           ) : (
             <motion.button
               key="volume-icon"
+              type="button"
+              tabIndex={-1}
+              onMouseDown={(e) => e.preventDefault()}
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               transition={{ duration: 0.12 }}
               onClick={() => setIsVolumeOpen(true)}
-              className="flex h-6 w-6 items-center justify-center rounded-[6px] bg-[#1c1c1e] text-[#8e8e93] hover:bg-[#2c2c2e] hover:text-white active:bg-[#3a3a3c] transition-colors"
+              className="flex h-6 w-6 items-center justify-center rounded-[6px] bg-[#1c1c1e] text-[#8e8e93] hover:bg-[#2c2c2e] hover:text-white active:bg-[#3a3a3c] transition-colors outline-none focus:outline-none focus-visible:outline-none focus:ring-0"
               title="Volume"
             >
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -420,8 +445,11 @@ export function TouchBarSimulator() {
         </AnimatePresence>
 
         <button
+          type="button"
+          tabIndex={-1}
+          onMouseDown={(e) => e.preventDefault()}
           onClick={() => sendAction({ type: "toggleFullscreen" })}
-          className={`flex h-6 w-6 items-center justify-center rounded-[6px] transition-colors ${
+          className={`flex h-6 w-6 items-center justify-center rounded-[6px] transition-colors outline-none focus:outline-none focus-visible:outline-none focus:ring-0 ${
             state.isFullscreen
               ? "bg-white text-black hover:bg-[#e5e5ea]"
               : "bg-[#1c1c1e] text-[#8e8e93] hover:bg-[#2c2c2e] hover:text-white active:bg-[#3a3a3c]"
