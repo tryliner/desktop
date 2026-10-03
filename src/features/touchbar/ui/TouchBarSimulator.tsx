@@ -400,9 +400,13 @@ export function TouchBarSimulator() {
             title={isPlaying ? "Pause" : "Play"}
           >
             {isPlaying ? (
-              <Pause size={13} weight="Bold" className="translate-x-[1.5px]" />
+              <span className="flex items-center justify-center" style={{ transform: "translateX(2px)" }}>
+                <Pause size={13} weight="Bold" />
+              </span>
             ) : (
-              <Play size={13} weight="Bold" className="-translate-x-[1px]" />
+              <span className="flex items-center justify-center" style={{ transform: "translateX(-1px)" }}>
+                <Play size={13} weight="Bold" />
+              </span>
             )}
           </button>
           <button
@@ -590,9 +594,13 @@ export function TouchBarSimulator() {
           title={state.isLiked ? "Unlike" : "Like"}
         >
           {state.isLiked ? (
-            <HeartFill size={13} className="-translate-x-[0.5px]" />
+            <span className="flex items-center justify-center" style={{ transform: "translateX(-0.5px)" }}>
+              <HeartFill size={13} />
+            </span>
           ) : (
-            <HeartLine size={13} className="-translate-x-[0.5px]" />
+            <span className="flex items-center justify-center" style={{ transform: "translateX(-0.5px)" }}>
+              <HeartLine size={13} />
+            </span>
           )}
         </button>
 
