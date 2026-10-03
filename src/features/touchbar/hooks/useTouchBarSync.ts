@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { usePlayerState } from "@/features/player/hooks/usePlayerState";
 import { playerEngine } from "@/features/player/engine/playerEngine";
+import { usePlayerStore } from "@/features/player/store/playerStore";
 import { useLyricsStore } from "@/features/lyrics";
 import {
   useIsTrackLiked,
@@ -61,13 +62,19 @@ export function useTouchBarSync() {
         case "toggleShuffle":
           playerEngine.setShuffle(!playerEngine.getSnapshot().shuffle);
           break;
-        case "toggleFullscreen":
-          if (location.pathname === "/player") {
-            navigate(-1);
+        case "toggleFullscreen": {
+          const currentFs = usePlayerStore.getState().fullscreen || location.pathname === "/player";
+          if (currentFs) {
+            if (location.pathname === "/player") {
+              navigate(-1);
+            } else {
+              usePlayerStore.getState().setFullscreen(false);
+            }
           } else {
-            navigate("/player");
+            usePlayerStore.getState().setFullscreen(true);
           }
           break;
+        }
         case "adjustOffset":
           if (typeof action.payload?.deltaMs === "number") {
             useLyricsStore.getState().adjustOffset(action.payload.deltaMs);

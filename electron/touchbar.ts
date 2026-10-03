@@ -195,11 +195,11 @@ export class TouchBarManager {
   private createSimulatorWindow() {
     this.simulatorWindow = new BrowserWindow({
       title: "Liner Touch Bar",
-      width: 900,
-      height: 52,
-      minWidth: 500,
-      minHeight: 48,
-      maxHeight: 64,
+      width: 960,
+      height: 48,
+      minWidth: 600,
+      minHeight: 44,
+      maxHeight: 52,
       frame: false,
       transparent: true,
       backgroundColor: "#00000000",

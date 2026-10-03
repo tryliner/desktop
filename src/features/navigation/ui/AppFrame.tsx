@@ -35,6 +35,7 @@ import {
   FullscreenPlayer,
   playerEngine,
   MiniPlayer,
+  usePlayerStore,
 } from "@/features/player";
 import SearchResultsList from "@/features/search/ui/SearchResultsList";
 import { SearchHistoryList, useSearchHistoryStore } from "@/features/search";
@@ -90,6 +91,13 @@ export default function AppFrame({ children }: AppFrameProps) {
   });
   const [fullscreenPlayerOpen, setFullscreenPlayerOpen] = useState(false);
   const [fullscreenEffectsReady, setFullscreenEffectsReady] = useState(false);
+  const storeFullscreen = usePlayerStore((state) => state.fullscreen);
+
+  useEffect(() => {
+    if (storeFullscreen !== fullscreenPlayerOpen && pathname !== "/player") {
+      setFullscreenPlayerOpen(storeFullscreen);
+    }
+  }, [storeFullscreen, fullscreenPlayerOpen, pathname]);
 
   useEffect(() => {
     if (pathname === "/settings") {
@@ -210,6 +218,10 @@ export default function AppFrame({ children }: AppFrameProps) {
   const hasSearchQuery = searchQuery.trim().length > 0;
   const isFullscreenRoute = pathname === "/player";
   const isFullscreenPlayer = isFullscreenRoute || fullscreenPlayerOpen;
+
+  useEffect(() => {
+    usePlayerStore.getState().setFullscreen(isFullscreenPlayer);
+  }, [isFullscreenPlayer]);
   const shellChildrenRef = useRef<React.ReactNode>(null);
   if (!isFullscreenRoute) {
     shellChildrenRef.current = children;
