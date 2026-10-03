@@ -175,7 +175,10 @@ export const usePlayerStore = create<PlayerStore>()(
         set({ trackDoubleClickBehavior }),
       setDefaultPlaybackContext: (defaultPlaybackContext: DefaultPlaybackContext) =>
         set({ defaultPlaybackContext }),
-      setFullscreen: (fullscreen: boolean) => set({ fullscreen }),
+      setFullscreen: (fullscreen: boolean) => {
+        if (get().fullscreen === fullscreen) return;
+        set({ fullscreen });
+      },
       clearQueue: () => {
         const state = get();
         if (state.currentTrack) {

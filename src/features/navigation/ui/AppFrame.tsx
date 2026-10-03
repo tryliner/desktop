@@ -89,15 +89,9 @@ export default function AppFrame({ children }: AppFrameProps) {
     const saved = window.localStorage.getItem("liner_right_drawer_tab");
     return saved === "queue" || saved === "lyrics" ? saved : "queue";
   });
-  const [fullscreenPlayerOpen, setFullscreenPlayerOpen] = useState(false);
+  const fullscreenPlayerOpen = usePlayerStore((state) => state.fullscreen);
+  const setFullscreenPlayerOpen = usePlayerStore((state) => state.setFullscreen);
   const [fullscreenEffectsReady, setFullscreenEffectsReady] = useState(false);
-  const storeFullscreen = usePlayerStore((state) => state.fullscreen);
-
-  useEffect(() => {
-    if (storeFullscreen !== fullscreenPlayerOpen && pathname !== "/player") {
-      setFullscreenPlayerOpen(storeFullscreen);
-    }
-  }, [storeFullscreen, fullscreenPlayerOpen, pathname]);
 
   useEffect(() => {
     if (pathname === "/settings") {
@@ -218,10 +212,6 @@ export default function AppFrame({ children }: AppFrameProps) {
   const hasSearchQuery = searchQuery.trim().length > 0;
   const isFullscreenRoute = pathname === "/player";
   const isFullscreenPlayer = isFullscreenRoute || fullscreenPlayerOpen;
-
-  useEffect(() => {
-    usePlayerStore.getState().setFullscreen(isFullscreenPlayer);
-  }, [isFullscreenPlayer]);
   const shellChildrenRef = useRef<React.ReactNode>(null);
   if (!isFullscreenRoute) {
     shellChildrenRef.current = children;
