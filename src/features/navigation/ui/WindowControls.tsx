@@ -56,10 +56,6 @@ export default function WindowControls({
     window.linerElectron?.close();
   };
 
-  const handleToggleTouchBar = () => {
-    window.linerElectron?.toggleTouchBarSimulator?.();
-  };
-
   const isDarkMode = isFullscreen;
   const isMinimizeDisabled = isWindowFullScreen || isHyprland;
   const hasCustomBg = useIsContentTransparent();
@@ -82,35 +78,6 @@ export default function WindowControls({
                 : "bg-bg-panel/90 text-text-primary backdrop-blur-xl"
         }`}
       >
-        <button
-          type="button"
-          onClick={handleToggleTouchBar}
-          className={`flex items-center justify-center w-[26px] h-[26px] min-w-[26px] min-h-[26px] max-h-[26px] rounded-md border-none bg-transparent transition-colors active:scale-95 cursor-pointer ${
-            isFullscreen
-              ? "text-white/80 hover:text-white hover:bg-white/10"
-              : isGlass
-                ? "text-text-primary hover:bg-black/10 dark:hover:bg-white/10"
-                : isDarkMode
-                  ? "text-white/70 hover:text-white hover:bg-white/10"
-                  : "text-text-primary hover:bg-border-alpha-14"
-          }`}
-          aria-label="Touch Bar (Ctrl+Alt+T)"
-          title="Touch Bar Simulator (Ctrl+Alt+T)"
-        >
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <rect x="2" y="5" width="20" height="14" rx="2" />
-            <line x1="6" y1="12" x2="18" y2="12" strokeWidth="2.5" />
-          </svg>
-        </button>
         <button
           type="button"
           onClick={isMinimizeDisabled ? undefined : handleMinimize}
