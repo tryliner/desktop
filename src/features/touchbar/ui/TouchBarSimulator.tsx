@@ -285,7 +285,15 @@ export function TouchBarSimulator() {
   const waveformRef = useRef<HTMLDivElement>(null);
   const lastNonZeroVolumeRef = useRef<number>(0.7);
 
-  const estimatedExpandedVolumeWidth = containerHeight + Math.round(240 * scale);
+  const maxVolumePillWidth = Math.max(
+    Math.round(110 * scale),
+    Math.min(
+      Math.round(240 * scale),
+      containerWidth - (leftControlsWidth || Math.round(280 * scale)) - containerHeight - Math.round(32 * scale)
+    )
+  );
+  const volumePillWidth = Math.round(maxVolumePillWidth);
+  const estimatedExpandedVolumeWidth = containerHeight + volumePillWidth;
   const effectiveLeftWidth = leftControlsWidth || Math.round(280 * scale);
   const availableCenterWidthWhenVolumeOpen =
     containerWidth - effectiveLeftWidth - estimatedExpandedVolumeWidth - Math.round(16 * scale);
@@ -699,10 +707,10 @@ export function TouchBarSimulator() {
         {!isTimelineHidden && (
           <motion.div
             key="center-timeline"
-            initial={{ opacity: 0, scale: 0.96 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.96 }}
-            transition={{ duration: 0.15, ease: "easeOut" }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.16, ease: "easeOut" }}
             className="relative flex h-full flex-1 items-center justify-center overflow-hidden"
             style={{
               minWidth: `${minTimelineWidth}px`,
@@ -910,21 +918,21 @@ export function TouchBarSimulator() {
       </AnimatePresence>
 
       <div
-        className="flex h-full items-center pl-0.5 shrink-0"
+        className="flex h-full items-center pl-0.5 shrink-0 justify-end overflow-hidden origin-right"
         style={{
           WebkitAppRegion: "no-drag",
           gap: `${Math.round(4 * scale)}px`,
         } as React.CSSProperties}
       >
-        <AnimatePresence mode="popLayout" initial={false}>
+        <AnimatePresence mode="wait" initial={false}>
           {isVolumeOpen ? (
             <motion.div
               key="expanded-volume"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.15, ease: "easeOut" }}
-              className="flex h-full items-center"
+              initial={{ opacity: 0, x: 10 * scale }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 10 * scale }}
+              transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+              className="flex h-full items-center justify-end origin-right"
               style={{ gap: `${Math.round(6 * scale)}px` }}
             >
               <button
@@ -952,11 +960,14 @@ export function TouchBarSimulator() {
                 </svg>
               </button>
 
-              <div
-                className="flex h-full items-center bg-[#1c1c1e] overflow-hidden"
+              <motion.div
+                initial={{ width: Math.round(100 * scale), opacity: 0 }}
+                animate={{ width: volumePillWidth, opacity: 1 }}
+                exit={{ width: Math.round(100 * scale), opacity: 0 }}
+                transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+                className="flex h-full items-center bg-[#1c1c1e] overflow-hidden origin-right shrink-0"
                 style={{
                   borderRadius: buttonRadius,
-                  width: `${Math.round(240 * scale)}px`,
                   paddingLeft: `${Math.round(6 * scale)}px`,
                   paddingRight: `${Math.round(8 * scale)}px`,
                   gap: `${Math.round(4 * scale)}px`,
@@ -1052,16 +1063,16 @@ export function TouchBarSimulator() {
                 >
                   {activeVolumePercent}%
                 </span>
-              </div>
+              </motion.div>
             </motion.div>
           ) : (
             <motion.div
               key="compact-controls"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.12, ease: "easeOut" }}
-              className="flex h-full items-center"
+              initial={{ opacity: 0, x: 6 * scale }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 6 * scale }}
+              transition={{ duration: 0.14, ease: [0.16, 1, 0.3, 1] }}
+              className="flex h-full items-center origin-right"
               style={{ gap: `${Math.round(4 * scale)}px` }}
             >
               <button
