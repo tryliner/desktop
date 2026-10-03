@@ -1,3 +1,16 @@
+export interface TouchBarWordData {
+  timeMs: number;
+  endMs: number;
+  text: string;
+}
+
+export interface TouchBarActiveLine {
+  text: string;
+  timeMs: number;
+  durationMs?: number;
+  words?: TouchBarWordData[];
+}
+
 export interface TouchBarTrackInfo {
   id?: string;
   title: string;
@@ -16,10 +29,12 @@ export interface TouchBarStatePayload {
   isLiked: boolean;
   shuffle: boolean;
   repeat: "off" | "all" | "one";
+  activeLine: TouchBarActiveLine | null;
   activeLyricText?: string;
   nextLyricText?: string;
   offsetMs?: number;
   currentRoute?: string;
+  isFullscreen?: boolean;
 }
 
 export interface TouchBarAction {
@@ -34,6 +49,7 @@ export interface TouchBarAction {
     | "volume"
     | "adjustOffset"
     | "navigate"
-    | "toggleShuffle";
+    | "toggleShuffle"
+    | "toggleFullscreen";
   payload?: any;
 }

@@ -8,7 +8,12 @@ import {
   useLikeTrack,
   useUnlikeTrack,
 } from "@/features/library/hooks";
-import type { TouchBarAction, TouchBarStatePayload } from "../contracts";
+import type {
+  TouchBarAction,
+  TouchBarActiveLine,
+  TouchBarStatePayload,
+  TouchBarWordData,
+} from "../contracts";
 
 export function useTouchBarSync() {
   const navigate = useNavigate();
@@ -56,6 +61,13 @@ export function useTouchBarSync() {
         case "toggleShuffle":
           playerEngine.setShuffle(!playerEngine.getSnapshot().shuffle);
           break;
+        case "toggleFullscreen":
+          if (location.pathname === "/player") {
+            navigate(-1);
+          } else {
+            navigate("/player");
+          }
+          break;
         case "adjustOffset":
           if (typeof action.payload?.deltaMs === "number") {
             useLyricsStore.getState().adjustOffset(action.payload.deltaMs);
@@ -83,7 +95,7 @@ export function useTouchBarSync() {
     });
 
     return cleanup;
-  }, [currentTrack, isLiked, likeMutation, unlikeMutation, navigate]);
+  }, [currentTrack, isLiked, likeMutation, unlikeMutation, navigate, location.pathname]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -99,7 +111,7 @@ export function useTouchBarSync() {
   useEffect(() => {
     if (!window.linerElectron?.touchbarUpdateState) return;
 
-    let activeLyricText = "";
+    let activeLine: TouchBarActiveLine | null = null;
     let nextLyricText = "";
 
     if (syncedLines.length > 0) {
@@ -113,12 +125,43 @@ export function useTouchBarSync() {
         }
       }
       if (activeIndex >= 0) {
-        activeLyricText = syncedLines[activeIndex]?.text || "";
-        nextLyricText = syncedLines[activeIndex + 1]?.text || "";
+        const line = syncedLines[activeIndex];
+        const nextLine = syncedLines[activeIndex + 1];
+        nextLyricText = nextLine?.text || "";
+
+        const lineDurationMs = nextLine
+          ? Math.max(800, nextLine.timeMs - line.timeMs)
+          : 4000;
+
+        let words: TouchBarWordData[] = [];
+        if (line.words && line.words.length > 0) {
+          words = line.words.map((w) => ({
+            text: w.text,
+            timeMs: w.timeMs,
+            endMs: w.endMs,
+          }));
+        } else if (line.text.trim()) {
+          const tokens = line.text.trim().split(/\s+/);
+          const perWordDuration = lineDurationMs / tokens.length;
+          words = tokens.map((token, i) => ({
+            text: token + (i < tokens.length - 1 ? " " : ""),
+            timeMs: line.timeMs + i * perWordDuration,
+            endMs: line.timeMs + (i + 1) * perWordDuration,
+          }));
+        }
+
+        activeLine = {
+          text: line.text,
+          timeMs: line.timeMs,
+          durationMs: lineDurationMs,
+          words,
+        };
       } else {
         nextLyricText = syncedLines[0]?.text || "";
       }
     }
+
+    const isFullscreen = location.pathname === "/player" || Boolean(player.fullscreen);
 
     const payload: TouchBarStatePayload = {
       status: player.status,
@@ -138,20 +181,23 @@ export function useTouchBarSync() {
       isLiked,
       shuffle: player.shuffle,
       repeat: player.repeat,
-      activeLyricText,
+      activeLine,
+      activeLyricText: activeLine?.text || "",
       nextLyricText,
       offsetMs,
       currentRoute: location.pathname,
+      isFullscreen,
     };
 
     const serialized = JSON.stringify({
       s: payload.status,
       id: payload.track?.id,
       p: Math.floor(payload.positionMs / 250),
-      v: payload.volume,
+      v: Math.round(payload.volume * 100),
       l: payload.isLiked,
       sh: payload.shuffle,
       ly: payload.activeLyricText,
+      fs: payload.isFullscreen,
       r: payload.currentRoute,
     });
 
@@ -166,6 +212,7 @@ export function useTouchBarSync() {
     player.volume,
     player.shuffle,
     player.repeat,
+    player.fullscreen,
     currentTrack,
     isLiked,
     syncedLines,

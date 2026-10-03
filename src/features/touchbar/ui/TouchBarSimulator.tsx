@@ -1,26 +1,30 @@
-import { useEffect, useState, useMemo, useCallback } from "react";
-import {
-  Play,
-  Pause,
-  SkipNext,
-  SkipPrevious,
-  Shuffle,
-  VolumeCross,
-  VolumeLoud,
-} from "@solar-icons/react";
-import { HeartFill, HeartLine } from "@mingcute/react";
-import type {
-  TouchBarAction,
-  TouchBarStatePayload,
-} from "../contracts";
-
-type TouchBarMode = "player" | "lyrics" | "actions" | "audio";
+import { useEffect, useState, useMemo, useRef, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import type { TouchBarAction, TouchBarStatePayload } from "../contracts";
 
 function formatTime(ms: number): string {
   const totalSeconds = Math.max(0, Math.floor(ms / 1000));
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
   return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+}
+
+function generateWaveform(seed: string, count = 72): number[] {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) {
+    hash = (hash << 5) - hash + seed.charCodeAt(i);
+    hash |= 0;
+  }
+  const result: number[] = [];
+  for (let i = 0; i < count; i++) {
+    const x = i / count;
+    const wave1 = Math.sin(x * Math.PI * 4 + hash);
+    const wave2 = Math.cos(x * Math.PI * 11 + hash * 0.3);
+    const wave3 = Math.sin(x * Math.PI * 18 + hash * 0.7);
+    const raw = 0.35 + 0.3 * Math.abs(wave1) + 0.2 * Math.abs(wave2) + 0.15 * Math.abs(wave3);
+    result.push(Math.max(0.18, Math.min(0.96, raw)));
+  }
+  return result;
 }
 
 export function TouchBarSimulator() {
@@ -33,15 +37,19 @@ export function TouchBarSimulator() {
     isLiked: false,
     shuffle: false,
     repeat: "off",
+    activeLine: null,
     activeLyricText: "",
     nextLyricText: "",
     offsetMs: 0,
     currentRoute: "/",
+    isFullscreen: false,
   });
 
-  const [mode, setMode] = useState<TouchBarMode>("player");
   const [isSeeking, setIsSeeking] = useState(false);
   const [localSeekMs, setLocalSeekMs] = useState(0);
+  const [isVolumeOpen, setIsVolumeOpen] = useState(false);
+  const [hoverPositionMs, setHoverPositionMs] = useState<number | null>(null);
+  const waveformRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!window.linerElectron?.onTouchBarSimulatorState) return;
@@ -56,332 +64,337 @@ export function TouchBarSimulator() {
   }, []);
 
   const isPlaying = state.status === "playing";
-  const durationMs = state.durationMs || 1;
+  const durationMs = state.durationMs || state.track?.durationMs || 1;
   const currentPosMs = isSeeking ? localSeekMs : state.positionMs;
-  const progressPercent = Math.min(100, Math.max(0, (currentPosMs / durationMs) * 100));
+  const progressRatio = Math.min(1, Math.max(0, currentPosMs / durationMs));
 
-  const handleSeekChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = Number(e.target.value);
+  const waveformSeed = state.track ? `${state.track.id || state.track.title}-${durationMs}` : "default";
+  const waveformBars = useMemo(() => generateWaveform(waveformSeed, 68), [waveformSeed]);
+
+  const handleWaveformPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!waveformRef.current) return;
+    const rect = waveformRef.current.getBoundingClientRect();
+    const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    const targetMs = ratio * durationMs;
     setIsSeeking(true);
-    setLocalSeekMs(val);
+    setLocalSeekMs(targetMs);
+
+    const onPointerMove = (moveEvent: PointerEvent) => {
+      const moveRatio = Math.max(0, Math.min(1, (moveEvent.clientX - rect.left) / rect.width));
+      setLocalSeekMs(moveRatio * durationMs);
+    };
+
+    const onPointerUp = (upEvent: PointerEvent) => {
+      const finalRatio = Math.max(0, Math.min(1, (upEvent.clientX - rect.left) / rect.width));
+      const finalMs = finalRatio * durationMs;
+      setIsSeeking(false);
+      sendAction({ type: "seek", payload: { positionMs: finalMs } });
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", onPointerUp);
+    };
+
+    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("pointerup", onPointerUp);
   };
 
-  const handleSeekCommit = () => {
-    setIsSeeking(false);
-    sendAction({ type: "seek", payload: { positionMs: localSeekMs } });
+  const handleWaveformPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!waveformRef.current) return;
+    const rect = waveformRef.current.getBoundingClientRect();
+    const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    setHoverPositionMs(ratio * durationMs);
   };
 
-  const handleClose = () => {
-    window.linerElectron?.closeTouchBarSimulator?.();
+  const handleWaveformPointerLeave = () => {
+    setHoverPositionMs(null);
   };
+
+  const effectiveLyricsTimeMs = currentPosMs + (state.offsetMs || 0);
 
   return (
-    <div className="flex h-12 w-full select-none items-center justify-between rounded-xl border border-white/10 bg-[#0d0d0f]/95 px-2.5 text-xs text-white shadow-2xl backdrop-blur-2xl">
-      <div
-        className="flex h-7 w-5 cursor-grab items-center justify-center text-white/30 hover:text-white/70 active:cursor-grabbing"
-        style={{ WebkitAppRegion: "drag" } as React.CSSProperties}
-      >
-        <span className="text-[11px] leading-none">⠿</span>
-      </div>
+    <div className="flex h-full w-full select-none items-center justify-between bg-black px-2 text-white antialiased rounded-[8px] overflow-hidden">
+      <AnimatePresence mode="wait">
+        {isVolumeOpen ? (
+          <motion.div
+            key="volume-bar"
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.98 }}
+            transition={{ duration: 0.15, ease: "easeOut" }}
+            className="flex h-full w-full items-center justify-between px-3"
+            style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
+          >
+            <button
+              onClick={() => sendAction({ type: "volume", payload: { volume: 0 } })}
+              className="flex h-7 w-7 items-center justify-center rounded-[6px] text-[#8e8e93] hover:text-white transition-colors"
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                <line x1="23" y1="9" x2="17" y2="15" />
+                <line x1="17" y1="9" x2="23" y2="15" />
+              </svg>
+            </button>
 
-      <div
-        className="mx-1.5 flex h-7 items-center gap-0.5 rounded-lg border border-white/10 bg-black/40 p-0.5"
-        style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
-      >
-        <button
-          onClick={() => setMode("player")}
-          className={`flex h-6 items-center px-2 text-[11px] font-medium rounded-md transition-colors ${
-            mode === "player"
-              ? "bg-white/20 text-white shadow-sm"
-              : "text-white/50 hover:text-white"
-          }`}
-        >
-          🎵
-        </button>
-        <button
-          onClick={() => setMode("lyrics")}
-          className={`flex h-6 items-center px-2 text-[11px] font-medium rounded-md transition-colors ${
-            mode === "lyrics"
-              ? "bg-white/20 text-white shadow-sm"
-              : "text-white/50 hover:text-white"
-          }`}
-        >
-          🎤
-        </button>
-        <button
-          onClick={() => setMode("actions")}
-          className={`flex h-6 items-center px-2 text-[11px] font-medium rounded-md transition-colors ${
-            mode === "actions"
-              ? "bg-white/20 text-white shadow-sm"
-              : "text-white/50 hover:text-white"
-          }`}
-        >
-          ⚡
-        </button>
-        <button
-          onClick={() => setMode("audio")}
-          className={`flex h-6 items-center px-2 text-[11px] font-medium rounded-md transition-colors ${
-            mode === "audio"
-              ? "bg-white/20 text-white shadow-sm"
-              : "text-white/50 hover:text-white"
-          }`}
-        >
-          🎚️
-        </button>
-      </div>
-
-      <div
-        className="flex flex-1 items-center overflow-hidden px-2"
-        style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
-      >
-        {mode === "player" && (
-          <div className="flex w-full items-center gap-3">
-            <div className="flex min-w-0 max-w-[170px] items-center gap-2">
-              {state.track?.cover ? (
-                <img
-                  src={state.track.cover}
-                  alt=""
-                  className="h-7 w-7 flex-shrink-0 rounded-md object-cover shadow-sm ring-1 ring-white/10"
-                />
-              ) : (
-                <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md bg-white/10 text-white/50 text-[10px]">
-                  ♪
-                </div>
-              )}
-              <div className="min-w-0 flex-1 leading-tight">
-                <p className="truncate text-xs font-semibold text-white">
-                  {state.track?.title || "No track playing"}
-                </p>
-                <p className="truncate text-[10px] text-white/50">
-                  {state.track?.artist || "Liner"}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex flex-1 items-center gap-2">
-              <span className="w-8 text-right font-mono text-[10px] text-white/50">
-                {formatTime(currentPosMs)}
+            <div className="flex flex-1 items-center gap-3 px-4">
+              <span className="font-mono text-[10px] text-[#8e8e93] w-7 text-left">
+                {Math.round(state.volume * 100)}%
               </span>
               <div className="relative flex flex-1 items-center">
                 <input
                   type="range"
                   min={0}
-                  max={durationMs}
-                  value={currentPosMs}
-                  onChange={handleSeekChange}
-                  onMouseUp={handleSeekCommit}
-                  onTouchEnd={handleSeekCommit}
-                  className="h-1 w-full cursor-pointer appearance-none rounded-full bg-white/15 accent-red-500 hover:bg-white/25"
+                  max={1}
+                  step={0.01}
+                  value={state.volume}
+                  onChange={(e) =>
+                    sendAction({
+                      type: "volume",
+                      payload: { volume: Number(e.target.value) },
+                    })
+                  }
+                  className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-[#2c2c2e] accent-white hover:bg-[#3a3a3c] transition-colors"
                 />
               </div>
-              <span className="w-8 font-mono text-[10px] text-white/50">
-                {formatTime(durationMs)}
-              </span>
             </div>
 
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => sendAction({ type: "toggleShuffle" })}
-                className={`flex h-7 w-7 items-center justify-center rounded-md transition-colors ${
-                  state.shuffle
-                    ? "text-red-400"
-                    : "text-white/40 hover:text-white"
-                }`}
-              >
-                <Shuffle size={14} />
-              </button>
-              <button
-                onClick={() => sendAction({ type: "prev" })}
-                className="flex h-7 w-7 items-center justify-center rounded-md text-white/70 hover:text-white"
-              >
-                <SkipPrevious size={15} />
-              </button>
-              <button
-                onClick={() => sendAction({ type: "togglePlay" })}
-                className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-black shadow-md hover:scale-105 active:scale-95 transition-transform"
-              >
-                {isPlaying ? <Pause size={14} /> : <Play size={14} />}
-              </button>
-              <button
-                onClick={() => sendAction({ type: "next" })}
-                className="flex h-7 w-7 items-center justify-center rounded-md text-white/70 hover:text-white"
-              >
-                <SkipNext size={15} />
-              </button>
-              <button
-                onClick={() => sendAction({ type: "like" })}
-                className={`flex h-7 w-7 items-center justify-center rounded-md transition-colors ${
-                  state.isLiked
-                    ? "text-red-500"
-                    : "text-white/40 hover:text-white"
-                }`}
-              >
-                {state.isLiked ? <HeartFill size={15} /> : <HeartLine size={15} />}
-              </button>
-            </div>
-          </div>
-        )}
-
-        {mode === "lyrics" && (
-          <div className="flex w-full items-center justify-between gap-3">
             <button
-              onClick={() => sendAction({ type: "navigate", payload: { route: "/player" } })}
-              className="flex min-w-0 flex-1 items-center gap-3 text-left hover:opacity-90 transition-opacity"
+              onClick={() => sendAction({ type: "volume", payload: { volume: 1 } })}
+              className="flex h-7 w-7 items-center justify-center rounded-[6px] text-[#8e8e93] hover:text-white transition-colors"
             >
-              {state.track?.cover && (
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+              </svg>
+            </button>
+
+            <button
+              onClick={() => setIsVolumeOpen(false)}
+              className="ml-3 flex h-7 w-7 items-center justify-center rounded-[6px] bg-[#1c1c1e] text-[#8e8e93] hover:bg-[#2c2c2e] hover:text-white transition-colors"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="player-bar"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            className="flex h-full w-full items-center justify-between"
+          >
+            <div
+              className="flex h-7 w-4 cursor-grab items-center justify-center text-[#48484a] hover:text-[#8e8e93] active:cursor-grabbing"
+              style={{ WebkitAppRegion: "drag" } as React.CSSProperties}
+            >
+              <span className="text-[10px] leading-none">⠿</span>
+            </div>
+
+            <div
+              className="flex items-center gap-2 pl-1 pr-2"
+              style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
+            >
+              {state.track?.cover ? (
                 <img
                   src={state.track.cover}
                   alt=""
-                  className="h-7 w-7 flex-shrink-0 rounded-md object-cover ring-1 ring-white/10"
+                  className="h-[26px] w-[26px] flex-shrink-0 rounded-[4px] object-cover"
                 />
+              ) : (
+                <div className="flex h-[26px] w-[26px] flex-shrink-0 items-center justify-center rounded-[4px] bg-[#1c1c1e] text-[#8e8e93] text-[10px]">
+                  ♪
+                </div>
               )}
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-xs font-semibold text-white drop-shadow-sm">
-                  {state.activeLyricText || "♪ ..."}
+              <div className="min-w-0 max-w-[125px] leading-tight">
+                <p className="truncate text-[11px] font-normal text-white">
+                  {state.track?.title || "No track"}
                 </p>
-                {state.nextLyricText && (
-                  <p className="truncate text-[10px] text-white/40">
-                    {state.nextLyricText}
-                  </p>
-                )}
+                <p className="truncate text-[10px] text-[#8e8e93]">
+                  {state.track?.artist || "Liner"}
+                </p>
               </div>
-            </button>
-
-            <div className="flex items-center gap-1 border-l border-white/10 pl-2">
-              <button
-                onClick={() =>
-                  sendAction({ type: "adjustOffset", payload: { deltaMs: -200 } })
-                }
-                className="rounded border border-white/10 bg-white/5 px-1.5 py-0.5 font-mono text-[10px] text-white/70 hover:bg-white/15"
-              >
-                -0.2s
-              </button>
-              <span className="px-1 font-mono text-[10px] text-white/40">
-                {state.offsetMs && state.offsetMs !== 0
-                  ? `${state.offsetMs > 0 ? "+" : ""}${state.offsetMs}ms`
-                  : "Sync"}
-              </span>
-              <button
-                onClick={() =>
-                  sendAction({ type: "adjustOffset", payload: { deltaMs: 200 } })
-                }
-                className="rounded border border-white/10 bg-white/5 px-1.5 py-0.5 font-mono text-[10px] text-white/70 hover:bg-white/15"
-              >
-                +0.2s
-              </button>
             </div>
-          </div>
-        )}
 
-        {mode === "actions" && (
-          <div className="flex w-full items-center justify-around gap-2">
-            <button
-              onClick={() => sendAction({ type: "navigate", payload: { route: "/" } })}
-              className="flex h-7 items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 text-xs font-medium text-white/80 hover:bg-white/15 hover:text-white"
+            <div
+              className="flex items-center gap-1 px-1"
+              style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
             >
-              🏠 Home
-            </button>
-            <button
-              onClick={() =>
-                sendAction({ type: "navigate", payload: { route: "/library" } })
-              }
-              className="flex h-7 items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 text-xs font-medium text-white/80 hover:bg-white/15 hover:text-white"
-            >
-              📚 Library
-            </button>
-            <button
-              onClick={() =>
-                sendAction({ type: "navigate", payload: { route: "/player" } })
-              }
-              className="flex h-7 items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 text-xs font-medium text-white/80 hover:bg-white/15 hover:text-white"
-            >
-              🎤 Player View
-            </button>
-            <button
-              onClick={() => sendAction({ type: "toggleShuffle" })}
-              className={`flex h-7 items-center gap-1.5 rounded-lg border border-white/10 px-3 text-xs font-medium ${
-                state.shuffle
-                  ? "bg-red-500/20 text-red-400 border-red-500/30"
-                  : "bg-white/5 text-white/80 hover:bg-white/15"
-              }`}
-            >
-              🔀 Shuffle
-            </button>
-          </div>
-        )}
-
-        {mode === "audio" && (
-          <div className="flex w-full items-center justify-between gap-4">
-            <div className="flex items-center gap-2 flex-1">
               <button
-                onClick={() =>
-                  sendAction({
-                    type: "volume",
-                    payload: { volume: state.volume > 0 ? 0 : 0.8 },
-                  })
-                }
-                className="text-white/60 hover:text-white"
+                onClick={() => sendAction({ type: "prev" })}
+                className="flex h-7 w-7 items-center justify-center rounded-[6px] bg-[#1c1c1e] text-[#8e8e93] hover:bg-[#2c2c2e] hover:text-white active:bg-[#3a3a3c] transition-colors"
               >
-                {state.volume === 0 ? (
-                  <VolumeCross size={16} />
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="19 20 9 12 19 4 19 20" fill="currentColor" />
+                  <line x1="5" y1="19" x2="5" y2="5" />
+                </svg>
+              </button>
+              <button
+                onClick={() => sendAction({ type: "togglePlay" })}
+                className="flex h-7 w-8 items-center justify-center rounded-[6px] bg-[#1c1c1e] text-white hover:bg-[#2c2c2e] active:bg-[#3a3a3c] transition-colors"
+              >
+                {isPlaying ? (
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                    <rect x="6" y="4" width="4" height="16" rx="1" />
+                    <rect x="14" y="4" width="4" height="16" rx="1" />
+                  </svg>
                 ) : (
-                  <VolumeLoud size={16} />
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                    <polygon points="5 3 19 12 5 21 5 3" />
+                  </svg>
                 )}
               </button>
-              <input
-                type="range"
-                min={0}
-                max={1}
-                step={0.01}
-                value={state.volume}
-                onChange={(e) =>
-                  sendAction({
-                    type: "volume",
-                    payload: { volume: Number(e.target.value) },
-                  })
-                }
-                className="h-1 w-32 cursor-pointer appearance-none rounded-full bg-white/15 accent-white hover:bg-white/25"
-              />
-              <span className="font-mono text-[10px] text-white/50 w-8">
-                {Math.round(state.volume * 100)}%
-              </span>
+              <button
+                onClick={() => sendAction({ type: "next" })}
+                className="flex h-7 w-7 items-center justify-center rounded-[6px] bg-[#1c1c1e] text-[#8e8e93] hover:bg-[#2c2c2e] hover:text-white active:bg-[#3a3a3c] transition-colors"
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="5 4 15 12 5 20 5 4" fill="currentColor" />
+                  <line x1="19" y1="5" x2="19" y2="19" />
+                </svg>
+              </button>
             </div>
 
-            <div className="flex items-center gap-1.5">
+            <div
+              className="relative mx-2 flex flex-1 items-center justify-center overflow-hidden"
+              style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
+            >
+              {state.isFullscreen && state.activeLine ? (
+                <div
+                  onClick={() => sendAction({ type: "toggleFullscreen" })}
+                  className="flex h-full w-full cursor-pointer flex-col items-center justify-center overflow-hidden text-center"
+                >
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={state.activeLine.timeMs}
+                      initial={{ opacity: 0, y: 5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -5 }}
+                      transition={{ duration: 0.18, ease: "easeOut" }}
+                      className="flex max-w-full items-center justify-center gap-1 px-2 text-center"
+                    >
+                      {state.activeLine.words && state.activeLine.words.length > 0 ? (
+                        state.activeLine.words.map((w, idx) => {
+                          const isSung = effectiveLyricsTimeMs >= w.endMs;
+                          const isActive =
+                            effectiveLyricsTimeMs >= w.timeMs &&
+                            effectiveLyricsTimeMs < w.endMs;
+
+                          return (
+                            <span
+                              key={`${w.timeMs}-${idx}`}
+                              className={`transition-colors duration-150 ${
+                                isActive
+                                  ? "font-semibold text-white drop-shadow-[0_0_6px_rgba(255,255,255,0.7)]"
+                                  : isSung
+                                    ? "font-medium text-white"
+                                    : "font-normal text-[#545458]"
+                              }`}
+                              style={{ fontSize: "12px", lineHeight: "14px" }}
+                            >
+                              {w.text}
+                            </span>
+                          );
+                        })
+                      ) : (
+                        <span className="text-[12px] font-medium text-white">
+                          {state.activeLine.text}
+                        </span>
+                      )}
+                    </motion.div>
+                  </AnimatePresence>
+
+                  {state.nextLyricText && (
+                    <p className="mt-0.5 max-w-full truncate text-[9px] text-[#545458]">
+                      {state.nextLyricText}
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div
+                  ref={waveformRef}
+                  onPointerDown={handleWaveformPointerDown}
+                  onPointerMove={handleWaveformPointerMove}
+                  onPointerLeave={handleWaveformPointerLeave}
+                  className="relative flex h-8 w-full cursor-pointer items-center justify-between rounded-[4px] bg-[#1c1c1e] px-2"
+                >
+                  <div className="absolute inset-0 flex items-center justify-between px-2.5">
+                    {waveformBars.map((heightRatio, i) => {
+                      const barRatio = i / waveformBars.length;
+                      const isPlayed = barRatio <= progressRatio;
+                      const pixelHeight = Math.max(4, Math.round(heightRatio * 22));
+
+                      return (
+                        <div
+                          key={i}
+                          style={{
+                            height: `${pixelHeight}px`,
+                            width: "2px",
+                          }}
+                          className={`rounded-full transition-colors duration-75 ${
+                            isPlayed ? "bg-white" : "bg-[#38383a]"
+                          }`}
+                        />
+                      );
+                    })}
+                  </div>
+
+                  <div
+                    className="pointer-events-none absolute top-1/2 h-6 w-1 -translate-y-1/2 rounded-full bg-white shadow-[0_0_4px_rgba(255,255,255,0.6)]"
+                    style={{
+                      left: `calc(${progressRatio * 100}% - 2px)`,
+                    }}
+                  />
+
+                  <div className="pointer-events-none absolute bottom-0.5 left-2 font-mono text-[9px] text-[#8e8e93]">
+                    {formatTime(hoverPositionMs !== null ? hoverPositionMs : currentPosMs)}
+                  </div>
+                  <div className="pointer-events-none absolute bottom-0.5 right-2 font-mono text-[9px] text-[#8e8e93]">
+                    {formatTime(durationMs)}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div
+              className="flex items-center gap-1 pl-1 pr-1"
+              style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
+            >
               <button
-                onClick={() =>
-                  sendAction({ type: "navigate", payload: { route: "/player" } })
-                }
-                className="rounded-md border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] text-white/80 hover:bg-white/15"
+                onClick={() => setIsVolumeOpen(true)}
+                className="flex h-7 w-7 items-center justify-center rounded-[6px] bg-[#1c1c1e] text-[#8e8e93] hover:bg-[#2c2c2e] hover:text-white active:bg-[#3a3a3c] transition-colors"
+                title="Volume"
               >
-                Stereo EQ
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                  <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+                </svg>
               </button>
+
               <button
-                onClick={() =>
-                  sendAction({ type: "navigate", payload: { route: "/" } })
-                }
-                className="rounded-md border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] text-white/80 hover:bg-white/15"
+                onClick={() => sendAction({ type: "toggleFullscreen" })}
+                className={`flex h-7 w-7 items-center justify-center rounded-[6px] transition-colors ${
+                  state.isFullscreen
+                    ? "bg-white text-black hover:bg-[#e5e5ea]"
+                    : "bg-[#1c1c1e] text-[#8e8e93] hover:bg-[#2c2c2e] hover:text-white active:bg-[#3a3a3c]"
+                }`}
+                title="Fullscreen / Lyrics"
               >
-                High-Res
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M15 3h6v6" />
+                  <path d="M9 21H3v-6" />
+                  <path d="M21 3l-7 7" />
+                  <path d="M3 21l7-7" />
+                </svg>
               </button>
             </div>
-          </div>
+          </motion.div>
         )}
-      </div>
-
-      <div
-        className="ml-1.5 flex h-7 items-center pl-1.5 border-l border-white/10"
-        style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
-      >
-        <button
-          onClick={handleClose}
-          className="flex h-6 w-6 items-center justify-center rounded-md text-white/40 hover:bg-white/10 hover:text-white transition-colors"
-          title="Close Touch Bar"
-        >
-          ✕
-        </button>
-      </div>
+      </AnimatePresence>
     </div>
   );
 }
+
 export default TouchBarSimulator;
