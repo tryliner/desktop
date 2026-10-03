@@ -796,7 +796,7 @@ export function TouchBarSimulator() {
                   className="relative flex items-center justify-center w-full overflow-hidden"
                   style={{
                     minHeight: `${Math.round(10 * scale)}px`,
-                    transform: `translateY(${(-1.0 * scale).toFixed(1)}px)`,
+                    transform: `translateY(${(-0.5 * scale).toFixed(1)}px)`,
                   }}
                 >
                   <AnimatePresence mode="popLayout" initial={false}>
