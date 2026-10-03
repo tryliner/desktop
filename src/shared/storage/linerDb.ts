@@ -1,6 +1,10 @@
 import type { Track } from "@/shared/types";
 import type { LyricsCandidate, LyricsSyncLevel } from "@/shared/contracts/lyrics";
 import type { LyricsProviderOption } from "@/features/lyrics/store/lyricsStore";
+import {
+  shouldCacheLyricsCandidate,
+  compareLyricsCandidates,
+} from "@/features/lyrics";
 
 export interface CachedTrackRecord {
   id: string;
@@ -31,6 +35,7 @@ export interface CachedLyricsRecord {
   rawLyrics: string;
   rawFormat: string;
   candidate: LyricsCandidate;
+  providers?: Record<string, LyricsCandidate>;
   lastCheckedAt: number;
   updatedAt: number;
   userLocked?: boolean;
@@ -44,7 +49,7 @@ export interface CachedArtistRecord {
 }
 
 const DB_NAME = "liner_db_v1";
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 
 class LinerDb {
   private dbPromise: Promise<IDBDatabase> | null = null;
@@ -76,7 +81,7 @@ class LinerDb {
         return;
       }
 
-      request.onupgradeneeded = () => {
+      request.onupgradeneeded = (event) => {
         const db = request.result;
 
         if (!db.objectStoreNames.contains("tracks")) {
@@ -100,6 +105,11 @@ class LinerDb {
           const lyricsStore = db.createObjectStore("lyrics", { keyPath: "trackId" });
           lyricsStore.createIndex("lastCheckedAt", "lastCheckedAt", { unique: false });
           lyricsStore.createIndex("syncLevel", "syncLevel", { unique: false });
+        } else if (event.oldVersion < 4) {
+          // clear legacy lyrics store on v4 migration
+          try {
+            request.transaction?.objectStore("lyrics").clear();
+          } catch {}
         }
 
         if (!db.objectStoreNames.contains("artists")) {
@@ -395,6 +405,21 @@ class LinerDb {
     });
 
     if (result) {
+      if (!result.providers) {
+        result.providers = {};
+        if (result.candidate) {
+          result.providers[result.candidate.provider.toLowerCase().trim()] =
+            result.candidate;
+        }
+        if (result.availableProviders) {
+          for (const opt of result.availableProviders) {
+            if (opt.candidate) {
+              result.providers[opt.provider.toLowerCase().trim()] =
+                opt.candidate;
+            }
+          }
+        }
+      }
       this.memLyrics.set(trackId, result);
       return result;
     }
@@ -402,14 +427,62 @@ class LinerDb {
   }
 
   async putLyrics(record: CachedLyricsRecord): Promise<void> {
-    if (record.syncLevel !== "word_level" && record.syncLevel !== "syllable_level") {
+    const providers: Record<string, LyricsCandidate> = {
+      ...(record.providers || {}),
+    };
+
+    if (record.candidate && shouldCacheLyricsCandidate(record.candidate)) {
+      providers[record.candidate.provider.toLowerCase().trim()] =
+        record.candidate;
+    }
+
+    if (record.availableProviders) {
+      for (const opt of record.availableProviders) {
+        if (opt.candidate && shouldCacheLyricsCandidate(opt.candidate)) {
+          providers[opt.candidate.provider.toLowerCase().trim()] =
+            opt.candidate;
+        }
+      }
+    }
+
+    const validCandidates = Object.values(providers).filter(
+      shouldCacheLyricsCandidate,
+    );
+    if (validCandidates.length === 0) {
       return;
     }
-    this.memLyrics.set(record.trackId, record);
+
+    const validOptions: LyricsProviderOption[] = validCandidates
+      .map((c) => ({
+        provider: c.provider,
+        syncLevel: c.syncLevel,
+        quality: c.quality.total,
+        candidate: c,
+      }))
+      .sort((a, b) => compareLyricsCandidates(a.candidate, b.candidate));
+
+    const primaryCandidate =
+      record.candidate && shouldCacheLyricsCandidate(record.candidate)
+        ? record.candidate
+        : validOptions[0].candidate;
+
+    const sanitizedRecord: CachedLyricsRecord = {
+      ...record,
+      syncLevel: primaryCandidate.syncLevel,
+      quality: primaryCandidate.quality.total,
+      activeProvider: primaryCandidate.provider,
+      rawLyrics: primaryCandidate.lyrics.content,
+      rawFormat: primaryCandidate.lyrics.format,
+      candidate: primaryCandidate,
+      providers,
+      availableProviders: validOptions,
+    };
+
+    this.memLyrics.set(record.trackId, sanitizedRecord);
 
     await this.runTransaction("lyrics", "readwrite", (store) => {
       return new Promise<void>((resolve, reject) => {
-        const req = store.put(record);
+        const req = store.put(sanitizedRecord);
         req.onsuccess = () => resolve();
         req.onerror = () => reject(req.error);
       });
@@ -432,7 +505,15 @@ class LinerDb {
           const cursor = req.result;
           if (cursor) {
             const val = cursor.value as CachedLyricsRecord;
-            total += (val.rawLyrics?.length || 0) * 2;
+            let recordBytes = 0;
+            if (val.providers) {
+              for (const cand of Object.values(val.providers)) {
+                recordBytes += (cand.lyrics?.content?.length || 0) * 2;
+              }
+            } else {
+              recordBytes = (val.rawLyrics?.length || 0) * 2;
+            }
+            total += recordBytes;
             cursor.continue();
           } else {
             resolve(total);
@@ -448,7 +529,15 @@ class LinerDb {
 
     let total = 0;
     for (const item of this.memLyrics.values()) {
-      total += (item.rawLyrics?.length || 0) * 2;
+      let recordBytes = 0;
+      if (item.providers) {
+        for (const cand of Object.values(item.providers)) {
+          recordBytes += (cand.lyrics?.content?.length || 0) * 2;
+        }
+      } else {
+        recordBytes = (item.rawLyrics?.length || 0) * 2;
+      }
+      total += recordBytes;
     }
     return total;
   }

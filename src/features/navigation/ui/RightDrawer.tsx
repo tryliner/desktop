@@ -482,7 +482,7 @@ function RightDrawer({ activeTab, onTabChange, onClose }: RightDrawerProps) {
 
   useEffect(() => {
     const container = lyricsContainerRef.current;
-    if (!container || activeTab !== "lyrics") return;
+    if (!container || activeTab !== "lyrics" || effectiveLoading) return;
 
     const onNativeUserInteraction = () => {
       handleUserScroll();
@@ -504,7 +504,7 @@ function RightDrawer({ activeTab, onTabChange, onClose }: RightDrawerProps) {
         capture: true,
       });
     };
-  }, [activeTab, handleUserScroll]);
+  }, [activeTab, effectiveLoading, handleUserScroll]);
 
   useEffect(() => {
     return () => {
@@ -864,35 +864,42 @@ function RightDrawer({ activeTab, onTabChange, onClose }: RightDrawerProps) {
         )}
 
         {activeTab === "lyrics" && (
-          <div
-            className="absolute inset-0 overflow-y-auto p-[32px]"
-            style={{
-              maskImage:
-                "linear-gradient(to bottom, transparent, black 5%, black 95%, transparent)",
-              WebkitMaskImage:
-                "linear-gradient(to bottom, transparent, black 5%, black 95%, transparent)",
-            }}
-            ref={lyricsContainerCallbackRef}
-            onWheelCapture={handleUserScroll}
-            onTouchMoveCapture={handleUserScroll}
-            onScroll={(e) => {
-              const target = e.currentTarget;
-              const next = target.scrollTop > 2;
-              setIsLyricsScrolled((prev) => (prev === next ? prev : next));
-            }}
-          >
+          effectiveLoading ? (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 select-none">
+              <div className="w-[26px] h-[26px] rounded-full border-[2.5px] border-text-tertiary/20 border-t-text-primary animate-spin" />
+              <span
+                className="text-[13px] font-[500] text-text-tertiary tracking-tight"
+                style={{ fontFamily: "var(--font-inter), sans-serif" }}
+              >
+                {t("common.loading") || "Loading"}
+              </span>
+            </div>
+          ) : (
             <div
-              className="flex flex-col gap-[24px] pb-[50vh] pt-[10vh]"
+              className="absolute inset-0 overflow-y-auto p-[32px]"
               style={{
-                fontFamily: "var(--font-inter), sans-serif",
-                letterSpacing: "-0.02em",
+                maskImage:
+                  "linear-gradient(to bottom, transparent, black 5%, black 95%, transparent)",
+                WebkitMaskImage:
+                  "linear-gradient(to bottom, transparent, black 5%, black 95%, transparent)",
+              }}
+              ref={lyricsContainerCallbackRef}
+              onWheelCapture={handleUserScroll}
+              onTouchMoveCapture={handleUserScroll}
+              onScroll={(e) => {
+                const target = e.currentTarget;
+                const next = target.scrollTop > 2;
+                setIsLyricsScrolled((prev) => (prev === next ? prev : next));
               }}
             >
-              {effectiveLoading ? (
-                <div className="flex items-center h-[100px]">
-                  <div className="w-[28px] h-[28px] rounded-full border-[3px] border-text-tertiary border-t-text-secondary animate-spin" />
-                </div>
-              ) : effectiveSyncedLines.length > 0 && isActuallySynced ? (
+              <div
+                className="flex flex-col gap-[24px] pb-[50vh] pt-[10vh]"
+                style={{
+                  fontFamily: "var(--font-inter), sans-serif",
+                  letterSpacing: "-0.02em",
+                }}
+              >
+                {effectiveSyncedLines.length > 0 && isActuallySynced ? (
                 <>
                   {effectiveSyncedLines[0].timeMs > 5000 && effectiveSyncedLines[0].text && (
                     <div
@@ -1130,7 +1137,7 @@ function RightDrawer({ activeTab, onTabChange, onClose }: RightDrawerProps) {
               )}
             </div>
           </div>
-        )}
+        ))}
       </div>
     </div>
   );

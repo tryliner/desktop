@@ -109,7 +109,41 @@ describe("linerDb storage layer", () => {
       updatedAt: initialTime,
     });
     const lineRecord = await linerDb.getLyrics("track_line_only");
-    expect(lineRecord).toBeNull();
+    expect(lineRecord).not.toBeNull();
+    expect(lineRecord?.activeProvider).toBe("lrclib");
+    expect(lineRecord?.syncLevel).toBe("line_level");
+
+    // cadence / polaris with line_level should not be cached
+    await linerDb.putLyrics({
+      trackId: "track_cadence_line",
+      syncLevel: "line_level",
+      quality: 70,
+      activeProvider: "cadence",
+      availableProviders: [],
+      rawLyrics: "[00:01.00] Cadence line",
+      rawFormat: "lrc",
+      candidate: {
+        provider: "cadence",
+        contentKind: "line_synced",
+        syncLevel: "line_level",
+        quality: {
+          total: 70,
+          match: 20,
+          content: 20,
+          sync: 30,
+          source: 0,
+          reasons: [],
+        },
+        lyrics: {
+          format: "lrc",
+          content: "[00:01.00] Cadence line",
+        },
+      },
+      lastCheckedAt: initialTime,
+      updatedAt: initialTime,
+    });
+    const cadenceRecord = await linerDb.getLyrics("track_cadence_line");
+    expect(cadenceRecord).toBeNull();
   });
 
   it("stores artist data and calculates total artist bytes", async () => {
