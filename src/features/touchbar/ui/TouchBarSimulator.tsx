@@ -512,19 +512,31 @@ export function TouchBarSimulator() {
           if (!span) continue;
           const w = words[i];
 
-          let progress = 0;
+          const timedDuration = Math.max(120, w.endMs - w.timeMs);
+          const swipeDuration = timedDuration * 1.6;
+          const swipeLead = timedDuration * 0.1;
+          const elapsed = effectiveTime - (w.timeMs - swipeLead);
+          let startPct = -20;
+          let endPct = -10;
+
           if (w.endMs <= w.timeMs) {
-            progress = effectiveTime >= w.timeMs ? 100 : 0;
-          } else if (effectiveTime >= w.endMs) {
-            progress = 100;
-          } else if (effectiveTime <= w.timeMs) {
-            progress = 0;
+            if (effectiveTime >= w.timeMs) {
+              startPct = 140;
+              endPct = 150;
+            }
+          } else if (elapsed <= 0) {
+            startPct = -20;
+            endPct = -10;
+          } else if (elapsed >= swipeDuration) {
+            startPct = 140;
+            endPct = 150;
           } else {
-            const pct = ((effectiveTime - w.timeMs) / (w.endMs - w.timeMs)) * 100;
-            progress = Math.max(0, Math.min(100, pct));
+            const t = elapsed / swipeDuration;
+            startPct = (-0.2 + t * 1.6) * 100;
+            endPct = (-0.1 + t * 1.6) * 100;
           }
 
-          const bg = `linear-gradient(to right, #ffffff ${progress.toFixed(1)}%, #636366 ${progress.toFixed(1)}%)`;
+          const bg = `linear-gradient(90deg, #ffffff ${startPct.toFixed(1)}%, #636366 ${endPct.toFixed(1)}%)`;
           if (span.style.backgroundImage !== bg) {
             span.style.backgroundImage = bg;
           }
@@ -753,7 +765,7 @@ export function TouchBarSimulator() {
                               }}
                               className="bg-clip-text text-transparent font-medium inline"
                               style={{
-                                backgroundImage: "linear-gradient(to right, #ffffff 0%, #636366 0%)",
+                                backgroundImage: "linear-gradient(90deg, #ffffff -20%, #636366 -10%)",
                                 fontSize: `${(11 * scale).toFixed(1)}px`,
                                 lineHeight: `${(13.5 * scale).toFixed(1)}px`,
                               }}
