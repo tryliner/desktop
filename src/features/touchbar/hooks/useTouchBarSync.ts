@@ -160,11 +160,57 @@ export function useTouchBarSync() {
 
         let words: TouchBarWordData[] = [];
         if (line.words && line.words.length > 0) {
-          words = line.words.map((w) => ({
-            text: w.text,
-            timeMs: w.timeMs,
-            endMs: w.endMs,
-          }));
+          const rawWords = line.words;
+          const lineText = line.text || "";
+          let charCursor = 0;
+
+          for (let i = 0; i < rawWords.length; i++) {
+            const w = rawWords[i];
+            if (!w || !w.text) continue;
+
+            if (w.text.trim().length === 0) {
+              if (words.length > 0) {
+                words[words.length - 1].text += w.text;
+              }
+              continue;
+            }
+
+            const cleanText = w.text.trim();
+            const foundIdx = lineText.indexOf(cleanText, charCursor);
+
+            let isContinuationOfPrevWord = false;
+            if (words.length > 0) {
+              const prev = words[words.length - 1];
+              const prevEndsSpace = /\s$/.test(prev.text);
+              const currStartsSpace = /^\s/.test(w.text);
+
+              if (foundIdx >= 0) {
+                const textBetween = lineText.slice(charCursor, foundIdx);
+                const hasSpaceBetween = /\s/.test(textBetween);
+                if (!hasSpaceBetween && !prevEndsSpace && !currStartsSpace) {
+                  isContinuationOfPrevWord = true;
+                }
+              } else if (!prevEndsSpace && !currStartsSpace) {
+                isContinuationOfPrevWord = true;
+              }
+            }
+
+            if (foundIdx >= 0) {
+              charCursor = foundIdx + cleanText.length;
+            }
+
+            if (isContinuationOfPrevWord && words.length > 0) {
+              const prev = words[words.length - 1];
+              prev.text += w.text;
+              prev.endMs = Math.max(prev.endMs, w.endMs);
+            } else {
+              words.push({
+                text: w.text,
+                timeMs: w.timeMs,
+                endMs: w.endMs,
+              });
+            }
+          }
         }
 
         activeLine = {

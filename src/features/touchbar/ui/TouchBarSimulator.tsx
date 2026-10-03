@@ -725,11 +725,11 @@ export function TouchBarSimulator() {
             {state.isFullscreen ? (
               <div
                 onClick={() => sendAction({ type: "toggleFullscreen" })}
-                className="relative flex h-full w-full cursor-pointer flex-col items-center justify-center overflow-hidden text-center py-0.5"
+                className="relative flex h-full w-full cursor-pointer flex-col items-center justify-center overflow-hidden text-center"
               >
                 <div
                   className="relative flex items-center justify-center w-full"
-                  style={{ minHeight: `${Math.round(16 * scale)}px` }}
+                  style={{ minHeight: `${Math.round(14 * scale)}px` }}
                 >
                   <AnimatePresence mode="popLayout" initial={false}>
                     <motion.div
@@ -754,11 +754,11 @@ export function TouchBarSimulator() {
                               className="bg-clip-text text-transparent font-medium inline"
                               style={{
                                 backgroundImage: "linear-gradient(to right, #ffffff 0%, #636366 0%)",
-                                fontSize: `${(11.5 * scale).toFixed(1)}px`,
-                                lineHeight: `${(14 * scale).toFixed(1)}px`,
+                                fontSize: `${(11 * scale).toFixed(1)}px`,
+                                lineHeight: `${(13.5 * scale).toFixed(1)}px`,
                               }}
                             >
-                              {w.text}
+                              {w.text.trim()}
                             </span>
                           );
                         })
@@ -768,7 +768,10 @@ export function TouchBarSimulator() {
                           animate={{ color: "#ffffff" }}
                           transition={{ duration: 0.32, ease: "easeOut" }}
                           className="font-medium truncate max-w-full"
-                          style={{ fontSize: `${(11.5 * scale).toFixed(1)}px` }}
+                          style={{
+                            fontSize: `${(11 * scale).toFixed(1)}px`,
+                            lineHeight: `${(13.5 * scale).toFixed(1)}px`,
+                          }}
                         >
                           {displayLineText}
                         </motion.span>
@@ -778,8 +781,11 @@ export function TouchBarSimulator() {
                 </div>
 
                 <div
-                  className="relative flex items-center justify-center w-full mt-0.5 overflow-hidden"
-                  style={{ minHeight: `${Math.round(11 * scale)}px` }}
+                  className="relative flex items-center justify-center w-full overflow-hidden"
+                  style={{
+                    minHeight: `${Math.round(10 * scale)}px`,
+                    transform: `translateY(${(-1.5 * scale).toFixed(1)}px)`,
+                  }}
                 >
                   <AnimatePresence mode="popLayout" initial={false}>
                     {state.nextLyricText && state.nextLyricText !== displayLineText && (
@@ -789,8 +795,11 @@ export function TouchBarSimulator() {
                         animate={{ y: 0, opacity: 1 }}
                         exit={{ y: -8 * scale, opacity: 0 }}
                         transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-                        className="max-w-full truncate text-[#636366] leading-none"
-                        style={{ fontSize: `${(8.5 * scale).toFixed(1)}px` }}
+                        className="max-w-full truncate text-[#636366] pb-[2px]"
+                        style={{
+                          fontSize: `${(8.5 * scale).toFixed(1)}px`,
+                          lineHeight: `${(10.5 * scale).toFixed(1)}px`,
+                        }}
                       >
                         {state.nextLyricText}
                       </motion.p>
