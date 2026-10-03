@@ -477,6 +477,7 @@ export function TouchBarSimulator() {
   const anchorPosRef = useRef(state.positionMs);
   const anchorTimeRef = useRef(performance.now());
   const wordSpanRefs = useRef<(HTMLSpanElement | null)[]>([]);
+  const noteClipRectRef = useRef<SVGRectElement | null>(null);
 
   useEffect(() => {
     anchorPosRef.current = state.positionMs;
@@ -485,11 +486,13 @@ export function TouchBarSimulator() {
 
   const displayLine = state.activeLine || lastActiveLineRef.current;
   const displayLineText =
-    state.activeLine?.text ||
-    state.activeLyricText ||
-    lastActiveLyricTextRef.current ||
-    state.nextLyricText ||
-    "•••";
+    displayLine?.isInstrumental
+      ? ""
+      : state.activeLine?.text ||
+        state.activeLyricText ||
+        lastActiveLyricTextRef.current ||
+        state.nextLyricText ||
+        "•••";
 
   useEffect(() => {
     let rafId: number;
@@ -505,40 +508,48 @@ export function TouchBarSimulator() {
 
       const effectiveTime = currentPos;
 
-      const words = displayLine?.words;
-      if (words && words.length > 0) {
-        for (let i = 0; i < words.length; i++) {
-          const span = wordSpanRefs.current[i];
-          if (!span) continue;
-          const w = words[i];
+      if (displayLine?.isInstrumental && noteClipRectRef.current) {
+        const lineStart = displayLine.timeMs;
+        const lineDuration = Math.max(1000, displayLine.durationMs || 4000);
+        const progress = Math.max(0, Math.min(1, (effectiveTime - lineStart) / lineDuration));
+        const yVal = (24 * (1 - progress)).toFixed(2);
+        noteClipRectRef.current.setAttribute("y", yVal);
+      } else {
+        const words = displayLine?.words;
+        if (words && words.length > 0) {
+          for (let i = 0; i < words.length; i++) {
+            const span = wordSpanRefs.current[i];
+            if (!span) continue;
+            const w = words[i];
 
-          const timedDuration = Math.max(120, w.endMs - w.timeMs);
-          const swipeDuration = timedDuration * 1.6;
-          const swipeLead = timedDuration * 0.1;
-          const elapsed = effectiveTime - (w.timeMs - swipeLead);
-          let startPct = -20;
-          let endPct = -10;
+            const timedDuration = Math.max(120, w.endMs - w.timeMs);
+            const swipeDuration = timedDuration * 1.6;
+            const swipeLead = timedDuration * 0.1;
+            const elapsed = effectiveTime - (w.timeMs - swipeLead);
+            let startPct = -20;
+            let endPct = -10;
 
-          if (w.endMs <= w.timeMs) {
-            if (effectiveTime >= w.timeMs) {
+            if (w.endMs <= w.timeMs) {
+              if (effectiveTime >= w.timeMs) {
+                startPct = 140;
+                endPct = 150;
+              }
+            } else if (elapsed <= 0) {
+              startPct = -20;
+              endPct = -10;
+            } else if (elapsed >= swipeDuration) {
               startPct = 140;
               endPct = 150;
+            } else {
+              const t = elapsed / swipeDuration;
+              startPct = (-0.2 + t * 1.6) * 100;
+              endPct = (-0.1 + t * 1.6) * 100;
             }
-          } else if (elapsed <= 0) {
-            startPct = -20;
-            endPct = -10;
-          } else if (elapsed >= swipeDuration) {
-            startPct = 140;
-            endPct = 150;
-          } else {
-            const t = elapsed / swipeDuration;
-            startPct = (-0.2 + t * 1.6) * 100;
-            endPct = (-0.1 + t * 1.6) * 100;
-          }
 
-          const bg = `linear-gradient(90deg, #ffffff ${startPct.toFixed(1)}%, #636366 ${endPct.toFixed(1)}%)`;
-          if (span.style.backgroundImage !== bg) {
-            span.style.backgroundImage = bg;
+            const bg = `linear-gradient(90deg, #ffffff ${startPct.toFixed(1)}%, #636366 ${endPct.toFixed(1)}%)`;
+            if (span.style.backgroundImage !== bg) {
+              span.style.backgroundImage = bg;
+            }
           }
         }
       }
@@ -745,7 +756,13 @@ export function TouchBarSimulator() {
                 >
                   <AnimatePresence mode="popLayout" initial={false}>
                     <motion.div
-                      key={displayLine?.timeMs !== undefined ? `${displayLine.timeMs}-${displayLine.text}` : displayLineText}
+                      key={
+                        displayLine?.isInstrumental
+                          ? `instrumental-${displayLine.timeMs}`
+                          : displayLine?.timeMs !== undefined
+                            ? `${displayLine.timeMs}-${displayLine.text}`
+                            : displayLineText
+                      }
                       initial={{ y: 13 * scale, scale: 0.82, opacity: 0.6 }}
                       animate={{ y: 0, scale: 1, opacity: 1 }}
                       exit={{ y: -13 * scale, scale: 0.96, opacity: 0 }}
@@ -753,7 +770,52 @@ export function TouchBarSimulator() {
                       className="flex max-w-full items-center justify-center px-2 text-center origin-center"
                       style={{ gap: `${Math.round(4 * scale)}px` }}
                     >
-                      {displayLine?.words && displayLine.words.length > 0 ? (
+                      {displayLine?.isInstrumental ? (
+                        <div className="flex items-center justify-center">
+                          <svg
+                            width={Math.round(15 * scale)}
+                            height={Math.round(15 * scale)}
+                            viewBox="0 0 24 24"
+                            className="inline-block shrink-0"
+                          >
+                            <defs>
+                              <clipPath id="touchbar-note-fill-clip">
+                                <rect
+                                  ref={noteClipRectRef}
+                                  x="0"
+                                  y={
+                                    displayLine.timeMs !== undefined
+                                      ? (
+                                          24 *
+                                          (1 -
+                                            Math.max(
+                                              0,
+                                              Math.min(
+                                                1,
+                                                (currentPosMs - displayLine.timeMs) /
+                                                  Math.max(1000, displayLine.durationMs || 4000)
+                                              )
+                                            ))
+                                        ).toFixed(2)
+                                      : "24"
+                                  }
+                                  width="24"
+                                  height="24"
+                                />
+                              </clipPath>
+                            </defs>
+                            <path
+                              d="M10 21q-1.65 0-2.825-1.175T6 17t1.175-2.825T10 13q.575 0 1.063.138t.937.412V4q0-.425.288-.712T13 3h4q.425 0 .713.288T18 4v2q0 .425-.288.713T17 7h-3v10q0 1.65-1.175 2.825T10 21"
+                              fill="#636366"
+                            />
+                            <path
+                              d="M10 21q-1.65 0-2.825-1.175T6 17t1.175-2.825T10 13q.575 0 1.063.138t.937.412V4q0-.425.288-.712T13 3h4q.425 0 .713.288T18 4v2q0 .425-.288.713T17 7h-3v10q0 1.65-1.175 2.825T10 21"
+                              fill="#ffffff"
+                              clipPath="url(#touchbar-note-fill-clip)"
+                            />
+                          </svg>
+                        </div>
+                      ) : displayLine?.words && displayLine.words.length > 0 ? (
                         displayLine.words.map((w: TouchBarWordData, idx: number) => {
                           return (
                             <span

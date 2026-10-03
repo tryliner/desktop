@@ -9,6 +9,7 @@ export interface TouchBarActiveLine {
   timeMs: number;
   durationMs?: number;
   words?: TouchBarWordData[];
+  isInstrumental?: boolean;
 }
 
 export interface TouchBarTrackInfo {

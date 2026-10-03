@@ -5,6 +5,7 @@ import {
   parseRawLyrics,
   applyLyricsOffset,
   type WordData,
+  type SyncedLine,
 } from "../engine/lyricsParser";
 import type { Lyric } from "@braccato/parsers";
 import type { LyricsCandidate, LyricsSyncLevel } from "@/shared/contracts/lyrics";
@@ -22,9 +23,9 @@ export interface LyricsState {
   rawLyrics: string | null;
   rawFormat: string | null;
   baseBraccatoLyrics: Lyric[];
-  baseSyncedLines: { timeMs: number; text: string; words?: WordData[] }[];
+  baseSyncedLines: SyncedLine[];
   braccatoLyrics: Lyric[];
-  syncedLines: { timeMs: number; text: string; words?: WordData[] }[];
+  syncedLines: SyncedLine[];
   plainLyrics: string | null;
   lyricsQuality: number;
   currentLyricsTrackId: string | null;

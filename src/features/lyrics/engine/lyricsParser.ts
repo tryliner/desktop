@@ -7,9 +7,17 @@ export interface WordData {
   isBackground?: boolean;
 }
 
+export interface SyncedLine {
+  timeMs: number;
+  durationMs?: number;
+  text: string;
+  isInstrumental?: boolean;
+  words?: WordData[];
+}
+
 export interface ParsedLyrics {
   braccatoLyrics: Lyric[];
-  syncedLines: { timeMs: number; text: string; words?: WordData[] }[];
+  syncedLines: SyncedLine[];
   plainLyrics: string | null;
 }
 
@@ -125,9 +133,11 @@ export function parseRawLyrics(
       };
     }
 
-    const syncedLines = braccatoLyrics.map((line) => ({
+    const syncedLines: SyncedLine[] = braccatoLyrics.map((line) => ({
       timeMs: line.startTimeMs,
+      durationMs: line.durationMs,
       text: line.words,
+      isInstrumental: Boolean((line as any).isInstrumental),
       words: line.parts?.map((p) => ({
         timeMs: p.startTimeMs,
         endMs: p.startTimeMs + p.durationMs,
@@ -151,12 +161,12 @@ export function parseRawLyrics(
 export function applyLyricsOffset(
   parsed: {
     braccatoLyrics: Lyric[];
-    syncedLines: { timeMs: number; text: string; words?: WordData[] }[];
+    syncedLines: SyncedLine[];
   },
   offsetMs: number,
 ): {
   braccatoLyrics: Lyric[];
-  syncedLines: { timeMs: number; text: string; words?: WordData[] }[];
+  syncedLines: SyncedLine[];
 } {
   if (!offsetMs) {
     return parsed;

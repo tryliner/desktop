@@ -159,7 +159,8 @@ export function useTouchBarSync() {
       if (activeIndex >= 0) {
         const line = syncedLines[activeIndex];
         const nextLine = syncedLines[activeIndex + 1];
-        nextLyricText = nextLine?.text || "";
+        const upcomingLine = syncedLines.slice(activeIndex + 1).find((l) => Boolean(l.text && l.text.trim()));
+        nextLyricText = upcomingLine?.text || "";
 
         const lineDurationMs = nextLine
           ? Math.max(800, nextLine.timeMs - line.timeMs)
@@ -220,14 +221,33 @@ export function useTouchBarSync() {
           }
         }
 
+        const isInstrumental = Boolean(
+          line.isInstrumental ||
+          (line.text.trim() === "" && (!line.words || line.words.length === 0)) ||
+          line.text.trim() === "♪"
+        );
+
         activeLine = {
           text: line.text,
           timeMs: line.timeMs,
-          durationMs: lineDurationMs,
+          durationMs: line.durationMs || lineDurationMs,
           words,
+          isInstrumental,
         };
       } else {
-        nextLyricText = syncedLines[0]?.text || "";
+        const firstLine = syncedLines[0];
+        if (firstLine && firstLine.timeMs > 3000 && currentAudioMs < firstLine.timeMs - 600) {
+          activeLine = {
+            text: "",
+            timeMs: 0,
+            durationMs: firstLine.timeMs,
+            words: [],
+            isInstrumental: true,
+          };
+          nextLyricText = firstLine.text || "";
+        } else {
+          nextLyricText = firstLine?.text || "";
+        }
       }
     }
 
