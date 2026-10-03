@@ -165,6 +165,8 @@ export function TouchBarSimulator() {
   useDisableButtonFocus();
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const leftControlsRef = useRef<HTMLDivElement>(null);
+
   const [containerHeight, setContainerHeight] = useState(() => {
     if (typeof window !== "undefined" && window.innerHeight > 0) {
       return Math.round(window.innerHeight);
@@ -172,21 +174,38 @@ export function TouchBarSimulator() {
     return 24;
   });
 
+  const [containerWidth, setContainerWidth] = useState(() => {
+    if (typeof window !== "undefined" && window.innerWidth > 0) {
+      return Math.round(window.innerWidth);
+    }
+    return 960;
+  });
+
+  const [leftControlsWidth, setLeftControlsWidth] = useState(0);
+
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-    const updateHeight = () => {
+    const updateDimensions = () => {
       const h = el.clientHeight || el.getBoundingClientRect().height;
+      const w = el.clientWidth || el.getBoundingClientRect().width;
       if (h > 0) {
         setContainerHeight(Math.round(h));
       }
+      if (w > 0) {
+        setContainerWidth(Math.round(w));
+      }
     };
-    updateHeight();
+    updateDimensions();
     const observer = new ResizeObserver((entries) => {
       for (const entry of entries) {
         const h = entry.contentRect.height;
+        const w = entry.contentRect.width;
         if (h > 0) {
           setContainerHeight(Math.round(h));
+        }
+        if (w > 0) {
+          setContainerWidth(Math.round(w));
         }
       }
     });
@@ -198,6 +217,7 @@ export function TouchBarSimulator() {
   const iconSize = Math.round(13 * scale);
   const volumeIconSize = Math.round(14 * scale);
   const buttonRadius = `${Math.round(6 * scale)}px`;
+  const minTimelineWidth = Math.round(180 * scale);
 
   const [state, setState] = useState<TouchBarStatePayload>({
     status: "idle",
@@ -215,6 +235,25 @@ export function TouchBarSimulator() {
     currentRoute: "/",
     isFullscreen: false,
   });
+
+  useEffect(() => {
+    const el = leftControlsRef.current;
+    if (!el) return;
+    const update = () => {
+      const w = el.getBoundingClientRect().width;
+      if (w > 0) setLeftControlsWidth(Math.round(w));
+    };
+    update();
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.contentRect.width > 0) {
+          setLeftControlsWidth(Math.round(entry.contentRect.width));
+        }
+      }
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [state.track?.title, state.track?.artist, scale]);
 
   const [coverAccentColor, setCoverAccentColor] = useState<string>("#0a84ff");
 
@@ -245,6 +284,12 @@ export function TouchBarSimulator() {
   const [hoverPositionMs, setHoverPositionMs] = useState<number | null>(null);
   const waveformRef = useRef<HTMLDivElement>(null);
   const lastNonZeroVolumeRef = useRef<number>(0.7);
+
+  const estimatedExpandedVolumeWidth = containerHeight + Math.round(230 * scale);
+  const effectiveLeftWidth = leftControlsWidth || Math.round(280 * scale);
+  const availableCenterWidthWhenVolumeOpen =
+    containerWidth - effectiveLeftWidth - estimatedExpandedVolumeWidth - Math.round(16 * scale);
+  const isTimelineHidden = isVolumeOpen && availableCenterWidthWhenVolumeOpen < minTimelineWidth;
 
   useEffect(() => {
     if (!window.linerElectron?.onTouchBarSimulatorState) return;
@@ -313,6 +358,11 @@ export function TouchBarSimulator() {
 
   useEffect(() => {
     const handleResize = () => {
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        if (rect.width > 0) setContainerWidth(Math.round(rect.width));
+        if (rect.height > 0) setContainerHeight(Math.round(rect.height));
+      }
       if (waveformRef.current) {
         updateWaveformWidth(waveformRef.current);
       }
@@ -336,8 +386,8 @@ export function TouchBarSimulator() {
     waveformWidth > 0
       ? waveformWidth
       : typeof window !== "undefined"
-      ? Math.max(300, window.innerWidth - 260)
-      : 300;
+      ? Math.max(minTimelineWidth, window.innerWidth - 260)
+      : minTimelineWidth;
 
   const barSlotWidth = Math.max(3, Math.round(5 * scale));
   const padding = Math.round(16 * scale);
@@ -520,6 +570,7 @@ export function TouchBarSimulator() {
       }}
     >
       <div
+        ref={leftControlsRef}
         className="flex h-full items-center shrink-0"
         style={{
           WebkitAppRegion: "no-drag",
@@ -644,209 +695,219 @@ export function TouchBarSimulator() {
         </div>
       </div>
 
-      <div
-        className="relative flex h-full flex-1 min-w-0 items-center justify-center overflow-hidden"
-        style={{
-          marginLeft: `${Math.round(6 * scale)}px`,
-          marginRight: `${Math.round(6 * scale)}px`,
-          WebkitAppRegion: "no-drag",
-        } as React.CSSProperties}
-      >
-        {state.isFullscreen ? (
-          <div
-            onClick={() => sendAction({ type: "toggleFullscreen" })}
-            className="relative flex h-full w-full cursor-pointer flex-col items-center justify-center overflow-hidden text-center py-0.5"
+      <AnimatePresence>
+        {!isTimelineHidden && (
+          <motion.div
+            key="center-timeline"
+            initial={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.96 }}
+            transition={{ duration: 0.15, ease: "easeOut" }}
+            className="relative flex h-full flex-1 items-center justify-center overflow-hidden"
+            style={{
+              minWidth: `${minTimelineWidth}px`,
+              marginLeft: `${Math.round(6 * scale)}px`,
+              marginRight: `${Math.round(6 * scale)}px`,
+              WebkitAppRegion: "no-drag",
+            } as React.CSSProperties}
           >
-            <div
-              className="relative flex items-center justify-center w-full"
-              style={{ minHeight: `${Math.round(16 * scale)}px` }}
-            >
-              <AnimatePresence mode="popLayout" initial={false}>
-                <motion.div
-                  key={displayLine?.timeMs !== undefined ? `${displayLine.timeMs}-${displayLine.text}` : displayLineText}
-                  initial={{ y: 13 * scale, scale: 0.82, opacity: 0.6 }}
-                  animate={{ y: 0, scale: 1, opacity: 1 }}
-                  exit={{ y: -13 * scale, scale: 0.96, opacity: 0 }}
-                  transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
-                  className="flex max-w-full items-center justify-center px-2 text-center origin-center"
-                  style={{ gap: `${Math.round(4 * scale)}px` }}
-                >
-                  {displayLine?.words && displayLine.words.length > 0 ? (
-                    displayLine.words.map((w: TouchBarWordData, idx: number) => {
-                      return (
-                        <span
-                          key={`${w.timeMs}-${idx}`}
-                          ref={(el) => {
-                            if (el) {
-                              wordSpanRefs.current[idx] = el;
-                            }
-                          }}
-                          className="bg-clip-text text-transparent font-medium inline"
-                          style={{
-                            backgroundImage: "linear-gradient(to right, #ffffff 0%, #636366 0%)",
-                            fontSize: `${(11.5 * scale).toFixed(1)}px`,
-                            lineHeight: `${(14 * scale).toFixed(1)}px`,
-                          }}
-                        >
-                          {w.text}
-                        </span>
-                      );
-                    })
-                  ) : (
-                    <motion.span
-                      initial={{ color: "#636366" }}
-                      animate={{ color: "#ffffff" }}
-                      transition={{ duration: 0.32, ease: "easeOut" }}
-                      className="font-medium truncate max-w-full"
-                      style={{ fontSize: `${(11.5 * scale).toFixed(1)}px` }}
-                    >
-                      {displayLineText}
-                    </motion.span>
-                  )}
-                </motion.div>
-              </AnimatePresence>
-            </div>
-
-            <div
-              className="relative flex items-center justify-center w-full mt-0.5 overflow-hidden"
-              style={{ minHeight: `${Math.round(11 * scale)}px` }}
-            >
-              <AnimatePresence mode="popLayout" initial={false}>
-                {state.nextLyricText && state.nextLyricText !== displayLineText && (
-                  <motion.p
-                    key={state.nextLyricText}
-                    initial={{ y: 8 * scale, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    exit={{ y: -8 * scale, opacity: 0 }}
-                    transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-                    className="max-w-full truncate text-[#636366] leading-none"
-                    style={{ fontSize: `${(8.5 * scale).toFixed(1)}px` }}
-                  >
-                    {state.nextLyricText}
-                  </motion.p>
-                )}
-              </AnimatePresence>
-            </div>
-          </div>
-        ) : (
-          <div
-            className="flex h-full w-full items-center px-0.5"
-            style={{ gap: `${Math.round(6 * scale)}px` }}
-          >
-            <span
-              className="shrink-0 font-mono tabular-nums text-[#8e8e93] text-right"
-              style={{
-                width: `${Math.round(28 * scale)}px`,
-                fontSize: `${(9.5 * scale).toFixed(1)}px`,
-              }}
-            >
-              {formatTime(hoverPositionMs !== null ? hoverPositionMs : currentPosMs)}
-            </span>
-
-            <div
-              ref={setWaveformRef}
-              onPointerDown={handleWaveformPointerDown}
-              onPointerMove={handleWaveformPointerMove}
-              onPointerLeave={handleWaveformPointerLeave}
-              className="relative flex h-full flex-1 min-w-[60px] cursor-pointer items-center bg-[#161618] hover:bg-[#19191c] transition-colors overflow-hidden select-none py-1"
-              style={{ borderRadius: buttonRadius }}
-            >
+            {state.isFullscreen ? (
               <div
-                className="absolute flex items-center"
-                style={{
-                  left: `${Math.round(8 * scale)}px`,
-                  right: `${Math.round(8 * scale)}px`,
-                  top: `${Math.round(4 * scale)}px`,
-                  bottom: `${Math.round(4 * scale)}px`,
-                }}
+                onClick={() => sendAction({ type: "toggleFullscreen" })}
+                className="relative flex h-full w-full cursor-pointer flex-col items-center justify-center overflow-hidden text-center py-0.5"
               >
-                {waveformBars.map((heightRatio, i) => {
-                  const barRatio = i / (waveformBars.length - 1);
-                  const isPlayed = barRatio <= activeTimelineRatio;
-                  const pixelHeight = Math.max(3, Math.round(heightRatio * 18 * scale));
-
-                  return (
-                    <div
-                      key={i}
-                      style={{
-                        left: `${barRatio * 100}%`,
-                        height: `${pixelHeight}px`,
-                        width: `${Math.max(2, Math.round(2 * scale))}px`,
-                      }}
-                      className={`absolute -translate-x-1/2 rounded-full transition-colors duration-75 ${
-                        isPlayed ? "bg-white" : "bg-[#333336]"
-                      }`}
-                    />
-                  );
-                })}
+                <div
+                  className="relative flex items-center justify-center w-full"
+                  style={{ minHeight: `${Math.round(16 * scale)}px` }}
+                >
+                  <AnimatePresence mode="popLayout" initial={false}>
+                    <motion.div
+                      key={displayLine?.timeMs !== undefined ? `${displayLine.timeMs}-${displayLine.text}` : displayLineText}
+                      initial={{ y: 13 * scale, scale: 0.82, opacity: 0.6 }}
+                      animate={{ y: 0, scale: 1, opacity: 1 }}
+                      exit={{ y: -13 * scale, scale: 0.96, opacity: 0 }}
+                      transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+                      className="flex max-w-full items-center justify-center px-2 text-center origin-center"
+                      style={{ gap: `${Math.round(4 * scale)}px` }}
+                    >
+                      {displayLine?.words && displayLine.words.length > 0 ? (
+                        displayLine.words.map((w: TouchBarWordData, idx: number) => {
+                          return (
+                            <span
+                              key={`${w.timeMs}-${idx}`}
+                              ref={(el) => {
+                                if (el) {
+                                  wordSpanRefs.current[idx] = el;
+                                }
+                              }}
+                              className="bg-clip-text text-transparent font-medium inline"
+                              style={{
+                                backgroundImage: "linear-gradient(to right, #ffffff 0%, #636366 0%)",
+                                fontSize: `${(11.5 * scale).toFixed(1)}px`,
+                                lineHeight: `${(14 * scale).toFixed(1)}px`,
+                              }}
+                            >
+                              {w.text}
+                            </span>
+                          );
+                        })
+                      ) : (
+                        <motion.span
+                          initial={{ color: "#636366" }}
+                          animate={{ color: "#ffffff" }}
+                          transition={{ duration: 0.32, ease: "easeOut" }}
+                          className="font-medium truncate max-w-full"
+                          style={{ fontSize: `${(11.5 * scale).toFixed(1)}px` }}
+                        >
+                          {displayLineText}
+                        </motion.span>
+                      )}
+                    </motion.div>
+                  </AnimatePresence>
+                </div>
 
                 <div
-                  className="pointer-events-none absolute top-1/2 -translate-y-1/2 z-10"
-                  style={{
-                    left: `${activeTimelineRatio * 100}%`,
-                  }}
+                  className="relative flex items-center justify-center w-full mt-0.5 overflow-hidden"
+                  style={{ minHeight: `${Math.round(11 * scale)}px` }}
                 >
-                  <motion.div
-                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white shadow-[0_0_8px_rgba(255,255,255,0.7),0_1px_3px_rgba(0,0,0,0.6)]"
-                    animate={{
-                      width: isTimelineTouched ? Math.round(12 * scale) : Math.max(2, Math.round(2.5 * scale)),
-                      height: isTimelineTouched ? Math.round(12 * scale) : Math.round(14 * scale),
-                      borderRadius: isTimelineTouched ? Math.round(3 * scale) : 9999,
-                      scale: isSeeking ? 1.15 : isTimelineTouched ? 1.05 : 1,
-                    }}
-                    transition={{
-                      type: "spring",
-                      stiffness: 500,
-                      damping: 28,
-                      mass: 0.6,
-                    }}
-                  />
-
-                  <AnimatePresence>
-                    {isTimelineTouched && (
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.85, x: isNearRightEdge ? 4 * scale : -4 * scale }}
-                        animate={{ opacity: 1, scale: 1, x: 0 }}
-                        exit={{ opacity: 0, scale: 0.85, x: isNearRightEdge ? 4 * scale : -4 * scale }}
-                        transition={{ duration: 0.14, ease: "easeOut" }}
-                        className="absolute top-1/2 -translate-y-1/2 z-20 flex items-center"
-                        style={{
-                          [isNearRightEdge ? "right" : "left"]: `${Math.round(9 * scale)}px`,
-                        }}
+                  <AnimatePresence mode="popLayout" initial={false}>
+                    {state.nextLyricText && state.nextLyricText !== displayLineText && (
+                      <motion.p
+                        key={state.nextLyricText}
+                        initial={{ y: 8 * scale, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        exit={{ y: -8 * scale, opacity: 0 }}
+                        transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                        className="max-w-full truncate text-[#636366] leading-none"
+                        style={{ fontSize: `${(8.5 * scale).toFixed(1)}px` }}
                       >
-                        <div
-                          className="flex items-center bg-[#1c1c1e]/95 border border-white/20 shadow-[0_2px_8px_rgba(0,0,0,0.8)] backdrop-blur-md"
-                          style={{
-                            borderRadius: `${Math.round(4 * scale)}px`,
-                            padding: `${Math.max(1, Math.round(2 * scale))}px ${Math.round(6 * scale)}px`,
-                          }}
-                        >
-                          <span
-                            className="font-mono font-bold text-white tracking-tight leading-none whitespace-nowrap tabular-nums"
-                            style={{ fontSize: `${(9 * scale).toFixed(1)}px` }}
-                          >
-                            {formatTime(activeTimelineMs)}
-                          </span>
-                        </div>
-                      </motion.div>
+                        {state.nextLyricText}
+                      </motion.p>
                     )}
                   </AnimatePresence>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div
+                className="flex h-full w-full items-center px-0.5"
+                style={{ gap: `${Math.round(6 * scale)}px` }}
+              >
+                <span
+                  className="shrink-0 font-mono tabular-nums text-[#8e8e93] text-right"
+                  style={{
+                    width: `${Math.round(28 * scale)}px`,
+                    fontSize: `${(9.5 * scale).toFixed(1)}px`,
+                  }}
+                >
+                  {formatTime(hoverPositionMs !== null ? hoverPositionMs : currentPosMs)}
+                </span>
 
-            <span
-              className="shrink-0 font-mono tabular-nums text-[#8e8e93] text-left"
-              style={{
-                width: `${Math.round(28 * scale)}px`,
-                fontSize: `${(9.5 * scale).toFixed(1)}px`,
-              }}
-            >
-              {formatTime(durationMs)}
-            </span>
-          </div>
+                <div
+                  ref={setWaveformRef}
+                  onPointerDown={handleWaveformPointerDown}
+                  onPointerMove={handleWaveformPointerMove}
+                  onPointerLeave={handleWaveformPointerLeave}
+                  className="relative flex h-full flex-1 min-w-[60px] cursor-pointer items-center bg-[#161618] hover:bg-[#19191c] transition-colors overflow-hidden select-none py-1"
+                  style={{ borderRadius: buttonRadius }}
+                >
+                  <div
+                    className="absolute flex items-center"
+                    style={{
+                      left: `${Math.round(8 * scale)}px`,
+                      right: `${Math.round(8 * scale)}px`,
+                      top: `${Math.round(4 * scale)}px`,
+                      bottom: `${Math.round(4 * scale)}px`,
+                    }}
+                  >
+                    {waveformBars.map((heightRatio, i) => {
+                      const barRatio = i / (waveformBars.length - 1);
+                      const isPlayed = barRatio <= activeTimelineRatio;
+                      const pixelHeight = Math.max(3, Math.round(heightRatio * 18 * scale));
+
+                      return (
+                        <div
+                          key={i}
+                          style={{
+                            left: `${barRatio * 100}%`,
+                            height: `${pixelHeight}px`,
+                            width: `${Math.max(2, Math.round(2 * scale))}px`,
+                          }}
+                          className={`absolute -translate-x-1/2 rounded-full transition-colors duration-75 ${
+                            isPlayed ? "bg-white" : "bg-[#333336]"
+                          }`}
+                        />
+                      );
+                    })}
+
+                    <div
+                      className="pointer-events-none absolute top-1/2 -translate-y-1/2 z-10"
+                      style={{
+                        left: `${activeTimelineRatio * 100}%`,
+                      }}
+                    >
+                      <motion.div
+                        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white shadow-[0_0_8px_rgba(255,255,255,0.7),0_1px_3px_rgba(0,0,0,0.6)]"
+                        animate={{
+                          width: isTimelineTouched ? Math.round(12 * scale) : Math.max(2, Math.round(2.5 * scale)),
+                          height: isTimelineTouched ? Math.round(12 * scale) : Math.round(14 * scale),
+                          borderRadius: isTimelineTouched ? Math.round(3 * scale) : 9999,
+                          scale: isSeeking ? 1.15 : isTimelineTouched ? 1.05 : 1,
+                        }}
+                        transition={{
+                          type: "spring",
+                          stiffness: 500,
+                          damping: 28,
+                          mass: 0.6,
+                        }}
+                      />
+
+                      <AnimatePresence>
+                        {isTimelineTouched && (
+                          <motion.div
+                            initial={{ opacity: 0, scale: 0.85, x: isNearRightEdge ? 4 * scale : -4 * scale }}
+                            animate={{ opacity: 1, scale: 1, x: 0 }}
+                            exit={{ opacity: 0, scale: 0.85, x: isNearRightEdge ? 4 * scale : -4 * scale }}
+                            transition={{ duration: 0.14, ease: "easeOut" }}
+                            className="absolute top-1/2 -translate-y-1/2 z-20 flex items-center"
+                            style={{
+                              [isNearRightEdge ? "right" : "left"]: `${Math.round(9 * scale)}px`,
+                            }}
+                          >
+                            <div
+                              className="flex items-center bg-[#1c1c1e]/95 border border-white/20 shadow-[0_2px_8px_rgba(0,0,0,0.8)] backdrop-blur-md"
+                              style={{
+                                borderRadius: `${Math.round(4 * scale)}px`,
+                                padding: `${Math.max(1, Math.round(2 * scale))}px ${Math.round(6 * scale)}px`,
+                              }}
+                            >
+                              <span
+                                className="font-mono font-bold text-white tracking-tight leading-none whitespace-nowrap tabular-nums"
+                                style={{ fontSize: `${(9 * scale).toFixed(1)}px` }}
+                              >
+                                {formatTime(activeTimelineMs)}
+                              </span>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  </div>
+                </div>
+
+                <span
+                  className="shrink-0 font-mono tabular-nums text-[#8e8e93] text-left"
+                  style={{
+                    width: `${Math.round(28 * scale)}px`,
+                    fontSize: `${(9.5 * scale).toFixed(1)}px`,
+                  }}
+                >
+                  {formatTime(durationMs)}
+                </span>
+              </div>
+            )}
+          </motion.div>
         )}
-      </div>
+      </AnimatePresence>
 
       <div
         className="flex h-full items-center pl-0.5 shrink-0"
