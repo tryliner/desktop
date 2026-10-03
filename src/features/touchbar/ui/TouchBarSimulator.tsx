@@ -403,26 +403,54 @@ export function TouchBarSimulator() {
     const rect = waveformRef.current.getBoundingClientRect();
     const waveformPad = Math.round(8 * scale);
     const trackWidth = Math.max(1, rect.width - waveformPad * 2);
-    const clickX = e.clientX - rect.left - waveformPad;
-    const ratio = Math.max(0, Math.min(1, clickX / trackWidth));
-    const targetMs = ratio * durationMs;
-    setIsSeeking(true);
-    setLocalSeekMs(targetMs);
+    const getMsFromClientX = (clientX: number) => {
+      const x = clientX - rect.left - waveformPad;
+      const ratio = Math.max(0, Math.min(1, x / trackWidth));
+      return ratio * durationMs;
+    };
+
+    const startClientX = e.clientX;
+    const initialMs = getMsFromClientX(startClientX);
+    let isDragSeeking = false;
+
+    const startSeeking = (targetMs: number) => {
+      if (isDragSeeking) return;
+      isDragSeeking = true;
+      setIsSeeking(true);
+      setLocalSeekMs(targetMs);
+    };
+
+    const holdTimer = window.setTimeout(() => {
+      startSeeking(initialMs);
+    }, 120);
 
     const onPointerMove = (moveEvent: PointerEvent) => {
-      const currentX = moveEvent.clientX - rect.left - waveformPad;
-      const moveRatio = Math.max(0, Math.min(1, currentX / trackWidth));
-      setLocalSeekMs(moveRatio * durationMs);
+      const currentMs = getMsFromClientX(moveEvent.clientX);
+      if (!isDragSeeking) {
+        if (Math.abs(moveEvent.clientX - startClientX) > 3) {
+          window.clearTimeout(holdTimer);
+          startSeeking(currentMs);
+        }
+      } else {
+        setLocalSeekMs(currentMs);
+      }
     };
 
     const onPointerUp = (upEvent: PointerEvent) => {
-      const finalX = upEvent.clientX - rect.left - waveformPad;
-      const finalRatio = Math.max(0, Math.min(1, finalX / trackWidth));
-      const finalMs = finalRatio * durationMs;
-      setIsSeeking(false);
-      sendAction({ type: "seek", payload: { positionMs: finalMs } });
+      window.clearTimeout(holdTimer);
       window.removeEventListener("pointermove", onPointerMove);
       window.removeEventListener("pointerup", onPointerUp);
+
+      const finalMs = getMsFromClientX(upEvent.clientX);
+      if (isDragSeeking) {
+        setIsSeeking(false);
+        sendAction({ type: "seek", payload: { positionMs: finalMs } });
+      } else {
+        anchorPosRef.current = finalMs;
+        anchorTimeRef.current = performance.now();
+        setState((prev) => ({ ...prev, positionMs: finalMs }));
+        sendAction({ type: "seek", payload: { positionMs: finalMs } });
+      }
     };
 
     window.addEventListener("pointermove", onPointerMove);
@@ -831,13 +859,11 @@ export function TouchBarSimulator() {
                         animate={{
                           width: isSeeking ? fullThumbSize : Math.max(2, Math.round(2.5 * scale)),
                           height: isSeeking ? fullThumbSize : Math.round(14 * scale),
-                          borderRadius: isSeeking ? Math.round(4 * scale) : 9999,
+                          borderRadius: isSeeking ? Math.round(4 * scale) : Math.round(2 * scale),
                         }}
                         transition={{
-                          type: "spring",
-                          stiffness: 500,
-                          damping: 28,
-                          mass: 0.6,
+                          duration: 0.14,
+                          ease: [0.16, 1, 0.3, 1],
                         }}
                       />
 
