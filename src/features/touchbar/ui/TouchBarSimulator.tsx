@@ -290,53 +290,55 @@ export function TouchBarSimulator() {
         {state.isFullscreen ? (
           <div
             onClick={() => sendAction({ type: "toggleFullscreen" })}
-            className="flex h-full w-full cursor-pointer flex-col items-center justify-center overflow-hidden text-center py-0.5"
+            className="relative flex h-full w-full cursor-pointer flex-col items-center justify-center overflow-hidden text-center py-0.5"
           >
-            <AnimatePresence mode="wait">
+            <AnimatePresence mode="popLayout" initial={false}>
               <motion.div
                 key={displayLine?.timeMs ?? displayLineText}
-                initial={{ opacity: 0, y: 3 }}
+                initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -3 }}
-                transition={{ duration: 0.15, ease: "easeOut" }}
-                className="flex max-w-full items-center justify-center gap-1 px-2 text-center"
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.24, ease: [0.25, 1, 0.5, 1] }}
+                className="flex w-full flex-col items-center justify-center text-center overflow-hidden"
               >
-                {displayLine?.words && displayLine.words.length > 0 ? (
-                  displayLine.words.map((w: TouchBarWordData, idx: number) => {
-                    const isSung = effectiveLyricsTimeMs >= w.endMs;
-                    const isActive =
-                      effectiveLyricsTimeMs >= w.timeMs &&
-                      effectiveLyricsTimeMs < w.endMs;
+                <div className="flex max-w-full items-center justify-center gap-1 px-2 text-center">
+                  {displayLine?.words && displayLine.words.length > 0 ? (
+                    displayLine.words.map((w: TouchBarWordData, idx: number) => {
+                      const isSung = effectiveLyricsTimeMs >= w.endMs;
+                      const isActive =
+                        effectiveLyricsTimeMs >= w.timeMs &&
+                        effectiveLyricsTimeMs < w.endMs;
 
-                    return (
-                      <span
-                        key={`${w.timeMs}-${idx}`}
-                        className={`transition-all duration-100 ${
-                          isActive
-                            ? "font-semibold text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.85)] scale-[1.03]"
-                            : isSung
-                              ? "font-medium text-white"
-                              : "font-normal text-[#545458]"
-                        }`}
-                        style={{ fontSize: "11.5px", lineHeight: "14px" }}
-                      >
-                        {w.text}
-                      </span>
-                    );
-                  })
-                ) : (
-                  <span className="text-[11.5px] font-medium text-white truncate max-w-full">
-                    {displayLineText}
-                  </span>
+                      return (
+                        <span
+                          key={`${w.timeMs}-${idx}`}
+                          className={`transition-all duration-100 ${
+                            isActive
+                              ? "font-semibold text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.85)] scale-[1.03]"
+                              : isSung
+                                ? "font-medium text-white"
+                                : "font-normal text-[#545458]"
+                          }`}
+                          style={{ fontSize: "11.5px", lineHeight: "14px" }}
+                        >
+                          {w.text}
+                        </span>
+                      );
+                    })
+                  ) : (
+                    <span className="text-[11.5px] font-medium text-white truncate max-w-full">
+                      {displayLineText}
+                    </span>
+                  )}
+                </div>
+
+                {state.nextLyricText && state.nextLyricText !== displayLineText && (
+                  <p className="max-w-full truncate text-[8.5px] text-[#636366] mt-0.5 leading-none">
+                    {state.nextLyricText}
+                  </p>
                 )}
               </motion.div>
             </AnimatePresence>
-
-            {state.nextLyricText && state.nextLyricText !== displayLineText && (
-              <p className="max-w-full truncate text-[8.5px] text-[#48484a] mt-0.5">
-                {state.nextLyricText}
-              </p>
-            )}
           </div>
         ) : (
           <div className="flex h-6 w-full items-center gap-1.5 px-0.5">
