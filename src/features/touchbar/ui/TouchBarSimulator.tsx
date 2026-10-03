@@ -669,7 +669,7 @@ export function TouchBarSimulator() {
             {isPlaying ? (
               <span
                 className="flex items-center justify-center"
-                style={{ transform: `translateX(${(1.4 * scale).toFixed(2)}px)` }}
+                style={{ transform: `translateX(${(-0.6 * scale).toFixed(2)}px)` }}
               >
                 <Pause size={iconSize} weight="Bold" />
               </span>
