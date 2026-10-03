@@ -98,6 +98,19 @@ export function TouchBarSimulator() {
   const durationMs = state.durationMs || state.track?.durationMs || 1;
   const currentPosMs = isSeeking ? localSeekMs : state.positionMs;
   const progressRatio = Math.min(1, Math.max(0, currentPosMs / durationMs));
+  const isTimelineTouched = isSeeking || hoverPositionMs !== null;
+  const activeTimelineRatio = isSeeking
+    ? progressRatio
+    : hoverPositionMs !== null
+      ? Math.min(1, Math.max(0, hoverPositionMs / durationMs))
+      : progressRatio;
+  const activeTimelineMs =
+    hoverPositionMs !== null
+      ? hoverPositionMs
+      : isSeeking
+        ? localSeekMs
+        : currentPosMs;
+  const isNearRightEdge = activeTimelineRatio > 0.8;
 
   const [waveformWidth, setWaveformWidth] = useState(0);
   const observerRef = useRef<ResizeObserver | null>(null);
@@ -491,7 +504,7 @@ export function TouchBarSimulator() {
               <div className="absolute inset-x-2 inset-y-0 flex items-center">
                 {waveformBars.map((heightRatio, i) => {
                   const barRatio = i / (waveformBars.length - 1);
-                  const isPlayed = barRatio <= progressRatio;
+                  const isPlayed = barRatio <= activeTimelineRatio;
                   const pixelHeight = Math.max(3, Math.round(heightRatio * 16));
 
                   return (
@@ -509,22 +522,47 @@ export function TouchBarSimulator() {
                 })}
 
                 <div
-                  className="pointer-events-none absolute top-1/2 h-4 w-[2.5px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white shadow-[0_0_6px_rgba(255,255,255,0.7)]"
+                  className="pointer-events-none absolute top-1/2 -translate-y-1/2 z-10"
                   style={{
-                    left: `${progressRatio * 100}%`,
+                    left: `${activeTimelineRatio * 100}%`,
                   }}
-                />
-
-                {hoverPositionMs !== null && (
-                  <div
-                    className="pointer-events-none absolute -top-0.5 rounded-[4px] bg-[#2c2c2e] px-1 font-mono text-[8.5px] text-white shadow -translate-x-1/2"
-                    style={{
-                      left: `${(hoverPositionMs / durationMs) * 100}%`,
+                >
+                  <motion.div
+                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white shadow-[0_0_8px_rgba(255,255,255,0.7),0_1px_3px_rgba(0,0,0,0.6)]"
+                    animate={{
+                      width: isTimelineTouched ? 12 : 2.5,
+                      height: isTimelineTouched ? 12 : 14,
+                      borderRadius: isTimelineTouched ? 3 : 9999,
+                      scale: isSeeking ? 1.15 : isTimelineTouched ? 1.05 : 1,
                     }}
-                  >
-                    {formatTime(hoverPositionMs)}
-                  </div>
-                )}
+                    transition={{
+                      type: "spring",
+                      stiffness: 500,
+                      damping: 28,
+                      mass: 0.6,
+                    }}
+                  />
+
+                  <AnimatePresence>
+                    {isTimelineTouched && (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.85, x: isNearRightEdge ? 4 : -4 }}
+                        animate={{ opacity: 1, scale: 1, x: 0 }}
+                        exit={{ opacity: 0, scale: 0.85, x: isNearRightEdge ? 4 : -4 }}
+                        transition={{ duration: 0.14, ease: "easeOut" }}
+                        className={`absolute top-1/2 -translate-y-1/2 z-20 flex items-center ${
+                          isNearRightEdge ? "right-[9px]" : "left-[9px]"
+                        }`}
+                      >
+                        <div className="flex items-center rounded-[4px] bg-[#1c1c1e]/95 border border-white/20 px-1.5 py-0.5 shadow-[0_2px_8px_rgba(0,0,0,0.8)] backdrop-blur-md">
+                          <span className="font-mono text-[9px] font-bold text-white tracking-tight leading-none whitespace-nowrap tabular-nums">
+                            {formatTime(activeTimelineMs)}
+                          </span>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
               </div>
             </div>
 
