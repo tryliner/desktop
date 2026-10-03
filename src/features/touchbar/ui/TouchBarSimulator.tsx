@@ -219,6 +219,7 @@ export function TouchBarSimulator() {
   const volumeSliderIconSize = Math.round(15.5 * scale);
   const buttonRadius = `${Math.round(6 * scale)}px`;
   const minTimelineWidth = Math.round(180 * scale);
+  const fullThumbSize = Math.max(16, Math.round(containerHeight - 6 * scale));
 
   const [state, setState] = useState<TouchBarStatePayload>({
     status: "idle",
@@ -282,7 +283,6 @@ export function TouchBarSimulator() {
   const [isSeeking, setIsSeeking] = useState(false);
   const [localSeekMs, setLocalSeekMs] = useState(0);
   const [isVolumeOpen, setIsVolumeOpen] = useState(false);
-  const [hoverPositionMs, setHoverPositionMs] = useState<number | null>(null);
   const waveformRef = useRef<HTMLDivElement>(null);
   const lastNonZeroVolumeRef = useRef<number>(0.7);
 
@@ -316,18 +316,9 @@ export function TouchBarSimulator() {
   const durationMs = state.durationMs || state.track?.durationMs || 1;
   const currentPosMs = isSeeking ? localSeekMs : state.positionMs;
   const progressRatio = Math.min(1, Math.max(0, currentPosMs / durationMs));
-  const isTimelineTouched = isSeeking || hoverPositionMs !== null;
-  const activeTimelineRatio = isSeeking
-    ? progressRatio
-    : hoverPositionMs !== null
-      ? Math.min(1, Math.max(0, hoverPositionMs / durationMs))
-      : progressRatio;
-  const activeTimelineMs =
-    hoverPositionMs !== null
-      ? hoverPositionMs
-      : isSeeking
-        ? localSeekMs
-        : currentPosMs;
+  const isTimelineTouched = isSeeking;
+  const activeTimelineRatio = progressRatio;
+  const activeTimelineMs = currentPosMs;
   const isNearRightEdge = activeTimelineRatio > 0.8;
 
   const [waveformWidth, setWaveformWidth] = useState(0);
@@ -429,7 +420,6 @@ export function TouchBarSimulator() {
       const finalRatio = Math.max(0, Math.min(1, finalX / trackWidth));
       const finalMs = finalRatio * durationMs;
       setIsSeeking(false);
-      setHoverPositionMs(null);
       sendAction({ type: "seek", payload: { positionMs: finalMs } });
       window.removeEventListener("pointermove", onPointerMove);
       window.removeEventListener("pointerup", onPointerUp);
@@ -437,22 +427,6 @@ export function TouchBarSimulator() {
 
     window.addEventListener("pointermove", onPointerMove);
     window.addEventListener("pointerup", onPointerUp);
-  };
-
-  const handleWaveformPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!waveformRef.current) return;
-    const rect = waveformRef.current.getBoundingClientRect();
-    const waveformPad = Math.round(8 * scale);
-    const trackWidth = Math.max(1, rect.width - waveformPad * 2);
-    const clickX = e.clientX - rect.left - waveformPad;
-    const ratio = Math.max(0, Math.min(1, clickX / trackWidth));
-    setHoverPositionMs(ratio * durationMs);
-  };
-
-  const handleWaveformPointerLeave = () => {
-    if (!isSeeking) {
-      setHoverPositionMs(null);
-    }
   };
 
   const lastActiveLineRef = useRef<TouchBarActiveLine | null>(null);
@@ -808,14 +782,12 @@ export function TouchBarSimulator() {
                     fontSize: `${(9.5 * scale).toFixed(1)}px`,
                   }}
                 >
-                  {formatTime(hoverPositionMs !== null ? hoverPositionMs : currentPosMs)}
+                  {formatTime(currentPosMs)}
                 </span>
 
                 <div
                   ref={setWaveformRef}
                   onPointerDown={handleWaveformPointerDown}
-                  onPointerMove={handleWaveformPointerMove}
-                  onPointerLeave={handleWaveformPointerLeave}
                   className="relative flex h-full flex-1 min-w-[60px] cursor-pointer items-center bg-[#161618] hover:bg-[#19191c] transition-colors overflow-hidden select-none py-1"
                   style={{ borderRadius: buttonRadius }}
                 >
@@ -857,10 +829,9 @@ export function TouchBarSimulator() {
                       <motion.div
                         className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white shadow-[0_0_8px_rgba(255,255,255,0.7),0_1px_3px_rgba(0,0,0,0.6)]"
                         animate={{
-                          width: isTimelineTouched ? Math.round(12 * scale) : Math.max(2, Math.round(2.5 * scale)),
-                          height: isTimelineTouched ? Math.round(12 * scale) : Math.round(14 * scale),
-                          borderRadius: isTimelineTouched ? Math.round(3 * scale) : 9999,
-                          scale: isSeeking ? 1.15 : isTimelineTouched ? 1.05 : 1,
+                          width: isSeeking ? fullThumbSize : Math.max(2, Math.round(2.5 * scale)),
+                          height: isSeeking ? fullThumbSize : Math.round(14 * scale),
+                          borderRadius: isSeeking ? Math.round(4 * scale) : 9999,
                         }}
                         transition={{
                           type: "spring",
@@ -871,7 +842,7 @@ export function TouchBarSimulator() {
                       />
 
                       <AnimatePresence>
-                        {isTimelineTouched && (
+                        {isSeeking && (
                           <motion.div
                             initial={{ opacity: 0, scale: 0.85, x: isNearRightEdge ? 4 * scale : -4 * scale }}
                             animate={{ opacity: 1, scale: 1, x: 0 }}
@@ -879,11 +850,11 @@ export function TouchBarSimulator() {
                             transition={{ duration: 0.14, ease: "easeOut" }}
                             className="absolute top-1/2 -translate-y-1/2 z-20 flex items-center"
                             style={{
-                              [isNearRightEdge ? "right" : "left"]: `${Math.round(9 * scale)}px`,
+                              [isNearRightEdge ? "right" : "left"]: `${Math.round(fullThumbSize / 2 + 4 * scale)}px`,
                             }}
                           >
                             <div
-                              className="flex items-center bg-[#1c1c1e]/95 border border-white/20 shadow-[0_2px_8px_rgba(0,0,0,0.8)] backdrop-blur-md"
+                              className="flex items-center bg-[#1c1c1e]/95 shadow-[0_2px_8px_rgba(0,0,0,0.8)] backdrop-blur-md"
                               style={{
                                 borderRadius: `${Math.round(4 * scale)}px`,
                                 padding: `${Math.max(1, Math.round(2 * scale))}px ${Math.round(6 * scale)}px`,
@@ -947,7 +918,7 @@ export function TouchBarSimulator() {
               >
                 <span
                   className="flex items-center justify-center"
-                  style={{ transform: `translateX(${(-0.5 * scale).toFixed(2)}px)` }}
+                  style={{ transform: `translateX(${(-0.4 * scale).toFixed(2)}px)` }}
                 >
                   <svg
                     width={Math.round(13 * scale)}
@@ -1012,14 +983,14 @@ export function TouchBarSimulator() {
                   <div
                     className={`pointer-events-none absolute top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white ${
                       isDraggingVolume
-                        ? "shadow-[0_2px_6px_rgba(0,0,0,0.9)] scale-110"
+                        ? "shadow-[0_0_8px_rgba(255,255,255,0.7),0_1px_3px_rgba(0,0,0,0.6)]"
                         : "shadow-[0_1px_4px_rgba(0,0,0,0.6)]"
                     } ${isDraggingVolume ? "" : "transition-all duration-150 ease-out"}`}
                     style={{
                       left: `${activeVolumePercent}%`,
-                      width: isDraggingVolume ? `${Math.round(14 * scale)}px` : `${Math.round(12 * scale)}px`,
-                      height: isDraggingVolume ? `${Math.round(14 * scale)}px` : `${Math.round(12 * scale)}px`,
-                      borderRadius: `${Math.round(3.5 * scale)}px`,
+                      width: isDraggingVolume ? `${fullThumbSize}px` : `${Math.round(12 * scale)}px`,
+                      height: isDraggingVolume ? `${fullThumbSize}px` : `${Math.round(12 * scale)}px`,
+                      borderRadius: isDraggingVolume ? `${Math.round(4 * scale)}px` : `${Math.round(3.5 * scale)}px`,
                     }}
                   />
                   <input
@@ -1097,14 +1068,14 @@ export function TouchBarSimulator() {
                 {state.isLiked ? (
                   <span
                     className="flex items-center justify-center"
-                    style={{ transform: `translateX(${(-0.5 * scale).toFixed(2)}px)` }}
+                    style={{ transform: `translateX(${(-0.1 * scale).toFixed(2)}px)` }}
                   >
                     <HeartFill size={iconSize} />
                   </span>
                 ) : (
                   <span
                     className="flex items-center justify-center"
-                    style={{ transform: `translateX(${(-0.5 * scale).toFixed(2)}px)` }}
+                    style={{ transform: `translateX(${(-0.1 * scale).toFixed(2)}px)` }}
                   >
                     <HeartLine size={iconSize} />
                   </span>
