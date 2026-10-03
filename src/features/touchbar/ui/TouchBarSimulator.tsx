@@ -55,6 +55,112 @@ function VolumeIcon({ percent, size = 13 }: { percent: number; size?: number }) 
   return <VolumeLoud size={size} weight="Bold" />;
 }
 
+function rgbToHsl(r: number, g: number, b: number): [number, number, number] {
+  r /= 255;
+  g /= 255;
+  b /= 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  let h = 0;
+  let s = 0;
+  const l = (max + min) / 2;
+
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case r:
+        h = (g - b) / d + (g < b ? 6 : 0);
+        break;
+      case g:
+        h = (b - r) / d + 2;
+        break;
+      case b:
+        h = (r - g) / d + 4;
+        break;
+    }
+    h /= 6;
+  }
+  return [h, s, l];
+}
+
+function hslToRgb(h: number, s: number, l: number): [number, number, number] {
+  let r: number, g: number, b: number;
+  if (s === 0) {
+    r = g = b = l;
+  } else {
+    const hue2rgb = (p: number, q: number, t: number) => {
+      if (t < 0) t += 1;
+      if (t > 1) t -= 1;
+      if (t < 1 / 6) return p + (q - p) * 6 * t;
+      if (t < 1 / 2) return q;
+      if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+      return p;
+    };
+    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+    const p = 2 * l - q;
+    r = hue2rgb(p, q, h + 1 / 3);
+    g = hue2rgb(p, q, h);
+    b = hue2rgb(p, q, h - 1 / 3);
+  }
+  return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+}
+
+function extractCoverColor(img: HTMLImageElement): string | null {
+  try {
+    const canvas = document.createElement("canvas");
+    canvas.width = 24;
+    canvas.height = 24;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    if (!ctx) return null;
+    ctx.drawImage(img, 0, 0, 24, 24);
+    const data = ctx.getImageData(0, 0, 24, 24).data;
+
+    let totalWeight = 0;
+    let weightedR = 0;
+    let weightedG = 0;
+    let weightedB = 0;
+    let totalR = 0;
+    let totalG = 0;
+    let totalB = 0;
+    const count = data.length / 4;
+
+    for (let i = 0; i < data.length; i += 4) {
+      const r = data[i];
+      const g = data[i + 1];
+      const b = data[i + 2];
+      totalR += r;
+      totalG += g;
+      totalB += b;
+
+      const [, s, l] = rgbToHsl(r, g, b);
+      if (l > 0.08 && l < 0.95 && s > 0.1) {
+        const vibrancy = s * (1 - Math.abs(l - 0.5) * 1.5);
+        const weight = Math.max(0.01, vibrancy * vibrancy);
+        weightedR += r * weight;
+        weightedG += g * weight;
+        weightedB += b * weight;
+        totalWeight += weight;
+      }
+    }
+
+    const finalR = Math.round(totalWeight > 0.5 ? weightedR / totalWeight : totalR / count);
+    const finalG = Math.round(totalWeight > 0.5 ? weightedG / totalWeight : totalG / count);
+    const finalB = Math.round(totalWeight > 0.5 ? weightedB / totalWeight : totalB / count);
+
+    const [h, s, l] = rgbToHsl(finalR, finalG, finalB);
+    if (s < 0.1) {
+      return "#ffffff";
+    }
+    const solidL = Math.max(0.55, Math.min(0.78, l < 0.4 ? 0.65 : l));
+    const solidS = Math.max(0.70, s);
+    const [solidR, solidG, solidB] = hslToRgb(h, solidS, solidL);
+    return `rgb(${solidR}, ${solidG}, ${solidB})`;
+  } catch {
+    return null;
+  }
+}
+
 export function TouchBarSimulator() {
   useDisableButtonFocus();
 
@@ -109,6 +215,29 @@ export function TouchBarSimulator() {
     currentRoute: "/",
     isFullscreen: false,
   });
+
+  const [coverAccentColor, setCoverAccentColor] = useState<string>("#0a84ff");
+
+  useEffect(() => {
+    if (!state.track?.cover) {
+      setCoverAccentColor("#0a84ff");
+      return;
+    }
+    let active = true;
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      if (!active) return;
+      const color = extractCoverColor(img);
+      if (color) {
+        setCoverAccentColor(color);
+      }
+    };
+    img.src = state.track.cover;
+    return () => {
+      active = false;
+    };
+  }, [state.track?.cover]);
 
   const [isSeeking, setIsSeeking] = useState(false);
   const [localSeekMs, setLocalSeekMs] = useState(0);
@@ -423,6 +552,13 @@ export function TouchBarSimulator() {
             <img
               src={state.track.cover}
               alt=""
+              crossOrigin="anonymous"
+              onLoad={(e) => {
+                const color = extractCoverColor(e.currentTarget);
+                if (color) {
+                  setCoverAccentColor(color);
+                }
+              }}
               className="h-full aspect-square shrink-0 object-cover ring-1 ring-white/10"
               style={{ borderRadius: `${Math.round(5 * scale)}px` }}
             />
@@ -735,7 +871,8 @@ export function TouchBarSimulator() {
                 tabIndex={-1}
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => setIsVolumeOpen(false)}
-                className="flex h-full aspect-square shrink-0 items-center justify-center rounded-full bg-[#1c1c1e] text-[#8e8e93] hover:bg-[#2c2c2e] hover:text-white transition-colors outline-none focus:outline-none focus-visible:outline-none focus:ring-0"
+                className="flex h-full aspect-square shrink-0 items-center justify-center bg-[#1c1c1e] text-[#8e8e93] hover:bg-[#2c2c2e] hover:text-white transition-colors outline-none focus:outline-none focus-visible:outline-none focus:ring-0"
+                style={{ borderRadius: buttonRadius }}
                 title="Close"
               >
                 <svg
@@ -755,8 +892,9 @@ export function TouchBarSimulator() {
               </button>
 
               <div
-                className="flex h-full items-center rounded-full bg-[#1c1c1e] overflow-hidden"
+                className="flex h-full items-center bg-[#1c1c1e] overflow-hidden"
                 style={{
+                  borderRadius: buttonRadius,
                   width: `${Math.round(220 * scale)}px`,
                   paddingLeft: `${Math.round(10 * scale)}px`,
                   paddingRight: `${Math.round(10 * scale)}px`,
@@ -776,14 +914,21 @@ export function TouchBarSimulator() {
 
                 <div className="relative flex flex-1 items-center h-full min-w-0">
                   <div
-                    className="relative w-full rounded-full bg-[#2c2c2e] overflow-hidden my-auto"
-                    style={{ height: `${Math.max(3, Math.round(4 * scale))}px` }}
+                    className="relative w-full bg-[#2c2c2e] overflow-hidden my-auto"
+                    style={{
+                      height: `${Math.max(3, Math.round(4 * scale))}px`,
+                      borderRadius: `${Math.round(2 * scale)}px`,
+                    }}
                   >
                     <div
-                      className={`h-full bg-[#0a84ff] rounded-full ${
+                      className={`h-full ${
                         isDraggingVolume ? "" : "transition-all duration-150 ease-out"
                       }`}
-                      style={{ width: `${activeVolumePercent}%` }}
+                      style={{
+                        width: `${activeVolumePercent}%`,
+                        backgroundColor: coverAccentColor,
+                        borderRadius: `${Math.round(2 * scale)}px`,
+                      }}
                     />
                   </div>
                   <div
