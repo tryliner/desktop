@@ -189,7 +189,15 @@ export function TouchBarSimulator() {
     lastActiveLyricTextRef.current = state.activeLyricText;
   }
 
-  const effectiveLyricsTimeMs = currentPosMs + (state.offsetMs || 0);
+  const anchorPosRef = useRef(state.positionMs);
+  const anchorTimeRef = useRef(performance.now());
+  const wordSpanRefs = useRef<(HTMLSpanElement | null)[]>([]);
+
+  useEffect(() => {
+    anchorPosRef.current = state.positionMs;
+    anchorTimeRef.current = performance.now();
+  }, [state.positionMs, state.status]);
+
   const displayLine = state.activeLine || lastActiveLineRef.current;
   const displayLineText =
     state.activeLine?.text ||
@@ -197,6 +205,54 @@ export function TouchBarSimulator() {
     lastActiveLyricTextRef.current ||
     state.nextLyricText ||
     "•••";
+
+  useEffect(() => {
+    let rafId: number;
+
+    const tick = () => {
+      const isPlaying = state.status === "playing";
+      const now = performance.now();
+      const currentPos = isSeeking
+        ? localSeekMs
+        : isPlaying
+          ? anchorPosRef.current + (now - anchorTimeRef.current)
+          : state.positionMs;
+
+      const effectiveTime = currentPos + (state.offsetMs || 0);
+
+      const words = displayLine?.words;
+      if (words && words.length > 0) {
+        for (let i = 0; i < words.length; i++) {
+          const span = wordSpanRefs.current[i];
+          if (!span) continue;
+          const w = words[i];
+
+          let progress = 0;
+          if (w.endMs <= w.timeMs) {
+            progress = effectiveTime >= w.timeMs ? 100 : 0;
+          } else if (effectiveTime >= w.endMs) {
+            progress = 100;
+          } else if (effectiveTime <= w.timeMs) {
+            progress = 0;
+          } else {
+            const pct = ((effectiveTime - w.timeMs) / (w.endMs - w.timeMs)) * 100;
+            progress = Math.max(0, Math.min(100, pct));
+          }
+
+          const bg = `linear-gradient(to right, #ffffff ${progress.toFixed(1)}%, #636366 ${progress.toFixed(1)}%)`;
+          if (span.style.backgroundImage !== bg) {
+            span.style.backgroundImage = bg;
+          }
+        }
+      }
+
+      rafId = requestAnimationFrame(tick);
+    };
+
+    rafId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafId);
+  }, [state.status, state.positionMs, state.offsetMs, isSeeking, localSeekMs, displayLine]);
+
   const volumeLevel = toVolumeLevel(state.volume);
   const volumePercent = Math.round(volumeLevel * 100);
 
@@ -304,22 +360,18 @@ export function TouchBarSimulator() {
                 <div className="flex max-w-full items-center justify-center gap-1 px-2 text-center">
                   {displayLine?.words && displayLine.words.length > 0 ? (
                     displayLine.words.map((w: TouchBarWordData, idx: number) => {
-                      const isSung = effectiveLyricsTimeMs >= w.endMs;
-                      const isActive =
-                        effectiveLyricsTimeMs >= w.timeMs &&
-                        effectiveLyricsTimeMs < w.endMs;
-
                       return (
                         <span
                           key={`${w.timeMs}-${idx}`}
-                          className={`transition-all duration-100 ${
-                            isActive
-                              ? "font-semibold text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.85)] scale-[1.03]"
-                              : isSung
-                                ? "font-medium text-white"
-                                : "font-normal text-[#545458]"
-                          }`}
-                          style={{ fontSize: "11.5px", lineHeight: "14px" }}
+                          ref={(el) => {
+                            wordSpanRefs.current[idx] = el;
+                          }}
+                          className="bg-clip-text text-transparent font-medium inline"
+                          style={{
+                            backgroundImage: "linear-gradient(to right, #ffffff 0%, #636366 0%)",
+                            fontSize: "11.5px",
+                            lineHeight: "14px",
+                          }}
                         >
                           {w.text}
                         </span>
