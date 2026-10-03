@@ -1230,7 +1230,12 @@ export function TouchBarSimulator() {
                 title={state.isFullscreen ? "Exit Fullscreen" : "Fullscreen / Lyrics"}
               >
                 {state.isFullscreen ? (
-                  <DownFill size={iconSize} />
+                  <span
+                    className="flex items-center justify-center"
+                    style={{ transform: `translateX(${(-0.4 * scale).toFixed(2)}px)` }}
+                  >
+                    <DownFill size={iconSize} />
+                  </span>
                 ) : (
                   <MaximizeSquare3 size={iconSize} weight="Bold" />
                 )}

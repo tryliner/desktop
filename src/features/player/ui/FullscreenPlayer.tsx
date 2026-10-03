@@ -477,7 +477,12 @@ export function FullscreenPlayer({
         data-no-window-drag
         className="absolute top-[12px] left-[11.8px] z-30 inline-flex h-[32px] w-[32px] items-center justify-center rounded-lg border-none bg-black/50 backdrop-blur-xl text-white/80 hover:text-white hover:bg-white/10 active:scale-[0.94] transition-all cursor-pointer select-none pointer-events-auto"
       >
-        <DownFill size={19} />
+        <span
+          className="flex items-center justify-center"
+          style={{ transform: "translateX(-0.4px)" }}
+        >
+          <DownFill size={19} />
+        </span>
       </button>
     </div>
   );
