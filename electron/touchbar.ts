@@ -66,23 +66,10 @@ export class TouchBarManager {
   private preloadPath: string;
   private rendererDist: string;
 
-  private standardTouchBar: any = null;
-  private lyricsTouchBar: any = null;
-  private currentTouchBarMode: "standard" | "lyrics" = "standard";
-
-  private stdPlayBtn: any = null;
-  private stdShuffleBtn: any = null;
-  private stdLikeBtn: any = null;
-  private stdFullscreenBtn: any = null;
-  private nativeTimeLabel: any = null;
+  private nativeTouchBar: any = null;
+  private currentTimeLabel: any = null;
+  private durationTimeLabel: any = null;
   private nativeTimelineSlider: any = null;
-
-  private lyrPlayBtn: any = null;
-  private lyrShuffleBtn: any = null;
-  private lyrLikeBtn: any = null;
-  private lyrFullscreenBtn: any = null;
-  private nativeLyricsLabel: any = null;
-  private nativeNextLyricsLabel: any = null;
 
   private isUserSeeking = false;
   private seekDebounceTimer: any = null;
@@ -102,38 +89,11 @@ export class TouchBarManager {
 
   private initNativeTouchBar() {
     if (!TouchBar) return;
-    const { TouchBarButton, TouchBarLabel, TouchBarSpacer, TouchBarSlider } = TouchBar;
+    const { TouchBarLabel, TouchBarSpacer, TouchBarSlider } = TouchBar;
 
-    this.stdShuffleBtn = new TouchBarButton({
-      label: "🔀",
-      click: () => {
-        this.forwardAction({ type: "toggleShuffle" });
-      },
-    });
-
-    const stdPrevBtn = new TouchBarButton({
-      label: "⏮",
-      click: () => {
-        this.forwardAction({ type: "prev" });
-      },
-    });
-
-    this.stdPlayBtn = new TouchBarButton({
-      label: "▶",
-      click: () => {
-        this.forwardAction({ type: "togglePlay" });
-      },
-    });
-
-    const stdNextBtn = new TouchBarButton({
-      label: "⏭",
-      click: () => {
-        this.forwardAction({ type: "next" });
-      },
-    });
-
-    this.nativeTimeLabel = new TouchBarLabel({
-      label: "0:00 / 0:00",
+    this.currentTimeLabel = new TouchBarLabel({
+      label: "0:00",
+      textColor: "#8e8e93",
     });
 
     this.nativeTimelineSlider = new TouchBarSlider({
@@ -142,114 +102,36 @@ export class TouchBarManager {
       value: 0,
       change: (val: number) => {
         this.isUserSeeking = true;
+        if (this.currentTimeLabel) {
+          this.currentTimeLabel.label = formatTime(val * 1000);
+        }
         this.forwardAction({ type: "seek", payload: { positionMs: val * 1000 } });
         if (this.seekDebounceTimer) clearTimeout(this.seekDebounceTimer);
         this.seekDebounceTimer = setTimeout(() => {
           this.isUserSeeking = false;
-        }, 300);
+        }, 400);
       },
     });
 
-    this.stdLikeBtn = new TouchBarButton({
-      label: "♡",
-      click: () => {
-        this.forwardAction({ type: "like" });
-      },
-    });
-
-    this.stdFullscreenBtn = new TouchBarButton({
-      label: "⤢",
-      click: () => {
-        this.forwardAction({ type: "toggleFullscreen" });
-      },
-    });
-
-    this.standardTouchBar = new TouchBar({
-      items: [
-        this.stdShuffleBtn,
-        stdPrevBtn,
-        this.stdPlayBtn,
-        stdNextBtn,
-        new TouchBarSpacer({ size: "small" }),
-        this.nativeTimeLabel,
-        this.nativeTimelineSlider,
-        new TouchBarSpacer({ size: "small" }),
-        this.stdLikeBtn,
-        this.stdFullscreenBtn,
-      ],
-    });
-
-    this.lyrShuffleBtn = new TouchBarButton({
-      label: "🔀",
-      click: () => {
-        this.forwardAction({ type: "toggleShuffle" });
-      },
-    });
-
-    const lyrPrevBtn = new TouchBarButton({
-      label: "⏮",
-      click: () => {
-        this.forwardAction({ type: "prev" });
-      },
-    });
-
-    this.lyrPlayBtn = new TouchBarButton({
-      label: "▶",
-      click: () => {
-        this.forwardAction({ type: "togglePlay" });
-      },
-    });
-
-    const lyrNextBtn = new TouchBarButton({
-      label: "⏭",
-      click: () => {
-        this.forwardAction({ type: "next" });
-      },
-    });
-
-    this.nativeLyricsLabel = new TouchBarLabel({
-      label: "•••",
-      textColor: "#ffffff",
-    });
-
-    this.nativeNextLyricsLabel = new TouchBarLabel({
-      label: "",
+    this.durationTimeLabel = new TouchBarLabel({
+      label: "0:00",
       textColor: "#8e8e93",
     });
 
-    this.lyrLikeBtn = new TouchBarButton({
-      label: "♡",
-      click: () => {
-        this.forwardAction({ type: "like" });
-      },
-    });
-
-    this.lyrFullscreenBtn = new TouchBarButton({
-      label: "⌄",
-      click: () => {
-        this.forwardAction({ type: "toggleFullscreen" });
-      },
-    });
-
-    this.lyricsTouchBar = new TouchBar({
+    this.nativeTouchBar = new TouchBar({
       items: [
-        this.lyrShuffleBtn,
-        lyrPrevBtn,
-        this.lyrPlayBtn,
-        lyrNextBtn,
         new TouchBarSpacer({ size: "small" }),
-        this.nativeLyricsLabel,
-        new TouchBarSpacer({ size: "flexible" }),
-        this.nativeNextLyricsLabel,
+        this.currentTimeLabel,
         new TouchBarSpacer({ size: "small" }),
-        this.lyrLikeBtn,
-        this.lyrFullscreenBtn,
+        this.nativeTimelineSlider,
+        new TouchBarSpacer({ size: "small" }),
+        this.durationTimeLabel,
+        new TouchBarSpacer({ size: "small" }),
       ],
     });
 
     if (this.mainWindow && !this.mainWindow.isDestroyed()) {
-      this.currentTouchBarMode = "standard";
-      this.mainWindow.setTouchBar(this.standardTouchBar);
+      this.mainWindow.setTouchBar(this.nativeTouchBar);
     }
   }
 
@@ -262,56 +144,23 @@ export class TouchBarManager {
       }
 
       if (process.platform === "darwin") {
-        const isPlaying = state.status === "playing";
-        const playLabel = isPlaying ? "⏸" : "▶";
-        if (this.stdPlayBtn) this.stdPlayBtn.label = playLabel;
-        if (this.lyrPlayBtn) this.lyrPlayBtn.label = playLabel;
+        const durationMs = Math.max(0, state.durationMs || 0);
+        const positionMs = Math.max(0, Math.min(durationMs, state.positionMs || 0));
 
-        const shuffleBg = state.shuffle ? "#3a3a3c" : undefined;
-        if (this.stdShuffleBtn) this.stdShuffleBtn.backgroundColor = shuffleBg;
-        if (this.lyrShuffleBtn) this.lyrShuffleBtn.backgroundColor = shuffleBg;
+        if (this.currentTimeLabel && !this.isUserSeeking) {
+          this.currentTimeLabel.label = formatTime(positionMs);
+        }
 
-        const likeLabel = state.isLiked ? "❤️" : "♡";
-        if (this.stdLikeBtn) this.stdLikeBtn.label = likeLabel;
-        if (this.lyrLikeBtn) this.lyrLikeBtn.label = likeLabel;
-
-        const fsLabel = state.isFullscreen ? "⌄" : "⤢";
-        if (this.stdFullscreenBtn) this.stdFullscreenBtn.label = fsLabel;
-        if (this.lyrFullscreenBtn) this.lyrFullscreenBtn.label = fsLabel;
-
-        if (this.nativeTimeLabel) {
-          this.nativeTimeLabel.label = `${formatTime(state.positionMs)} / ${formatTime(state.durationMs)}`;
+        if (this.durationTimeLabel) {
+          this.durationTimeLabel.label = formatTime(durationMs);
         }
 
         if (this.nativeTimelineSlider) {
-          const totalSec = Math.max(1, Math.floor(state.durationMs / 1000));
-          const currentSec = Math.min(totalSec, Math.floor(state.positionMs / 1000));
+          const totalSec = Math.max(1, Math.floor(durationMs / 1000));
+          const currentSec = Math.min(totalSec, Math.floor(positionMs / 1000));
           this.nativeTimelineSlider.maxValue = totalSec;
           if (!this.isUserSeeking) {
             this.nativeTimelineSlider.value = currentSec;
-          }
-        }
-
-        if (this.nativeLyricsLabel) {
-          if (state.activeLine?.isInstrumental) {
-            this.nativeLyricsLabel.label = "♪ Instrumental";
-          } else {
-            this.nativeLyricsLabel.label = state.activeLyricText || "•••";
-          }
-        }
-
-        if (this.nativeNextLyricsLabel) {
-          this.nativeNextLyricsLabel.label = state.nextLyricText ? `  ${state.nextLyricText}` : "";
-        }
-
-        const shouldShowLyricsMode = Boolean(state.isFullscreen && state.hasSyncedLyrics);
-        const desiredMode = shouldShowLyricsMode ? "lyrics" : "standard";
-
-        if (desiredMode !== this.currentTouchBarMode && this.mainWindow && !this.mainWindow.isDestroyed()) {
-          this.currentTouchBarMode = desiredMode;
-          const bar = desiredMode === "lyrics" ? this.lyricsTouchBar : this.standardTouchBar;
-          if (bar) {
-            this.mainWindow.setTouchBar(bar);
           }
         }
       }
