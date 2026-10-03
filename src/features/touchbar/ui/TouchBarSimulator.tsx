@@ -370,12 +370,9 @@ export function TouchBarSimulator() {
             title={isPlaying ? "Pause" : "Play"}
           >
             {isPlaying ? (
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" className="block">
-                <rect x="5.5" y="4" width="4" height="16" rx="1.5" />
-                <rect x="14.5" y="4" width="4" height="16" rx="1.5" />
-              </svg>
+              <Pause size={13} weight="Bold" />
             ) : (
-              <Play size={13} weight="Bold" className="ml-0.5" />
+              <Play size={13} weight="Bold" />
             )}
           </button>
           <button
