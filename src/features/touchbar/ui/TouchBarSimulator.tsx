@@ -238,6 +238,8 @@ export function TouchBarSimulator() {
   }, [isPlaying, isSeeking, durationMs]);
 
   const currentPosMs = isSeeking ? localSeekMs : interpolatedPosMs;
+  const currentPosMsRef = useRef(currentPosMs);
+  currentPosMsRef.current = currentPosMs;
   const progressRatio = Math.min(1, Math.max(0, currentPosMs / durationMs));
   const activeTimelineRatio = progressRatio;
   const activeTimelineMs = currentPosMs;
@@ -462,7 +464,7 @@ export function TouchBarSimulator() {
     let rafId: number;
 
     const tick = () => {
-      const effectiveTime = currentPosMs;
+      const effectiveTime = currentPosMsRef.current;
 
       if (displayLine?.isInstrumental && noteClipRectRef.current) {
         const lineStart = displayLine.timeMs;
@@ -515,7 +517,7 @@ export function TouchBarSimulator() {
 
     rafId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafId);
-  }, [currentPosMs, displayLine]);
+  }, [displayLine]);
 
   const handleWaveformPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!waveformRef.current) return;
@@ -824,14 +826,22 @@ export function TouchBarSimulator() {
                           ? `${displayLine.timeMs}-${displayLine.text}`
                           : displayLineText
                     }
-                    initial={{ opacity: 0, y: 12 }}
+                    initial={{ opacity: 0, y: 16 }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
+                    exit={{
+                      opacity: 0,
+                      y: -14,
+                      transition: { duration: 0.38, ease: [0.33, 1, 0.68, 1] },
+                    }}
                     transition={{
-                      duration: 0.95,
+                      duration: 0.85,
                       ease: [0.16, 1, 0.3, 1],
                     }}
                     className="flex w-full flex-col justify-center overflow-hidden origin-bottom-left"
+                    style={{
+                      willChange: "transform, opacity",
+                      transform: "translateZ(0)",
+                    }}
                   >
                     {displayLine?.isInstrumental ? (
                       <div className="flex items-center gap-1.5 text-xs text-[#a1a1aa] py-0.5">
@@ -924,14 +934,22 @@ export function TouchBarSimulator() {
                   {showNextLine && (
                     <motion.div
                       key={nextLyricText}
-                      initial={{ opacity: 0, y: 10 }}
+                      initial={{ opacity: 0, y: 12 }}
                       animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -6 }}
+                      exit={{
+                        opacity: 0,
+                        y: -8,
+                        transition: { duration: 0.32, ease: "easeIn" },
+                      }}
                       transition={{
-                        duration: 0.85,
+                        duration: 0.75,
                         ease: [0.16, 1, 0.3, 1],
                       }}
                       className="text-[10.5px] leading-[13.5px] text-[#71717a] truncate mt-0.5 select-none pointer-events-none w-full"
+                      style={{
+                        willChange: "transform, opacity",
+                        transform: "translateZ(0)",
+                      }}
                     >
                       {nextLyricText}
                     </motion.div>
