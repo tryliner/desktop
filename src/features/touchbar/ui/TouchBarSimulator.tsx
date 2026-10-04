@@ -973,9 +973,9 @@ export function TouchBarSimulator() {
                     title={isPlaying ? "Pause" : "Play"}
                   >
                     {isPlaying ? (
-                      <Pause size={19} weight="Bold" />
+                      <Pause size={19} weight="Bold" className="-translate-x-[0.5px]" />
                     ) : (
-                      <Play size={19} weight="Bold" className="translate-x-[0.5px]" />
+                      <Play size={19} weight="Bold" className="-translate-x-[0.7px]" />
                     )}
                   </button>
 
