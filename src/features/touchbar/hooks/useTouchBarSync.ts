@@ -130,6 +130,50 @@ export function useTouchBarSync() {
   }, []);
 
   useEffect(() => {
+    let rafId: number;
+    let lastCalculatedIdx = -1;
+
+    const syncLoop = () => {
+      const audioEl =
+        typeof document !== "undefined"
+          ? (document.getElementById("liner-audio") as HTMLAudioElement | null)
+          : null;
+
+      if (audioEl && !Number.isNaN(audioEl.currentTime)) {
+        const currentMs = audioEl.currentTime * 1000;
+        const lines = useLyricsStore.getState().syncedLines;
+        if (lines && lines.length > 0) {
+          let idx = -1;
+          for (let i = 0; i < lines.length; i++) {
+            const prevEnd =
+              i > 0 && lines[i - 1].words && lines[i - 1].words!.length > 0
+                ? lines[i - 1].words![lines[i - 1].words!.length - 1].endMs
+                : i > 0
+                  ? lines[i - 1].timeMs
+                  : 0;
+            const targetEarlyMs = Math.max(prevEnd, lines[i].timeMs - 600);
+            if (targetEarlyMs <= currentMs) {
+              idx = i;
+            } else {
+              break;
+            }
+          }
+
+          if (idx !== lastCalculatedIdx) {
+            lastCalculatedIdx = idx;
+            useLyricsStore.getState().setActiveLineIndex(idx >= 0 ? idx : null);
+          }
+        }
+      }
+
+      rafId = requestAnimationFrame(syncLoop);
+    };
+
+    rafId = requestAnimationFrame(syncLoop);
+    return () => cancelAnimationFrame(rafId);
+  }, []);
+
+  useEffect(() => {
     if (!window.linerElectron?.touchbarUpdateState) return;
 
     let activeLine: TouchBarActiveLine | null = null;
@@ -272,6 +316,22 @@ export function useTouchBarSync() {
 
     const isFullscreen = location.pathname === "/player" || Boolean(player.fullscreen);
 
+    const mappedSyncedLines: TouchBarActiveLine[] = syncedLines.map((l) => ({
+      text: l.text,
+      timeMs: l.timeMs,
+      durationMs: l.durationMs,
+      isInstrumental: Boolean(
+        l.isInstrumental ||
+        (l.text.trim() === "" && (!l.words || l.words.length === 0)) ||
+        l.text.trim() === "♪"
+      ),
+      words: l.words?.map((w) => ({
+        text: w.text,
+        timeMs: w.timeMs,
+        endMs: w.endMs,
+      })),
+    }));
+
     const payload: TouchBarStatePayload = {
       status: player.status,
       track: currentTrack
@@ -297,6 +357,8 @@ export function useTouchBarSync() {
       currentRoute: location.pathname,
       isFullscreen,
       hasSyncedLyrics,
+      syncedLines: hasSyncedLyrics ? mappedSyncedLines : [],
+      activeIndex,
     };
 
     const serialized = JSON.stringify({
@@ -310,6 +372,7 @@ export function useTouchBarSync() {
       li: activeIndex,
       fs: payload.isFullscreen,
       sl: payload.hasSyncedLyrics,
+      sc: payload.syncedLines?.length || 0,
       r: payload.currentRoute,
     });
 

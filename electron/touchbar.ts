@@ -40,6 +40,8 @@ export interface TouchBarStatePayload {
   currentRoute?: string;
   isFullscreen?: boolean;
   hasSyncedLyrics?: boolean;
+  syncedLines?: TouchBarActiveLine[];
+  activeIndex?: number;
 }
 
 export interface TouchBarAction {

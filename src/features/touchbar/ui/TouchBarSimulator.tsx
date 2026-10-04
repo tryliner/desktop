@@ -152,11 +152,15 @@ export function TouchBarSimulator() {
 
   const wordSpanRefs = useRef<(HTMLSpanElement | null)[]>([]);
   const noteClipRectRef = useRef<SVGRectElement | null>(null);
+  const activeLineContainerRef = useRef<HTMLDivElement>(null);
+  const [isThreeRows, setIsThreeRows] = useState(false);
 
   const lastActiveLineRef = useRef<TouchBarActiveLine | null>(null);
   const lastActiveLyricTextRef = useRef<string>("");
   const currentTrackId = state.track?.id;
   const prevTrackIdRef = useRef<string | undefined>(currentTrackId);
+
+  const [localActiveIndex, setLocalActiveIndex] = useState<number>(-1);
 
   if (prevTrackIdRef.current !== currentTrackId) {
     prevTrackIdRef.current = currentTrackId;
@@ -164,7 +168,90 @@ export function TouchBarSimulator() {
     lastActiveLyricTextRef.current = "";
   }
 
-  if (state.activeLine) {
+  useEffect(() => {
+    if (typeof state.activeIndex === "number") {
+      setLocalActiveIndex(state.activeIndex);
+    }
+  }, [state.activeIndex]);
+
+  useEffect(() => {
+    const lines = state.syncedLines;
+    if (!lines || lines.length === 0) {
+      setLocalActiveIndex(-1);
+      return;
+    }
+
+    let rafId: number;
+    let lastIdx = -1;
+
+    const syncTick = () => {
+      const now = performance.now();
+      const timeMs =
+        isPlaying && !isSeeking
+          ? Math.min(durationMs, anchorPosRef.current + (now - anchorTimeRef.current))
+          : isSeeking
+            ? localSeekMs
+            : anchorPosRef.current;
+
+      let idx = -1;
+      for (let i = 0; i < lines.length; i++) {
+        const prevEnd =
+          i > 0 && lines[i - 1].words && lines[i - 1].words!.length > 0
+            ? lines[i - 1].words![lines[i - 1].words!.length - 1].endMs
+            : i > 0
+              ? lines[i - 1].timeMs
+              : 0;
+        const targetEarlyMs = Math.max(prevEnd, lines[i].timeMs - 600);
+        if (targetEarlyMs <= timeMs) {
+          idx = i;
+        } else {
+          break;
+        }
+      }
+
+      if (idx !== lastIdx) {
+        lastIdx = idx;
+        setLocalActiveIndex(idx);
+      }
+
+      rafId = requestAnimationFrame(syncTick);
+    };
+
+    rafId = requestAnimationFrame(syncTick);
+    return () => cancelAnimationFrame(rafId);
+  }, [state.syncedLines, isPlaying, isSeeking, durationMs, localSeekMs]);
+
+  const activeLineFromSynced = useMemo(() => {
+    if (!state.syncedLines || state.syncedLines.length === 0) return null;
+    if (localActiveIndex >= 0 && localActiveIndex < state.syncedLines.length) {
+      return state.syncedLines[localActiveIndex];
+    }
+    const firstLine = state.syncedLines[0];
+    if (firstLine && firstLine.timeMs > 3000 && currentPosMs < firstLine.timeMs - 600) {
+      return {
+        text: "",
+        timeMs: 0,
+        durationMs: firstLine.timeMs,
+        words: [],
+        isInstrumental: true,
+      };
+    }
+    return null;
+  }, [state.syncedLines, localActiveIndex, currentPosMs]);
+
+  const nextLyricFromSynced = useMemo(() => {
+    if (!state.syncedLines || state.syncedLines.length === 0) return "";
+    const fromIdx = localActiveIndex >= 0 ? localActiveIndex + 1 : 0;
+    const upcoming = state.syncedLines
+      .slice(fromIdx)
+      .find((l) => Boolean(l.text && l.text.trim()));
+    return upcoming?.text || "";
+  }, [state.syncedLines, localActiveIndex]);
+
+  if (activeLineFromSynced) {
+    lastActiveLineRef.current = activeLineFromSynced;
+    lastActiveLyricTextRef.current = activeLineFromSynced.text;
+  } else if (state.activeLine) {
     lastActiveLineRef.current = state.activeLine;
     lastActiveLyricTextRef.current = state.activeLine.text;
   } else if (state.activeLyricText) {
@@ -172,21 +259,63 @@ export function TouchBarSimulator() {
   }
 
   const hasLyricsContent = Boolean(
-    state.hasSyncedLyrics ||
+    (state.hasSyncedLyrics ||
+      (state.syncedLines && state.syncedLines.length > 0) ||
       state.activeLine ||
       state.activeLyricText ||
-      lastActiveLyricTextRef.current
+      lastActiveLyricTextRef.current) &&
+      state.track
   );
 
-  const displayLine = state.activeLine || lastActiveLineRef.current;
+  const displayLine =
+    activeLineFromSynced || state.activeLine || lastActiveLineRef.current;
+  const nextLyricText = nextLyricFromSynced || state.nextLyricText || "";
   const displayLineText =
     displayLine?.isInstrumental
       ? ""
-      : state.activeLine?.text ||
+      : displayLine?.text ||
         state.activeLyricText ||
         lastActiveLyricTextRef.current ||
-        state.nextLyricText ||
+        nextLyricText ||
         "•••";
+
+  useEffect(() => {
+    const el = activeLineContainerRef.current;
+    if (!el) {
+      setIsThreeRows(false);
+      return;
+    }
+    const checkHeight = () => {
+      setIsThreeRows(el.scrollHeight >= 40);
+    };
+    checkHeight();
+    const observer = new ResizeObserver(checkHeight);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [displayLineText, displayLine]);
+
+  const activeIsThreeRows = useMemo(() => {
+    if (isThreeRows) return true;
+    if (!displayLineText || displayLineText === "•••") return false;
+    return (
+      displayLineText.length > 55 ||
+      Boolean(displayLine?.words && displayLine.words.length > 11)
+    );
+  }, [isThreeRows, displayLineText, displayLine]);
+
+  const showNextLine =
+    !activeIsThreeRows &&
+    Boolean(
+      nextLyricText &&
+        nextLyricText.trim() &&
+        nextLyricText.trim() !== "•••" &&
+        nextLyricText.trim() !== displayLineText.trim()
+    );
+
+  const wordsList = useMemo(() => {
+    if (!displayLineText || displayLineText === "•••") return [];
+    return displayLineText.trim().split(/\s+/).filter(Boolean);
+  }, [displayLineText]);
 
   useEffect(() => {
     let rafId: number;
@@ -489,7 +618,7 @@ export function TouchBarSimulator() {
           <div className="flex h-full flex-1 flex-col justify-center min-w-0 pl-3 overflow-hidden">
             {hasLyricsContent ? (
               <div className="flex flex-col justify-center w-full overflow-hidden">
-                <AnimatePresence mode="wait" initial={false}>
+                <AnimatePresence mode="popLayout" initial={false}>
                   <motion.div
                     key={
                       displayLine?.isInstrumental
@@ -498,14 +627,17 @@ export function TouchBarSimulator() {
                           ? `${displayLine.timeMs}-${displayLine.text}`
                           : displayLineText
                     }
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.18, ease: "easeOut" }}
-                    className="flex max-w-full items-center overflow-hidden"
+                    initial={{ opacity: 0, y: 14, scale: 0.94 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -14, scale: 0.96 }}
+                    transition={{
+                      duration: 0.3,
+                      ease: [0.22, 1, 0.36, 1],
+                    }}
+                    className="flex w-full flex-col justify-center overflow-hidden origin-bottom-left"
                   >
                     {displayLine?.isInstrumental ? (
-                      <div className="flex items-center gap-1.5 text-xs text-[#a1a1aa]">
+                      <div className="flex items-center gap-1.5 text-xs text-[#a1a1aa] py-0.5">
                         <svg width="14" height="14" viewBox="0 0 24 24" className="shrink-0">
                           <defs>
                             <clipPath id="miniplayer-note-clip">
@@ -543,39 +675,75 @@ export function TouchBarSimulator() {
                             clipPath="url(#miniplayer-note-clip)"
                           />
                         </svg>
-                        <span>Instrumental</span>
+                        <span className="font-medium text-[12px] text-[#a1a1aa]">Instrumental</span>
                       </div>
                     ) : displayLine?.words && displayLine.words.length > 0 ? (
-                      <div className="flex flex-wrap items-baseline gap-1 overflow-hidden leading-tight">
+                      <div
+                        ref={activeLineContainerRef}
+                        className="flex flex-wrap items-baseline gap-x-1 overflow-hidden leading-[16.5px] max-h-[50px]"
+                      >
                         {displayLine.words.map((w: TouchBarWordData, idx: number) => (
-                          <span
-                            key={`${w.timeMs}-${idx}`}
+                          <motion.span
+                            key={`${displayLine.timeMs}-${idx}`}
                             ref={(el) => {
                               if (el) wordSpanRefs.current[idx] = el;
                             }}
-                            className="bg-clip-text text-transparent font-medium text-[13px] inline tracking-tight"
+                            initial={{ opacity: 0, y: 7 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{
+                              duration: 0.24,
+                              delay: Math.min(0.24, idx * 0.022),
+                              ease: [0.22, 1, 0.36, 1],
+                            }}
+                            className="bg-clip-text text-transparent font-medium text-[12.5px] leading-[16.5px] inline-block tracking-tight"
                             style={{
                               backgroundImage:
                                 "linear-gradient(90deg, #ffffff -20%, #71717a -10%)",
                             }}
                           >
                             {w.text.trim()}
-                          </span>
+                          </motion.span>
                         ))}
                       </div>
                     ) : (
-                      <span className="font-medium text-[13px] text-white tracking-tight truncate">
-                        {displayLineText}
-                      </span>
+                      <div
+                        ref={activeLineContainerRef}
+                        className="flex flex-wrap items-baseline gap-x-1 overflow-hidden leading-[16.5px] max-h-[50px]"
+                      >
+                        {wordsList.map((word, idx) => (
+                          <motion.span
+                            key={`${displayLine?.timeMs ?? displayLineText}-${idx}`}
+                            initial={{ opacity: 0, y: 7 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{
+                              duration: 0.24,
+                              delay: Math.min(0.24, idx * 0.022),
+                              ease: [0.22, 1, 0.36, 1],
+                            }}
+                            className="font-medium text-[12.5px] leading-[16.5px] text-white tracking-tight inline-block"
+                          >
+                            {word}
+                          </motion.span>
+                        ))}
+                      </div>
                     )}
                   </motion.div>
                 </AnimatePresence>
 
-                {state.nextLyricText && state.nextLyricText !== displayLineText && (
-                  <p className="text-[10px] text-[#71717a] truncate mt-1">
-                    {state.nextLyricText}
-                  </p>
-                )}
+                <AnimatePresence mode="popLayout" initial={false}>
+                  {showNextLine && (
+                    <motion.div
+                      key={nextLyricText}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -6 }}
+                      transition={{ duration: 0.22, ease: "easeOut" }}
+                      className="text-[10px] leading-[13px] text-[#71717a] truncate mt-0.5 select-none pointer-events-none w-full"
+                    >
+                      {nextLyricText}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             ) : (
               <div className="flex flex-col justify-center min-w-0">
