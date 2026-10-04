@@ -847,7 +847,7 @@ export function TouchBarSimulator() {
         </div>
 
         <div
-          className="relative flex h-8 w-full items-center shrink-0"
+          className="relative flex h-8 w-full items-center shrink-0 -mt-1"
           style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
         >
           <AnimatePresence mode="wait" initial={false}>
