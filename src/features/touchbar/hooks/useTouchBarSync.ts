@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { usePlayerState } from "@/features/player/hooks/usePlayerState";
 import { playerEngine } from "@/features/player/engine/playerEngine";
@@ -29,6 +29,16 @@ export function useTouchBarSync() {
   const unlikeMutation = useUnlikeTrack();
   const isTogglingLikeRef = useRef(false);
   const lastStateSentRef = useRef<string>("");
+  const [syncRequestTick, setSyncRequestTick] = useState(0);
+
+  useEffect(() => {
+    if (!window.linerElectron?.onTouchBarRequestSync) return;
+    const cleanup = window.linerElectron.onTouchBarRequestSync(() => {
+      lastStateSentRef.current = "";
+      setSyncRequestTick((t) => t + 1);
+    });
+    return cleanup;
+  }, []);
 
   useEffect(() => {
     if (!window.linerElectron?.onTouchBarAction) return;
@@ -321,5 +331,6 @@ export function useTouchBarSync() {
     offsetMs,
     activeLineIndex,
     location.pathname,
+    syncRequestTick,
   ]);
 }

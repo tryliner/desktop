@@ -96,6 +96,8 @@ export interface LinerElectronApi {
   onTouchBarSimulatorState: (cb: (state: any) => void) => () => void;
   sendTouchBarAction: (action: any) => void;
   closeTouchBarSimulator: () => void;
+  getTouchBarInitialState: () => Promise<any>;
+  onTouchBarRequestSync: (cb: () => void) => () => void;
 }
 
 const isHyprland = Boolean(
@@ -211,6 +213,14 @@ const api: LinerElectronApi = {
   },
   closeTouchBarSimulator: () => {
     ipcRenderer.send("touchbar:close-simulator");
+  },
+  getTouchBarInitialState: () => ipcRenderer.invoke("touchbar:get-initial-state"),
+  onTouchBarRequestSync: (cb) => {
+    const listener = () => cb();
+    ipcRenderer.on("touchbar:request-sync", listener);
+    return () => {
+      ipcRenderer.removeListener("touchbar:request-sync", listener);
+    };
   },
 };
 

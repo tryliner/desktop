@@ -93,8 +93,15 @@ export class TouchBarManager {
       }
 
       this.mainWindow.on("minimize", () => {
-        if (!this.userDismissedOverlay && this.latestState?.track) {
+        const isPlaying =
+          Boolean(this.latestState?.track) &&
+          (this.latestState?.status === "playing" ||
+            this.latestState?.status === "buffering" ||
+            this.latestState?.status === "loading");
+
+        if (!this.userDismissedOverlay && isPlaying) {
           this.wasAutoOpened = true;
+          this.mainWindow?.webContents.send("touchbar:request-sync");
           this.showSimulator();
         }
       });
@@ -212,6 +219,10 @@ export class TouchBarManager {
       this.forwardAction(action);
     });
 
+    ipcMain.handle("touchbar:get-initial-state", () => {
+      return this.latestState;
+    });
+
     ipcMain.handle("touchbar:toggle-simulator", () => {
       return this.toggleSimulator();
     });
@@ -246,10 +257,16 @@ export class TouchBarManager {
   public showSimulator() {
     if (this.simulatorWindow && !this.simulatorWindow.isDestroyed()) {
       if (this.lastOverlayBounds) {
-        this.simulatorWindow.setBounds(this.lastOverlayBounds);
+        this.simulatorWindow.setBounds({
+          ...this.lastOverlayBounds,
+          height: 188,
+        });
       }
       if (!this.simulatorWindow.isVisible()) {
         this.simulatorWindow.show();
+      }
+      if (this.latestState) {
+        this.simulatorWindow.webContents.send("touchbar:simulator-state", this.latestState);
       }
       return;
     }
@@ -261,15 +278,21 @@ export class TouchBarManager {
     this.wasAutoOpened = false;
     if (this.simulatorWindow && !this.simulatorWindow.isDestroyed()) {
       if (this.simulatorWindow.isVisible()) {
-        this.lastOverlayBounds = this.simulatorWindow.getBounds();
+        this.lastOverlayBounds = { ...this.simulatorWindow.getBounds(), height: 188 };
         this.simulatorWindow.hide();
         return false;
       } else {
         if (this.lastOverlayBounds) {
-          this.simulatorWindow.setBounds(this.lastOverlayBounds);
+          this.simulatorWindow.setBounds({
+            ...this.lastOverlayBounds,
+            height: 188,
+          });
         }
         this.simulatorWindow.show();
         this.simulatorWindow.focus();
+        if (this.latestState) {
+          this.simulatorWindow.webContents.send("touchbar:simulator-state", this.latestState);
+        }
         return true;
       }
     }
@@ -280,7 +303,7 @@ export class TouchBarManager {
 
   public closeSimulator() {
     if (this.simulatorWindow && !this.simulatorWindow.isDestroyed()) {
-      this.lastOverlayBounds = this.simulatorWindow.getBounds();
+      this.lastOverlayBounds = { ...this.simulatorWindow.getBounds(), height: 188 };
       this.simulatorWindow.hide();
     }
   }
@@ -291,20 +314,20 @@ export class TouchBarManager {
     const defaultWidth = 350;
     const defaultHeight = 188;
     const width = this.lastOverlayBounds?.width || defaultWidth;
-    const height = Math.max(188, this.lastOverlayBounds?.height || defaultHeight);
+    const height = defaultHeight;
     const x = this.lastOverlayBounds?.x ?? Math.round(workArea.x + workArea.width - width - 20);
     const y = this.lastOverlayBounds?.y ?? Math.round(workArea.y + workArea.height - height - 20);
 
     this.simulatorWindow = new BrowserWindow({
       title: "Liner Mini Player",
       width,
-      height,
+      height: defaultHeight,
       x,
       y,
       minWidth: 300,
-      minHeight: 175,
-      maxWidth: 480,
-      maxHeight: 260,
+      minHeight: defaultHeight,
+      maxWidth: 520,
+      maxHeight: defaultHeight,
       frame: false,
       transparent: true,
       backgroundColor: "#00000000",
@@ -318,18 +341,21 @@ export class TouchBarManager {
         contextIsolation: true,
         sandbox: false,
         devTools: true,
+        backgroundThrottling: false,
       },
     });
 
     this.simulatorWindow.on("moved", () => {
       if (this.simulatorWindow && !this.simulatorWindow.isDestroyed()) {
-        this.lastOverlayBounds = this.simulatorWindow.getBounds();
+        const bounds = this.simulatorWindow.getBounds();
+        this.lastOverlayBounds = { ...bounds, height: defaultHeight };
       }
     });
 
     this.simulatorWindow.on("resized", () => {
       if (this.simulatorWindow && !this.simulatorWindow.isDestroyed()) {
-        this.lastOverlayBounds = this.simulatorWindow.getBounds();
+        const bounds = this.simulatorWindow.getBounds();
+        this.lastOverlayBounds = { ...bounds, height: defaultHeight };
       }
     });
 
