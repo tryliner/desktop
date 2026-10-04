@@ -174,7 +174,6 @@ export function TouchBarSimulator() {
   const anchorTimeRef = useRef(performance.now());
   const [interpolatedPosMs, setInterpolatedPosMs] = useState(state.positionMs);
   const lastTrackIdRef = useRef<string | null>(null);
-  const [appearCount, setAppearCount] = useState(0);
 
   useEffect(() => {
     window.linerElectron?.getTouchBarInitialState?.().then((initial) => {
@@ -191,37 +190,6 @@ export function TouchBarSimulator() {
       setState(newState);
     });
     return cleanup;
-  }, []);
-
-  useEffect(() => {
-    const handleAppear = () => {
-      setAppearCount((c) => c + 1);
-      anchorTimeRef.current = performance.now();
-      window.linerElectron?.getTouchBarInitialState?.().then((initial) => {
-        if (initial) {
-          anchorPosRef.current = initial.positionMs;
-          anchorTimeRef.current = performance.now();
-          setInterpolatedPosMs(initial.positionMs);
-          setState(initial);
-        }
-      });
-    };
-
-    window.addEventListener("pageshow", handleAppear);
-    window.addEventListener("focus", handleAppear);
-    const handleVisibility = () => {
-      if (document.visibilityState === "visible") {
-        handleAppear();
-      }
-    };
-    document.addEventListener("visibilitychange", handleVisibility);
-    const unlisten = window.linerElectron?.onTouchBarWindowShown?.(handleAppear);
-    return () => {
-      window.removeEventListener("pageshow", handleAppear);
-      window.removeEventListener("focus", handleAppear);
-      document.removeEventListener("visibilitychange", handleVisibility);
-      unlisten?.();
-    };
   }, []);
 
   const sendAction = useCallback((action: TouchBarAction) => {
@@ -867,11 +835,7 @@ export function TouchBarSimulator() {
 
   return (
     <div className="flex h-screen w-screen select-none items-center justify-center bg-transparent antialiased overflow-hidden font-sans p-0 m-0 border-0">
-      <motion.div
-        key={`miniplayer-card-${appearCount}`}
-        initial={{ opacity: 0, scale: 0.985, y: 2 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+      <div
         className={`relative flex h-full w-full flex-col justify-start rounded-xl pt-2 px-3 pb-1.5 text-white overflow-hidden shadow-2xl select-none transition-colors duration-200 border-0 border-none ${
           hasCustomBg
             ? ""
@@ -1475,7 +1439,7 @@ export function TouchBarSimulator() {
           </AnimatePresence>
         </div>
       </div>
-    </motion.div>
+    </div>
   </div>
 );
 }

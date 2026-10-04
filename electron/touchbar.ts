@@ -305,10 +305,13 @@ export class TouchBarManager {
     if (this.simulatorWindow && !this.simulatorWindow.isDestroyed()) {
       const bounds = this.simulatorWindow.getBounds();
       if (bounds.height !== targetHeight) {
+        this.simulatorWindow.setMinimumSize(300, targetHeight);
+        this.simulatorWindow.setMaximumSize(520, targetHeight);
         this.simulatorWindow.setBounds({
           ...bounds,
           height: targetHeight,
         });
+        this.lastOverlayBounds = { ...bounds, height: targetHeight };
       }
       this.mainWindow?.webContents.send("touchbar:request-sync");
       if (this.latestState) {
@@ -335,10 +338,13 @@ export class TouchBarManager {
       } else {
         const bounds = this.simulatorWindow.getBounds();
         if (bounds.height !== targetHeight) {
+          this.simulatorWindow.setMinimumSize(300, targetHeight);
+          this.simulatorWindow.setMaximumSize(520, targetHeight);
           this.simulatorWindow.setBounds({
             ...bounds,
             height: targetHeight,
           });
+          this.lastOverlayBounds = { ...bounds, height: targetHeight };
         }
         this.mainWindow?.webContents.send("touchbar:request-sync");
         if (this.latestState) {
