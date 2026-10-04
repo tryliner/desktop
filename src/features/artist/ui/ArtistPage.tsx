@@ -418,10 +418,10 @@ function ArtistContent() {
 
                 {data.description && (
                   <div
-                    className={`w-full md:w-[340px] lg:w-[380px] shrink-0 rounded-md p-[16px] flex flex-col gap-[6px] ${
+                    className={`w-full md:w-[340px] lg:w-[380px] shrink-0 rounded-md p-[16px] flex flex-col gap-[6px] border-0 !border-none ${
                       hasCustomBg
-                        ? "apple-glass-action text-text-primary"
-                        : "border border-border-alpha-14 bg-bg-panel/40 text-text-primary backdrop-blur-sm"
+                        ? "apple-glass-pill !border-none text-text-primary"
+                        : "bg-bg-panel/85 backdrop-blur-xl text-text-primary border-0 !border-none"
                     }`}
                   >
                     <span
