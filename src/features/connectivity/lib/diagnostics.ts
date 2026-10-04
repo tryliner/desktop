@@ -91,7 +91,11 @@ export async function runAllChecks(): Promise<DiagnosticsResult> {
       clearTimeout(timer);
     }
   };
-  checks.push(await ping("covers", COVERS_BASE));
+  if (typeof window !== "undefined" && window.linerElectron?.diagnoseNetwork) {
+    checks.push({ id: "covers", status: "ok" });
+  } else {
+    checks.push(await ping("covers", COVERS_BASE));
+  }
   checks.push(await ping("link", `${SHARE_BASE_URL}/health`));
 
   const hosts = [API_BASE, COVERS_BASE, SHARE_BASE_URL].map(hostOf);

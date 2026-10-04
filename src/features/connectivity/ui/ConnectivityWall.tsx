@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { WifiOffLine, CopyLine, DownloadLine, MailLine } from "@mingcute/react";
+import { WifiOffLine, CopyLine, DownloadLine, MailLine, CloseLine } from "@mingcute/react";
 import Button from "@/shared/ui/Button";
 import { useTranslation } from "@/languages";
 import { useToast } from "@/shared/ui";
@@ -20,7 +20,6 @@ function StatusDot({ status }: { status: DiagCheck["status"] }) {
   return <span className={`mt-[5px] h-[8px] w-[8px] shrink-0 rounded-full ${color}`} />;
 }
 
-// full-screen offline wall, blocks the whole app until the backend is back.
 export default function ConnectivityWall() {
   const { t } = useTranslation();
   const { toast } = useToast();
@@ -32,6 +31,7 @@ export default function ConnectivityWall() {
   const main = useConnectivityStore((s) => s.main);
   const lastRunAt = useConnectivityStore((s) => s.lastRunAt);
   const retry = useConnectivityStore((s) => s.retry);
+  const reset = useConnectivityStore((s) => s.reset);
   const runDiagnostics = useConnectivityStore((s) => s.runDiagnostics);
 
   const dump = useMemo(
@@ -70,7 +70,15 @@ export default function ConnectivityWall() {
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-bg-primary/95 p-[24px] backdrop-blur-md">
-      <div className="flex max-h-full w-full max-w-[520px] flex-col overflow-hidden rounded-lg border border-bg-elevated bg-bg-panel p-[28px]">
+      <div className="relative flex max-h-full w-full max-w-[520px] flex-col overflow-hidden rounded-lg border border-bg-elevated bg-bg-panel p-[28px]">
+        <button
+          type="button"
+          onClick={reset}
+          className="absolute right-4 top-4 flex h-7 w-7 items-center justify-center rounded-md text-text-tertiary hover:bg-bg-elevated hover:text-text-primary transition-colors border-0"
+          title={t("common.close")}
+        >
+          <CloseLine size={18} />
+        </button>
         <div className="flex items-center gap-[12px]">
           <span className="flex h-[40px] w-[40px] shrink-0 items-center justify-center rounded-full bg-red-500/15 text-red-400">
             <WifiOffLine size={20} />

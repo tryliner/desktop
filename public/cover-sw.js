@@ -15,8 +15,11 @@ const inFlight = new Map();
 
 function isCoverRequest(url) {
   try {
-    const { hostname } = new URL(url);
-    return COVER_HOSTS.some((h) => hostname === h || hostname.endsWith("." + h));
+    const parsed = new URL(url);
+    if (!parsed.pathname || parsed.pathname === "/" || parsed.pathname === "/health") {
+      return false;
+    }
+    return COVER_HOSTS.some((h) => parsed.hostname === h || parsed.hostname.endsWith("." + h));
   } catch {
     return false;
   }

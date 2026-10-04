@@ -25,6 +25,7 @@ import { showToast } from "@/shared/ui/Toast";
 import { createTranslatorSync, getStoredLocale } from "@/languages";
 import {
   isConnectivityFailure,
+  isPlaybackPath,
   recordConnectivityFailure,
   statusOf,
   stripQuery,
@@ -250,7 +251,7 @@ async function executeRequest<T>(
       } catch (fallbackErr) {
         const durationMs = Math.round(performance.now() - startTime);
         telemetry.trackNetwork(method, path, 0, durationMs, requestId);
-        if (isConnectivityFailure(fallbackErr)) {
+        if (isConnectivityFailure(fallbackErr) && !isPlaybackPath(path)) {
           recordConnectivityFailure({
             method,
             path: stripQuery(path),
@@ -263,7 +264,7 @@ async function executeRequest<T>(
     } else {
       const durationMs = Math.round(performance.now() - startTime);
       telemetry.trackNetwork(method, path, 0, durationMs, requestId);
-      if (isConnectivityFailure(err)) {
+      if (isConnectivityFailure(err) && !isPlaybackPath(path)) {
         recordConnectivityFailure({
           method,
           path: stripQuery(path),
@@ -323,7 +324,7 @@ async function executeRequest<T>(
     } catch (err) {
       const durationMs = Math.round(performance.now() - startTime);
       telemetry.trackNetwork(method, path, 0, durationMs, requestId);
-      if (isConnectivityFailure(err)) {
+      if (isConnectivityFailure(err) && !isPlaybackPath(path)) {
         recordConnectivityFailure({
           method,
           path: stripQuery(path),
@@ -365,7 +366,7 @@ async function executeRequest<T>(
       typeof body.code === "string" ? body.code : undefined,
       resRequestId,
     );
-    if (isConnectivityFailure(apiErr)) {
+    if (isConnectivityFailure(apiErr) && !isPlaybackPath(path)) {
       recordConnectivityFailure({
         method,
         path: stripQuery(path),

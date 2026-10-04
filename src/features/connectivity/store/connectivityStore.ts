@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { DIAG_ENDPOINTS, runAllChecks, type DiagnosticsResult } from "../lib/diagnostics";
+import { isPlaybackPath } from "../lib/failureKind";
 import { buildOfflineDump, downloadDump, type SaveDumpResult } from "../lib/dump";
 import { DEFAULT_PRIMARY_API, setApiBaseUrl } from "@/shared/api/baseUrl";
 
@@ -43,12 +44,12 @@ export const useConnectivityStore = create<ConnectivityState>((set, get) => ({
   lastSavedDumpPath: null,
 
   recordFailure: (entry) => {
+    if (isPlaybackPath(entry.path)) return;
     const at = Date.now();
     const failures = [...get().failures, { ...entry, at }].slice(-MAX_FAILURES);
     const recent = failures.filter((f) => at - f.at <= TRIP_WINDOW_MS).length;
     if (recent >= TRIP_COUNT) {
       set({ failures, tripped: true, visible: true });
-      // fresh probes for the wall and the dump
       void get().runDiagnostics();
     } else {
       set({ failures });
@@ -61,6 +62,10 @@ export const useConnectivityStore = create<ConnectivityState>((set, get) => ({
     try {
       const { checks, main } = await runAllChecks();
       set({ checks, main, lastRunAt: Date.now() });
+      const apiOk = checks.some((c) => c.id === "api" && c.status === "ok");
+      if (apiOk && get().tripped) {
+        set({ tripped: false, visible: false, failures: [] });
+      }
     } finally {
       set({ running: false });
     }
@@ -107,11 +112,10 @@ export const useConnectivityStore = create<ConnectivityState>((set, get) => ({
   },
 }));
 
-// api-layer hook, importable without cycles (this feature never imports @/shared/api)
 export function recordConnectivityFailure(entry: Omit<FailureEntry, "at">): void {
+  if (isPlaybackPath(entry.path)) return;
   try {
     useConnectivityStore.getState().recordFailure(entry);
   } catch {
-    // store unavailable in exotic contexts, the request error still propagates
   }
 }
