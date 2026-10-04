@@ -289,9 +289,9 @@ export class TouchBarManager {
     const primaryDisplay = screen.getPrimaryDisplay();
     const { workArea } = primaryDisplay;
     const defaultWidth = 350;
-    const defaultHeight = 175;
+    const defaultHeight = 188;
     const width = this.lastOverlayBounds?.width || defaultWidth;
-    const height = this.lastOverlayBounds?.height || defaultHeight;
+    const height = Math.max(188, this.lastOverlayBounds?.height || defaultHeight);
     const x = this.lastOverlayBounds?.x ?? Math.round(workArea.x + workArea.width - width - 20);
     const y = this.lastOverlayBounds?.y ?? Math.round(workArea.y + workArea.height - height - 20);
 
@@ -302,7 +302,7 @@ export class TouchBarManager {
       x,
       y,
       minWidth: 300,
-      minHeight: 150,
+      minHeight: 175,
       maxWidth: 480,
       maxHeight: 260,
       frame: false,

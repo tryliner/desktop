@@ -387,7 +387,7 @@ export function TouchBarSimulator() {
         </div>
 
         <div
-          className="flex h-14 w-full items-center my-auto"
+          className="flex flex-1 min-h-[48px] w-full items-center"
           style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
         >
           <div
@@ -525,7 +525,7 @@ export function TouchBarSimulator() {
         </div>
 
         <div
-          className="flex h-5 w-full items-center gap-2 shrink-0 select-none"
+          className="flex h-5 w-full items-center gap-2 shrink-0 select-none my-2.5"
           style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
         >
           <span className="font-mono text-[9.5px] text-[#8e8e93] tabular-nums shrink-0 w-6 text-right">
