@@ -420,8 +420,8 @@ function ArtistContent() {
                   <div
                     className={`w-full md:w-[340px] lg:w-[380px] shrink-0 rounded-md p-[16px] flex flex-col gap-[6px] ${
                       hasCustomBg
-                        ? "apple-glass-pill text-text-primary"
-                        : "bg-bg-panel/90 text-text-primary backdrop-blur-md"
+                        ? "apple-glass-action text-text-primary"
+                        : "border border-border-alpha-14 bg-bg-panel/40 text-text-primary backdrop-blur-sm"
                     }`}
                   >
                     <span
