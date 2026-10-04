@@ -80,6 +80,7 @@ export function TouchBarSimulator() {
   const [localSeekMs, setLocalSeekMs] = useState(0);
   const [isVolumeOpen, setIsVolumeOpen] = useState(false);
   const waveformRef = useRef<HTMLDivElement>(null);
+  const volumeTrackRef = useRef<HTMLDivElement>(null);
   const lastNonZeroVolumeRef = useRef<number>(0.7);
 
   const anchorPosRef = useRef(state.positionMs);
@@ -327,16 +328,6 @@ export function TouchBarSimulator() {
   const [isDraggingVolume, setIsDraggingVolume] = useState(false);
 
   useEffect(() => {
-    if (!isDraggingVolume) return;
-    const handleUp = () => {
-      setIsDraggingVolume(false);
-      setLocalVolumeLevel(null);
-    };
-    window.addEventListener("pointerup", handleUp);
-    return () => window.removeEventListener("pointerup", handleUp);
-  }, [isDraggingVolume]);
-
-  useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape" && isVolumeOpen) {
         setIsVolumeOpen(false);
@@ -366,9 +357,61 @@ export function TouchBarSimulator() {
     }
   }, [activeVolumeLevel, sendAction]);
 
+  const handleVolumePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!volumeTrackRef.current) return;
+    const targetEl = e.currentTarget;
+    const pointerId = e.pointerId;
+    try {
+      targetEl.setPointerCapture(pointerId);
+    } catch {}
+
+    const rect = volumeTrackRef.current.getBoundingClientRect();
+    const calculateLevel = (clientX: number) => {
+      const x = clientX - rect.left;
+      const ratio = Math.max(0, Math.min(1, x / rect.width));
+      return Math.round(ratio * 100) / 100;
+    };
+
+    setIsDraggingVolume(true);
+    const initialLvl = calculateLevel(e.clientX);
+    setLocalVolumeLevel(initialLvl);
+    sendAction({
+      type: "volume",
+      payload: { volume: toVolumeGain(initialLvl) },
+    });
+
+    const onPointerMove = (moveEv: PointerEvent) => {
+      if (moveEv.pointerId !== pointerId) return;
+      const lvl = calculateLevel(moveEv.clientX);
+      setLocalVolumeLevel(lvl);
+      sendAction({
+        type: "volume",
+        payload: { volume: toVolumeGain(lvl) },
+      });
+    };
+
+    const onPointerUp = (upEv: PointerEvent) => {
+      if (upEv.pointerId !== pointerId) return;
+      try {
+        if (targetEl.hasPointerCapture(pointerId)) {
+          targetEl.releasePointerCapture(pointerId);
+        }
+      } catch {}
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", onPointerUp);
+      window.removeEventListener("pointercancel", onPointerUp);
+      setIsDraggingVolume(false);
+      setLocalVolumeLevel(null);
+    };
+
+    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("pointerup", onPointerUp);
+    window.addEventListener("pointercancel", onPointerUp);
+  };
+
   return (
     <div className="flex h-screen w-screen select-none items-center justify-center bg-transparent antialiased overflow-hidden font-sans p-0 m-0 border-0">
-      <div className="relative flex h-full w-full flex-col justify-between rounded-2xl bg-black p-3 text-white overflow-hidden shadow-2xl border-0 select-none">
+      <div className="relative flex h-full w-full flex-col justify-between rounded-xl bg-black p-3 text-white overflow-hidden shadow-2xl border-0 select-none">
         <div
           className="flex h-5 w-full items-center justify-between shrink-0"
           style={{ WebkitAppRegion: "drag" } as React.CSSProperties}
@@ -415,12 +458,12 @@ export function TouchBarSimulator() {
         </div>
 
         <div
-          className="flex flex-1 min-h-[48px] w-full items-center"
+          className="flex min-h-[52px] h-[52px] w-full items-center my-auto"
           style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
         >
           <div
             onClick={() => sendAction({ type: "togglePlay" })}
-            className="relative h-14 w-14 shrink-0 rounded-xl overflow-hidden bg-[#141414] cursor-pointer group shadow-sm border-0"
+            className="relative h-13 w-13 shrink-0 rounded-lg overflow-hidden bg-[#141414] cursor-pointer group shadow-sm border-0"
           >
             {state.track?.cover ? (
               <img
@@ -553,7 +596,7 @@ export function TouchBarSimulator() {
         </div>
 
         <div
-          className="flex h-5 w-full items-center gap-2 shrink-0 select-none mt-1 mb-3.5"
+          className="flex h-5 w-full items-center gap-2 shrink-0 select-none mt-0 mb-5"
           style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
         >
           <span className="font-mono text-[9.5px] text-[#71717a] tabular-nums shrink-0 w-6 text-right">
@@ -563,7 +606,7 @@ export function TouchBarSimulator() {
           <div
             ref={setWaveformRef}
             onPointerDown={handleWaveformPointerDown}
-            className="relative flex h-full flex-1 cursor-pointer items-center bg-[#111111] hover:bg-[#181818] transition-colors rounded-lg overflow-hidden py-0.5 touch-none border-0"
+            className="relative flex h-full flex-1 cursor-pointer items-center bg-[#111111] rounded-[5px] overflow-hidden py-0.5 touch-none border-0"
           >
             <div className="absolute inset-x-2 inset-y-1 flex items-center">
               {waveformBars.map((heightRatio, i) => {
@@ -590,12 +633,21 @@ export function TouchBarSimulator() {
                 className="pointer-events-none absolute top-1/2 -translate-y-1/2 z-10"
                 style={{ left: `${activeTimelineRatio * 100}%` }}
               >
-                <div
-                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-full shadow-md"
-                  style={{
-                    width: isSeeking ? "10px" : "3px",
-                    height: isSeeking ? "10px" : "12px",
+                <motion.div
+                  initial={false}
+                  animate={{
+                    width: isSeeking ? 10 : 3,
+                    height: isSeeking ? 10 : 13,
+                    borderRadius: 2,
+                    scale: isSeeking ? 1.08 : 1,
                   }}
+                  transition={{
+                    type: "spring",
+                    stiffness: 500,
+                    damping: 32,
+                    mass: 0.5,
+                  }}
+                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white shadow-md"
                 />
                 {isSeeking && (
                   <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-[#181818] text-white text-[9px] font-mono px-1.5 py-0.5 rounded shadow-lg whitespace-nowrap border-0">
@@ -623,14 +675,14 @@ export function TouchBarSimulator() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -3 }}
                 transition={{ duration: 0.15 }}
-                className="flex h-full w-full items-center gap-2 px-0.5"
+                className="flex h-full w-full items-center gap-2.5 px-0.5"
               >
                 <button
                   type="button"
                   tabIndex={-1}
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => setIsVolumeOpen(false)}
-                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[#8e8e93] hover:text-white hover:bg-white/10 active:scale-95 transition-all outline-none border-0"
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[#8e8e93] hover:text-white hover:bg-white/10 active:scale-95 transition-all outline-none border-0"
                   title="Close volume"
                 >
                   <CloseLine size={15} />
@@ -641,35 +693,29 @@ export function TouchBarSimulator() {
                   tabIndex={-1}
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={handleToggleMute}
-                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[#8e8e93] hover:text-white hover:bg-white/10 active:scale-95 transition-all outline-none border-0"
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[#8e8e93] hover:text-white hover:bg-white/10 active:scale-95 transition-all outline-none border-0"
                   title={activeVolumeLevel === 0 ? "Unmute" : "Mute"}
                 >
                   <VolumeIcon percent={activeVolumePercent} size={15} />
                 </button>
 
-                <div className="relative flex flex-1 items-center h-full px-1">
-                  <input
-                    type="range"
-                    tabIndex={-1}
-                    min={0}
-                    max={1}
-                    step={0.01}
-                    value={activeVolumeLevel}
-                    onPointerDown={() => setIsDraggingVolume(true)}
-                    onPointerUp={() => {
-                      setIsDraggingVolume(false);
-                      setLocalVolumeLevel(null);
-                    }}
-                    onChange={(e) => {
-                      const val = Number(e.target.value);
-                      setLocalVolumeLevel(val);
-                      sendAction({
-                        type: "volume",
-                        payload: { volume: toVolumeGain(val) },
-                      });
-                    }}
-                    className="w-full h-2 bg-[#27272a] rounded-full appearance-none cursor-pointer accent-white border-0"
-                  />
+                <div
+                  ref={volumeTrackRef}
+                  onPointerDown={handleVolumePointerDown}
+                  className="relative flex flex-1 items-center h-full cursor-pointer touch-none select-none px-1 group"
+                >
+                  <div className="relative w-full h-[6px] rounded-full bg-[#222226] overflow-hidden transition-all duration-150 group-hover:h-[8px]">
+                    <div
+                      className="absolute inset-y-0 left-0 bg-white rounded-full transition-[width] ease-out duration-75"
+                      style={{ width: `${activeVolumePercent}%` }}
+                    />
+                  </div>
+                  <div
+                    className="pointer-events-none absolute top-1/2 -translate-y-1/2 -translate-x-1/2"
+                    style={{ left: `calc(${activeVolumePercent}% * 0.98 + 2px)` }}
+                  >
+                    <div className="h-[12px] w-[3.5px] bg-white rounded-full shadow-sm" />
+                  </div>
                 </div>
 
                 <span className="font-mono text-[10.5px] text-[#8e8e93] tabular-nums shrink-0 w-8 text-right select-none">
