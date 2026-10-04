@@ -75,6 +75,8 @@ export class TouchBarManager {
 
   private isUserSeeking = false;
   private seekDebounceTimer: any = null;
+  private wasAutoOpened = false;
+  private userDismissedOverlay = false;
 
   constructor(preloadPath: string, rendererDist: string) {
     this.preloadPath = preloadPath;
@@ -84,8 +86,25 @@ export class TouchBarManager {
 
   public setMainWindow(win: BrowserWindow | null) {
     this.mainWindow = win;
-    if (this.mainWindow && process.platform === "darwin") {
-      this.initNativeTouchBar();
+    if (this.mainWindow) {
+      if (process.platform === "darwin") {
+        this.initNativeTouchBar();
+      }
+
+      this.mainWindow.on("minimize", () => {
+        if (!this.userDismissedOverlay && this.latestState?.track) {
+          this.wasAutoOpened = true;
+          this.showSimulator();
+        }
+      });
+
+      this.mainWindow.on("restore", () => {
+        this.userDismissedOverlay = false;
+        if (this.wasAutoOpened) {
+          this.wasAutoOpened = false;
+          this.closeSimulator();
+        }
+      });
     }
   }
 
@@ -171,13 +190,21 @@ export class TouchBarManager {
     ipcMain.on("touchbar:send-action", (_event, action: TouchBarAction) => {
       if (action.type === "restoreMainWindow") {
         if (this.mainWindow && !this.mainWindow.isDestroyed()) {
-          if (this.mainWindow.isMinimized()) this.mainWindow.restore();
+          if (this.mainWindow.isMinimized()) {
+            this.mainWindow.restore();
+          }
           this.mainWindow.show();
           this.mainWindow.focus();
+        }
+        if (this.wasAutoOpened) {
+          this.wasAutoOpened = false;
+          this.closeSimulator();
         }
         return;
       }
       if (action.type === "closeOverlay") {
+        this.userDismissedOverlay = true;
+        this.wasAutoOpened = false;
         this.closeSimulator();
         return;
       }
@@ -215,7 +242,19 @@ export class TouchBarManager {
     } catch {}
   }
 
+  public showSimulator() {
+    if (this.simulatorWindow && !this.simulatorWindow.isDestroyed()) {
+      if (!this.simulatorWindow.isVisible()) {
+        this.simulatorWindow.show();
+      }
+      return;
+    }
+    this.createSimulatorWindow();
+  }
+
   public toggleSimulator(): boolean {
+    this.userDismissedOverlay = false;
+    this.wasAutoOpened = false;
     if (this.simulatorWindow && !this.simulatorWindow.isDestroyed()) {
       if (this.simulatorWindow.isVisible()) {
         this.simulatorWindow.hide();
