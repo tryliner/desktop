@@ -778,7 +778,7 @@ export function TouchBarSimulator() {
         </div>
 
         <div
-          className="flex h-7 w-full items-center gap-2 shrink-0 select-none my-3.5"
+          className="flex h-7 w-full items-center gap-2 shrink-0 select-none my-2"
           style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
         >
           <span className="font-mono text-[10px] text-[#71717a] tabular-nums shrink-0 w-7 text-right">
@@ -853,11 +853,11 @@ export function TouchBarSimulator() {
             {isVolumeOpen ? (
               <motion.div
                 key="volume-bar"
-                initial={{ opacity: 0, y: 3 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -3 }}
-                transition={{ duration: 0.15 }}
-                className="flex h-full w-full items-center gap-2.5 px-0.5"
+                initial={{ opacity: 0, scaleX: 0.88, originX: 1 }}
+                animate={{ opacity: 1, scaleX: 1, originX: 1 }}
+                exit={{ opacity: 0, scaleX: 0.88, originX: 1 }}
+                transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+                className="flex h-full w-full items-center gap-2 px-0.5 origin-right"
               >
                 <button
                   type="button"
@@ -884,11 +884,13 @@ export function TouchBarSimulator() {
                 <div
                   ref={volumeTrackRef}
                   onPointerDown={handleVolumePointerDown}
-                  className="relative flex flex-1 items-center h-full cursor-pointer touch-none select-none px-1 group"
+                  className="relative flex flex-1 items-center h-full cursor-pointer touch-none select-none px-1"
                 >
-                  <div className="relative w-full h-[6px] rounded-full bg-[#222226] overflow-hidden transition-all duration-150 group-hover:h-[8px]">
+                  <div className="relative w-full h-[6px] rounded-full bg-[#222226] overflow-hidden">
                     <div
-                      className="absolute inset-y-0 left-0 bg-white rounded-full transition-[width] ease-out duration-75"
+                      className={`absolute inset-y-0 left-0 bg-white rounded-full ${
+                        isDraggingVolume ? "" : "transition-[width] duration-75 ease-out"
+                      }`}
                       style={{ width: `${activeVolumePercent}%` }}
                     />
                   </div>
@@ -900,16 +902,18 @@ export function TouchBarSimulator() {
                   </div>
                 </div>
 
-                <span className="font-mono text-[10.5px] text-[#8e8e93] tabular-nums shrink-0 w-8 text-right select-none">
-                  {activeVolumePercent}%
-                </span>
+                <div className="flex items-center justify-center shrink-0 w-11 pr-0.5">
+                  <span className="font-mono text-[10.5px] text-[#8e8e93] tabular-nums select-none text-center">
+                    {activeVolumePercent}%
+                  </span>
+                </div>
               </motion.div>
             ) : (
               <motion.div
                 key="playback-controls"
-                initial={{ opacity: 0, y: -3 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 3 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
                 transition={{ duration: 0.15 }}
                 className="relative flex h-full w-full items-center justify-between"
               >
