@@ -559,7 +559,7 @@ export function TouchBarSimulator() {
 
   return (
     <div className="flex h-screen w-screen select-none items-center justify-center bg-transparent antialiased overflow-hidden font-sans p-0 m-0 border-0">
-      <div className="relative flex h-full w-full flex-col justify-start rounded-xl bg-black p-3 text-white overflow-hidden shadow-2xl border-0 select-none">
+      <div className="relative flex h-full w-full flex-col justify-start rounded-xl bg-black pt-2 px-3 pb-1.5 text-white overflow-hidden shadow-2xl border-0 select-none">
         <div
           className="flex h-5 w-full items-center justify-between shrink-0 mb-1"
           style={{ WebkitAppRegion: "drag" } as React.CSSProperties}
