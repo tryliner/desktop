@@ -772,11 +772,6 @@ export function TouchBarSimulator() {
                 <p className="text-[11px] text-[#a1a1aa] truncate mt-0.5">
                   {state.track?.artist || "Liner Music"}
                 </p>
-                {state.track?.album && (
-                  <p className="text-[9.5px] text-[#71717a] truncate mt-0.5">
-                    {state.track.album}
-                  </p>
-                )}
               </div>
             )}
           </div>
