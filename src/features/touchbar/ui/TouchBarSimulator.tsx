@@ -56,112 +56,6 @@ function VolumeIcon({ percent, size = 14 }: { percent: number; size?: number }) 
   return <VolumeLoud size={size} weight="Bold" />;
 }
 
-function rgbToHsl(r: number, g: number, b: number): [number, number, number] {
-  r /= 255;
-  g /= 255;
-  b /= 255;
-  const max = Math.max(r, g, b);
-  const min = Math.min(r, g, b);
-  let h = 0;
-  let s = 0;
-  const l = (max + min) / 2;
-
-  if (max !== min) {
-    const d = max - min;
-    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-    switch (max) {
-      case r:
-        h = (g - b) / d + (g < b ? 6 : 0);
-        break;
-      case g:
-        h = (b - r) / d + 2;
-        break;
-      case b:
-        h = (r - g) / d + 4;
-        break;
-    }
-    h /= 6;
-  }
-  return [h, s, l];
-}
-
-function hslToRgb(h: number, s: number, l: number): [number, number, number] {
-  let r: number, g: number, b: number;
-  if (s === 0) {
-    r = g = b = l;
-  } else {
-    const hue2rgb = (p: number, q: number, t: number) => {
-      if (t < 0) t += 1;
-      if (t > 1) t -= 1;
-      if (t < 1 / 6) return p + (q - p) * 6 * t;
-      if (t < 1 / 2) return q;
-      if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
-      return p;
-    };
-    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-    const p = 2 * l - q;
-    r = hue2rgb(p, q, h + 1 / 3);
-    g = hue2rgb(p, q, h);
-    b = hue2rgb(p, q, h - 1 / 3);
-  }
-  return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
-}
-
-function extractCoverColor(img: HTMLImageElement): string | null {
-  try {
-    const canvas = document.createElement("canvas");
-    canvas.width = 24;
-    canvas.height = 24;
-    const ctx = canvas.getContext("2d", { willReadFrequently: true });
-    if (!ctx) return null;
-    ctx.drawImage(img, 0, 0, 24, 24);
-    const data = ctx.getImageData(0, 0, 24, 24).data;
-
-    let totalWeight = 0;
-    let weightedR = 0;
-    let weightedG = 0;
-    let weightedB = 0;
-    let totalR = 0;
-    let totalG = 0;
-    let totalB = 0;
-    const count = data.length / 4;
-
-    for (let i = 0; i < data.length; i += 4) {
-      const r = data[i];
-      const g = data[i + 1];
-      const b = data[i + 2];
-      totalR += r;
-      totalG += g;
-      totalB += b;
-
-      const [, s, l] = rgbToHsl(r, g, b);
-      if (l > 0.08 && l < 0.95 && s > 0.1) {
-        const vibrancy = s * (1 - Math.abs(l - 0.5) * 1.5);
-        const weight = Math.max(0.01, vibrancy * vibrancy);
-        weightedR += r * weight;
-        weightedG += g * weight;
-        weightedB += b * weight;
-        totalWeight += weight;
-      }
-    }
-
-    const finalR = Math.round(totalWeight > 0.5 ? weightedR / totalWeight : totalR / count);
-    const finalG = Math.round(totalWeight > 0.5 ? weightedG / totalWeight : totalG / count);
-    const finalB = Math.round(totalWeight > 0.5 ? weightedB / totalWeight : totalB / count);
-
-    const [h, s, l] = rgbToHsl(finalR, finalG, finalB);
-    if (s < 0.1) {
-      return "#ffffff";
-    }
-    const solidL = Math.max(0.55, Math.min(0.78, l < 0.4 ? 0.65 : l));
-    const solidS = Math.max(0.7, s);
-    const [solidR, solidG, solidB] = hslToRgb(h, solidS, solidL);
-    return `rgb(${solidR}, ${solidG}, ${solidB})`;
-  } catch {
-    return null;
-  }
-}
-
 export function TouchBarSimulator() {
   useDisableButtonFocus();
 
@@ -181,29 +75,6 @@ export function TouchBarSimulator() {
     currentRoute: "/",
     isFullscreen: false,
   });
-
-  const [coverAccentColor, setCoverAccentColor] = useState<string>("#0a84ff");
-
-  useEffect(() => {
-    if (!state.track?.cover) {
-      setCoverAccentColor("#0a84ff");
-      return;
-    }
-    let active = true;
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => {
-      if (!active) return;
-      const color = extractCoverColor(img);
-      if (color) {
-        setCoverAccentColor(color);
-      }
-    };
-    img.src = state.track.cover;
-    return () => {
-      active = false;
-    };
-  }, [state.track?.cover]);
 
   const [isSeeking, setIsSeeking] = useState(false);
   const [localSeekMs, setLocalSeekMs] = useState(0);
@@ -468,18 +339,8 @@ export function TouchBarSimulator() {
   }, [activeVolumeLevel, sendAction]);
 
   return (
-    <div className="relative flex h-screen w-screen select-none items-center justify-center p-2 box-border bg-transparent antialiased overflow-hidden font-sans">
-      <div
-        className="relative flex h-full w-full flex-col justify-between rounded-2xl bg-[#0e0e11]/92 backdrop-blur-2xl border border-white/10 p-3 text-white overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.85)]"
-        style={{
-          boxShadow: `0 16px 40px -10px ${coverAccentColor}28, 0 0 0 1px rgba(255,255,255,0.08)`,
-        }}
-      >
-        <div
-          className="pointer-events-none absolute -top-12 -left-12 h-36 w-36 rounded-full blur-3xl opacity-30"
-          style={{ backgroundColor: coverAccentColor }}
-        />
-
+    <div className="flex h-screen w-screen select-none items-center justify-center bg-transparent antialiased overflow-hidden font-sans p-0 m-0 border-0">
+      <div className="relative flex h-full w-full flex-col justify-between rounded-2xl bg-[#121214] p-3 text-white overflow-hidden shadow-2xl border-0 select-none">
         <div
           className="flex h-5 w-full items-center justify-between shrink-0"
           style={{ WebkitAppRegion: "drag" } as React.CSSProperties}
@@ -507,7 +368,7 @@ export function TouchBarSimulator() {
               tabIndex={-1}
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => sendAction({ type: "restoreMainWindow" })}
-              className="flex h-5 w-5 items-center justify-center rounded-md text-[#8e8e93] hover:bg-white/10 hover:text-white transition-colors outline-none"
+              className="flex h-5 w-5 items-center justify-center rounded-md text-[#8e8e93] hover:bg-white/10 hover:text-white transition-colors outline-none border-0"
               title="Open Liner"
             >
               <MaximizeSquare3 size={12} weight="Bold" />
@@ -517,7 +378,7 @@ export function TouchBarSimulator() {
               tabIndex={-1}
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => sendAction({ type: "closeOverlay" })}
-              className="flex h-5 w-5 items-center justify-center rounded-md text-[#8e8e93] hover:bg-red-500/20 hover:text-red-400 transition-colors outline-none"
+              className="flex h-5 w-5 items-center justify-center rounded-md text-[#8e8e93] hover:bg-red-500/20 hover:text-red-400 transition-colors outline-none border-0"
               title="Close"
             >
               <CloseLine size={13} />
@@ -531,10 +392,7 @@ export function TouchBarSimulator() {
         >
           <div
             onClick={() => sendAction({ type: "togglePlay" })}
-            className="relative h-14 w-14 shrink-0 rounded-xl overflow-hidden bg-[#1c1c1e] cursor-pointer group ring-1 ring-white/10 shadow-md"
-            style={{
-              boxShadow: `0 6px 18px -4px ${coverAccentColor}45`,
-            }}
+            className="relative h-14 w-14 shrink-0 rounded-xl overflow-hidden bg-[#1c1c1e] cursor-pointer group shadow-sm border-0"
           >
             {state.track?.cover ? (
               <img
@@ -560,7 +418,7 @@ export function TouchBarSimulator() {
           <div className="flex h-full flex-1 flex-col justify-center min-w-0 pl-3 overflow-hidden">
             {hasLyricsContent ? (
               <div className="flex flex-col justify-center w-full overflow-hidden">
-                <AnimatePresence mode="popLayout" initial={false}>
+                <AnimatePresence mode="wait" initial={false}>
                   <motion.div
                     key={
                       displayLine?.isInstrumental
@@ -569,10 +427,10 @@ export function TouchBarSimulator() {
                           ? `${displayLine.timeMs}-${displayLine.text}`
                           : displayLineText
                     }
-                    initial={{ y: 8, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    exit={{ y: -8, opacity: 0 }}
-                    transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.18, ease: "easeOut" }}
                     className="flex max-w-full items-center overflow-hidden"
                   >
                     {displayLine?.isInstrumental ? (
@@ -677,7 +535,7 @@ export function TouchBarSimulator() {
           <div
             ref={setWaveformRef}
             onPointerDown={handleWaveformPointerDown}
-            className="relative flex h-full flex-1 cursor-pointer items-center bg-[#18181b]/70 hover:bg-[#1c1c20] transition-colors rounded-lg overflow-hidden py-0.5 touch-none"
+            className="relative flex h-full flex-1 cursor-pointer items-center bg-[#1c1c1f] hover:bg-[#222226] transition-colors rounded-lg overflow-hidden py-0.5 touch-none border-0"
           >
             <div className="absolute inset-x-2 inset-y-1 flex items-center">
               {waveformBars.map((heightRatio, i) => {
@@ -705,14 +563,14 @@ export function TouchBarSimulator() {
                 style={{ left: `${activeTimelineRatio * 100}%` }}
               >
                 <div
-                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-full shadow-[0_0_6px_rgba(255,255,255,0.7)]"
+                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-full shadow-md"
                   style={{
                     width: isSeeking ? "10px" : "3px",
                     height: isSeeking ? "10px" : "12px",
                   }}
                 />
                 {isSeeking && (
-                  <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-[#1c1c1e] text-white text-[9px] font-mono px-1.5 py-0.5 rounded shadow-lg whitespace-nowrap">
+                  <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-[#1c1c1e] text-white text-[9px] font-mono px-1.5 py-0.5 rounded shadow-lg whitespace-nowrap border-0">
                     {formatTime(activeTimelineMs)}
                   </div>
                 )}
@@ -726,16 +584,16 @@ export function TouchBarSimulator() {
         </div>
 
         <div
-          className="flex h-8 w-full items-center justify-between shrink-0"
+          className="relative flex h-8 w-full items-center justify-between shrink-0"
           style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
         >
-          <div className="flex items-center gap-1">
+          <div className="flex items-center">
             <button
               type="button"
               tabIndex={-1}
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => sendAction({ type: "toggleShuffle" })}
-              className={`flex h-7 w-7 items-center justify-center rounded-lg transition-colors outline-none ${
+              className={`flex h-7 w-7 items-center justify-center rounded-lg transition-colors outline-none border-0 ${
                 state.shuffle
                   ? "text-white bg-white/15"
                   : "text-[#8e8e93] hover:text-white hover:bg-white/5"
@@ -744,16 +602,18 @@ export function TouchBarSimulator() {
             >
               <Shuffle size={14} weight={state.shuffle ? "Bold" : "Outline"} />
             </button>
+          </div>
 
+          <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2">
             <button
               type="button"
               tabIndex={-1}
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => sendAction({ type: "prev" })}
-              className="flex h-7 w-7 items-center justify-center rounded-lg text-[#8e8e93] hover:text-white hover:bg-white/5 active:scale-95 transition-all outline-none"
+              className="flex h-7 w-7 items-center justify-center rounded-lg text-[#8e8e93] hover:text-white hover:bg-white/5 active:scale-95 transition-all outline-none border-0"
               title="Previous"
             >
-              <SkipPrevious size={15} weight="Bold" />
+              <SkipPrevious size={16} weight="Bold" />
             </button>
 
             <button
@@ -761,13 +621,13 @@ export function TouchBarSimulator() {
               tabIndex={-1}
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => sendAction({ type: "togglePlay" })}
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-black hover:bg-[#f2f2f7] active:scale-95 transition-all shadow-md outline-none"
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-black hover:bg-[#f2f2f7] active:scale-95 transition-all shadow-md outline-none border-0"
               title={isPlaying ? "Pause" : "Play"}
             >
               {isPlaying ? (
-                <Pause size={15} weight="Bold" />
+                <Pause size={16} weight="Bold" />
               ) : (
-                <Play size={15} weight="Bold" className="translate-x-[0.5px]" />
+                <Play size={16} weight="Bold" className="translate-x-[0.5px]" />
               )}
             </button>
 
@@ -776,10 +636,10 @@ export function TouchBarSimulator() {
               tabIndex={-1}
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => sendAction({ type: "next" })}
-              className="flex h-7 w-7 items-center justify-center rounded-lg text-[#8e8e93] hover:text-white hover:bg-white/5 active:scale-95 transition-all outline-none"
+              className="flex h-7 w-7 items-center justify-center rounded-lg text-[#8e8e93] hover:text-white hover:bg-white/5 active:scale-95 transition-all outline-none border-0"
               title="Next"
             >
-              <SkipNext size={15} weight="Bold" />
+              <SkipNext size={16} weight="Bold" />
             </button>
           </div>
 
@@ -789,7 +649,7 @@ export function TouchBarSimulator() {
               tabIndex={-1}
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => sendAction({ type: "like" })}
-              className={`flex h-7 w-7 items-center justify-center rounded-lg transition-colors outline-none active:scale-90 ${
+              className={`flex h-7 w-7 items-center justify-center rounded-lg transition-colors outline-none active:scale-90 border-0 ${
                 state.isLiked
                   ? "text-red-500 hover:text-red-400"
                   : "text-[#8e8e93] hover:text-white hover:bg-white/5"
@@ -807,14 +667,14 @@ export function TouchBarSimulator() {
                     animate={{ width: 90, opacity: 1 }}
                     exit={{ width: 0, opacity: 0 }}
                     transition={{ duration: 0.16 }}
-                    className="flex items-center gap-1.5 bg-[#1c1c1e] px-2 py-1 rounded-lg overflow-hidden mr-1"
+                    className="flex items-center gap-1.5 bg-[#1c1c1e] px-2 py-1 rounded-lg overflow-hidden mr-1 border-0"
                   >
                     <button
                       type="button"
                       tabIndex={-1}
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={handleToggleMute}
-                      className="text-[#8e8e93] hover:text-white transition-colors"
+                      className="text-[#8e8e93] hover:text-white transition-colors border-0"
                     >
                       <VolumeIcon percent={activeVolumePercent} size={12} />
                     </button>
@@ -838,7 +698,7 @@ export function TouchBarSimulator() {
                           payload: { volume: toVolumeGain(val) },
                         });
                       }}
-                      className="w-12 h-1 bg-[#3a3a3c] rounded appearance-none cursor-pointer accent-white"
+                      className="w-12 h-1 bg-[#3a3a3c] rounded appearance-none cursor-pointer accent-white border-0"
                     />
                   </motion.div>
                 ) : null}
@@ -849,7 +709,7 @@ export function TouchBarSimulator() {
                 tabIndex={-1}
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => setIsVolumeOpen(!isVolumeOpen)}
-                className="flex h-7 w-7 items-center justify-center rounded-lg text-[#8e8e93] hover:text-white hover:bg-white/5 transition-colors outline-none"
+                className="flex h-7 w-7 items-center justify-center rounded-lg text-[#8e8e93] hover:text-white hover:bg-white/5 transition-colors outline-none border-0"
                 title="Volume"
               >
                 <VolumeIcon percent={activeVolumePercent} size={14} />

@@ -77,6 +77,7 @@ export class TouchBarManager {
   private seekDebounceTimer: any = null;
   private wasAutoOpened = false;
   private userDismissedOverlay = false;
+  private lastOverlayBounds: { x: number; y: number; width: number; height: number } | null = null;
 
   constructor(preloadPath: string, rendererDist: string) {
     this.preloadPath = preloadPath;
@@ -244,6 +245,9 @@ export class TouchBarManager {
 
   public showSimulator() {
     if (this.simulatorWindow && !this.simulatorWindow.isDestroyed()) {
+      if (this.lastOverlayBounds) {
+        this.simulatorWindow.setBounds(this.lastOverlayBounds);
+      }
       if (!this.simulatorWindow.isVisible()) {
         this.simulatorWindow.show();
       }
@@ -257,9 +261,13 @@ export class TouchBarManager {
     this.wasAutoOpened = false;
     if (this.simulatorWindow && !this.simulatorWindow.isDestroyed()) {
       if (this.simulatorWindow.isVisible()) {
+        this.lastOverlayBounds = this.simulatorWindow.getBounds();
         this.simulatorWindow.hide();
         return false;
       } else {
+        if (this.lastOverlayBounds) {
+          this.simulatorWindow.setBounds(this.lastOverlayBounds);
+        }
         this.simulatorWindow.show();
         this.simulatorWindow.focus();
         return true;
@@ -272,18 +280,20 @@ export class TouchBarManager {
 
   public closeSimulator() {
     if (this.simulatorWindow && !this.simulatorWindow.isDestroyed()) {
-      this.simulatorWindow.close();
-      this.simulatorWindow = null;
+      this.lastOverlayBounds = this.simulatorWindow.getBounds();
+      this.simulatorWindow.hide();
     }
   }
 
   private createSimulatorWindow() {
     const primaryDisplay = screen.getPrimaryDisplay();
     const { workArea } = primaryDisplay;
-    const width = 360;
-    const height = 186;
-    const x = Math.round(workArea.x + workArea.width - width - 20);
-    const y = Math.round(workArea.y + workArea.height - height - 20);
+    const defaultWidth = 350;
+    const defaultHeight = 175;
+    const width = this.lastOverlayBounds?.width || defaultWidth;
+    const height = this.lastOverlayBounds?.height || defaultHeight;
+    const x = this.lastOverlayBounds?.x ?? Math.round(workArea.x + workArea.width - width - 20);
+    const y = this.lastOverlayBounds?.y ?? Math.round(workArea.y + workArea.height - height - 20);
 
     this.simulatorWindow = new BrowserWindow({
       title: "Liner Mini Player",
@@ -291,10 +301,10 @@ export class TouchBarManager {
       height,
       x,
       y,
-      minWidth: 320,
-      minHeight: 160,
+      minWidth: 300,
+      minHeight: 150,
       maxWidth: 480,
-      maxHeight: 280,
+      maxHeight: 260,
       frame: false,
       transparent: true,
       backgroundColor: "#00000000",
@@ -309,6 +319,18 @@ export class TouchBarManager {
         sandbox: false,
         devTools: true,
       },
+    });
+
+    this.simulatorWindow.on("moved", () => {
+      if (this.simulatorWindow && !this.simulatorWindow.isDestroyed()) {
+        this.lastOverlayBounds = this.simulatorWindow.getBounds();
+      }
+    });
+
+    this.simulatorWindow.on("resized", () => {
+      if (this.simulatorWindow && !this.simulatorWindow.isDestroyed()) {
+        this.lastOverlayBounds = this.simulatorWindow.getBounds();
+      }
     });
 
     if (process.platform === "darwin") {
