@@ -819,7 +819,7 @@ export function TouchBarSimulator() {
                 <motion.div
                   initial={false}
                   animate={{
-                    width: isSeeking ? 18 : 3.5,
+                    width: isSeeking ? 8 : 3.5,
                     height: 18,
                     borderRadius: 2,
                     scale: isSeeking ? 1.05 : 1,
@@ -903,7 +903,7 @@ export function TouchBarSimulator() {
                       <motion.div
                         initial={false}
                         animate={{
-                          width: isDraggingVolume ? 12 : 3.5,
+                          width: isDraggingVolume ? 6.5 : 3.5,
                           height: 12,
                           borderRadius: 2,
                           scale: isDraggingVolume ? 1.05 : 1,

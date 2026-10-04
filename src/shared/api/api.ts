@@ -229,7 +229,10 @@ async function executeRequest<T>(
       },
       timeoutMs,
     );
-  } catch (err) {
+  } catch (err: any) {
+    if (init?.signal?.aborted || err?.name === "AbortError") {
+      throw err;
+    }
     if (switchToFallbackEdge()) {
       try {
         const fallbackSigned = await signApiRequest(method, path, rawBody);
@@ -926,17 +929,41 @@ export const api = {
       "x-session-id": id,
     };
 
-    const res = await fetch(
-      `${getApiBaseUrl()}${path}`,
-      {
-        signal,
-        headers: {
-          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-          ...correlationHeaders,
-          ...signedHeaders,
+    let res: Response;
+    try {
+      res = await fetch(
+        `${getApiBaseUrl()}${path}`,
+        {
+          signal,
+          headers: {
+            ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+            ...correlationHeaders,
+            ...signedHeaders,
+          },
         },
-      },
-    );
+      );
+    } catch (fetchErr: any) {
+      if (signal?.aborted || fetchErr?.name === "AbortError") {
+        throw fetchErr;
+      }
+      if (getApiBaseUrl() !== DEFAULT_PRIMARY_API) {
+        switchToPrimaryApi();
+        const primarySigned = await signApiRequest("GET", path);
+        res = await fetch(
+          `${getApiBaseUrl()}${path}`,
+          {
+            signal,
+            headers: {
+              ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+              ...correlationHeaders,
+              ...primarySigned,
+            },
+          },
+        );
+      } else {
+        throw fetchErr;
+      }
+    }
 
     const lyricsDateHeader = res.headers?.get?.("date");
     if (lyricsDateHeader) {
