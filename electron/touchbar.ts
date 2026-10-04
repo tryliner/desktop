@@ -80,6 +80,9 @@ export class TouchBarManager {
   private wasAutoOpened = false;
   private userDismissedOverlay = false;
   private lastOverlayBounds: { x: number; y: number; width: number; height: number } | null = null;
+  private autoShowOnMinimize = true;
+  private closeOnRestore = true;
+  private alwaysOnTop = true;
 
   constructor(preloadPath: string, rendererDist: string) {
     this.preloadPath = preloadPath;
@@ -95,6 +98,7 @@ export class TouchBarManager {
       }
 
       this.mainWindow.on("minimize", () => {
+        if (!this.autoShowOnMinimize) return;
         const isPlaying =
           Boolean(this.latestState?.track) &&
           (this.latestState?.status === "playing" ||
@@ -110,7 +114,7 @@ export class TouchBarManager {
 
       this.mainWindow.on("restore", () => {
         this.userDismissedOverlay = false;
-        if (this.wasAutoOpened) {
+        if (this.wasAutoOpened && this.closeOnRestore) {
           this.wasAutoOpened = false;
           this.closeSimulator();
         }
@@ -236,6 +240,29 @@ export class TouchBarManager {
     ipcMain.on("touchbar:close-simulator", () => {
       this.closeSimulator();
     });
+
+    ipcMain.on("touchbar:update-settings", (_event, settings: any) => {
+      if (!settings || typeof settings !== "object") return;
+      if (typeof settings.autoShowOnMinimize === "boolean") {
+        this.autoShowOnMinimize = settings.autoShowOnMinimize;
+      }
+      if (typeof settings.closeOnRestore === "boolean") {
+        this.closeOnRestore = settings.closeOnRestore;
+      }
+      if (typeof settings.alwaysOnTop === "boolean") {
+        this.alwaysOnTop = settings.alwaysOnTop;
+        if (this.simulatorWindow && !this.simulatorWindow.isDestroyed()) {
+          if (process.platform === "darwin") {
+            this.simulatorWindow.setAlwaysOnTop(this.alwaysOnTop, "floating");
+          } else {
+            this.simulatorWindow.setAlwaysOnTop(this.alwaysOnTop);
+          }
+        }
+      }
+      if (this.simulatorWindow && !this.simulatorWindow.isDestroyed()) {
+        this.simulatorWindow.webContents.send("touchbar:settings-changed", settings);
+      }
+    });
   }
 
   public registerShortcut() {
@@ -333,7 +360,7 @@ export class TouchBarManager {
       frame: false,
       transparent: true,
       backgroundColor: "#00000000",
-      alwaysOnTop: true,
+      alwaysOnTop: this.alwaysOnTop,
       resizable: true,
       skipTaskbar: false,
       hasShadow: false,
@@ -363,7 +390,9 @@ export class TouchBarManager {
 
     if (process.platform === "darwin") {
       this.simulatorWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
-      this.simulatorWindow.setAlwaysOnTop(true, "floating");
+      this.simulatorWindow.setAlwaysOnTop(this.alwaysOnTop, "floating");
+    } else {
+      this.simulatorWindow.setAlwaysOnTop(this.alwaysOnTop);
     }
 
     const targetUrl = process.env.VITE_DEV_SERVER_URL

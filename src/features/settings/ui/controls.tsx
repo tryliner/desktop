@@ -14,7 +14,7 @@ export function SettingRow({
 }: {
   title: string;
   description?: string;
-  control: ReactNode;
+  control?: ReactNode;
   titleKey?: string;
   descKey?: string;
   searchQuery?: string;
@@ -53,7 +53,7 @@ export function SettingRow({
           </span>
         ) : null}
       </div>
-      <div className="shrink-0">{control}</div>
+      {control ? <div className="shrink-0">{control}</div> : null}
     </div>
   );
 }

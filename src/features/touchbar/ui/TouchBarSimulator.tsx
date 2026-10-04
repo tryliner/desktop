@@ -20,6 +20,8 @@ import type {
   TouchBarActiveLine,
   TouchBarWordData,
 } from "../contracts";
+import { useMiniPlayerSettingsStore } from "../store/miniPlayerSettingsStore";
+import { useCustomizationStore, getBlockStyle } from "@/features/settings";
 
 interface GroupedSyllable {
   text: string;
@@ -243,6 +245,15 @@ export function TouchBarSimulator() {
   const progressRatio = Math.min(1, Math.max(0, currentPosMs / durationMs));
   const activeTimelineRatio = progressRatio;
   const activeTimelineMs = currentPosMs;
+
+  const showTimeline = useMiniPlayerSettingsStore((s) => s.showTimeline);
+  const applyCustomBackground = useMiniPlayerSettingsStore((s) => s.applyCustomBackground);
+  const backgroundImage = useCustomizationStore((s) => s.backgroundImage);
+  const backgroundBlur = useCustomizationStore((s) => s.backgroundBlur);
+  const backgroundDim = useCustomizationStore((s) => s.backgroundDim);
+  const miniplayerConfig = useCustomizationStore((s) => s.miniplayer);
+  const hasCustomBg = Boolean(applyCustomBackground && backgroundImage);
+  const miniplayerCustomStyle = getBlockStyle(miniplayerConfig, true, hasCustomBg);
 
   const [waveformWidth, setWaveformWidth] = useState(240);
 
@@ -624,20 +635,22 @@ export function TouchBarSimulator() {
   const [localVolumeLevel, setLocalVolumeLevel] = useState<number | null>(null);
   const [isDraggingVolume, setIsDraggingVolume] = useState(false);
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isVolumeOpen) {
-        setIsVolumeOpen(false);
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isVolumeOpen]);
-
   const baseVolumeLevel = toVolumeLevel(state.volume);
   const activeVolumeLevel =
     isDraggingVolume && localVolumeLevel !== null ? localVolumeLevel : baseVolumeLevel;
   const activeVolumePercent = Math.round(activeVolumeLevel * 100);
+
+  const handleVolumeChange = useCallback(
+    (nextLvl: number) => {
+      const clamped = Math.max(0, Math.min(1, Math.round(nextLvl * 100) / 100));
+      setLocalVolumeLevel(clamped);
+      sendAction({
+        type: "volume",
+        payload: { volume: toVolumeGain(clamped) },
+      });
+    },
+    [sendAction],
+  );
 
   const handleToggleMute = useCallback(() => {
     if (activeVolumeLevel > 0) {
@@ -653,6 +666,84 @@ export function TouchBarSimulator() {
       });
     }
   }, [activeVolumeLevel, sendAction]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.defaultPrevented) return;
+      if (e.key === "Escape") {
+        if (isVolumeOpen) {
+          e.preventDefault();
+          setIsVolumeOpen(false);
+          return;
+        }
+        return;
+      }
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      const { code } = e;
+      switch (code) {
+        case "Space":
+          e.preventDefault();
+          sendAction({ type: "togglePlay" });
+          return;
+        case "ArrowLeft": {
+          e.preventDefault();
+          const targetMs = Math.max(0, currentPosMs - 5000);
+          sendAction({ type: "seek", payload: { positionMs: targetMs } });
+          return;
+        }
+        case "ArrowRight": {
+          e.preventDefault();
+          const targetMs = Math.min(durationMs, currentPosMs + 5000);
+          sendAction({ type: "seek", payload: { positionMs: targetMs } });
+          return;
+        }
+        case "ArrowUp": {
+          e.preventDefault();
+          handleVolumeChange(activeVolumeLevel + 0.05);
+          return;
+        }
+        case "ArrowDown": {
+          e.preventDefault();
+          handleVolumeChange(activeVolumeLevel - 0.05);
+          return;
+        }
+        case "KeyM":
+          e.preventDefault();
+          handleToggleMute();
+          return;
+        case "KeyL":
+          e.preventDefault();
+          sendAction({ type: "like" });
+          return;
+        case "KeyS":
+          e.preventDefault();
+          sendAction({ type: "toggleShuffle" });
+          return;
+        case "KeyJ":
+        case "BracketLeft":
+          e.preventDefault();
+          sendAction({ type: "prev" });
+          return;
+        case "KeyK":
+        case "BracketRight":
+          e.preventDefault();
+          sendAction({ type: "next" });
+          return;
+        default:
+          return;
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [
+    isVolumeOpen,
+    currentPosMs,
+    durationMs,
+    activeVolumeLevel,
+    sendAction,
+    handleVolumeChange,
+    handleToggleMute,
+  ]);
 
   const handleVolumePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!volumeTrackRef.current) return;
@@ -708,9 +799,37 @@ export function TouchBarSimulator() {
 
   return (
     <div className="flex h-screen w-screen select-none items-center justify-center bg-transparent antialiased overflow-hidden font-sans p-0 m-0 border-0">
-      <div className="relative flex h-full w-full flex-col justify-start rounded-xl bg-black pt-2 px-3 pb-1.5 text-white overflow-hidden shadow-2xl border-0 select-none">
+      <div
+        className={`relative flex h-full w-full flex-col justify-start rounded-xl pt-2 px-3 pb-1.5 text-white overflow-hidden shadow-2xl select-none transition-colors duration-200 ${
+          hasCustomBg
+            ? "border border-white/10"
+            : "bg-[#121212]/80 backdrop-blur-2xl border border-white/[0.08]"
+        }`}
+        style={hasCustomBg ? miniplayerCustomStyle : undefined}
+      >
+        {hasCustomBg && backgroundImage && (
+          <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-xl z-0">
+            <img
+              src={backgroundImage}
+              alt=""
+              crossOrigin="anonymous"
+              className="h-full w-full object-cover"
+              style={{
+                filter: backgroundBlur > 0 ? `blur(${backgroundBlur}px)` : undefined,
+                transform: backgroundBlur > 0 ? "scale(1.08)" : undefined,
+              }}
+            />
+            {backgroundDim > 0 && (
+              <div
+                className="absolute inset-0 bg-black"
+                style={{ opacity: backgroundDim / 100 }}
+              />
+            )}
+          </div>
+        )}
+
         <div
-          className="flex h-5 w-full items-center justify-between shrink-0 mb-1 cursor-grab active:cursor-grabbing select-none"
+          className="relative z-10 flex h-5 w-full items-center justify-between shrink-0 mb-1 cursor-grab active:cursor-grabbing select-none"
           style={{ WebkitAppRegion: "drag" } as React.CSSProperties}
         >
           <div
@@ -754,7 +873,7 @@ export function TouchBarSimulator() {
           </div>
         </div>
 
-        <div className="flex flex-col flex-1 justify-between min-h-0 w-full">
+        <div className="relative z-10 flex flex-col flex-1 justify-between min-h-0 w-full">
           <div
             className="flex min-h-[52px] h-[52px] w-full items-center shrink-0"
             style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
@@ -977,76 +1096,78 @@ export function TouchBarSimulator() {
           </div>
         </div>
 
-        <div
-          className="flex h-7 w-full items-center gap-2 shrink-0 select-none my-0"
-          style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
-        >
-          <span className="font-mono text-[10px] text-[#71717a] tabular-nums shrink-0 w-7 text-right">
-            {formatTime(currentPosMs)}
-          </span>
-
+        {showTimeline && (
           <div
-            ref={setWaveformRef}
-            onPointerDown={handleWaveformPointerDown}
-            className="relative flex h-full flex-1 cursor-pointer items-center bg-[#111111] rounded-[6px] overflow-hidden py-0.5 touch-none border-0"
+            className="flex h-7 w-full items-center gap-2 shrink-0 select-none my-0"
+            style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
           >
-            <div className="absolute inset-x-2 inset-y-0.5 flex items-center">
-              {waveformBars.map((heightRatio, i) => {
-                const barRatio = i / Math.max(1, waveformBars.length - 1);
-                const isPlayed = barRatio <= activeTimelineRatio;
-                const pixelHeight = Math.max(4, Math.round(heightRatio * 21));
+            <span className="font-mono text-[10px] text-[#71717a] tabular-nums shrink-0 w-7 text-right">
+              {formatTime(currentPosMs)}
+            </span>
 
-                return (
-                  <div
-                    key={i}
-                    style={{
-                      left: `${barRatio * 100}%`,
-                      height: `${pixelHeight}px`,
-                      width: "2px",
+            <div
+              ref={setWaveformRef}
+              onPointerDown={handleWaveformPointerDown}
+              className="relative flex h-full flex-1 cursor-pointer items-center bg-[#111111] rounded-[6px] overflow-hidden py-0.5 touch-none border-0"
+            >
+              <div className="absolute inset-x-2 inset-y-0.5 flex items-center">
+                {waveformBars.map((heightRatio, i) => {
+                  const barRatio = i / Math.max(1, waveformBars.length - 1);
+                  const isPlayed = barRatio <= activeTimelineRatio;
+                  const pixelHeight = Math.max(4, Math.round(heightRatio * 21));
+
+                  return (
+                    <div
+                      key={i}
+                      style={{
+                        left: `${barRatio * 100}%`,
+                        height: `${pixelHeight}px`,
+                        width: "2px",
+                      }}
+                      className={`absolute -translate-x-1/2 rounded-full transition-colors duration-75 ${
+                        isPlayed ? "bg-white" : "bg-[#27272a]"
+                      }`}
+                    />
+                  );
+                })}
+
+                <div
+                  className="pointer-events-none absolute top-1/2 -translate-y-1/2 z-10"
+                  style={{ left: `${activeTimelineRatio * 100}%` }}
+                >
+                  <motion.div
+                    initial={false}
+                    animate={{
+                      width: isSeeking ? 8 : 3.5,
+                      height: 18,
+                      borderRadius: 2,
+                      scale: isSeeking ? 1.05 : 1,
                     }}
-                    className={`absolute -translate-x-1/2 rounded-full transition-colors duration-75 ${
-                      isPlayed ? "bg-white" : "bg-[#27272a]"
-                    }`}
+                    transition={{
+                      type: "spring",
+                      stiffness: 500,
+                      damping: 32,
+                      mass: 0.5,
+                    }}
+                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white shadow-md"
                   />
-                );
-              })}
-
-              <div
-                className="pointer-events-none absolute top-1/2 -translate-y-1/2 z-10"
-                style={{ left: `${activeTimelineRatio * 100}%` }}
-              >
-                <motion.div
-                  initial={false}
-                  animate={{
-                    width: isSeeking ? 8 : 3.5,
-                    height: 18,
-                    borderRadius: 2,
-                    scale: isSeeking ? 1.05 : 1,
-                  }}
-                  transition={{
-                    type: "spring",
-                    stiffness: 500,
-                    damping: 32,
-                    mass: 0.5,
-                  }}
-                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white shadow-md"
-                />
-                {isSeeking && (
-                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-[#181818] text-white text-[9px] font-mono px-1.5 py-0.5 rounded shadow-lg whitespace-nowrap border-0">
-                    {formatTime(activeTimelineMs)}
-                  </div>
-                )}
+                  {isSeeking && (
+                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-[#181818] text-white text-[9px] font-mono px-1.5 py-0.5 rounded shadow-lg whitespace-nowrap border-0">
+                      {formatTime(activeTimelineMs)}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
 
-          <span className="font-mono text-[10px] text-[#71717a] tabular-nums shrink-0 w-7 text-left">
-            {formatTime(durationMs)}
-          </span>
-        </div>
+            <span className="font-mono text-[10px] text-[#71717a] tabular-nums shrink-0 w-7 text-left">
+              {formatTime(durationMs)}
+            </span>
+          </div>
+        )}
 
         <div
-          className="relative flex h-8 w-full items-center shrink-0 -mt-1"
+          className="relative z-10 flex h-8 w-full items-center shrink-0 -mt-1"
           style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
         >
           <AnimatePresence mode="wait" initial={false}>

@@ -420,13 +420,49 @@
       "account": "Account",
       "about": "About",
       "playback": "Playback",
+      "miniplayer": "Mini Player",
       "privacy": "Privacy"
     },
     "playback": {
       "description": "Queue behavior, click actions and audio output."
     },
+    "miniplayer": {
+      "description": "Floating overlay player behavior, timeline and appearance.",
+      "auto_show_on_minimize": {
+        "title": "Auto-show on minimize",
+        "description": "Automatically show the mini player overlay when Liner is minimized during playback."
+      },
+      "show_timeline": {
+        "title": "Show timeline",
+        "description": "Display the scrubber and waveform progress bar in the mini player."
+      },
+      "close_on_restore": {
+        "title": "Close on app restore",
+        "description": "Automatically hide the mini player when restoring the main window."
+      },
+      "always_on_top": {
+        "title": "Always on top",
+        "description": "Keep the mini player floating above all other windows."
+      },
+      "custom_background": {
+        "title": "Apply custom wallpaper",
+        "description": "Use the uploaded customization wallpaper as the background for the mini player.",
+        "no_wallpaper_description": "Upload a wallpaper in Customization to apply it to the mini player."
+      },
+      "test_toggle": {
+        "title": "Test mini player",
+        "description": "Open or close the floating mini player overlay right now.",
+        "button": "Toggle Mini Player"
+      },
+      "hotkeys": {
+        "title": "Keyboard shortcuts",
+        "description": "When focused: Space (Play/Pause), Left/Right (Seek 5s), Up/Down (Volume 5%), M (Mute), L (Like), S (Shuffle), J/K (Prev/Next)."
+      }
+    },
     "customization": {
       "description": "Window background wallpaper, transparency and block blur effects.",
+      "apply_to_overlay": "Apply to overlay mini player",
+      "apply_to_overlay_desc": "Render the custom background and glass styling on the floating mini player.",
       "dark_theme_only": "Customization is only available for dark theme",
       "wallpaper_title": "Window Wallpaper",
       "wallpaper_description": "Set a custom image or animated GIF as the full window background.",

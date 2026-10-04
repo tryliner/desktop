@@ -15,6 +15,7 @@ import type {
   TouchBarStatePayload,
   TouchBarWordData,
 } from "../contracts";
+import { useMiniPlayerSettingsStore } from "../store/miniPlayerSettingsStore";
 
 export function useTouchBarSync() {
   const navigate = useNavigate();
@@ -38,6 +39,15 @@ export function useTouchBarSync() {
       setSyncRequestTick((t) => t + 1);
     });
     return cleanup;
+  }, []);
+
+  useEffect(() => {
+    const s = useMiniPlayerSettingsStore.getState();
+    window.linerElectron?.updateTouchBarSettings?.({
+      autoShowOnMinimize: s.autoShowOnMinimize,
+      closeOnRestore: s.closeOnRestore,
+      alwaysOnTop: s.alwaysOnTop,
+    });
   }, []);
 
   useEffect(() => {

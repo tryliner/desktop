@@ -8,7 +8,8 @@ import { Upload2Line, CopyLine } from "@mingcute/react";
 
 import { useTranslation } from "@/languages";
 import { useTheme } from "next-themes";
-import { Button, Slider, useToast } from "@/shared/ui";
+import { Button, Slider, ToggleSwitch, useToast } from "@/shared/ui";
+import { useMiniPlayerSettingsStore } from "@/features/touchbar";
 import {
   SettingBlock,
   SettingRow,
@@ -50,6 +51,8 @@ export function CustomizationTab({ searchQuery }: { searchQuery?: string }) {
   const applyToAllBlocks = useCustomizationStore((s) => s.applyToAllBlocks);
   const resetBlock = useCustomizationStore((s) => s.resetBlock);
   const resetAll = useCustomizationStore((s) => s.resetAll);
+  const applyCustomBackground = useMiniPlayerSettingsStore((s) => s.applyCustomBackground);
+  const setApplyCustomBackground = useMiniPlayerSettingsStore((s) => s.setApplyCustomBackground);
 
   const { resolvedTheme } = useTheme();
   const isDark =
@@ -379,6 +382,25 @@ export function CustomizationTab({ searchQuery }: { searchQuery?: string }) {
             </div>
           </div>
         </SettingBlock>
+
+        {backgroundImage && (
+          <SettingRow
+            title={t("settings.customization.apply_to_overlay") || "Apply to overlay mini player"}
+            description={
+              t("settings.customization.apply_to_overlay_desc") ||
+              "Render the custom background and glass styling on the floating mini player."
+            }
+            titleKey="settings.customization.apply_to_overlay"
+            descKey="settings.customization.apply_to_overlay_desc"
+            searchQuery={searchQuery}
+            control={
+              <ToggleSwitch
+                checked={applyCustomBackground}
+                onChange={setApplyCustomBackground}
+              />
+            }
+          />
+        )}
 
         <SettingRow
           title={t("settings.customization.reset_all") || "Reset All Customization"}
