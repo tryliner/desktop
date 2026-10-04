@@ -62,7 +62,27 @@ export function useTouchBarSync() {
           break;
         case "seek":
           if (typeof action.payload?.positionMs === "number") {
-            playerEngine.seek(action.payload.positionMs);
+            const targetMs = action.payload.positionMs;
+            playerEngine.seek(targetMs);
+            const lines = useLyricsStore.getState().syncedLines;
+            if (lines && lines.length > 0) {
+              let idx = -1;
+              for (let i = 0; i < lines.length; i++) {
+                const prevEnd =
+                  i > 0 && lines[i - 1].words && lines[i - 1].words!.length > 0
+                    ? lines[i - 1].words![lines[i - 1].words!.length - 1].endMs
+                    : i > 0
+                      ? lines[i - 1].timeMs
+                      : 0;
+                const targetEarlyMs = Math.max(prevEnd, lines[i].timeMs - 600);
+                if (targetEarlyMs <= targetMs) {
+                  idx = i;
+                } else {
+                  break;
+                }
+              }
+              useLyricsStore.getState().setActiveLineIndex(idx >= 0 ? idx : null);
+            }
           }
           break;
         case "volume":
@@ -185,7 +205,7 @@ export function useTouchBarSync() {
         ? (document.getElementById("liner-audio") as HTMLAudioElement | null)
         : null;
     const currentAudioMs =
-      audioEl && !Number.isNaN(audioEl.currentTime)
+      audioEl && !Number.isNaN(audioEl.currentTime) && !audioEl.seeking
         ? Math.round(audioEl.currentTime * 1000)
         : player.positionMs;
 

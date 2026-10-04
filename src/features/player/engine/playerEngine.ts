@@ -550,6 +550,10 @@ class PlayerEngine {
     if (wasLoading) {
       playerRuntime?.cancelPendingLoad();
     }
+    const audioEl = document.getElementById("liner-audio") as HTMLAudioElement | null;
+    if (audioEl && !Number.isNaN(audioEl.currentTime)) {
+      store.setPosition(Math.round(audioEl.currentTime * 1000));
+    }
     store.setStatus("paused");
     if (playerRuntime && !wasLoading) {
       playerRuntime.pause();
