@@ -969,13 +969,13 @@ export function TouchBarSimulator() {
                     tabIndex={-1}
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() => sendAction({ type: "togglePlay" })}
-                    className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-black hover:bg-[#e4e4e7] active:scale-95 transition-all shadow-md outline-none border-0"
+                    className="flex h-7 w-7 items-center justify-center rounded-lg text-white hover:bg-white/10 active:scale-90 transition-all outline-none border-0"
                     title={isPlaying ? "Pause" : "Play"}
                   >
                     {isPlaying ? (
-                      <Pause size={16} weight="Bold" />
+                      <Pause size={19} weight="Bold" />
                     ) : (
-                      <Play size={16} weight="Bold" className="translate-x-[0.5px]" />
+                      <Play size={19} weight="Bold" className="translate-x-[0.5px]" />
                     )}
                   </button>
 
