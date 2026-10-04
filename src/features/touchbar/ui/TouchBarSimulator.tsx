@@ -143,8 +143,27 @@ export function TouchBarSimulator() {
     }
   }, []);
 
-  const barsCount = Math.max(20, Math.min(54, Math.floor((waveformWidth - 16) / 5)));
-  const waveformSeed = state.track ? `${state.track.id || state.track.title}-${durationMs}` : "liner";
+  useEffect(() => {
+    const el = waveformRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const w = entry.contentRect.width;
+        if (w > 0) setWaveformWidth(Math.round(w));
+      }
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  const innerTrackWidth = Math.max(60, waveformWidth - 16);
+  const barsCount = Math.max(
+    24,
+    Math.min(75, Math.round(26 + innerTrackWidth / 11))
+  );
+  const waveformSeed = state.track
+    ? `${state.track.id || state.track.title}-${durationMs}`
+    : "liner";
   const waveformBars = useMemo(
     () => generateWaveform(waveformSeed, barsCount),
     [waveformSeed, barsCount]
@@ -587,7 +606,7 @@ export function TouchBarSimulator() {
         </div>
 
         <div
-          className="flex min-h-[52px] h-[52px] w-full items-center my-auto"
+          className="flex min-h-[52px] h-[52px] w-full items-center shrink-0"
           style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
         >
           <div
@@ -764,23 +783,23 @@ export function TouchBarSimulator() {
         </div>
 
         <div
-          className="flex h-5 w-full items-center gap-2 shrink-0 select-none mt-0 mb-5"
+          className="flex h-7 w-full items-center gap-2 shrink-0 select-none my-3.5"
           style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
         >
-          <span className="font-mono text-[9.5px] text-[#71717a] tabular-nums shrink-0 w-6 text-right">
+          <span className="font-mono text-[10px] text-[#71717a] tabular-nums shrink-0 w-7 text-right">
             {formatTime(currentPosMs)}
           </span>
 
           <div
             ref={setWaveformRef}
             onPointerDown={handleWaveformPointerDown}
-            className="relative flex h-full flex-1 cursor-pointer items-center bg-[#111111] rounded-[5px] overflow-hidden py-0.5 touch-none border-0"
+            className="relative flex h-full flex-1 cursor-pointer items-center bg-[#111111] rounded-[6px] overflow-hidden py-1 touch-none border-0"
           >
             <div className="absolute inset-x-2 inset-y-1 flex items-center">
               {waveformBars.map((heightRatio, i) => {
-                const barRatio = i / (waveformBars.length - 1);
+                const barRatio = i / Math.max(1, waveformBars.length - 1);
                 const isPlayed = barRatio <= activeTimelineRatio;
-                const pixelHeight = Math.max(3, Math.round(heightRatio * 14));
+                const pixelHeight = Math.max(4, Math.round(heightRatio * 19));
 
                 return (
                   <div
@@ -804,8 +823,8 @@ export function TouchBarSimulator() {
                 <motion.div
                   initial={false}
                   animate={{
-                    width: isSeeking ? 10 : 3,
-                    height: isSeeking ? 10 : 13,
+                    width: isSeeking ? 11 : 3.5,
+                    height: isSeeking ? 11 : 18,
                     borderRadius: 2,
                     scale: isSeeking ? 1.08 : 1,
                   }}
@@ -818,7 +837,7 @@ export function TouchBarSimulator() {
                   className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white shadow-md"
                 />
                 {isSeeking && (
-                  <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-[#181818] text-white text-[9px] font-mono px-1.5 py-0.5 rounded shadow-lg whitespace-nowrap border-0">
+                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-[#181818] text-white text-[9px] font-mono px-1.5 py-0.5 rounded shadow-lg whitespace-nowrap border-0">
                     {formatTime(activeTimelineMs)}
                   </div>
                 )}
@@ -826,7 +845,7 @@ export function TouchBarSimulator() {
             </div>
           </div>
 
-          <span className="font-mono text-[9.5px] text-[#71717a] tabular-nums shrink-0 w-6 text-left">
+          <span className="font-mono text-[10px] text-[#71717a] tabular-nums shrink-0 w-7 text-left">
             {formatTime(durationMs)}
           </span>
         </div>
