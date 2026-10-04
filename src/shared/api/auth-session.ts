@@ -3,7 +3,7 @@ import { signApiRequest, syncServerTime } from "./requestSigner";
 
 export type { AuthTokens, AuthUser };
 
-import { getApiBaseUrl, switchToFallbackEdge } from "./baseUrl";
+import { DEFAULT_PRIMARY_API, getApiBaseUrl, switchToFallbackEdge, switchToPrimaryApi } from "./baseUrl";
  
 const STORAGE_KEY = "liner_auth_session";
 
@@ -132,8 +132,23 @@ export function refreshAuthSession(): Promise<AuthTokens | null> {
           body,
         });
       } catch (networkErr) {
-        // fast failover to polish edge relay if cloudflare is throttled by tspu
         if (switchToFallbackEdge()) {
+          try {
+            signedHeaders = await signApiRequest("POST", "/v1/auth/refresh", body);
+            response = await fetch(`${getApiBaseUrl()}/v1/auth/refresh`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                ...signedHeaders,
+              },
+              body,
+            });
+          } catch (fallbackErr) {
+            switchToPrimaryApi();
+            throw fallbackErr;
+          }
+        } else if (getApiBaseUrl() !== DEFAULT_PRIMARY_API) {
+          switchToPrimaryApi();
           signedHeaders = await signApiRequest("POST", "/v1/auth/refresh", body);
           response = await fetch(`${getApiBaseUrl()}/v1/auth/refresh`, {
             method: "POST",

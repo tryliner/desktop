@@ -38,7 +38,6 @@ export function setApiBaseUrl(url: string): void {
   persistBaseUrl(currentBaseUrl);
 }
 
-// fast failover to edge relay if cloudflare is throttled by tspu
 export function switchToFallbackEdge(): boolean {
   if (currentBaseUrl === DEFAULT_PRIMARY_API) {
     currentBaseUrl = FALLBACK_EDGE_API;
@@ -46,6 +45,11 @@ export function switchToFallbackEdge(): boolean {
     return true;
   }
   return false;
+}
+
+export function switchToPrimaryApi(): void {
+  currentBaseUrl = DEFAULT_PRIMARY_API;
+  persistBaseUrl(DEFAULT_PRIMARY_API);
 }
 
 // eagerly probes primary health on launch and switches to edge if cloudflare is unreachable

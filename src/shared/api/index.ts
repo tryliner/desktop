@@ -5,6 +5,7 @@ export {
   getApiBaseUrl,
   setApiBaseUrl,
   switchToFallbackEdge,
+  switchToPrimaryApi,
   initApiEndpointProbe,
   resetEndpointProbe,
 } from "./baseUrl";

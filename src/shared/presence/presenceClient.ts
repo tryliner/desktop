@@ -1,5 +1,5 @@
 import { getAuthSession, getValidAccessToken } from "../api/auth-session";
-import { getApiBaseUrl, switchToFallbackEdge } from "../api/baseUrl";
+import { getApiBaseUrl } from "../api/baseUrl";
 import { APP_VERSION } from "../config/version";
 
 const DEFAULT_PING_INTERVAL_MS = 25_000;
@@ -191,8 +191,6 @@ export class PresenceClient {
       ws.onerror = () => {
         this.isConnecting = false;
         if (this.ws !== ws) return;
-        // try failover edge if cloudflare blocks websocket in russia
-        switchToFallbackEdge();
         this.clearTimers();
         this.disconnectSocket();
         this.scheduleReconnect();

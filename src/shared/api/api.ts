@@ -39,7 +39,7 @@ function translate(key: string, vars?: Record<string, string | number>) {
   }
 }
 
-import { getApiBaseUrl, switchToFallbackEdge } from "./baseUrl";
+import { DEFAULT_PRIMARY_API, getApiBaseUrl, switchToFallbackEdge, switchToPrimaryApi } from "./baseUrl";
 
 const CLIENT_VERSION =
   (import.meta.env.VITE_CLIENT_VERSION as string | undefined) || "1.0.4-desktop";
@@ -230,7 +230,6 @@ async function executeRequest<T>(
       timeoutMs,
     );
   } catch (err) {
-    // fast failover to polish edge relay if cloudflare is throttled by tspu
     if (switchToFallbackEdge()) {
       try {
         const fallbackSigned = await signApiRequest(method, path, rawBody);
@@ -249,6 +248,7 @@ async function executeRequest<T>(
           timeoutMs,
         );
       } catch (fallbackErr) {
+        switchToPrimaryApi();
         const durationMs = Math.round(performance.now() - startTime);
         telemetry.trackNetwork(method, path, 0, durationMs, requestId);
         if (isConnectivityFailure(fallbackErr) && !isPlaybackPath(path)) {
@@ -260,6 +260,37 @@ async function executeRequest<T>(
           });
         }
         throw fallbackErr;
+      }
+    } else if (getApiBaseUrl() !== DEFAULT_PRIMARY_API) {
+      switchToPrimaryApi();
+      try {
+        const primarySigned = await signApiRequest(method, path, rawBody);
+        res = await fetchWithTimeout(
+          getApiBaseUrl() + path,
+          {
+            ...init,
+            headers: {
+              ...(hasBody ? { "Content-Type": "application/json" } : {}),
+              ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+              ...correlationHeaders,
+              ...primarySigned,
+              ...restHeaders,
+            },
+          },
+          timeoutMs,
+        );
+      } catch (primaryErr) {
+        const durationMs = Math.round(performance.now() - startTime);
+        telemetry.trackNetwork(method, path, 0, durationMs, requestId);
+        if (isConnectivityFailure(primaryErr) && !isPlaybackPath(path)) {
+          recordConnectivityFailure({
+            method,
+            path: stripQuery(path),
+            status: statusOf(primaryErr),
+            latencyMs: durationMs,
+          });
+        }
+        throw primaryErr;
       }
     } else {
       const durationMs = Math.round(performance.now() - startTime);
