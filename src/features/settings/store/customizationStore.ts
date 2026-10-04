@@ -121,6 +121,24 @@ export const clampBlockConfig = (cfg: Partial<BlockCustomization>): BlockCustomi
   return { opacity, blur, dim };
 };
 
+export const wallpaperBroadcast =
+  typeof window !== "undefined" && typeof BroadcastChannel !== "undefined"
+    ? new BroadcastChannel("liner_wallpaper_sync")
+    : null;
+
+if (wallpaperBroadcast) {
+  wallpaperBroadcast.onmessage = (e) => {
+    if (e.data?.type === "wallpaper_changed") {
+      useCustomizationStore.setState({ backgroundImage: e.data.image });
+    } else if (e.data?.type === "request_wallpaper") {
+      const current = useCustomizationStore.getState().backgroundImage;
+      if (current) {
+        wallpaperBroadcast.postMessage({ type: "wallpaper_changed", image: current });
+      }
+    }
+  };
+}
+
 export const useCustomizationStore = create<CustomizationState>()(
   persist(
     (set, get) => ({
@@ -135,6 +153,7 @@ export const useCustomizationStore = create<CustomizationState>()(
         const prev = get().backgroundImage;
         set({ backgroundImage: image });
         void savePersistedWallpaper(image);
+        wallpaperBroadcast?.postMessage({ type: "wallpaper_changed", image });
 
         // if user just added first background and blocks are fully opaque, apply balanced glass preset
         if (image && !prev) {
@@ -209,6 +228,7 @@ export const useCustomizationStore = create<CustomizationState>()(
 
       resetAll: () => {
         void savePersistedWallpaper(null);
+        wallpaperBroadcast?.postMessage({ type: "wallpaper_changed", image: null });
         set({
           backgroundImage: null,
           backgroundBlur: 0,
@@ -239,6 +259,7 @@ export const useCustomizationStore = create<CustomizationState>()(
             useCustomizationStore.setState({ backgroundImage: img });
           }
         });
+        wallpaperBroadcast?.postMessage({ type: "request_wallpaper" });
       },
     },
   ),

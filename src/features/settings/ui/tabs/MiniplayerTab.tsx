@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "@/languages";
 import { useMiniPlayerSettingsStore } from "@/features/touchbar";
-import { useCustomizationStore } from "@/features/settings";
 import { ToggleSwitch, Button } from "@/shared/ui";
 import { SettingRow, SettingSection } from "../controls";
 
@@ -20,11 +19,6 @@ export function MiniplayerTab({ searchQuery }: { searchQuery?: string }) {
 
   const alwaysOnTop = useMiniPlayerSettingsStore((s) => s.alwaysOnTop);
   const setAlwaysOnTop = useMiniPlayerSettingsStore((s) => s.setAlwaysOnTop);
-
-  const applyCustomBackground = useMiniPlayerSettingsStore((s) => s.applyCustomBackground);
-  const setApplyCustomBackground = useMiniPlayerSettingsStore((s) => s.setApplyCustomBackground);
-
-  const backgroundImage = useCustomizationStore((s) => s.backgroundImage);
 
   const handleToggleSimulator = () => {
     window.linerElectron?.toggleTouchBarSimulator?.();
@@ -88,24 +82,6 @@ export function MiniplayerTab({ searchQuery }: { searchQuery?: string }) {
           <ToggleSwitch
             checked={alwaysOnTop}
             onChange={setAlwaysOnTop}
-          />
-        }
-      />
-
-      <SettingRow
-        title={t("settings.miniplayer.custom_background.title")}
-        description={
-          backgroundImage
-            ? t("settings.miniplayer.custom_background.description")
-            : t("settings.miniplayer.custom_background.no_wallpaper_description")
-        }
-        titleKey="settings.miniplayer.custom_background.title"
-        descKey="settings.miniplayer.custom_background.description"
-        searchQuery={searchQuery}
-        control={
-          <ToggleSwitch
-            checked={applyCustomBackground}
-            onChange={setApplyCustomBackground}
           />
         }
       />

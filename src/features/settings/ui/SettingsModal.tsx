@@ -59,7 +59,6 @@ const SETTING_ITEMS: { tabId: TabId; titleKey: string; descKey?: string }[] = [
   { tabId: "Miniplayer", titleKey: "settings.miniplayer.show_timeline.title", descKey: "settings.miniplayer.show_timeline.description" },
   { tabId: "Miniplayer", titleKey: "settings.miniplayer.close_on_restore.title", descKey: "settings.miniplayer.close_on_restore.description" },
   { tabId: "Miniplayer", titleKey: "settings.miniplayer.always_on_top.title", descKey: "settings.miniplayer.always_on_top.description" },
-  { tabId: "Miniplayer", titleKey: "settings.miniplayer.custom_background.title", descKey: "settings.miniplayer.custom_background.description" },
 
   // Appearance
   { tabId: "Appearance", titleKey: "settings.language.label", descKey: "settings.language.description" },

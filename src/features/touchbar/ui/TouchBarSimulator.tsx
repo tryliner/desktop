@@ -21,7 +21,11 @@ import type {
   TouchBarWordData,
 } from "../contracts";
 import { useMiniPlayerSettingsStore } from "../store/miniPlayerSettingsStore";
-import { useCustomizationStore, getBlockStyle, loadPersistedWallpaper } from "@/features/settings";
+import {
+  useCustomizationStore,
+  loadPersistedWallpaper,
+  DEFAULT_GLASS_CONFIG,
+} from "@/features/settings";
 
 interface GroupedSyllable {
   text: string;
@@ -254,27 +258,49 @@ export function TouchBarSimulator() {
   const activeTimelineMs = currentPosMs;
 
   const showTimeline = useMiniPlayerSettingsStore((s) => s.showTimeline);
-  const applyCustomBackground = useMiniPlayerSettingsStore((s) => s.applyCustomBackground);
   const backgroundImage = useCustomizationStore((s) => s.backgroundImage);
   const backgroundBlur = useCustomizationStore((s) => s.backgroundBlur);
   const backgroundDim = useCustomizationStore((s) => s.backgroundDim);
   const contentViewConfig = useCustomizationStore((s) => s.contentView);
   const miniplayerConfig = useCustomizationStore((s) => s.miniplayer);
-  const hasCustomBg = Boolean(applyCustomBackground && backgroundImage);
-  const activeBlockConfig = contentViewConfig || miniplayerConfig;
-  const contentCustomStyle = getBlockStyle(activeBlockConfig, true, hasCustomBg);
+  const hasCustomBg = Boolean(backgroundImage);
+
+  const activeBlockConfig =
+    (miniplayerConfig && (miniplayerConfig.opacity < 100 || miniplayerConfig.blur > 0 || miniplayerConfig.dim > 0))
+      ? miniplayerConfig
+      : (contentViewConfig && (contentViewConfig.opacity < 100 || contentViewConfig.blur > 0 || contentViewConfig.dim > 0))
+        ? contentViewConfig
+        : DEFAULT_GLASS_CONFIG;
+
+  const alpha = Math.min(0.78, (activeBlockConfig?.opacity ?? 60) / 100);
+  const dimAlpha = (activeBlockConfig?.dim ?? 15) / 100;
+  const blurPx = activeBlockConfig?.blur ?? 20;
+
+  const tintBackground = dimAlpha > 0
+    ? `linear-gradient(rgba(0, 0, 0, ${dimAlpha}), rgba(0, 0, 0, ${dimAlpha})), rgba(10, 10, 10, ${alpha})`
+    : `rgba(10, 10, 10, ${alpha})`;
 
   useEffect(() => {
-    if (!backgroundImage) {
-      void loadPersistedWallpaper().then((img) => {
-        if (img) {
-          useCustomizationStore.setState({ backgroundImage: img });
+    void loadPersistedWallpaper().then((img) => {
+      if (img) {
+        useCustomizationStore.setState({ backgroundImage: img });
+      }
+    });
+
+    const channel =
+      typeof window !== "undefined" && typeof BroadcastChannel !== "undefined"
+        ? new BroadcastChannel("liner_wallpaper_sync")
+        : null;
+
+    if (channel) {
+      channel.onmessage = (e) => {
+        if (e.data?.type === "wallpaper_changed") {
+          useCustomizationStore.setState({ backgroundImage: e.data.image });
         }
-      });
+      };
+      channel.postMessage({ type: "request_wallpaper" });
     }
-  }, [backgroundImage]);
 
-  useEffect(() => {
     const handleStorage = (e: StorageEvent) => {
       if (e.key === "liner_customization_v1" && e.newValue) {
         try {
@@ -286,7 +312,10 @@ export function TouchBarSimulator() {
       }
     };
     window.addEventListener("storage", handleStorage);
-    return () => window.removeEventListener("storage", handleStorage);
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+      channel?.close();
+    };
   }, []);
 
   const [waveformWidth, setWaveformWidth] = useState(240);
@@ -864,9 +893,9 @@ export function TouchBarSimulator() {
             <div
               className="absolute inset-0"
               style={{
-                background: contentCustomStyle.background,
-                backdropFilter: contentCustomStyle.backdropFilter,
-                WebkitBackdropFilter: contentCustomStyle.WebkitBackdropFilter,
+                background: tintBackground,
+                backdropFilter: blurPx > 0 ? `blur(${blurPx}px)` : undefined,
+                WebkitBackdropFilter: blurPx > 0 ? `blur(${blurPx}px)` : undefined,
               }}
             />
           </div>
