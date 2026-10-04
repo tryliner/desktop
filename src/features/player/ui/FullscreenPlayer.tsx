@@ -16,7 +16,7 @@ import {
 } from "@/features/lyrics";
 import { AnimatePresence, motion } from "framer-motion";
 import { PlayerUiElements } from "./PlayerUiElements";
-import { DownFill } from "@mingcute/react";
+import { DownLine } from "@mingcute/react";
 import { preloadCoverArt, useCoverSrc } from "@/features/covers";
 import "@braccato/core/element";
 import "@braccato/core/styles/variables.css";
@@ -481,14 +481,9 @@ export function FullscreenPlayer({
         title={t("player.close_fullscreen") || "Close"}
         onClick={onClose}
         data-no-window-drag
-        className="absolute top-[12px] left-[11.8px] z-30 inline-flex h-[32px] w-[32px] items-center justify-center rounded-lg border-none bg-black/50 backdrop-blur-xl text-white/80 hover:text-white hover:bg-white/10 active:scale-[0.94] transition-all cursor-pointer select-none pointer-events-auto"
+        className="absolute top-[12px] left-[12px] z-30 inline-flex h-[32px] w-[32px] items-center justify-center rounded-lg border-none bg-black/50 backdrop-blur-xl text-white/80 hover:text-white hover:bg-white/10 active:scale-[0.94] transition-all cursor-pointer select-none pointer-events-auto"
       >
-        <span
-          className="flex items-center justify-center"
-          style={{ transform: "translateX(-0.4px)" }}
-        >
-          <DownFill size={19} />
-        </span>
+        <DownLine size={18} />
       </button>
     </div>
   );
