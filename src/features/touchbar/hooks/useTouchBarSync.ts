@@ -107,7 +107,10 @@ export function useTouchBarSync() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.altKey && e.code === "KeyT") {
+      if (
+        ((e.ctrlKey || e.metaKey) && e.altKey && e.code === "KeyT") ||
+        ((e.ctrlKey || e.metaKey) && e.shiftKey && e.code === "KeyM")
+      ) {
         e.preventDefault();
         window.linerElectron?.toggleTouchBarSimulator?.();
       }

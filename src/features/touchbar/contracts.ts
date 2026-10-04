@@ -52,6 +52,8 @@ export interface TouchBarAction {
     | "adjustOffset"
     | "navigate"
     | "toggleShuffle"
-    | "toggleFullscreen";
+    | "toggleFullscreen"
+    | "restoreMainWindow"
+    | "closeOverlay";
   payload?: any;
 }

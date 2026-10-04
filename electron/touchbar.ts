@@ -1,4 +1,4 @@
-import { BrowserWindow, ipcMain, globalShortcut, TouchBar } from "electron";
+import { BrowserWindow, ipcMain, globalShortcut, TouchBar, screen } from "electron";
 import path from "node:path";
 
 function formatTime(ms: number): string {
@@ -55,7 +55,9 @@ export interface TouchBarAction {
     | "adjustOffset"
     | "navigate"
     | "toggleShuffle"
-    | "toggleFullscreen";
+    | "toggleFullscreen"
+    | "restoreMainWindow"
+    | "closeOverlay";
   payload?: any;
 }
 
@@ -167,6 +169,18 @@ export class TouchBarManager {
     });
 
     ipcMain.on("touchbar:send-action", (_event, action: TouchBarAction) => {
+      if (action.type === "restoreMainWindow") {
+        if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+          if (this.mainWindow.isMinimized()) this.mainWindow.restore();
+          this.mainWindow.show();
+          this.mainWindow.focus();
+        }
+        return;
+      }
+      if (action.type === "closeOverlay") {
+        this.closeSimulator();
+        return;
+      }
       this.forwardAction(action);
     });
 
@@ -185,6 +199,9 @@ export class TouchBarManager {
 
   public registerShortcut() {
     try {
+      globalShortcut.register("CommandOrControl+Shift+M", () => {
+        this.toggleSimulator();
+      });
       globalShortcut.register("CommandOrControl+Alt+T", () => {
         this.toggleSimulator();
       });
@@ -193,6 +210,7 @@ export class TouchBarManager {
 
   public unregisterShortcut() {
     try {
+      globalShortcut.unregister("CommandOrControl+Shift+M");
       globalShortcut.unregister("CommandOrControl+Alt+T");
     } catch {}
   }
@@ -221,13 +239,23 @@ export class TouchBarManager {
   }
 
   private createSimulatorWindow() {
+    const primaryDisplay = screen.getPrimaryDisplay();
+    const { workArea } = primaryDisplay;
+    const width = 360;
+    const height = 186;
+    const x = Math.round(workArea.x + workArea.width - width - 20);
+    const y = Math.round(workArea.y + workArea.height - height - 20);
+
     this.simulatorWindow = new BrowserWindow({
-      title: "Liner Touch Bar",
-      width: 960,
-      height: 48,
-      minWidth: 600,
-      minHeight: 44,
-      maxHeight: 52,
+      title: "Liner Mini Player",
+      width,
+      height,
+      x,
+      y,
+      minWidth: 320,
+      minHeight: 160,
+      maxWidth: 480,
+      maxHeight: 280,
       frame: false,
       transparent: true,
       backgroundColor: "#00000000",
@@ -243,6 +271,11 @@ export class TouchBarManager {
         devTools: true,
       },
     });
+
+    if (process.platform === "darwin") {
+      this.simulatorWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+      this.simulatorWindow.setAlwaysOnTop(true, "floating");
+    }
 
     const targetUrl = process.env.VITE_DEV_SERVER_URL
       ? `${process.env.VITE_DEV_SERVER_URL}#/touchbar-simulator`

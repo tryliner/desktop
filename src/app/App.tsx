@@ -36,7 +36,9 @@ function TouchBarSync() {
 }
 
 export default function App() {
-  const isTouchBar = window.location.hash.startsWith("#/touchbar");
+  const isTouchBar =
+    window.location.hash.startsWith("#/touchbar") ||
+    window.location.hash.startsWith("#/miniplayer");
 
   if (isTouchBar) {
     return (
