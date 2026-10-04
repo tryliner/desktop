@@ -290,9 +290,11 @@ export function TouchBarSimulator() {
   const backgroundImage = useCustomizationStore((s) => s.backgroundImage);
   const backgroundBlur = useCustomizationStore((s) => s.backgroundBlur);
   const backgroundDim = useCustomizationStore((s) => s.backgroundDim);
+  const contentViewConfig = useCustomizationStore((s) => s.contentView);
   const miniplayerConfig = useCustomizationStore((s) => s.miniplayer);
   const hasCustomBg = Boolean(applyCustomBackground && backgroundImage);
-  const miniplayerCustomStyle = getBlockStyle(miniplayerConfig, true, hasCustomBg);
+  const activeBlockConfig = contentViewConfig || miniplayerConfig;
+  const contentCustomStyle = getBlockStyle(activeBlockConfig, true, hasCustomBg);
 
   useEffect(() => {
     if (!backgroundImage) {
@@ -585,7 +587,7 @@ export function TouchBarSimulator() {
               endPct = (-0.1 + t * 1.6) * 100;
             }
 
-            const bg = `linear-gradient(90deg, #ffffff ${startPct.toFixed(1)}%, #71717a ${endPct.toFixed(1)}%)`;
+            const bg = `linear-gradient(90deg, #ffffff ${startPct.toFixed(1)}%, rgba(255, 255, 255, 0.42) ${endPct.toFixed(1)}%)`;
             if (span.style.backgroundImage !== bg) {
               span.style.backgroundImage = bg;
             }
@@ -875,10 +877,10 @@ export function TouchBarSimulator() {
             ? ""
             : "bg-[#0a0a0a]"
         }`}
-        style={hasCustomBg ? miniplayerCustomStyle : undefined}
       >
         {hasCustomBg && backgroundImage && (
           <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-xl z-0">
+            <div className="absolute inset-0 bg-black" />
             <img
               src={backgroundImage}
               alt=""
@@ -895,6 +897,14 @@ export function TouchBarSimulator() {
                 style={{ opacity: backgroundDim / 100 }}
               />
             )}
+            <div
+              className="absolute inset-0"
+              style={{
+                background: contentCustomStyle.background,
+                backdropFilter: contentCustomStyle.backdropFilter,
+                WebkitBackdropFilter: contentCustomStyle.WebkitBackdropFilter,
+              }}
+            />
           </div>
         )}
 
@@ -1052,7 +1062,7 @@ export function TouchBarSimulator() {
                       }}
                     >
                       {displayLine?.isInstrumental ? (
-                        <div className="flex items-center gap-1.5 text-xs text-[#a1a1aa] py-0.5">
+                        <div className="flex items-center gap-1.5 text-xs text-white/50 py-0.5">
                           <svg width="14" height="14" viewBox="0 0 24 24" className="shrink-0">
                             <defs>
                               <clipPath id="miniplayer-note-clip">
@@ -1082,7 +1092,7 @@ export function TouchBarSimulator() {
                             </defs>
                             <path
                               d="M10 21q-1.65 0-2.825-1.175T6 17t1.175-2.825T10 13q.575 0 1.063.138t.937.412V4q0-.425.288-.712T13 3h4q.425 0 .713.288T18 4v2q0 .425-.288.713T17 7h-3v10q0 1.65-1.175 2.825T10 21"
-                              fill="#52525b"
+                              fill="rgba(255, 255, 255, 0.28)"
                             />
                             <path
                               d="M10 21q-1.65 0-2.825-1.175T6 17t1.175-2.825T10 13q.575 0 1.063.138t.937.412V4q0-.425.288-.712T13 3h4q.425 0 .713.288T18 4v2q0 .425-.288.713T17 7h-3v10q0 1.65-1.175 2.825T10 21"
@@ -1090,7 +1100,7 @@ export function TouchBarSimulator() {
                               clipPath="url(#miniplayer-note-clip)"
                             />
                           </svg>
-                          <span className="font-medium text-[12px] text-[#a1a1aa]">Instrumental</span>
+                          <span className="font-medium text-[12px] text-white/50">Instrumental</span>
                         </div>
                       ) : displayLine?.words && displayLine.words.length > 0 ? (
                         <div
@@ -1111,7 +1121,7 @@ export function TouchBarSimulator() {
                                   className="bg-clip-text text-transparent font-medium text-[13px] leading-[17px] inline-block tracking-tight"
                                   style={{
                                     backgroundImage:
-                                      "linear-gradient(90deg, #ffffff -20%, #71717a -10%)",
+                                      "linear-gradient(90deg, #ffffff -20%, rgba(255, 255, 255, 0.42) -10%)",
                                   }}
                                 >
                                   {s.text}
@@ -1155,9 +1165,7 @@ export function TouchBarSimulator() {
                           duration: 0.48,
                           ease: [0.16, 1, 0.3, 1],
                         }}
-                        className={`col-start-1 row-start-1 text-[10.5px] leading-[15px] ${
-                          hasCustomBg ? "text-white/50" : "text-[#71717a]"
-                        } truncate select-none pointer-events-none w-full`}
+                        className="col-start-1 row-start-1 text-[10.5px] leading-[15px] text-white/45 truncate select-none pointer-events-none w-full"
                         style={{
                           willChange: "transform, opacity",
                           transform: "translateZ(0)",
@@ -1174,11 +1182,7 @@ export function TouchBarSimulator() {
                 <p className="font-semibold text-[13.5px] text-white tracking-tight truncate">
                   {state.track?.title || "No track playing"}
                 </p>
-                <p
-                  className={`text-[11px] ${
-                    hasCustomBg ? "text-white/60" : "text-[#a1a1aa]"
-                  } truncate mt-0.5`}
-                >
+                <p className="text-[11px] text-white/60 truncate mt-0.5">
                   {state.track?.artist || "Liner Music"}
                 </p>
               </div>
@@ -1191,11 +1195,7 @@ export function TouchBarSimulator() {
             className="flex h-7 w-full items-center gap-2 shrink-0 select-none my-0"
             style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
           >
-            <span
-              className={`font-mono text-[10px] tabular-nums shrink-0 w-7 text-right ${
-                hasCustomBg ? "text-white/60" : "text-[#71717a]"
-              }`}
-            >
+            <span className="font-mono text-[10px] tabular-nums shrink-0 w-7 text-right text-white/50">
               {formatTime(currentPosMs)}
             </span>
 
@@ -1225,7 +1225,7 @@ export function TouchBarSimulator() {
                           ? "bg-white"
                           : hasCustomBg
                             ? "bg-white/20"
-                            : "bg-[#27272a]"
+                            : "bg-white/15"
                       }`}
                     />
                   );
@@ -1264,11 +1264,7 @@ export function TouchBarSimulator() {
               </div>
             </div>
 
-            <span
-              className={`font-mono text-[10px] tabular-nums shrink-0 w-7 text-left ${
-                hasCustomBg ? "text-white/60" : "text-[#71717a]"
-              }`}
-            >
+            <span className="font-mono text-[10px] tabular-nums shrink-0 w-7 text-left text-white/50">
               {formatTime(durationMs)}
             </span>
           </div>
