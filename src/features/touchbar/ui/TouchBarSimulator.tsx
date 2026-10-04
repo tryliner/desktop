@@ -900,7 +900,22 @@ export function TouchBarSimulator() {
                       className="pointer-events-none absolute top-1/2 -translate-y-1/2 -translate-x-1/2"
                       style={{ left: `${activeVolumePercent}%` }}
                     >
-                      <div className="h-[12px] w-[3.5px] bg-white rounded-full shadow-sm" />
+                      <motion.div
+                        initial={false}
+                        animate={{
+                          width: isDraggingVolume ? 10 : 3.5,
+                          height: isDraggingVolume ? 10 : 12,
+                          borderRadius: 2,
+                          scale: isDraggingVolume ? 1.08 : 1,
+                        }}
+                        transition={{
+                          type: "spring",
+                          stiffness: 500,
+                          damping: 32,
+                          mass: 0.5,
+                        }}
+                        className="bg-white shadow-sm"
+                      />
                     </div>
                   </div>
                 </div>
