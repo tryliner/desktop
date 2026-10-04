@@ -824,11 +824,11 @@ export function TouchBarSimulator() {
                           ? `${displayLine.timeMs}-${displayLine.text}`
                           : displayLineText
                     }
-                    initial={{ opacity: 0, y: 16, scale: 0.97 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -14, scale: 0.97 }}
+                    initial={{ opacity: 0, y: 14 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -12 }}
                     transition={{
-                      duration: 0.48,
+                      duration: 0.45,
                       ease: [0.16, 1, 0.3, 1],
                     }}
                     className="flex w-full flex-col justify-center overflow-hidden origin-bottom-left"
@@ -885,17 +885,10 @@ export function TouchBarSimulator() {
                             className="inline-flex items-baseline whitespace-nowrap"
                           >
                             {group.syllables.map((s) => (
-                              <motion.span
+                              <span
                                 key={`${displayLine.timeMs}-${s.globalIndex}`}
                                 ref={(el) => {
                                   if (el) wordSpanRefs.current[s.globalIndex] = el;
-                                }}
-                                initial={{ opacity: 0, y: 7 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{
-                                  duration: 0.28,
-                                  delay: Math.min(0.24, s.globalIndex * 0.022),
-                                  ease: [0.16, 1, 0.3, 1],
                                 }}
                                 className="bg-clip-text text-transparent font-medium text-[13px] leading-[17px] inline-block tracking-tight"
                                 style={{
@@ -904,7 +897,7 @@ export function TouchBarSimulator() {
                                 }}
                               >
                                 {s.text}
-                              </motion.span>
+                              </span>
                             ))}
                           </span>
                         ))}
@@ -915,19 +908,12 @@ export function TouchBarSimulator() {
                         className="flex flex-wrap items-baseline gap-x-1.5 overflow-hidden leading-[17px] max-h-[52px]"
                       >
                         {wordsList.map((word, idx) => (
-                          <motion.span
+                          <span
                             key={`${displayLine?.timeMs ?? displayLineText}-${idx}`}
-                            initial={{ opacity: 0, y: 7 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{
-                              duration: 0.28,
-                              delay: Math.min(0.24, idx * 0.022),
-                              ease: [0.16, 1, 0.3, 1],
-                            }}
                             className="font-medium text-[13px] leading-[17px] text-white tracking-tight inline-block whitespace-nowrap"
                           >
                             {word}
-                          </motion.span>
+                          </span>
                         ))}
                       </div>
                     )}
