@@ -261,7 +261,7 @@ export class TouchBarManager {
       if (this.lastOverlayBounds) {
         this.simulatorWindow.setBounds({
           ...this.lastOverlayBounds,
-          height: 188,
+          height: 172,
         });
       }
       if (!this.simulatorWindow.isVisible()) {
@@ -280,14 +280,14 @@ export class TouchBarManager {
     this.wasAutoOpened = false;
     if (this.simulatorWindow && !this.simulatorWindow.isDestroyed()) {
       if (this.simulatorWindow.isVisible()) {
-        this.lastOverlayBounds = { ...this.simulatorWindow.getBounds(), height: 188 };
+        this.lastOverlayBounds = { ...this.simulatorWindow.getBounds(), height: 172 };
         this.simulatorWindow.hide();
         return false;
       } else {
         if (this.lastOverlayBounds) {
           this.simulatorWindow.setBounds({
             ...this.lastOverlayBounds,
-            height: 188,
+            height: 172,
           });
         }
         this.simulatorWindow.show();
@@ -305,7 +305,7 @@ export class TouchBarManager {
 
   public closeSimulator() {
     if (this.simulatorWindow && !this.simulatorWindow.isDestroyed()) {
-      this.lastOverlayBounds = { ...this.simulatorWindow.getBounds(), height: 188 };
+      this.lastOverlayBounds = { ...this.simulatorWindow.getBounds(), height: 172 };
       this.simulatorWindow.hide();
     }
   }
@@ -314,7 +314,7 @@ export class TouchBarManager {
     const primaryDisplay = screen.getPrimaryDisplay();
     const { workArea } = primaryDisplay;
     const defaultWidth = 350;
-    const defaultHeight = 188;
+    const defaultHeight = 172;
     const width = this.lastOverlayBounds?.width || defaultWidth;
     const height = defaultHeight;
     const x = this.lastOverlayBounds?.x ?? Math.round(workArea.x + workArea.width - width - 20);

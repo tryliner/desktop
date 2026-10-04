@@ -561,7 +561,7 @@ export function TouchBarSimulator() {
     <div className="flex h-screen w-screen select-none items-center justify-center bg-transparent antialiased overflow-hidden font-sans p-0 m-0 border-0">
       <div className="relative flex h-full w-full flex-col justify-start rounded-xl bg-black p-3 text-white overflow-hidden shadow-2xl border-0 select-none">
         <div
-          className="flex h-5 w-full items-center justify-between shrink-0 mb-1.5"
+          className="flex h-5 w-full items-center justify-between shrink-0 mb-1"
           style={{ WebkitAppRegion: "drag" } as React.CSSProperties}
         >
           <div className="flex items-center min-w-0 pr-2">
@@ -605,10 +605,11 @@ export function TouchBarSimulator() {
           </div>
         </div>
 
-        <div
-          className="flex min-h-[52px] h-[52px] w-full items-center shrink-0"
-          style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
-        >
+        <div className="flex flex-col flex-1 justify-between min-h-0 w-full">
+          <div
+            className="flex min-h-[52px] h-[52px] w-full items-center shrink-0"
+            style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
+          >
           <div
             onClick={() => sendAction({ type: "togglePlay" })}
             className="relative h-13 w-13 shrink-0 rounded-lg overflow-hidden bg-[#141414] cursor-pointer group shadow-sm border-0"
@@ -778,7 +779,7 @@ export function TouchBarSimulator() {
         </div>
 
         <div
-          className="flex h-7 w-full items-center gap-2 shrink-0 select-none my-1"
+          className="flex h-7 w-full items-center gap-2 shrink-0 select-none my-0"
           style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
         >
           <span className="font-mono text-[10px] text-[#71717a] tabular-nums shrink-0 w-7 text-right">
@@ -846,7 +847,7 @@ export function TouchBarSimulator() {
         </div>
 
         <div
-          className="relative flex h-8 w-full items-center shrink-0 mt-auto"
+          className="relative flex h-8 w-full items-center shrink-0"
           style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
         >
           <AnimatePresence mode="wait" initial={false}>
@@ -882,23 +883,25 @@ export function TouchBarSimulator() {
                 </button>
 
                 <div
-                  ref={volumeTrackRef}
                   onPointerDown={handleVolumePointerDown}
-                  className="relative flex flex-1 items-center h-full cursor-pointer touch-none select-none px-1"
+                  className="relative flex flex-1 items-center h-full cursor-pointer touch-none select-none"
                 >
-                  <div className="relative w-full h-[6px] rounded-full bg-[#222226] overflow-hidden">
+                  <div
+                    ref={volumeTrackRef}
+                    className="relative w-full h-[6px] rounded-full bg-[#222226]"
+                  >
                     <div
-                      className={`absolute inset-y-0 left-0 bg-white rounded-full ${
+                      className={`absolute inset-y-0 left-0 bg-gradient-to-r from-[#71717a] via-[#d4d4d8] to-white rounded-full ${
                         isDraggingVolume ? "" : "transition-[width] duration-75 ease-out"
                       }`}
                       style={{ width: `${activeVolumePercent}%` }}
                     />
-                  </div>
-                  <div
-                    className="pointer-events-none absolute top-1/2 -translate-y-1/2 -translate-x-1/2"
-                    style={{ left: `calc(${activeVolumePercent}% * 0.98 + 2px)` }}
-                  >
-                    <div className="h-[12px] w-[3.5px] bg-white rounded-full shadow-sm" />
+                    <div
+                      className="pointer-events-none absolute top-1/2 -translate-y-1/2 -translate-x-1/2"
+                      style={{ left: `${activeVolumePercent}%` }}
+                    >
+                      <div className="h-[12px] w-[3.5px] bg-white rounded-full shadow-sm" />
+                    </div>
                   </div>
                 </div>
 
@@ -1006,7 +1009,8 @@ export function TouchBarSimulator() {
         </div>
       </div>
     </div>
-  );
+  </div>
+);
 }
 
 export default TouchBarSimulator;
