@@ -372,13 +372,13 @@ export function TouchBarSimulator() {
     return null;
   }, [state.syncedLines, localActiveIndex, currentPosMs]);
 
-  const nextLyricFromSynced = useMemo(() => {
-    if (!state.syncedLines || state.syncedLines.length === 0) return "";
+  const nextLyricLine = useMemo(() => {
+    if (!state.syncedLines || state.syncedLines.length === 0) return null;
     const fromIdx = localActiveIndex >= 0 ? localActiveIndex + 1 : 0;
     const upcoming = state.syncedLines
       .slice(fromIdx)
       .find((l) => Boolean(l.text && l.text.trim()));
-    return upcoming?.text || "";
+    return upcoming || null;
   }, [state.syncedLines, localActiveIndex]);
 
   if (activeLineFromSynced) {
@@ -402,7 +402,11 @@ export function TouchBarSimulator() {
 
   const displayLine =
     activeLineFromSynced || state.activeLine || lastActiveLineRef.current;
-  const nextLyricText = nextLyricFromSynced || state.nextLyricText || "";
+  const nextLyricText = nextLyricLine?.text || state.nextLyricText || "";
+  const nextLyricKey =
+    nextLyricLine?.timeMs !== undefined
+      ? `${nextLyricLine.timeMs}-${nextLyricText}`
+      : nextLyricText;
   const displayLineText =
     displayLine?.isInstrumental
       ? ""
@@ -817,144 +821,148 @@ export function TouchBarSimulator() {
 
             {hasLyricsContent ? (
               <div className="flex flex-col justify-center w-full overflow-hidden">
-                <AnimatePresence mode="popLayout" initial={false}>
-                  <motion.div
-                    key={
-                      displayLine?.isInstrumental
-                        ? `instrumental-${displayLine.timeMs}`
-                        : displayLine?.timeMs !== undefined
-                          ? `${displayLine.timeMs}-${displayLine.text}`
-                          : displayLineText
-                    }
-                    initial={{ opacity: 0, y: 16 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{
-                      opacity: 0,
-                      y: -14,
-                      transition: { duration: 0.38, ease: [0.33, 1, 0.68, 1] },
-                    }}
-                    transition={{
-                      duration: 0.85,
-                      ease: [0.16, 1, 0.3, 1],
-                    }}
-                    className="flex w-full flex-col justify-center overflow-hidden origin-bottom-left"
-                    style={{
-                      willChange: "transform, opacity",
-                      transform: "translateZ(0)",
-                    }}
-                  >
-                    {displayLine?.isInstrumental ? (
-                      <div className="flex items-center gap-1.5 text-xs text-[#a1a1aa] py-0.5">
-                        <svg width="14" height="14" viewBox="0 0 24 24" className="shrink-0">
-                          <defs>
-                            <clipPath id="miniplayer-note-clip">
-                              <rect
-                                ref={noteClipRectRef}
-                                x="0"
-                                y={
-                                  displayLine.timeMs !== undefined
-                                    ? (
-                                        24 *
-                                        (1 -
-                                          Math.max(
-                                            0,
-                                            Math.min(
-                                              1,
-                                              (currentPosMs - displayLine.timeMs) /
-                                                Math.max(1000, displayLine.durationMs || 4000)
-                                            )
-                                          ))
-                                      ).toFixed(2)
-                                    : "24"
-                                }
-                                width="24"
-                                height="24"
-                              />
-                            </clipPath>
-                          </defs>
-                          <path
-                            d="M10 21q-1.65 0-2.825-1.175T6 17t1.175-2.825T10 13q.575 0 1.063.138t.937.412V4q0-.425.288-.712T13 3h4q.425 0 .713.288T18 4v2q0 .425-.288.713T17 7h-3v10q0 1.65-1.175 2.825T10 21"
-                            fill="#52525b"
-                          />
-                          <path
-                            d="M10 21q-1.65 0-2.825-1.175T6 17t1.175-2.825T10 13q.575 0 1.063.138t.937.412V4q0-.425.288-.712T13 3h4q.425 0 .713.288T18 4v2q0 .425-.288.713T17 7h-3v10q0 1.65-1.175 2.825T10 21"
-                            fill="#ffffff"
-                            clipPath="url(#miniplayer-note-clip)"
-                          />
-                        </svg>
-                        <span className="font-medium text-[12px] text-[#a1a1aa]">Instrumental</span>
-                      </div>
-                    ) : displayLine?.words && displayLine.words.length > 0 ? (
-                      <div
-                        ref={activeLineContainerRef}
-                        className="flex flex-wrap items-baseline gap-x-1.5 overflow-hidden leading-[17px] max-h-[52px]"
-                      >
-                        {groupedWords.map((group, wIdx) => (
-                          <span
-                            key={`word-${wIdx}`}
-                            className="inline-flex items-baseline whitespace-nowrap"
-                          >
-                            {group.syllables.map((s) => (
-                              <span
-                                key={`${displayLine.timeMs}-${s.globalIndex}`}
-                                ref={(el) => {
-                                  if (el) wordSpanRefs.current[s.globalIndex] = el;
-                                }}
-                                className="bg-clip-text text-transparent font-medium text-[13px] leading-[17px] inline-block tracking-tight"
-                                style={{
-                                  backgroundImage:
-                                    "linear-gradient(90deg, #ffffff -20%, #71717a -10%)",
-                                }}
-                              >
-                                {s.text}
-                              </span>
-                            ))}
-                          </span>
-                        ))}
-                      </div>
-                    ) : (
-                      <div
-                        ref={activeLineContainerRef}
-                        className="flex flex-wrap items-baseline gap-x-1.5 overflow-hidden leading-[17px] max-h-[52px]"
-                      >
-                        {wordsList.map((word, idx) => (
-                          <span
-                            key={`${displayLine?.timeMs ?? displayLineText}-${idx}`}
-                            className="font-medium text-[13px] leading-[17px] text-white tracking-tight inline-block whitespace-nowrap"
-                          >
-                            {word}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </motion.div>
-                </AnimatePresence>
-
-                <AnimatePresence mode="popLayout" initial={false}>
-                  {showNextLine && (
+                <div className="relative w-full overflow-hidden grid grid-cols-1 grid-rows-1">
+                  <AnimatePresence initial={false}>
                     <motion.div
-                      key={nextLyricText}
-                      initial={{ opacity: 0, y: 12 }}
+                      key={
+                        displayLine?.isInstrumental
+                          ? `instrumental-${displayLine.timeMs}`
+                          : displayLine?.timeMs !== undefined
+                            ? `${displayLine.timeMs}-${displayLine.text}`
+                            : displayLineText
+                      }
+                      initial={{ opacity: 0, y: 16 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{
                         opacity: 0,
-                        y: -8,
-                        transition: { duration: 0.32, ease: "easeIn" },
+                        y: -12,
+                        transition: { duration: 0.24, ease: [0.32, 0, 0.67, 0] },
                       }}
                       transition={{
-                        duration: 0.75,
+                        duration: 0.52,
                         ease: [0.16, 1, 0.3, 1],
                       }}
-                      className="text-[10.5px] leading-[13.5px] text-[#71717a] truncate mt-0.5 select-none pointer-events-none w-full"
+                      className="col-start-1 row-start-1 flex w-full flex-col justify-center overflow-hidden"
                       style={{
                         willChange: "transform, opacity",
                         transform: "translateZ(0)",
                       }}
                     >
-                      {nextLyricText}
+                      {displayLine?.isInstrumental ? (
+                        <div className="flex items-center gap-1.5 text-xs text-[#a1a1aa] py-0.5">
+                          <svg width="14" height="14" viewBox="0 0 24 24" className="shrink-0">
+                            <defs>
+                              <clipPath id="miniplayer-note-clip">
+                                <rect
+                                  ref={noteClipRectRef}
+                                  x="0"
+                                  y={
+                                    displayLine.timeMs !== undefined
+                                      ? (
+                                          24 *
+                                          (1 -
+                                            Math.max(
+                                              0,
+                                              Math.min(
+                                                1,
+                                                (currentPosMs - displayLine.timeMs) /
+                                                  Math.max(1000, displayLine.durationMs || 4000)
+                                              )
+                                            ))
+                                        ).toFixed(2)
+                                      : "24"
+                                  }
+                                  width="24"
+                                  height="24"
+                                />
+                              </clipPath>
+                            </defs>
+                            <path
+                              d="M10 21q-1.65 0-2.825-1.175T6 17t1.175-2.825T10 13q.575 0 1.063.138t.937.412V4q0-.425.288-.712T13 3h4q.425 0 .713.288T18 4v2q0 .425-.288.713T17 7h-3v10q0 1.65-1.175 2.825T10 21"
+                              fill="#52525b"
+                            />
+                            <path
+                              d="M10 21q-1.65 0-2.825-1.175T6 17t1.175-2.825T10 13q.575 0 1.063.138t.937.412V4q0-.425.288-.712T13 3h4q.425 0 .713.288T18 4v2q0 .425-.288.713T17 7h-3v10q0 1.65-1.175 2.825T10 21"
+                              fill="#ffffff"
+                              clipPath="url(#miniplayer-note-clip)"
+                            />
+                          </svg>
+                          <span className="font-medium text-[12px] text-[#a1a1aa]">Instrumental</span>
+                        </div>
+                      ) : displayLine?.words && displayLine.words.length > 0 ? (
+                        <div
+                          ref={activeLineContainerRef}
+                          className="flex flex-wrap items-baseline gap-x-1.5 overflow-hidden leading-[17px] max-h-[52px]"
+                        >
+                          {groupedWords.map((group, wIdx) => (
+                            <span
+                              key={`word-${wIdx}`}
+                              className="inline-flex items-baseline whitespace-nowrap"
+                            >
+                              {group.syllables.map((s) => (
+                                <span
+                                  key={`${displayLine.timeMs}-${s.globalIndex}`}
+                                  ref={(el) => {
+                                    if (el) wordSpanRefs.current[s.globalIndex] = el;
+                                  }}
+                                  className="bg-clip-text text-transparent font-medium text-[13px] leading-[17px] inline-block tracking-tight"
+                                  style={{
+                                    backgroundImage:
+                                      "linear-gradient(90deg, #ffffff -20%, #71717a -10%)",
+                                  }}
+                                >
+                                  {s.text}
+                                </span>
+                              ))}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <div
+                          ref={activeLineContainerRef}
+                          className="flex flex-wrap items-baseline gap-x-1.5 overflow-hidden leading-[17px] max-h-[52px]"
+                        >
+                          {wordsList.map((word, idx) => (
+                            <span
+                              key={`${displayLine?.timeMs ?? displayLineText}-${idx}`}
+                              className="font-medium text-[13px] leading-[17px] text-white tracking-tight inline-block whitespace-nowrap"
+                            >
+                              {word}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </motion.div>
-                  )}
-                </AnimatePresence>
+                  </AnimatePresence>
+                </div>
+
+                {showNextLine && (
+                  <div className="w-full overflow-hidden h-[15px] mt-0.5 grid grid-cols-1 grid-rows-1">
+                    <AnimatePresence initial={false}>
+                      <motion.div
+                        key={nextLyricKey}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{
+                          opacity: 0,
+                          y: -6,
+                          transition: { duration: 0.18, ease: "easeIn" },
+                        }}
+                        transition={{
+                          duration: 0.48,
+                          ease: [0.16, 1, 0.3, 1],
+                        }}
+                        className="col-start-1 row-start-1 text-[10.5px] leading-[15px] text-[#71717a] truncate select-none pointer-events-none w-full"
+                        style={{
+                          willChange: "transform, opacity",
+                          transform: "translateZ(0)",
+                        }}
+                      >
+                        {nextLyricText}
+                      </motion.div>
+                    </AnimatePresence>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="flex flex-col justify-center min-w-0">
