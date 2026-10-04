@@ -561,21 +561,21 @@ export function TouchBarSimulator() {
     <div className="flex h-screen w-screen select-none items-center justify-center bg-transparent antialiased overflow-hidden font-sans p-0 m-0 border-0">
       <div className="relative flex h-full w-full flex-col justify-start rounded-xl bg-black pt-2 px-3 pb-1.5 text-white overflow-hidden shadow-2xl border-0 select-none">
         <div
-          className="flex h-5 w-full items-center justify-between shrink-0 mb-1"
+          className="flex h-5 w-full items-center justify-between shrink-0 mb-1 cursor-grab active:cursor-grabbing select-none"
           style={{ WebkitAppRegion: "drag" } as React.CSSProperties}
         >
-          <div className="flex items-center min-w-0 pr-2">
-            <span className="text-[#52525b] text-xs mr-2 leading-none select-none">⠿</span>
-            <div className="flex items-baseline min-w-0 truncate">
-              <span className="font-semibold text-[11.5px] text-white tracking-tight truncate">
-                {state.track?.title || "Liner"}
+          <div
+            className="flex items-baseline min-w-0 truncate pr-2 pointer-events-none select-none"
+            style={{ WebkitAppRegion: "drag" } as React.CSSProperties}
+          >
+            <span className="font-semibold text-[11.5px] text-white tracking-tight truncate">
+              {state.track?.title || "Liner"}
+            </span>
+            {state.track?.artist && (
+              <span className="text-[10px] text-[#a1a1aa] truncate ml-1.5 font-normal">
+                • {state.track.artist}
               </span>
-              {state.track?.artist && (
-                <span className="text-[10px] text-[#a1a1aa] truncate ml-1.5 font-normal">
-                  • {state.track.artist}
-                </span>
-              )}
-            </div>
+            )}
           </div>
 
           <div
