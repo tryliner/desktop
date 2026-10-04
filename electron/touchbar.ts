@@ -303,17 +303,20 @@ export class TouchBarManager {
   public showSimulator() {
     const targetHeight = this.showTimeline ? 160 : 126;
     if (this.simulatorWindow && !this.simulatorWindow.isDestroyed()) {
-      if (this.lastOverlayBounds) {
+      const bounds = this.simulatorWindow.getBounds();
+      if (bounds.height !== targetHeight) {
         this.simulatorWindow.setBounds({
-          ...this.lastOverlayBounds,
+          ...bounds,
           height: targetHeight,
         });
       }
-      if (!this.simulatorWindow.isVisible()) {
-        this.simulatorWindow.show();
-      }
+      this.mainWindow?.webContents.send("touchbar:request-sync");
       if (this.latestState) {
         this.simulatorWindow.webContents.send("touchbar:simulator-state", this.latestState);
+      }
+      this.simulatorWindow.webContents.send("touchbar:window-shown");
+      if (!this.simulatorWindow.isVisible()) {
+        this.simulatorWindow.show();
       }
       return;
     }
@@ -330,17 +333,20 @@ export class TouchBarManager {
         this.simulatorWindow.hide();
         return false;
       } else {
-        if (this.lastOverlayBounds) {
+        const bounds = this.simulatorWindow.getBounds();
+        if (bounds.height !== targetHeight) {
           this.simulatorWindow.setBounds({
-            ...this.lastOverlayBounds,
+            ...bounds,
             height: targetHeight,
           });
         }
-        this.simulatorWindow.show();
-        this.simulatorWindow.focus();
+        this.mainWindow?.webContents.send("touchbar:request-sync");
         if (this.latestState) {
           this.simulatorWindow.webContents.send("touchbar:simulator-state", this.latestState);
         }
+        this.simulatorWindow.webContents.send("touchbar:window-shown");
+        this.simulatorWindow.show();
+        this.simulatorWindow.focus();
         return true;
       }
     }
@@ -380,6 +386,7 @@ export class TouchBarManager {
       frame: false,
       transparent: true,
       backgroundColor: "#00000000",
+      show: false,
       alwaysOnTop: this.alwaysOnTop,
       resizable: true,
       skipTaskbar: false,
@@ -392,6 +399,16 @@ export class TouchBarManager {
         devTools: true,
         backgroundThrottling: false,
       },
+    });
+
+    this.simulatorWindow.once("ready-to-show", () => {
+      if (this.simulatorWindow && !this.simulatorWindow.isDestroyed()) {
+        if (this.latestState) {
+          this.simulatorWindow.webContents.send("touchbar:simulator-state", this.latestState);
+        }
+        this.simulatorWindow.webContents.send("touchbar:window-shown");
+        this.simulatorWindow.show();
+      }
     });
 
     this.simulatorWindow.on("moved", () => {

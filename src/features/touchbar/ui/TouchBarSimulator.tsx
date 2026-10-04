@@ -174,10 +174,16 @@ export function TouchBarSimulator() {
   const anchorTimeRef = useRef(performance.now());
   const [interpolatedPosMs, setInterpolatedPosMs] = useState(state.positionMs);
   const lastTrackIdRef = useRef<string | null>(null);
+  const [appearCount, setAppearCount] = useState(0);
 
   useEffect(() => {
     window.linerElectron?.getTouchBarInitialState?.().then((initial) => {
-      if (initial) setState(initial);
+      if (initial) {
+        anchorPosRef.current = initial.positionMs;
+        anchorTimeRef.current = performance.now();
+        setInterpolatedPosMs(initial.positionMs);
+        setState(initial);
+      }
     });
 
     if (!window.linerElectron?.onTouchBarSimulatorState) return;
@@ -185,6 +191,37 @@ export function TouchBarSimulator() {
       setState(newState);
     });
     return cleanup;
+  }, []);
+
+  useEffect(() => {
+    const handleAppear = () => {
+      setAppearCount((c) => c + 1);
+      anchorTimeRef.current = performance.now();
+      window.linerElectron?.getTouchBarInitialState?.().then((initial) => {
+        if (initial) {
+          anchorPosRef.current = initial.positionMs;
+          anchorTimeRef.current = performance.now();
+          setInterpolatedPosMs(initial.positionMs);
+          setState(initial);
+        }
+      });
+    };
+
+    window.addEventListener("pageshow", handleAppear);
+    window.addEventListener("focus", handleAppear);
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        handleAppear();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    const unlisten = window.linerElectron?.onTouchBarWindowShown?.(handleAppear);
+    return () => {
+      window.removeEventListener("pageshow", handleAppear);
+      window.removeEventListener("focus", handleAppear);
+      document.removeEventListener("visibilitychange", handleVisibility);
+      unlisten?.();
+    };
   }, []);
 
   const sendAction = useCallback((action: TouchBarAction) => {
@@ -221,21 +258,23 @@ export function TouchBarSimulator() {
   useEffect(() => {
     if (!isPlaying || isSeeking) return;
     let animId: number;
-    const startAnchor = anchorPosRef.current;
-    const startTime = anchorTimeRef.current;
 
     const step = () => {
-      const elapsed = performance.now() - startTime;
-      const current = Math.min(durationMs, startAnchor + elapsed);
+      if (document.hidden) {
+        animId = requestAnimationFrame(step);
+        return;
+      }
+      const elapsed = performance.now() - anchorTimeRef.current;
+      const current = Math.min(durationMs, anchorPosRef.current + elapsed);
       setInterpolatedPosMs(current);
       animId = requestAnimationFrame(step);
     };
     animId = requestAnimationFrame(step);
     return () => {
       cancelAnimationFrame(animId);
-      const elapsed = performance.now() - startTime;
-      const current = Math.min(durationMs, startAnchor + elapsed);
-      anchorPosRef.current = current;
+      const elapsed = performance.now() - anchorTimeRef.current;
+      anchorPosRef.current = Math.min(durationMs, anchorPosRef.current + elapsed);
+      anchorTimeRef.current = performance.now();
     };
   }, [isPlaying, isSeeking, durationMs]);
 
@@ -321,7 +360,9 @@ export function TouchBarSimulator() {
   const activeLineContainerRef = useRef<HTMLDivElement>(null);
   const lyricsContainerRef = useRef<HTMLDivElement>(null);
   const measureContainerRef = useRef<HTMLDivElement>(null);
-  const [containerWidth, setContainerWidth] = useState(0);
+  const [containerWidth, setContainerWidth] = useState(() =>
+    typeof window !== "undefined" ? Math.max(180, window.innerWidth - 88) : 260
+  );
   const [activeRowCount, setActiveRowCount] = useState(1);
 
   const lastActiveLineRef = useRef<TouchBarActiveLine | null>(null);
@@ -824,7 +865,11 @@ export function TouchBarSimulator() {
 
   return (
     <div className="flex h-screen w-screen select-none items-center justify-center bg-transparent antialiased overflow-hidden font-sans p-0 m-0 border-0">
-      <div
+      <motion.div
+        key={`miniplayer-card-${appearCount}`}
+        initial={{ opacity: 0, scale: 0.985, y: 2 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
         className={`relative flex h-full w-full flex-col justify-start rounded-xl pt-2 px-3 pb-1.5 text-white overflow-hidden shadow-2xl select-none transition-colors duration-200 border-0 border-none ${
           hasCustomBg
             ? ""
@@ -1434,7 +1479,7 @@ export function TouchBarSimulator() {
           </AnimatePresence>
         </div>
       </div>
-    </div>
+    </motion.div>
   </div>
 );
 }
