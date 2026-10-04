@@ -559,9 +559,9 @@ export function TouchBarSimulator() {
 
   return (
     <div className="flex h-screen w-screen select-none items-center justify-center bg-transparent antialiased overflow-hidden font-sans p-0 m-0 border-0">
-      <div className="relative flex h-full w-full flex-col justify-between rounded-xl bg-black p-3 text-white overflow-hidden shadow-2xl border-0 select-none">
+      <div className="relative flex h-full w-full flex-col justify-start rounded-xl bg-black p-3 text-white overflow-hidden shadow-2xl border-0 select-none">
         <div
-          className="flex h-5 w-full items-center justify-between shrink-0"
+          className="flex h-5 w-full items-center justify-between shrink-0 mb-1.5"
           style={{ WebkitAppRegion: "drag" } as React.CSSProperties}
         >
           <div className="flex items-center min-w-0 pr-2">
@@ -778,7 +778,7 @@ export function TouchBarSimulator() {
         </div>
 
         <div
-          className="flex h-7 w-full items-center gap-2 shrink-0 select-none my-2"
+          className="flex h-7 w-full items-center gap-2 shrink-0 select-none my-1"
           style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
         >
           <span className="font-mono text-[10px] text-[#71717a] tabular-nums shrink-0 w-7 text-right">
@@ -788,13 +788,13 @@ export function TouchBarSimulator() {
           <div
             ref={setWaveformRef}
             onPointerDown={handleWaveformPointerDown}
-            className="relative flex h-full flex-1 cursor-pointer items-center bg-[#111111] rounded-[6px] overflow-hidden py-1 touch-none border-0"
+            className="relative flex h-full flex-1 cursor-pointer items-center bg-[#111111] rounded-[6px] overflow-hidden py-0.5 touch-none border-0"
           >
-            <div className="absolute inset-x-2 inset-y-1 flex items-center">
+            <div className="absolute inset-x-2 inset-y-0.5 flex items-center">
               {waveformBars.map((heightRatio, i) => {
                 const barRatio = i / Math.max(1, waveformBars.length - 1);
                 const isPlayed = barRatio <= activeTimelineRatio;
-                const pixelHeight = Math.max(4, Math.round(heightRatio * 19));
+                const pixelHeight = Math.max(4, Math.round(heightRatio * 21));
 
                 return (
                   <div
@@ -846,7 +846,7 @@ export function TouchBarSimulator() {
         </div>
 
         <div
-          className="relative flex h-8 w-full items-center shrink-0"
+          className="relative flex h-8 w-full items-center shrink-0 mt-auto"
           style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
         >
           <AnimatePresence mode="wait" initial={false}>
