@@ -17,6 +17,35 @@ export interface LyricsProviderOption {
   candidate: LyricsCandidate;
 }
 
+export function hasSyncedLyricsSources(
+  availableProviders: LyricsProviderOption[] = [],
+  braccatoLyrics: Lyric[] = [],
+  rawFormat: string | null = null,
+): boolean {
+  if (
+    availableProviders.some(
+      (p) =>
+        (p.syncLevel && p.syncLevel !== "plain") ||
+        (p.candidate?.syncLevel && p.candidate.syncLevel !== "plain") ||
+        (p.candidate?.lyrics?.format && p.candidate.lyrics.format !== "plain") ||
+        (p.candidate?.contentKind && p.candidate.contentKind !== "plain") ||
+        (p.candidate?.syncHint && p.candidate.syncHint !== "plain"),
+    )
+  ) {
+    return true;
+  }
+  if (
+    braccatoLyrics.length > 0 &&
+    braccatoLyrics.some((l) => (l.startTimeMs ?? 0) > 0 || (l.durationMs ?? 0) > 0)
+  ) {
+    return true;
+  }
+  if (rawFormat !== null && rawFormat !== "plain") {
+    return true;
+  }
+  return false;
+}
+
 export interface LyricsState {
   lyricsLoading: boolean;
   lyricsError: string | null;

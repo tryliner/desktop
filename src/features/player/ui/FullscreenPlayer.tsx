@@ -8,7 +8,12 @@ import {
 import { useNavigate } from "react-router-dom";
 import { usePlayerState } from "../hooks/usePlayerState";
 import { playerEngine } from "../engine/playerEngine";
-import { useLyricsStore, LyricsProviderIsland, braccatoThemeCss } from "@/features/lyrics";
+import {
+  useLyricsStore,
+  LyricsProviderIsland,
+  braccatoThemeCss,
+  hasSyncedLyricsSources,
+} from "@/features/lyrics";
 import { AnimatePresence, motion } from "framer-motion";
 import { PlayerUiElements } from "./PlayerUiElements";
 import { DownFill } from "@mingcute/react";
@@ -308,6 +313,7 @@ export function FullscreenPlayer({
     lyricsError,
     plainLyrics,
     activeProvider,
+    availableProviders,
     currentLyricsTrackId,
   } = useLyricsStore();
 
@@ -324,13 +330,13 @@ export function FullscreenPlayer({
   const currentTrackId = player.currentTrack?.id;
   const isMatchingTrack = Boolean(currentTrackId && currentLyricsTrackId === currentTrackId);
   const hasLyrics = isMatchingTrack && braccatoLyrics.length > 0;
-  const isOnlyPlainText =
-    rawFormat === "plain" ||
-    (braccatoLyrics.length > 0 &&
-      braccatoLyrics.every(
-        (l) => (l.startTimeMs ?? 0) === 0 && (l.durationMs ?? 0) === 0,
-      ));
-  const hasSyncedLyrics = hasLyrics && !isOnlyPlainText;
+  const hasSyncedSources = hasSyncedLyricsSources(
+    availableProviders,
+    braccatoLyrics,
+    rawFormat,
+  );
+  const showProviderIsland =
+    hasLyrics && (hasSyncedSources || availableProviders.length > 1);
   const isInstrumental =
     isMatchingTrack &&
     !lyricsLoading &&
@@ -368,7 +374,7 @@ export function FullscreenPlayer({
         </div>
 
         <div className="flex-1 h-full min-h-0 pl-2 pr-6 flex flex-col relative">
-          {hasSyncedLyrics && (
+          {showProviderIsland && (
             <div className="absolute top-[12px] left-1/2 -translate-x-1/2 z-30 pointer-events-none flex justify-center">
               <LyricsProviderIsland />
             </div>

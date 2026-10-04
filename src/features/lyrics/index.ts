@@ -5,7 +5,11 @@ export {
   type WordData,
 } from "./engine/lyricsParser";
 export { braccatoThemeCss } from "./engine/braccatoTheme";
-export { useLyricsStore } from "./store/lyricsStore";
+export {
+  useLyricsStore,
+  hasSyncedLyricsSources,
+  type LyricsProviderOption,
+} from "./store/lyricsStore";
 export {
   lyricsCache,
   shouldCacheLyricsCandidate,

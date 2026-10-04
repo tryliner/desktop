@@ -10,7 +10,7 @@ import {
   MinimizeLine,
   Refresh1Line,
 } from "@mingcute/react";
-import { useLyricsStore } from "../store/lyricsStore";
+import { useLyricsStore, hasSyncedLyricsSources } from "../store/lyricsStore";
 import { useTranslation } from "@/languages";
 
 function formatOffsetBadge(ms: number): string {
@@ -95,14 +95,24 @@ export function LyricsProviderIsland() {
     [unit, setOffset],
   );
 
-  const isOnlyPlainText =
+  const hasSyncedSources = hasSyncedLyricsSources(
+    availableProviders,
+    braccatoLyrics,
+    rawFormat,
+  );
+
+  const isCurrentPlain =
     rawFormat === "plain" ||
     (braccatoLyrics.length > 0 &&
       braccatoLyrics.every(
         (l) => (l.startTimeMs ?? 0) === 0 && (l.durationMs ?? 0) === 0,
       ));
 
-  if (availableProviders.length === 0 || braccatoLyrics.length === 0 || isOnlyPlainText) {
+  if (
+    availableProviders.length === 0 ||
+    braccatoLyrics.length === 0 ||
+    (!hasSyncedSources && availableProviders.length <= 1)
+  ) {
     return null;
   }
 
@@ -195,54 +205,58 @@ export function LyricsProviderIsland() {
           </button>
         )}
 
-        <div className="w-[1px] h-[14px] bg-white/15 mx-[1px]" />
+        {!isCurrentPlain && (
+          <>
+            <div className="w-[1px] h-[14px] bg-white/15 mx-[1px]" />
 
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            adjustOffset(-100);
-          }}
-          aria-label="Lyrics earlier (-0.1s)"
-          title="Lyrics earlier (-0.1s)"
-          className="w-[26px] h-[26px] min-w-[26px] min-h-[26px] max-h-[26px] rounded-md flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 active:scale-95 transition-all border-none bg-transparent cursor-pointer"
-        >
-          <MinimizeLine size={12} />
-        </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                adjustOffset(-100);
+              }}
+              aria-label="Lyrics earlier (-0.1s)"
+              title="Lyrics earlier (-0.1s)"
+              className="w-[26px] h-[26px] min-w-[26px] min-h-[26px] max-h-[26px] rounded-md flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 active:scale-95 transition-all border-none bg-transparent cursor-pointer"
+            >
+              <MinimizeLine size={12} />
+            </button>
 
-        <button
-          type="button"
-          onClick={() => {
-            setDropdownOpen(false);
-            setOffsetOpen((v) => !v);
-          }}
-          className={`flex items-center gap-[4px] h-[26px] min-h-[26px] max-h-[26px] px-[6px] rounded-md text-[12px] font-mono transition-all border-none bg-transparent hover:bg-white/10 cursor-pointer ${
-            offsetMs !== 0
-              ? "text-white font-[600]"
-              : "text-white/80 font-[500]"
-          }`}
-          style={{ fontFamily: "var(--font-inter), sans-serif" }}
-          title={t("player.lyrics_offset")}
-        >
-          <TimeLine
-            size={12}
-            className={offsetMs !== 0 ? "text-white" : "text-white/50"}
-          />
-          <span>{formatOffsetBadge(offsetMs)}</span>
-        </button>
+            <button
+              type="button"
+              onClick={() => {
+                setDropdownOpen(false);
+                setOffsetOpen((v) => !v);
+              }}
+              className={`flex items-center gap-[4px] h-[26px] min-h-[26px] max-h-[26px] px-[6px] rounded-md text-[12px] font-mono transition-all border-none bg-transparent hover:bg-white/10 cursor-pointer ${
+                offsetMs !== 0
+                  ? "text-white font-[600]"
+                  : "text-white/80 font-[500]"
+              }`}
+              style={{ fontFamily: "var(--font-inter), sans-serif" }}
+              title={t("player.lyrics_offset")}
+            >
+              <TimeLine
+                size={12}
+                className={offsetMs !== 0 ? "text-white" : "text-white/50"}
+              />
+              <span>{formatOffsetBadge(offsetMs)}</span>
+            </button>
 
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            adjustOffset(100);
-          }}
-          aria-label="Lyrics later (+0.1s)"
-          title="Lyrics later (+0.1s)"
-          className="w-[26px] h-[26px] min-w-[26px] min-h-[26px] max-h-[26px] rounded-md flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 active:scale-95 transition-all border-none bg-transparent cursor-pointer"
-        >
-          <AddLine size={12} />
-        </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                adjustOffset(100);
+              }}
+              aria-label="Lyrics later (+0.1s)"
+              title="Lyrics later (+0.1s)"
+              className="w-[26px] h-[26px] min-w-[26px] min-h-[26px] max-h-[26px] rounded-md flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 active:scale-95 transition-all border-none bg-transparent cursor-pointer"
+            >
+              <AddLine size={12} />
+            </button>
+          </>
+        )}
       </div>
 
       <AnimatePresence>
@@ -288,7 +302,7 @@ export function LyricsProviderIsland() {
           </motion.div>
         )}
 
-        {offsetOpen && (
+        {offsetOpen && !isCurrentPlain && (
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: -4 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
