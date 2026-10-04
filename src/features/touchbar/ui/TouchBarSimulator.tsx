@@ -828,7 +828,7 @@ export function TouchBarSimulator() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
                     transition={{
-                      duration: 0.65,
+                      duration: 0.95,
                       ease: [0.16, 1, 0.3, 1],
                     }}
                     className="flex w-full flex-col justify-center overflow-hidden origin-bottom-left"
@@ -928,7 +928,7 @@ export function TouchBarSimulator() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -6 }}
                       transition={{
-                        duration: 0.58,
+                        duration: 0.85,
                         ease: [0.16, 1, 0.3, 1],
                       }}
                       className="text-[10.5px] leading-[13.5px] text-[#71717a] truncate mt-0.5 select-none pointer-events-none w-full"
