@@ -21,7 +21,7 @@ import type {
   TouchBarWordData,
 } from "../contracts";
 import { useMiniPlayerSettingsStore } from "../store/miniPlayerSettingsStore";
-import { useCustomizationStore, getBlockStyle } from "@/features/settings";
+import { useCustomizationStore, getBlockStyle, loadPersistedWallpaper } from "@/features/settings";
 
 interface GroupedSyllable {
   text: string;
@@ -254,6 +254,31 @@ export function TouchBarSimulator() {
   const miniplayerConfig = useCustomizationStore((s) => s.miniplayer);
   const hasCustomBg = Boolean(applyCustomBackground && backgroundImage);
   const miniplayerCustomStyle = getBlockStyle(miniplayerConfig, true, hasCustomBg);
+
+  useEffect(() => {
+    if (!backgroundImage) {
+      void loadPersistedWallpaper().then((img) => {
+        if (img) {
+          useCustomizationStore.setState({ backgroundImage: img });
+        }
+      });
+    }
+  }, [backgroundImage]);
+
+  useEffect(() => {
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "liner_customization_v1" && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          if (parsed?.state) {
+            useCustomizationStore.setState(parsed.state);
+          }
+        } catch {}
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, []);
 
   const [waveformWidth, setWaveformWidth] = useState(240);
 
@@ -800,10 +825,10 @@ export function TouchBarSimulator() {
   return (
     <div className="flex h-screen w-screen select-none items-center justify-center bg-transparent antialiased overflow-hidden font-sans p-0 m-0 border-0">
       <div
-        className={`relative flex h-full w-full flex-col justify-start rounded-xl pt-2 px-3 pb-1.5 text-white overflow-hidden shadow-2xl select-none transition-colors duration-200 ${
+        className={`relative flex h-full w-full flex-col justify-start rounded-xl pt-2 px-3 pb-1.5 text-white overflow-hidden shadow-2xl select-none transition-colors duration-200 border-0 border-none ${
           hasCustomBg
-            ? "border border-white/10"
-            : "bg-[#121212]/80 backdrop-blur-2xl border border-white/[0.08]"
+            ? ""
+            : "bg-[#0a0a0a]"
         }`}
         style={hasCustomBg ? miniplayerCustomStyle : undefined}
       >
@@ -813,7 +838,7 @@ export function TouchBarSimulator() {
               src={backgroundImage}
               alt=""
               crossOrigin="anonymous"
-              className="h-full w-full object-cover"
+              className="h-full w-full object-cover select-none"
               style={{
                 filter: backgroundBlur > 0 ? `blur(${backgroundBlur}px)` : undefined,
                 transform: backgroundBlur > 0 ? "scale(1.08)" : undefined,
@@ -840,7 +865,11 @@ export function TouchBarSimulator() {
               {state.track?.title || "Liner"}
             </span>
             {state.track?.artist && (
-              <span className="text-[10px] text-[#a1a1aa] truncate ml-1.5 font-normal">
+              <span
+                className={`text-[10px] truncate ml-1.5 font-normal ${
+                  hasCustomBg ? "text-white/60" : "text-[#a1a1aa]"
+                }`}
+              >
                 • {state.track.artist}
               </span>
             )}
@@ -855,7 +884,9 @@ export function TouchBarSimulator() {
               tabIndex={-1}
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => sendAction({ type: "restoreMainWindow" })}
-              className="flex h-5 w-5 items-center justify-center rounded-md text-[#8e8e93] hover:bg-white/10 hover:text-white transition-colors outline-none border-0"
+              className={`flex h-5 w-5 items-center justify-center rounded-md ${
+                hasCustomBg ? "text-white/70 hover:bg-white/15" : "text-[#8e8e93] hover:bg-white/10"
+              } hover:text-white transition-colors outline-none border-0`}
               title="Open Liner"
             >
               <MaximizeSquare3 size={12} weight="Bold" />
@@ -865,7 +896,9 @@ export function TouchBarSimulator() {
               tabIndex={-1}
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => sendAction({ type: "closeOverlay" })}
-              className="flex h-5 w-5 items-center justify-center rounded-md text-[#8e8e93] hover:bg-red-500/20 hover:text-red-400 transition-colors outline-none border-0"
+              className={`flex h-5 w-5 items-center justify-center rounded-md ${
+                hasCustomBg ? "text-white/70" : "text-[#8e8e93]"
+              } hover:bg-red-500/20 hover:text-red-400 transition-colors outline-none border-0`}
               title="Close"
             >
               <CloseLine size={13} />
@@ -873,14 +906,20 @@ export function TouchBarSimulator() {
           </div>
         </div>
 
-        <div className="relative z-10 flex flex-col flex-1 justify-between min-h-0 w-full">
+        <div
+          className={`relative z-10 flex flex-col flex-1 ${
+            showTimeline ? "justify-between" : "justify-between gap-1"
+          } min-h-0 w-full`}
+        >
           <div
             className="flex min-h-[52px] h-[52px] w-full items-center shrink-0"
             style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
           >
           <div
             onClick={() => sendAction({ type: "togglePlay" })}
-            className="relative h-13 w-13 shrink-0 rounded-lg overflow-hidden bg-[#141414] cursor-pointer group shadow-sm border-0"
+            className={`relative h-13 w-13 shrink-0 rounded-lg overflow-hidden cursor-pointer group shadow-sm border-0 ${
+              hasCustomBg ? "bg-white/10 backdrop-blur-md" : "bg-[#141414]"
+            }`}
           >
             {state.track?.cover ? (
               <img
@@ -1071,7 +1110,9 @@ export function TouchBarSimulator() {
                           duration: 0.48,
                           ease: [0.16, 1, 0.3, 1],
                         }}
-                        className="col-start-1 row-start-1 text-[10.5px] leading-[15px] text-[#71717a] truncate select-none pointer-events-none w-full"
+                        className={`col-start-1 row-start-1 text-[10.5px] leading-[15px] ${
+                          hasCustomBg ? "text-white/50" : "text-[#71717a]"
+                        } truncate select-none pointer-events-none w-full`}
                         style={{
                           willChange: "transform, opacity",
                           transform: "translateZ(0)",
@@ -1088,7 +1129,11 @@ export function TouchBarSimulator() {
                 <p className="font-semibold text-[13.5px] text-white tracking-tight truncate">
                   {state.track?.title || "No track playing"}
                 </p>
-                <p className="text-[11px] text-[#a1a1aa] truncate mt-0.5">
+                <p
+                  className={`text-[11px] ${
+                    hasCustomBg ? "text-white/60" : "text-[#a1a1aa]"
+                  } truncate mt-0.5`}
+                >
                   {state.track?.artist || "Liner Music"}
                 </p>
               </div>
@@ -1101,14 +1146,20 @@ export function TouchBarSimulator() {
             className="flex h-7 w-full items-center gap-2 shrink-0 select-none my-0"
             style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
           >
-            <span className="font-mono text-[10px] text-[#71717a] tabular-nums shrink-0 w-7 text-right">
+            <span
+              className={`font-mono text-[10px] tabular-nums shrink-0 w-7 text-right ${
+                hasCustomBg ? "text-white/60" : "text-[#71717a]"
+              }`}
+            >
               {formatTime(currentPosMs)}
             </span>
 
             <div
               ref={setWaveformRef}
               onPointerDown={handleWaveformPointerDown}
-              className="relative flex h-full flex-1 cursor-pointer items-center bg-[#111111] rounded-[6px] overflow-hidden py-0.5 touch-none border-0"
+              className={`relative flex h-full flex-1 cursor-pointer items-center rounded-[6px] overflow-hidden py-0.5 touch-none border-0 ${
+                hasCustomBg ? "bg-white/[0.08] backdrop-blur-md" : "bg-[#111111]"
+              }`}
             >
               <div className="absolute inset-x-2 inset-y-0.5 flex items-center">
                 {waveformBars.map((heightRatio, i) => {
@@ -1125,7 +1176,11 @@ export function TouchBarSimulator() {
                         width: "2px",
                       }}
                       className={`absolute -translate-x-1/2 rounded-full transition-colors duration-75 ${
-                        isPlayed ? "bg-white" : "bg-[#27272a]"
+                        isPlayed
+                          ? "bg-white"
+                          : hasCustomBg
+                            ? "bg-white/20"
+                            : "bg-[#27272a]"
                       }`}
                     />
                   );
@@ -1152,7 +1207,11 @@ export function TouchBarSimulator() {
                     className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white shadow-md"
                   />
                   {isSeeking && (
-                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-[#181818] text-white text-[9px] font-mono px-1.5 py-0.5 rounded shadow-lg whitespace-nowrap border-0">
+                    <div
+                      className={`absolute bottom-4 left-1/2 -translate-x-1/2 ${
+                        hasCustomBg ? "bg-black/60 backdrop-blur-md" : "bg-[#181818]"
+                      } text-white text-[9px] font-mono px-1.5 py-0.5 rounded shadow-lg whitespace-nowrap border-0`}
+                    >
                       {formatTime(activeTimelineMs)}
                     </div>
                   )}
@@ -1160,14 +1219,20 @@ export function TouchBarSimulator() {
               </div>
             </div>
 
-            <span className="font-mono text-[10px] text-[#71717a] tabular-nums shrink-0 w-7 text-left">
+            <span
+              className={`font-mono text-[10px] tabular-nums shrink-0 w-7 text-left ${
+                hasCustomBg ? "text-white/60" : "text-[#71717a]"
+              }`}
+            >
               {formatTime(durationMs)}
             </span>
           </div>
         )}
 
         <div
-          className="relative z-10 flex h-8 w-full items-center shrink-0 -mt-1"
+          className={`relative z-10 flex h-8 w-full items-center shrink-0 ${
+            showTimeline ? "-mt-1" : "mt-0"
+          }`}
           style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
         >
           <AnimatePresence mode="wait" initial={false}>
@@ -1185,7 +1250,9 @@ export function TouchBarSimulator() {
                   tabIndex={-1}
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => setIsVolumeOpen(false)}
-                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[#8e8e93] hover:text-white hover:bg-white/10 active:scale-95 transition-all outline-none border-0"
+                  className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${
+                    hasCustomBg ? "text-white/70 hover:bg-white/15" : "text-[#8e8e93] hover:bg-white/10"
+                  } hover:text-white active:scale-95 transition-all outline-none border-0`}
                   title="Close volume"
                 >
                   <CloseLine size={15} />
@@ -1196,7 +1263,9 @@ export function TouchBarSimulator() {
                   tabIndex={-1}
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={handleToggleMute}
-                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[#8e8e93] hover:text-white hover:bg-white/10 active:scale-95 transition-all outline-none border-0"
+                  className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${
+                    hasCustomBg ? "text-white/70 hover:bg-white/15" : "text-[#8e8e93] hover:bg-white/10"
+                  } hover:text-white active:scale-95 transition-all outline-none border-0`}
                   title={activeVolumeLevel === 0 ? "Unmute" : "Mute"}
                 >
                   <VolumeIcon percent={activeVolumePercent} size={15} />
@@ -1208,10 +1277,16 @@ export function TouchBarSimulator() {
                 >
                   <div
                     ref={volumeTrackRef}
-                    className="relative w-full h-[6px] rounded-full bg-[#222226]"
+                    className={`relative w-full h-[6px] rounded-full ${
+                      hasCustomBg ? "bg-white/15 backdrop-blur-md" : "bg-[#222226]"
+                    }`}
                   >
                     <div
-                      className={`absolute inset-y-0 left-0 bg-gradient-to-r from-[#71717a] via-[#d4d4d8] to-white rounded-full ${
+                      className={`absolute inset-y-0 left-0 ${
+                        hasCustomBg
+                          ? "bg-white"
+                          : "bg-gradient-to-r from-[#71717a] via-[#d4d4d8] to-white"
+                      } rounded-full ${
                         isDraggingVolume ? "" : "transition-[width] duration-75 ease-out"
                       }`}
                       style={{ width: `${activeVolumePercent}%` }}
@@ -1241,7 +1316,11 @@ export function TouchBarSimulator() {
                 </div>
 
                 <div className="flex items-center justify-center shrink-0 w-11 pr-0.5">
-                  <span className="font-mono text-[10.5px] text-[#8e8e93] tabular-nums select-none text-center">
+                  <span
+                    className={`font-mono text-[10.5px] ${
+                      hasCustomBg ? "text-white/70" : "text-[#8e8e93]"
+                    } tabular-nums select-none text-center`}
+                  >
                     {activeVolumePercent}%
                   </span>
                 </div>
@@ -1264,7 +1343,9 @@ export function TouchBarSimulator() {
                     className={`flex h-7 w-7 items-center justify-center rounded-lg transition-colors outline-none border-0 ${
                       state.shuffle
                         ? "text-white bg-white/20"
-                        : "text-[#8e8e93] hover:text-white hover:bg-white/10"
+                        : hasCustomBg
+                          ? "text-white/70 hover:text-white hover:bg-white/15"
+                          : "text-[#8e8e93] hover:text-white hover:bg-white/10"
                     }`}
                     title="Shuffle"
                   >
@@ -1278,7 +1359,9 @@ export function TouchBarSimulator() {
                     tabIndex={-1}
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() => sendAction({ type: "prev" })}
-                    className="flex h-7 w-7 items-center justify-center rounded-lg text-[#8e8e93] hover:text-white hover:bg-white/10 active:scale-95 transition-all outline-none border-0"
+                    className={`flex h-7 w-7 items-center justify-center rounded-lg ${
+                      hasCustomBg ? "text-white/70 hover:bg-white/15" : "text-[#8e8e93] hover:bg-white/10"
+                    } hover:text-white active:scale-95 transition-all outline-none border-0`}
                     title="Previous"
                   >
                     <SkipPrevious size={16} weight="Bold" />
@@ -1289,7 +1372,9 @@ export function TouchBarSimulator() {
                     tabIndex={-1}
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() => sendAction({ type: "togglePlay" })}
-                    className="flex h-7 w-7 items-center justify-center rounded-lg text-white hover:bg-white/10 active:scale-90 transition-all outline-none border-0"
+                    className={`flex h-7 w-7 items-center justify-center rounded-lg text-white ${
+                      hasCustomBg ? "hover:bg-white/15" : "hover:bg-white/10"
+                    } active:scale-90 transition-all outline-none border-0`}
                     title={isPlaying ? "Pause" : "Play"}
                   >
                     {isPlaying ? (
@@ -1304,7 +1389,9 @@ export function TouchBarSimulator() {
                     tabIndex={-1}
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() => sendAction({ type: "next" })}
-                    className="flex h-7 w-7 items-center justify-center rounded-lg text-[#8e8e93] hover:text-white hover:bg-white/10 active:scale-95 transition-all outline-none border-0"
+                    className={`flex h-7 w-7 items-center justify-center rounded-lg ${
+                      hasCustomBg ? "text-white/70 hover:bg-white/15" : "text-[#8e8e93] hover:bg-white/10"
+                    } hover:text-white active:scale-95 transition-all outline-none border-0`}
                     title="Next"
                   >
                     <SkipNext size={16} weight="Bold" />
@@ -1320,7 +1407,9 @@ export function TouchBarSimulator() {
                     className={`flex h-7 w-7 items-center justify-center rounded-lg transition-colors outline-none active:scale-90 border-0 ${
                       state.isLiked
                         ? "text-red-500 hover:text-red-400"
-                        : "text-[#8e8e93] hover:text-white hover:bg-white/10"
+                        : hasCustomBg
+                          ? "text-white/70 hover:text-white hover:bg-white/15"
+                          : "text-[#8e8e93] hover:text-white hover:bg-white/10"
                     }`}
                     title={state.isLiked ? "Unlike" : "Like"}
                   >
@@ -1332,7 +1421,9 @@ export function TouchBarSimulator() {
                     tabIndex={-1}
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() => setIsVolumeOpen(true)}
-                    className="flex h-7 w-7 items-center justify-center rounded-lg text-[#8e8e93] hover:text-white hover:bg-white/10 transition-colors outline-none border-0"
+                    className={`flex h-7 w-7 items-center justify-center rounded-lg ${
+                      hasCustomBg ? "text-white/70 hover:bg-white/15" : "text-[#8e8e93] hover:bg-white/10"
+                    } hover:text-white transition-colors outline-none border-0`}
                     title="Volume"
                   >
                     <VolumeIcon percent={activeVolumePercent} size={14} />

@@ -17,6 +17,7 @@ export interface MiniPlayerSettingsState {
 
 function syncElectronSettings(patch: {
   autoShowOnMinimize?: boolean;
+  showTimeline?: boolean;
   closeOnRestore?: boolean;
   alwaysOnTop?: boolean;
 }) {
@@ -33,7 +34,7 @@ export const useMiniPlayerSettingsStore = create<MiniPlayerSettingsState>()(
       closeOnRestore: true,
       alwaysOnTop: true,
       applyCustomBackground: true,
-
+      
       setAutoShowOnMinimize: (value) => {
         set({ autoShowOnMinimize: value });
         syncElectronSettings({ autoShowOnMinimize: value });
@@ -41,6 +42,7 @@ export const useMiniPlayerSettingsStore = create<MiniPlayerSettingsState>()(
 
       setShowTimeline: (value) => {
         set({ showTimeline: value });
+        syncElectronSettings({ showTimeline: value });
       },
 
       setCloseOnRestore: (value) => {
@@ -64,6 +66,7 @@ export const useMiniPlayerSettingsStore = create<MiniPlayerSettingsState>()(
         if (!state) return;
         syncElectronSettings({
           autoShowOnMinimize: state.autoShowOnMinimize,
+          showTimeline: state.showTimeline,
           closeOnRestore: state.closeOnRestore,
           alwaysOnTop: state.alwaysOnTop,
         });

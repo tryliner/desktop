@@ -72,8 +72,7 @@ function openWallpaperDb(): Promise<IDBDatabase | null> {
   });
 }
 
-// loads persisted wallpaper payload from indexeddb
-async function loadPersistedWallpaper(): Promise<string | null> {
+export async function loadPersistedWallpaper(): Promise<string | null> {
   const db = await openWallpaperDb();
   if (!db) return null;
   return new Promise((resolve) => {

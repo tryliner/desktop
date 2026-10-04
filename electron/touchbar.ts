@@ -81,6 +81,7 @@ export class TouchBarManager {
   private userDismissedOverlay = false;
   private lastOverlayBounds: { x: number; y: number; width: number; height: number } | null = null;
   private autoShowOnMinimize = true;
+  private showTimeline = true;
   private closeOnRestore = true;
   private alwaysOnTop = true;
 
@@ -246,6 +247,22 @@ export class TouchBarManager {
       if (typeof settings.autoShowOnMinimize === "boolean") {
         this.autoShowOnMinimize = settings.autoShowOnMinimize;
       }
+      if (typeof settings.showTimeline === "boolean") {
+        this.showTimeline = settings.showTimeline;
+        if (this.simulatorWindow && !this.simulatorWindow.isDestroyed()) {
+          const targetHeight = this.showTimeline ? 160 : 126;
+          this.simulatorWindow.setMinimumSize(300, targetHeight);
+          this.simulatorWindow.setMaximumSize(520, targetHeight);
+          const bounds = this.simulatorWindow.getBounds();
+          this.simulatorWindow.setBounds({
+            x: bounds.x,
+            y: bounds.y,
+            width: bounds.width,
+            height: targetHeight,
+          });
+          this.lastOverlayBounds = { ...bounds, height: targetHeight };
+        }
+      }
       if (typeof settings.closeOnRestore === "boolean") {
         this.closeOnRestore = settings.closeOnRestore;
       }
@@ -284,11 +301,12 @@ export class TouchBarManager {
   }
 
   public showSimulator() {
+    const targetHeight = this.showTimeline ? 160 : 126;
     if (this.simulatorWindow && !this.simulatorWindow.isDestroyed()) {
       if (this.lastOverlayBounds) {
         this.simulatorWindow.setBounds({
           ...this.lastOverlayBounds,
-          height: 160,
+          height: targetHeight,
         });
       }
       if (!this.simulatorWindow.isVisible()) {
@@ -305,16 +323,17 @@ export class TouchBarManager {
   public toggleSimulator(): boolean {
     this.userDismissedOverlay = false;
     this.wasAutoOpened = false;
+    const targetHeight = this.showTimeline ? 160 : 126;
     if (this.simulatorWindow && !this.simulatorWindow.isDestroyed()) {
       if (this.simulatorWindow.isVisible()) {
-        this.lastOverlayBounds = { ...this.simulatorWindow.getBounds(), height: 160 };
+        this.lastOverlayBounds = { ...this.simulatorWindow.getBounds(), height: targetHeight };
         this.simulatorWindow.hide();
         return false;
       } else {
         if (this.lastOverlayBounds) {
           this.simulatorWindow.setBounds({
             ...this.lastOverlayBounds,
-            height: 160,
+            height: targetHeight,
           });
         }
         this.simulatorWindow.show();
@@ -332,7 +351,8 @@ export class TouchBarManager {
 
   public closeSimulator() {
     if (this.simulatorWindow && !this.simulatorWindow.isDestroyed()) {
-      this.lastOverlayBounds = { ...this.simulatorWindow.getBounds(), height: 160 };
+      const targetHeight = this.showTimeline ? 160 : 126;
+      this.lastOverlayBounds = { ...this.simulatorWindow.getBounds(), height: targetHeight };
       this.simulatorWindow.hide();
     }
   }
@@ -341,7 +361,7 @@ export class TouchBarManager {
     const primaryDisplay = screen.getPrimaryDisplay();
     const { workArea } = primaryDisplay;
     const defaultWidth = 350;
-    const defaultHeight = 160;
+    const defaultHeight = this.showTimeline ? 160 : 126;
     const width = this.lastOverlayBounds?.width || defaultWidth;
     const height = defaultHeight;
     const x = this.lastOverlayBounds?.x ?? Math.round(workArea.x + workArea.width - width - 20);
@@ -377,14 +397,14 @@ export class TouchBarManager {
     this.simulatorWindow.on("moved", () => {
       if (this.simulatorWindow && !this.simulatorWindow.isDestroyed()) {
         const bounds = this.simulatorWindow.getBounds();
-        this.lastOverlayBounds = { ...bounds, height: defaultHeight };
+        this.lastOverlayBounds = { ...bounds, height: this.showTimeline ? 160 : 126 };
       }
     });
 
     this.simulatorWindow.on("resized", () => {
       if (this.simulatorWindow && !this.simulatorWindow.isDestroyed()) {
         const bounds = this.simulatorWindow.getBounds();
-        this.lastOverlayBounds = { ...bounds, height: defaultHeight };
+        this.lastOverlayBounds = { ...bounds, height: this.showTimeline ? 160 : 126 };
       }
     });
 
