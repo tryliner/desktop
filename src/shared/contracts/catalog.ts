@@ -47,6 +47,8 @@ export interface ArtistAlbum {
   year?: number;
   cover?: Cover;
   explicit?: boolean;
+  totalTracks?: number;
+  trackCount?: number;
 }
 
 export type ApiArtistAlbum = ArtistAlbum;

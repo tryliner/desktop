@@ -18,6 +18,7 @@ import {
   TrashBin2,
   Bookmark,
   Pip,
+  PlaybackSpeed,
 } from "@solar-icons/react";
 import { HeartFill, HeartLine } from "@mingcute/react";
 
@@ -30,6 +31,7 @@ import { useIsTrackLiked, useLikeTrack, useUnlikeTrack } from "@/features/librar
 import { usePlayerStore } from "../store/playerStore";
 import { toVolumeGain, toVolumeLevel } from "../engine/volume";
 import { VolumePicker } from "./VolumePicker";
+import { SpeedPitchPicker } from "./SpeedPitchPicker";
 import { TimelineSlider } from "./TimelineSlider";
 import { useTheme } from "next-themes";
 import { useCoverReady, CoverImage } from "@/features/covers";
@@ -295,10 +297,16 @@ function MiniPlayer({
   const [volumePopupStyle, setVolumePopupStyle] = useState<React.CSSProperties>(
     {},
   );
+  const [speedOpen, setSpeedOpen] = useState(false);
+  const [speedPopupStyle, setSpeedPopupStyle] = useState<React.CSSProperties>(
+    {},
+  );
   const miniPlayerRootRef = useRef<HTMLDivElement>(null);
   const queuePopupRef = useRef<HTMLDivElement>(null);
   const volumePopupRef = useRef<HTMLDivElement>(null);
   const volumeToggleRef = useRef<HTMLButtonElement>(null);
+  const speedPopupRef = useRef<HTMLDivElement>(null);
+  const speedToggleRef = useRef<HTMLButtonElement>(null);
   const volumeAutoCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
@@ -436,6 +444,19 @@ function MiniPlayer({
   }, [volumeOpen]);
 
   useEffect(() => {
+    if (!speedOpen) return;
+    const toggle = speedToggleRef.current;
+    const root = miniPlayerRootRef.current;
+    if (!toggle || !root) return;
+    const toggleRect = toggle.getBoundingClientRect();
+    const rootRect = root.getBoundingClientRect();
+    const popupW = 270;
+    const btnW = toggleRect.width;
+    const right = rootRect.right - toggleRect.right + (btnW - popupW) / 2;
+    setSpeedPopupStyle({ right: Math.max(8, right) });
+  }, [speedOpen]);
+
+  useEffect(() => {
     const onDocumentPointerDown = (event: MouseEvent) => {
       const target = event.target as Node | null;
       if (!target) {
@@ -452,13 +473,29 @@ function MiniPlayer({
           scheduleVolumeAutoClose();
         }
       }
+
+      if (speedOpen) {
+        const clickedSpeedPopup = speedPopupRef.current?.contains(target);
+        const clickedSpeedToggle =
+          speedToggleRef.current?.contains(target);
+        if (!clickedSpeedPopup && !clickedSpeedToggle) {
+          setSpeedOpen(false);
+        }
+      }
     };
 
     const onDocumentKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && volumeOpen) {
-        event.preventDefault();
-        event.stopPropagation();
-        setVolumeOpen(false);
+      if (event.key === "Escape") {
+        if (volumeOpen) {
+          event.preventDefault();
+          event.stopPropagation();
+          setVolumeOpen(false);
+        }
+        if (speedOpen) {
+          event.preventDefault();
+          event.stopPropagation();
+          setSpeedOpen(false);
+        }
       }
     };
 
@@ -468,7 +505,7 @@ function MiniPlayer({
       document.removeEventListener("mousedown", onDocumentPointerDown, true);
       document.removeEventListener("keydown", onDocumentKeyDown, true);
     };
-  }, [scheduleVolumeAutoClose, volumeOpen]);
+  }, [scheduleVolumeAutoClose, speedOpen, volumeOpen]);
 
   const [scrubRatio, setScrubRatio] = useState<number | null>(null);
   const activeProgress = scrubRatio !== null ? scrubRatio : progress;
@@ -503,6 +540,22 @@ function MiniPlayer({
               iconClassName="text-text-secondary hover:text-text-primary"
               valueClassName="text-text-tertiary text-[11px]"
             />
+          </motion.div>
+        ) : null}
+
+        {speedOpen ? (
+          <motion.div
+            key="speed-popup"
+            ref={speedPopupRef}
+            initial={{ opacity: 0, y: 10, scale: 0.985 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.985 }}
+            transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
+            className="absolute bottom-[74px] z-[92] w-[270px] rounded-xl bg-bg-primary border border-border-primary/50 p-[12px] shadow-2xl prevent-seek"
+            style={speedPopupStyle}
+            onPointerDown={(e) => e.stopPropagation()}
+          >
+            <SpeedPitchPicker onClose={() => setSpeedOpen(false)} />
           </motion.div>
         ) : null}
       </AnimatePresence>
@@ -728,6 +781,44 @@ function MiniPlayer({
                 {repeatIcon}
               </button>
               <button
+                ref={speedToggleRef}
+                type="button"
+                aria-label="Speed and Pitch"
+                title={`${t("player.speed_pitch")}: x${(player.playbackRate ?? 1).toFixed(2)}`}
+                className={`${iconButtonClass} ${
+                  speedOpen ||
+                  Math.abs((player.playbackRate ?? 1) - 1) > 0.001 ||
+                  Math.abs(player.pitchSemitones ?? 0) > 0.001
+                    ? "bg-white/[0.09] text-white"
+                    : ""
+                }`}
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={() => {
+                  setVolumeOpen(false);
+                  onQueueOpenChange?.(false);
+                  setSpeedOpen((prev) => !prev);
+                }}
+                style={{ cursor: "pointer" }}
+              >
+                <motion.div
+                  animate={{
+                    scale: speedOpen ? 1.08 : 1,
+                  }}
+                  transition={{ type: "spring", stiffness: 350, damping: 22 }}
+                  className="flex items-center justify-center"
+                >
+                  <PlaybackSpeed
+                    size={18}
+                    weight={
+                      Math.abs((player.playbackRate ?? 1) - 1) > 0.001 ||
+                      Math.abs(player.pitchSemitones ?? 0) > 0.001
+                        ? "Bold"
+                        : "Outline"
+                    }
+                  />
+                </motion.div>
+              </button>
+              <button
                 ref={volumeToggleRef}
                 type="button"
                 aria-label="Volume"
@@ -737,6 +828,7 @@ function MiniPlayer({
                 }`}
                 onPointerDown={(e) => e.stopPropagation()}
                 onClick={() => {
+                  setSpeedOpen(false);
                   onQueueOpenChange?.(false);
                   setVolumeOpen((prev) => !prev);
                   scheduleVolumeAutoClose();
@@ -757,7 +849,11 @@ function MiniPlayer({
                 title="Open player"
                 className={iconButtonClass}
                 onPointerDown={(e) => e.stopPropagation()}
-                onClick={onFullscreenOpen}
+                onClick={() => {
+                  setSpeedOpen(false);
+                  setVolumeOpen(false);
+                  onFullscreenOpen?.();
+                }}
               >
                 <MaximizeSquare3 size={18} weight="Outline" />
               </button>
@@ -784,6 +880,7 @@ function MiniPlayer({
                 className={iconButtonClass}
                 onPointerDown={(e) => e.stopPropagation()}
                 onClick={() => {
+                  setSpeedOpen(false);
                   setVolumeOpen(false);
                   setQueueLimit(50);
                   onQueueToggle?.();

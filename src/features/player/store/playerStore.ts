@@ -57,6 +57,12 @@ export interface SessionState {
   trackDoubleClickBehavior: TrackDoubleClickBehavior;
   defaultPlaybackContext: DefaultPlaybackContext;
   fullscreen: boolean;
+  playbackRate: number;
+  pitchSemitones: number;
+  isPitchLinked: boolean;
+  keepSpeedAcrossTracks: boolean;
+  isReverbEnabled: boolean;
+  reverbLevel: number;
 }
 
 export type PlayerState = TransportState &
@@ -78,6 +84,10 @@ export type PlayerCommand =
   | { type: "SKIP_NEXT"; isAutoEnd?: boolean }
   | { type: "SKIP_PREVIOUS" }
   | { type: "SET_VOLUME"; volume: number }
+  | { type: "SET_PLAYBACK_RATE"; rate: number }
+  | { type: "SET_PITCH_SEMITONES"; semitones: number }
+  | { type: "SET_REVERB_ENABLED"; enabled: boolean }
+  | { type: "SET_REVERB_LEVEL"; level: number }
   | { type: "TOGGLE_PLAY_PAUSE" };
 
 export interface PlayerStore extends PlayerState {
@@ -101,6 +111,13 @@ export interface PlayerStore extends PlayerState {
   setTrackDoubleClickBehavior: (value: TrackDoubleClickBehavior) => void;
   setDefaultPlaybackContext: (value: DefaultPlaybackContext) => void;
   setFullscreen: (value: boolean) => void;
+  setPlaybackRate: (rate: number) => void;
+  setPitchSemitones: (semitones: number) => void;
+  setIsPitchLinked: (linked: boolean) => void;
+  setKeepSpeedAcrossTracks: (keep: boolean) => void;
+  setIsReverbEnabled: (enabled: boolean) => void;
+  setReverbLevel: (level: number) => void;
+  resetSpeedAndPitch: () => void;
   clearQueue: () => void;
 }
 
@@ -137,6 +154,12 @@ export const usePlayerStore = create<PlayerStore>()(
       trackDoubleClickBehavior: "play",
       defaultPlaybackContext: "resume",
       fullscreen: false,
+      playbackRate: 1,
+      pitchSemitones: 0,
+      isPitchLinked: true,
+      keepSpeedAcrossTracks: true,
+      isReverbEnabled: false,
+      reverbLevel: 0.35,
 
       dispatch: () => {
         // Implementation injected by PlayerEngine
@@ -179,6 +202,15 @@ export const usePlayerStore = create<PlayerStore>()(
         if (get().fullscreen === fullscreen) return;
         set({ fullscreen });
       },
+      setPlaybackRate: (playbackRate: number) => set({ playbackRate }),
+      setPitchSemitones: (pitchSemitones: number) => set({ pitchSemitones }),
+      setIsPitchLinked: (isPitchLinked: boolean) => set({ isPitchLinked }),
+      setKeepSpeedAcrossTracks: (keepSpeedAcrossTracks: boolean) =>
+        set({ keepSpeedAcrossTracks }),
+      setIsReverbEnabled: (isReverbEnabled: boolean) => set({ isReverbEnabled }),
+      setReverbLevel: (reverbLevel: number) =>
+        set({ reverbLevel: Math.max(0, Math.min(1, reverbLevel)) }),
+      resetSpeedAndPitch: () => set({ playbackRate: 1, pitchSemitones: 0 }),
       clearQueue: () => {
         const state = get();
         if (state.currentTrack) {
@@ -228,6 +260,26 @@ export const usePlayerStore = create<PlayerStore>()(
         if (state && !validVariants.includes(state.accentVariant)) {
           state.accentVariant = "default";
         }
+        if (state) {
+          if (typeof state.playbackRate !== "number" || isNaN(state.playbackRate)) {
+            state.playbackRate = 1;
+          }
+          if (typeof state.pitchSemitones !== "number" || isNaN(state.pitchSemitones)) {
+            state.pitchSemitones = 0;
+          }
+          if (typeof state.isPitchLinked !== "boolean") {
+            state.isPitchLinked = true;
+          }
+          if (typeof state.keepSpeedAcrossTracks !== "boolean") {
+            state.keepSpeedAcrossTracks = true;
+          }
+          if (typeof state.isReverbEnabled !== "boolean") {
+            state.isReverbEnabled = false;
+          }
+          if (typeof state.reverbLevel !== "number" || isNaN(state.reverbLevel)) {
+            state.reverbLevel = 0.35;
+          }
+        }
       },
       partialize: (state) => ({
         ...(state.defaultPlaybackContext === "resume"
@@ -252,6 +304,12 @@ export const usePlayerStore = create<PlayerStore>()(
         autoplaySimilar: state.autoplaySimilar,
         trackDoubleClickBehavior: state.trackDoubleClickBehavior,
         defaultPlaybackContext: state.defaultPlaybackContext,
+        playbackRate: state.playbackRate,
+        pitchSemitones: state.pitchSemitones,
+        isPitchLinked: state.isPitchLinked,
+        keepSpeedAcrossTracks: state.keepSpeedAcrossTracks,
+        isReverbEnabled: state.isReverbEnabled,
+        reverbLevel: state.reverbLevel,
       }),
     },
   ),

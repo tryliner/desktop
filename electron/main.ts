@@ -111,6 +111,7 @@ function createWindow() {
       sandbox: false,
       devTools: true,
       backgroundThrottling: false, // keeps audio timer and playback ticks running when app is in background or another workspace
+      webSecurity: false,
     },
   });
 
@@ -289,6 +290,14 @@ if (!gotTheLock) {
       } catch (err) {
         console.error("\x1b[41;37m icon \x1b[0m set-icon error:", err);
       }
+    });
+
+    session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+      const responseHeaders = { ...(details.responseHeaders || {}) };
+      responseHeaders["access-control-allow-origin"] = ["*"];
+      responseHeaders["access-control-allow-headers"] = ["*"];
+      responseHeaders["access-control-allow-methods"] = ["GET, HEAD, OPTIONS"];
+      callback({ responseHeaders });
     });
 
     let lastSavedExportPath: string | null = null;

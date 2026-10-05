@@ -40,6 +40,9 @@ function deduplicateReviewItems(reviewItems: ImportReview[]): ImportReview[] {
   const seen = new Set<string>();
   const unique: ImportReview[] = [];
   for (const it of reviewItems) {
+    if (!it.proposedTrack || it.reason === "no_catalog_candidates") {
+      continue;
+    }
     const trackKey = it.sourceTrack?.sourceId
       ? `${it.sourceTrack.sourceId}:${it.position}`
       : `${it.sourceTrack?.title ?? ""}:${it.sourceTrack?.artists?.join(",") ?? ""}:${it.position}`;

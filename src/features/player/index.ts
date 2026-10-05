@@ -30,3 +30,4 @@ export {
   type SongCardWithMenuProps,
 } from "./ui/SongCardWithMenu";
 export { VolumePicker, type VolumePickerProps } from "./ui/VolumePicker";
+export { SpeedPitchPicker, type SpeedPitchPickerProps } from "./ui/SpeedPitchPicker";

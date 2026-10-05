@@ -6,6 +6,7 @@ import {
   type PlayerState,
 } from "../store/playerStore";
 import { playerRuntime } from "./playerRuntime";
+import { pitchShifter } from "./pitchShifter";
 import {
   api,
   type ApiRadioTrack,
@@ -360,6 +361,12 @@ class PlayerEngine {
       case "SET_VOLUME":
         this.setVolume(command.volume);
         break;
+      case "SET_PLAYBACK_RATE":
+        this.setPlaybackRate(command.rate);
+        break;
+      case "SET_PITCH_SEMITONES":
+        this.setPitchSemitones(command.semitones);
+        break;
       case "TOGGLE_PLAY_PAUSE":
         this.togglePlayPause();
         break;
@@ -659,6 +666,58 @@ class PlayerEngine {
 
   public setVolumeSmooth(volume: number): void {
     this.setVolume(volume);
+  }
+
+  public setPlaybackRate(rate: number): void {
+    pitchShifter.resumeContext();
+    const clampedRate = Math.min(2.0, Math.max(0.5, Number(rate.toFixed(2))));
+    const store = usePlayerStore.getState();
+    if (store.isPitchLinked) {
+      const semitones = Number((12 * Math.log2(clampedRate)).toFixed(1));
+      store.setPitchSemitones(semitones);
+    }
+    store.setPlaybackRate(clampedRate);
+  }
+
+  public setPitchSemitones(semitones: number): void {
+    pitchShifter.resumeContext();
+    const clampedSemitones = Math.min(12, Math.max(-12, Number(semitones.toFixed(1))));
+    const store = usePlayerStore.getState();
+    if (store.isPitchLinked) {
+      const rate = Number(Math.pow(2, clampedSemitones / 12).toFixed(2));
+      const clampedRate = Math.min(2.0, Math.max(0.5, rate));
+      store.setPlaybackRate(clampedRate);
+    }
+    store.setPitchSemitones(clampedSemitones);
+  }
+
+  public setIsPitchLinked(linked: boolean): void {
+    pitchShifter.resumeContext();
+    const store = usePlayerStore.getState();
+    store.setIsPitchLinked(linked);
+    if (linked) {
+      const rate = store.playbackRate ?? 1;
+      const semitones = Number((12 * Math.log2(rate)).toFixed(1));
+      store.setPitchSemitones(semitones);
+    }
+  }
+
+  public setKeepSpeedAcrossTracks(keep: boolean): void {
+    usePlayerStore.getState().setKeepSpeedAcrossTracks(keep);
+  }
+
+  public setIsReverbEnabled(enabled: boolean): void {
+    pitchShifter.resumeContext();
+    usePlayerStore.getState().setIsReverbEnabled(enabled);
+  }
+
+  public setReverbLevel(level: number): void {
+    pitchShifter.resumeContext();
+    usePlayerStore.getState().setReverbLevel(level);
+  }
+
+  public resetSpeedAndPitch(): void {
+    usePlayerStore.getState().resetSpeedAndPitch();
   }
 
   public setRepeat(mode: RepeatMode): void {

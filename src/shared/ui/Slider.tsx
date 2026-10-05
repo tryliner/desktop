@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, memo } from "react";
 import { motion } from "framer-motion";
 
 export interface SliderProps {
+  label?: React.ReactNode;
   value: number;
   onChange: (value: number) => void;
   min?: number;
@@ -16,6 +17,7 @@ export interface SliderProps {
 }
 
 export const Slider = memo(function Slider({
+  label,
   value,
   onChange,
   min = 0,
@@ -137,6 +139,11 @@ export const Slider = memo(function Slider({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
+      {label && (
+        <span className="text-[12px] font-medium text-text-secondary select-none">
+          {label}
+        </span>
+      )}
       <div
         role="slider"
         aria-label={ariaLabel}

@@ -4,6 +4,7 @@ import { log } from "@/shared/utils/logger";
 import { telemetry } from "@/shared/telemetry";
 import { linerDb } from "@/shared/storage";
 import type { Track } from "@/shared/types";
+import { pitchShifter } from "./pitchShifter";
 
 export class PlayerRuntime {
   private audio: HTMLAudioElement;
@@ -27,27 +28,27 @@ export class PlayerRuntime {
   public onError?: (info: { trackId: string; message: string }) => void;
 
   constructor() {
-    if (typeof window !== "undefined") {
-      const existing = document.getElementById("liner-audio") as HTMLAudioElement | null;
-      if (existing) {
-        existing.pause();
-        existing.removeAttribute("src");
-        existing.load();
-        existing.remove();
+    const win = typeof window !== "undefined" ? (window as any) : null;
+    let audio = (win?.__liner_audio || (typeof document !== "undefined" && document.getElementById("liner-audio"))) as HTMLAudioElement | null;
+    if (!audio) {
+      audio = new Audio();
+      audio.id = "liner-audio";
+      audio.crossOrigin = "anonymous";
+      audio.preload = "auto";
+      if (typeof document !== "undefined") {
+        document.body.appendChild(audio);
       }
     }
-
-    this.audio = new Audio();
-    this.audio.id = "liner-audio";
-    this.audio.crossOrigin = "anonymous";
-    this.audio.preload = "auto";
-    if (typeof document !== "undefined") {
-      document.body.appendChild(this.audio);
+    if (win) {
+      win.__liner_audio = audio;
     }
+    this.audio = audio;
     this.setupAudioListeners(this.audio);
+    pitchShifter.attach(this.audio);
 
     const initialVolume = usePlayerStore.getState().volume;
     this.audio.volume = initialVolume;
+    this.applyPlaybackRateAndPitch();
     log("cyan", "boot", `volume ${initialVolume}`);
 
     usePlayerStore.subscribe((state, prevState) => {
@@ -56,6 +57,17 @@ export class PlayerRuntime {
         if (!this.audio.paused) {
           this.audio.volume = state.volume;
         }
+      }
+      if (
+        state.playbackRate !== prevState.playbackRate ||
+        state.isPitchLinked !== prevState.isPitchLinked ||
+        state.pitchSemitones !== prevState.pitchSemitones ||
+        state.isReverbEnabled !== prevState.isReverbEnabled ||
+        state.reverbLevel !== prevState.reverbLevel
+      ) {
+        const rate = state.playbackRate ?? 1;
+        const preservesPitch = !state.isPitchLinked;
+        this.applyPlaybackRateAndPitch(rate, preservesPitch);
       }
     });
 
@@ -189,6 +201,7 @@ export class PlayerRuntime {
     audioEl.addEventListener("playing", () => {
       if (this.isResetting || audioEl !== this.audio) return;
       log("green", "audio", "playing");
+      this.applyPlaybackRateAndPitch();
 
       if (this.stallStartTime !== null) {
         const stallDurationMs = Math.round(performance.now() - this.stallStartTime);
@@ -272,6 +285,40 @@ export class PlayerRuntime {
       !this.audio.error &&
       !isExpired
     );
+  }
+
+  public applyPlaybackRateAndPitch(rate?: number, preservesPitch?: boolean): void {
+    if (!this.audio) return;
+    const store = usePlayerStore.getState();
+    const targetRate = rate ?? store.playbackRate ?? 1;
+    const targetPreserves =
+      preservesPitch ?? (store.isPitchLinked !== undefined ? !store.isPitchLinked : true);
+
+    try {
+      this.audio.playbackRate = targetRate;
+      this.audio.defaultPlaybackRate = targetRate;
+      this.audio.preservesPitch = targetPreserves;
+      (this.audio as any).mozPreservesPitch = targetPreserves;
+      (this.audio as any).webkitPreservesPitch = targetPreserves;
+    } catch {
+      // Audio element not initialized or properties unsupported
+    }
+
+    try {
+      const isPitchLinked = store.isPitchLinked ?? true;
+      const pitchSemitones = store.pitchSemitones ?? 0;
+      const isReverbEnabled = store.isReverbEnabled ?? false;
+      const reverbLevel = store.reverbLevel ?? 0.35;
+      pitchShifter.attach(this.audio);
+      pitchShifter.update({
+        pitchSemitones,
+        isPitchLinked,
+        isReverbEnabled,
+        reverbLevel,
+      });
+    } catch (err) {
+      console.error("[PlayerRuntime] applyPlaybackRateAndPitch error:", err);
+    }
   }
 
   private cancelFade(): void {
@@ -458,11 +505,14 @@ export class PlayerRuntime {
     const bgCacheController = new AbortController();
     this.backgroundCacheAbortController = bgCacheController;
 
+    const store = usePlayerStore.getState();
+    if (!store.keepSpeedAcrossTracks && this.currentTrackId !== track.id) {
+      store.resetSpeedAndPitch();
+    }
     this.currentTrackId = track.id;
     this.loadStartTime = performance.now();
     this.updateMediaSessionMetadata(track);
 
-    const store = usePlayerStore.getState();
     store.setStatus("loading", null);
     store.setPosition(startPositionMs > 0 ? startPositionMs : 0);
 
@@ -483,6 +533,7 @@ export class PlayerRuntime {
         this.audio.src = blobUrl;
         this.audio.volume = 0;
         this.audio.load();
+        this.applyPlaybackRateAndPitch();
 
         const targetPosition =
           this.pendingStartPositionMs > 0
@@ -554,6 +605,7 @@ export class PlayerRuntime {
       this.audio.src = url;
       this.audio.volume = 0;
       this.audio.load();
+      this.applyPlaybackRateAndPitch();
 
       const targetPosition =
         this.pendingStartPositionMs > 0
@@ -687,6 +739,8 @@ export class PlayerRuntime {
 
     const targetVolume = usePlayerStore.getState().volume;
     usePlayerStore.getState().setStatus("playing");
+    pitchShifter.resumeContext();
+    this.applyPlaybackRateAndPitch();
     log("cyan", "audio", "resume requested (fading in)");
 
     const currentTrack = usePlayerStore.getState().currentTrack;

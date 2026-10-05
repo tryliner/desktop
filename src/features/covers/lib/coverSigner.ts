@@ -8,10 +8,12 @@ const COVER_PROXY_SIZE = 1024;
 // Must mirror ALLOWED_HOSTS in apps/workers/covers: a token for any other host
 // is rejected there, so minting one would only produce a broken fallback.
 const COVER_PROXY_HOSTS: ReadonlySet<string> = new Set([
-  "i.ytimg.com",
-  "yt3.ggpht.com",
-  "lh3.googleusercontent.com",
-  "yt3.googleusercontent.com",
+  "i1.sndcdn.com",
+  "i2.sndcdn.com",
+  "i3.sndcdn.com",
+  "i4.sndcdn.com",
+  "img.sndcdn.com",
+  "a1.sndcdn.com",
 ]);
 
 // Raw cover URL -> resolved fallback URL (or undefined when not proxyable).
@@ -33,7 +35,7 @@ function base64UrlEncode(input: string): string {
  * in the path filename (no options segment), so it passes through untouched.
  */
 function sizeAgnosticUrl(rawUrl: string, host: string): string {
-  if (host === "i.ytimg.com") return rawUrl;
+  if (host.endsWith(".sndcdn.com") || host === "sndcdn.com" || host === "i.ytimg.com") return rawUrl;
   const eq = rawUrl.indexOf("=");
   return eq === -1 ? rawUrl : rawUrl.slice(0, eq);
 }

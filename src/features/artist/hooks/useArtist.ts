@@ -73,6 +73,7 @@ export function useArtist(id: string | null) {
             title: album.title,
             coverUrl: album.cover ? mediaUrl(album.cover.url) : "",
             ...(album.year ? { releaseDate: String(album.year) } : {}),
+            totalTracks: album.totalTracks ?? album.trackCount,
             explicit: album.explicit,
           })),
           reposts: [],
@@ -82,6 +83,7 @@ export function useArtist(id: string | null) {
             coverUrl: single.cover ? mediaUrl(single.cover.url) : "",
             releaseType: single.releaseType,
             ...(single.year ? { releaseDate: String(single.year) } : {}),
+            totalTracks: single.totalTracks ?? single.trackCount,
             explicit: single.explicit,
           })),
         };
