@@ -1,13 +1,6 @@
 import { BrowserWindow, ipcMain, globalShortcut, TouchBar, screen } from "electron";
 import path from "node:path";
 
-function formatTime(ms: number): string {
-  const totalSeconds = Math.max(0, Math.floor(ms / 1000));
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
-}
-
 export interface TouchBarTrackInfo {
   id?: string;
   title: string;
@@ -71,12 +64,10 @@ export class TouchBarManager {
   private rendererDist: string;
 
   private nativeTouchBar: any = null;
-  private currentTimeLabel: any = null;
-  private durationTimeLabel: any = null;
-  private nativeTimelineSlider: any = null;
+  private nativePlayBtn: any = null;
+  private nativeTrackLabel: any = null;
+  private nativeLyricsLabel: any = null;
 
-  private isUserSeeking = false;
-  private seekDebounceTimer: any = null;
   private wasAutoOpened = false;
   private userDismissedOverlay = false;
   private lastOverlayBounds: { x: number; y: number; width: number; height: number } | null = null;
@@ -125,44 +116,46 @@ export class TouchBarManager {
 
   private initNativeTouchBar() {
     if (!TouchBar) return;
-    const { TouchBarLabel, TouchBarSpacer, TouchBarSlider } = TouchBar;
+    const { TouchBarButton, TouchBarLabel, TouchBarSpacer } = TouchBar;
 
-    this.currentTimeLabel = new TouchBarLabel({
-      label: "0:00",
-      textColor: "#8e8e93",
-    });
-
-    this.nativeTimelineSlider = new TouchBarSlider({
-      minValue: 0,
-      maxValue: 100,
-      value: 0,
-      change: (val: number) => {
-        this.isUserSeeking = true;
-        if (this.currentTimeLabel) {
-          this.currentTimeLabel.label = formatTime(val * 1000);
-        }
-        this.forwardAction({ type: "seek", payload: { positionMs: val * 1000 } });
-        if (this.seekDebounceTimer) clearTimeout(this.seekDebounceTimer);
-        this.seekDebounceTimer = setTimeout(() => {
-          this.isUserSeeking = false;
-        }, 400);
+    this.nativePlayBtn = new TouchBarButton({
+      label: "▶",
+      click: () => {
+        this.forwardAction({ type: "togglePlay" });
       },
     });
 
-    this.durationTimeLabel = new TouchBarLabel({
-      label: "0:00",
-      textColor: "#8e8e93",
+    const prevBtn = new TouchBarButton({
+      label: "⏮",
+      click: () => {
+        this.forwardAction({ type: "prev" });
+      },
+    });
+
+    const nextBtn = new TouchBarButton({
+      label: "⏭",
+      click: () => {
+        this.forwardAction({ type: "next" });
+      },
+    });
+
+    this.nativeTrackLabel = new TouchBarLabel({
+      label: "Liner",
+    });
+
+    this.nativeLyricsLabel = new TouchBarLabel({
+      label: "",
     });
 
     this.nativeTouchBar = new TouchBar({
       items: [
+        this.nativeTrackLabel,
         new TouchBarSpacer({ size: "small" }),
-        this.currentTimeLabel,
-        new TouchBarSpacer({ size: "small" }),
-        this.nativeTimelineSlider,
-        new TouchBarSpacer({ size: "small" }),
-        this.durationTimeLabel,
-        new TouchBarSpacer({ size: "small" }),
+        prevBtn,
+        this.nativePlayBtn,
+        nextBtn,
+        new TouchBarSpacer({ size: "flexible" }),
+        this.nativeLyricsLabel,
       ],
     });
 
@@ -179,25 +172,17 @@ export class TouchBarManager {
         this.simulatorWindow.webContents.send("touchbar:simulator-state", state);
       }
 
-      if (process.platform === "darwin") {
-        const durationMs = Math.max(0, state.durationMs || 0);
-        const positionMs = Math.max(0, Math.min(durationMs, state.positionMs || 0));
-
-        if (this.currentTimeLabel && !this.isUserSeeking) {
-          this.currentTimeLabel.label = formatTime(positionMs);
+      if (process.platform === "darwin" && this.nativeTouchBar) {
+        if (this.nativePlayBtn) {
+          this.nativePlayBtn.label = state.status === "playing" ? "⏸" : "▶";
         }
-
-        if (this.durationTimeLabel) {
-          this.durationTimeLabel.label = formatTime(durationMs);
+        if (this.nativeTrackLabel) {
+          this.nativeTrackLabel.label = state.track
+            ? `${state.track.title} - ${state.track.artist}`
+            : "Liner";
         }
-
-        if (this.nativeTimelineSlider) {
-          const totalSec = Math.max(1, Math.floor(durationMs / 1000));
-          const currentSec = Math.min(totalSec, Math.floor(positionMs / 1000));
-          this.nativeTimelineSlider.maxValue = totalSec;
-          if (!this.isUserSeeking) {
-            this.nativeTimelineSlider.value = currentSec;
-          }
+        if (this.nativeLyricsLabel) {
+          this.nativeLyricsLabel.label = state.activeLyricText || "";
         }
       }
     });
