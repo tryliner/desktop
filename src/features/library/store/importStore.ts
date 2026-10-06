@@ -89,11 +89,12 @@ export const useImportStore = create<ActiveImportState>((set, get) => ({
         return job;
       }
 
-      if (job.workerWsUrl && job.importToken) {
+      const targetWsUrl = job.workerWsUrl?.trim() || "wss://import.tryliner.fun/v1/ws";
+      if (targetWsUrl && job.importToken) {
         set({ isPolling: true });
-        get().listenToWebSocketWorker(job);
+        get().listenToWebSocketWorker({ ...job, workerWsUrl: targetWsUrl });
       } else {
-        set({ error: "Import worker unavailable", isPolling: false, pendingTrack: null });
+        set({ error: "Import worker unavailable", isPolling: false, pendingTrack: null, job: null });
       }
       return job;
     } catch (err) {
