@@ -1,5 +1,5 @@
 import { useEffect, useSyncExternalStore } from "react";
-import { api, toClientTrack } from "@/shared/api";
+import { api, getAuthSession, toClientTrack } from "@/shared/api";
 import type { Track } from "@/shared/types";
 
 type LikedData = { tracks: Track[]; total: number };
@@ -55,6 +55,13 @@ const SERVER_SNAPSHOT = { data: EMPTY, isLoading: true };
 
 function load(force = false): Promise<void> {
   if (request) return request;
+  const session = getAuthSession();
+  if (!session?.accessToken) {
+    cache = EMPTY;
+    loaded = false;
+    emit(false);
+    return Promise.resolve();
+  }
   if (loaded && !force) return Promise.resolve();
 
   if (!loaded) emit(true);
@@ -72,7 +79,7 @@ function load(force = false): Promise<void> {
     optimisticOverrides.clear();
   })()
     .catch(() => {
-      cache = EMPTY;
+      if (!loaded) cache = EMPTY;
       loaded = true;
     })
     .finally(() => {
@@ -105,14 +112,19 @@ export function applyOptimisticUnlike(trackId: string): () => void {
 }
 
 if (typeof window !== "undefined") {
-  const target = window as Window & { __linerLikedRefresh?: EventListener };
-  if (target.__linerLikedRefresh)
-    window.removeEventListener("library:changed", target.__linerLikedRefresh);
-  target.__linerLikedRefresh = () => {
-    // silent background refresh without toggling loading state
-    void load(true);
+  const handleRefresh = () => {
+    const session = getAuthSession();
+    if (!session?.accessToken) {
+      cache = EMPTY;
+      loaded = false;
+      optimisticOverrides.clear();
+      emit(false);
+    } else {
+      void load(true);
+    }
   };
-  window.addEventListener("library:changed", target.__linerLikedRefresh);
+  window.addEventListener("library:changed", handleRefresh);
+  window.addEventListener("auth:changed", handleRefresh);
 }
 
 export function useLikedTracks(_params?: { limit?: number; offset?: number }) {

@@ -4,6 +4,7 @@ import { usePlayerState } from "../hooks/usePlayerState";
 import { playerEngine } from "../engine/playerEngine";
 import { useTranslation } from "@/languages";
 import { ToggleSwitch } from "@/shared/ui";
+import { SparklesFill } from "@mingcute/react";
 
 export interface SpeedPitchPickerProps {
   className?: string;
@@ -375,56 +376,61 @@ export const SpeedPitchPicker = memo(function SpeedPitchPicker({
           />
         </div>
 
-        {/* Reverb toggle */}
-        <div className="flex items-center justify-between gap-[8px] pt-[2px]">
-          <div className="flex flex-col">
-            <span className="text-[12px] font-medium text-text-primary">
-              {t("player.reverb")}
-            </span>
-            <span className="text-[10px] text-text-tertiary leading-tight">
-              {t("player.reverb_hint")}
-            </span>
+        {/* Reverb group */}
+        <div className="flex flex-col pt-[2px]">
+          <div className="flex items-center justify-between gap-[8px]">
+            <div className="flex flex-col">
+              <span className="flex items-center gap-[6px] text-[12px] font-medium text-text-primary">
+                {t("player.reverb")}
+                <SparklesFill size={13} className="text-amber-400 shrink-0" />
+              </span>
+              <span className="text-[10px] text-text-tertiary leading-tight">
+                {t("player.reverb_hint")}
+              </span>
+            </div>
+            <ToggleSwitch
+              checked={isReverbEnabled}
+              onChange={handleReverbToggle}
+              ariaLabel={t("player.reverb")}
+            />
           </div>
-          <ToggleSwitch
-            checked={isReverbEnabled}
-            onChange={handleReverbToggle}
-            ariaLabel={t("player.reverb")}
-          />
-        </div>
 
-        {/* Reverb Amount Slider */}
-        <AnimatePresence>
-          {isReverbEnabled && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.18, ease: "easeOut" }}
-              className="overflow-hidden pt-[2px]"
-            >
-              <SliderRow
-                label={t("player.reverb_amount")}
-                valueText={`${Math.round(reverbLevel * 100)}%`}
-                min={0.05}
-                max={1.0}
-                step={0.05}
-                value={reverbLevel}
-                onStepDown={() =>
-                  handleReverbChange(
-                    Math.max(0.05, Number((reverbLevel - 0.05).toFixed(2))),
-                  )
-                }
-                onStepUp={() =>
-                  handleReverbChange(
-                    Math.min(1.0, Number((reverbLevel + 0.05).toFixed(2))),
-                  )
-                }
-                onChange={handleReverbChange}
-                ariaLabel={t("player.reverb_amount")}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
+          {/* Reverb Amount Slider */}
+          <AnimatePresence initial={false}>
+            {isReverbEnabled && (
+              <motion.div
+                initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                animate={{ opacity: 1, height: "auto", marginTop: 8 }}
+                exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                className="overflow-hidden"
+              >
+                <div className="pt-[2px]">
+                  <SliderRow
+                    label={t("player.reverb_amount")}
+                    valueText={`${Math.round(reverbLevel * 100)}%`}
+                    min={0.05}
+                    max={1.0}
+                    step={0.05}
+                    value={reverbLevel}
+                    onStepDown={() =>
+                      handleReverbChange(
+                        Math.max(0.05, Number((reverbLevel - 0.05).toFixed(2))),
+                      )
+                    }
+                    onStepUp={() =>
+                      handleReverbChange(
+                        Math.min(1.0, Number((reverbLevel + 0.05).toFixed(2))),
+                      )
+                    }
+                    onChange={handleReverbChange}
+                    ariaLabel={t("player.reverb_amount")}
+                  />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
     </div>
   );

@@ -59,6 +59,7 @@ export {
   getAuthSession,
   setAuthSession,
   getAccessToken,
+  getSessionExpiryMs,
   refreshAuthSession,
   clearAuthSession,
   type AuthUser,

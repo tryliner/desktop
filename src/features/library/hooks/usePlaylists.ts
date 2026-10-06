@@ -1,5 +1,5 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
-import { api, mediaUrl, toClientTrack, type ApiUserPlaylistItem } from "@/shared/api";
+import { api, getAuthSession, mediaUrl, toClientTrack, type ApiUserPlaylistItem } from "@/shared/api";
 import type { Track } from "@/shared/types";
 
 export interface LibraryPlaylistSummary {
@@ -86,6 +86,13 @@ const SERVER_SNAPSHOT = { data: EMPTY, error: undefined as unknown, isLoading: t
 
 function load(force = false): Promise<void> {
   if (request) return request;
+  const session = getAuthSession();
+  if (!session?.accessToken) {
+    cache = EMPTY;
+    loaded = false;
+    emit();
+    return Promise.resolve();
+  }
   if (loaded && !force) return Promise.resolve();
 
   if (!loaded) {
@@ -136,9 +143,10 @@ function load(force = false): Promise<void> {
     cache = { playlists, total: playlists.length };
     loaded = true;
   })()
-    .catch(() => {
-      cache = EMPTY;
+    .catch((err) => {
+      if (!loaded) cache = EMPTY;
       loaded = true;
+      view.error = err;
     })
     .finally(() => {
       request = null;
@@ -148,14 +156,18 @@ function load(force = false): Promise<void> {
 }
 
 if (typeof window !== "undefined") {
-  const target = window as Window & { __linerPlaylistsRefresh?: EventListener };
-  if (target.__linerPlaylistsRefresh)
-    window.removeEventListener("library:changed", target.__linerPlaylistsRefresh);
-  target.__linerPlaylistsRefresh = () => {
-    // silent background refresh without toggling loading state
-    void load(true);
+  const handleRefresh = () => {
+    const session = getAuthSession();
+    if (!session?.accessToken) {
+      cache = EMPTY;
+      loaded = false;
+      emit();
+    } else {
+      void load(true);
+    }
   };
-  window.addEventListener("library:changed", target.__linerPlaylistsRefresh);
+  window.addEventListener("library:changed", handleRefresh);
+  window.addEventListener("auth:changed", handleRefresh);
 }
 
 function toTrack(item: ApiUserPlaylistItem): Track {

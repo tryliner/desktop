@@ -4,6 +4,7 @@ import {
   clearAuthSession,
   getAuthSession,
   setAuthSession,
+  refreshAuthSession,
   type AuthUser,
   type PublicUser,
   type UpdateProfileInput,
@@ -50,6 +51,25 @@ export const useAuthStore = create<AuthState>((set) => ({
       set({ status: "authenticated", user: user ?? current?.user ?? stored.user });
     } catch (err) {
       if (err instanceof ApiError && (err.status === 401 || err.status === 403)) {
+        // Attempt refresh before clearing session in case access token expired between sessions
+        const current = getAuthSession();
+        if (current?.refreshToken) {
+          try {
+            const refreshed = await refreshAuthSession();
+            if (refreshed) {
+              const retryUser = await api.getMe().catch(() => null);
+              const active = getAuthSession();
+              if (active) setAuthSession({ ...active, user: retryUser ?? active.user });
+              set({
+                status: "authenticated",
+                user: retryUser ?? refreshed.user ?? current.user ?? stored.user,
+              });
+              return;
+            }
+          } catch {
+            // refresh failed
+          }
+        }
         setAuthSession(null);
         set({ status: "anonymous", user: null });
       } else {
@@ -66,10 +86,16 @@ export const useAuthStore = create<AuthState>((set) => ({
   login: async (email, password) => {
     const result = await api.login(email, password);
     set({ status: "authenticated", user: result.user });
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("library:changed"));
+    }
   },
   register: async (email, password, username, displayName) => {
     const result = await api.register(email, password, username, displayName);
     set({ status: "authenticated", user: result.user });
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("library:changed"));
+    }
   },
   updateProfile: async (patch) => {
     const updated = await api.updateProfile(patch);
@@ -87,8 +113,21 @@ export const useAuthStore = create<AuthState>((set) => ({
       usePlayerStore.getState().dispatch({ type: "PAUSE_REQUESTED" });
       playerRuntime?.pause();
     } catch {}
+    try {
+      usePlayerStore.getState().setFullscreen(false);
+    } catch {}
+    try {
+      window.linerElectron?.closeOverlay?.();
+      window.linerElectron?.sendOverlayAction?.({ type: "closeOverlay" });
+    } catch {}
+    if (typeof window !== "undefined" && window.location.hash.includes("/player")) {
+      window.location.hash = "#/";
+    }
     await clearAuthSession();
     set({ status: "anonymous", user: null });
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("library:changed"));
+    }
   },
 }));
 

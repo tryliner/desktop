@@ -12,6 +12,40 @@ export interface OverlaySettings {
   alwaysOnTop: boolean;
 }
 
+const CYRILLIC_TO_QWERTY: Record<string, string> = {
+  "й": "Q", "ц": "W", "у": "E", "к": "R", "е": "T", "н": "Y", "г": "U", "ш": "I", "щ": "O", "з": "P", "х": "[", "ъ": "]",
+  "ф": "A", "ы": "S", "в": "D", "а": "F", "п": "G", "р": "H", "о": "J", "л": "K", "д": "L", "ж": ";", "э": "'",
+  "я": "Z", "ч": "X", "с": "C", "м": "V", "и": "B", "т": "N", "ь": "M", "б": ",", "ю": ".", "ё": "`",
+  "і": "S", "ї": "]", "є": "'", "ґ": "\\",
+};
+
+function normalizeShortcut(raw: string): string {
+  if (!raw) return "";
+  const parts = raw.split("+").map((p) => p.trim()).filter(Boolean);
+  const normalized: string[] = [];
+  for (const part of parts) {
+    const lower = part.toLowerCase();
+    if (lower === "control" || lower === "ctrl" || lower === "commandorcontrol") {
+      normalized.push("Control");
+    } else if (lower === "alt" || lower === "option") {
+      normalized.push("Alt");
+    } else if (lower === "shift") {
+      normalized.push("Shift");
+    } else if (lower === "command" || lower === "cmd" || lower === "meta") {
+      normalized.push("Command");
+    } else if (CYRILLIC_TO_QWERTY[lower]) {
+      normalized.push(CYRILLIC_TO_QWERTY[lower]);
+    } else if (lower === "space") {
+      normalized.push("Space");
+    } else if (lower === "plus" || lower === "+") {
+      normalized.push("Plus");
+    } else {
+      normalized.push(part.toUpperCase());
+    }
+  }
+  return normalized.join("+");
+}
+
 export class OverlayManager {
   private mainWindow: BrowserWindow | null = null;
   private overlayWindow: BrowserWindow | null = null;
@@ -112,7 +146,9 @@ export class OverlayManager {
 
   public registerShortcut(newShortcut?: string) {
     if (newShortcut) {
-      this.shortcut = newShortcut;
+      this.shortcut = normalizeShortcut(newShortcut);
+    } else if (this.shortcut) {
+      this.shortcut = normalizeShortcut(this.shortcut);
     }
 
     this.unregisterShortcut();
@@ -293,19 +329,24 @@ export class OverlayManager {
   }
 
   public closeOverlay() {
+    this.wasAutoOpened = false;
     if (this.closeTimeout) {
       clearTimeout(this.closeTimeout);
       this.closeTimeout = null;
     }
 
-    if (this.overlayWindow && !this.overlayWindow.isDestroyed() && this.overlayWindow.isVisible()) {
-      this.overlayWindow.webContents.send("overlay:visibility", false);
-      this.closeTimeout = setTimeout(() => {
-        if (this.overlayWindow && !this.overlayWindow.isDestroyed()) {
-          this.overlayWindow.hide();
-        }
-        this.closeTimeout = null;
-      }, 90);
+    if (this.overlayWindow && !this.overlayWindow.isDestroyed()) {
+      if (this.overlayWindow.isVisible()) {
+        this.overlayWindow.webContents.send("overlay:visibility", false);
+        this.closeTimeout = setTimeout(() => {
+          if (this.overlayWindow && !this.overlayWindow.isDestroyed()) {
+            this.overlayWindow.hide();
+          }
+          this.closeTimeout = null;
+        }, 90);
+      } else {
+        this.overlayWindow.hide();
+      }
     }
   }
 
@@ -383,6 +424,16 @@ export class OverlayManager {
     ipcMain.on("overlay:send-action", (_event, action: any) => {
       if (action.type === "closeOverlay") {
         this.closeOverlay();
+        return;
+      }
+      if (action.type === "focusMainWindow") {
+        if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+          if (this.mainWindow.isMinimized()) {
+            this.mainWindow.restore();
+          }
+          this.mainWindow.show();
+          this.mainWindow.focus();
+        }
         return;
       }
       if (this.mainWindow && !this.mainWindow.isDestroyed()) {

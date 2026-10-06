@@ -61,7 +61,13 @@ export function isCoverReady(url: string | undefined): boolean {
 export function getCoverElement(url: string | undefined): HTMLImageElement | undefined {
   if (!url) return undefined;
   const entry = entries.get(url);
-  return entry?.status === "loaded" ? entry.element : undefined;
+  if (entry?.status === "loaded" && entry.element) return entry.element;
+  for (const item of entries.values()) {
+    if (item.status === "loaded" && item.element && (item.effectiveUrl === url || item.element.src === url)) {
+      return item.element;
+    }
+  }
+  return undefined;
 }
 
 /**

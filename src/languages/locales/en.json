@@ -371,18 +371,18 @@
     "speed": "Speed",
     "pitch": "Pitch",
     "link_speed_pitch": "Link speed to pitch",
-    "link_speed_pitch_hint": "Vinyl & tape effect: speed alters pitch",
+    "link_speed_pitch_hint": "Vinyl & tape style: speed alters pitch",
     "key_lock": "Key Lock",
-    "key_lock_hint": "Preserves original key when speed changes",
+    "key_lock_hint": "Preserves original key while changing speed",
     "keep_speed_across_tracks": "Keep across tracks",
-    "keep_speed_hint": "Keep active for the next tracks",
+    "keep_speed_hint": "Keeps settings active for upcoming tracks",
     "reset_speed": "Reset",
     "preset_normal": "1.0x Normal",
     "preset_speedup": "1.25x Speed Up",
     "preset_slowed": "0.8x Slowed",
     "preset_nightcore": "1.35x Nightcore",
     "reverb": "Reverb",
-    "reverb_hint": "Atmospheric space & slowed+reverb effect",
+    "reverb_hint": "Atmospheric space & ambient depth",
     "reverb_amount": "Reverb"
   },
   "playlist": {
@@ -455,7 +455,11 @@
       },
       "shortcut": {
         "title": "Global shortcut",
-        "description": "Toggle the desktop overlay from any application across the system."
+        "description": "Toggle the desktop overlay from any application across the system.",
+        "recording": "Press key combination...",
+        "need_modifier": "Shortcut must include Ctrl, Alt, or Shift",
+        "reset": "Reset to Alt+Shift+O",
+        "reset_label": "Reset"
       },
       "auto_show_on_minimize": {
         "title": "Auto-show on minimize",
@@ -709,7 +713,6 @@
       "website": "Website",
       "tagline": "Modern desktop music streaming player with syllable-synced lyrics",
       "updates_title": "Updates & Build",
-      "test_update": "Test update",
       "check_updates": "Check for updates",
       "checking_updates": "Checking…",
       "up_to_date": "Up to date",

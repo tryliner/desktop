@@ -12,7 +12,7 @@ export function KawarpWrapper({ src, onLoad, onError }: KawarpWrapperProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const engineRef = useRef<KawarpEngine | null>(null);
-  const [, setLoaded] = useState(false);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -102,7 +102,9 @@ export function KawarpWrapper({ src, onLoad, onError }: KawarpWrapperProps) {
     >
       <canvas
         ref={canvasRef}
-        className="absolute inset-0 w-full h-full block"
+        className={`absolute inset-0 w-full h-full block transition-opacity duration-500 ${
+          loaded ? "opacity-100" : "opacity-0"
+        }`}
       />
     </div>
   );

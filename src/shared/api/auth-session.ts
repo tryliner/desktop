@@ -169,9 +169,9 @@ export function refreshAuthSession(): Promise<AuthTokens | null> {
       }
 
       if (!response.ok) {
-        // If the server explicitly rejected the refresh token (401 / 403 / 400),
+        // If the server explicitly rejected the refresh token (401 / 403),
         // only clear the stored session if it hasn't already been rotated by another process
-        if (response.status === 401 || response.status === 403 || response.status === 400) {
+        if (response.status === 401 || response.status === 403) {
           const latest = getAuthSession();
           if (latest?.refreshToken === current.refreshToken) {
             setAuthSession(null);

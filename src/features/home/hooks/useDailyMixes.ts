@@ -14,6 +14,51 @@ export interface DailyMix {
   tracks: Track[];
 }
 
+export function getDailyMixArtists(
+  clusterArtists?: string[],
+  tracks?: Track[],
+  targetCount: number = 4,
+): string[] {
+  const seen = new Set<string>();
+  const result: string[] = [];
+
+  const addName = (raw?: string) => {
+    if (!raw) return;
+    const name = raw.trim();
+    if (!name || name.toLowerCase() === "unknown" || seen.has(name.toLowerCase())) {
+      return;
+    }
+    seen.add(name.toLowerCase());
+    result.push(name);
+  };
+
+  if (Array.isArray(clusterArtists)) {
+    for (const name of clusterArtists) {
+      addName(name);
+      if (result.length >= targetCount) return result;
+    }
+  }
+
+  if (Array.isArray(tracks)) {
+    for (const track of tracks) {
+      if (track.artistList && track.artistList.length > 0) {
+        for (const a of track.artistList) {
+          addName(a.name);
+          if (result.length >= targetCount) return result;
+        }
+      } else if (track.artists) {
+        const parts = track.artists.split(",").map((p) => p.trim()).filter(Boolean);
+        for (const part of parts) {
+          addName(part);
+          if (result.length >= targetCount) return result;
+        }
+      }
+    }
+  }
+
+  return result;
+}
+
 const cache = { data: [] as DailyMix[], timestamp: 0 };
 const CACHE_TTL = 120_000;
 
@@ -42,11 +87,13 @@ export function useDailyMixes() {
             (clientTracks[0]?.coverUrl ||
             clientTracks[1]?.coverUrl);
 
+          const computedArtists = getDailyMixArtists(mix.clusterArtists, clientTracks, 4);
+
           const mixItem: DailyMix = {
             id: mix.id,
             title: mix.title,
             description: mix.description,
-            clusterArtists: mix.clusterArtists || [],
+            clusterArtists: computedArtists,
             coverUrl: primaryCover,
             trackCount: mix.trackCount || clientTracks.length,
             tracks: clientTracks,
@@ -56,7 +103,7 @@ export function useDailyMixes() {
           const collectionData: CollectionPageData = {
             type: "playlist",
             title: mix.title,
-            author: mix.clusterArtists && mix.clusterArtists.length > 0 ? mix.clusterArtists.join(", ") : "Daily Mix",
+            author: computedArtists.length > 0 ? computedArtists.join(", ") : "Daily Mix",
             description: mix.description,
             coverUrl: primaryCover || "",
             tracks: clientTracks,

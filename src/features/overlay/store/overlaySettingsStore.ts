@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import type { OverlayPosition, OverlaySettings } from "../contracts";
+import { normalizeShortcutToEnglish } from "../lib/shortcutUtils";
 
 interface OverlaySettingsState extends OverlaySettings {
   setEnabled: (enabled: boolean) => void;
@@ -36,7 +37,8 @@ export const useOverlaySettingsStore = create<OverlaySettingsState>()(
         set({ position });
         notifyElectron({ position });
       },
-      setShortcut: (shortcut) => {
+      setShortcut: (rawShortcut) => {
+        const shortcut = normalizeShortcutToEnglish(rawShortcut) || DEFAULT_SETTINGS.shortcut;
         set({ shortcut });
         notifyElectron({ shortcut });
       },
@@ -52,6 +54,11 @@ export const useOverlaySettingsStore = create<OverlaySettingsState>()(
     {
       name: "liner_overlay_settings_v1",
       storage: createJSONStorage(() => localStorage),
+      onRehydrateStorage: () => (state) => {
+        if (state?.shortcut) {
+          state.shortcut = normalizeShortcutToEnglish(state.shortcut) || DEFAULT_SETTINGS.shortcut;
+        }
+      },
     }
   )
 );

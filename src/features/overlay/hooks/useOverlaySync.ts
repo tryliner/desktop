@@ -6,6 +6,7 @@ import {
   useLikeTrack,
   useUnlikeTrack,
 } from "@/features/library/hooks";
+import { getAuthSession } from "@/shared/api";
 import type {
   OverlayAction,
   OverlayStatePayload,
@@ -30,6 +31,21 @@ export function useOverlaySync() {
       autoShowOnMinimize: s.autoShowOnMinimize,
       alwaysOnTop: s.alwaysOnTop,
     });
+  }, []);
+
+  // Hide overlay when user logs out or session is cleared
+  useEffect(() => {
+    const handleAuthChange = () => {
+      const session = getAuthSession();
+      if (!session) {
+        window.linerElectron?.closeOverlay?.();
+        window.linerElectron?.sendOverlayAction?.({ type: "closeOverlay" });
+      }
+    };
+    window.addEventListener("auth:changed", handleAuthChange);
+    return () => {
+      window.removeEventListener("auth:changed", handleAuthChange);
+    };
   }, []);
 
   // Listen for actions from overlay
@@ -70,6 +86,27 @@ export function useOverlaySync() {
               likeMutation.mutate(currentTrack.id, { onSettled });
             }
           }
+          break;
+        case "volumeUp": {
+          const current = player.volume;
+          const next = Math.min(1, Math.round((current + 0.05) * 100) / 100);
+          playerEngine.setVolume(next);
+          break;
+        }
+        case "volumeDown": {
+          const current = player.volume;
+          const next = Math.max(0, Math.round((current - 0.05) * 100) / 100);
+          playerEngine.setVolume(next);
+          break;
+        }
+        case "setVolume": {
+          if (typeof action.payload?.volume === "number") {
+            const next = Math.min(1, Math.max(0, action.payload.volume));
+            playerEngine.setVolume(next);
+          }
+          break;
+        }
+        case "focusMainWindow":
           break;
       }
     });

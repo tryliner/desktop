@@ -15,6 +15,7 @@ export interface SongCardProps {
   artists?: string;
   artistId?: string;
   artistList?: TrackArtist[];
+  artistsClickable?: boolean;
   coverUrl: string;
   className?: string;
   onPlay?: () => void;
@@ -42,6 +43,7 @@ function SongCard({
   artists,
   artistId,
   artistList,
+  artistsClickable = true,
   coverUrl,
   className,
   onPlay,
@@ -209,13 +211,17 @@ function SongCard({
             }}
           >
             {explicit && <ExplicitBadge size="md" className="mr-[6px] shrink-0" />}
-            <ArtistLink
-              name={artists}
-              artistId={artistId}
-              artistList={artistList}
-              onNavigate={onNavigate}
-              className="text-text-secondary"
-            />
+            {artistsClickable ? (
+              <ArtistLink
+                name={artists}
+                artistId={artistId}
+                artistList={artistList}
+                onNavigate={onNavigate}
+                className="text-text-secondary"
+              />
+            ) : (
+              <span className="truncate select-none">{artists}</span>
+            )}
           </p>
         </div>
       </div>

@@ -1,6 +1,14 @@
 import { useState, useRef, useEffect } from "react";
+import { Refresh1Line } from "@mingcute/react";
 import { useTranslation } from "@/languages";
-import { useOverlaySettingsStore, type OverlayPosition } from "@/features/overlay";
+import {
+  useOverlaySettingsStore,
+  type OverlayPosition,
+  getEnglishKeyFromEvent,
+  getKeyDisplay,
+  splitShortcutParts,
+  normalizeShortcutToEnglish,
+} from "@/features/overlay";
 import { ToggleSwitch } from "@/shared/ui";
 import { SettingRow, SettingSection, SegmentedControl } from "../controls";
 
@@ -12,16 +20,276 @@ const POSITION_OPTIONS = [
 
 const DEFAULT_SHORTCUT = "Alt+Shift+O";
 
-function formatAcceleratorForDisplay(accelerator: string): string {
-  if (!accelerator) return "None";
-  return accelerator
-    .split("+")
-    .map((p) => {
-      if (p === "Control" || p === "CommandOrControl") return "Ctrl";
-      if (p === "Command") return "Cmd";
-      return p;
-    })
-    .join(" + ");
+function KeyCap({
+  label,
+  symbol,
+  isModifier,
+  highlighted,
+}: {
+  label: string;
+  symbol?: string;
+  isModifier?: boolean;
+  highlighted?: boolean;
+}) {
+  return (
+    <kbd
+      className={`inline-flex items-center justify-center gap-1 min-w-[22px] h-[22px] px-1.5 rounded-[5px] text-[11.5px] font-mono font-medium tracking-tight select-none transition-all ${
+        highlighted
+          ? "bg-border-alpha-24 text-text-primary"
+          : isModifier
+            ? "bg-border-alpha-14 text-text-secondary"
+            : "bg-border-alpha-14 text-text-primary"
+      }`}
+    >
+      {symbol && (
+        <span
+          className={`text-[10.5px] leading-none ${
+            highlighted ? "text-text-secondary" : "text-text-tertiary"
+          }`}
+        >
+          {symbol}
+        </span>
+      )}
+      <span className="leading-none">{label}</span>
+    </kbd>
+  );
+}
+
+interface ShortcutRecorderProps {
+  shortcut: string;
+  defaultShortcut: string;
+  enabled: boolean;
+  onChange: (shortcut: string) => void;
+}
+
+function ShortcutRecorder({
+  shortcut,
+  defaultShortcut,
+  enabled,
+  onChange,
+}: ShortcutRecorderProps) {
+  const { t } = useTranslation();
+  const [isRecording, setIsRecording] = useState(false);
+  const [warning, setWarning] = useState<string | null>(null);
+  const [heldModifiers, setHeldModifiers] = useState<{
+    ctrl: boolean;
+    alt: boolean;
+    shift: boolean;
+    meta: boolean;
+  }>({ ctrl: false, alt: false, shift: false, meta: false });
+  const containerRef = useRef<HTMLDivElement>(null);
+  const warningTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showWarning = (msg: string) => {
+    if (warningTimeoutRef.current) clearTimeout(warningTimeoutRef.current);
+    setWarning(msg);
+    warningTimeoutRef.current = setTimeout(() => setWarning(null), 2500);
+  };
+
+  useEffect(() => {
+    if (!isRecording) {
+      setHeldModifiers({ ctrl: false, alt: false, shift: false, meta: false });
+      setWarning(null);
+      return;
+    }
+
+    const updateModifiersFromEvent = (e: KeyboardEvent) => {
+      setHeldModifiers({
+        ctrl: e.ctrlKey,
+        alt: e.altKey,
+        shift: e.shiftKey,
+        meta: e.metaKey,
+      });
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      updateModifiersFromEvent(e);
+
+      if (e.key === "Escape") {
+        setIsRecording(false);
+        return;
+      }
+
+      // Ignore pure modifier key presses
+      if (["Control", "Shift", "Alt", "Meta"].includes(e.key)) {
+        return;
+      }
+
+      const hasModifier = e.ctrlKey || e.altKey || e.shiftKey || e.metaKey;
+      const isFKey = /^F\d{1,2}$/i.test(e.key) || /^F\d{1,2}$/i.test(e.code);
+
+      if (!hasModifier && !isFKey) {
+        showWarning(
+          t("settings.overlay.shortcut.need_modifier") ||
+            "Must include Ctrl, Alt, or Shift"
+        );
+        return;
+      }
+
+      const englishKey = getEnglishKeyFromEvent(e);
+      if (!englishKey) {
+        return;
+      }
+
+      const parts: string[] = [];
+      if (e.ctrlKey) parts.push("Control");
+      if (e.altKey) parts.push("Alt");
+      if (e.shiftKey) parts.push("Shift");
+      if (e.metaKey) parts.push("Command");
+      parts.push(englishKey);
+
+      const normalized = normalizeShortcutToEnglish(parts.join("+"));
+      if (normalized) {
+        onChange(normalized);
+        setIsRecording(false);
+      }
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      updateModifiersFromEvent(e);
+    };
+
+    const handleMouseDown = (e: MouseEvent) => {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
+        setIsRecording(false);
+      }
+    };
+
+    const handleWindowBlur = () => {
+      setIsRecording(false);
+    };
+
+    window.addEventListener("keydown", handleKeyDown, true);
+    window.addEventListener("keyup", handleKeyUp, true);
+    window.addEventListener("mousedown", handleMouseDown, true);
+    window.addEventListener("blur", handleWindowBlur);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown, true);
+      window.removeEventListener("keyup", handleKeyUp, true);
+      window.removeEventListener("mousedown", handleMouseDown, true);
+      window.removeEventListener("blur", handleWindowBlur);
+      if (warningTimeoutRef.current) clearTimeout(warningTimeoutRef.current);
+    };
+  }, [isRecording, onChange, t]);
+
+  const parts = splitShortcutParts(shortcut);
+  const isDefault = shortcut === defaultShortcut;
+
+  // Active held modifiers for preview during recording
+  const heldPartKeys: string[] = [];
+  if (heldModifiers.ctrl) heldPartKeys.push("Control");
+  if (heldModifiers.alt) heldPartKeys.push("Alt");
+  if (heldModifiers.shift) heldPartKeys.push("Shift");
+  if (heldModifiers.meta) heldPartKeys.push("Command");
+
+  return (
+    <div ref={containerRef} className="flex flex-col items-end gap-1.5">
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          disabled={!enabled}
+          onClick={() => enabled && setIsRecording((prev) => !prev)}
+          className={`group h-[32px] px-2.5 rounded-lg text-[12px] font-medium transition-all flex items-center gap-2 border-0 select-none ${
+            !enabled
+              ? "bg-layer-1 text-text-tertiary cursor-not-allowed opacity-50"
+              : isRecording
+                ? "bg-border-alpha-20 text-text-primary cursor-pointer"
+                : "bg-border-alpha-10 hover:bg-border-alpha-16 text-text-primary cursor-pointer active:scale-[0.99]"
+          }`}
+          style={{ fontFamily: "var(--font-inter), sans-serif" }}
+          aria-label={isRecording ? "Recording shortcut" : "Change shortcut"}
+        >
+          {isRecording ? (
+            <div className="flex items-center gap-2">
+              {heldPartKeys.length > 0 ? (
+                <div className="flex items-center gap-1">
+                  {heldPartKeys.map((p) => {
+                    const info = getKeyDisplay(p);
+                    return (
+                      <KeyCap
+                        key={p}
+                        label={info.label}
+                        symbol={info.symbol}
+                        isModifier={info.isModifier}
+                        highlighted
+                      />
+                    );
+                  })}
+                  <span className="text-[11px] text-text-tertiary font-mono">
+                    + ...
+                  </span>
+                </div>
+              ) : (
+                <span className="text-text-secondary text-[12px]">
+                  {t("settings.overlay.shortcut.recording") || "Press keys..."}
+                </span>
+              )}
+              <kbd className="ml-1 text-[10px] text-text-tertiary px-1.5 py-0.5 rounded bg-border-alpha-14 border-0 select-none">
+                Esc
+              </kbd>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1.5">
+              {parts.length > 0 ? (
+                parts.map((p, idx) => {
+                  const info = getKeyDisplay(p);
+                  return (
+                    <div key={idx} className="flex items-center gap-1.5">
+                      {idx > 0 && (
+                        <span className="text-[11px] text-text-quaternary select-none font-medium leading-none">
+                          +
+                        </span>
+                      )}
+                      <KeyCap
+                        label={info.label}
+                        symbol={info.symbol}
+                        isModifier={info.isModifier}
+                      />
+                    </div>
+                  );
+                })
+              ) : (
+                <span className="text-text-tertiary">None</span>
+              )}
+            </div>
+          )}
+        </button>
+
+        {!isDefault && enabled && !isRecording && (
+          <button
+            type="button"
+            title={
+              t("settings.overlay.shortcut.reset") || "Reset to Alt+Shift+O"
+            }
+            onClick={() => onChange(defaultShortcut)}
+            className="flex items-center gap-1 px-2 py-1 h-[28px] rounded-md text-[11.5px] text-text-tertiary hover:text-text-primary hover:bg-border-alpha-10 transition-colors cursor-pointer select-none"
+            style={{ fontFamily: "var(--font-inter), sans-serif" }}
+          >
+            <Refresh1Line className="w-3.5 h-3.5" />
+            <span>{t("settings.overlay.shortcut.reset_label") || "Reset"}</span>
+          </button>
+        )}
+      </div>
+
+      {warning && (
+        <span
+          className="text-[11px] text-amber-500 font-medium animate-fadeIn select-none"
+          style={{ fontFamily: "var(--font-inter), sans-serif" }}
+        >
+          {warning}
+        </span>
+      )}
+    </div>
+  );
 }
 
 export function OverlayTab({ searchQuery }: { searchQuery?: string }) {
@@ -36,65 +304,15 @@ export function OverlayTab({ searchQuery }: { searchQuery?: string }) {
   const shortcut = useOverlaySettingsStore((s) => s.shortcut);
   const setShortcut = useOverlaySettingsStore((s) => s.setShortcut);
 
-  const autoShowOnMinimize = useOverlaySettingsStore((s) => s.autoShowOnMinimize);
-  const setAutoShowOnMinimize = useOverlaySettingsStore((s) => s.setAutoShowOnMinimize);
+  const autoShowOnMinimize = useOverlaySettingsStore(
+    (s) => s.autoShowOnMinimize
+  );
+  const setAutoShowOnMinimize = useOverlaySettingsStore(
+    (s) => s.setAutoShowOnMinimize
+  );
 
   const alwaysOnTop = useOverlaySettingsStore((s) => s.alwaysOnTop);
   const setAlwaysOnTop = useOverlaySettingsStore((s) => s.setAlwaysOnTop);
-
-  const [isRecording, setIsRecording] = useState(false);
-  const recordButtonRef = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => {
-    if (!isRecording) return;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-
-      if (e.key === "Escape") {
-        setIsRecording(false);
-        return;
-      }
-
-      if (["Control", "Shift", "Alt", "Meta"].includes(e.key)) {
-        return;
-      }
-
-      const parts: string[] = [];
-      if (e.ctrlKey) parts.push("Control");
-      if (e.altKey) parts.push("Alt");
-      if (e.shiftKey) parts.push("Shift");
-      if (e.metaKey) parts.push("Command");
-
-      if (parts.length === 0 && !/^F\d{1,2}$/i.test(e.key)) {
-        return;
-      }
-
-      let key = e.key;
-      if (key === " ") key = "Space";
-      else if (key.length === 1) key = key.toUpperCase();
-
-      parts.push(key);
-      const newShortcut = parts.join("+");
-      setShortcut(newShortcut);
-      setIsRecording(false);
-    };
-
-    const handleMouseDown = (e: MouseEvent) => {
-      if (recordButtonRef.current && !recordButtonRef.current.contains(e.target as Node)) {
-        setIsRecording(false);
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown, true);
-    window.addEventListener("mousedown", handleMouseDown, true);
-
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown, true);
-      window.removeEventListener("mousedown", handleMouseDown, true);
-    };
-  }, [isRecording, setShortcut]);
 
   return (
     <SettingSection>
@@ -152,44 +370,20 @@ export function OverlayTab({ searchQuery }: { searchQuery?: string }) {
           descKey="settings.overlay.shortcut.description"
           searchQuery={searchQuery}
           control={
-            <div className="flex items-center gap-2">
-              <button
-                ref={recordButtonRef}
-                type="button"
-                disabled={!enabled}
-                onClick={() => enabled && setIsRecording((prev) => !prev)}
-                className={`h-[28px] px-3 rounded-lg text-[12.5px] font-medium transition-all flex items-center gap-1.5 border ${
-                  !enabled
-                    ? "bg-border-alpha-10 border-transparent text-text-tertiary cursor-not-allowed opacity-50"
-                    : isRecording
-                      ? "bg-accent-primary/10 border-accent-primary text-accent-primary ring-2 ring-accent-primary/20 cursor-pointer"
-                      : "bg-border-alpha-14 border-transparent text-text-primary hover:bg-border-alpha-20 cursor-pointer"
-                }`}
-                style={{ fontFamily: "var(--font-inter), sans-serif" }}
-              >
-                {isRecording ? (
-                  <span className="animate-pulse">Press keys (Esc to cancel)...</span>
-                ) : (
-                  <span>{formatAcceleratorForDisplay(shortcut)}</span>
-                )}
-              </button>
-              {shortcut !== DEFAULT_SHORTCUT && enabled && (
-                <button
-                  type="button"
-                  disabled={!enabled}
-                  onClick={() => setShortcut(DEFAULT_SHORTCUT)}
-                  className="text-[11.5px] text-text-tertiary hover:text-text-primary underline cursor-pointer bg-transparent border-0 p-0"
-                  style={{ fontFamily: "var(--font-inter), sans-serif" }}
-                >
-                  Reset
-                </button>
-              )}
-            </div>
+            <ShortcutRecorder
+              shortcut={shortcut}
+              defaultShortcut={DEFAULT_SHORTCUT}
+              enabled={enabled}
+              onChange={setShortcut}
+            />
           }
         />
 
         <SettingRow
-          title={t("settings.overlay.auto_show_on_minimize.title") || "Auto-show on minimize"}
+          title={
+            t("settings.overlay.auto_show_on_minimize.title") ||
+            "Auto-show on minimize"
+          }
           description={
             t("settings.overlay.auto_show_on_minimize.description") ||
             "Automatically show the overlay when Liner is minimized."

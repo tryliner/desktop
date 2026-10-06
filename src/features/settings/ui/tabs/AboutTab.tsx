@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { FaTelegramPlane, FaGithub, FaGlobe } from "react-icons/fa";
-import { Refresh1Line, CheckLine, SparklesFill } from "@mingcute/react";
+import { Refresh1Line, CheckLine } from "@mingcute/react";
 import { QuestionCircle } from "@solar-icons/react";
 import Button from "@/shared/ui/Button";
 import { useToast } from "@/shared/ui";
@@ -211,17 +211,6 @@ export function AboutTab({ searchQuery }: { searchQuery?: string }) {
         </div>
 
         <div className="flex items-center gap-[6px] shrink-0">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => useUpdaterStore.getState().triggerTestUpdate()}
-            className="!h-[30px] !px-[10px] !text-[12px] !gap-[5px] text-text-tertiary hover:text-text-primary"
-            title={t("settings.about.test_update") || "Test update"}
-          >
-            <SparklesFill size={13} className="text-amber-400" />
-            {t("settings.about.test_update") || "Test update"}
-          </Button>
-
           <Button
             variant="secondary"
             size="sm"

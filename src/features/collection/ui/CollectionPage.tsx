@@ -49,6 +49,14 @@ function CollectionContent() {
   const { data, loading } = useCollection(type, id);
   const entityType = type === "playlist" ? "playlist" : "album";
   const decodedId = id ? decodeURIComponent(id) : "";
+  const isDailyMix = Boolean(
+    data?.isDailyMix ||
+    (type === "playlist" && (
+      decodedId.startsWith("daily-mix") ||
+      decodedId.startsWith("mix-") ||
+      (id && (id.startsWith("daily-mix") || id.startsWith("mix-")))
+    ))
+  );
 
   const { data: savedAlbums } = useExternalItems("album");
   const { data: savedPlaylists } = useExternalItems("playlist");
@@ -459,37 +467,39 @@ function CollectionContent() {
                           <LuShuffle size={16} />
                         </Button>
 
-                        <DropdownMenu
-                          trigger={
-                            <Button
-                              variant={hasCustomBg ? "glass-action" : "outline"}
-                              className="!h-[36px] !w-[36px] shrink-0 !p-0 flex items-center justify-center text-text-primary"
-                              title={t("common.more")}
-                            >
-                              <More2Line size={18} />
-                            </Button>
-                          }
-                          items={[
-                            {
-                              id: "library",
-                              icon: inLibrary ? (
-                                <FolderCheckFill size={16} />
-                              ) : (
-                                <NewFolderLine size={16} />
-                              ),
-                              label: inLibrary
-                                ? t("common.remove_from_library")
-                                : t("common.save_to_library"),
-                              onClick: handleSaveToLibrary,
-                            },
-                            {
-                              id: "share",
-                              icon: <ShareForwardLine size={16} />,
-                              label: t("common.share"),
-                              onClick: handleShare,
-                            },
-                          ]}
-                        />
+                        {!isDailyMix && (
+                          <DropdownMenu
+                            trigger={
+                              <Button
+                                variant={hasCustomBg ? "glass-action" : "outline"}
+                                className="!h-[36px] !w-[36px] shrink-0 !p-0 flex items-center justify-center text-text-primary"
+                                title={t("common.more")}
+                              >
+                                <More2Line size={18} />
+                              </Button>
+                            }
+                            items={[
+                              {
+                                id: "library",
+                                icon: inLibrary ? (
+                                  <FolderCheckFill size={16} />
+                                ) : (
+                                  <NewFolderLine size={16} />
+                                ),
+                                label: inLibrary
+                                  ? t("common.remove_from_library")
+                                  : t("common.save_to_library"),
+                                onClick: handleSaveToLibrary,
+                              },
+                              {
+                                id: "share",
+                                icon: <ShareForwardLine size={16} />,
+                                label: t("common.share"),
+                                onClick: handleShare,
+                              },
+                            ]}
+                          />
+                        )}
                       </div>
                     </div>
                   }

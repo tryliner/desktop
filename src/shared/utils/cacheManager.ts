@@ -203,9 +203,16 @@ export async function getStorageAnalytics(): Promise<StorageAnalytics> {
   } catch {}
 
   // take the maximum between indexeddb object store iteration and physical disk size
+  // if indexeddb store is empty, ignore residual leveldb engine overhead under 2MB
   if (electronStats && electronStats.indexedDbSize > 0) {
     const totalIdbDisk = electronStats.indexedDbSize + (electronStats.blobStorageSize || 0);
-    audioBytes = Math.max(audioBytes, totalIdbDisk);
+    if (audioBytes > 0) {
+      audioBytes = Math.max(audioBytes, totalIdbDisk);
+    } else if (totalIdbDisk > 2 * 1024 * 1024) {
+      audioBytes = totalIdbDisk;
+    } else {
+      audioBytes = 0;
+    }
   }
 
   // 3. serviceworker covers added in cover-sw.js
@@ -215,9 +222,15 @@ export async function getStorageAnalytics(): Promise<StorageAnalytics> {
     coversCount = coverStats.count;
   } catch {}
 
-  // physical disk size for service worker cache storage
+  // physical disk size for service worker cache storage (only when covers exist or exceed 1MB)
   if (electronStats && electronStats.serviceWorkerSize > 0) {
-    coversBytes = Math.max(coversBytes, electronStats.serviceWorkerSize);
+    if (coversBytes > 0) {
+      coversBytes = Math.max(coversBytes, electronStats.serviceWorkerSize);
+    } else if (electronStats.serviceWorkerSize > 1024 * 1024) {
+      coversBytes = electronStats.serviceWorkerSize;
+    } else {
+      coversBytes = 0;
+    }
   }
 
   // 4. lyrics cache added in lyricsCache.ts + linerDb lyrics
@@ -323,13 +336,18 @@ export async function getStorageAnalytics(): Promise<StorageAnalytics> {
 // clears chosen categories cleanly while maintaining user session
 export async function clearStorageCategories(categoryIds: StorageCategoryId[]): Promise<void> {
   const set = new Set(categoryIds);
+  const isAllCategories =
+    set.has("audio") && set.has("covers") && set.has("lyrics") && set.has("metadata");
 
   if (set.has("audio")) {
     audioCache.revokeAll();
     await linerDb.clearStore("audio");
     await linerDb.clearStore("tracks");
+    if (isAllCategories) {
+      await linerDb.close();
+    }
     if (typeof window !== "undefined" && window.linerElectron?.clearAudioCache) {
-      await window.linerElectron.clearAudioCache();
+      await window.linerElectron.clearAudioCache(isAllCategories);
     }
   }
 
@@ -366,6 +384,10 @@ export async function clearStorageCategories(categoryIds: StorageCategoryId[]): 
       }
       toRemove.forEach((k) => localStorage.removeItem(k));
     }
+  }
+
+  if (typeof window !== "undefined" && window.linerElectron?.clearHttpCache) {
+    await window.linerElectron.clearHttpCache();
   }
 }
 

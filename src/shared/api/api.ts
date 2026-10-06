@@ -1,6 +1,7 @@
 import {
   getAccessToken,
   getAuthSession,
+  getSessionExpiryMs,
   getValidAccessToken,
   refreshAuthSession,
   setAuthSession,
@@ -181,7 +182,18 @@ async function executeRequest<T>(
   const method = (init?.method ?? "GET").toUpperCase();
   const rawBody = typeof init?.body === "string" ? init.body : null;
   const signedHeaders = await signApiRequest(method, path, rawBody);
-  const accessToken = allowRefresh ? await getValidAccessToken() : null;
+  const currentSession = getAuthSession();
+  let accessToken = allowRefresh ? await getValidAccessToken() : null;
+
+  if (allowRefresh && currentSession?.accessToken && !accessToken && !path.startsWith("/v1/auth/")) {
+    const expiryMs = getSessionExpiryMs(currentSession);
+    if (expiryMs && expiryMs > Date.now()) {
+      accessToken = currentSession.accessToken;
+    } else {
+      throw new ApiError(0, "Network error during token refresh.", "NETWORK_ERROR");
+    }
+  }
+
   const hasBody = init?.body != null;
   const extraHeaders = (init?.headers as Record<string, string>) ?? {};
   const { Authorization: _ignoredAuth, ...restHeaders } = extraHeaders;
@@ -192,8 +204,6 @@ async function executeRequest<T>(
     (typeof crypto !== "undefined" && crypto.randomUUID
       ? crypto.randomUUID()
       : `req_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`);
-
-  const currentSession = getAuthSession();
   const correlationHeaders: Record<string, string> = {
     "x-request-id": requestId,
     "x-client-version": CLIENT_VERSION,
@@ -328,6 +338,30 @@ async function executeRequest<T>(
     if (!nextToken && currentSession?.refreshToken) {
       const refreshed = await refreshAuthSession();
       nextToken = refreshed?.accessToken ?? null;
+      if (!nextToken && getAuthSession()?.refreshToken) {
+        throw new ApiError(
+          0,
+          "Failed to refresh auth session due to network issue",
+          "NETWORK_ERROR",
+        );
+      }
+    }
+
+    if (!nextToken) {
+      const durationMs = Math.round(performance.now() - startTime);
+      telemetry.trackNetwork(method, path, res.status, durationMs, requestId);
+      const body = (await res.json().catch(() => ({}))) as Record<
+        string,
+        unknown
+      >;
+      const code = typeof body?.code === "string" ? body.code : undefined;
+      const message =
+        typeof body?.message === "string"
+          ? body.message
+          : typeof body?.error === "string"
+          ? body.error
+          : "Unauthorized";
+      throw new ApiError(res.status, message, code, requestId);
     }
 
     // Retry request with newly signed headers (synced server clock + fresh token if available)
