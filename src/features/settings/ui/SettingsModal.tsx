@@ -11,7 +11,7 @@ import {
   Book2,
   QuestionCircle,
   Database,
-  Pip,
+  Widget5,
 } from "@solar-icons/react";
 import Dialog from "@/shared/ui/Dialog";
 import { UserAvatar } from "@/shared/ui";
@@ -26,14 +26,14 @@ import {
   StorageTab,
   PrivacyTab,
   AboutTab,
-  MiniplayerTab,
+  OverlayTab,
 } from "./tabs";
 
-type TabId = "Playback" | "Miniplayer" | "Appearance" | "Customization" | "Audio" | "Storage" | "Privacy" | "About";
+type TabId = "Playback" | "Overlay" | "Appearance" | "Customization" | "Audio" | "Storage" | "Privacy" | "About";
 
 const TAB_ICONS: Record<TabId, typeof Play> = {
   Playback: Play,
-  Miniplayer: Pip,
+  Overlay: Widget5,
   Appearance: Palette,
   Customization: Gallery,
   Audio: HeadphonesRound,
@@ -43,7 +43,7 @@ const TAB_ICONS: Record<TabId, typeof Play> = {
 };
 
 const TAB_GROUPS: { labelKey: "preferences" | "application"; ids: TabId[] }[] = [
-  { labelKey: "preferences", ids: ["Playback", "Audio", "Miniplayer", "Appearance", "Customization"] },
+  { labelKey: "preferences", ids: ["Playback", "Overlay", "Audio", "Appearance", "Customization"] },
   { labelKey: "application", ids: ["Storage", "Privacy", "About"] },
 ];
 
@@ -55,10 +55,11 @@ const SETTING_ITEMS: { tabId: TabId; titleKey: string; descKey?: string }[] = [
   { tabId: "Playback", titleKey: "settings.default_playback_context.title", descKey: "settings.default_playback_context.description" },
   { tabId: "Playback", titleKey: "settings.audio.pause_on_device_change.title", descKey: "settings.audio.pause_on_device_change.description" },
 
-  { tabId: "Miniplayer", titleKey: "settings.miniplayer.auto_show_on_minimize.title", descKey: "settings.miniplayer.auto_show_on_minimize.description" },
-  { tabId: "Miniplayer", titleKey: "settings.miniplayer.show_timeline.title", descKey: "settings.miniplayer.show_timeline.description" },
-  { tabId: "Miniplayer", titleKey: "settings.miniplayer.close_on_restore.title", descKey: "settings.miniplayer.close_on_restore.description" },
-  { tabId: "Miniplayer", titleKey: "settings.miniplayer.always_on_top.title", descKey: "settings.miniplayer.always_on_top.description" },
+  // Overlay
+  { tabId: "Overlay", titleKey: "settings.overlay.position.title", descKey: "settings.overlay.position.description" },
+  { tabId: "Overlay", titleKey: "settings.overlay.show_lyrics.title", descKey: "settings.overlay.show_lyrics.description" },
+  { tabId: "Overlay", titleKey: "settings.overlay.auto_show_on_minimize.title", descKey: "settings.overlay.auto_show_on_minimize.description" },
+  { tabId: "Overlay", titleKey: "settings.overlay.always_on_top.title", descKey: "settings.overlay.always_on_top.description" },
 
   // Appearance
   { tabId: "Appearance", titleKey: "settings.language.label", descKey: "settings.language.description" },
@@ -104,7 +105,7 @@ export default function SettingsModal() {
 
   const tabLabels: Record<TabId, string> = {
     Playback: t("settings.tabs.playback"),
-    Miniplayer: t("settings.tabs.miniplayer") || "Mini Player",
+    Overlay: t("settings.tabs.overlay") || "Overlay",
     Appearance: t("settings.tabs.appearance"),
     Customization: t("settings.tabs.customization") || "Customization",
     Audio: t("settings.tabs.audio"),
@@ -115,7 +116,7 @@ export default function SettingsModal() {
 
   const tabDescriptions: Record<TabId, string> = {
     Playback: t("settings.playback.description"),
-    Miniplayer: t("settings.miniplayer.description") || "Floating overlay player behavior, timeline and appearance.",
+    Overlay: t("settings.overlay.description") || "Desktop overlay behavior, position and lyrics display.",
     Appearance: t("settings.theme.description"),
     Customization: t("settings.customization.description") || "Window background wallpaper, transparency and block blur effects.",
     Audio: t("settings.audio.description"),
@@ -131,7 +132,7 @@ export default function SettingsModal() {
 
     const TAB_LABEL_KEYS: Record<TabId, string> = {
       Playback: "settings.tabs.playback",
-      Miniplayer: "settings.tabs.miniplayer",
+      Overlay: "settings.tabs.overlay",
       Appearance: "settings.theme.title",
       Customization: "settings.tabs.customization",
       Audio: "settings.tabs.audio",
@@ -142,7 +143,7 @@ export default function SettingsModal() {
 
     const TAB_DESC_KEYS: Record<TabId, string> = {
       Playback: "settings.playback.description",
-      Miniplayer: "settings.miniplayer.description",
+      Overlay: "settings.overlay.description",
       Appearance: "settings.theme.description",
       Customization: "settings.customization.description",
       Audio: "settings.audio.description",
@@ -385,11 +386,11 @@ export default function SettingsModal() {
             key={activeTab}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.1, ease: "linear" }}
+            transition={{ duration: 0.15, ease: [0.22, 1, 0.36, 1] }}
             className="flex-1 flex flex-col"
           >
             {activeTab === "Playback" && <PlaybackTab searchQuery={searchQuery} />}
-            {activeTab === "Miniplayer" && <MiniplayerTab searchQuery={searchQuery} />}
+            {activeTab === "Overlay" && <OverlayTab searchQuery={searchQuery} />}
             {activeTab === "Appearance" && <AppearanceTab searchQuery={searchQuery} />}
             {activeTab === "Customization" && <CustomizationTab searchQuery={searchQuery} />}
             {activeTab === "Audio" && <AudioTab searchQuery={searchQuery} />}

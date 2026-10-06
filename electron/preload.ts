@@ -91,16 +91,19 @@ export interface LinerElectronApi {
   onUpdateError: (cb: (err: { message: string }) => void) => () => void;
   touchbarUpdateState: (state: any) => void;
   onTouchBarAction: (cb: (action: any) => void) => () => void;
-  toggleTouchBarSimulator: () => Promise<boolean>;
-  isTouchBarSimulatorOpen: () => Promise<boolean>;
-  onTouchBarSimulatorState: (cb: (state: any) => void) => () => void;
   sendTouchBarAction: (action: any) => void;
-  closeTouchBarSimulator: () => void;
   getTouchBarInitialState: () => Promise<any>;
   onTouchBarRequestSync: (cb: () => void) => () => void;
-  updateTouchBarSettings: (settings: any) => void;
-  onTouchBarSettingsChanged: (cb: (settings: any) => void) => () => void;
-  onTouchBarWindowShown?: (cb: () => void) => () => void;
+  overlayUpdateState: (state: any) => void;
+  onOverlayAction: (cb: (action: any) => void) => () => void;
+  sendOverlayAction: (action: any) => void;
+  toggleOverlay: () => Promise<boolean>;
+  isOverlayOpen: () => Promise<boolean>;
+  onOverlayState: (cb: (state: any) => void) => () => void;
+  getOverlayInitialState: () => Promise<any>;
+  updateOverlaySettings: (settings: any) => void;
+  onOverlaySettingsChanged: (cb: (settings: any) => void) => () => void;
+  onOverlayVisibility: (cb: (visible: boolean) => void) => () => void;
 }
 
 const isHyprland = Boolean(
@@ -202,20 +205,8 @@ const api: LinerElectronApi = {
       ipcRenderer.removeListener("touchbar:action", listener);
     };
   },
-  toggleTouchBarSimulator: () => ipcRenderer.invoke("touchbar:toggle-simulator"),
-  isTouchBarSimulatorOpen: () => ipcRenderer.invoke("touchbar:is-simulator-open"),
-  onTouchBarSimulatorState: (cb) => {
-    const listener = (_event: unknown, state: any) => cb(state);
-    ipcRenderer.on("touchbar:simulator-state", listener);
-    return () => {
-      ipcRenderer.removeListener("touchbar:simulator-state", listener);
-    };
-  },
   sendTouchBarAction: (action) => {
     ipcRenderer.send("touchbar:send-action", action);
-  },
-  closeTouchBarSimulator: () => {
-    ipcRenderer.send("touchbar:close-simulator");
   },
   getTouchBarInitialState: () => ipcRenderer.invoke("touchbar:get-initial-state"),
   onTouchBarRequestSync: (cb) => {
@@ -225,21 +216,44 @@ const api: LinerElectronApi = {
       ipcRenderer.removeListener("touchbar:request-sync", listener);
     };
   },
-  updateTouchBarSettings: (settings) => {
-    ipcRenderer.send("touchbar:update-settings", settings);
+  overlayUpdateState: (state) => {
+    ipcRenderer.send("overlay:update-state", state);
   },
-  onTouchBarSettingsChanged: (cb) => {
-    const listener = (_event: unknown, settings: any) => cb(settings);
-    ipcRenderer.on("touchbar:settings-changed", listener);
+  onOverlayAction: (cb) => {
+    const listener = (_event: unknown, action: any) => cb(action);
+    ipcRenderer.on("overlay:action", listener);
     return () => {
-      ipcRenderer.removeListener("touchbar:settings-changed", listener);
+      ipcRenderer.removeListener("overlay:action", listener);
     };
   },
-  onTouchBarWindowShown: (cb) => {
-    const listener = () => cb();
-    ipcRenderer.on("touchbar:window-shown", listener);
+  sendOverlayAction: (action) => {
+    ipcRenderer.send("overlay:send-action", action);
+  },
+  toggleOverlay: () => ipcRenderer.invoke("overlay:toggle"),
+  isOverlayOpen: () => ipcRenderer.invoke("overlay:is-open"),
+  onOverlayState: (cb) => {
+    const listener = (_event: unknown, state: any) => cb(state);
+    ipcRenderer.on("overlay:state", listener);
     return () => {
-      ipcRenderer.removeListener("touchbar:window-shown", listener);
+      ipcRenderer.removeListener("overlay:state", listener);
+    };
+  },
+  getOverlayInitialState: () => ipcRenderer.invoke("overlay:get-initial-state"),
+  updateOverlaySettings: (settings) => {
+    ipcRenderer.send("overlay:update-settings", settings);
+  },
+  onOverlaySettingsChanged: (cb) => {
+    const listener = (_event: unknown, settings: any) => cb(settings);
+    ipcRenderer.on("overlay:settings-changed", listener);
+    return () => {
+      ipcRenderer.removeListener("overlay:settings-changed", listener);
+    };
+  },
+  onOverlayVisibility: (cb) => {
+    const listener = (_event: unknown, visible: boolean) => cb(visible);
+    ipcRenderer.on("overlay:visibility", listener);
+    return () => {
+      ipcRenderer.removeListener("overlay:visibility", listener);
     };
   },
 };

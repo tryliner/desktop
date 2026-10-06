@@ -8,7 +8,8 @@ import { AuthLock } from "@/features/auth";
 import { CoverSwRegistrar } from "@/features/covers";
 import { usePresenceSync } from "@/shared/presence";
 import { useThemeCustomizationSync } from "@/features/settings";
-import { TouchBarSimulator, useTouchBarSync } from "@/features/touchbar";
+import { useTouchBarSync } from "@/features/touchbar";
+import { OverlayPlayer, useOverlaySync } from "@/features/overlay";
 import { AppRoutes } from "./routes";
 import DeeplinkHandler from "./DeeplinkHandler";
 import EnvironmentWarning from "./EnvironmentWarning";
@@ -35,12 +36,15 @@ function TouchBarSync() {
   return null;
 }
 
-export default function App() {
-  const isTouchBar =
-    window.location.hash.startsWith("#/touchbar") ||
-    window.location.hash.startsWith("#/miniplayer");
+function OverlaySync() {
+  useOverlaySync();
+  return null;
+}
 
-  if (isTouchBar) {
+export default function App() {
+  const isOverlay = window.location.hash.startsWith("#/overlay");
+
+  if (isOverlay) {
     return (
       <ThemeProvider
         attribute="data-theme"
@@ -48,7 +52,7 @@ export default function App() {
         enableSystem={false}
         forcedTheme="dark"
       >
-        <TouchBarSimulator />
+        <OverlayPlayer />
       </ThemeProvider>
     );
   }
@@ -68,6 +72,7 @@ export default function App() {
         <AppIconSync />
         <PresenceSync />
         <TouchBarSync />
+        <OverlaySync />
         <AppleEmojiProvider>
           <I18nProvider>
             <ToastProvider>

@@ -5,5 +5,4 @@ export { AudioTab } from "./AudioTab";
 export { StorageTab } from "./StorageTab";
 export { PrivacyTab } from "./PrivacyTab";
 export { AboutTab } from "./AboutTab";
-export { MiniplayerTab } from "./MiniplayerTab";
-
+export { OverlayTab } from "./OverlayTab";

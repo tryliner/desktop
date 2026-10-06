@@ -144,17 +144,23 @@ export function SegmentedControl<T extends string>({
   value,
   onChange,
   ariaLabel,
+  disabled = false,
 }: {
   options: readonly { value: T; label: string }[];
   value: T;
   onChange: (next: T) => void;
   ariaLabel?: string;
+  disabled?: boolean;
 }) {
   return (
     <div
       role={ariaLabel ? "group" : undefined}
       aria-label={ariaLabel}
-      className="inline-flex w-fit shrink-0 items-center gap-[1px] rounded-lg bg-border-alpha-14 p-[3px]"
+      className={`inline-flex w-fit shrink-0 items-center gap-[1px] rounded-lg p-[3px] transition-opacity ${
+        disabled
+          ? "bg-border-alpha-10 opacity-50 cursor-not-allowed pointer-events-none"
+          : "bg-border-alpha-14"
+      }`}
     >
       {options.map((opt) => {
         const isActive = opt.value === value;
@@ -162,12 +168,17 @@ export function SegmentedControl<T extends string>({
           <button
             key={opt.value}
             type="button"
-            onClick={() => onChange(opt.value)}
+            disabled={disabled}
+            onClick={() => !disabled && onChange(opt.value)}
             aria-pressed={isActive}
-            className={`inline-flex h-[26px] cursor-pointer items-center whitespace-nowrap rounded-md border-0 px-[11px] text-[12.5px] leading-none transition-colors ${
-              isActive
-                ? "bg-bg-primary text-text-primary"
-                : "bg-transparent text-text-secondary hover:text-text-primary"
+            className={`inline-flex h-[26px] items-center whitespace-nowrap rounded-md border-0 px-[11px] text-[12.5px] leading-none transition-colors ${
+              disabled
+                ? isActive
+                  ? "bg-bg-primary/50 text-text-tertiary cursor-not-allowed"
+                  : "bg-transparent text-text-tertiary/70 cursor-not-allowed"
+                : isActive
+                  ? "bg-bg-primary text-text-primary cursor-pointer"
+                  : "bg-transparent text-text-secondary hover:text-text-primary cursor-pointer"
             }`}
             style={{ ...font, fontWeight: isActive ? 500 : 400 }}
           >

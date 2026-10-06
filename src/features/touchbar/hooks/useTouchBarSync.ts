@@ -15,7 +15,6 @@ import type {
   TouchBarStatePayload,
   TouchBarWordData,
 } from "../contracts";
-import { useMiniPlayerSettingsStore } from "../store/miniPlayerSettingsStore";
 
 export function useTouchBarSync() {
   const navigate = useNavigate();
@@ -39,15 +38,6 @@ export function useTouchBarSync() {
       setSyncRequestTick((t) => t + 1);
     });
     return cleanup;
-  }, []);
-
-  useEffect(() => {
-    const s = useMiniPlayerSettingsStore.getState();
-    window.linerElectron?.updateTouchBarSettings?.({
-      autoShowOnMinimize: s.autoShowOnMinimize,
-      closeOnRestore: s.closeOnRestore,
-      alwaysOnTop: s.alwaysOnTop,
-    });
   }, []);
 
   useEffect(() => {
@@ -144,20 +134,6 @@ export function useTouchBarSync() {
 
     return cleanup;
   }, [currentTrack, isLiked, likeMutation, unlikeMutation, navigate, location.pathname]);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (
-        ((e.ctrlKey || e.metaKey) && e.altKey && e.code === "KeyT") ||
-        ((e.ctrlKey || e.metaKey) && e.shiftKey && e.code === "KeyM")
-      ) {
-        e.preventDefault();
-        window.linerElectron?.toggleTouchBarSimulator?.();
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
 
   useEffect(() => {
     let rafId: number;

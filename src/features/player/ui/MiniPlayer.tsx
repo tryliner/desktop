@@ -17,7 +17,6 @@ import {
   MaximizeSquare3,
   TrashBin2,
   Bookmark,
-  Pip,
   PlaybackSpeed,
 } from "@solar-icons/react";
 import { HeartFill, HeartLine } from "@mingcute/react";
@@ -856,18 +855,6 @@ function MiniPlayer({
                 }}
               >
                 <MaximizeSquare3 size={18} weight="Outline" />
-              </button>
-              <button
-                type="button"
-                aria-label="Mini player overlay"
-                title="Mini player overlay"
-                className={iconButtonClass}
-                onPointerDown={(e) => e.stopPropagation()}
-                onClick={() => {
-                  window.linerElectron?.toggleTouchBarSimulator?.();
-                }}
-              >
-                <Pip size={18} weight="Outline" />
               </button>
               <span
                 className="mx-[3px] h-[16px] w-px bg-border-toolbox-divider"

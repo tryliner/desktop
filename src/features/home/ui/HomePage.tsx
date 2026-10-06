@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import PopularTracksSection from "./PopularTracksSection";
 import DailyMixesSection from "./DailyMixesSection";
@@ -74,6 +74,16 @@ export default function HomePage() {
   const hasEnoughQuickData = quickRecentItems.length >= 5;
 
   const isReady = !isDataLoading;
+  const [skeletonExited, setSkeletonExited] = useState(() => !isDataLoading);
+
+  useEffect(() => {
+    if (isReady && !skeletonExited) {
+      const timer = setTimeout(() => {
+        setSkeletonExited(true);
+      }, 400);
+      return () => clearTimeout(timer);
+    }
+  }, [isReady, skeletonExited]);
 
   const quickCardClass = hasCustomBg
     ? "apple-glass-action"
@@ -95,12 +105,12 @@ export default function HomePage() {
         />
       )}
 
-      {!isReady ? (
-        <HomePageSkeleton glowClass={glowClass} showQuickGrid={hasEnoughQuickData} />
-      ) : (
-        <div className="relative z-1 w-full pb-[16px]">
-          {hasEnoughQuickData && (
-            <div className="flex flex-col">
+      <div className="relative z-1 grid grid-cols-1 items-start w-full">
+        {/* Real Content Layer */}
+        {isReady && (
+          <div className="col-start-1 row-start-1 w-full pb-[16px]">
+            {hasEnoughQuickData && (
+              <div className="flex flex-col">
               <div className="mt-[20px] px-8 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <div className="flex items-center shrink-0">
@@ -238,6 +248,19 @@ export default function HomePage() {
           )}
         </div>
       )}
+
+      {/* Direct Crossfade Skeleton Layer */}
+      {!skeletonExited && (
+        <div
+          className={`col-start-1 row-start-1 w-full z-10 transition-opacity duration-300 ease-out ${
+            isReady ? "opacity-0 pointer-events-none" : "opacity-100 pointer-events-auto"
+          }`}
+          onTransitionEnd={() => setSkeletonExited(true)}
+        >
+          <HomePageSkeleton glowClass={glowClass} showQuickGrid={hasEnoughQuickData} />
+        </div>
+      )}
+      </div>
     </div>
   );
 }

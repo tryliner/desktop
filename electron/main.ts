@@ -31,6 +31,7 @@ import {
   type MainNetResult,
 } from "./netdiag.js";
 import { TouchBarManager } from "./touchbar.js";
+import { OverlayManager } from "./overlay.js";
 
 // root error handling for main process
 process.on("uncaughtException", (error) => {
@@ -62,6 +63,7 @@ process.env.VITE_PUBLIC = process.env.VITE_DEV_SERVER_URL
 
 let mainWindow: BrowserWindow | null = null;
 let touchBarManager: TouchBarManager | null = null;
+let overlayManager: OverlayManager | null = null;
 
 // liner:// deeplink support (share links bounce here from link.tryliner.fun)
 
@@ -188,6 +190,7 @@ function createWindow() {
   });
 
   touchBarManager?.setMainWindow(mainWindow);
+  overlayManager?.setMainWindow(mainWindow);
 }
 
 // Single instance lock
@@ -226,6 +229,13 @@ if (!gotTheLock) {
       RENDERER_DIST,
     );
     touchBarManager.registerShortcut();
+
+    overlayManager = new OverlayManager(
+      path.join(__dirname, "preload.cjs"),
+      RENDERER_DIST,
+    );
+    overlayManager.setMainWindow(mainWindow);
+    overlayManager.registerShortcut();
 
     const isHyprland = Boolean(
       process.env.HYPRLAND_INSTANCE_SIGNATURE ||
@@ -911,4 +921,5 @@ app.on("window-all-closed", () => {
 
 app.on("will-quit", () => {
   touchBarManager?.unregisterShortcut();
+  overlayManager?.unregisterShortcut();
 });

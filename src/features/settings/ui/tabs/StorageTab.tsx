@@ -202,13 +202,14 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
 
     try {
       const targetIds = Array.from(selectedCategories);
-      setClearingProgress(45);
+      setClearingProgress(40);
       await clearStorageCategories(targetIds);
-      setClearingProgress(85);
+      setClearingProgress(80);
 
       // brief pause so user sees the telegram sweeping duck animation
-      await new Promise((resolve) => setTimeout(resolve, 300));
+      await new Promise((resolve) => setTimeout(resolve, 260));
       setClearingProgress(100);
+      await new Promise((resolve) => setTimeout(resolve, 140));
 
       const fresh = await refreshStorageAnalytics();
       setAnalytics(fresh);
@@ -278,14 +279,14 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
 
   return (
     <div className="flex-1 flex flex-col relative w-full h-full min-h-[460px]">
-      <AnimatePresence mode="wait" initial={false}>
+      <AnimatePresence mode="popLayout">
         {clearing ? (
           <motion.div
             key="clearing"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
+            initial={{ opacity: 0, filter: "blur(3px)" }}
+            animate={{ opacity: 1, filter: "blur(0px)" }}
+            exit={{ opacity: 0, filter: "blur(3px)" }}
+            transition={{ duration: 0.16, ease: "easeOut" }}
             className="flex-1 flex flex-col items-center justify-center my-auto py-6 text-center px-4 w-full h-full"
           >
             <TelegramCleaningDuck size={140} />
@@ -308,10 +309,10 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
         ) : clearedSuccess ? (
           <motion.div
             key="cleared"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
+            initial={{ opacity: 0, filter: "blur(3px)" }}
+            animate={{ opacity: 1, filter: "blur(0px)" }}
+            exit={{ opacity: 0, filter: "blur(3px)" }}
+            transition={{ duration: 0.16, ease: "easeOut" }}
             className="flex-1 flex flex-col items-center justify-center my-auto py-6 text-center px-4 w-full h-full"
           >
             <div className="w-[64px] h-[64px] rounded-full bg-[#10B981]/15 flex items-center justify-center text-[#10B981] mb-2">
@@ -336,11 +337,11 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
         ) : (
           <motion.div
             key="main"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className="flex-1 flex flex-col gap-[20px] pt-[8px]"
+            initial={{ opacity: 0, filter: "blur(3px)" }}
+            animate={{ opacity: 1, filter: "blur(0px)" }}
+            exit={{ opacity: 0, filter: "blur(3px)" }}
+            transition={{ duration: 0.16, ease: "easeOut" }}
+            className="flex-1 flex flex-col gap-[20px] pt-[8px] w-full"
           >
       <div className="bg-bg-panel border border-border-primary/60 dark:border-transparent dark:bg-white/[0.035] pl-[10px] pr-[16px] py-[10px] rounded-2xl">
         <div className="flex flex-col sm:flex-row items-center gap-4">
