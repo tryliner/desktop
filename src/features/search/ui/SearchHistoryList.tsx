@@ -3,7 +3,6 @@ import { Search3Line } from "@mingcute/react";
 import SongCardWithMenu from "@/features/player/ui/SongCardWithMenu";
 import { useTranslation } from "@/languages";
 import { useSearchHistoryStore } from "../store/searchHistoryStore";
-import { useIsContentTransparent } from "@/features/settings/store/customizationStore";
 
 export interface SearchHistoryListProps {
   onSelectQuery: (query: string) => void;
@@ -23,7 +22,6 @@ export const SearchHistoryList = memo(function SearchHistoryList({
   maskStyle,
 }: SearchHistoryListProps) {
   const { t } = useTranslation();
-  const hasCustomBg = useIsContentTransparent();
   const internalRef = useRef<HTMLDivElement>(null);
   const containerRef = scrollRef ?? internalRef;
 
@@ -42,22 +40,14 @@ export const SearchHistoryList = memo(function SearchHistoryList({
       style={maskStyle}
     >
       <div className="flex items-center justify-between px-[6px] pt-[4px] pb-[10px]">
-        <span
-          className={`text-[13px] font-medium tracking-tight ${
-            hasCustomBg ? "text-white/70" : "text-text-secondary"
-          }`}
-        >
+        <span className="text-[13px] font-medium text-text-secondary tracking-tight">
           {t("common.recent_searches")}
         </span>
         <button
           type="button"
           onPointerDown={(e) => e.stopPropagation()}
           onClick={clearHistory}
-          className={`text-[12px] transition-colors border-none bg-transparent cursor-pointer p-0 select-none ${
-            hasCustomBg
-              ? "text-white/50 hover:text-white"
-              : "text-text-tertiary hover:text-text-primary"
-          }`}
+          className="text-[12px] text-text-tertiary hover:text-text-primary transition-colors border-none bg-transparent cursor-pointer p-0 select-none"
         >
           {t("common.clear_recent")}
         </button>
@@ -70,27 +60,13 @@ export const SearchHistoryList = memo(function SearchHistoryList({
               <div
                 key={item.id}
                 onClick={() => onSelectQuery(item.title)}
-                className={`group relative flex items-center px-[12px] py-[9px] rounded-[8px] cursor-pointer transition-colors select-none ${
-                  hasCustomBg
-                    ? "hover:bg-white/10"
-                    : "hover:bg-border-alpha-14"
-                }`}
+                className="group relative flex items-center px-[12px] py-[9px] rounded-[8px] hover:bg-border-alpha-14 cursor-pointer transition-colors select-none"
               >
                 <div className="flex items-center gap-[12px] min-w-0">
-                  <span
-                    className={`shrink-0 transition-colors ${
-                      hasCustomBg
-                        ? "text-white/60 group-hover:text-white"
-                        : "text-text-tertiary group-hover:text-text-primary"
-                    }`}
-                  >
+                  <span className="shrink-0 text-text-tertiary group-hover:text-text-primary transition-colors">
                     <Search3Line size={17} />
                   </span>
-                  <span
-                    className={`truncate text-[14.5px] font-[400] ${
-                      hasCustomBg ? "text-white" : "text-text-primary"
-                    }`}
-                  >
+                  <span className="truncate text-[14.5px] font-[400] text-text-primary">
                     {item.title}
                   </span>
                 </div>

@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { useSearchHistoryStore } from "./searchHistoryStore";
 import { clearSearchAndQueryCache } from "@/shared/utils/cacheManager";
+import { debouncedStorage } from "@/shared/utils/storage";
 
 describe("searchHistoryStore", () => {
   beforeEach(() => {
@@ -132,6 +133,6 @@ describe("searchHistoryStore", () => {
     await clearSearchAndQueryCache();
 
     expect(useSearchHistoryStore.getState().items).toEqual([]);
-    expect(localStorage.getItem("liner_search_history")).toBeNull();
+    expect(debouncedStorage.getItem("liner_search_history")).toBeNull();
   });
 });

@@ -42,9 +42,6 @@ export function OverlayPlayer() {
   const [interpolatedPosMs, setInterpolatedPosMs] = useState(state.positionMs);
   const lastTrackIdRef = useRef<string | null>(null);
 
-  // Timeline scrubber state
-  const timelineRef = useRef<HTMLDivElement>(null);
-  const [scrubRatio, setScrubRatio] = useState<number | null>(null);
 
   useEffect(() => {
     window.linerElectron?.getOverlayInitialState?.().then((initial) => {
@@ -246,53 +243,6 @@ export function OverlayPlayer() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [currentPosMs, durationMs, sendAction, state.volume]);
 
-  // Handle pointer scrub on bottom timeline lane
-  const handleTimelinePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    const calcRatio = (clientX: number) => {
-      if (!timelineRef.current) return 0;
-      const rect = timelineRef.current.getBoundingClientRect();
-      if (rect.width <= 0) return 0;
-      return Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-    };
-
-    const initialRatio = calcRatio(e.clientX);
-    setScrubRatio(initialRatio);
-    const targetMs = Math.round(initialRatio * durationMs);
-    setInterpolatedPosMs(targetMs);
-    anchorPosRef.current = targetMs;
-    anchorTimeRef.current = performance.now();
-    sendAction({ type: "seek", payload: { positionMs: targetMs } });
-
-    const onPointerMove = (ev: PointerEvent) => {
-      const r = calcRatio(ev.clientX);
-      setScrubRatio(r);
-      const pos = Math.round(r * durationMs);
-      setInterpolatedPosMs(pos);
-      anchorPosRef.current = pos;
-      anchorTimeRef.current = performance.now();
-    };
-
-    const onPointerUp = (ev: PointerEvent) => {
-      const finalRatio = calcRatio(ev.clientX);
-      setScrubRatio(null);
-      const pos = Math.round(finalRatio * durationMs);
-      setInterpolatedPosMs(pos);
-      anchorPosRef.current = pos;
-      anchorTimeRef.current = performance.now();
-      sendAction({ type: "seek", payload: { positionMs: pos } });
-      window.removeEventListener("pointermove", onPointerMove);
-      window.removeEventListener("pointerup", onPointerUp);
-      window.removeEventListener("pointercancel", onPointerUp);
-    };
-
-    window.addEventListener("pointermove", onPointerMove);
-    window.addEventListener("pointerup", onPointerUp);
-    window.addEventListener("pointercancel", onPointerUp);
-  };
-
   return (
     <div
       className="flex h-screen w-screen select-none flex-col justify-start bg-transparent antialiased overflow-hidden font-sans p-1 m-0 border-0"
@@ -346,14 +296,6 @@ export function OverlayPlayer() {
             width: `${progressRatio * 100}%`,
             transition: "width 200ms cubic-bezier(0.22, 1, 0.36, 1)",
           }}
-        />
-
-        {/* Invisible Bottom Timeline Scrubber Lane */}
-        <div
-          ref={timelineRef}
-          className="absolute bottom-0 inset-x-0 h-[6px] cursor-ew-resize z-10 select-none bg-transparent"
-          style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
-          onPointerDown={handleTimelinePointerDown}
         />
 
         {/* Content Row */}
