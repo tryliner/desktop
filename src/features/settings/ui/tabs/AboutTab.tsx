@@ -21,7 +21,6 @@ import scanlinesLogo from "@/assets/branding/logo-scanlines.svg";
 import vhsLogo from "@/assets/branding/logo-vhs.svg";
 import { usePlayerStore, type AccentVariant } from "@/features/player";
 import { useUpdaterStore } from "@/features/updater";
-import { SettingRow, SettingSection } from "../controls";
 
 const brandingLogos: Record<Exclude<AccentVariant, "default">, string> = {
   spotify: spotifyLogo,
@@ -55,6 +54,7 @@ export function AboutTab({ searchQuery }: { searchQuery?: string }) {
   const [lastCheckedTime, setLastCheckedTime] = useState<string | null>(null);
 
   useEffect(() => {
+    // dynamically query electron runtime version & bundle status
     if (window.linerElectron) {
       window.linerElectron
         .getAppVersion?.()
@@ -104,6 +104,7 @@ export function AboutTab({ searchQuery }: { searchQuery?: string }) {
     }
   };
 
+  // search query filter matching
   const isMatch = useMemo(() => {
     if (!searchQuery?.trim()) return true;
     const q = searchQuery.toLowerCase().trim();
@@ -121,66 +122,87 @@ export function AboutTab({ searchQuery }: { searchQuery?: string }) {
   if (!isMatch) return null;
 
   return (
-    <div className="flex w-full flex-col gap-[20px] py-[4px]">
-      {/* ── Top Hero Card ── */}
-      <div className="relative overflow-hidden rounded-2xl bg-border-alpha-10 p-[18px] flex items-center justify-between gap-[16px] border border-border-primary/50">
-        <div className="flex items-center gap-[16px] min-w-0">
-          <div className="bg-bg-elevated flex h-[58px] w-[58px] shrink-0 items-center justify-center rounded-xl border border-border-primary/60 shadow-xs">
-            <img
-              src={
-                accentVariant === "default"
-                  ? logo
-                  : brandingLogos[accentVariant]
-              }
-              alt="Liner Logo"
-              width={38}
-              height={38}
-              className={
-                "h-[38px] w-[38px] " +
-                (accentVariant === "default" ||
-                accentVariant === "carbon" ||
-                accentVariant === "pixel" ||
-                accentVariant === "scanlines"
-                  ? "theme-logo invert dark:invert-0"
-                  : "")
-              }
-              draggable={false}
-            />
-          </div>
+    <div className="flex w-full flex-col items-center justify-center py-[24px]">
+      {/* ── Unified Centered About Card ── */}
+      <div className="relative w-full max-w-[440px] overflow-hidden rounded-2xl bg-border-alpha-14 p-[24px] flex flex-col items-center text-center border border-border-primary/40 shadow-sm">
+        {/* Logo */}
+        <div className="bg-bg-elevated flex h-[68px] w-[68px] shrink-0 items-center justify-center rounded-2xl border border-border-primary/50 shadow-inner mb-[14px]">
+          <img
+            src={
+              accentVariant === "default"
+                ? logo
+                : brandingLogos[accentVariant]
+            }
+            alt="Liner Logo"
+            width={44}
+            height={44}
+            className={
+              "h-[44px] w-[44px] " +
+              (accentVariant === "default" ||
+              accentVariant === "carbon" ||
+              accentVariant === "pixel" ||
+              accentVariant === "scanlines"
+                ? "theme-logo invert dark:invert-0"
+                : "")
+            }
+            draggable={false}
+          />
+        </div>
 
-          <div className="flex flex-col min-w-0 justify-center">
-            <div className="flex items-center gap-[8px]">
-              <h2
-                className="text-text-primary text-[18px] font-[650] tracking-[-0.015em] leading-none m-0"
-                style={font}
-              >
-                {t("settings.about.liner")}
-              </h2>
-              <div
-                className="inline-flex items-center gap-[5px] h-[20px] rounded-full bg-border-alpha-14 px-[8px] border border-border-primary/50 text-[11px] font-[500] text-text-secondary select-none"
-                style={font}
-              >
-                <span className="h-[5px] w-[5px] rounded-full bg-emerald-400" />
-                <span>v{bundleInfo?.bundleVersion || appVersion}</span>
-              </div>
-            </div>
-
-            <p
-              className="text-text-tertiary text-[12px] leading-snug mt-[6px] mb-0 max-w-[420px]"
-              style={font}
-            >
-              {t("settings.about.tagline")}
-            </p>
+        {/* Title & Version badge */}
+        <div className="flex items-center gap-[8px] mb-[6px]">
+          <h2
+            className="text-text-primary text-[20px] font-[600] tracking-[-0.01em] leading-none m-0"
+            style={font}
+          >
+            {t("settings.about.liner")}
+          </h2>
+          <div
+            className="inline-flex items-center gap-[5px] h-[22px] rounded-full bg-border-alpha-14 px-[9px] border border-border-primary/40 text-[11.5px] font-[500] text-text-secondary leading-none select-none"
+            style={font}
+          >
+            <span className="h-[5.5px] w-[5.5px] rounded-full bg-emerald-400" />
+            <span>v{bundleInfo?.bundleVersion || appVersion}</span>
           </div>
         </div>
 
-        {/* Action links */}
-        <div className="flex items-center gap-[6px] shrink-0">
+        {/* Core & bundle info subtitle */}
+        <span
+          className="text-text-tertiary text-[12px] mb-[18px] select-none"
+          style={font}
+        >
+          {bundleInfo?.isOta
+            ? `Client ${bundleInfo.bundleVersion}${bundleInfo.sha256 ? ` (${bundleInfo.sha256.slice(0, 7)})` : ""} · Core ${appVersion}`
+            : `Client ${appVersion} (native)`}
+          {lastCheckedTime ? ` · ${lastCheckedTime}` : ""}
+        </span>
+
+        {/* Update Checker Button */}
+        <div className="w-full flex items-center justify-center mb-[20px]">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleCheckUpdates}
+            disabled={checkingUpdate}
+            className="!h-[32px] !px-[16px] !text-[12.5px] !gap-[7px] !rounded-lg"
+          >
+            <Refresh1Line
+              size={14}
+              className={checkingUpdate ? "animate-spin text-text-primary" : "text-text-tertiary"}
+            />
+            {checkingUpdate
+              ? t("settings.about.checking_updates")
+              : t("settings.about.check_updates")}
+          </Button>
+        </div>
+
+        {/* Social & Support Links */}
+        <div className="flex flex-wrap items-center justify-center gap-[6px] w-full pt-[16px] border-t border-border-primary/30">
           <Button
             variant="secondary"
             size="sm"
             onClick={() => openUrl("https://t.me/liner_app")}
-            className="!h-[32px] !px-[12px] !text-[12px] gap-[6px]"
+            className="!h-[28px] !px-[10px] !text-[12px] gap-[6px]"
           >
             <FaTelegramPlane size={13} className="text-[#2AABEE]" />
             {t("settings.about.telegram")}
@@ -189,7 +211,7 @@ export function AboutTab({ searchQuery }: { searchQuery?: string }) {
             variant="secondary"
             size="sm"
             onClick={() => openUrl("https://t.me/liner_app?direct")}
-            className="!h-[32px] !px-[12px] !text-[12px] gap-[6px]"
+            className="!h-[28px] !px-[10px] !text-[12px] gap-[6px]"
           >
             <QuestionCircle size={14} weight="Bold" className="text-text-tertiary" />
             {t("settings.about.support")}
@@ -198,66 +220,23 @@ export function AboutTab({ searchQuery }: { searchQuery?: string }) {
             variant="secondary"
             size="sm"
             onClick={() => openUrl("https://github.com/tryliner/desktop")}
-            className="!h-[32px] !px-[12px] !text-[12px] gap-[6px]"
+            className="!h-[28px] !px-[10px] !text-[12px] gap-[6px]"
           >
             <FaGithub size={13} />
             {t("settings.about.github")}
           </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => openUrl("https://tryliner.fun")}
+            className="!h-[28px] !px-[10px] !text-[12px] gap-[6px]"
+          >
+            <FaGlobe size={12} className="text-text-tertiary" />
+            {t("settings.about.website")}
+          </Button>
         </div>
-      </div>
-
-      {/* ── Settings Standard Sections ── */}
-      <SettingSection label={t("settings.about.updates_title")}>
-        <SettingRow
-          title={t("settings.about.updates_title")}
-          description={
-            bundleInfo?.isOta
-              ? `OTA Web Bundle v${bundleInfo.bundleVersion}${bundleInfo.sha256 ? ` (${bundleInfo.sha256.slice(0, 7)})` : ""} · Host v${appVersion}${lastCheckedTime ? ` · Last checked ${lastCheckedTime}` : ""}`
-              : `Native Build v${appVersion}${lastCheckedTime ? ` · Last checked ${lastCheckedTime}` : ""}`
-          }
-          control={
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={handleCheckUpdates}
-              disabled={checkingUpdate}
-              className="!h-[32px] !px-[14px] !text-[12.5px] !gap-[7px]"
-            >
-              <Refresh1Line
-                size={14}
-                className={checkingUpdate ? "animate-spin text-text-primary" : "text-text-tertiary"}
-              />
-              {checkingUpdate
-                ? t("settings.about.checking_updates")
-                : t("settings.about.check_updates")}
-            </Button>
-          }
-          searchQuery={searchQuery}
-        />
-
-        <SettingRow
-          title="Website"
-          description="Official product home, web player and platform announcements."
-          control={
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => openUrl("https://tryliner.fun")}
-              className="!h-[30px] !px-[12px] !text-[12px] gap-[6px]"
-            >
-              <FaGlobe size={13} className="text-text-tertiary" />
-              tryliner.fun
-            </Button>
-          }
-          searchQuery={searchQuery}
-        />
-      </SettingSection>
-
-      <div className="pt-[6px] text-center">
-        <span className="text-text-tertiary text-[11.5px]" style={font}>
-          Distributed under Liner Source-Available License
-        </span>
       </div>
     </div>
   );
 }
+
