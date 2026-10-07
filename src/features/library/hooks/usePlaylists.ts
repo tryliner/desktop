@@ -1,5 +1,6 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { api, getAuthSession, mediaUrl, toClientTrack, type ApiUserPlaylistItem } from "@/shared/api";
+import { queryCache } from "@/shared/cache/queryCache";
 import type { Track } from "@/shared/types";
 
 export interface LibraryPlaylistSummary {
@@ -65,6 +66,7 @@ export function evictPlaylistFromCache(id: string) {
     playlists: cache.playlists.filter((p) => p.id !== id),
     total: Math.max(0, cache.total - 1),
   };
+  queryCache.delete(`playlist:detail:${id}`);
   emit();
 }
 
@@ -187,20 +189,31 @@ export function usePlaylistsList() {
 }
 
 export function usePlaylist(id: string | null) {
-  const [data, setData] = useState<LibraryPlaylistDetail | null>(null);
+  const cacheKey = id ? `playlist:detail:${id}` : null;
+  const cached = cacheKey ? queryCache.get<LibraryPlaylistDetail>(cacheKey) : undefined;
+  const [data, setData] = useState<LibraryPlaylistDetail | null>(cached ?? null);
   const [error, setError] = useState<unknown>();
-  const [isLoading, setIsLoading] = useState(Boolean(id));
+  const [isLoading, setIsLoading] = useState(!cached && Boolean(id));
 
   useEffect(() => {
-    if (!id) {
+    if (!id || !cacheKey) {
       setData(null);
       setIsLoading(false);
       return;
     }
+
+    const initial = queryCache.get<LibraryPlaylistDetail>(cacheKey);
+    if (initial) {
+      setData(initial);
+      setIsLoading(false);
+    } else {
+      setData(null);
+      setIsLoading(true);
+    }
     let active = true;
 
     const fetchDetail = async (isBackground = false) => {
-      if (!isBackground) setIsLoading(true);
+      if (!isBackground && !queryCache.get(cacheKey)) setIsLoading(true);
       try {
         const response = await api.getUserPlaylist(id);
         if (!active) return;
@@ -215,7 +228,7 @@ export function usePlaylist(id: string | null) {
         };
         writeCoverCache(coverCache);
 
-        setData({
+        const detail: LibraryPlaylistDetail = {
           id: response.playlist.id,
           title: response.playlist.title,
           description: response.playlist.description,
@@ -224,7 +237,9 @@ export function usePlaylist(id: string | null) {
           coverUrls: covers,
           revision: response.playlist.revision,
           tracks: response.items.map(toTrack),
-        });
+        };
+        queryCache.set(cacheKey, detail);
+        setData(detail);
       } catch (err) {
         if (active) setError(err);
       } finally {
@@ -232,14 +247,14 @@ export function usePlaylist(id: string | null) {
       }
     };
 
-    void fetchDetail(false);
+    void fetchDetail(Boolean(initial));
     const refresh = () => void fetchDetail(true);
     window.addEventListener("library:changed", refresh);
     return () => {
       active = false;
       window.removeEventListener("library:changed", refresh);
     };
-  }, [id]);
+  }, [id, cacheKey]);
 
   return { data, error, isLoading };
 }

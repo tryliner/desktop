@@ -31,19 +31,17 @@ function PlaylistPageSkeletonComponent({
 }: PlaylistPageSkeletonProps) {
   return (
     <div
-      className={`relative w-full bg-transparent pb-[32px] select-none ${className}`}
+      className={`relative h-full w-full overflow-hidden bg-transparent select-none ${className}`}
     >
-
-      <div className="absolute top-[12px] left-[32px] skeleton-shimmer h-[32px] w-[64px] rounded-md" />
-      <div className="flex items-start gap-[32px] px-[32px] pt-[56px] pb-[24px]">
-        <aside className="w-[280px] shrink-0">
+      <div className="relative z-10 flex flex-row items-stretch gap-[16px] pl-[32px] pr-[16px] h-full w-full min-h-0 box-border">
+        <aside className="shrink-0 w-[280px] self-start pt-[56px] pb-[24px]">
           <div className="relative aspect-square w-full overflow-hidden rounded-md bg-border-alpha-14">
             <div className="skeleton-shimmer h-full w-full" />
           </div>
 
           <div className="skeleton-shimmer h-[26px] w-[80%] rounded-[6px] mt-[16px]" />
-          <div className="skeleton-shimmer h-[16px] w-[60%] rounded-[4px] mt-[8px]" />
-          <div className="skeleton-shimmer h-[14px] w-[40%] rounded-[4px] mt-[8px]" />
+          <div className="skeleton-shimmer h-[16px] w-[60%] rounded-[4px] mt-[6px]" />
+          <div className="skeleton-shimmer h-[26px] w-[130px] rounded-md mt-[8px]" />
 
           <div className="skeleton-shimmer h-[36px] w-full rounded-md mt-[16px]" />
           <div className="mt-[8px] flex items-center gap-[8px]">
@@ -53,12 +51,12 @@ function PlaylistPageSkeletonComponent({
           </div>
         </aside>
 
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-col -mx-[8px] space-y-[2px]">
-            {Array.from({ length: 8 }).map((_, i) => (
+        <div className="min-w-0 flex-1 h-full min-h-0 overflow-hidden px-[8px] pt-[56px] pb-[24px]">
+          <div className="flex flex-col">
+            {Array.from({ length: 10 }).map((_, i) => (
               <div
                 key={i}
-                className="flex items-center justify-between rounded-lg p-[8px] h-[64px]"
+                className="flex items-center justify-between rounded-md p-[8px] h-[64px]"
               >
                 <div className="flex items-center gap-[16px] min-w-0 flex-1">
                   <div className="skeleton-shimmer h-[48px] w-[48px] shrink-0 rounded-md" />

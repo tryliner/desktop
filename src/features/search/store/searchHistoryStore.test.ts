@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { useSearchHistoryStore } from "./searchHistoryStore";
+import { clearSearchAndQueryCache } from "@/shared/utils/cacheManager";
 
 describe("searchHistoryStore", () => {
   beforeEach(() => {
@@ -118,5 +119,19 @@ describe("searchHistoryStore", () => {
     const items = useSearchHistoryStore.getState().items;
     expect(items.length).toBe(30);
     expect(items[0].id).toBe("track-34");
+  });
+
+  it("clears search history from both in-memory store and storage when cache is wiped", async () => {
+    useSearchHistoryStore.getState().addItem({
+      id: "track-1",
+      type: "track",
+      title: "Track One",
+    });
+    expect(useSearchHistoryStore.getState().items.length).toBe(1);
+
+    await clearSearchAndQueryCache();
+
+    expect(useSearchHistoryStore.getState().items).toEqual([]);
+    expect(localStorage.getItem("liner_search_history")).toBeNull();
   });
 });

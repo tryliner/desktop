@@ -9,6 +9,8 @@ export {
   getCoverElement,
   useCoverReady,
   useCoverSrc,
+  useCoverElement,
+  clearCoverRegistry,
 } from "./lib/coverArt";
 export {
   prepareCoverFallback,

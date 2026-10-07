@@ -69,12 +69,15 @@ export default function AppImage({
     [autoCropLetterbox],
   );
 
+  const loadedSrcRef = useRef<string | null>(null);
+
   // Sync state if src prop changes
   useEffect(() => {
     setCurrentSrc(resolvedSrc);
     setIsLoaded(false);
     setHasError(false);
     setIsLetterboxed(false);
+    loadedSrcRef.current = null;
   }, [resolvedSrc]);
 
   // If already complete (e.g. from browser / service worker cache)
@@ -82,13 +85,23 @@ export default function AppImage({
     if (imgRef.current?.complete && imgRef.current.naturalWidth > 0) {
       checkLetterbox(imgRef.current);
       setIsLoaded(true);
+      if (loadedSrcRef.current !== currentSrc) {
+        loadedSrcRef.current = currentSrc;
+        onLoad?.({
+          currentTarget: imgRef.current,
+          target: imgRef.current,
+        } as unknown as SyntheticEvent<HTMLImageElement, Event>);
+      }
     }
-  }, [currentSrc, checkLetterbox]);
+  }, [currentSrc, checkLetterbox, onLoad]);
 
   const handleLoad = (e: SyntheticEvent<HTMLImageElement, Event>) => {
     checkLetterbox(e.currentTarget);
     setIsLoaded(true);
-    onLoad?.(e);
+    if (loadedSrcRef.current !== currentSrc) {
+      loadedSrcRef.current = currentSrc;
+      onLoad?.(e);
+    }
   };
 
   const handleError = (e: SyntheticEvent<HTMLImageElement, Event>) => {
@@ -150,7 +163,7 @@ export default function AppImage({
         alt={alt}
         crossOrigin={crossOrigin}
         loading={priority ? "eager" : "lazy"}
-        decoding="async"
+        decoding={priority ? "auto" : "async"}
         draggable={draggable}
         onLoad={handleLoad}
         onError={handleError}

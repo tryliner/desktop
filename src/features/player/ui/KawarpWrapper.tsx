@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { KawarpEngine } from "../engine/kawarpEngine";
-import { getCoverElement } from "@/features/covers";
+import { getCoverElement, useCoverElement } from "@/features/covers";
 
 interface KawarpWrapperProps {
   src?: string;
@@ -13,6 +13,7 @@ export function KawarpWrapper({ src, onLoad, onError }: KawarpWrapperProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const engineRef = useRef<KawarpEngine | null>(null);
   const [loaded, setLoaded] = useState(false);
+  const coverElement = useCoverElement(src);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -77,9 +78,10 @@ export function KawarpWrapper({ src, onLoad, onError }: KawarpWrapperProps) {
     if (!engine || !src) return;
 
     let isCancelled = false;
+    const element = coverElement || getCoverElement(src);
 
     engine
-      .loadImage(src, getCoverElement(src))
+      .loadImage(src, element)
       .then(() => {
         if (isCancelled) return;
         setLoaded(true);
@@ -93,7 +95,7 @@ export function KawarpWrapper({ src, onLoad, onError }: KawarpWrapperProps) {
     return () => {
       isCancelled = true;
     };
-  }, [src, onLoad, onError]);
+  }, [src, coverElement, onLoad, onError]);
 
   return (
     <div
