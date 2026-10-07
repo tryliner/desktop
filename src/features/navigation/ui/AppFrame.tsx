@@ -52,7 +52,7 @@ import {
   CreatePlaylistModal,
   useModalStore,
 } from "@/features/library";
-import { SettingsModal, useCustomizationStore, getBlockStyle, useIsContentTransparent } from "@/features/settings";
+import { SettingsModal, useCustomizationStore, getBlockStyle } from "@/features/settings";
 import { UpdateModal, UpdateToastBridge } from "@/features/updater";
 
 
@@ -673,17 +673,11 @@ export default function AppFrame({ children }: AppFrameProps) {
   const contentViewConfig = useCustomizationStore((s) => s.contentView);
 
   const hasCustomBg = Boolean(backgroundImage && isDark);
-  const isTransparentBg = useIsContentTransparent();
 
   const mainStyle = useMemo(
     () => getBlockStyle(contentViewConfig, isDark, hasCustomBg),
     [contentViewConfig, isDark, hasCustomBg],
   );
-
-  const drawerVarsStyle = useMemo(() => {
-    const { background, backdropFilter, WebkitBackdropFilter, ...vars } = mainStyle;
-    return vars;
-  }, [mainStyle]);
 
   return (
     <div
@@ -761,11 +755,7 @@ export default function AppFrame({ children }: AppFrameProps) {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-                className={`absolute inset-0 pointer-events-auto z-[30] ${
-                  isTransparentBg
-                    ? "bg-black/20 backdrop-blur-[3px]"
-                    : "bg-black/12 backdrop-blur-[2px]"
-                }`}
+                className="absolute inset-0 bg-black/12 backdrop-blur-[2px] pointer-events-auto z-[30]"
                 onClick={() => closeSearch()}
               />
             )}
@@ -848,18 +838,13 @@ export default function AppFrame({ children }: AppFrameProps) {
               left: SIDEBAR_WIDTH + SHELL_EDGE_GAP,
               right: SHELL_EDGE_GAP,
               top: 12,
-              ...(isTransparentBg ? drawerVarsStyle : {}),
             }}
           >
             {/* 1. Search Input Island */}
             <div
-              className={`w-[min(660px,calc(100vw-72px))] h-[54px] rounded-[8px] pointer-events-auto flex items-center px-[18px] gap-[14px] ${
-                isTransparentBg
-                  ? "apple-glass-pill !border-none shadow-2xl"
-                  : "bg-bg-panel/95 border border-border-primary/50 backdrop-blur-2xl"
-              }`}
+              className="w-[min(660px,calc(100vw-72px))] h-[54px] rounded-[8px] pointer-events-auto flex items-center px-[18px] gap-[14px] bg-bg-panel/95 border border-border-primary/50 backdrop-blur-2xl"
             >
-              <span className={`shrink-0 flex items-center justify-center ${isTransparentBg ? "text-white/60" : "text-text-tertiary"}`}>
+              <span className="shrink-0 flex items-center justify-center text-text-tertiary">
                 <AnimatePresence mode="wait" initial={false}>
                   {searchLoading ? (
                     <motion.span
@@ -868,9 +853,7 @@ export default function AppFrame({ children }: AppFrameProps) {
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, scale: 0.8 }}
                       transition={{ duration: 0.1 }}
-                      className={`inline-block h-[17px] w-[17px] rounded-full border-[1.5px] border-t-transparent animate-spin ${
-                        isTransparentBg ? "border-white/80" : "border-text-secondary"
-                      }`}
+                      className="inline-block h-[17px] w-[17px] rounded-full border-[1.5px] border-text-secondary border-t-transparent animate-spin"
                       aria-hidden="true"
                     />
                   ) : (
@@ -880,7 +863,7 @@ export default function AppFrame({ children }: AppFrameProps) {
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, scale: 0.8 }}
                       transition={{ duration: 0.1 }}
-                      className={`inline-flex ${isTransparentBg ? "text-white/60" : "text-text-tertiary"}`}
+                      className="inline-flex text-text-tertiary"
                     >
                       <Search3Line size={19} />
                     </motion.span>
@@ -902,11 +885,7 @@ export default function AppFrame({ children }: AppFrameProps) {
                     runSearchNow();
                   }
                 }}
-                className={`w-full flex-1 bg-transparent border-none outline-none text-[16px] font-[400] tracking-tight ${
-                  isTransparentBg
-                    ? "text-white placeholder:text-white/50"
-                    : "text-text-primary placeholder:text-text-tertiary"
-                }`}
+                className="w-full flex-1 bg-transparent border-none outline-none text-text-primary text-[16px] placeholder:text-text-tertiary font-[400] tracking-tight"
                 style={{
                   fontFamily: "var(--font-inter), sans-serif",
                   lineHeight: "1.2",
@@ -928,11 +907,7 @@ export default function AppFrame({ children }: AppFrameProps) {
                       setSearchQuery("");
                       searchInputRef.current?.focus();
                     }}
-                    className={`shrink-0 transition-colors border-none bg-transparent p-0 flex items-center justify-center cursor-pointer ${
-                      isTransparentBg
-                        ? "text-white/60 hover:text-white"
-                        : "text-text-tertiary hover:text-text-primary"
-                    }`}
+                    className="shrink-0 text-text-tertiary hover:text-text-primary transition-colors border-none bg-transparent p-0 flex items-center justify-center cursor-pointer"
                   >
                     <CloseCircleFill size={18} />
                   </motion.button>
@@ -948,11 +923,7 @@ export default function AppFrame({ children }: AppFrameProps) {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -6, scale: 0.99 }}
                   transition={{ duration: 0.1, ease: [0.16, 1, 0.3, 1] }}
-                  className={`w-[min(660px,calc(100vw-72px))] mt-[8px] max-h-[500px] h-[500px] rounded-[8px] pointer-events-auto flex flex-col overflow-hidden ${
-                    isTransparentBg
-                      ? "apple-glass-static !border-none shadow-2xl"
-                      : "bg-bg-panel/95 border border-border-primary/50 backdrop-blur-2xl"
-                  }`}
+                  className="w-[min(660px,calc(100vw-72px))] mt-[8px] max-h-[500px] h-[500px] rounded-[8px] pointer-events-auto flex flex-col overflow-hidden bg-bg-panel/95 border border-border-primary/50 backdrop-blur-2xl"
                 >
                   <div className="flex gap-[6px] px-[14px] pt-[12px] pb-[6px] shrink-0 overflow-x-auto">
                     {filterKeys.map((key) => {
@@ -970,15 +941,11 @@ export default function AppFrame({ children }: AppFrameProps) {
                           type="button"
                           onClick={() => setActiveFilter(key)}
                           className={`
-                            relative flex items-center gap-[7px] px-[13px] py-[7px] rounded-[6px] text-[13.5px] transition-colors border-none bg-transparent cursor-pointer select-none shrink-0
+                            relative flex items-center gap-[7px] px-[13px] py-[7px] rounded-[6px] text-[13.5px] font-normal transition-colors border-none bg-transparent cursor-pointer select-none shrink-0
                             ${
                               isActive
-                                ? isTransparentBg
-                                  ? "text-black font-semibold"
-                                  : "text-text-primary font-medium"
-                                : isTransparentBg
-                                  ? "text-white/70 hover:text-white hover:bg-white/10 font-normal"
-                                  : "text-text-secondary hover:text-text-primary hover:bg-border-alpha-14 font-normal"
+                                ? "text-text-primary font-medium"
+                                : "text-text-secondary hover:text-text-primary hover:bg-border-alpha-14"
                             }
                           `}
                           style={{
@@ -989,11 +956,7 @@ export default function AppFrame({ children }: AppFrameProps) {
                           {isActive && (
                             <motion.div
                               layoutId="activeFilterPill"
-                              className={`absolute inset-0 rounded-[6px] pointer-events-none z-0 ${
-                                isTransparentBg
-                                  ? "apple-glass-prominent"
-                                  : "bg-border-alpha-14"
-                              }`}
+                              className="absolute inset-0 rounded-[6px] bg-border-alpha-14 pointer-events-none z-0"
                               transition={{
                                 type: "spring",
                                 stiffness: 450,
@@ -1022,9 +985,7 @@ export default function AppFrame({ children }: AppFrameProps) {
                           className="flex h-full flex-col items-center justify-center gap-[6px] px-[20px] text-center"
                         >
                           <p
-                            className={`m-0 text-[14px] font-medium ${
-                              isTransparentBg ? "text-white" : "text-text-primary"
-                            }`}
+                            className="m-0 text-[14px] text-text-primary font-medium"
                             style={{
                               fontFamily: "var(--font-inter), sans-serif",
                             }}
@@ -1032,9 +993,7 @@ export default function AppFrame({ children }: AppFrameProps) {
                             {t("common.no_results")}
                           </p>
                           <p
-                            className={`m-0 text-[12px] ${
-                              isTransparentBg ? "text-white/60" : "text-text-tertiary"
-                            }`}
+                            className="m-0 text-[12px] text-text-tertiary"
                             style={{
                               fontFamily: "var(--font-inter), sans-serif",
                             }}
@@ -1077,11 +1036,7 @@ export default function AppFrame({ children }: AppFrameProps) {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -6, scale: 0.99 }}
                   transition={{ duration: 0.1, ease: [0.16, 1, 0.3, 1] }}
-                  className={`w-[min(660px,calc(100vw-72px))] mt-[8px] max-h-[480px] h-auto rounded-[8px] pointer-events-auto flex flex-col overflow-hidden ${
-                    isTransparentBg
-                      ? "apple-glass-static !border-none shadow-2xl"
-                      : "bg-bg-panel/95 border border-border-primary/50 backdrop-blur-2xl"
-                  }`}
+                  className="w-[min(660px,calc(100vw-72px))] mt-[8px] max-h-[480px] h-auto rounded-[8px] pointer-events-auto flex flex-col overflow-hidden bg-bg-panel/95 border border-border-primary/50 backdrop-blur-2xl"
                 >
                   <SearchHistoryList
                     onSelectQuery={handleSelectHistoryQuery}
