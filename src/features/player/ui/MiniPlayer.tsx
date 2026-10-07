@@ -515,7 +515,7 @@ function MiniPlayer({
       className="relative h-[64px] w-full select-none"
     >
       <AnimatePresence>
-        {volumeOpen ? (
+        {volumeOpen && (
           <motion.div
             key="volume-popup"
             ref={volumePopupRef}
@@ -540,9 +540,11 @@ function MiniPlayer({
               valueClassName="text-text-tertiary text-[11px]"
             />
           </motion.div>
-        ) : null}
+        )}
+      </AnimatePresence>
 
-        {speedOpen ? (
+      <AnimatePresence>
+        {speedOpen && (
           <motion.div
             key="speed-popup"
             ref={speedPopupRef}
@@ -556,7 +558,7 @@ function MiniPlayer({
           >
             <SpeedPitchPicker onClose={() => setSpeedOpen(false)} />
           </motion.div>
-        ) : null}
+        )}
       </AnimatePresence>
 
       <div
