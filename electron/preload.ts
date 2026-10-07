@@ -89,6 +89,15 @@ export interface LinerElectronApi {
   onUpdateDownloadProgress: (cb: (progress: UpdateDownloadProgress) => void) => () => void;
   onUpdateDownloaded: (cb: (info: { version: string }) => void) => () => void;
   onUpdateError: (cb: (err: { message: string }) => void) => () => void;
+  // OTA Frontend Bundle Updater
+  bundleCheck: () => Promise<{ available: boolean; manifest?: any; reason?: string }>;
+  bundleDownloadAndInstall: (manifest: any) => Promise<{ success: boolean; error?: string }>;
+  bundleHotSwap: () => Promise<boolean>;
+  bundleRollback: () => Promise<boolean>;
+  bundleGetStatus: () => Promise<{ activeVersion: string; effectivePath: string }>;
+  onBundleAvailable: (cb: (manifest: any) => void) => () => void;
+  onBundleDownloadProgress: (cb: (progress: { percent: number; transferred: number; total: number }) => void) => () => void;
+  onBundleReady: (cb: (state: any) => void) => () => void;
   touchbarUpdateState: (state: any) => void;
   onTouchBarAction: (cb: (action: any) => void) => () => void;
   sendTouchBarAction: (action: any) => void;
@@ -186,6 +195,33 @@ const api: LinerElectronApi = {
     ipcRenderer.on("updater:error", listener);
     return () => {
       ipcRenderer.removeListener("updater:error", listener);
+    };
+  },
+  // OTA Frontend Bundle Updater
+  bundleCheck: () => ipcRenderer.invoke("bundle:check"),
+  bundleDownloadAndInstall: (manifest) => ipcRenderer.invoke("bundle:download-and-install", manifest),
+  bundleHotSwap: () => ipcRenderer.invoke("bundle:hot-swap"),
+  bundleRollback: () => ipcRenderer.invoke("bundle:rollback"),
+  bundleGetStatus: () => ipcRenderer.invoke("bundle:get-status"),
+  onBundleAvailable: (cb) => {
+    const listener = (_event: unknown, manifest: any) => cb(manifest);
+    ipcRenderer.on("bundle:available", listener);
+    return () => {
+      ipcRenderer.removeListener("bundle:available", listener);
+    };
+  },
+  onBundleDownloadProgress: (cb) => {
+    const listener = (_event: unknown, progress: any) => cb(progress);
+    ipcRenderer.on("bundle:download-progress", listener);
+    return () => {
+      ipcRenderer.removeListener("bundle:download-progress", listener);
+    };
+  },
+  onBundleReady: (cb) => {
+    const listener = (_event: unknown, state: any) => cb(state);
+    ipcRenderer.on("bundle:ready", listener);
+    return () => {
+      ipcRenderer.removeListener("bundle:ready", listener);
     };
   },
   onDeeplink: (cb) => {

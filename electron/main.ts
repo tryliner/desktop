@@ -32,6 +32,7 @@ import {
 } from "./netdiag.js";
 import { TouchBarManager } from "./touchbar.js";
 import { OverlayManager } from "./overlay.js";
+import { BundleManager } from "./bundle-manager.js";
 
 // root error handling for main process
 process.on("uncaughtException", (error) => {
@@ -64,6 +65,7 @@ process.env.VITE_PUBLIC = process.env.VITE_DEV_SERVER_URL
 let mainWindow: BrowserWindow | null = null;
 let touchBarManager: TouchBarManager | null = null;
 let overlayManager: OverlayManager | null = null;
+let bundleManager: BundleManager | null = null;
 
 // liner:// deeplink support (share links bounce here from link.tryliner.fun)
 
@@ -181,7 +183,11 @@ function createWindow() {
   if (process.env.VITE_DEV_SERVER_URL) {
     mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL);
   } else {
-    mainWindow.loadFile(path.join(RENDERER_DIST, "index.html"));
+    bundleManager = new BundleManager({
+      defaultRendererDist: RENDERER_DIST,
+    });
+    bundleManager.setMainWindow(mainWindow);
+    mainWindow.loadFile(bundleManager.getEffectiveIndexPath());
   }
 
   // renderer ready, deliver any cold-start deeplink waiting in the queue
@@ -896,13 +902,53 @@ if (!gotTheLock) {
       return true;
     });
 
+    // OTA bundle updater IPC handlers
+    ipcMain.handle("bundle:check", async () => {
+      if (!bundleManager) {
+        return { available: false, error: "Bundle updater inactive (dev mode)" };
+      }
+      return await bundleManager.checkForUpdates();
+    });
+
+    ipcMain.handle("bundle:download-and-install", async (_event, manifest) => {
+      if (!bundleManager) {
+        return { success: false, error: "Bundle updater inactive (dev mode)" };
+      }
+      return await bundleManager.downloadAndInstall(manifest);
+    });
+
+    ipcMain.handle("bundle:hot-swap", () => {
+      if (!bundleManager) return false;
+      return bundleManager.hotSwap();
+    });
+
+    ipcMain.handle("bundle:rollback", () => {
+      if (!bundleManager) return false;
+      return bundleManager.rollback();
+    });
+
+    ipcMain.handle("bundle:get-status", () => {
+      return {
+        activeVersion: bundleManager ? bundleManager.getActiveVersion() : app.getVersion(),
+        effectivePath: bundleManager ? bundleManager.getEffectiveIndexPath() : RENDERER_DIST,
+      };
+    });
+
     // automatic update check after window initialization (packaged app only)
     if (app.isPackaged) {
       setTimeout(() => {
         autoUpdater.checkForUpdates().catch((err) => {
           console.error("\x1b[31m updater \x1b[0m background check error:", err?.message || err);
         });
+        bundleManager?.checkForUpdates().catch((err) => {
+          console.error("\x1b[31m bundle updater \x1b[0m check error:", err?.message || err);
+        });
       }, 4000);
+
+      // check for OTA bundles every 15 minutes silently in background
+      setInterval(() => {
+        bundleManager?.checkForUpdates().catch(() => {});
+      }, 15 * 60 * 1000);
     }
 
     app.on("activate", () => {

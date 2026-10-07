@@ -13,6 +13,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "bundle:publish": "pnpm --dir ../updater bundle:publish",
     "signer:build": "node ../signer/scripts/build-wasm.mjs",
     "preview": "vite preview",
     "test": "vitest run",
@@ -118,6 +119,7 @@
     "react-router-dom": "^7.18.2",
     "solar-icons": "^0.0.15",
     "soundtouchjs": "^0.3.0",
+    "tar": "^7.5.22",
     "zustand": "^5.0.12"
   },
   "devDependencies": {
@@ -125,6 +127,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/tar": "^7.0.87",
     "@vitejs/plugin-react": "^6.0.5",
     "electron": "^44.0.0",
     "electron-builder": "^26.15.3",
