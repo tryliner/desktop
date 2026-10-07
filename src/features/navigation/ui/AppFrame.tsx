@@ -40,7 +40,6 @@ import {
 } from "@/features/player";
 import SearchResultsList from "@/features/search/ui/SearchResultsList";
 import { SearchHistoryList, useSearchHistoryStore } from "@/features/search";
-import IslandWallpaper from "@/features/search/ui/IslandWallpaper";
 import { useTranslation } from "@/languages";
 import { useTheme } from "next-themes";
 import {
@@ -134,9 +133,6 @@ export default function AppFrame({ children }: AppFrameProps) {
   const appFrameRef = useRef<HTMLDivElement>(null);
   const queueDrawerRef = useRef<HTMLDivElement>(null);
   const searchPopupRef = useRef<HTMLDivElement>(null);
-  const searchInputIslandRef = useRef<HTMLDivElement>(null);
-  const searchResultsIslandRef = useRef<HTMLDivElement>(null);
-  const searchHistoryIslandRef = useRef<HTMLDivElement>(null);
   const mainScrollRef = useRef<HTMLDivElement>(null);
   const prevLocationRef = useRef(pathname + search);
 
@@ -750,6 +746,10 @@ export default function AppFrame({ children }: AppFrameProps) {
               searchOpen || isFullscreenPlayer
                 ? "overflow-hidden"
                 : "overflow-y-auto"
+            } ${
+              searchOpen && isTransparentBg
+                ? "opacity-0 pointer-events-none transition-opacity duration-200"
+                : "opacity-100 transition-opacity duration-200"
             }`}
           >
 
@@ -857,23 +857,12 @@ export default function AppFrame({ children }: AppFrameProps) {
           >
             {/* 1. Search Input Island */}
             <div
-              ref={searchInputIslandRef}
-              className={`w-[min(660px,calc(100vw-72px))] h-[54px] rounded-[8px] pointer-events-auto flex items-center px-[18px] gap-[14px] relative overflow-hidden ${
+              className={`w-[min(660px,calc(100vw-72px))] h-[54px] rounded-[10px] pointer-events-auto flex items-center px-[18px] gap-[14px] relative overflow-hidden ${
                 isTransparentBg
-                  ? "border border-white/10 shadow-[0_8px_30px_rgba(0,0,0,0.5),0_1px_3px_rgba(0,0,0,0.3)]"
+                  ? "search-glass-island"
                   : "bg-bg-panel/95 border border-border-primary/50 backdrop-blur-2xl"
               }`}
             >
-              {isTransparentBg && (
-                <IslandWallpaper
-                  appFrameRef={appFrameRef}
-                  islandRef={searchInputIslandRef}
-                  backgroundImage={backgroundImage}
-                  backgroundBlur={backgroundBlur}
-                  backgroundDim={backgroundDim}
-                  drawerStyle={mainStyle}
-                />
-              )}
               <span className={`shrink-0 flex items-center justify-center relative z-10 ${isTransparentBg ? "text-white/60" : "text-text-tertiary"}`}>
                 <AnimatePresence mode="wait" initial={false}>
                   {searchLoading ? (
@@ -958,28 +947,17 @@ export default function AppFrame({ children }: AppFrameProps) {
             <AnimatePresence mode="wait">
               {hasSearchQuery ? (
                 <motion.div
-                  ref={searchResultsIslandRef}
                   key="search-results-island"
                   initial={{ opacity: 0, y: -6, scale: 0.99 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -6, scale: 0.99 }}
                   transition={{ duration: 0.1, ease: [0.16, 1, 0.3, 1] }}
-                  className={`w-[min(660px,calc(100vw-72px))] mt-[8px] max-h-[500px] h-[500px] rounded-[8px] pointer-events-auto flex flex-col relative overflow-hidden ${
+                  className={`w-[min(660px,calc(100vw-72px))] mt-[8px] max-h-[500px] h-[500px] rounded-[10px] pointer-events-auto flex flex-col relative overflow-hidden ${
                     isTransparentBg
-                      ? "border border-white/10 shadow-[0_14px_40px_rgba(0,0,0,0.55),0_2px_4px_rgba(0,0,0,0.3)]"
+                      ? "search-glass-island"
                       : "bg-bg-panel/95 border border-border-primary/50 backdrop-blur-2xl"
                   }`}
                 >
-                  {isTransparentBg && (
-                    <IslandWallpaper
-                      appFrameRef={appFrameRef}
-                      islandRef={searchResultsIslandRef}
-                      backgroundImage={backgroundImage}
-                      backgroundBlur={backgroundBlur}
-                      backgroundDim={backgroundDim}
-                      drawerStyle={mainStyle}
-                    />
-                  )}
                   <div className="flex gap-[6px] px-[14px] pt-[12px] pb-[6px] shrink-0 overflow-x-auto relative z-10">
                     {filterKeys.map((key) => {
                       const label = filterLabels[key];
@@ -1098,28 +1076,17 @@ export default function AppFrame({ children }: AppFrameProps) {
                 </motion.div>
               ) : historyItems.length > 0 ? (
                 <motion.div
-                  ref={searchHistoryIslandRef}
                   key="search-history-island"
                   initial={{ opacity: 0, y: -6, scale: 0.99 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -6, scale: 0.99 }}
                   transition={{ duration: 0.1, ease: [0.16, 1, 0.3, 1] }}
-                  className={`w-[min(660px,calc(100vw-72px))] mt-[8px] max-h-[480px] h-auto rounded-[8px] pointer-events-auto flex flex-col relative overflow-hidden ${
+                  className={`w-[min(660px,calc(100vw-72px))] mt-[8px] max-h-[480px] h-auto rounded-[10px] pointer-events-auto flex flex-col relative overflow-hidden ${
                     isTransparentBg
-                      ? "border border-white/10 shadow-[0_14px_40px_rgba(0,0,0,0.55),0_2px_4px_rgba(0,0,0,0.3)]"
+                      ? "search-glass-island"
                       : "bg-bg-panel/95 border border-border-primary/50 backdrop-blur-2xl"
                   }`}
                 >
-                  {isTransparentBg && (
-                    <IslandWallpaper
-                      appFrameRef={appFrameRef}
-                      islandRef={searchHistoryIslandRef}
-                      backgroundImage={backgroundImage}
-                      backgroundBlur={backgroundBlur}
-                      backgroundDim={backgroundDim}
-                      drawerStyle={mainStyle}
-                    />
-                  )}
                   <div className="relative z-10 w-full flex flex-col">
                     <SearchHistoryList
                       onSelectQuery={handleSelectHistoryQuery}

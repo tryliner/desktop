@@ -265,6 +265,16 @@ img {
   transition: background 150ms ease, color 150ms ease, border-color 150ms ease !important;
 }
 
+.search-glass-island {
+  background: var(--glass-pill-bg, linear-gradient(135deg, rgba(0, 0, 0, 0.50) 0%, rgba(0, 0, 0, 0.40) 100%)) !important;
+  backdrop-filter: blur(var(--glass-blur, 24px)) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(var(--glass-blur, 24px)) saturate(160%) !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.12) !important;
+  border: none !important;
+  color: #ffffff !important;
+  transition: background 150ms ease, color 150ms ease !important;
+}
+
 button.apple-glass-pill:hover,
 button.apple-glass-action:hover,
 .apple-glass-action:hover,
