@@ -149,9 +149,9 @@ export function AboutTab({ searchQuery }: { searchQuery?: string }) {
         </div>
 
         <div className="flex flex-1 flex-col min-w-0 justify-center">
-          <div className="flex flex-wrap items-center gap-[6px]">
+          <div className="flex items-center gap-[8px]">
             <h2
-              className="text-text-primary text-[17px] font-[600] tracking-[-0.01em] leading-none m-0 mr-[2px]"
+              className="text-text-primary text-[17px] font-[600] tracking-[-0.01em] leading-none m-0"
               style={font}
             >
               {t("settings.about.liner")}
@@ -159,21 +159,10 @@ export function AboutTab({ searchQuery }: { searchQuery?: string }) {
             <div
               className="inline-flex items-center gap-[5px] h-[20px] rounded-full bg-border-alpha-14 px-[8px] border border-border-primary/40 text-[11px] font-[500] text-text-secondary leading-none select-none"
               style={font}
-              title="Electron App Native Version"
             >
               <span className="h-[5px] w-[5px] rounded-full bg-emerald-400" />
-              <span>App v{appVersion}</span>
+              <span>v{bundleInfo?.bundleVersion || appVersion}</span>
             </div>
-            {bundleInfo && (
-              <div
-                className="inline-flex items-center gap-[5px] h-[20px] rounded-full bg-border-alpha-14 px-[8px] border border-border-primary/40 text-[11px] font-[500] text-text-secondary leading-none select-none"
-                style={font}
-                title={bundleInfo.sha256 ? `SHA-256: ${bundleInfo.sha256}` : "Built-in frontend bundle"}
-              >
-                <span className={`h-[5px] w-[5px] rounded-full ${bundleInfo.isOta ? "bg-cyan-400" : "bg-zinc-400"}`} />
-                <span>Bundle {bundleInfo.bundleVersion}{bundleInfo.sha256 ? ` (${bundleInfo.sha256.slice(0, 7)})` : ""}</span>
-              </div>
-            )}
           </div>
 
           <div className="mt-[10px] flex flex-wrap items-center gap-[6px]">
@@ -237,8 +226,8 @@ export function AboutTab({ searchQuery }: { searchQuery?: string }) {
             style={font}
           >
             {bundleInfo?.isOta
-              ? `OTA Bundle · App ${appVersion} · Bundle ${bundleInfo.bundleVersion}`
-              : `${t("settings.about.build_info")} · v${appVersion}`}
+              ? `Client ${bundleInfo.bundleVersion}${bundleInfo.sha256 ? ` (${bundleInfo.sha256.slice(0, 7)})` : ""} · Core ${appVersion}`
+              : `Client ${appVersion} (native)`}
             {lastCheckedTime ? ` · ${lastCheckedTime}` : ""}
           </span>
         </div>

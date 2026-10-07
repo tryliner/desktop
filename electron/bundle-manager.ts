@@ -178,13 +178,12 @@ export class BundleManager {
         return { available: false, reason: "Already up to date" };
       }
 
-      console.log(`\x1b[32m[BundleManager]\x1b[0m New OTA bundle available: ${manifest.bundleVersion} (sha: ${manifest.sha256.slice(0, 8)})`);
-      this.mainWindow?.webContents.send("bundle:available", manifest);
+      console.log(`\x1b[32m[BundleManager]\x1b[0m New OTA bundle found: ${manifest.bundleVersion} (sha: ${manifest.sha256.slice(0, 8)}). Downloading silently in background...`);
 
-      // Auto download & install in background seamlessly
+      // Auto download & install in background completely silently (no UI alerts)
       this.downloadAndInstall(manifest).then((res) => {
         if (res.success) {
-          console.log(`\x1b[32m[BundleManager]\x1b[0m Bundle ${manifest.bundleVersion} (${manifest.sha256.slice(0, 8)}) installed ready for next launch or hot reload.`);
+          console.log(`\x1b[32m[BundleManager]\x1b[0m Bundle ${manifest.bundleVersion} installed silently. Will activate on next launch.`);
         }
       });
 
@@ -228,13 +227,6 @@ export class BundleManager {
         const chunkBuf = Buffer.from(value);
         chunks.push(chunkBuf);
         transferred += chunkBuf.length;
-
-        const percent = total > 0 ? Math.round((transferred / total) * 100) : 0;
-        this.mainWindow?.webContents.send("bundle:download-progress", {
-          percent,
-          transferred,
-          total,
-        });
       }
 
       const archiveBuffer = Buffer.concat(chunks);
