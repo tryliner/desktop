@@ -35,6 +35,7 @@ import {
   useCustomizationStore,
   getBlockStyle,
 } from "@/features/settings/store/customizationStore";
+import IslandWallpaper from "./IslandWallpaper";
 
 export interface SearchModalProps {
   isOpen: boolean;
@@ -70,14 +71,21 @@ export function SearchModal({
         (document.documentElement.getAttribute("data-theme") === "dark" ||
           (!document.documentElement.getAttribute("data-theme") &&
             window.matchMedia?.("(prefers-color-scheme: dark)")?.matches));
+  const backgroundImage = useCustomizationStore((s) => s.backgroundImage);
+  const backgroundBlur = useCustomizationStore((s) => s.backgroundBlur);
+  const backgroundDim = useCustomizationStore((s) => s.backgroundDim);
   const contentViewConfig = useCustomizationStore((s) => s.contentView);
+
+  const drawerStyle = useMemo(
+    () => (isTransparentBg ? getBlockStyle(contentViewConfig, isDark, true) : {}),
+    [contentViewConfig, isDark, isTransparentBg],
+  );
 
   const drawerVarsStyle = useMemo(() => {
     if (!isTransparentBg) return {};
-    const blockStyle = getBlockStyle(contentViewConfig, isDark, true);
-    const { background, backdropFilter, WebkitBackdropFilter, ...vars } = blockStyle;
+    const { background, backdropFilter, WebkitBackdropFilter, ...vars } = drawerStyle;
     return vars;
-  }, [contentViewConfig, isDark, isTransparentBg]);
+  }, [drawerStyle, isTransparentBg]);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<SearchFilterKey>("all");
@@ -89,6 +97,9 @@ export function SearchModal({
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchScrollRef = useRef<HTMLDivElement>(null);
+  const modalInputIslandRef = useRef<HTMLDivElement>(null);
+  const modalResultsIslandRef = useRef<HTMLDivElement>(null);
+  const modalHistoryIslandRef = useRef<HTMLDivElement>(null);
   const internalContainerRef = useRef<HTMLDivElement>(null);
   const modalRootRef = containerRef ?? internalContainerRef;
 
@@ -439,13 +450,23 @@ export function SearchModal({
         >
           {/* 1. Sleek Floating Search Bar Island */}
           <div
-            className={`w-[min(660px,calc(100vw-90px))] h-[54px] rounded-[8px] px-[18px] flex items-center gap-[14px] ${
+            ref={modalInputIslandRef}
+            className={`w-[min(660px,calc(100vw-90px))] h-[54px] rounded-[8px] px-[18px] flex items-center gap-[14px] relative overflow-hidden ${
               isTransparentBg
-                ? "apple-glass-pill !border-none shadow-2xl"
+                ? "border border-white/10 shadow-[0_8px_30px_rgba(0,0,0,0.5),0_1px_3px_rgba(0,0,0,0.3)]"
                 : "bg-bg-panel/98 backdrop-blur-2xl"
             }`}
           >
-        <span className={`shrink-0 flex items-center justify-center ${isTransparentBg ? "text-white/60" : "text-text-tertiary"}`}>
+            {isTransparentBg && (
+              <IslandWallpaper
+                islandRef={modalInputIslandRef}
+                backgroundImage={backgroundImage}
+                backgroundBlur={backgroundBlur}
+                backgroundDim={backgroundDim}
+                drawerStyle={drawerStyle}
+              />
+            )}
+        <span className={`shrink-0 flex items-center justify-center relative z-10 ${isTransparentBg ? "text-white/60" : "text-text-tertiary"}`}>
           <AnimatePresence mode="wait" initial={false}>
             {searchLoading ? (
               <motion.span
@@ -486,7 +507,7 @@ export function SearchModal({
               runSearchNow();
             }
           }}
-          className={`w-full flex-1 bg-transparent border-none outline-none text-[16px] font-[400] tracking-tight ${
+          className={`w-full flex-1 bg-transparent border-none outline-none text-[16px] font-[400] tracking-tight relative z-10 ${
             isTransparentBg
               ? "text-white placeholder:text-white/50"
               : "text-text-primary placeholder:text-text-tertiary"
@@ -511,7 +532,7 @@ export function SearchModal({
                 searchInputRef.current?.focus();
               }}
               aria-label="Clear search"
-              className={`shrink-0 transition-colors border-none bg-transparent p-0 flex items-center justify-center cursor-pointer ${
+              className={`shrink-0 transition-colors border-none bg-transparent p-0 flex items-center justify-center cursor-pointer relative z-10 ${
                 isTransparentBg
                   ? "text-white/60 hover:text-white"
                   : "text-text-tertiary hover:text-text-primary"
@@ -526,6 +547,7 @@ export function SearchModal({
       <AnimatePresence mode="wait">
         {hasSearchQuery ? (
           <motion.div
+            ref={modalResultsIslandRef}
             key="search-modal-results-island"
             initial={{ opacity: 0, y: -6, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -534,13 +556,22 @@ export function SearchModal({
               duration: 0.1,
               ease: [0.16, 1, 0.3, 1],
             }}
-            className={`w-[min(660px,calc(100vw-90px))] mt-[8px] max-h-[500px] h-[500px] rounded-[8px] flex flex-col overflow-hidden ${
+            className={`w-[min(660px,calc(100vw-90px))] mt-[8px] max-h-[500px] h-[500px] rounded-[8px] flex flex-col relative overflow-hidden ${
               isTransparentBg
-                ? "apple-glass-static !border-none shadow-2xl"
+                ? "border border-white/10 shadow-[0_14px_40px_rgba(0,0,0,0.55),0_2px_4px_rgba(0,0,0,0.3)]"
                 : "bg-bg-panel/98 backdrop-blur-2xl"
             }`}
           >
-            <div className="flex items-center gap-[6px] px-[14px] pt-[12px] pb-[6px] shrink-0 overflow-x-auto">
+            {isTransparentBg && (
+              <IslandWallpaper
+                islandRef={modalResultsIslandRef}
+                backgroundImage={backgroundImage}
+                backgroundBlur={backgroundBlur}
+                backgroundDim={backgroundDim}
+                drawerStyle={drawerStyle}
+              />
+            )}
+            <div className="flex items-center gap-[6px] px-[14px] pt-[12px] pb-[6px] shrink-0 overflow-x-auto relative z-10">
               {filterKeys.map((key) => {
                 const label = filterLabels[key];
                 const isActive = activeFilter === key;
@@ -595,7 +626,7 @@ export function SearchModal({
               })}
             </div>
 
-            <div className="relative flex-1 min-h-0 overflow-hidden">
+            <div className="relative flex-1 min-h-0 overflow-hidden z-10">
               <AnimatePresence mode="wait">
                 {isSearchEmpty ? (
                   <motion.div
@@ -651,6 +682,7 @@ export function SearchModal({
           </motion.div>
         ) : historyItems.length > 0 ? (
           <motion.div
+            ref={modalHistoryIslandRef}
             key="search-modal-history-island"
             initial={{ opacity: 0, y: -6, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -659,23 +691,34 @@ export function SearchModal({
               duration: 0.1,
               ease: [0.16, 1, 0.3, 1],
             }}
-            className={`w-[min(660px,calc(100vw-90px))] mt-[8px] max-h-[480px] h-auto rounded-[8px] flex flex-col overflow-hidden ${
+            className={`w-[min(660px,calc(100vw-90px))] mt-[8px] max-h-[480px] h-auto rounded-[8px] flex flex-col relative overflow-hidden ${
               isTransparentBg
-                ? "apple-glass-static !border-none shadow-2xl"
+                ? "border border-white/10 shadow-[0_14px_40px_rgba(0,0,0,0.55),0_2px_4px_rgba(0,0,0,0.3)]"
                 : "bg-bg-panel/98 backdrop-blur-2xl"
             }`}
           >
-            <SearchHistoryList
-              onSelectQuery={handleSelectHistoryQuery}
-              onPlayTrack={onPlayTrack}
-              onNavigateItem={handleItemClick}
-              onScroll={updateSearchMask}
-              scrollRef={searchScrollRef}
-              maskStyle={{
-                WebkitMaskImage: searchScrollMask,
-                maskImage: searchScrollMask,
-              }}
-            />
+            {isTransparentBg && (
+              <IslandWallpaper
+                islandRef={modalHistoryIslandRef}
+                backgroundImage={backgroundImage}
+                backgroundBlur={backgroundBlur}
+                backgroundDim={backgroundDim}
+                drawerStyle={drawerStyle}
+              />
+            )}
+            <div className="relative z-10 w-full flex flex-col">
+              <SearchHistoryList
+                onSelectQuery={handleSelectHistoryQuery}
+                onPlayTrack={onPlayTrack}
+                onNavigateItem={handleItemClick}
+                onScroll={updateSearchMask}
+                scrollRef={searchScrollRef}
+                maskStyle={{
+                  WebkitMaskImage: searchScrollMask,
+                  maskImage: searchScrollMask,
+                }}
+              />
+            </div>
           </motion.div>
         ) : null}
       </AnimatePresence>
