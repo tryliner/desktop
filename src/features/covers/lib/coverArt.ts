@@ -100,10 +100,13 @@ export function markCoverReady(url: string | undefined, effectiveUrl?: string, e
   const resolved = effectiveUrl ?? url;
   const entry = entries.get(url);
   if (entry) {
+    const prevElement = entry.element;
+    const prevStatus = entry.status;
+    const prevEffective = entry.effectiveUrl;
     entry.effectiveUrl = resolved;
     if (element) entry.element = element;
-    if (entry.status !== "loaded") {
-      entry.status = "loaded";
+    entry.status = "loaded";
+    if (prevStatus !== "loaded" || prevEffective !== resolved || (!prevElement && element)) {
       notify(url);
     }
     return;

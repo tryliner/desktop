@@ -372,7 +372,41 @@ export class KawarpEngine {
     const gl = this.gl;
     gl.bindTexture(gl.TEXTURE_2D, this.sourceTexture);
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, bitmap);
+
+    try {
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, bitmap);
+    } catch {
+      // If WebGL rejected a DOM element, fallback to clean CORS fetch/blob
+      let cleanBitmap: ImageBitmap | null = null;
+      try {
+        const res = await fetch(src, { mode: 'cors' });
+        if (res.ok) {
+          const blob = await res.blob();
+          cleanBitmap = await createImageBitmap(blob);
+        }
+      } catch {}
+
+      if (!cleanBitmap) {
+        try {
+          const fallback = await prepareCoverFallback(src);
+          if (fallback) {
+            const res = await fetch(fallback, { mode: 'cors' });
+            if (res.ok) {
+              const blob = await res.blob();
+              cleanBitmap = await createImageBitmap(blob);
+            }
+          }
+        } catch {}
+      }
+
+      if (cleanBitmap) {
+        if (loadId === this.loadSequenceId) {
+          gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, cleanBitmap);
+        }
+        cleanBitmap.close();
+      }
+    }
+
     if ('close' in bitmap && typeof (bitmap as ImageBitmap).close === 'function') {
       (bitmap as ImageBitmap).close();
     }

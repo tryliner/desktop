@@ -8,7 +8,12 @@ type CoverImageProps = Omit<ImageProps, "src" | "onError"> & {
 };
 
 // cover art renderer with automatic proxy fallback on direct cdn failure and self-healing retries
-export default function CoverImage({ src, onLoad, ...rest }: CoverImageProps) {
+export default function CoverImage({
+  src,
+  onLoad,
+  crossOrigin = "anonymous",
+  ...rest
+}: CoverImageProps) {
   const centralSrc = useCoverSrc(src);
   const [localFallback, setLocalFallback] = useState<string | undefined>(undefined);
   const [retryCount, setRetryCount] = useState(0);
@@ -55,6 +60,7 @@ export default function CoverImage({ src, onLoad, ...rest }: CoverImageProps) {
       {...rest}
       key={`${effectiveSrc}-${retryCount}`}
       src={effectiveSrc}
+      crossOrigin={crossOrigin}
       onLoad={(event) => {
         markCoverReady(src, effectiveSrc, event.currentTarget);
         onLoad?.(event);
