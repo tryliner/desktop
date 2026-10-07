@@ -141,7 +141,26 @@ export class OverlayManager {
           this.closeOverlay();
         }
       });
+
+      this.mainWindow.on("closed", () => {
+        this.destroy();
+      });
     }
+  }
+
+  public destroy() {
+    this.stopMoveAnimation();
+    if (this.closeTimeout) {
+      clearTimeout(this.closeTimeout);
+      this.closeTimeout = null;
+    }
+    if (this.overlayWindow && !this.overlayWindow.isDestroyed()) {
+      try {
+        this.overlayWindow.destroy();
+      } catch {}
+    }
+    this.overlayWindow = null;
+    this.mainWindow = null;
   }
 
   public registerShortcut(newShortcut?: string) {
