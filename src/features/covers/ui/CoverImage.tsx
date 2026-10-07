@@ -17,16 +17,18 @@ export default function CoverImage({
   const centralSrc = useCoverSrc(src);
   const [localFallback, setLocalFallback] = useState<string | undefined>(undefined);
   const [retryCount, setRetryCount] = useState(0);
+  const [corsMode, setCorsMode] = useState<ImageProps["crossOrigin"]>(crossOrigin || undefined);
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     setLocalFallback(undefined);
     setRetryCount(0);
+    setCorsMode(crossOrigin || undefined);
     if (retryTimerRef.current) {
       clearTimeout(retryTimerRef.current);
       retryTimerRef.current = null;
     }
-  }, [src]);
+  }, [src, crossOrigin]);
 
   useEffect(() => {
     return () => {
@@ -39,6 +41,13 @@ export default function CoverImage({
   const effectiveSrc = localFallback || centralSrc || src;
 
   const handleError = () => {
+    // If CORS mode failed (e.g. file:// origin in Electron or CDN lacks CORS headers),
+    // immediately fallback to standard no-cors mode so artwork is never blank
+    if (corsMode === "anonymous") {
+      setCorsMode(undefined);
+      return;
+    }
+
     void prepareCoverFallback(src).then((resolved) => {
       if (resolved && resolved !== src) {
         setLocalFallback(resolved);
@@ -58,9 +67,9 @@ export default function CoverImage({
   return (
     <AppImage
       {...rest}
-      key={`${effectiveSrc}-${retryCount}`}
+      key={`${effectiveSrc}-${corsMode ?? "nocors"}-${retryCount}`}
       src={effectiveSrc}
-      crossOrigin={crossOrigin}
+      crossOrigin={corsMode}
       onLoad={(event) => {
         markCoverReady(src, effectiveSrc, event.currentTarget);
         onLoad?.(event);

@@ -370,12 +370,12 @@ export function OverlayPlayer() {
                   key={state.track.coverUrl || state.track.cover}
                   src={state.track.coverUrl || state.track.cover || ""}
                   alt={state.track?.title || "Artwork"}
-                  width={32}
-                  height={32}
+                  fill
+                  sizes="32px"
                   priority
                   unoptimized
                   draggable={false}
-                  className="h-full w-full object-cover pointer-events-none select-none"
+                  className="rounded-[6px] object-cover pointer-events-none select-none"
                 />
               ) : (
                 <div className="flex h-full w-full items-center justify-center text-[11px] text-white/30 select-none">
