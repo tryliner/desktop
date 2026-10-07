@@ -195,6 +195,14 @@ function createWindow() {
     flushPendingDeeplink();
   });
 
+  mainWindow.on("closed", () => {
+    mainWindow = null;
+    overlayManager?.destroy();
+    if (process.platform !== "darwin") {
+      app.quit();
+    }
+  });
+
   touchBarManager?.setMainWindow(mainWindow);
   overlayManager?.setMainWindow(mainWindow);
 }
@@ -207,13 +215,13 @@ if (!gotTheLock) {
   app.on("second-instance", (_event, argv) => {
     // running instance gets here when xdg-open / os launches liner:// again
     const raw = findDeeplinkArg(argv);
-    if (mainWindow) {
+    if (!mainWindow || mainWindow.isDestroyed()) {
+      createWindow();
+    } else {
       if (mainWindow.isMinimized()) mainWindow.restore();
       mainWindow.focus();
-      if (raw) deliverDeeplink(parseDeeplink(raw));
-    } else if (raw) {
-      pendingDeeplink = parseDeeplink(raw);
     }
+    if (raw) deliverDeeplink(parseDeeplink(raw));
   });
 
   // macos cold-start / running deeplink delivery
@@ -1020,4 +1028,5 @@ app.on("window-all-closed", () => {
 app.on("will-quit", () => {
   touchBarManager?.unregisterShortcut();
   overlayManager?.unregisterShortcut();
+  overlayManager?.destroy();
 });
