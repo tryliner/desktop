@@ -976,8 +976,12 @@ if (!gotTheLock) {
     });
 
     ipcMain.handle("bundle:get-status", () => {
+      const activeState = bundleManager?.getActiveState?.() || null;
       return {
-        activeVersion: bundleManager ? bundleManager.getActiveVersion() : app.getVersion(),
+        appVersion: app.getVersion(),
+        bundleVersion: activeState?.bundleVersion || app.getVersion(),
+        isOta: Boolean(activeState),
+        sha256: activeState?.sha256 || null,
         effectivePath: bundleManager ? bundleManager.getEffectiveIndexPath() : RENDERER_DIST,
       };
     });

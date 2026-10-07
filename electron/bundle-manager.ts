@@ -121,6 +121,10 @@ export class BundleManager {
     return this.activeState ? this.activeState.bundleVersion : app.getVersion();
   }
 
+  public getActiveState(): ActiveBundleState | null {
+    return this.activeState;
+  }
+
   /**
    * Compares appVersion >= minAppVersion using semver comparison
    */

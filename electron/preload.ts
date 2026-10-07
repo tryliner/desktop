@@ -94,7 +94,13 @@ export interface LinerElectronApi {
   bundleDownloadAndInstall: (manifest: any) => Promise<{ success: boolean; error?: string }>;
   bundleHotSwap: () => Promise<boolean>;
   bundleRollback: () => Promise<boolean>;
-  bundleGetStatus: () => Promise<{ activeVersion: string; effectivePath: string }>;
+  bundleGetStatus: () => Promise<{
+    appVersion: string;
+    bundleVersion: string;
+    isOta: boolean;
+    sha256: string | null;
+    effectivePath: string;
+  }>;
   onBundleAvailable: (cb: (manifest: any) => void) => () => void;
   onBundleDownloadProgress: (cb: (progress: { percent: number; transferred: number; total: number }) => void) => () => void;
   onBundleReady: (cb: (state: any) => void) => () => void;

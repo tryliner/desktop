@@ -45,17 +45,37 @@ export function AboutTab({ searchQuery }: { searchQuery?: string }) {
   const accentVariant = usePlayerStore((state) => state.accentVariant);
 
   const [appVersion, setAppVersion] = useState(APP_VERSION);
+  const [bundleInfo, setBundleInfo] = useState<{
+    bundleVersion: string;
+    isOta: boolean;
+    sha256: string | null;
+  } | null>(null);
   const [checkingUpdate, setCheckingUpdate] = useState(false);
   const [lastCheckedTime, setLastCheckedTime] = useState<string | null>(null);
 
   useEffect(() => {
-    // dynamically query electron runtime version if running in desktop shell
-    window.linerElectron
-      ?.getAppVersion?.()
-      .then((ver) => {
-        if (ver) setAppVersion(ver);
-      })
-      .catch(() => {});
+    // dynamically query electron runtime version & bundle status
+    if (window.linerElectron) {
+      window.linerElectron
+        .getAppVersion?.()
+        .then((ver) => {
+          if (ver) setAppVersion(ver);
+        })
+        .catch(() => {});
+
+      window.linerElectron
+        .bundleGetStatus?.()
+        .then((status) => {
+          if (status) {
+            setBundleInfo({
+              bundleVersion: status.bundleVersion,
+              isOta: status.isOta,
+              sha256: status.sha256,
+            });
+          }
+        })
+        .catch(() => {});
+    }
   }, []);
 
   const openUrl = (url: string) => {
@@ -129,9 +149,9 @@ export function AboutTab({ searchQuery }: { searchQuery?: string }) {
         </div>
 
         <div className="flex flex-1 flex-col min-w-0 justify-center">
-          <div className="flex items-center gap-[8px]">
+          <div className="flex flex-wrap items-center gap-[6px]">
             <h2
-              className="text-text-primary text-[17px] font-[600] tracking-[-0.01em] leading-none m-0"
+              className="text-text-primary text-[17px] font-[600] tracking-[-0.01em] leading-none m-0 mr-[2px]"
               style={font}
             >
               {t("settings.about.liner")}
@@ -139,10 +159,21 @@ export function AboutTab({ searchQuery }: { searchQuery?: string }) {
             <div
               className="inline-flex items-center gap-[5px] h-[20px] rounded-full bg-border-alpha-14 px-[8px] border border-border-primary/40 text-[11px] font-[500] text-text-secondary leading-none select-none"
               style={font}
+              title="Electron App Native Version"
             >
               <span className="h-[5px] w-[5px] rounded-full bg-emerald-400" />
-              <span>v{appVersion}</span>
+              <span>App v{appVersion}</span>
             </div>
+            {bundleInfo && (
+              <div
+                className="inline-flex items-center gap-[5px] h-[20px] rounded-full bg-border-alpha-14 px-[8px] border border-border-primary/40 text-[11px] font-[500] text-text-secondary leading-none select-none"
+                style={font}
+                title={bundleInfo.sha256 ? `SHA-256: ${bundleInfo.sha256}` : "Built-in frontend bundle"}
+              >
+                <span className={`h-[5px] w-[5px] rounded-full ${bundleInfo.isOta ? "bg-cyan-400" : "bg-zinc-400"}`} />
+                <span>Bundle {bundleInfo.bundleVersion}{bundleInfo.sha256 ? ` (${bundleInfo.sha256.slice(0, 7)})` : ""}</span>
+              </div>
+            )}
           </div>
 
           <div className="mt-[10px] flex flex-wrap items-center gap-[6px]">
@@ -205,7 +236,9 @@ export function AboutTab({ searchQuery }: { searchQuery?: string }) {
             className="text-text-tertiary text-[12px] truncate"
             style={font}
           >
-            {t("settings.about.build_info")}
+            {bundleInfo?.isOta
+              ? `OTA Bundle · App ${appVersion} · Bundle ${bundleInfo.bundleVersion}`
+              : `${t("settings.about.build_info")} · v${appVersion}`}
             {lastCheckedTime ? ` · ${lastCheckedTime}` : ""}
           </span>
         </div>
