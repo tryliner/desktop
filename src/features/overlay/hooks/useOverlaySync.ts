@@ -6,6 +6,7 @@ import {
   useLikeTrack,
   useUnlikeTrack,
 } from "@/features/library/hooks";
+import { useCoverSrc } from "@/features/covers";
 import { getAuthSession } from "@/shared/api";
 import type {
   OverlayAction,
@@ -16,6 +17,7 @@ import { useOverlaySettingsStore } from "../store/overlaySettingsStore";
 export function useOverlaySync() {
   const player = usePlayerState();
   const currentTrack = player.currentTrack;
+  const effectiveCover = useCoverSrc(currentTrack?.coverUrl);
   const isLiked = useIsTrackLiked(currentTrack?.id);
   const likeMutation = useLikeTrack();
   const unlikeMutation = useUnlikeTrack();
@@ -140,8 +142,8 @@ export function useOverlaySync() {
               typeof currentTrack.album === "string"
                 ? currentTrack.album
                 : currentTrack.album?.title,
-            cover: currentTrack.coverUrl,
-            coverUrl: currentTrack.coverUrl,
+            cover: effectiveCover || currentTrack.coverUrl,
+            coverUrl: effectiveCover || currentTrack.coverUrl,
             durationMs: currentTrack.durationMs || player.durationMs,
           }
         : null,
@@ -158,6 +160,7 @@ export function useOverlaySync() {
     player.durationMs,
     player.volume,
     currentTrack,
+    effectiveCover,
     isLiked,
   ]);
 }

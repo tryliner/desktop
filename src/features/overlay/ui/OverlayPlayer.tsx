@@ -367,10 +367,13 @@ export function OverlayPlayer() {
             <div className="relative h-[32px] w-[32px] shrink-0 overflow-hidden rounded-[6px] bg-[#16161a]">
               {state.track?.coverUrl || state.track?.cover ? (
                 <CoverImage
+                  key={state.track.coverUrl || state.track.cover}
                   src={state.track.coverUrl || state.track.cover || ""}
                   alt={state.track?.title || "Artwork"}
                   width={32}
                   height={32}
+                  priority
+                  unoptimized
                   draggable={false}
                   className="h-full w-full object-cover pointer-events-none select-none"
                 />
