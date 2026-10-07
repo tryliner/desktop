@@ -166,19 +166,21 @@ export class BundleManager {
         return { available: false, reason: "App version too old for bundle" };
       }
 
-      // 2. Check if newer than active
-      const currentVer = this.getActiveVersion();
-      if (currentVer === manifest.bundleVersion) {
+      // 2. Check if newer or different hash
+      const isSameVersion = this.activeState?.bundleVersion === manifest.bundleVersion;
+      const isSameHash = this.activeState?.sha256?.toLowerCase() === manifest.sha256.toLowerCase();
+
+      if (isSameVersion && isSameHash) {
         return { available: false, reason: "Already up to date" };
       }
 
-      console.log(`\x1b[32m[BundleManager]\x1b[0m New OTA bundle available: ${manifest.bundleVersion}`);
+      console.log(`\x1b[32m[BundleManager]\x1b[0m New OTA bundle available: ${manifest.bundleVersion} (sha: ${manifest.sha256.slice(0, 8)})`);
       this.mainWindow?.webContents.send("bundle:available", manifest);
 
       // Auto download & install in background seamlessly
       this.downloadAndInstall(manifest).then((res) => {
         if (res.success) {
-          console.log(`\x1b[32m[BundleManager]\x1b[0m Bundle ${manifest.bundleVersion} installed ready for next launch or hot reload.`);
+          console.log(`\x1b[32m[BundleManager]\x1b[0m Bundle ${manifest.bundleVersion} (${manifest.sha256.slice(0, 8)}) installed ready for next launch or hot reload.`);
         }
       });
 
@@ -198,7 +200,10 @@ export class BundleManager {
     if (this.isDownloading) return { success: false, error: "Already downloading" };
     this.isDownloading = true;
 
-    const bundleDir = path.join(this.bundlesRoot, `bundle-${manifest.bundleVersion}`);
+    const bundleDir = path.join(
+      this.bundlesRoot,
+      `bundle-${manifest.bundleVersion}-${manifest.sha256.slice(0, 8)}`
+    );
     const tempDir = path.join(this.bundlesRoot, `temp-${manifest.bundleVersion}-${Date.now()}`);
 
     try {
