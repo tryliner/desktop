@@ -6,6 +6,8 @@ import {
   useLikeTrack,
   useUnlikeTrack,
 } from "@/features/library/hooks";
+import { useCoverSrc } from "@/features/covers";
+import { getAuthSession } from "@/shared/api";
 import type {
   OverlayAction,
   OverlayStatePayload,
@@ -15,6 +17,7 @@ import { useOverlaySettingsStore } from "../store/overlaySettingsStore";
 export function useOverlaySync() {
   const player = usePlayerState();
   const currentTrack = player.currentTrack;
+  const effectiveCover = useCoverSrc(currentTrack?.coverUrl);
   const isLiked = useIsTrackLiked(currentTrack?.id);
   const likeMutation = useLikeTrack();
   const unlikeMutation = useUnlikeTrack();
@@ -30,6 +33,21 @@ export function useOverlaySync() {
       autoShowOnMinimize: s.autoShowOnMinimize,
       alwaysOnTop: s.alwaysOnTop,
     });
+  }, []);
+
+  // Hide overlay when user logs out or session is cleared
+  useEffect(() => {
+    const handleAuthChange = () => {
+      const session = getAuthSession();
+      if (!session) {
+        window.linerElectron?.closeOverlay?.();
+        window.linerElectron?.sendOverlayAction?.({ type: "closeOverlay" });
+      }
+    };
+    window.addEventListener("auth:changed", handleAuthChange);
+    return () => {
+      window.removeEventListener("auth:changed", handleAuthChange);
+    };
   }, []);
 
   // Listen for actions from overlay
@@ -71,6 +89,27 @@ export function useOverlaySync() {
             }
           }
           break;
+        case "volumeUp": {
+          const current = player.volume;
+          const next = Math.min(1, Math.round((current + 0.05) * 100) / 100);
+          playerEngine.setVolume(next);
+          break;
+        }
+        case "volumeDown": {
+          const current = player.volume;
+          const next = Math.max(0, Math.round((current - 0.05) * 100) / 100);
+          playerEngine.setVolume(next);
+          break;
+        }
+        case "setVolume": {
+          if (typeof action.payload?.volume === "number") {
+            const next = Math.min(1, Math.max(0, action.payload.volume));
+            playerEngine.setVolume(next);
+          }
+          break;
+        }
+        case "focusMainWindow":
+          break;
       }
     });
 
@@ -103,8 +142,8 @@ export function useOverlaySync() {
               typeof currentTrack.album === "string"
                 ? currentTrack.album
                 : currentTrack.album?.title,
-            cover: currentTrack.coverUrl,
-            coverUrl: currentTrack.coverUrl,
+            cover: effectiveCover || currentTrack.coverUrl,
+            coverUrl: effectiveCover || currentTrack.coverUrl,
             durationMs: currentTrack.durationMs || player.durationMs,
           }
         : null,
@@ -121,6 +160,7 @@ export function useOverlaySync() {
     player.durationMs,
     player.volume,
     currentTrack,
+    effectiveCover,
     isLiked,
   ]);
 }

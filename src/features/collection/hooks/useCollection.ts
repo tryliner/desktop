@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { api, mediaUrl, toClientTrack } from "@/shared/api";
 import { queryCache } from "@/shared/cache/queryCache";
 import type { Track } from "@/shared/types";
+import { getDailyMixArtists } from "@/features/home/hooks/useDailyMixes";
 
 export interface CollectionPageData {
   type?: "playlist" | "album";
@@ -12,6 +13,7 @@ export interface CollectionPageData {
   year?: number;
   coverUrl: string;
   tracks: Track[];
+  isDailyMix?: boolean;
 }
 
 export function useCollection(type: string | null, id: string | null) {
@@ -64,13 +66,15 @@ export function useCollection(type: string | null, id: string | null) {
               const primaryCover = found.cover?.url
                 ? mediaUrl(found.cover.url)
                 : (clientTracks[0]?.coverUrl || clientTracks[1]?.coverUrl || "");
+              const computedArtists = getDailyMixArtists(found.clusterArtists, clientTracks, 4);
               const formatted: CollectionPageData = {
                 type: "playlist",
                 title: found.title,
-                author: found.clusterArtists && found.clusterArtists.length > 0 ? found.clusterArtists.join(", ") : "Daily Mix",
+                author: computedArtists.length > 0 ? computedArtists.join(", ") : "Daily Mix",
                 description: found.description,
                 coverUrl: primaryCover,
                 tracks: clientTracks,
+                isDailyMix: true,
               };
               return formatted;
             }

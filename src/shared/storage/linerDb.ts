@@ -625,7 +625,21 @@ class LinerDb {
     });
   }
 
+  async close(): Promise<void> {
+    if (this.dbPromise) {
+      try {
+        const db = await this.dbPromise;
+        db.close();
+      } catch {}
+      this.dbPromise = null;
+    }
+  }
+
   async clearAll(): Promise<void> {
+    this.memTracks.clear();
+    this.memAudio.clear();
+    this.memLyrics.clear();
+    this.memArtists.clear();
     await this.clearStore("audio");
     await this.clearStore("tracks");
     await this.clearStore("lyrics");

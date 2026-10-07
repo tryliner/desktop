@@ -665,7 +665,7 @@ function MiniPlayer({
               tabIndex={0}
               aria-label="Open player"
               className={`relative h-[38px] w-[38px] shrink-0 overflow-hidden rounded-[8px] bg-bg-elevated cursor-pointer pointer-events-auto prevent-seek ${
-                !isCoverLoaded ? "animate-pulse" : ""
+                coverUrl && !isCoverLoaded ? "animate-pulse" : ""
               }`}
               onClick={onFullscreenOpen}
               onPointerDown={(e) => e.stopPropagation()}
@@ -681,9 +681,7 @@ function MiniPlayer({
                 onLoad={(e) => {
                   extractAccentColor(e.currentTarget as HTMLImageElement);
                 }}
-                className={`h-[38px] w-[38px] object-cover transition-opacity duration-300 ease-out ${
-                  isCoverLoaded ? "opacity-100" : "opacity-0"
-                } rounded-[8px]`}
+                className="h-[38px] w-[38px] object-cover rounded-[8px]"
               />
             </div>
             <div className="flex min-w-0 flex-col pointer-events-none">

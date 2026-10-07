@@ -1,3 +1,5 @@
+import { prepareCoverFallback } from "@/features/covers";
+
 const BLUR_SIZE = 160;
 
 const VERTEX_SHADER = `
@@ -128,7 +130,7 @@ const OUTPUT_SHADER = `
 
   highp float hash(highp vec3 p) {
     p = fract(p * 0.1031);
-    p += dot(p, p.zyx + 31.32);
+    p += vec3(dot(p, p.zyx + 31.32));
     return fract((p.x + p.y) * p.z);
   }
 
@@ -149,7 +151,7 @@ const OUTPUT_SHADER = `
     highp float noise = hash(vec3(pixelPos, floor(u_time * 60.0)));
     color.rgb += (noise - 0.5) * u_dithering;
 
-    gl_FragColor = color;
+    gl_FragColor = vec4(color.rgb, 1.0);
   }
 `;
 
@@ -174,8 +176,6 @@ export interface KawarpOptions {
 
 export class KawarpEngine {
   private gl: WebGLRenderingContext;
-  private halfFloatExt: any = null;
-  private halfFloatLinearExt: any = null;
 
   private blurProgram: WebGLProgram;
   private blendProgram: WebGLProgram;
@@ -214,7 +214,6 @@ export class KawarpEngine {
   private scale = 1.2;
   private hasImage = false;
 
-  private attribs: { position: number; texCoord: number };
   private uniforms: any;
 
   constructor(private readonly canvas: HTMLCanvasElement, options: KawarpOptions = {}) {
@@ -228,9 +227,6 @@ export class KawarpEngine {
     });
     if (!gl) throw new Error('WebGL not supported');
     this.gl = gl;
-
-    this.halfFloatExt = gl.getExtension('OES_texture_half_float');
-    this.halfFloatLinearExt = gl.getExtension('OES_texture_half_float_linear');
 
     if (options.warpIntensity !== undefined) this.warpIntensity = options.warpIntensity;
     if (options.blurPasses !== undefined) this.blurPasses = options.blurPasses;
@@ -247,11 +243,6 @@ export class KawarpEngine {
     this.tintProgram = this.createProgram(VERTEX_SHADER, TINT_SHADER);
     this.warpProgram = this.createProgram(VERTEX_SHADER, DOMAIN_WARP_SHADER);
     this.outputProgram = this.createProgram(VERTEX_SHADER, OUTPUT_SHADER);
-
-    this.attribs = {
-      position: gl.getAttribLocation(this.blurProgram, 'a_position'),
-      texCoord: gl.getAttribLocation(this.blurProgram, 'a_texCoord'),
-    };
 
     this.uniforms = {
       blur: {
@@ -288,15 +279,15 @@ export class KawarpEngine {
     this.texCoordBuffer = this.createBuffer(new Float32Array([0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1]));
 
     this.sourceTexture = this.createTexture();
-    this.blurFBO1 = this.createFramebuffer(BLUR_SIZE, BLUR_SIZE, false);
-    this.blurFBO2 = this.createFramebuffer(BLUR_SIZE, BLUR_SIZE, false);
-    this.currentAlbumFBO = this.createFramebuffer(BLUR_SIZE, BLUR_SIZE, false);
-    this.nextAlbumFBO = this.createFramebuffer(BLUR_SIZE, BLUR_SIZE, false);
-    this.transitionFBO = this.createFramebuffer(BLUR_SIZE, BLUR_SIZE, false);
+    this.blurFBO1 = this.createFramebuffer(BLUR_SIZE, BLUR_SIZE);
+    this.blurFBO2 = this.createFramebuffer(BLUR_SIZE, BLUR_SIZE);
+    this.currentAlbumFBO = this.createFramebuffer(BLUR_SIZE, BLUR_SIZE);
+    this.nextAlbumFBO = this.createFramebuffer(BLUR_SIZE, BLUR_SIZE);
+    this.transitionFBO = this.createFramebuffer(BLUR_SIZE, BLUR_SIZE);
 
     const initW = Math.max(1, canvas.width || 640);
     const initH = Math.max(1, canvas.height || 360);
-    this.warpFBO = this.createFramebuffer(initW, initH, true);
+    this.warpFBO = this.createFramebuffer(initW, initH);
   }
 
   public resize() {
@@ -304,7 +295,7 @@ export class KawarpEngine {
     const height = Math.max(1, this.canvas.height);
     if (this.warpFBO.width !== width || this.warpFBO.height !== height) {
       this.deleteFramebuffer(this.warpFBO);
-      this.warpFBO = this.createFramebuffer(width, height, true);
+      this.warpFBO = this.createFramebuffer(width, height);
     }
     if (this.hasImage) {
       this.render(this.accumulatedTime, performance.now());
@@ -335,13 +326,39 @@ export class KawarpEngine {
     }
 
     if (!bitmap) {
-      bitmap = await new Promise<HTMLImageElement>((resolve, reject) => {
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        img.onload = () => resolve(img);
-        img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
-        img.src = src;
-      });
+      try {
+        bitmap = await new Promise<HTMLImageElement>((resolve, reject) => {
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          img.onload = () => resolve(img);
+          img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
+          img.src = src;
+        });
+      } catch (err) {
+        try {
+          const fallback = await prepareCoverFallback(src);
+          if (fallback && fallback !== src) {
+            const res = await fetch(fallback, { mode: 'cors' });
+            if (res.ok) {
+              const blob = await res.blob();
+              bitmap = await createImageBitmap(blob);
+            }
+            if (!bitmap) {
+              bitmap = await new Promise<HTMLImageElement>((resolve, reject) => {
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                img.onload = () => resolve(img);
+                img.onerror = () => reject(new Error(`Failed to load image: ${fallback}`));
+                img.src = fallback;
+              });
+            }
+          }
+        } catch {
+        }
+        if (!bitmap) {
+          throw err;
+        }
+      }
     }
 
     // drop out-of-order stale loads
@@ -355,7 +372,41 @@ export class KawarpEngine {
     const gl = this.gl;
     gl.bindTexture(gl.TEXTURE_2D, this.sourceTexture);
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, bitmap);
+
+    try {
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, bitmap);
+    } catch {
+      // If WebGL rejected a DOM element, fallback to clean CORS fetch/blob
+      let cleanBitmap: ImageBitmap | null = null;
+      try {
+        const res = await fetch(src, { mode: 'cors' });
+        if (res.ok) {
+          const blob = await res.blob();
+          cleanBitmap = await createImageBitmap(blob);
+        }
+      } catch {}
+
+      if (!cleanBitmap) {
+        try {
+          const fallback = await prepareCoverFallback(src);
+          if (fallback) {
+            const res = await fetch(fallback, { mode: 'cors' });
+            if (res.ok) {
+              const blob = await res.blob();
+              cleanBitmap = await createImageBitmap(blob);
+            }
+          }
+        } catch {}
+      }
+
+      if (cleanBitmap) {
+        if (loadId === this.loadSequenceId) {
+          gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, cleanBitmap);
+        }
+        cleanBitmap.close();
+      }
+    }
+
     if ('close' in bitmap && typeof (bitmap as ImageBitmap).close === 'function') {
       (bitmap as ImageBitmap).close();
     }
@@ -463,7 +514,7 @@ export class KawarpEngine {
 
     if (this.warpFBO.width !== width || this.warpFBO.height !== height) {
       this.deleteFramebuffer(this.warpFBO);
-      this.warpFBO = this.createFramebuffer(width, height, true);
+      this.warpFBO = this.createFramebuffer(width, height);
     }
 
     let blendFactor = 1.0;
@@ -534,12 +585,12 @@ export class KawarpEngine {
   private setupAttributes() {
     const gl = this.gl;
     gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);
-    gl.enableVertexAttribArray(this.attribs.position);
-    gl.vertexAttribPointer(this.attribs.position, 2, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(0);
+    gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, this.texCoordBuffer);
-    gl.enableVertexAttribArray(this.attribs.texCoord);
-    gl.vertexAttribPointer(this.attribs.texCoord, 2, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(1);
+    gl.vertexAttribPointer(1, 2, gl.FLOAT, false, 0, 0);
   }
 
   private createShader(type: number, source: string): WebGLShader {
@@ -564,6 +615,8 @@ export class KawarpEngine {
     if (!program) throw new Error('Failed to create program');
     gl.attachShader(program, vs);
     gl.attachShader(program, fs);
+    gl.bindAttribLocation(program, 0, 'a_position');
+    gl.bindAttribLocation(program, 1, 'a_texCoord');
     gl.linkProgram(program);
     if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
       const error = gl.getProgramInfoLog(program);
@@ -596,18 +649,10 @@ export class KawarpEngine {
     return texture;
   }
 
-  private createFramebuffer(width: number, height: number, useHighPrecision: boolean = false): FboInfo {
+  private createFramebuffer(width: number, height: number): FboInfo {
     const gl = this.gl;
     const texture = this.createTexture();
-    const canColorBufferFloat = !!(
-      gl.getExtension('EXT_color_buffer_half_float') ||
-      gl.getExtension('WEBGL_color_buffer_half_float')
-    );
-    const canUseHalfFloat =
-      useHighPrecision && this.halfFloatExt && this.halfFloatLinearExt && canColorBufferFloat;
-    const type = canUseHalfFloat ? this.halfFloatExt.HALF_FLOAT_OES : gl.UNSIGNED_BYTE;
-
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, type, null);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
     const framebuffer = gl.createFramebuffer();
     if (!framebuffer) throw new Error('Failed to create framebuffer');
     gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);

@@ -6,6 +6,9 @@ import {
 } from "@/shared/storage/audioCache";
 import { queryCache } from "@/shared/cache/queryCache";
 import { lyricsCache } from "@/features/lyrics";
+import { clearCoverRegistry } from "@/features/covers";
+import { useSearchHistoryStore } from "@/features/search/store/searchHistoryStore";
+import { debouncedStorage } from "@/shared/utils/storage";
 
 export { DEFAULT_AUDIO_CACHE_LIMIT_BYTES, MIN_AUDIO_CACHE_LIMIT_BYTES };
 
@@ -49,6 +52,7 @@ export interface StorageAnalytics {
  * Clears cached network responses and cover image caches stored in CacheStorage and localStorage.
  */
 export async function clearMediaAndCoverCache(): Promise<void> {
+  clearCoverRegistry();
   if (typeof window !== "undefined" && "caches" in window) {
     try {
       const keys = await window.caches.keys();
@@ -81,6 +85,15 @@ export async function clearMediaAndCoverCache(): Promise<void> {
  * Clears search query caches and cached catalog lookups.
  */
 export async function clearSearchAndQueryCache(): Promise<void> {
+  queryCache.clear();
+  try {
+    useSearchHistoryStore.getState().clearHistory();
+    debouncedStorage.removeItem("liner_search_history");
+    debouncedStorage.flush();
+  } catch {
+    // Best-effort in non-store environments
+  }
+
   if (typeof window !== "undefined" && window.localStorage) {
     const keysToRemove: string[] = [];
     for (let i = 0; i < localStorage.length; i++) {
@@ -89,7 +102,9 @@ export async function clearSearchAndQueryCache(): Promise<void> {
         key &&
         (key.startsWith("liner:search:") ||
           key.startsWith("liner:query:") ||
-          key.startsWith("search-cache"))
+          key.startsWith("liner_search_") ||
+          key.startsWith("search-cache") ||
+          key === "liner_search_history")
       ) {
         keysToRemove.push(key);
       }
@@ -104,6 +119,13 @@ export async function clearSearchAndQueryCache(): Promise<void> {
  * Clears temporary application cache while preserving auth and user settings.
  */
 export async function clearApplicationCacheSafely(): Promise<void> {
+  clearCoverRegistry();
+  try {
+    useSearchHistoryStore.getState().clearHistory();
+    debouncedStorage.removeItem("liner_search_history");
+    debouncedStorage.flush();
+  } catch {}
+
   await Promise.all([
     clearMediaAndCoverCache(),
     clearSearchAndQueryCache(),
@@ -203,9 +225,16 @@ export async function getStorageAnalytics(): Promise<StorageAnalytics> {
   } catch {}
 
   // take the maximum between indexeddb object store iteration and physical disk size
+  // if indexeddb store is empty, ignore residual leveldb engine overhead under 2MB
   if (electronStats && electronStats.indexedDbSize > 0) {
     const totalIdbDisk = electronStats.indexedDbSize + (electronStats.blobStorageSize || 0);
-    audioBytes = Math.max(audioBytes, totalIdbDisk);
+    if (audioBytes > 0) {
+      audioBytes = Math.max(audioBytes, totalIdbDisk);
+    } else if (totalIdbDisk > 2 * 1024 * 1024) {
+      audioBytes = totalIdbDisk;
+    } else {
+      audioBytes = 0;
+    }
   }
 
   // 3. serviceworker covers added in cover-sw.js
@@ -215,9 +244,15 @@ export async function getStorageAnalytics(): Promise<StorageAnalytics> {
     coversCount = coverStats.count;
   } catch {}
 
-  // physical disk size for service worker cache storage
+  // physical disk size for service worker cache storage (only when covers exist or exceed 1MB)
   if (electronStats && electronStats.serviceWorkerSize > 0) {
-    coversBytes = Math.max(coversBytes, electronStats.serviceWorkerSize);
+    if (coversBytes > 0) {
+      coversBytes = Math.max(coversBytes, electronStats.serviceWorkerSize);
+    } else if (electronStats.serviceWorkerSize > 1024 * 1024) {
+      coversBytes = electronStats.serviceWorkerSize;
+    } else {
+      coversBytes = 0;
+    }
   }
 
   // 4. lyrics cache added in lyricsCache.ts + linerDb lyrics
@@ -243,7 +278,13 @@ export async function getStorageAnalytics(): Promise<StorageAnalytics> {
       const size = (k.length + v.length) * 2;
       if (k.startsWith("liner:playlist-covers") || k.startsWith("liner:cover:")) {
         coversBytes += size;
-      } else if (k.startsWith("liner:search:") || k.startsWith("liner:query:") || k.startsWith("search-cache")) {
+      } else if (
+        k.startsWith("liner:search:") ||
+        k.startsWith("liner:query:") ||
+        k.startsWith("liner_search_") ||
+        k.startsWith("search-cache") ||
+        k === "liner_search_history"
+      ) {
         metadataBytes += size;
       } else if (k.startsWith("liner:artist:")) {
         metadataBytes += size;
@@ -323,13 +364,18 @@ export async function getStorageAnalytics(): Promise<StorageAnalytics> {
 // clears chosen categories cleanly while maintaining user session
 export async function clearStorageCategories(categoryIds: StorageCategoryId[]): Promise<void> {
   const set = new Set(categoryIds);
+  const isAllCategories =
+    set.has("audio") && set.has("covers") && set.has("lyrics") && set.has("metadata");
 
   if (set.has("audio")) {
     audioCache.revokeAll();
     await linerDb.clearStore("audio");
     await linerDb.clearStore("tracks");
+    if (isAllCategories) {
+      await linerDb.close();
+    }
     if (typeof window !== "undefined" && window.linerElectron?.clearAudioCache) {
-      await window.linerElectron.clearAudioCache();
+      await window.linerElectron.clearAudioCache(isAllCategories);
     }
   }
 
@@ -362,10 +408,24 @@ export async function clearStorageCategories(categoryIds: StorageCategoryId[]): 
       const toRemove: string[] = [];
       for (let i = 0; i < localStorage.length; i++) {
         const k = localStorage.key(i);
-        if (k && k.startsWith("liner:artist:")) toRemove.push(k);
+        if (
+          k &&
+          (k.startsWith("liner:artist:") ||
+            k.startsWith("liner:search:") ||
+            k.startsWith("liner:query:") ||
+            k.startsWith("liner_search_") ||
+            k.startsWith("search-cache") ||
+            k === "liner_search_history")
+        ) {
+          toRemove.push(k);
+        }
       }
       toRemove.forEach((k) => localStorage.removeItem(k));
     }
+  }
+
+  if (typeof window !== "undefined" && window.linerElectron?.clearHttpCache) {
+    await window.linerElectron.clearHttpCache();
   }
 }
 

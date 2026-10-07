@@ -42,6 +42,7 @@ export function OverlayPlayer() {
   const [interpolatedPosMs, setInterpolatedPosMs] = useState(state.positionMs);
   const lastTrackIdRef = useRef<string | null>(null);
 
+
   useEffect(() => {
     window.linerElectron?.getOverlayInitialState?.().then((initial) => {
       if (initial) {
@@ -155,43 +156,92 @@ export function OverlayPlayer() {
     });
   }, []);
 
-  // Keyboard Shortcuts
+  // Keyboard Shortcuts (Arrow keys for sound & seek, Space, L, J, K, F to switch to main app)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.defaultPrevented) return;
       if (e.ctrlKey || e.metaKey || e.altKey) return;
-      switch (e.code) {
-        case "Space":
-          e.preventDefault();
-          sendAction({ type: "togglePlay" });
-          break;
-        case "ArrowLeft":
-          e.preventDefault();
-          sendAction({ type: "seek", payload: { positionMs: Math.max(0, currentPosMs - 5000) } });
-          break;
-        case "ArrowRight":
-          e.preventDefault();
-          sendAction({ type: "seek", payload: { positionMs: Math.min(durationMs, currentPosMs + 5000) } });
-          break;
-        case "KeyL":
-          e.preventDefault();
-          sendAction({ type: "like" });
-          break;
-        case "KeyJ":
-        case "BracketLeft":
-          e.preventDefault();
-          sendAction({ type: "prev" });
-          break;
-        case "KeyK":
-        case "BracketRight":
-          e.preventDefault();
-          sendAction({ type: "next" });
-          break;
+
+      const code = e.code;
+      const keyLower = e.key.toLowerCase();
+
+      // Sound up / down shortcuts
+      if (code === "ArrowUp" || e.key === "ArrowUp") {
+        e.preventDefault();
+        sendAction({ type: "volumeUp" });
+        return;
+      }
+
+      if (code === "ArrowDown" || e.key === "ArrowDown") {
+        e.preventDefault();
+        sendAction({ type: "volumeDown" });
+        return;
+      }
+
+      // Switch to main app
+      if (code === "KeyF" || keyLower === "f" || keyLower === "а") {
+        e.preventDefault();
+        sendAction({ type: "focusMainWindow" });
+        return;
+      }
+
+      // Playback toggle
+      if (code === "Space" || keyLower === " ") {
+        e.preventDefault();
+        sendAction({ type: "togglePlay" });
+        return;
+      }
+
+      // Seek left / right
+      if (code === "ArrowLeft" || e.key === "ArrowLeft") {
+        e.preventDefault();
+        sendAction({ type: "seek", payload: { positionMs: Math.max(0, currentPosMs - 5000) } });
+        return;
+      }
+
+      if (code === "ArrowRight" || e.key === "ArrowRight") {
+        e.preventDefault();
+        sendAction({ type: "seek", payload: { positionMs: Math.min(durationMs, currentPosMs + 5000) } });
+        return;
+      }
+
+      // Like
+      if (code === "KeyL" || keyLower === "l" || keyLower === "д") {
+        e.preventDefault();
+        sendAction({ type: "like" });
+        return;
+      }
+
+      // Previous
+      if (
+        code === "KeyJ" ||
+        code === "BracketLeft" ||
+        keyLower === "j" ||
+        keyLower === "о" ||
+        keyLower === "["
+      ) {
+        e.preventDefault();
+        sendAction({ type: "prev" });
+        return;
+      }
+
+      // Next
+      if (
+        code === "KeyK" ||
+        code === "BracketRight" ||
+        keyLower === "k" ||
+        keyLower === "л" ||
+        keyLower === "]"
+      ) {
+        e.preventDefault();
+        sendAction({ type: "next" });
+        return;
       }
     };
+
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [currentPosMs, durationMs, sendAction]);
+  }, [currentPosMs, durationMs, sendAction, state.volume]);
 
   return (
     <div
@@ -250,30 +300,33 @@ export function OverlayPlayer() {
 
         {/* Content Row */}
         <div className="relative z-[2] flex h-full w-full items-center justify-between px-2.5">
-          {/* Left: Artwork + Track Info + Like Button directly to the right */}
-          <div className="flex min-w-0 flex-1 items-center gap-2">
+          {/* Left: Artwork + Track Info (Fully draggable to drag window) */}
+          <div
+            className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden cursor-default pr-2"
+            onMouseEnter={() => setIsInfoHovered(true)}
+            onMouseLeave={() => setIsInfoHovered(false)}
+          >
             <div className="relative h-[32px] w-[32px] shrink-0 overflow-hidden rounded-[6px] bg-[#16161a]">
               {state.track?.coverUrl || state.track?.cover ? (
                 <CoverImage
+                  key={state.track.coverUrl || state.track.cover}
                   src={state.track.coverUrl || state.track.cover || ""}
                   alt={state.track?.title || "Artwork"}
-                  width={32}
-                  height={32}
+                  fill
+                  sizes="32px"
+                  priority
+                  unoptimized
                   draggable={false}
-                  className="h-full w-full object-cover"
+                  className="rounded-[6px] object-cover pointer-events-none select-none"
                 />
               ) : (
-                <div className="flex h-full w-full items-center justify-center text-[11px] text-white/30">♪</div>
+                <div className="flex h-full w-full items-center justify-center text-[11px] text-white/30 select-none">
+                  ♪
+                </div>
               )}
             </div>
 
-            <div
-              className="flex min-w-0 max-w-[115px] flex-col justify-center overflow-hidden"
-              style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
-              onMouseDown={(e) => e.stopPropagation()}
-              onMouseEnter={() => setIsInfoHovered(true)}
-              onMouseLeave={() => setIsInfoHovered(false)}
-            >
+            <div className="flex min-w-0 flex-1 flex-col justify-center overflow-hidden">
               <ScrollableText
                 text={state.track?.title || "No track playing"}
                 isParentHovered={isInfoHovered}
@@ -287,7 +340,14 @@ export function OverlayPlayer() {
                 style={{ fontFamily: "var(--font-inter), sans-serif" }}
               />
             </div>
+          </div>
 
+          {/* Right: Like Button + Playback Controls (Previous, Play/Pause, Next) */}
+          <div
+            className="flex items-center gap-0.5 shrink-0 pl-1"
+            style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
+            onMouseDown={(e) => e.stopPropagation()}
+          >
             <button
               type="button"
               tabIndex={-1}
@@ -299,24 +359,16 @@ export function OverlayPlayer() {
                 e.stopPropagation();
                 sendAction({ type: "like" });
               }}
-              className={`flex h-[24px] w-[24px] shrink-0 items-center justify-center rounded-md border-0 bg-transparent transition-colors outline-none cursor-pointer active:scale-90 ${
+              className={`flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-lg border-0 bg-transparent transition-colors outline-none cursor-pointer active:scale-90 ${
                 state.isLiked
                   ? "text-[#ff3b5c]"
                   : "text-white/40 hover:text-white"
               }`}
-              style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
               title={state.isLiked ? "Unlike" : "Like"}
             >
               {state.isLiked ? <HeartFill size={16} /> : <HeartLine size={16} />}
             </button>
-          </div>
 
-          {/* Right: Playback Controls (Previous, Play/Pause, Next) */}
-          <div
-            className="flex items-center gap-1 shrink-0 pl-1"
-            style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
-            onMouseDown={(e) => e.stopPropagation()}
-          >
             <button
               type="button"
               tabIndex={-1}

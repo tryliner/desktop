@@ -80,7 +80,7 @@ export interface LinerElectronApi {
   getCacheStats: () => Promise<ElectronCacheStats>;
   openCacheFolder: () => Promise<boolean>;
   clearCoversCache: () => Promise<boolean>;
-  clearAudioCache: () => Promise<boolean>;
+  clearAudioCache: (clearEntireDb?: boolean) => Promise<boolean>;
   clearHttpCache: () => Promise<boolean>;
   checkForUpdates: () => Promise<{ available: boolean; version?: string; releaseNotes?: string; error?: string }>;
   downloadUpdate: () => Promise<{ success: boolean; error?: string }>;
@@ -108,6 +108,7 @@ export interface LinerElectronApi {
   sendOverlayAction: (action: any) => void;
   toggleOverlay: () => Promise<boolean>;
   isOverlayOpen: () => Promise<boolean>;
+  closeOverlay: () => void;
   onOverlayState: (cb: (state: any) => void) => () => void;
   getOverlayInitialState: () => Promise<any>;
   updateOverlaySettings: (settings: any) => void;
@@ -164,7 +165,7 @@ const api: LinerElectronApi = {
   getCacheStats: () => ipcRenderer.invoke("storage:get-cache-stats"),
   openCacheFolder: () => ipcRenderer.invoke("shell:open-cache-folder"),
   clearCoversCache: () => ipcRenderer.invoke("storage:clear-covers-cache"),
-  clearAudioCache: () => ipcRenderer.invoke("storage:clear-audio-cache"),
+  clearAudioCache: (clearEntireDb?: boolean) => ipcRenderer.invoke("storage:clear-audio-cache", clearEntireDb),
   clearHttpCache: () => ipcRenderer.invoke("storage:clear-http-cache"),
   checkForUpdates: () => ipcRenderer.invoke("updater:check-for-updates"),
   downloadUpdate: () => ipcRenderer.invoke("updater:download-update"),
@@ -267,6 +268,9 @@ const api: LinerElectronApi = {
   },
   toggleOverlay: () => ipcRenderer.invoke("overlay:toggle"),
   isOverlayOpen: () => ipcRenderer.invoke("overlay:is-open"),
+  closeOverlay: () => {
+    ipcRenderer.send("overlay:close");
+  },
   onOverlayState: (cb) => {
     const listener = (_event: unknown, state: any) => cb(state);
     ipcRenderer.on("overlay:state", listener);

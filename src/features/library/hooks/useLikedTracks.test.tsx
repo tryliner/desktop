@@ -12,6 +12,7 @@ vi.mock("@/shared/api", () => ({
   api: {
     listLikedTracks: vi.fn(),
   },
+  getAuthSession: () => ({ accessToken: "test-token", user: { id: "u1" } }),
   toClientTrack: (track: any) => ({
     id: track.id,
     title: track.title,

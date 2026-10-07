@@ -18,7 +18,7 @@ if (typeof window !== "undefined") {
 
 export const debouncedStorage = {
   getItem: (name: string) => {
-    if (typeof window === "undefined") return null;
+    if (typeof window === "undefined" || typeof localStorage === "undefined") return null;
     if (pendingWrites.has(name)) {
       return pendingWrites.get(name)!;
     }
@@ -31,7 +31,9 @@ export const debouncedStorage = {
   removeItem: (name: string) => {
     if (typeof window === "undefined") return;
     pendingWrites.delete(name);
-    localStorage.removeItem(name);
+    if (typeof localStorage !== "undefined") {
+      localStorage.removeItem(name);
+    }
   },
   flush: flushPendingWrites,
 };

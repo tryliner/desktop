@@ -404,6 +404,36 @@ if (!gotTheLock) {
       return total;
     };
 
+    // recursively deletes all files and subdirectories inside dirPath safely
+    const clearDirectoryContentsSafe = async (dirPath: string): Promise<void> => {
+      try {
+        if (!fs.existsSync(dirPath)) return;
+        const entries = await fs.promises.readdir(dirPath, { withFileTypes: true });
+        for (const entry of entries) {
+          const full = path.join(dirPath, entry.name);
+          try {
+            await fs.promises.rm(full, { recursive: true, force: true });
+          } catch {}
+        }
+      } catch {}
+    };
+
+    // recursively clears all *.indexeddb.blob directories within IndexedDB folder
+    const clearIndexedDbBlobsSafe = async (idbDir: string): Promise<void> => {
+      try {
+        if (!fs.existsSync(idbDir)) return;
+        const entries = await fs.promises.readdir(idbDir, { withFileTypes: true });
+        for (const entry of entries) {
+          if (entry.isDirectory() && entry.name.endsWith(".indexeddb.blob")) {
+            await clearDirectoryContentsSafe(path.join(idbDir, entry.name));
+            try {
+              await fs.promises.rm(path.join(idbDir, entry.name), { recursive: true, force: true });
+            } catch {}
+          }
+        }
+      } catch {}
+    };
+
     ipcMain.handle("storage:get-cache-stats", async () => {
       try {
         const userData = app.getPath("userData");
@@ -462,6 +492,8 @@ if (!gotTheLock) {
         await session.defaultSession.clearStorageData({
           storages: ["serviceworkers", "cachestorage"],
         });
+        const userData = app.getPath("userData");
+        await clearDirectoryContentsSafe(path.join(userData, "Service Worker"));
         return true;
       } catch (err) {
         console.error("\x1b[41;37m storage \x1b[0m clear-covers-cache error:", err);
@@ -469,9 +501,22 @@ if (!gotTheLock) {
       }
     });
 
-    ipcMain.handle("storage:clear-audio-cache", async () => {
-      // Audio blobs and tracks are cleared safely inside renderer via linerDb
-      return true;
+    ipcMain.handle("storage:clear-audio-cache", async (_event, clearEntireDb?: boolean) => {
+      try {
+        const userData = app.getPath("userData");
+        if (clearEntireDb) {
+          await session.defaultSession.clearStorageData({
+            storages: ["indexdb"],
+          }).catch(() => {});
+        }
+        await clearIndexedDbBlobsSafe(path.join(userData, "IndexedDB"));
+        await clearDirectoryContentsSafe(path.join(userData, "blob_storage"));
+        await session.defaultSession.clearCache().catch(() => {});
+        return true;
+      } catch (err) {
+        console.error("\x1b[41;37m storage \x1b[0m clear-audio-cache error:", err);
+        return false;
+      }
     });
 
     // clears chromium http and v8 code cache
@@ -479,6 +524,9 @@ if (!gotTheLock) {
       try {
         await session.defaultSession.clearCache();
         await session.defaultSession.clearCodeCaches({});
+        const userData = app.getPath("userData");
+        await clearDirectoryContentsSafe(path.join(userData, "Cache"));
+        await clearDirectoryContentsSafe(path.join(userData, "Code Cache"));
         return true;
       } catch (err) {
         console.error("\x1b[41;37m storage \x1b[0m clear-http-cache error:", err);

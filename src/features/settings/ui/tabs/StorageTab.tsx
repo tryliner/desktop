@@ -231,9 +231,9 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
   };
 
   const formattedCenter = useMemo(() => {
-    if (selectedBytes <= 0) return { val: "0", unit: "B" };
+    if (selectedBytes <= 0) return { val: "0", unit: "" };
     const parts = formatStorageBytes(selectedBytes).split(" ");
-    return { val: parts[0] || "0", unit: parts[1] || "B" };
+    return { val: parts[0] || "0", unit: parts[1] || "" };
   }, [selectedBytes]);
 
   const donutSlices = useMemo((): Array<{
@@ -467,9 +467,11 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
                     <span className="text-[19px] font-[700] text-text-primary tracking-tight leading-none">
                       {formattedCenter.val}
                     </span>
-                    <span className="absolute top-full left-1/2 -translate-x-1/2 mt-0.5 text-[10px] font-[600] text-text-tertiary uppercase leading-none whitespace-nowrap">
-                      {formattedCenter.unit}
-                    </span>
+                    {formattedCenter.unit ? (
+                      <span className="absolute top-full left-1/2 -translate-x-1/2 mt-0.5 text-[10px] font-[600] text-text-tertiary uppercase leading-none whitespace-nowrap">
+                        {formattedCenter.unit}
+                      </span>
+                    ) : null}
                   </div>
                 </div>
               </div>

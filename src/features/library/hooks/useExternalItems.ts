@@ -42,8 +42,15 @@ export function useExternalItems(type: EntityType) {
         }));
       } catch { if (active) setData([]); }
     };
-    void load(); const refresh = () => void load(); window.addEventListener("library:changed", refresh);
-    return () => { active = false; window.removeEventListener("library:changed", refresh); };
+    void load();
+    const refresh = () => void load();
+    window.addEventListener("library:changed", refresh);
+    window.addEventListener("auth:changed", refresh);
+    return () => {
+      active = false;
+      window.removeEventListener("library:changed", refresh);
+      window.removeEventListener("auth:changed", refresh);
+    };
   }, [type]);
   return { data };
 }

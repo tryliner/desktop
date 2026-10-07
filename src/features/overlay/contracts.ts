@@ -36,6 +36,10 @@ export interface OverlayAction {
     | "prev"
     | "seek"
     | "like"
+    | "volumeUp"
+    | "volumeDown"
+    | "setVolume"
+    | "focusMainWindow"
     | "closeOverlay";
   payload?: any;
 }

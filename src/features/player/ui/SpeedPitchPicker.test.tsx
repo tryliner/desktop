@@ -112,4 +112,28 @@ describe("SpeedPitchPicker Component", () => {
 
     expect(setRateSpy).toHaveBeenCalledWith(1.0);
   });
+
+  it("renders reverb toggle with star icon and updates reverb state", () => {
+    const setReverbSpy = vi.spyOn(playerEngine, "setIsReverbEnabled");
+
+    act(() => {
+      root?.render(<SpeedPitchPicker />);
+    });
+
+    expect(container?.textContent).toContain("Reverb");
+    expect(container?.textContent).toContain("Atmospheric space & ambient depth");
+
+    // Verify star icon SVG is present in reverb section
+    const svgIcons = container?.querySelectorAll("svg");
+    expect(svgIcons && svgIcons.length > 0).toBe(true);
+
+    const reverbToggle = container?.querySelector('button[aria-label="Reverb"]') as HTMLButtonElement | null;
+    expect(reverbToggle).not.toBeNull();
+
+    act(() => {
+      reverbToggle?.click();
+    });
+
+    expect(setReverbSpy).toHaveBeenCalledWith(true);
+  });
 });

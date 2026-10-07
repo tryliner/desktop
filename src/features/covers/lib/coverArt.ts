@@ -58,10 +58,24 @@ export function isCoverReady(url: string | undefined): boolean {
   return !!url && entries.get(url)?.status === "loaded";
 }
 
+/** Clears the in-memory cover entries registry and notifies all subscribers. */
+export function clearCoverRegistry(): void {
+  entries.clear();
+  for (const set of listeners.values()) {
+    for (const listener of set) listener();
+  }
+}
+
 export function getCoverElement(url: string | undefined): HTMLImageElement | undefined {
   if (!url) return undefined;
   const entry = entries.get(url);
-  return entry?.status === "loaded" ? entry.element : undefined;
+  if (entry?.status === "loaded" && entry.element) return entry.element;
+  for (const item of entries.values()) {
+    if (item.status === "loaded" && item.element && (item.effectiveUrl === url || item.element.src === url)) {
+      return item.element;
+    }
+  }
+  return undefined;
 }
 
 /**
@@ -70,7 +84,8 @@ export function getCoverElement(url: string | undefined): HTMLImageElement | und
  * settles, so the placeholder never pulses forever.
  */
 function isCoverSettled(url: string | undefined): boolean {
-  const status = url ? entries.get(url)?.status : undefined;
+  if (!url) return true;
+  const status = entries.get(url)?.status;
   return status === "loaded" || status === "error";
 }
 
@@ -80,19 +95,23 @@ function isCoverSettled(url: string | undefined): boolean {
  * the URL that actually decoded (the proxy when a `CoverImage` swapped to it),
  * so `useCoverSrc` consumers pick up the working URL.
  */
-export function markCoverReady(url: string | undefined, effectiveUrl?: string): void {
+export function markCoverReady(url: string | undefined, effectiveUrl?: string, element?: HTMLImageElement): void {
   if (!url) return;
   const resolved = effectiveUrl ?? url;
   const entry = entries.get(url);
   if (entry) {
+    const prevElement = entry.element;
+    const prevStatus = entry.status;
+    const prevEffective = entry.effectiveUrl;
     entry.effectiveUrl = resolved;
-    if (entry.status !== "loaded") {
-      entry.status = "loaded";
+    if (element) entry.element = element;
+    entry.status = "loaded";
+    if (prevStatus !== "loaded" || prevEffective !== resolved || (!prevElement && element)) {
       notify(url);
     }
     return;
   }
-  entries.set(url, { status: "loaded", effectiveUrl: resolved, promise: Promise.resolve() });
+  entries.set(url, { status: "loaded", effectiveUrl: resolved, element, promise: Promise.resolve() });
   notify(url);
 }
 
@@ -111,7 +130,14 @@ export function preloadCoverArt(url: string | undefined): Promise<void> {
   if (!url || typeof window === "undefined") return Promise.resolve();
 
   const existing = entries.get(url);
-  if (existing) return existing.promise;
+  if (existing) {
+    if (existing.status === "error") {
+      // Evict stale failure to allow fresh retry on next navigation/mount
+      entries.delete(url);
+    } else {
+      return existing.promise;
+    }
+  }
 
   const img = new window.Image();
   img.crossOrigin = "anonymous";
@@ -211,3 +237,26 @@ export function useCoverSrc(url: string | undefined): string | undefined {
     () => url,
   );
 }
+
+/**
+ * Returns the decoded HTMLImageElement for `url` once ready, reactively
+ * re-rendering surfaces (like Kawarp WebGL canvas) the moment the image settles
+ * so textures can be loaded directly from in-memory pixels without extra network requests.
+ */
+export function useCoverElement(url: string | undefined): HTMLImageElement | undefined {
+  const subscribeToUrl = useCallback(
+    (onChange: () => void) => {
+      if (!url) return () => {};
+      void preloadCoverArt(url);
+      return subscribe(url, onChange);
+    },
+    [url],
+  );
+
+  return useSyncExternalStore(
+    subscribeToUrl,
+    () => getCoverElement(url),
+    () => undefined,
+  );
+}
+

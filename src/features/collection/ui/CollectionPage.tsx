@@ -49,6 +49,14 @@ function CollectionContent() {
   const { data, loading } = useCollection(type, id);
   const entityType = type === "playlist" ? "playlist" : "album";
   const decodedId = id ? decodeURIComponent(id) : "";
+  const isDailyMix = Boolean(
+    data?.isDailyMix ||
+    (type === "playlist" && (
+      decodedId.startsWith("daily-mix") ||
+      decodedId.startsWith("mix-") ||
+      (id && (id.startsWith("daily-mix") || id.startsWith("mix-")))
+    ))
+  );
 
   const { data: savedAlbums } = useExternalItems("album");
   const { data: savedPlaylists } = useExternalItems("playlist");
@@ -64,9 +72,6 @@ function CollectionContent() {
     if (!data) return [];
     const urls = new Set<string>();
     if (data.coverUrl) urls.add(data.coverUrl);
-    for (const track of data.tracks.slice(0, 8)) {
-      if (track.coverUrl) urls.add(track.coverUrl);
-    }
     return Array.from(urls);
   }, [data]);
 
@@ -87,7 +92,7 @@ function CollectionContent() {
         settled = true;
         setImagesLoaded(true);
       }
-    }, 1000);
+    }, 150);
 
     const promises = urlsToPreload.map(
       (url) =>
@@ -123,7 +128,7 @@ function CollectionContent() {
     if (isReady && !skeletonExited) {
       const timer = setTimeout(() => {
         setSkeletonExited(true);
-      }, 400);
+      }, 250);
       return () => clearTimeout(timer);
     }
   }, [isReady, skeletonExited]);
@@ -274,30 +279,32 @@ function CollectionContent() {
           className="flex-1 min-w-0 h-full pointer-events-auto"
         />
       </div>
-      {isReady && (
-        <button
-          type="button"
-          onClick={handleBack}
-          title={t("common.back")}
-          aria-label={t("common.back")}
-          data-no-window-drag
-          className={`absolute top-[12px] left-[32px] z-20 group inline-flex h-[32px] shrink-0 items-center gap-[6px] rounded-md px-[10px] active:scale-[0.94] transition-all cursor-pointer select-none pointer-events-auto text-[13px] font-[500] border-0 !border-none ${
-            hasCustomBg
-              ? "apple-glass-pill !border-none"
-              : "bg-bg-panel/85 backdrop-blur-xl text-text-primary hover:bg-bg-panel border-0 !border-none"
-          }`}
-          style={{ fontFamily: "var(--font-inter), sans-serif" }}
-        >
-          <ArrowLeftLine
-            size={16}
-            className="transition-transform duration-150 group-hover:-translate-x-0.5"
-          />
-          <span className="relative -left-[1.5px] top-[1px]">{t("common.back")}</span>
-        </button>
-      )}
+      <button
+        type="button"
+        onClick={handleBack}
+        title={t("common.back")}
+        aria-label={t("common.back")}
+        data-no-window-drag
+        className={`absolute top-[12px] left-[32px] z-20 group inline-flex h-[32px] shrink-0 items-center gap-[6px] rounded-md px-[10px] active:scale-[0.94] transition-all cursor-pointer select-none pointer-events-auto text-[13px] font-[500] border-0 !border-none ${
+          hasCustomBg
+            ? "apple-glass-pill !border-none"
+            : "bg-bg-panel/85 backdrop-blur-xl text-text-primary hover:bg-bg-panel border-0 !border-none"
+        }`}
+        style={{ fontFamily: "var(--font-inter), sans-serif" }}
+      >
+        <ArrowLeftLine
+          size={16}
+          className="transition-transform duration-150 group-hover:-translate-x-0.5"
+        />
+        <span className="relative -left-[1.5px] top-[1px]">{t("common.back")}</span>
+      </button>
       <div className="relative z-1 grid grid-cols-1 w-full h-full min-h-0 overflow-hidden">
-        {isReady && data && (
-          <div className="col-start-1 row-start-1 w-full h-full min-h-0 overflow-hidden">
+        {data && (
+          <div
+            className={`col-start-1 row-start-1 w-full h-full min-h-0 overflow-hidden transition-opacity duration-200 ease-out ${
+              isReady ? "opacity-100" : "opacity-0 pointer-events-none"
+            }`}
+          >
             <div className="relative z-10 flex flex-row items-stretch gap-[16px] pl-[32px] pr-[16px] h-full w-full min-h-0 box-border">
               <div
                 className="shrink-0 w-[280px] self-start pt-[56px] pb-[24px]"
@@ -459,37 +466,39 @@ function CollectionContent() {
                           <LuShuffle size={16} />
                         </Button>
 
-                        <DropdownMenu
-                          trigger={
-                            <Button
-                              variant={hasCustomBg ? "glass-action" : "outline"}
-                              className="!h-[36px] !w-[36px] shrink-0 !p-0 flex items-center justify-center text-text-primary"
-                              title={t("common.more")}
-                            >
-                              <More2Line size={18} />
-                            </Button>
-                          }
-                          items={[
-                            {
-                              id: "library",
-                              icon: inLibrary ? (
-                                <FolderCheckFill size={16} />
-                              ) : (
-                                <NewFolderLine size={16} />
-                              ),
-                              label: inLibrary
-                                ? t("common.remove_from_library")
-                                : t("common.save_to_library"),
-                              onClick: handleSaveToLibrary,
-                            },
-                            {
-                              id: "share",
-                              icon: <ShareForwardLine size={16} />,
-                              label: t("common.share"),
-                              onClick: handleShare,
-                            },
-                          ]}
-                        />
+                        {!isDailyMix && (
+                          <DropdownMenu
+                            trigger={
+                              <Button
+                                variant={hasCustomBg ? "glass-action" : "outline"}
+                                className="!h-[36px] !w-[36px] shrink-0 !p-0 flex items-center justify-center text-text-primary"
+                                title={t("common.more")}
+                              >
+                                <More2Line size={18} />
+                              </Button>
+                            }
+                            items={[
+                              {
+                                id: "library",
+                                icon: inLibrary ? (
+                                  <FolderCheckFill size={16} />
+                                ) : (
+                                  <NewFolderLine size={16} />
+                                ),
+                                label: inLibrary
+                                  ? t("common.remove_from_library")
+                                  : t("common.save_to_library"),
+                                onClick: handleSaveToLibrary,
+                              },
+                              {
+                                id: "share",
+                                icon: <ShareForwardLine size={16} />,
+                                label: t("common.share"),
+                                onClick: handleShare,
+                              },
+                            ]}
+                          />
+                        )}
                       </div>
                     </div>
                   }
@@ -550,8 +559,8 @@ function CollectionContent() {
         {/* Direct Crossfade Skeleton Layer */}
         {!skeletonExited && (
           <div
-            className={`col-start-1 row-start-1 w-full h-full z-10 transition-opacity duration-300 ease-out overflow-hidden ${
-              isReady ? "opacity-0 pointer-events-none" : "opacity-100 pointer-events-auto"
+            className={`col-start-1 row-start-1 w-full h-full z-10 transition-opacity duration-200 ease-out overflow-hidden pointer-events-none ${
+              isReady ? "opacity-0" : "opacity-100"
             }`}
             onTransitionEnd={() => setSkeletonExited(true)}
           >

@@ -8,6 +8,7 @@ import {
   Repeat,
   RepeatOne,
   Shuffle,
+  MusicNote,
 } from "@solar-icons/react";
 import { AddLine, CheckFill } from "@mingcute/react";
 import { usePlayerState } from "../hooks/usePlayerState";
@@ -85,34 +86,34 @@ export function PlayerUiElements({
       {/* Artwork (Compact, flat, no drop shadows) */}
       <div
         className={`relative shrink-0 overflow-hidden rounded-xl w-[280px] h-[280px] bg-black/20 ${
-          !isCoverLoaded ? "animate-pulse" : ""
+          coverUrl && !isCoverLoaded ? "animate-pulse" : ""
         }`}
       >
-        <AnimatePresence mode="popLayout">
+        <AnimatePresence>
           <motion.div
-            key={coverUrl}
-            initial={
-              isCoverLoaded
-                ? { opacity: 1, filter: "blur(0px)" }
-                : { opacity: 0, filter: "blur(8px)" }
-            }
-            animate={{
-              opacity: isCoverLoaded ? 1 : 0,
-              filter: isCoverLoaded ? "blur(0px)" : "blur(8px)",
-            }}
+            key={track?.id || coverUrl || "empty"}
+            initial={{ opacity: 0, filter: "blur(8px)" }}
+            animate={{ opacity: 1, filter: "blur(0px)" }}
             exit={{ opacity: 0, filter: "blur(8px)" }}
-            transition={{ duration: 0.15, ease: "easeOut" }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
             className="absolute inset-0"
           >
-            <CoverImage
-              src={coverUrl}
-              alt={trackTitle}
-              fill
-              sizes="280px"
-              priority
-              unoptimized
-              className="rounded-xl object-cover"
-            />
+            {coverUrl ? (
+              <CoverImage
+                key={coverUrl}
+                src={coverUrl}
+                alt={trackTitle}
+                fill
+                sizes="280px"
+                priority
+                unoptimized
+                className="rounded-xl object-cover"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center bg-white/5 text-white/40">
+                <MusicNote size={64} />
+              </div>
+            )}
           </motion.div>
         </AnimatePresence>
         {/* tooltip wrapper positioned on cover corner */}

@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   useMemo,
@@ -144,7 +145,7 @@ export default function AppFrame({ children }: AppFrameProps) {
     }
   }, [pathname, search, searchOpen, searchQuery, closeSearch]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (mainScrollRef.current) {
       mainScrollRef.current.scrollTop = 0;
       const innerScrollables = mainScrollRef.current.querySelectorAll(".overflow-y-auto");

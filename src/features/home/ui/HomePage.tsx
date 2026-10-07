@@ -129,6 +129,7 @@ export default function HomePage() {
                   <SongCard
                     title={t("library.liked_songs")}
                     artists={`${likedData.total} ${likedData.total === 1 ? t("library.song") : t("library.songs")}`}
+                    artistsClickable={false}
                     coverUrl=""
                     icon={<HeartFill size={22} className={hasCustomBg ? "text-white/80" : "text-zinc-400 dark:text-zinc-500"} />}
                     onPlay={() => navigate("/library/playlist?id=likes")}

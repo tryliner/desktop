@@ -265,6 +265,7 @@ img {
   transition: background 150ms ease, color 150ms ease, border-color 150ms ease !important;
 }
 
+
 button.apple-glass-pill:hover,
 button.apple-glass-action:hover,
 .apple-glass-action:hover,
