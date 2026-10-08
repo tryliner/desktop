@@ -180,16 +180,16 @@ export const useImportStore = create<ActiveImportState>((set, get) => ({
             // sync final playlist id from backend if created asynchronously via redis
             if (!current.playlistId) {
               void (async () => {
-                for (let i = 0; i < 5; i++) {
+                for (let i = 0; i < 20; i++) {
                   try {
                     const synced = await api.getPlaylistImport(job.id);
-                    if (synced.playlistId || synced.status === "completed") {
+                    if (synced.playlistId) {
                       set({ isPolling: false, job: synced });
                       notifyLibraryChanged();
                       return;
                     }
                   } catch {}
-                  await new Promise((r) => setTimeout(r, 600));
+                  await new Promise((r) => setTimeout(r, 800));
                 }
                 set({ isPolling: false, job: current });
                 notifyLibraryChanged();
