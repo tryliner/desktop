@@ -581,7 +581,7 @@ export function ShortcutsTab({ searchQuery: externalQuery }: { searchQuery?: str
                   if (localSearchQuery) setLocalSearchQuery("");
                   setActiveScope(tab.value);
                 }}
-                className={`relative px-3.5 py-1.5 rounded-[9px] text-[13px] font-[500] transition-colors duration-150 border-0 outline-none cursor-pointer flex items-center gap-1.5 justify-center ${
+                className={`group relative px-3.5 py-1.5 rounded-[9px] text-[13px] font-[500] transition-colors duration-150 border-0 outline-none cursor-pointer flex items-center gap-1.5 justify-center ${
                   isActive
                     ? "text-text-primary"
                     : "text-text-tertiary hover:text-text-primary bg-transparent"
@@ -602,10 +602,10 @@ export function ShortcutsTab({ searchQuery: externalQuery }: { searchQuery?: str
                 )}
                 <span className="relative z-10 leading-none">{tab.label}</span>
                 <span
-                  className={`relative z-10 text-[11px] leading-none px-1.5 py-0.5 rounded-full ${
+                  className={`relative z-10 text-[10.5px] font-[500] leading-none px-1.5 py-0.5 rounded-full min-w-[17px] inline-flex items-center justify-center transition-colors ${
                     isActive
                       ? "bg-border-alpha-14 text-text-secondary"
-                      : "bg-transparent text-text-tertiary"
+                      : "bg-border-alpha-10 text-text-tertiary group-hover:bg-border-alpha-14 group-hover:text-text-secondary"
                   }`}
                 >
                   {tab.count}
