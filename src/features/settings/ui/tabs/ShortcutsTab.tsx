@@ -578,7 +578,7 @@ export function ShortcutsTab({ searchQuery: externalQuery }: { searchQuery?: str
       {/* ── Top Bar: Scope Tabs (Left) + Tiny Search Field (Right) ── */}
       <div className="flex items-center justify-between gap-3">
         <div
-          className="flex items-center gap-1 p-[3px] rounded-xl bg-border-alpha-14 select-none shrink-0"
+          className="h-[34px] flex items-center gap-1 p-[3px] rounded-lg bg-border-alpha-14 select-none shrink-0"
           role="tablist"
           aria-label="Shortcut filter scopes"
         >
@@ -594,7 +594,7 @@ export function ShortcutsTab({ searchQuery: externalQuery }: { searchQuery?: str
                   if (localSearchQuery) setLocalSearchQuery("");
                   setActiveScope(tab.value);
                 }}
-                className={`group relative px-3.5 py-1.5 rounded-[9px] text-[13px] font-[500] transition-colors duration-150 border-0 outline-none cursor-pointer flex items-center gap-1.5 justify-center ${
+                className={`group relative h-full px-3 rounded-[6px] text-[13px] font-[500] transition-colors duration-150 border-0 outline-none cursor-pointer flex items-center gap-1.5 justify-center ${
                   isActive
                     ? "text-text-primary"
                     : "text-text-tertiary hover:text-text-primary bg-transparent"
@@ -604,7 +604,7 @@ export function ShortcutsTab({ searchQuery: externalQuery }: { searchQuery?: str
                 {isActive && (
                   <motion.div
                     layoutId="shortcutsScopeTab"
-                    className="absolute inset-0 rounded-[9px] bg-bg-primary shadow-sm"
+                    className="absolute inset-0 rounded-[6px] bg-bg-primary shadow-sm"
                     transition={{
                       type: "spring",
                       stiffness: 500,
@@ -613,31 +613,33 @@ export function ShortcutsTab({ searchQuery: externalQuery }: { searchQuery?: str
                     }}
                   />
                 )}
-                <span className="relative z-10 leading-none">{tab.label}</span>
-                <span
-                  className={`relative z-10 text-[10.5px] font-[500] leading-none px-1.5 py-0.5 rounded-full min-w-[17px] inline-flex items-center justify-center transition-colors ${
-                    isActive
-                      ? "bg-border-alpha-14 text-text-secondary"
-                      : "bg-border-alpha-10 text-text-tertiary group-hover:bg-border-alpha-14 group-hover:text-text-secondary"
-                  }`}
-                >
-                  {tab.count}
+                <span className="relative z-10 leading-none flex items-center gap-1.5">
+                  <span className="leading-none">{tab.label}</span>
+                  <span
+                    className={`text-[12px] font-normal leading-none transition-colors ${
+                      isActive
+                        ? "text-text-tertiary"
+                        : "text-text-tertiary/60 group-hover:text-text-tertiary"
+                    }`}
+                  >
+                    {tab.count}
+                  </span>
                 </span>
               </button>
             );
           })}
         </div>
 
-        {/* Tiny Search Field */}
+        {/* Tiny Search Field (matching library search styling without border) */}
         <div className="relative flex items-center shrink-0">
-          <div className="h-[30px] px-2.5 rounded-[9px] bg-border-alpha-10 hover:bg-border-alpha-14 focus-within:bg-border-alpha-14 flex items-center gap-1.5 transition-colors w-[165px] sm:w-[190px]">
-            <Search2Line size={13} className="text-text-tertiary shrink-0" />
+          <div className="h-[34px] px-3 rounded-lg bg-bg-elevated flex items-center gap-2.5 transition-colors w-[190px] sm:w-[230px] border-none outline-none ring-0">
+            <Search2Line size={16} className="text-text-tertiary shrink-0" />
             <input
               type="text"
               value={localSearchQuery}
               onChange={(e) => setLocalSearchQuery(e.target.value)}
               placeholder={t("settings.shortcuts.search_placeholder") || "Search shortcuts..."}
-              className="w-full bg-transparent border-0 outline-none text-[12px] text-text-primary placeholder:text-text-tertiary p-0"
+              className="w-full bg-transparent border-none outline-none text-[13px] text-text-primary placeholder:text-text-tertiary p-0"
               style={font}
             />
             {localSearchQuery && (
@@ -647,7 +649,7 @@ export function ShortcutsTab({ searchQuery: externalQuery }: { searchQuery?: str
                 aria-label="Clear search"
                 className="text-text-tertiary hover:text-text-primary transition-colors border-0 bg-transparent p-0 cursor-pointer flex items-center justify-center shrink-0"
               >
-                <CloseLine size={13} />
+                <CloseLine size={14} />
               </button>
             )}
           </div>
