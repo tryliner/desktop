@@ -578,7 +578,7 @@ export function ShortcutsTab({ searchQuery: externalQuery }: { searchQuery?: str
       {/* ── Top Bar: Scope Tabs (Left) + Tiny Search Field (Right) ── */}
       <div className="flex items-center justify-between gap-3">
         <div
-          className="h-[34px] flex items-center gap-1 p-[3px] rounded-lg bg-border-alpha-14 select-none shrink-0"
+          className="inline-flex items-center gap-[4px] rounded-xl p-[4px] bg-bg-elevated select-none shrink-0"
           role="tablist"
           aria-label="Shortcut filter scopes"
         >
@@ -594,17 +594,20 @@ export function ShortcutsTab({ searchQuery: externalQuery }: { searchQuery?: str
                   if (localSearchQuery) setLocalSearchQuery("");
                   setActiveScope(tab.value);
                 }}
-                className={`group relative h-full px-3 rounded-[6px] text-[13px] font-[500] transition-colors duration-150 border-0 outline-none cursor-pointer flex items-center gap-1.5 justify-center ${
+                className={`group relative inline-flex items-center justify-center rounded-lg px-[16px] py-[7px] text-[13px] leading-none transition-colors duration-150 border-0 bg-transparent cursor-pointer select-none active:scale-[0.97] ${
                   isActive
                     ? "text-text-primary"
-                    : "text-text-tertiary hover:text-text-primary bg-transparent"
+                    : "text-text-secondary hover:text-text-primary"
                 }`}
-                style={font}
+                style={{
+                  fontFamily: "var(--font-inter), sans-serif",
+                  fontWeight: isActive ? 500 : 400,
+                }}
               >
                 {isActive && (
                   <motion.div
                     layoutId="shortcutsScopeTab"
-                    className="absolute inset-0 rounded-[6px] bg-bg-primary shadow-sm"
+                    className="absolute inset-0 rounded-lg bg-bg-primary shadow-sm"
                     transition={{
                       type: "spring",
                       stiffness: 500,
@@ -616,7 +619,7 @@ export function ShortcutsTab({ searchQuery: externalQuery }: { searchQuery?: str
                 <span className="relative z-10 leading-none flex items-center gap-1.5">
                   <span className="leading-none">{tab.label}</span>
                   <span
-                    className={`text-[12px] font-normal leading-none transition-colors ${
+                    className={`text-[12px] font-normal leading-none transition-colors translate-y-[0.8px] ${
                       isActive
                         ? "text-text-tertiary"
                         : "text-text-tertiary/60 group-hover:text-text-tertiary"
@@ -632,7 +635,7 @@ export function ShortcutsTab({ searchQuery: externalQuery }: { searchQuery?: str
 
         {/* Tiny Search Field (matching library search styling without border) */}
         <div className="relative flex items-center shrink-0">
-          <div className="h-[34px] px-3 rounded-lg bg-bg-elevated flex items-center gap-2.5 transition-colors w-[190px] sm:w-[230px] border-none outline-none ring-0">
+          <div className="h-[35px] px-3 rounded-lg bg-bg-elevated flex items-center gap-2.5 transition-colors w-[190px] sm:w-[230px] border-none outline-none ring-0">
             <Search2Line size={16} className="text-text-tertiary shrink-0" />
             <input
               type="text"

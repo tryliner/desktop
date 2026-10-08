@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { UndoLeftRound } from "@solar-icons/react";
+import { RiRestartLine } from "react-icons/ri";
 import { useTranslation } from "@/languages";
 import {
   getEnglishKeyFromEvent,
@@ -217,7 +217,7 @@ export function ShortcutRecorder({
             }}
             className="h-[24px] w-[24px] rounded-md border-0 outline-none flex items-center justify-center bg-border-alpha-14 hover:bg-border-alpha-20 text-text-tertiary hover:text-text-primary transition-colors cursor-pointer select-none active:scale-[0.95] p-0 shrink-0"
           >
-            <UndoLeftRound size={13} />
+            <RiRestartLine size={13.5} />
           </motion.button>
         )}
       </AnimatePresence>
