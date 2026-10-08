@@ -19,6 +19,8 @@ export interface ShortcutRecorderProps {
   isGlobal?: boolean;
   validateCandidate?: (candidate: string) => { conflictWith: string } | null;
   disabled?: boolean;
+  isRecording?: boolean;
+  onRecordingChange?: (recording: boolean) => void;
 }
 
 export function ShortcutRecorder({
@@ -29,9 +31,23 @@ export function ShortcutRecorder({
   isGlobal = false,
   validateCandidate,
   disabled = false,
+  isRecording: isRecordingProp,
+  onRecordingChange,
 }: ShortcutRecorderProps) {
   const { t } = useTranslation();
-  const [isRecording, setIsRecording] = useState(false);
+  const [internalIsRecording, setInternalIsRecording] = useState(false);
+  const isControlled = isRecordingProp !== undefined;
+  const isRecording = isControlled ? isRecordingProp : internalIsRecording;
+
+  const setIsRecording = (val: boolean | ((prev: boolean) => boolean)) => {
+    const nextVal = typeof val === "function" ? val(isRecording) : val;
+    if (isControlled) {
+      onRecordingChange?.(nextVal);
+    } else {
+      setInternalIsRecording(nextVal);
+    }
+  };
+
   const [heldModifiers, setHeldModifiers] = useState<string[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const recordButtonRef = useRef<HTMLButtonElement>(null);
@@ -147,6 +163,7 @@ export function ShortcutRecorder({
     };
 
     const handleMouseDown = (e: MouseEvent) => {
+      if (isControlled) return;
       if (recordButtonRef.current && !recordButtonRef.current.contains(e.target as Node)) {
         setHeldModifiers([]);
         setErrorMessage(null);
@@ -171,12 +188,12 @@ export function ShortcutRecorder({
       window.removeEventListener("mousedown", handleMouseDown, true);
       window.removeEventListener("blur", handleWindowBlur);
     };
-  }, [isRecording, isGlobal, validateCandidate, onChange, t]);
+  }, [isRecording, isGlobal, validateCandidate, onChange, t, isControlled]);
 
   const hasChanged = value !== defaultValue;
 
   return (
-    <div className="relative flex items-center gap-1.5 shrink-0">
+    <div className="relative flex items-center gap-1.5 shrink-0 h-[24px]">
       <AnimatePresence>
         {hasChanged && !disabled && (
           <motion.button
@@ -191,13 +208,14 @@ export function ShortcutRecorder({
               }) || `Reset to ${formatAcceleratorForDisplay(defaultValue)}`
             }
             aria-label="Reset shortcut"
-            onClick={() => {
+            onClick={(e) => {
+              e.stopPropagation();
               setHeldModifiers([]);
               setErrorMessage(null);
               setIsRecording(false);
               onReset();
             }}
-            className="h-[24px] w-[24px] rounded-md border-0 outline-none flex items-center justify-center bg-border-alpha-14 hover:bg-border-alpha-20 text-text-tertiary hover:text-text-primary transition-colors cursor-pointer select-none active:scale-[0.95] p-0"
+            className="h-[24px] w-[24px] rounded-md border-0 outline-none flex items-center justify-center bg-border-alpha-14 hover:bg-border-alpha-20 text-text-tertiary hover:text-text-primary transition-colors cursor-pointer select-none active:scale-[0.95] p-0 shrink-0"
           >
             <UndoLeftRound size={13} />
           </motion.button>
@@ -208,27 +226,28 @@ export function ShortcutRecorder({
         ref={recordButtonRef}
         type="button"
         disabled={disabled}
-        onClick={() => {
+        onClick={(e) => {
+          e.stopPropagation();
           if (!disabled) {
             setHeldModifiers([]);
             setErrorMessage(null);
             setIsRecording((prev) => !prev);
           }
         }}
-        className={`transition-all flex items-center justify-center border-0 outline-none select-none cursor-pointer ${
+        className={`flex items-center justify-center border-0 outline-none select-none cursor-pointer h-[24px] min-h-[24px] ${
           disabled
             ? "opacity-50 cursor-not-allowed bg-transparent"
             : isRecording
               ? errorMessage
-                ? "h-[24px] px-2.5 rounded-md bg-rose-500/20 text-rose-300"
+                ? "px-2.5 rounded-md bg-rose-500/20 text-rose-300"
                 : heldModifiers.length > 0
-                  ? "h-[24px] px-2.5 rounded-md bg-border-alpha-24 text-text-primary"
-                  : "h-[24px] px-2.5 rounded-md bg-border-alpha-20 text-text-primary"
+                  ? "px-2.5 rounded-md bg-border-alpha-24 text-text-primary"
+                  : "px-2.5 rounded-md bg-border-alpha-20 text-text-primary"
               : "bg-transparent p-0"
         }`}
         style={{ fontFamily: "var(--font-inter), sans-serif" }}
       >
-        <AnimatePresence mode="wait" initial={false}>
+        <AnimatePresence initial={false}>
           {isRecording ? (
             <motion.span
               key={
@@ -238,10 +257,10 @@ export function ShortcutRecorder({
                     ? heldModifiers.join("+")
                     : "waiting"
               }
-              initial={{ opacity: 0, y: -2 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 2 }}
-              transition={{ duration: 0.08, ease: "easeOut" }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.08 }}
               className="leading-none text-[12px] font-medium"
             >
               {heldModifiers.length > 0
@@ -254,8 +273,8 @@ export function ShortcutRecorder({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.1, ease: "easeOut" }}
-              className="flex items-center gap-1 select-none"
+              transition={{ duration: 0.08 }}
+              className="flex items-center gap-1 select-none h-[24px]"
             >
               {getAcceleratorKeycaps(value).map((chip, idx) => (
                 <span

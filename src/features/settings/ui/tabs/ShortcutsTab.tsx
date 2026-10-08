@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Play,
@@ -42,6 +42,19 @@ export function ShortcutsTab({ searchQuery: externalQuery }: { searchQuery?: str
   const { t } = useTranslation();
   const [activeScope, setActiveScope] = useState<ScopeFilter>("mainApp");
   const [localSearchQuery, setLocalSearchQuery] = useState("");
+  const [recordingId, setRecordingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!recordingId) return;
+    const handleOutsideClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (!target?.closest("[data-shortcut-row]")) {
+        setRecordingId(null);
+      }
+    };
+    window.addEventListener("mousedown", handleOutsideClick);
+    return () => window.removeEventListener("mousedown", handleOutsideClick);
+  }, [recordingId]);
 
   const global = useShortcutsStore((state) => state.global);
   const mainApp = useShortcutsStore((state) => state.mainApp);
@@ -658,13 +671,22 @@ export function ShortcutsTab({ searchQuery: externalQuery }: { searchQuery?: str
           ) : (
             filteredItems.map((item) => {
               const Icon = item.icon;
+              const isRowRecording = recordingId === item.id;
               return (
                 <div
                   key={item.id}
-                  className="flex items-center justify-between gap-4 px-3 py-2.5 rounded-xl hover:bg-border-alpha-10 transition-colors group select-none"
+                  data-shortcut-row={item.id}
+                  onClick={() => {
+                    setRecordingId((prev) => (prev === item.id ? null : item.id));
+                  }}
+                  className={`h-[44px] min-h-[44px] flex items-center justify-between gap-4 px-3 rounded-xl transition-colors group select-none cursor-pointer ${
+                    isRowRecording
+                      ? "bg-border-alpha-14 ring-1 ring-border-alpha-24"
+                      : "hover:bg-border-alpha-10"
+                  }`}
                 >
                   {/* Left: Icon + Title + Scope Badge */}
-                  <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex items-center gap-3 min-w-0 pointer-events-none">
                     <span className="text-text-tertiary group-hover:text-text-primary transition-colors shrink-0 flex items-center justify-center w-[20px] h-[20px]">
                       <Icon size={18} weight="Bold" />
                     </span>
@@ -685,10 +707,15 @@ export function ShortcutsTab({ searchQuery: externalQuery }: { searchQuery?: str
                   <ShortcutRecorder
                     value={item.value}
                     defaultValue={item.defaultValue}
-                    onChange={item.onChange}
+                    onChange={(val) => {
+                      item.onChange(val);
+                      setRecordingId(null);
+                    }}
                     onReset={item.onReset}
                     isGlobal={item.scope === "global"}
                     validateCandidate={item.validateCandidate}
+                    isRecording={isRowRecording}
+                    onRecordingChange={(rec) => setRecordingId(rec ? item.id : null)}
                   />
                 </div>
               );
