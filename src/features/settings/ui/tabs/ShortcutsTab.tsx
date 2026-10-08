@@ -681,11 +681,7 @@ export function ShortcutsTab({ searchQuery: externalQuery }: { searchQuery?: str
                   onClick={() => {
                     setRecordingId((prev) => (prev === item.id ? null : item.id));
                   }}
-                  className={`h-[44px] min-h-[44px] flex items-center justify-between gap-4 px-3 rounded-xl transition-colors group select-none cursor-pointer ${
-                    isRowRecording
-                      ? "bg-border-alpha-14 ring-1 ring-border-alpha-24"
-                      : "hover:bg-border-alpha-10"
-                  }`}
+                  className="h-[44px] min-h-[44px] flex items-center justify-between gap-4 px-3 rounded-xl hover:bg-border-alpha-10 transition-colors group select-none cursor-pointer"
                 >
                   {/* Left: Icon + Title + Scope Badge */}
                   <div className="flex items-center gap-3 min-w-0 pointer-events-none">

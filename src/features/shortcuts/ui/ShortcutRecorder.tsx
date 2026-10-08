@@ -234,20 +234,20 @@ export function ShortcutRecorder({
             setIsRecording((prev) => !prev);
           }
         }}
-        className={`flex items-center justify-center border-0 outline-none select-none cursor-pointer h-[24px] min-h-[24px] ${
+        className={`transition-all flex items-center justify-center border-0 outline-none select-none cursor-pointer ${
           disabled
             ? "opacity-50 cursor-not-allowed bg-transparent"
             : isRecording
               ? errorMessage
-                ? "px-2.5 rounded-md bg-rose-500/20 text-rose-300"
+                ? "h-[24px] px-2.5 rounded-md bg-rose-500/20 text-rose-300"
                 : heldModifiers.length > 0
-                  ? "px-2.5 rounded-md bg-border-alpha-24 text-text-primary"
-                  : "px-2.5 rounded-md bg-border-alpha-20 text-text-primary"
+                  ? "h-[24px] px-2.5 rounded-md bg-border-alpha-24 text-text-primary"
+                  : "h-[24px] px-2.5 rounded-md bg-border-alpha-20 text-text-primary"
               : "bg-transparent p-0"
         }`}
         style={{ fontFamily: "var(--font-inter), sans-serif" }}
       >
-        <AnimatePresence initial={false}>
+        <AnimatePresence mode="wait" initial={false}>
           {isRecording ? (
             <motion.span
               key={
@@ -257,10 +257,10 @@ export function ShortcutRecorder({
                     ? heldModifiers.join("+")
                     : "waiting"
               }
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.08 }}
+              initial={{ opacity: 0, y: -2 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 2 }}
+              transition={{ duration: 0.08, ease: "easeOut" }}
               className="leading-none text-[12px] font-medium"
             >
               {heldModifiers.length > 0
@@ -273,8 +273,8 @@ export function ShortcutRecorder({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.08 }}
-              className="flex items-center gap-1 select-none h-[24px]"
+              transition={{ duration: 0.1, ease: "easeOut" }}
+              className="flex items-center gap-1 select-none"
             >
               {getAcceleratorKeycaps(value).map((chip, idx) => (
                 <span
