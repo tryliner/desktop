@@ -10,6 +10,7 @@ import { HeartFill, HeartLine } from "@mingcute/react";
 import CoverImage from "@/features/covers/ui/CoverImage";
 import { ScrollableText } from "@/shared/ui/ScrollableText";
 import { useDisableButtonFocus } from "@/features/navigation/hooks/useDisableButtonFocus";
+import { getAuthSession } from "@/shared/api";
 import type { OverlayAction, OverlayStatePayload } from "../contracts";
 import {
   useCustomizationStore,
@@ -45,6 +46,11 @@ export function OverlayPlayer() {
 
 
   useEffect(() => {
+    if (!getAuthSession()) {
+      window.linerElectron?.closeOverlay?.();
+      return;
+    }
+
     window.linerElectron?.getOverlayInitialState?.().then((initial) => {
       if (initial) {
         anchorPosRef.current = initial.positionMs;

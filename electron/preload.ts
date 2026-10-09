@@ -45,6 +45,8 @@ export interface LinerElectronApi {
   isMaximized: () => Promise<boolean>;
   isFullScreen: () => Promise<boolean>;
   onWindowStateChange: (cb: (state: WindowState) => void) => () => void;
+  onWindowRestored?: (cb: () => void) => () => void;
+  onWindowMinimized?: (cb: () => void) => () => void;
   startWindowMove: () => void;
   dragStart: () => void;
   dragMove: (deltaX: number, deltaY: number) => void;
@@ -121,6 +123,7 @@ export interface LinerElectronApi {
   pauseOverlayShortcuts: (paused: boolean) => void;
   onOverlaySettingsChanged: (cb: (settings: any) => void) => () => void;
   onOverlayVisibility: (cb: (visible: boolean) => void) => () => void;
+  setOverlayAuthenticated?: (authenticated: boolean) => void;
 }
 
 const isHyprland = Boolean(
@@ -143,6 +146,20 @@ const api: LinerElectronApi = {
     ipcRenderer.on("window:state-changed", listener);
     return () => {
       ipcRenderer.removeListener("window:state-changed", listener);
+    };
+  },
+  onWindowRestored: (cb) => {
+    const listener = () => cb();
+    ipcRenderer.on("window:restored", listener);
+    return () => {
+      ipcRenderer.removeListener("window:restored", listener);
+    };
+  },
+  onWindowMinimized: (cb) => {
+    const listener = () => cb();
+    ipcRenderer.on("window:minimized", listener);
+    return () => {
+      ipcRenderer.removeListener("window:minimized", listener);
     };
   },
   startWindowMove: () => {
@@ -305,6 +322,9 @@ const api: LinerElectronApi = {
     return () => {
       ipcRenderer.removeListener("overlay:visibility", listener);
     };
+  },
+  setOverlayAuthenticated: (authenticated) => {
+    ipcRenderer.send("overlay:set-authenticated", authenticated);
   },
 };
 

@@ -58,7 +58,7 @@ describe("WindowControls", () => {
     });
 
     const minimizeBtn = container.querySelector("button[aria-label='Minimize']") as HTMLButtonElement;
-    const maximizeBtn = container.querySelector("button[title='Maximize']") as HTMLButtonElement;
+    const maximizeBtn = container.querySelector("button[aria-label='Maximize']") as HTMLButtonElement;
     const closeBtn = container.querySelector("button[aria-label='Close']") as HTMLButtonElement;
 
     expect(minimizeBtn).toBeDefined();

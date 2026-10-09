@@ -132,6 +132,15 @@ function createWindow() {
   mainWindow.on("unmaximize", broadcastWindowState);
   mainWindow.on("enter-full-screen", broadcastWindowState);
   mainWindow.on("leave-full-screen", broadcastWindowState);
+  mainWindow.on("restore", () => {
+    broadcastWindowState();
+    if (!mainWindow || mainWindow.isDestroyed()) return;
+    mainWindow.webContents.send("window:restored");
+  });
+  mainWindow.on("minimize", () => {
+    if (!mainWindow || mainWindow.isDestroyed()) return;
+    mainWindow.webContents.send("window:minimized");
+  });
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     if (url.startsWith("https:") || url.startsWith("http:")) {

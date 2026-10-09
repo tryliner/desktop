@@ -306,9 +306,11 @@ function MiniPlayer({
   const volumeToggleRef = useRef<HTMLButtonElement>(null);
   const speedPopupRef = useRef<HTMLDivElement>(null);
   const speedToggleRef = useRef<HTMLButtonElement>(null);
-  const volumeAutoCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+  const volumeHoverCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
+  const [isVolumeDragging, setIsVolumeDragging] = useState(false);
+  const lastNonZeroVolumeRef = useRef<number>(0.7);
 
   const currentTrack = player.currentTrack;
   const volumeLevel = toVolumeLevel(player.volume);
@@ -404,43 +406,81 @@ function MiniPlayer({
   const iconButtonClass =
     "inline-flex h-[30px] w-[30px] items-center justify-center rounded-md text-text-secondary transition-colors duration-150 hover:bg-black/[0.05] dark:hover:bg-white/[0.09] hover:text-text-primary active:scale-[0.96] border-none bg-transparent cursor-pointer";
 
-  const clearVolumeAutoCloseTimer = useCallback(() => {
-    if (volumeAutoCloseTimerRef.current) {
-      clearTimeout(volumeAutoCloseTimerRef.current);
-      volumeAutoCloseTimerRef.current = null;
+  const clearVolumeHoverTimer = useCallback(() => {
+    if (volumeHoverCloseTimerRef.current) {
+      clearTimeout(volumeHoverCloseTimerRef.current);
+      volumeHoverCloseTimerRef.current = null;
     }
   }, []);
 
-  const scheduleVolumeAutoClose = useCallback(() => {
-    clearVolumeAutoCloseTimer();
-    volumeAutoCloseTimerRef.current = setTimeout(() => {
-      setVolumeOpen(false);
-    }, 3000);
-  }, [clearVolumeAutoCloseTimer]);
-
-  useEffect(() => {
-    if (!volumeOpen) {
-      clearVolumeAutoCloseTimer();
-      return;
-    }
-    scheduleVolumeAutoClose();
-    return () => {
-      clearVolumeAutoCloseTimer();
-    };
-  }, [clearVolumeAutoCloseTimer, scheduleVolumeAutoClose, volumeOpen]);
-
-  useEffect(() => {
-    if (!volumeOpen) return;
+  const updateVolumePopupPosition = useCallback(() => {
     const toggle = volumeToggleRef.current;
     const root = miniPlayerRootRef.current;
     if (!toggle || !root) return;
     const toggleRect = toggle.getBoundingClientRect();
     const rootRect = root.getBoundingClientRect();
-    const popupW = 176;
+    const popupW = 38;
     const btnW = toggleRect.width;
     const right = rootRect.right - toggleRect.right + (btnW - popupW) / 2;
-    setVolumePopupStyle({ right: Math.max(0, right) });
-  }, [volumeOpen]);
+    setVolumePopupStyle({ right: Math.max(8, right) });
+  }, []);
+
+  const handleVolumeMouseEnter = useCallback(() => {
+    clearVolumeHoverTimer();
+    updateVolumePopupPosition();
+    setSpeedOpen(false);
+    setVolumeOpen(true);
+  }, [clearVolumeHoverTimer, updateVolumePopupPosition]);
+
+  const handleVolumeMouseLeave = useCallback(() => {
+    clearVolumeHoverTimer();
+    // Keep open while user is actively dragging the slider
+    if (isVolumeDragging) return;
+    volumeHoverCloseTimerRef.current = setTimeout(() => {
+      setVolumeOpen(false);
+    }, 140);
+  }, [clearVolumeHoverTimer, isVolumeDragging]);
+
+  const handleToggleMute = useCallback(() => {
+    if (volumeLevel > 0) {
+      lastNonZeroVolumeRef.current = volumeLevel;
+      playerEngine.setVolume(0);
+    } else {
+      const restore = lastNonZeroVolumeRef.current || 0.7;
+      playerEngine.setVolume(toVolumeGain(restore));
+    }
+  }, [volumeLevel]);
+
+  const handleVolumeWheel = useCallback(
+    (e: React.WheelEvent) => {
+      e.stopPropagation();
+      e.preventDefault();
+      const delta = e.deltaY < 0 ? 0.04 : -0.04;
+      const nextLevel = Math.min(1, Math.max(0, volumeLevel + delta));
+      playerEngine.setVolume(toVolumeGain(nextLevel));
+      setVolumeOpen(true);
+      clearVolumeHoverTimer();
+      volumeHoverCloseTimerRef.current = setTimeout(() => {
+        setVolumeOpen(false);
+      }, 1200);
+    },
+    [clearVolumeHoverTimer, volumeLevel],
+  );
+
+  const handleVolumeDraggingChange = useCallback((dragging: boolean) => {
+    setIsVolumeDragging(dragging);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      clearVolumeHoverTimer();
+    };
+  }, [clearVolumeHoverTimer]);
+
+  useEffect(() => {
+    if (!volumeOpen) return;
+    updateVolumePopupPosition();
+  }, [volumeOpen, updateVolumePopupPosition]);
 
   useEffect(() => {
     if (!speedOpen) return;
@@ -467,9 +507,8 @@ function MiniPlayer({
         const clickedVolumeToggle =
           volumeToggleRef.current?.contains(target);
         if (!clickedVolumePopup && !clickedVolumeToggle) {
+          clearVolumeHoverTimer();
           setVolumeOpen(false);
-        } else {
-          scheduleVolumeAutoClose();
         }
       }
 
@@ -488,6 +527,7 @@ function MiniPlayer({
         if (volumeOpen) {
           event.preventDefault();
           event.stopPropagation();
+          clearVolumeHoverTimer();
           setVolumeOpen(false);
         }
         if (speedOpen) {
@@ -504,7 +544,7 @@ function MiniPlayer({
       document.removeEventListener("mousedown", onDocumentPointerDown, true);
       document.removeEventListener("keydown", onDocumentKeyDown, true);
     };
-  }, [scheduleVolumeAutoClose, speedOpen, volumeOpen]);
+  }, [clearVolumeHoverTimer, speedOpen, volumeOpen]);
 
   const [scrubRatio, setScrubRatio] = useState<number | null>(null);
   const activeProgress = scrubRatio !== null ? scrubRatio : progress;
@@ -519,25 +559,26 @@ function MiniPlayer({
           <motion.div
             key="volume-popup"
             ref={volumePopupRef}
-            initial={{ opacity: 0, y: 10, scale: 0.985 }}
+            initial={{ opacity: 0, y: 8, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 10, scale: 0.985 }}
-            transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
-            className="absolute bottom-[74px] z-[92] w-[184px] rounded-xl bg-bg-primary border border-border-primary/50 px-[12px] py-[8px] prevent-seek"
+            exit={{ opacity: 0, y: 6, scale: 0.96 }}
+            transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
+            className="absolute bottom-[56px] z-[99] w-[38px] rounded-xl bg-bg-surface/90 dark:bg-[#161618]/95 backdrop-blur-2xl pt-[6px] pb-[8px] px-[4px] shadow-[0_8px_24px_rgba(0,0,0,0.14)] dark:shadow-[0_12px_32px_rgba(0,0,0,0.5)] prevent-seek"
             style={volumePopupStyle}
             onPointerDown={(e) => e.stopPropagation()}
-            onMouseEnter={clearVolumeAutoCloseTimer}
-            onMouseMove={clearVolumeAutoCloseTimer}
-            onMouseLeave={scheduleVolumeAutoClose}
-            onMouseDown={scheduleVolumeAutoClose}
+            onMouseEnter={clearVolumeHoverTimer}
+            onMouseLeave={handleVolumeMouseLeave}
           >
+            {/* Seamless invisible hit zone bridging popup and toggle button */}
+            <div className="absolute -inset-x-3 -bottom-[18px] top-0 pointer-events-auto" />
+
             <VolumePicker
-              size="sm"
+              orientation="vertical"
               showValue
-              trackClassName="bg-black/[0.10] dark:bg-white/[0.14]"
-              fillClassName="bg-text-primary"
-              iconClassName="text-text-secondary hover:text-text-primary"
-              valueClassName="text-text-tertiary text-[11px]"
+              showIcon={false}
+              onDraggingChange={handleVolumeDraggingChange}
+              trackClassName="bg-black/[0.08] dark:bg-white/[0.12]"
+              fillClassName="bg-text-primary dark:bg-white"
             />
           </motion.div>
         )}
@@ -821,25 +862,28 @@ function MiniPlayer({
                 ref={volumeToggleRef}
                 type="button"
                 aria-label="Volume"
-                title="Volume"
                 className={`${iconButtonClass} ${
                   volumeOpen ? "bg-bg-toolbox-active text-text-primary" : ""
                 }`}
                 onPointerDown={(e) => e.stopPropagation()}
-                onClick={() => {
+                onMouseEnter={handleVolumeMouseEnter}
+                onMouseLeave={handleVolumeMouseLeave}
+                onWheel={handleVolumeWheel}
+                onClick={(e) => {
+                  e.stopPropagation();
                   setSpeedOpen(false);
                   onQueueOpenChange?.(false);
-                  setVolumeOpen((prev) => !prev);
-                  scheduleVolumeAutoClose();
+                  handleToggleMute();
+                  setVolumeOpen(true);
                 }}
                 style={{ cursor: "pointer" }}
               >
                 {volumeLevel === 0 ? (
-                  <VolumeCross size={20} />
+                  <VolumeCross size={18} weight="Outline" />
                 ) : volumeLevel < 0.33 ? (
-                  <VolumeSmall size={20} />
+                  <VolumeSmall size={18} weight="Outline" />
                 ) : (
-                  <VolumeLoud size={20} />
+                  <VolumeLoud size={18} weight="Outline" />
                 )}
               </button>
               <button

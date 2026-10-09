@@ -57,7 +57,7 @@ export default function LibraryControls({
       >
         <button
           type="button"
-          title={t("library.view_grid")}
+          data-no-tooltip="true"
           aria-label={t("library.view_grid")}
           onClick={() => onViewModeChange("grid")}
           className={`inline-flex items-center justify-center h-[28px] w-[30px] rounded-[6px] border-0 transition-colors cursor-pointer select-none active:scale-[0.95] ${
@@ -78,7 +78,7 @@ export default function LibraryControls({
         </button>
         <button
           type="button"
-          title={t("library.view_list")}
+          data-no-tooltip="true"
           aria-label={t("library.view_list")}
           onClick={() => onViewModeChange("list")}
           className={`inline-flex items-center justify-center h-[28px] w-[30px] rounded-[6px] border-0 transition-colors cursor-pointer select-none active:scale-[0.95] ${

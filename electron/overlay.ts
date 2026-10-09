@@ -64,6 +64,7 @@ export class OverlayManager {
   private autoShowOnMinimize = true;
   private alwaysOnTop = true;
   private wasAutoOpened = false;
+  private isAuthenticated = false;
 
   private moveAnimationTimer: NodeJS.Timeout | null = null;
   private currentAnimatedX: number | null = null;
@@ -138,9 +139,14 @@ export class OverlayManager {
     this.mainWindow = win;
     if (this.mainWindow) {
       this.mainWindow.on("minimize", () => {
-        if (!this.enabled || !this.autoShowOnMinimize) return;
+        if (!this.isAuthenticated || !this.enabled || !this.autoShowOnMinimize) return;
         this.wasAutoOpened = true;
-        this.showOverlay();
+        // Small delay so the OS completes window minimization and activates
+        // the underlying window (e.g. fullscreen browser) before overlay displays and elevates
+        setTimeout(() => {
+          if (!this.isAuthenticated) return;
+          this.showOverlay();
+        }, 50);
       });
 
       this.mainWindow.on("restore", () => {
@@ -200,7 +206,7 @@ export class OverlayManager {
 
     try {
       const ok = globalShortcut.register(this.shortcut, () => {
-        if (!this.enabled) return;
+        if (!this.isAuthenticated || !this.enabled) return;
         this.toggleOverlay();
       });
       if (ok) {
@@ -243,6 +249,7 @@ export class OverlayManager {
 
     try {
       const ok = globalShortcut.register(this.likeShortcut, () => {
+        if (!this.isAuthenticated) return;
         if (this.mainWindow && !this.mainWindow.isDestroyed()) {
           this.mainWindow.webContents.send("overlay:action", {
             type: "like",
@@ -368,7 +375,7 @@ export class OverlayManager {
   }
 
   public showOverlay() {
-    if (!this.enabled) return;
+    if (!this.isAuthenticated || !this.enabled) return;
 
     if (this.closeTimeout) {
       clearTimeout(this.closeTimeout);
@@ -393,13 +400,14 @@ export class OverlayManager {
       if (!this.overlayWindow.isVisible()) {
         this.overlayWindow.showInactive();
       }
+      this.applyAlwaysOnTop();
       return;
     }
     this.createOverlayWindow();
   }
 
   public toggleOverlay(): boolean {
-    if (!this.enabled) {
+    if (!this.isAuthenticated || !this.enabled) {
       this.closeOverlay();
       return false;
     }
@@ -441,8 +449,54 @@ export class OverlayManager {
     }
   }
 
+  private applyAlwaysOnTop() {
+    if (!this.overlayWindow || this.overlayWindow.isDestroyed()) return;
+
+    if (!this.alwaysOnTop) {
+      try {
+        this.overlayWindow.setAlwaysOnTop(false, "normal");
+      } catch {
+        try {
+          this.overlayWindow.setAlwaysOnTop(false);
+        } catch {}
+      }
+      return;
+    }
+
+    try {
+      this.overlayWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+    } catch {}
+
+    const elevate = () => {
+      if (!this.overlayWindow || this.overlayWindow.isDestroyed()) return;
+      try {
+        this.overlayWindow.setAlwaysOnTop(true, "screen-saver", 1);
+      } catch {
+        try {
+          this.overlayWindow.setAlwaysOnTop(true, "floating");
+        } catch {
+          this.overlayWindow.setAlwaysOnTop(true);
+        }
+      }
+      try {
+        this.overlayWindow.moveTop();
+      } catch {}
+    };
+
+    elevate();
+    // Re-assert after OS focus transition to guarantee priority over fullscreen windows
+    setTimeout(elevate, 100);
+  }
+
+  public setAuthenticated(authenticated: boolean) {
+    this.isAuthenticated = Boolean(authenticated);
+    if (!this.isAuthenticated) {
+      this.closeOverlay();
+    }
+  }
+
   private createOverlayWindow() {
-    if (!this.enabled) return;
+    if (!this.isAuthenticated || !this.enabled) return;
     const bounds = this.getWindowBounds();
 
     this.overlayWindow = new BrowserWindow({
@@ -471,20 +525,20 @@ export class OverlayManager {
 
     this.overlayWindow.once("ready-to-show", () => {
       if (this.overlayWindow && !this.overlayWindow.isDestroyed()) {
+        if (!this.isAuthenticated || !this.enabled) {
+          this.overlayWindow.hide();
+          return;
+        }
         if (this.latestState) {
           this.overlayWindow.webContents.send("overlay:state", this.latestState);
         }
         this.overlayWindow.webContents.send("overlay:visibility", true);
         this.overlayWindow.showInactive();
+        this.applyAlwaysOnTop();
       }
     });
 
-    if (process.platform === "darwin") {
-      this.overlayWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
-      this.overlayWindow.setAlwaysOnTop(this.alwaysOnTop, "floating");
-    } else {
-      this.overlayWindow.setAlwaysOnTop(this.alwaysOnTop);
-    }
+    this.applyAlwaysOnTop();
 
     const targetUrl = process.env.VITE_DEV_SERVER_URL
       ? `${process.env.VITE_DEV_SERVER_URL}#/overlay`
@@ -504,7 +558,12 @@ export class OverlayManager {
   }
 
   private registerIpcHandlers() {
+    ipcMain.on("overlay:set-authenticated", (_event, authenticated: boolean) => {
+      this.setAuthenticated(authenticated);
+    });
+
     ipcMain.on("overlay:update-state", (_event, state: any) => {
+      if (!this.isAuthenticated) return;
       this.latestState = state;
 
       if (this.overlayWindow && !this.overlayWindow.isDestroyed()) {
@@ -533,10 +592,12 @@ export class OverlayManager {
     });
 
     ipcMain.handle("overlay:get-initial-state", () => {
+      if (!this.isAuthenticated) return null;
       return this.latestState;
     });
 
     ipcMain.handle("overlay:toggle", () => {
+      if (!this.isAuthenticated) return false;
       return this.toggleOverlay();
     });
 
@@ -602,9 +663,7 @@ export class OverlayManager {
 
       if (typeof settings.alwaysOnTop === "boolean") {
         this.alwaysOnTop = settings.alwaysOnTop;
-        if (this.overlayWindow && !this.overlayWindow.isDestroyed()) {
-          this.overlayWindow.setAlwaysOnTop(this.alwaysOnTop);
-        }
+        this.applyAlwaysOnTop();
       }
 
       if (shouldAnimate) {

@@ -8,6 +8,7 @@ import {
 } from "@/features/library/hooks";
 import { useCoverSrc } from "@/features/covers";
 import { getAuthSession } from "@/shared/api";
+import { useAuthStore } from "@/features/auth/store/authStore";
 import { showToast } from "@/shared/ui/Toast";
 import type {
   OverlayAction,
@@ -16,6 +17,8 @@ import type {
 import { useOverlaySettingsStore } from "../store/overlaySettingsStore";
 
 export function useOverlaySync() {
+  const authStatus = useAuthStore((s) => s.status);
+  const isAuthenticated = authStatus === "authenticated" && Boolean(getAuthSession());
   const player = usePlayerState();
   const currentTrack = player.currentTrack;
   const effectiveCover = useCoverSrc(currentTrack?.coverUrl);
@@ -23,6 +26,14 @@ export function useOverlaySync() {
   const likeMutation = useLikeTrack();
   const unlikeMutation = useUnlikeTrack();
   const isTogglingLikeRef = useRef(false);
+
+  // Sync auth status to Electron overlay manager
+  useEffect(() => {
+    window.linerElectron?.setOverlayAuthenticated?.(isAuthenticated);
+    if (!isAuthenticated) {
+      window.linerElectron?.closeOverlay?.();
+    }
+  }, [isAuthenticated]);
 
   // Sync settings on mount
   useEffect(() => {
@@ -40,7 +51,9 @@ export function useOverlaySync() {
   useEffect(() => {
     const handleAuthChange = () => {
       const session = getAuthSession();
-      if (!session) {
+      const authed = Boolean(session);
+      window.linerElectron?.setOverlayAuthenticated?.(authed);
+      if (!authed) {
         window.linerElectron?.closeOverlay?.();
         window.linerElectron?.sendOverlayAction?.({ type: "closeOverlay" });
       }
@@ -141,6 +154,7 @@ export function useOverlaySync() {
   // Push updates to overlay
   useEffect(() => {
     if (!window.linerElectron?.overlayUpdateState) return;
+    if (!isAuthenticated) return;
 
     const artistName =
       (currentTrack?.artists && typeof currentTrack.artists === "string" ? currentTrack.artists : "") ||
@@ -177,6 +191,7 @@ export function useOverlaySync() {
 
     window.linerElectron.overlayUpdateState(payload);
   }, [
+    isAuthenticated,
     player.status,
     player.positionMs,
     player.durationMs,

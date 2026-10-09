@@ -53,8 +53,8 @@ export function StickyHeader({
             <button
               type="button"
               onClick={handleBack}
-              title={t("common.back")}
               aria-label={t("common.back")}
+              data-no-tooltip="true"
               data-no-window-drag
               className={`group inline-flex h-[32px] shrink-0 items-center gap-[6px] rounded-md px-[10px] active:scale-[0.94] transition-all cursor-pointer select-none pointer-events-auto text-[13px] font-[500] border-0 !border-none ${
                 hasCustomBg
