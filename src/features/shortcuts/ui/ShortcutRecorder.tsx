@@ -204,12 +204,11 @@ export function ShortcutRecorder({
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
             transition={{ duration: 0.1, ease: "easeOut" }}
-            title={
+            aria-label={
               t("settings.shortcuts.reset_tooltip", {
                 shortcut: formatAcceleratorForDisplay(defaultValue),
               }) || `Reset to ${formatAcceleratorForDisplay(defaultValue)}`
             }
-            aria-label="Reset shortcut"
             onClick={(e) => {
               e.stopPropagation();
               setHeldModifiers([]);

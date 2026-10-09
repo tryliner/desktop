@@ -22,7 +22,7 @@ import {
   ExternalLinkLine,
 } from "@mingcute/react";
 import { useTranslation } from "@/languages";
-import { Dialog, Button, useToast } from "@/shared/ui";
+import { Dialog, Button, Tooltip, useToast } from "@/shared/ui";
 import {
   useShortcutsStore,
   normalizeShortcutToEnglish,
@@ -671,15 +671,20 @@ export function ShortcutsTab({ searchQuery: externalQuery }: { searchQuery?: str
             )}
           </div>
 
-          <button
-            type="button"
-            onClick={() => setIsResetModalOpen(true)}
-            title={t("settings.shortcuts.reset_all") || "Reset all shortcuts"}
-            aria-label={t("settings.shortcuts.reset_all") || "Reset all shortcuts"}
-            className="h-[35px] w-[35px] rounded-lg bg-bg-elevated hover:bg-border-alpha-14 flex items-center justify-center text-text-tertiary hover:text-text-primary transition-colors cursor-pointer shrink-0 border-0 p-0 active:scale-[0.95]"
+          <Tooltip
+            content={t("settings.shortcuts.reset_all") || "Reset all shortcuts"}
+            side="bottom"
+            sideOffset={6}
           >
-            <ResetIcon size={14.5} className="-top-[1px]" style={{ top: "-1px" }} />
-          </button>
+            <button
+              type="button"
+              onClick={() => setIsResetModalOpen(true)}
+              aria-label={t("settings.shortcuts.reset_all") || "Reset all shortcuts"}
+              className="h-[35px] w-[35px] rounded-lg bg-bg-elevated hover:bg-border-alpha-14 flex items-center justify-center text-text-tertiary hover:text-text-primary transition-colors cursor-pointer shrink-0 border-0 p-0 active:scale-[0.95]"
+            >
+              <ResetIcon size={14.5} className="-top-[1px]" style={{ top: "-1px" }} />
+            </button>
+          </Tooltip>
         </div>
       </div>
 
