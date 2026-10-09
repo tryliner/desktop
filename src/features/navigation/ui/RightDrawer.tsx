@@ -713,8 +713,8 @@ function RightDrawer({ activeTab, onTabChange, onClose }: RightDrawerProps) {
               <button
                 type="button"
                 onClick={onClose}
-                title={t("common.back") || "Back"}
                 aria-label={t("common.back") || "Back"}
+                data-no-tooltip="true"
                 data-no-window-drag
                 className={`group inline-flex h-[32px] shrink-0 items-center gap-[6px] rounded-md px-[10px] active:scale-[0.94] transition-all cursor-pointer select-none pointer-events-auto text-[13px] font-[500] border-0 !border-none ${
                   hasCustomBg

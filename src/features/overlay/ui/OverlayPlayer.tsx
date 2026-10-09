@@ -10,12 +10,14 @@ import { HeartFill, HeartLine } from "@mingcute/react";
 import CoverImage from "@/features/covers/ui/CoverImage";
 import { ScrollableText } from "@/shared/ui/ScrollableText";
 import { useDisableButtonFocus } from "@/features/navigation/hooks/useDisableButtonFocus";
+import { getAuthSession } from "@/shared/api";
 import type { OverlayAction, OverlayStatePayload } from "../contracts";
 import {
   useCustomizationStore,
   loadPersistedWallpaper,
   DEFAULT_GLASS_CONFIG,
 } from "@/features/settings";
+import { useShortcutsStore, matchesShortcut } from "@/features/shortcuts";
 
 const OVERLAY_CARD_TRANSITION = {
   duration: 0.08,
@@ -44,6 +46,11 @@ export function OverlayPlayer() {
 
 
   useEffect(() => {
+    if (!getAuthSession()) {
+      window.linerElectron?.closeOverlay?.();
+      return;
+    }
+
     window.linerElectron?.getOverlayInitialState?.().then((initial) => {
       if (initial) {
         anchorPosRef.current = initial.positionMs;
@@ -156,83 +163,69 @@ export function OverlayPlayer() {
     });
   }, []);
 
-  // Keyboard Shortcuts (Arrow keys for sound & seek, Space, L, J, K, F to switch to main app)
+  // Keyboard Shortcuts (Miniplayer mode)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.defaultPrevented) return;
-      if (e.ctrlKey || e.metaKey || e.altKey) return;
 
-      const code = e.code;
-      const keyLower = e.key.toLowerCase();
+      const { miniplayer } = useShortcutsStore.getState();
 
       // Sound up / down shortcuts
-      if (code === "ArrowUp" || e.key === "ArrowUp") {
+      if (matchesShortcut(e, miniplayer.volumeUp)) {
         e.preventDefault();
         sendAction({ type: "volumeUp" });
         return;
       }
 
-      if (code === "ArrowDown" || e.key === "ArrowDown") {
+      if (matchesShortcut(e, miniplayer.volumeDown)) {
         e.preventDefault();
         sendAction({ type: "volumeDown" });
         return;
       }
 
       // Switch to main app
-      if (code === "KeyF" || keyLower === "f" || keyLower === "а") {
+      if (matchesShortcut(e, miniplayer.focusMainWindow)) {
         e.preventDefault();
         sendAction({ type: "focusMainWindow" });
         return;
       }
 
       // Playback toggle
-      if (code === "Space" || keyLower === " ") {
+      if (matchesShortcut(e, miniplayer.playPause)) {
         e.preventDefault();
         sendAction({ type: "togglePlay" });
         return;
       }
 
       // Seek left / right
-      if (code === "ArrowLeft" || e.key === "ArrowLeft") {
+      if (matchesShortcut(e, miniplayer.seekBackward)) {
         e.preventDefault();
         sendAction({ type: "seek", payload: { positionMs: Math.max(0, currentPosMs - 5000) } });
         return;
       }
 
-      if (code === "ArrowRight" || e.key === "ArrowRight") {
+      if (matchesShortcut(e, miniplayer.seekForward)) {
         e.preventDefault();
         sendAction({ type: "seek", payload: { positionMs: Math.min(durationMs, currentPosMs + 5000) } });
         return;
       }
 
       // Like
-      if (code === "KeyL" || keyLower === "l" || keyLower === "д") {
+      if (matchesShortcut(e, miniplayer.likeTrack)) {
         e.preventDefault();
         sendAction({ type: "like" });
         return;
       }
 
       // Previous
-      if (
-        code === "KeyJ" ||
-        code === "BracketLeft" ||
-        keyLower === "j" ||
-        keyLower === "о" ||
-        keyLower === "["
-      ) {
+      if (matchesShortcut(e, miniplayer.prevTrack)) {
         e.preventDefault();
         sendAction({ type: "prev" });
         return;
       }
 
       // Next
-      if (
-        code === "KeyK" ||
-        code === "BracketRight" ||
-        keyLower === "k" ||
-        keyLower === "л" ||
-        keyLower === "]"
-      ) {
+      if (matchesShortcut(e, miniplayer.nextTrack)) {
         e.preventDefault();
         sendAction({ type: "next" });
         return;

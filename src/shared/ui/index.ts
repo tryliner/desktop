@@ -44,4 +44,10 @@ export {
   type EntitySidebarProps,
 } from "./EntitySidebar";
 export { default as Slider, type SliderProps } from "./Slider";
+export { default as GlobalTooltip } from "./GlobalTooltip";
+export {
+  default as WindowAnimationContainer,
+  useWindowAnimationStore,
+  type WindowAnimationPhase,
+} from "./WindowAnimationContainer";
 

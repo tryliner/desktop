@@ -132,6 +132,15 @@ function createWindow() {
   mainWindow.on("unmaximize", broadcastWindowState);
   mainWindow.on("enter-full-screen", broadcastWindowState);
   mainWindow.on("leave-full-screen", broadcastWindowState);
+  mainWindow.on("restore", () => {
+    broadcastWindowState();
+    if (!mainWindow || mainWindow.isDestroyed()) return;
+    mainWindow.webContents.send("window:restored");
+  });
+  mainWindow.on("minimize", () => {
+    if (!mainWindow || mainWindow.isDestroyed()) return;
+    mainWindow.webContents.send("window:minimized");
+  });
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     if (url.startsWith("https:") || url.startsWith("http:")) {
@@ -210,6 +219,9 @@ function createWindow() {
 // Single instance lock
 const gotTheLock = app.requestSingleInstanceLock();
 if (!gotTheLock) {
+  console.warn(
+    "\n\x1b[33m[Liner]\x1b[0m Another instance of Liner is already running in the background. Exiting development instance.\nTo run in development mode, please close the running Liner application first.\n"
+  );
   app.quit();
 } else {
   app.on("second-instance", (_event, argv) => {

@@ -84,7 +84,7 @@ function Tooltip({
       left = side === "right" ? rect.right + sideOffset : rect.left - sideOffset;
     }
 
-    setPos({ top, left });
+    setPos({ top: Math.round(top), left: Math.round(left) });
     setIsOpen(true);
   };
 
@@ -140,6 +140,7 @@ function Tooltip({
   return (
     <div
       ref={anchorRef}
+      data-no-tooltip="true"
       className={`relative inline-flex items-center justify-center ${wrapperClassName}`}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
@@ -162,19 +163,14 @@ function Tooltip({
                   animate={{ opacity: 1, x: 0, y: 0 }}
                   exit={{ opacity: 0, ...animOffset }}
                   transition={{ duration: 0.14, ease: [0.22, 1, 0.36, 1] }}
-                  className={`rounded-md border border-border-primary bg-bg-elevated px-3 py-2 text-[13px] font-medium text-text-primary antialiased select-none ${
+                  className={`rounded-md border border-border-primary bg-bg-elevated px-3 py-2 text-[13px] font-medium text-text-primary select-none ${
                     multiline
                       ? "whitespace-normal min-w-[180px] max-w-[240px] leading-snug"
                       : "whitespace-nowrap leading-none"
                   } ${className}`}
                   style={{
                     fontFamily: "var(--font-inter), sans-serif",
-                    WebkitFontSmoothing: "antialiased",
-                    MozOsxFontSmoothing: "grayscale",
-                    textRendering: "optimizeLegibility",
-                    backfaceVisibility: "hidden",
-                    WebkitBackfaceVisibility: "hidden",
-                    willChange: "transform, opacity",
+                    textRendering: "geometricPrecision",
                   }}
                 >
                   {content}
