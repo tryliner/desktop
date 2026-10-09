@@ -8,6 +8,7 @@ import {
   getEnglishKeyFromEvent,
   normalizeShortcutToEnglish,
 } from "@/features/overlay";
+import { useShortcutsStore } from "@/features/shortcuts";
 import { ToggleSwitch } from "@/shared/ui";
 import { SettingRow, SettingSection, SegmentedControl } from "../controls";
 
@@ -106,6 +107,7 @@ export function OverlayTab({ searchQuery }: { searchQuery?: string }) {
       const normalized = normalizeShortcutToEnglish(parts.join("+"));
       if (normalized) {
         setShortcut(normalized);
+        useShortcutsStore.getState().setGlobalShortcut("toggleOverlay", normalized);
         setHeldModifiers([]);
         setIsRecording(false);
       }
@@ -213,6 +215,7 @@ export function OverlayTab({ searchQuery }: { searchQuery?: string }) {
                       setHeldModifiers([]);
                       setIsRecording(false);
                       setShortcut(DEFAULT_SHORTCUT);
+                      useShortcutsStore.getState().setGlobalShortcut("toggleOverlay", DEFAULT_SHORTCUT);
                     }}
                     className="h-[28px] w-[28px] rounded-lg border-0 outline-none flex items-center justify-center bg-border-alpha-14 hover:bg-border-alpha-20 text-text-secondary hover:text-text-primary transition-colors cursor-pointer select-none active:scale-[0.95]"
                   >

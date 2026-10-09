@@ -210,6 +210,9 @@ function createWindow() {
 // Single instance lock
 const gotTheLock = app.requestSingleInstanceLock();
 if (!gotTheLock) {
+  console.warn(
+    "\n\x1b[33m[Liner]\x1b[0m Another instance of Liner is already running in the background. Exiting development instance.\nTo run in development mode, please close the running Liner application first.\n"
+  );
   app.quit();
 } else {
   app.on("second-instance", (_event, argv) => {

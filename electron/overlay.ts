@@ -8,6 +8,7 @@ export interface OverlaySettings {
   enabled: boolean;
   position: OverlayPosition;
   shortcut: string;
+  likeShortcut?: string;
   autoShowOnMinimize: boolean;
   alwaysOnTop: boolean;
 }
@@ -56,7 +57,10 @@ export class OverlayManager {
   private enabled = true;
   private position: OverlayPosition = "top-center";
   private shortcut = "Alt+Shift+O";
+  private likeShortcut = "Alt+Shift+L";
+  private shortcutsPaused = false;
   private currentRegisteredShortcut: string | null = null;
+  private currentRegisteredLikeShortcut: string | null = null;
   private autoShowOnMinimize = true;
   private alwaysOnTop = true;
   private wasAutoOpened = false;
@@ -97,6 +101,9 @@ export class OverlayManager {
         if (typeof data.shortcut === "string" && data.shortcut.trim()) {
           this.shortcut = data.shortcut.trim();
         }
+        if (typeof data.likeShortcut === "string" && data.likeShortcut.trim()) {
+          this.likeShortcut = data.likeShortcut.trim();
+        }
         if (typeof data.autoShowOnMinimize === "boolean") {
           this.autoShowOnMinimize = data.autoShowOnMinimize;
         }
@@ -117,6 +124,7 @@ export class OverlayManager {
         enabled: this.enabled,
         position: this.position,
         shortcut: this.shortcut,
+        likeShortcut: this.likeShortcut,
         autoShowOnMinimize: this.autoShowOnMinimize,
         alwaysOnTop: this.alwaysOnTop,
       };
@@ -154,6 +162,8 @@ export class OverlayManager {
       clearTimeout(this.closeTimeout);
       this.closeTimeout = null;
     }
+    this.unregisterShortcut();
+    this.unregisterLikeShortcut();
     if (this.overlayWindow && !this.overlayWindow.isDestroyed()) {
       try {
         this.overlayWindow.destroy();
@@ -161,6 +171,20 @@ export class OverlayManager {
     }
     this.overlayWindow = null;
     this.mainWindow = null;
+  }
+
+  public pauseShortcuts(paused: boolean) {
+    this.shortcutsPaused = paused;
+    if (paused) {
+      this.unregisterShortcut();
+      this.unregisterLikeShortcut();
+    } else {
+      if (this.enabled) {
+        this.registerShortcut();
+      } else {
+        this.registerLikeShortcut();
+      }
+    }
   }
 
   public registerShortcut(newShortcut?: string) {
@@ -172,7 +196,7 @@ export class OverlayManager {
 
     this.unregisterShortcut();
 
-    if (!this.enabled || !this.shortcut) return;
+    if (this.shortcutsPaused || !this.enabled || !this.shortcut) return;
 
     try {
       const ok = globalShortcut.register(this.shortcut, () => {
@@ -187,6 +211,9 @@ export class OverlayManager {
     } catch (e) {
       console.error("[overlay] Error registering global shortcut:", e);
     }
+
+    // Ensure like shortcut is also active
+    this.registerLikeShortcut();
   }
 
   public unregisterShortcut() {
@@ -199,6 +226,51 @@ export class OverlayManager {
     if (this.shortcut) {
       try {
         globalShortcut.unregister(this.shortcut);
+      } catch {}
+    }
+  }
+
+  public registerLikeShortcut(newShortcut?: string) {
+    if (newShortcut) {
+      this.likeShortcut = normalizeShortcut(newShortcut);
+    } else if (this.likeShortcut) {
+      this.likeShortcut = normalizeShortcut(this.likeShortcut);
+    }
+
+    this.unregisterLikeShortcut();
+
+    if (this.shortcutsPaused || !this.likeShortcut) return;
+
+    try {
+      const ok = globalShortcut.register(this.likeShortcut, () => {
+        if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+          this.mainWindow.webContents.send("overlay:action", {
+            type: "like",
+            payload: { fromGlobalShortcut: true },
+            fromGlobalShortcut: true,
+          });
+        }
+      });
+      if (ok) {
+        this.currentRegisteredLikeShortcut = this.likeShortcut;
+      } else {
+        console.warn("[overlay] Failed to register global like shortcut:", this.likeShortcut);
+      }
+    } catch (e) {
+      console.error("[overlay] Error registering global like shortcut:", e);
+    }
+  }
+
+  public unregisterLikeShortcut() {
+    if (this.currentRegisteredLikeShortcut) {
+      try {
+        globalShortcut.unregister(this.currentRegisteredLikeShortcut);
+      } catch {}
+      this.currentRegisteredLikeShortcut = null;
+    }
+    if (this.likeShortcut) {
+      try {
+        globalShortcut.unregister(this.likeShortcut);
       } catch {}
     }
   }
@@ -476,6 +548,10 @@ export class OverlayManager {
       this.closeOverlay();
     });
 
+    ipcMain.on("overlay:pause-shortcuts", (_event, paused: boolean) => {
+      this.pauseShortcuts(Boolean(paused));
+    });
+
     ipcMain.on("overlay:update-settings", (_event, settings: Partial<OverlaySettings>) => {
       if (!settings || typeof settings !== "object") return;
 
@@ -509,6 +585,14 @@ export class OverlayManager {
           if (this.enabled) {
             this.registerShortcut();
           }
+        }
+      }
+
+      if (typeof settings.likeShortcut === "string" && settings.likeShortcut.trim()) {
+        const nextLikeShortcut = settings.likeShortcut.trim();
+        if (nextLikeShortcut !== this.likeShortcut) {
+          this.likeShortcut = nextLikeShortcut;
+          this.registerLikeShortcut();
         }
       }
 

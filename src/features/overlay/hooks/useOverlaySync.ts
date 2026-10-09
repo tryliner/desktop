@@ -8,6 +8,7 @@ import {
 } from "@/features/library/hooks";
 import { useCoverSrc } from "@/features/covers";
 import { getAuthSession } from "@/shared/api";
+import { showToast } from "@/shared/ui/Toast";
 import type {
   OverlayAction,
   OverlayStatePayload,
@@ -79,13 +80,34 @@ export function useOverlaySync() {
         case "like":
           if (currentTrack && !isTogglingLikeRef.current) {
             isTogglingLikeRef.current = true;
+            const fromGlobal = Boolean(
+              (action.payload as any)?.fromGlobalShortcut || (action as any).fromGlobalShortcut
+            );
             const onSettled = () => {
               isTogglingLikeRef.current = false;
             };
             if (isLiked) {
-              unlikeMutation.mutate(currentTrack.id, { onSettled });
+              unlikeMutation.mutate(currentTrack.id, {
+                onSuccess: () => {
+                  if (fromGlobal) {
+                    showToast(currentTrack.title || "Song", "info", {
+                      description: "Removed from favorites",
+                    });
+                  }
+                },
+                onSettled,
+              });
             } else {
-              likeMutation.mutate(currentTrack.id, { onSettled });
+              likeMutation.mutate(currentTrack.id, {
+                onSuccess: () => {
+                  if (fromGlobal) {
+                    showToast(currentTrack.title || "Song", "checkmark", {
+                      description: "Added to favorites",
+                    });
+                  }
+                },
+                onSettled,
+              });
             }
           }
           break;

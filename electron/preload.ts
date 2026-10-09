@@ -118,6 +118,7 @@ export interface LinerElectronApi {
   onOverlayState: (cb: (state: any) => void) => () => void;
   getOverlayInitialState: () => Promise<any>;
   updateOverlaySettings: (settings: any) => void;
+  pauseOverlayShortcuts: (paused: boolean) => void;
   onOverlaySettingsChanged: (cb: (settings: any) => void) => () => void;
   onOverlayVisibility: (cb: (visible: boolean) => void) => () => void;
 }
@@ -287,6 +288,9 @@ const api: LinerElectronApi = {
   getOverlayInitialState: () => ipcRenderer.invoke("overlay:get-initial-state"),
   updateOverlaySettings: (settings) => {
     ipcRenderer.send("overlay:update-settings", settings);
+  },
+  pauseOverlayShortcuts: (paused) => {
+    ipcRenderer.send("overlay:pause-shortcuts", paused);
   },
   onOverlaySettingsChanged: (cb) => {
     const listener = (_event: unknown, settings: any) => cb(settings);

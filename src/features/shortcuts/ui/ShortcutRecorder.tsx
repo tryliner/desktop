@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { RiRestartLine } from "react-icons/ri";
+import { ResetIcon } from "./ResetIcon";
 import { useTranslation } from "@/languages";
 import {
   getEnglishKeyFromEvent,
@@ -194,6 +194,8 @@ export function ShortcutRecorder({
 
   return (
     <div className="relative flex items-center gap-1.5 shrink-0 h-[24px]">
+      {/* Per-row reset button hidden for now */}
+      {/*
       <AnimatePresence>
         {hasChanged && !disabled && (
           <motion.button
@@ -217,10 +219,11 @@ export function ShortcutRecorder({
             }}
             className="h-[24px] w-[24px] rounded-md border-0 outline-none flex items-center justify-center bg-border-alpha-14 hover:bg-border-alpha-20 text-text-tertiary hover:text-text-primary transition-colors cursor-pointer select-none active:scale-[0.95] p-0 shrink-0"
           >
-            <RiRestartLine size={13.5} />
+            <ResetIcon size={12.5} className="-top-[0.62px] left-[0.3px]" style={{ top: "-0.62px", left: "0.3px" }} />
           </motion.button>
         )}
       </AnimatePresence>
+      */}
 
       <button
         ref={recordButtonRef}

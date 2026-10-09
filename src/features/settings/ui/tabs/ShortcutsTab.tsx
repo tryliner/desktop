@@ -21,9 +21,8 @@ import {
   FastRewindLine,
   ExternalLinkLine,
 } from "@mingcute/react";
-import { Refresh } from "@solar-icons/react";
 import { useTranslation } from "@/languages";
-import Button from "@/shared/ui/Button";
+import { Dialog, Button, useToast } from "@/shared/ui";
 import {
   useShortcutsStore,
   normalizeShortcutToEnglish,
@@ -31,6 +30,7 @@ import {
   type GlobalShortcutsSettings,
   type MainAppShortcutsSettings,
   type MiniplayerShortcutsSettings,
+  ResetIcon,
 } from "@/features/shortcuts";
 import { ShortcutRecorder } from "@/features/shortcuts/ui/ShortcutRecorder";
 
@@ -39,10 +39,13 @@ const font = { fontFamily: "var(--font-inter), sans-serif" } as const;
 type ScopeFilter = "mainApp" | "miniplayer" | "global";
 
 export function ShortcutsTab({ searchQuery: externalQuery }: { searchQuery?: string }) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
+  const { toast } = useToast();
+  const isRu = locale === "ru";
   const [activeScope, setActiveScope] = useState<ScopeFilter>("mainApp");
   const [localSearchQuery, setLocalSearchQuery] = useState("");
   const [recordingId, setRecordingId] = useState<string | null>(null);
+  const [isResetModalOpen, setIsResetModalOpen] = useState(false);
 
   useEffect(() => {
     if (!recordingId) return;
@@ -65,6 +68,15 @@ export function ShortcutsTab({ searchQuery: externalQuery }: { searchQuery?: str
   const setMiniplayerShortcut = useShortcutsStore((state) => state.setMiniplayerShortcut);
   const resetShortcut = useShortcutsStore((state) => state.resetShortcut);
   const resetAll = useShortcutsStore((state) => state.resetAll);
+
+  const handleConfirmResetAll = useCallback(() => {
+    resetAll();
+    setIsResetModalOpen(false);
+    toast(
+      isRu ? "Все горячие клавиши сброшены" : "All shortcuts have been reset",
+      "info"
+    );
+  }, [resetAll, toast, isRu]);
 
   // Labels for Global Actions
   const globalLabels: Record<keyof GlobalShortcutsSettings, { title: string; desc: string }> = {
@@ -574,9 +586,9 @@ export function ShortcutsTab({ searchQuery: externalQuery }: { searchQuery?: str
   );
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col">
       {/* ── Top Bar: Scope Tabs (Left) + Tiny Search Field (Right) ── */}
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex items-center justify-between gap-3 mt-[8px] mb-[6px] w-full min-w-0">
         <div
           className="inline-flex items-center gap-[4px] rounded-xl p-[4px] bg-bg-elevated select-none shrink-0"
           role="tablist"
@@ -594,14 +606,16 @@ export function ShortcutsTab({ searchQuery: externalQuery }: { searchQuery?: str
                   if (localSearchQuery) setLocalSearchQuery("");
                   setActiveScope(tab.value);
                 }}
-                className={`group relative inline-flex items-center justify-center rounded-lg px-[16px] py-[7px] text-[13px] leading-none transition-colors duration-150 border-0 bg-transparent cursor-pointer select-none active:scale-[0.97] ${
+                className={`group relative inline-flex items-center justify-center rounded-lg ${
+                  isRu ? "px-[13px]" : "px-[16px]"
+                } py-[7px] text-[13px] leading-none transition-colors duration-150 border-0 bg-transparent cursor-pointer select-none active:scale-[0.97] ${
                   isActive
                     ? "text-text-primary"
                     : "text-text-secondary hover:text-text-primary"
                 }`}
                 style={{
                   fontFamily: "var(--font-inter), sans-serif",
-                  fontWeight: isActive ? 500 : 400,
+                  fontWeight: 500,
                 }}
               >
                 {isActive && (
@@ -619,7 +633,7 @@ export function ShortcutsTab({ searchQuery: externalQuery }: { searchQuery?: str
                 <span className="relative z-10 leading-none flex items-center gap-1.5">
                   <span className="leading-none">{tab.label}</span>
                   <span
-                    className={`text-[12px] font-normal leading-none transition-colors translate-y-[0.8px] ${
+                    className={`text-[12px] font-normal tabular-nums leading-none transition-colors ${
                       isActive
                         ? "text-text-tertiary"
                         : "text-text-tertiary/60 group-hover:text-text-tertiary"
@@ -633,16 +647,16 @@ export function ShortcutsTab({ searchQuery: externalQuery }: { searchQuery?: str
           })}
         </div>
 
-        {/* Tiny Search Field (matching library search styling without border) */}
-        <div className="relative flex items-center shrink-0">
-          <div className="h-[35px] px-3 rounded-lg bg-bg-elevated flex items-center gap-2.5 transition-colors w-[190px] sm:w-[230px] border-none outline-none ring-0">
+        {/* Right Tools: Search Field + Small Reset Button */}
+        <div className="relative flex items-center justify-end flex-1 min-w-0 gap-2">
+          <div className="h-[35px] px-3 rounded-lg bg-bg-elevated flex items-center gap-2.5 transition-colors w-full max-w-[240px] min-w-[130px] border-none outline-none ring-0">
             <Search2Line size={16} className="text-text-tertiary shrink-0" />
             <input
               type="text"
               value={localSearchQuery}
               onChange={(e) => setLocalSearchQuery(e.target.value)}
               placeholder={t("settings.shortcuts.search_placeholder") || "Search shortcuts..."}
-              className="w-full bg-transparent border-none outline-none text-[13px] text-text-primary placeholder:text-text-tertiary p-0"
+              className="w-full bg-transparent border-none outline-none text-[13px] text-text-primary placeholder:text-text-tertiary p-0 min-w-0 truncate"
               style={font}
             />
             {localSearchQuery && (
@@ -656,6 +670,16 @@ export function ShortcutsTab({ searchQuery: externalQuery }: { searchQuery?: str
               </button>
             )}
           </div>
+
+          <button
+            type="button"
+            onClick={() => setIsResetModalOpen(true)}
+            title={t("settings.shortcuts.reset_all") || "Reset all shortcuts"}
+            aria-label={t("settings.shortcuts.reset_all") || "Reset all shortcuts"}
+            className="h-[35px] w-[35px] rounded-lg bg-bg-elevated hover:bg-border-alpha-14 flex items-center justify-center text-text-tertiary hover:text-text-primary transition-colors cursor-pointer shrink-0 border-0 p-0 active:scale-[0.95]"
+          >
+            <ResetIcon size={14.5} className="-top-[1px]" style={{ top: "-1px" }} />
+          </button>
         </div>
       </div>
 
@@ -667,7 +691,7 @@ export function ShortcutsTab({ searchQuery: externalQuery }: { searchQuery?: str
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -4 }}
           transition={{ duration: 0.12, ease: "easeOut" }}
-          className="flex flex-col gap-0.5 mt-1"
+          className="flex flex-col gap-0.5"
         >
           {filteredItems.length === 0 ? (
             <div className="py-8 text-center text-text-tertiary text-[13px]" style={font}>
@@ -725,27 +749,55 @@ export function ShortcutsTab({ searchQuery: externalQuery }: { searchQuery?: str
         </motion.div>
       </AnimatePresence>
 
-      {/* ── Global Reset Defaults Footer ── */}
-      <div className="pt-4 pb-2 flex items-center justify-between border-t border-border-primary/40 mt-3">
-        <div>
-          <span className="text-[13px] font-[500] text-text-primary block" style={font}>
-            {t("settings.shortcuts.reset_all") || "Reset all shortcuts"}
-          </span>
-          <span className="text-[12px] text-text-tertiary block mt-0.5" style={font}>
-            {t("settings.shortcuts.reset_all_desc") ||
-              "Restore factory default shortcuts for all sections."}
-          </span>
+      {/* ── Global Reset Confirmation Modal ── */}
+      <Dialog
+        open={isResetModalOpen}
+        onOpenChange={setIsResetModalOpen}
+        maxWidth={310}
+        zIndex={250}
+        className="p-[16px]"
+      >
+        <div className="flex flex-col">
+          {/* Header */}
+          <div className="flex flex-col gap-[3px]">
+            <h3
+              className="text-[15px] font-[600] text-text-primary m-0 leading-tight"
+              style={{ fontFamily: "var(--font-inter), sans-serif", letterSpacing: "-0.01em" }}
+            >
+              {isRu ? "Все горячие клавиши будут сброшены" : "All shortkeys will be reset"}
+            </h3>
+            <p
+              className="text-[12.5px] text-text-tertiary m-0 mt-[4px] leading-snug"
+              style={{ fontFamily: "var(--font-inter), sans-serif" }}
+            >
+              {isRu
+                ? "Все комбинации клавиш вернутся к значениям по умолчанию. Это действие нельзя отменить."
+                : "All customized shortcut keys will be restored to their factory defaults. This action cannot be undone."}
+            </p>
+          </div>
+
+          {/* Actions: Cancel + Continue */}
+          <div className="flex items-center gap-[8px] mt-[16px]">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setIsResetModalOpen(false)}
+              className="flex-1 !h-[34px] text-[13px] !rounded-lg"
+            >
+              {t("common.cancel") || (isRu ? "Отмена" : "Cancel")}
+            </Button>
+
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={handleConfirmResetAll}
+              className="flex-1 !h-[34px] text-[13px] !rounded-lg !bg-accent-secondary !text-bg-primary hover:!opacity-90"
+            >
+              {isRu ? "Продолжить" : "Continue"}
+            </Button>
+          </div>
         </div>
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={resetAll}
-          className="!h-[30px] !px-3 !text-[12px] gap-1.5"
-        >
-          <Refresh size={14} className="text-text-tertiary" />
-          {t("settings.shortcuts.reset_all_button") || "Reset defaults"}
-        </Button>
-      </div>
+      </Dialog>
     </div>
   );
 }

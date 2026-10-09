@@ -11,7 +11,10 @@ export interface DialogProps {
   minHeight?: number | string;
   maxHeight?: number | string;
   className?: string;
+  zIndex?: number;
 }
+
+const activeDialogs: Array<() => void> = [];
 
 export default function Dialog({
   open,
@@ -21,6 +24,7 @@ export default function Dialog({
   minHeight,
   maxHeight,
   className = "",
+  zIndex,
 }: DialogProps) {
   const [mounted, setMounted] = useState(false);
   const pointerStartRef = useRef<{ x: number; y: number; target: EventTarget | null } | null>(null);
@@ -31,14 +35,31 @@ export default function Dialog({
 
   useEffect(() => {
     if (!open) return;
+
+    const closeHandler = () => onOpenChange(false);
+    activeDialogs.push(closeHandler);
+
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
+        // Only the top-most open dialog closes on Escape; parent dialogs stay open
+        if (activeDialogs[activeDialogs.length - 1] !== closeHandler) {
+          return;
+        }
+        e.preventDefault();
         e.stopPropagation();
+        e.stopImmediatePropagation();
         onOpenChange(false);
       }
     };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
+
+    window.addEventListener("keydown", onKey, true);
+    return () => {
+      window.removeEventListener("keydown", onKey, true);
+      const idx = activeDialogs.indexOf(closeHandler);
+      if (idx !== -1) {
+        activeDialogs.splice(idx, 1);
+      }
+    };
   }, [open, onOpenChange]);
 
   if (!mounted || typeof document === "undefined") return null;
@@ -79,6 +100,7 @@ export default function Dialog({
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
           className="fixed inset-0 z-[199] bg-black/40 backdrop-blur-[2px] rounded-4xl overflow-hidden"
+          style={zIndex ? { zIndex: zIndex - 1 } : undefined}
           onPointerDown={handlePointerDown}
           onClick={handleBackdropClick}
         />
@@ -92,6 +114,7 @@ export default function Dialog({
           exit={{ opacity: 0, scale: 0.97, y: 10 }}
           transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
           className="fixed inset-0 z-[200] flex items-center justify-center pointer-events-none"
+          style={zIndex ? { zIndex } : undefined}
         >
           <div
             className={`pointer-events-auto w-full mx-[16px] max-h-[85vh] flex flex-col rounded-xl border border-border-primary bg-bg-primary overflow-hidden relative ${
