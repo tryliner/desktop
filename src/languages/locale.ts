@@ -28,7 +28,7 @@ export function getBrowserLocale(): Locale {
     if (code === "en") return "en";
     if (code === "ru") return "ru";
     if (code === "uk" || code === "ua") return "uk";
-    if (code === "pt_br") return "pt_br";
+    if (code === "pt") return "pt_br";
   }
   return "ru";
 }
