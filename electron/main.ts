@@ -35,6 +35,10 @@ import { TouchBarManager } from "./touchbar.js";
 import { OverlayManager } from "./overlay.js";
 import { BundleManager } from "./bundle-manager.js";
 import { createSleepBlocker } from "./sleep-blocker.js";
+import { registerLocalScheme, registerLocalLibrary } from "./local-library.js";
+
+// custom scheme for local music files (must be registered before app is ready)
+registerLocalScheme();
 
 // root error handling for main process
 process.on("uncaughtException", (error) => {
@@ -303,6 +307,8 @@ if (!gotTheLock) {
     ipcMain.handle("window:is-fullscreen", () => {
       return mainWindow?.isFullScreen() ?? false;
     });
+
+    registerLocalLibrary(() => mainWindow);
 
     ipcMain.handle("app:get-version", () => {
       return app.getVersion();

@@ -7,6 +7,7 @@ import { linerDb } from "@/shared/storage";
 import { isStandaloneAudioFile } from "@/shared/storage/audioFormat";
 import type { Track } from "@/shared/types";
 import { pitchShifter } from "./pitchShifter";
+import { isLocalTrackId } from "@/shared/utils/localTrack";
 
 interface ResolvedAudioStream {
   url: string;
@@ -487,6 +488,7 @@ export class PlayerRuntime {
   }
 
   public async preloadTrack(track: Track): Promise<void> {
+    if (track.localUrl || isLocalTrackId(track.id)) return;
     if (this.currentTrackId === track.id) return;
     if (this.preloadingTrackId === track.id) return;
 
@@ -625,6 +627,11 @@ export class PlayerRuntime {
     this.safeResetAudioElement();
 
     try {
+      if (track.localUrl) {
+        await this.playLocalTrack(track, epoch, controller, startPositionMs);
+        return;
+      }
+
       const cachedAudio = await linerDb.getAudio(track.id);
       if (epoch !== this.loadEpoch || controller.signal.aborted) {
         return;
@@ -828,6 +835,55 @@ export class PlayerRuntime {
         this.activePlayPromise = null;
       }
     }
+  }
+
+  /** Plays a file from the user's local library (liner-local:// URL). No API / session involved. */
+  private async playLocalTrack(
+    track: Track,
+    epoch: number,
+    controller: AbortController,
+    startPositionMs: number,
+  ): Promise<void> {
+    this.currentSessionExpiresAt = null;
+    if (this.activeBlobUrl) {
+      URL.revokeObjectURL(this.activeBlobUrl);
+      this.activeBlobUrl = null;
+    }
+
+    this.audio.src = track.localUrl!;
+    this.audio.volume = 0;
+    this.audio.load();
+    this.applyPlaybackRateAndPitch();
+
+    const targetPosition =
+      this.pendingStartPositionMs > 0 ? this.pendingStartPositionMs : startPositionMs;
+    this.seekWhenReady(epoch, targetPosition);
+
+    if (this.audio.readyState < 3) {
+      await new Promise<void>((resolve) => {
+        const timeout = setTimeout(resolve, 3000);
+        const done = () => {
+          clearTimeout(timeout);
+          this.audio.removeEventListener("canplay", done);
+          this.audio.removeEventListener("error", done);
+          resolve();
+        };
+        this.audio.addEventListener("canplay", done, { once: true });
+        this.audio.addEventListener("error", done, { once: true });
+      });
+    }
+
+    if (epoch !== this.loadEpoch || controller.signal.aborted) return;
+
+    const playPromise = this.audio.play();
+    this.activePlayPromise = playPromise;
+    await playPromise;
+
+    if (epoch === this.loadEpoch) {
+      usePlayerStore.getState().setStatus("playing");
+      this.fadeVolume(usePlayerStore.getState().volume, 180);
+    }
+    log("green", "playback", `started (local): ${track.title}`);
   }
 
   private seekWhenReady(epoch: number, positionMs: number) {
