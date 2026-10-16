@@ -7,6 +7,8 @@ import LoginPage from "./LoginPage";
 const mockNavigate = vi.fn();
 const mockLogin = vi.fn();
 const mockRegister = vi.fn();
+const mockRequestPasswordReset = vi.fn();
+const mockResetPassword = vi.fn();
 
 vi.mock("react-router-dom", () => ({
   useNavigate: () => mockNavigate,
@@ -33,6 +35,8 @@ vi.mock("../store/authStore", () => ({
     selector({
       login: mockLogin,
       register: mockRegister,
+      requestPasswordReset: mockRequestPasswordReset,
+      resetPassword: mockResetPassword,
       status: "anonymous",
       user: null,
     }),
@@ -80,6 +84,17 @@ vi.mock("@/languages", () => {
     "login.errors.username_taken": "This username is already taken. Please choose another.",
     "login.errors.display_name_required": "Display name is required.",
     "login.username_hint": "3-30 lowercase characters, numbers or underscores.",
+    "login.forgot_password": "Forgot password?",
+    "login.reset_title": "Reset your password",
+    "login.reset_code_title": "Check your email",
+    "login.reset_code_subtitle": "If an account exists for {email}, a 6-digit code is on its way.",
+    "login.btn_send_code": "Send code",
+    "login.btn_resend_code": "Resend code",
+    "login.btn_reset_password": "Reset password",
+    "login.reset_code_resent": "We sent a new code.",
+    "login.reset_success": "Password updated. Sign in with your new password.",
+    "login.errors.reset_code_format": "Enter the 6-digit code from the email.",
+    "login.errors.reset_code_invalid": "This code is invalid or has expired. Request a new one.",
   };
 
   return {
@@ -360,5 +375,134 @@ describe("LoginPage Multi-Step Registration Flow", () => {
       "Carol Music",
     );
     expect(mockNavigate).toHaveBeenCalledWith("/", { replace: true });
+  });
+});
+
+describe("LoginPage password reset flow", () => {
+  let container: HTMLDivElement;
+  let root: Root;
+
+  const setValue = (selector: string, value: string) => {
+    const input = container.querySelector(selector) as HTMLInputElement;
+    Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")?.set?.call(
+      input,
+      value,
+    );
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  };
+
+  const click = (label: string) => {
+    const button = Array.from(container.querySelectorAll("button")).find(
+      (b) => b.textContent?.trim() === label,
+    );
+    expect(button).toBeDefined();
+    button?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+  };
+
+  const submit = () =>
+    container
+      .querySelector("form")
+      ?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+
+  const openResetCodeStep = async (email: string) => {
+    await act(async () => {
+      root.render(<LoginPage />);
+    });
+    await act(async () => click("Forgot password?"));
+    await act(async () => setValue("#reset-email", email));
+    await act(async () => submit());
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    container = document.createElement("div");
+    document.body.appendChild(container);
+    root = createRoot(container);
+  });
+
+  afterEach(async () => {
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it("opens the reset form from sign in and carries the typed email over", async () => {
+    await act(async () => {
+      root.render(<LoginPage />);
+    });
+    await act(async () => setValue("#auth-email", "dana@example.com"));
+    await act(async () => click("Forgot password?"));
+
+    expect(container.textContent).toContain("Reset your password");
+    expect(container.querySelector("#auth-password")).toBeNull();
+    expect((container.querySelector("#reset-email") as HTMLInputElement).value).toBe(
+      "dana@example.com",
+    );
+
+    await act(async () => click("Back"));
+    expect(container.querySelector("#auth-password")).not.toBeNull();
+  });
+
+  it("validates the email before requesting a code", async () => {
+    await openResetCodeStep("not-an-email");
+
+    expect(mockRequestPasswordReset).not.toHaveBeenCalled();
+    expect(container.querySelector("#reset-form-error")?.textContent).toContain(
+      "Enter a valid email address",
+    );
+  });
+
+  it("requests a code, resets the password and returns to sign in", async () => {
+    mockRequestPasswordReset.mockResolvedValue(undefined);
+    mockResetPassword.mockResolvedValueOnce(undefined);
+
+    await openResetCodeStep("  Erin@Example.com ");
+
+    expect(mockRequestPasswordReset).toHaveBeenCalledWith("erin@example.com");
+    expect(container.textContent).toContain("If an account exists for erin@example.com");
+
+    await act(async () => click("Resend code"));
+    expect(mockRequestPasswordReset).toHaveBeenCalledTimes(2);
+    expect(container.textContent).toContain("We sent a new code.");
+
+    await act(async () => {
+      setValue("#reset-code", "12a34");
+      setValue("#reset-password", "newpassword1");
+      setValue("#reset-confirm", "newpassword1");
+    });
+    await act(async () => submit());
+    expect(container.querySelector("#reset-form-error")?.textContent).toContain(
+      "Enter the 6-digit code",
+    );
+
+    await act(async () => setValue("#reset-code", "123456"));
+    await act(async () => submit());
+
+    expect(mockResetPassword).toHaveBeenCalledWith("erin@example.com", "123456", "newpassword1");
+    expect(container.querySelector("#auth-password")).not.toBeNull();
+    expect((container.querySelector("#auth-email") as HTMLInputElement).value).toBe(
+      "erin@example.com",
+    );
+    expect(container.textContent).toContain("Password updated");
+    expect(mockNavigate).not.toHaveBeenCalled();
+  });
+
+  it("shows a clear message when the code is rejected", async () => {
+    mockRequestPasswordReset.mockResolvedValueOnce(undefined);
+    mockResetPassword.mockRejectedValueOnce({ code: "INVALID_RESET_CODE" });
+
+    await openResetCodeStep("frank@example.com");
+    await act(async () => {
+      setValue("#reset-code", "654321");
+      setValue("#reset-password", "anotherpass");
+      setValue("#reset-confirm", "anotherpass");
+    });
+    await act(async () => submit());
+
+    expect(container.querySelector("#reset-form-error")?.textContent).toContain(
+      "invalid or has expired",
+    );
+    expect(container.querySelector("#reset-code")).not.toBeNull();
   });
 });

@@ -14,4 +14,10 @@ describe("getAuthErrorCode", () => {
     expect(getAuthErrorCode(new ApiError(401, "Unauthorized", "INVALID_CREDENTIALS"))).toBe("invalid_credentials");
     expect(getAuthErrorCode(new ApiError(401, ""))).toBe("unknown_error");
   });
+
+  it("maps password reset failures", () => {
+    expect(getAuthErrorCode(new ApiError(429, "Too Many Requests"))).toBe("rate_limited");
+    expect(getAuthErrorCode(new ApiError(400, "Bad code", "INVALID_RESET_CODE"))).toBe("invalid_reset_code");
+    expect(getAuthErrorCode(new ApiError(400, "Expired", "RESET_CODE_EXPIRED"))).toBe("invalid_reset_code");
+  });
 });

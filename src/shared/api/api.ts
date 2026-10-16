@@ -633,6 +633,23 @@ export const api = {
     return result;
   },
 
+  // always resolves for well-formed emails so the response never reveals whether an account exists
+  requestPasswordReset(email: string): Promise<void> {
+    return request<void>(
+      "/v1/auth/forgot-password",
+      { method: "POST", body: JSON.stringify({ email }) },
+      false,
+    );
+  },
+
+  resetPassword(email: string, code: string, password: string): Promise<void> {
+    return request<void>(
+      "/v1/auth/reset-password",
+      { method: "POST", body: JSON.stringify({ email, code, password }) },
+      false,
+    );
+  },
+
   getMe(): Promise<AuthUser> {
     return request<AuthUser>("/v1/me");
   },
