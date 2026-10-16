@@ -1,11 +1,14 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
-  Play,
-  Pause,
   SkipNext,
   SkipPrevious,
 } from "@solar-icons/react";
+import {
+  PlayerMorphIcon,
+  ICON_PLAY,
+  ICON_PAUSE,
+} from "@/features/player/ui/morphPlayerIcons";
 import { HeartFill, HeartLine } from "@mingcute/react";
 import CoverImage from "@/features/covers/ui/CoverImage";
 import { ScrollableText } from "@/shared/ui/ScrollableText";
@@ -400,11 +403,16 @@ export function OverlayPlayer() {
               className="inline-flex h-[28px] w-[28px] items-center justify-center rounded-full bg-white text-black shadow transition-all duration-150 ease-out hover:scale-105 active:scale-95 border-none cursor-pointer"
               title={isPlaying ? "Pause" : "Play"}
             >
-              {isPlaying ? (
-                <Pause size={14} weight="Bold" />
-              ) : (
-                <Play size={14} weight="Bold" className="translate-x-[0.5px]" />
-              )}
+              <span
+                className={`flex items-center justify-center transition-transform ${
+                  isPlaying ? "" : "translate-x-[0.5px]"
+                }`}
+              >
+                <PlayerMorphIcon
+                  icon={isPlaying ? ICON_PAUSE : ICON_PLAY}
+                  size={14}
+                />
+              </span>
             </button>
 
             <button

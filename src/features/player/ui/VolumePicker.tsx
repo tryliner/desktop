@@ -1,6 +1,11 @@
 import { useState, useRef, useCallback, memo } from "react";
 import { motion } from "framer-motion";
-import { VolumeCross, VolumeSmall, VolumeLoud } from "@solar-icons/react";
+import {
+  PlayerMorphIcon,
+  ICON_VOLUME_MUTE,
+  ICON_VOLUME_LOW,
+  ICON_VOLUME_HIGH,
+} from "./morphPlayerIcons";
 import { usePlayerState } from "../hooks/usePlayerState";
 import { playerEngine } from "../engine/playerEngine";
 import { toVolumeGain, toVolumeLevel } from "../engine/volume";
@@ -181,13 +186,16 @@ export const VolumePicker = memo(function VolumePicker({
           } transition-colors duration-150 ease-out cursor-pointer ${iconClassName}`}
         >
           <span className="flex items-center justify-center transition-transform duration-150 ease-out hover:scale-110 active:scale-90">
-            {percentage === 0 ? (
-              <VolumeCross size={iconSizes} weight="Bold" />
-            ) : percentage < 40 ? (
-              <VolumeSmall size={iconSizes} weight="Bold" />
-            ) : (
-              <VolumeLoud size={iconSizes} weight="Bold" />
-            )}
+            <PlayerMorphIcon
+              icon={
+                percentage === 0
+                  ? ICON_VOLUME_MUTE
+                  : percentage < 40
+                    ? ICON_VOLUME_LOW
+                    : ICON_VOLUME_HIGH
+              }
+              size={iconSizes}
+            />
           </span>
         </button>
       )}

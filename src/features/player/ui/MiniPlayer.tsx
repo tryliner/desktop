@@ -4,22 +4,26 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   Radio,
   Sidebar,
-  Play,
-  Pause,
-  Repeat,
-  RepeatOne,
-  Shuffle,
   SkipNext,
   SkipPrevious,
-  VolumeCross,
-  VolumeSmall,
-  VolumeLoud,
   MaximizeSquare3,
   TrashBin2,
   Bookmark,
   PlaybackSpeed,
+  VolumeCross,
+  VolumeSmall,
+  VolumeLoud,
+  Repeat,
+  RepeatOne,
+  Shuffle,
 } from "@solar-icons/react";
 import { HeartFill, HeartLine } from "@mingcute/react";
+
+import {
+  PlayerMorphIcon,
+  ICON_PLAY,
+  ICON_PAUSE,
+} from "./morphPlayerIcons";
 
 import { usePlayerState } from "../hooks/usePlayerState";
 import { playerEngine } from "../engine/playerEngine";
@@ -907,16 +911,30 @@ function MiniPlayer({
               }}
               style={{ cursor: "pointer" }}
             >
-              {isLoading ? (
+              {/* keep the morph icon mounted through the loading state
+                  (spinner overlays it) — swapping it out on "loading" would
+                  remount MorphIcon when the track starts, which skips the
+                  play -> pause morph animation. */}
+              <span className="relative flex h-[16px] w-[16px] items-center justify-center">
                 <span
-                  className="h-[16px] w-[16px] animate-spin rounded-full border-[2px] border-current border-t-transparent"
-                  aria-label="Loading playback"
-                />
-              ) : isPlaying ? (
-                <Pause size={16} weight="Bold" />
-              ) : (
-                <Play size={16} weight="Bold" className="translate-x-[0.5px]" />
-              )}
+                  className={`absolute inset-0 flex items-center justify-center ${
+                    isLoading ? "opacity-0" : ""
+                  } transition-transform ${
+                    isPlaying ? "" : "translate-x-[0.5px]"
+                  }`}
+                >
+                  <PlayerMorphIcon
+                    icon={isPlaying ? ICON_PAUSE : ICON_PLAY}
+                    size={16}
+                  />
+                </span>
+                {isLoading && (
+                  <span
+                    className="absolute h-[16px] w-[16px] animate-spin rounded-full border-[2px] border-current border-t-transparent"
+                    aria-label="Loading playback"
+                  />
+                )}
+              </span>
             </button>
             <button
               type="button"
