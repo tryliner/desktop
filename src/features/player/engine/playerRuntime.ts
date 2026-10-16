@@ -93,6 +93,9 @@ async function resolveDirectInnertubeStream(plan: {
   };
 }
 
+// seconds of steady playback after which a recovered track counts as healthy again
+const STABLE_PLAYBACK_RESET_S = 5;
+
 export class PlayerRuntime {
   private audio: HTMLAudioElement;
   private currentTrackId: string | null = null;
@@ -111,6 +114,8 @@ export class PlayerRuntime {
   private backgroundCacheAbortController: AbortController | null = null;
   private currentSessionExpiresAt: number | null = null;
   private recoveryAttempts = 0;
+  private stablePlaybackSeconds = 0;
+  private lastPlaybackTime: number | null = null;
   public onEnded?: () => void;
   public onError?: (info: { trackId: string; message: string }) => void;
 
@@ -251,6 +256,7 @@ export class PlayerRuntime {
 
       const posMs = Math.round(audioEl.currentTime * 1000);
       usePlayerStore.getState().setPosition(posMs);
+      this.countStablePlayback(audioEl.currentTime);
     });
 
     audioEl.addEventListener("durationchange", () => {
@@ -264,6 +270,7 @@ export class PlayerRuntime {
     audioEl.addEventListener("waiting", () => {
       if (this.isResetting || audioEl !== this.audio) return;
       log("yellow", "audio", "buffering (waiting)");
+      this.resetStablePlayback();
       this.stallStartTime = performance.now();
       if (usePlayerStore.getState().status === "playing") {
         usePlayerStore.getState().setStatus("loading");
@@ -288,6 +295,8 @@ export class PlayerRuntime {
     audioEl.addEventListener("playing", () => {
       if (this.isResetting || audioEl !== this.audio) return;
       log("green", "audio", "playing");
+      this.stablePlaybackSeconds = 0;
+      this.lastPlaybackTime = audioEl.currentTime;
       this.applyPlaybackRateAndPitch();
 
       if (this.stallStartTime !== null) {
@@ -311,6 +320,7 @@ export class PlayerRuntime {
     audioEl.addEventListener("pause", () => {
       if (this.isResetting || audioEl !== this.audio) return;
       log("cyan", "audio", "paused");
+      this.resetStablePlayback();
       const st = usePlayerStore.getState().status;
       if (st === "playing") {
         usePlayerStore.getState().setStatus("paused");
@@ -320,6 +330,7 @@ export class PlayerRuntime {
     audioEl.addEventListener("error", () => {
       if (this.isResetting || audioEl !== this.audio) return;
       if (!this.currentTrackId || !audioEl.src || audioEl.src === window.location.href) return;
+      this.resetStablePlayback();
 
       const message = audioEl.error?.message || "Audio playback error";
       const code = audioEl.error?.code;
@@ -357,6 +368,28 @@ export class PlayerRuntime {
       usePlayerStore.getState().setStatus("error", message);
       this.onError?.({ trackId: this.currentTrackId, message });
     });
+  }
+
+  // a recovered track that keeps playing is healthy again, so a later transient error
+  // (e.g. an expired session on a long listen) gets its own recovery attempt.
+  // an unreadable file never reaches steady playback, so it still gives up after one retry.
+  private countStablePlayback(currentTime: number): void {
+    if (this.lastPlaybackTime === null || this.recoveryAttempts === 0) return;
+    const delta = currentTime - this.lastPlaybackTime;
+    this.lastPlaybackTime = currentTime;
+    // a step back or a jump (seek) is not playback
+    if (delta <= 0 || delta > 2) return;
+    this.stablePlaybackSeconds += delta;
+    if (this.stablePlaybackSeconds >= STABLE_PLAYBACK_RESET_S) {
+      log("green", "playback", "playback stable again — recovery attempt restored");
+      this.recoveryAttempts = 0;
+      this.resetStablePlayback();
+    }
+  }
+
+  private resetStablePlayback(): void {
+    this.stablePlaybackSeconds = 0;
+    this.lastPlaybackTime = null;
   }
 
   public getCurrentTrackId(): string | null {
@@ -457,6 +490,7 @@ export class PlayerRuntime {
   private safeResetAudioElement() {
     this.isResetting = true;
     this.currentSessionExpiresAt = null;
+    this.resetStablePlayback();
     try {
       this.cancelFade();
       this.audio.pause();
