@@ -178,6 +178,18 @@ describe("linerDb storage layer", () => {
     expect(updated?.lastCheckedAt).toBeGreaterThan(initialTime);
   });
 
+  it("keeps only the most recent audio blobs in memory instead of every played track", async () => {
+    for (let i = 1; i <= 6; i++) {
+      await linerDb.putAudio(`track_mem_${i}`, new Blob([`audio ${i}`], { type: "audio/ogg" }), "audio/ogg");
+    }
+    const inMemory = [...(linerDb as unknown as { memAudio: Map<string, unknown> }).memAudio.keys()];
+    expect(inMemory).toEqual(["track_mem_4", "track_mem_5", "track_mem_6"]);
+
+    await linerDb.getAudio("track_mem_5");
+    const afterRead = [...(linerDb as unknown as { memAudio: Map<string, unknown> }).memAudio.keys()];
+    expect(afterRead).toEqual(["track_mem_4", "track_mem_6", "track_mem_5"]);
+  });
+
   it("tracks lastPlayedAt on putAudio and touchAudio", async () => {
     const blob1 = new Blob(["audio content 1"], { type: "audio/ogg" });
     const earlyTime = 100000;

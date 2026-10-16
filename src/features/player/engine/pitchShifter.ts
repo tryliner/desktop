@@ -398,6 +398,10 @@ export class PitchShifterController {
     }
   }
 
+  public isAttached(): boolean {
+    return this.isConnected;
+  }
+
   public resumeContext(): void {
     if (this.context && this.context.state === "suspended") {
       void this.context.resume().catch(() => {});
@@ -468,13 +472,6 @@ export class PitchShifterController {
 }
 
 export const pitchShifter = new PitchShifterController();
-if (typeof window !== "undefined") {
-  const win = window as any;
-  const audio = win.__liner_audio || (typeof document !== "undefined" && document.getElementById("liner-audio"));
-  if (audio) {
-    pitchShifter.attach(audio);
-  }
-}
 
 if (import.meta.hot) {
   import.meta.hot.accept();

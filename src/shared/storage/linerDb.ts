@@ -51,6 +51,8 @@ export interface CachedArtistRecord {
 const DB_NAME = "liner_db_v1";
 const DB_VERSION = 4;
 
+const MEM_AUDIO_LIMIT = 3;
+
 class LinerDb {
   private dbPromise: Promise<IDBDatabase> | null = null;
   private isSupported = typeof indexedDB !== "undefined";
@@ -252,9 +254,22 @@ class LinerDb {
     return total;
   }
 
+  private rememberAudio(trackId: string, record: CachedAudioRecord): void {
+    this.memAudio.delete(trackId);
+    this.memAudio.set(trackId, record);
+    while (this.memAudio.size > MEM_AUDIO_LIMIT) {
+      const oldest = this.memAudio.keys().next().value;
+      if (oldest === undefined) break;
+      this.memAudio.delete(oldest);
+    }
+  }
+
   async getAudio(trackId: string): Promise<CachedAudioRecord | null> {
     const mem = this.memAudio.get(trackId);
-    if (mem) return mem;
+    if (mem) {
+      this.rememberAudio(trackId, mem);
+      return mem;
+    }
 
     const result = await this.runTransaction("audio", "readonly", (store) => {
       return new Promise<CachedAudioRecord | null>((resolve) => {
@@ -265,7 +280,7 @@ class LinerDb {
     });
 
     if (result) {
-      this.memAudio.set(trackId, result);
+      this.rememberAudio(trackId, result);
       return result;
     }
     return this.memAudio.get(trackId) || null;
@@ -282,7 +297,7 @@ class LinerDb {
       savedAt: existing?.savedAt ?? now,
       lastPlayedAt: lastPlayedAt ?? now,
     };
-    this.memAudio.set(trackId, record);
+    this.rememberAudio(trackId, record);
 
     await this.runTransaction("audio", "readwrite", (store) => {
       return new Promise<void>((resolve, reject) => {
@@ -297,7 +312,7 @@ class LinerDb {
     const record = await this.getAudio(trackId);
     if (!record) return;
     record.lastPlayedAt = Date.now();
-    this.memAudio.set(trackId, record);
+    this.rememberAudio(trackId, record);
 
     await this.runTransaction("audio", "readwrite", (store) => {
       return new Promise<void>((resolve) => {

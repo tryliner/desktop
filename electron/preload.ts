@@ -33,6 +33,7 @@ export interface UpdateDownloadProgress {
 export interface WindowState {
   isMaximized: boolean;
   isFullScreen: boolean;
+  isVisible?: boolean;
 }
 
 export interface LinerElectronApi {

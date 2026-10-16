@@ -130,7 +130,6 @@ export class PlayerRuntime {
     }
     this.audio = audio;
     this.setupAudioListeners(this.audio);
-    pitchShifter.attach(this.audio);
 
     const initialVolume = usePlayerStore.getState().volume;
     this.audio.volume = initialVolume;
@@ -397,6 +396,8 @@ export class PlayerRuntime {
       const pitchSemitones = store.pitchSemitones ?? 0;
       const isReverbEnabled = store.isReverbEnabled ?? false;
       const reverbLevel = store.reverbLevel ?? 0.35;
+      const needsEffects = isReverbEnabled || (!isPitchLinked && Math.abs(pitchSemitones) >= 0.05);
+      if (!needsEffects && !pitchShifter.isAttached()) return;
       pitchShifter.attach(this.audio);
       pitchShifter.update({
         pitchSemitones,

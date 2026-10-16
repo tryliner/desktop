@@ -127,6 +127,7 @@ function createWindow() {
     mainWindow.webContents.send("window:state-changed", {
       isMaximized: mainWindow.isMaximized(),
       isFullScreen: mainWindow.isFullScreen(),
+      isVisible: mainWindow.isVisible() && !mainWindow.isMinimized(),
     });
   };
 
@@ -134,6 +135,10 @@ function createWindow() {
   mainWindow.on("unmaximize", broadcastWindowState);
   mainWindow.on("enter-full-screen", broadcastWindowState);
   mainWindow.on("leave-full-screen", broadcastWindowState);
+  mainWindow.on("minimize", broadcastWindowState);
+  mainWindow.on("restore", broadcastWindowState);
+  mainWindow.on("hide", broadcastWindowState);
+  mainWindow.on("show", broadcastWindowState);
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     if (url.startsWith("https:") || url.startsWith("http:")) {
