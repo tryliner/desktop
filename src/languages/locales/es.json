@@ -471,7 +471,7 @@
       },
       "auto_show_on_minimize": {
         "title": "Mostrar automáticamente al minimizar",
-        "description": "Muestra automáticamente el reproductor flotante cuando Liner se minimiza."
+        "description": "Muestra automáticamente el reproductor flotante cuando Liner se minimiza o pasa a segundo plano (Alt+Tab)."
       },
       "always_on_top": {
         "title": "Siempre encima",

@@ -467,7 +467,7 @@
       },
       "auto_show_on_minimize": {
         "title": "Auto-show on minimize",
-        "description": "Automatically show the overlay when Liner is minimized."
+        "description": "Automatically show the overlay when Liner is minimized or goes to the background (Alt+Tab)."
       },
       "always_on_top": {
         "title": "Always on top",
