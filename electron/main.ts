@@ -49,8 +49,6 @@ app.commandLine.appendSwitch("enable-gpu-rasterization");
 app.commandLine.appendSwitch("enable-zero-copy");
 app.commandLine.appendSwitch("ignore-gpu-blocklist");
 app.commandLine.appendSwitch("enable-native-gpu-memory-buffers");
-// forces resilient http/1.1 to prevent chromium err_http2_ping_failed on dropped network frames
-app.commandLine.appendSwitch("disable-http2");
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -326,7 +324,9 @@ if (!gotTheLock) {
       const responseHeaders = { ...(details.responseHeaders || {}) };
       responseHeaders["access-control-allow-origin"] = ["*"];
       responseHeaders["access-control-allow-headers"] = ["*"];
-      responseHeaders["access-control-allow-methods"] = ["GET, HEAD, OPTIONS"];
+      responseHeaders["access-control-allow-methods"] = [
+        "GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS",
+      ];
       callback({ responseHeaders });
     });
 
