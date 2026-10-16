@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from "react";
+import { useTranslation } from "@/languages";
 import { motion } from "framer-motion";
 import {
   Play,
@@ -24,6 +25,7 @@ const OVERLAY_CARD_TRANSITION = {
 
 export function OverlayPlayer() {
   useDisableButtonFocus();
+  const { t } = useTranslation();
 
   const [state, setState] = useState<OverlayStatePayload>({
     status: "idle",
@@ -381,7 +383,8 @@ export function OverlayPlayer() {
                 sendAction({ type: "prev" });
               }}
               className="flex h-[26px] w-[26px] items-center justify-center rounded-lg border-0 bg-transparent text-white/60 hover:text-white active:scale-90 transition-all outline-none cursor-pointer"
-              title="Previous"
+              aria-label={t("player.previous")}
+              title={t("player.previous")}
             >
               <SkipPrevious size={16} weight="Bold" />
             </button>
@@ -419,7 +422,8 @@ export function OverlayPlayer() {
                 sendAction({ type: "next" });
               }}
               className="flex h-[26px] w-[26px] items-center justify-center rounded-lg border-0 bg-transparent text-white/60 hover:text-white active:scale-90 transition-all outline-none cursor-pointer"
-              title="Next"
+              aria-label={t("player.next")}
+              title={t("player.next")}
             >
               <SkipNext size={16} weight="Bold" />
             </button>

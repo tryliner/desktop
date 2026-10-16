@@ -2,6 +2,7 @@ import en from "./locales/en.json";
 import ru from "./locales/ru.json";
 import uk from "./locales/uk.json";
 import es from "./locales/es.json";
+import de from "./locales/de.json";
 import type { Locale } from "./locale";
 
 export const translations: Record<Locale, Record<string, unknown>> = {
@@ -9,4 +10,5 @@ export const translations: Record<Locale, Record<string, unknown>> = {
   ru,
   uk,
   es,
+  de,
 };

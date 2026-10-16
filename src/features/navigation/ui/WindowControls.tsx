@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "@/languages";
 import { LuMinus, LuSquare, LuX } from "react-icons/lu";
 import { useIsContentTransparent } from "@/features/settings/store/customizationStore";
 
@@ -15,6 +16,7 @@ export default function WindowControls({
   style,
   isFullscreen = false,
 }: WindowControlsProps) {
+  const { t } = useTranslation();
   const [isWindowFullScreen, setIsWindowFullScreen] = useState(false);
   const [isWindowMaximized, setIsWindowMaximized] = useState(false);
 
@@ -94,8 +96,8 @@ export default function WindowControls({
                     ? "text-white/70 hover:text-white hover:bg-white/10 active:scale-95 cursor-pointer"
                     : "text-text-primary hover:bg-border-alpha-14 active:scale-95 cursor-pointer"
           }`}
-          aria-label="Minimize"
-          title={isMinimizeDisabled ? undefined : "Minimize"}
+          aria-label={t("common.minimize")}
+          title={isMinimizeDisabled ? undefined : t("common.minimize")}
         >
           <LuMinus size={13} />
         </button>
@@ -113,17 +115,17 @@ export default function WindowControls({
           }`}
           aria-label={
             isWindowFullScreen
-              ? "Exit Fullscreen"
+              ? t("common.exitFullscreen")
               : isWindowMaximized
-                ? "Restore"
-                : "Maximize"
+                ? t("common.restore")
+                : t("common.maximize")
           }
           title={
             isWindowFullScreen
-              ? "Exit Fullscreen"
+              ? t("common.exitFullscreen")
               : isWindowMaximized
-                ? "Restore"
-                : "Maximize"
+                ? t("common.restore")
+                : t("common.maximize")
           }
         >
           <LuSquare size={11} />
@@ -140,8 +142,8 @@ export default function WindowControls({
                   ? "text-white/70 hover:text-white"
                   : "text-text-primary"
           }`}
-          aria-label="Close"
-          title="Close"
+          aria-label={t("common.close")}
+          title={t("common.close")}
         >
           <LuX size={13} />
         </button>

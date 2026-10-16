@@ -43,7 +43,7 @@ describe("locale", () => {
   });
 
   it("falls back to browser locale on invalid stored value", () => {
-    localStorage.setItem("liner_locale", "de");
+    localStorage.setItem("liner_locale", "fr");
     expect(getStoredLocale()).toBe("en");
   });
 });
