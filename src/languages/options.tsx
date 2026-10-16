@@ -19,4 +19,9 @@ export const LOCALE_OPTIONS: SelectOption<Locale>[] = [
     label: "Українська",
     icon: <Emoji name="flag-ukraine" width={16} />,
   },
+  {
+    value: "pt",
+    label: "Português (Brasil)",
+    icon: <Emoji name="flag-brazil" width={16} />,
+  },
 ];

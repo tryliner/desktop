@@ -71,6 +71,17 @@ describe("getBrowserLocale", () => {
     vi.unstubAllGlobals();
   });
 
+  it("returns pt when navigator.language is pt-BR or pt-PT", () => {
+    vi.stubGlobal("window", { navigator: { language: "pt-BR", languages: ["pt-BR", "en-US"] } });
+    vi.stubGlobal("navigator", {
+      ...navigator,
+      language: "pt-BR",
+      languages: ["pt-BR", "en-US"],
+    });
+    expect(getBrowserLocale()).toBe("pt");
+    vi.unstubAllGlobals();
+  });
+
   it("falls back to ru for unknown locales", () => {
     vi.stubGlobal("window", { navigator: { language: "fr-FR", languages: ["fr-FR"] } });
     vi.stubGlobal("navigator", {
