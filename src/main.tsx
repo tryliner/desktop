@@ -8,7 +8,7 @@ import { initBackgroundStorageAnalytics } from "@/shared/utils/cacheManager";
 import { initApiEndpointProbe } from "@/shared/api";
 import { initClientVisitorSession } from "@/shared/api/visitorSession";
 
-// Initialize global uncaught error, telemetry listeners, background storage tracker, edge health probe, and visitor session
+// Initialize global uncaught error, telemetry listeners, background storage tracker, api health probe, and visitor session
 initGlobalErrorHandlers();
 initTelemetry();
 initBackgroundStorageAnalytics();

@@ -1,14 +1,24 @@
-// primary api and polish edge relay fallback
+// api base url: the https primary api, unless VITE_API_URL or setApiBaseUrl points to another https (or loopback) server
 export const DEFAULT_PRIMARY_API = "https://api.tryliner.fun";
-export const FALLBACK_EDGE_API = "http://edge.tryliner.fun:10518";
 
 const STORAGE_KEY = "liner_active_api_base";
 const HEALTH_TIMEOUT_MS = 6000;
+const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]"]);
+
+// https only: plain http would carry tokens and passwords unencrypted, except to a local dev server
+function isSecureBaseUrl(url: string): boolean {
+  try {
+    const { protocol, hostname } = new URL(url);
+    return protocol === "https:" || (protocol === "http:" && LOOPBACK_HOSTS.has(hostname));
+  } catch {
+    return false;
+  }
+}
 
 function isExplicitCustomOverride(url?: string): boolean {
   if (!url) return false;
   const clean = url.replace(/\/+$/, "");
-  return clean.length > 0 && clean !== DEFAULT_PRIMARY_API && clean !== FALLBACK_EDGE_API;
+  return clean.length > 0 && clean !== DEFAULT_PRIMARY_API && isSecureBaseUrl(clean);
 }
 
 function loadStoredBaseUrl(): string {
@@ -33,14 +43,16 @@ export function getApiBaseUrl(): string {
   return currentBaseUrl;
 }
 
-export function setApiBaseUrl(url: string): void {
-  currentBaseUrl = url.replace(/\/+$/, "");
+// returns false and keeps the current base url when the url is not https (or http to loopback)
+export function setApiBaseUrl(url: string): boolean {
+  const clean = url.replace(/\/+$/, "");
+  if (!isSecureBaseUrl(clean)) {
+    console.warn("[API] refusing insecure api base url:", clean);
+    return false;
+  }
+  currentBaseUrl = clean;
   persistBaseUrl(currentBaseUrl);
-}
-
-// never fall back to the edge relay while it is plain http: it would carry tokens and passwords unencrypted
-export function switchToFallbackEdge(): boolean {
-  return false;
+  return true;
 }
 
 export function switchToPrimaryApi(): void {
@@ -48,7 +60,7 @@ export function switchToPrimaryApi(): void {
   persistBaseUrl(DEFAULT_PRIMARY_API);
 }
 
-// eagerly probes primary health on launch and switches to edge if cloudflare is unreachable
+// probes the primary api health on launch; the client stays on the https primary api whatever the result
 export function initApiEndpointProbe(timeoutMs = HEALTH_TIMEOUT_MS): Promise<string> {
   if (probePromise) return probePromise;
   const envUrl = import.meta.env.VITE_API_URL as string | undefined;

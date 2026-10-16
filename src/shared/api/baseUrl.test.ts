@@ -1,10 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import {
   DEFAULT_PRIMARY_API,
-  FALLBACK_EDGE_API,
   getApiBaseUrl,
   setApiBaseUrl,
-  switchToFallbackEdge,
   initApiEndpointProbe,
   resetEndpointProbe,
 } from "./baseUrl";
@@ -42,11 +40,24 @@ describe("baseUrl endpoint manager & probe", () => {
     vi.restoreAllMocks();
   });
 
-  it("never switches to the plain http edge relay", () => {
+  it("refuses a plain http base url to a remote host and keeps the current one", () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    storageMap.clear();
+
+    expect(setApiBaseUrl("http://edge.tryliner.fun:10518")).toBe(false);
+    expect(setApiBaseUrl("not a url")).toBe(false);
     expect(getApiBaseUrl()).toBe(DEFAULT_PRIMARY_API);
-    expect(switchToFallbackEdge()).toBe(false);
-    expect(getApiBaseUrl()).toBe(DEFAULT_PRIMARY_API);
-    expect(storageMap.get("liner_active_api_base")).not.toBe(FALLBACK_EDGE_API);
+    expect(storageMap.has("liner_active_api_base")).toBe(false);
+  });
+
+  it("accepts https and plain http to loopback", () => {
+    expect(setApiBaseUrl("https://staging.example.com/")).toBe(true);
+    expect(getApiBaseUrl()).toBe("https://staging.example.com");
+
+    for (const url of ["http://localhost:1337", "http://127.0.0.1:1337", "http://[::1]:1337"]) {
+      expect(setApiBaseUrl(url)).toBe(true);
+      expect(getApiBaseUrl()).toBe(url);
+    }
   });
 
   it("stays on the https primary api when health probe fails", async () => {
