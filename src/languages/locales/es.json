@@ -393,6 +393,11 @@
   "playlist": {
     "playlist": "Lista de reproducción",
     "liked_songs": "Canciones que te gustan",
+    "downloaded_title": "Música descargada",
+    "downloaded_hint": "Canciones guardadas en este ordenador. Se reproducen incluso cuando Liner está sin conexión.",
+    "downloaded_offline_hint": "Estás sin conexión. Estas canciones se reproducen desde este ordenador hasta que vuelvan los servidores de Liner.",
+    "downloaded_empty_title": "Todavía no hay música descargada",
+    "downloaded_empty_subtitle": "Las canciones que escuchas se guardan aquí automáticamente.",
     "untitled_playlist": "Lista sin título",
     "play_all": "Reproducir todo",
     "add_to_queue": "Añadir lista a la cola",
@@ -856,6 +861,8 @@
     "sign_out": "Cerrar sesión"
   },
   "connectivity": {
+    "open_downloads": "Música descargada ({count})",
+    "back_online": "Liner vuelve a estar en línea.",
     "wall_title": "Error de conexión",
     "wall_subtitle": "Liner no puede comunicarse con sus servidores. Tu música y biblioteca están seguras.",
     "steps_title": "Soluciones rápidas que puedes probar",

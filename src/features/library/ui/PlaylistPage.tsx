@@ -14,6 +14,8 @@ import {
   CheckLine,
   ArrowLeftLine,
   ShareForwardLine,
+  Download2Fill,
+  Refresh1Line,
 } from "@mingcute/react";
 import { AnimatePresence, motion } from "framer-motion";
 import { LuPencil, LuTrash2, LuText, LuShuffle } from "react-icons/lu";
@@ -27,7 +29,10 @@ import {
   usePlaylist,
   useLikedTracks,
   useReorderPlaylistTracks,
+  useDownloadedTracks,
+  DOWNLOADS_PLAYLIST_ID,
 } from "../hooks";
+import { useConnectivityStore } from "@/features/connectivity/store/connectivityStore";
 import { useListReorder } from "@/shared/hooks";
 import { playerEngine } from "@/features/player";
 import type { Track } from "@/shared/types";
@@ -101,6 +106,12 @@ function LibraryPlaylistContent() {
   const [searchParams] = useSearchParams();
   const id = searchParams.get("id");
   const isLikesMode = id === "likes";
+  const isDownloadsMode = id === DOWNLOADS_PLAYLIST_ID;
+  // likes and downloads are built on the client: no rename, description, menu or reorder
+  const isVirtualMode = isLikesMode || isDownloadsMode;
+  const offlineMode = useConnectivityStore((s) => s.offlineMode);
+  const connectivityRunning = useConnectivityStore((s) => s.running);
+  const retryConnectivity = useConnectivityStore((s) => s.retry);
   const decodedId = id ? decodeURIComponent(id) : null;
   const scrollRef = useRef<HTMLDivElement>(null);
   const { t } = useTranslation();
@@ -116,13 +127,20 @@ function LibraryPlaylistContent() {
     data: playlistDetail,
     isLoading: playlistLoading,
     error: playlistError,
-  } = usePlaylist(isLikesMode ? null : decodedId);
+  } = usePlaylist(isVirtualMode ? null : decodedId);
 
   const { data: likesData, isLoading: likesLoading } = useLikedTracks(
     isLikesMode ? { limit: 1000, offset: 0 } : undefined,
   );
 
-  const isLoading = isLikesMode ? likesLoading : playlistLoading;
+  const { data: downloadedTracks, isLoading: downloadsLoading } =
+    useDownloadedTracks(isDownloadsMode);
+
+  const isLoading = isLikesMode
+    ? likesLoading
+    : isDownloadsMode
+      ? downloadsLoading
+      : playlistLoading;
 
   const viewData = (() => {
     if (isLikesMode) {
@@ -138,6 +156,18 @@ function LibraryPlaylistContent() {
         coverUrl: "",
         coverUrls: [] as string[],
         tracks,
+        revision: 0,
+      };
+    }
+    if (isDownloadsMode) {
+      if (!downloadedTracks) return null;
+      return {
+        title: t("playlist.downloaded_title"),
+        bio: "",
+        countLabel: t("common.tracks", { count: downloadedTracks.length }),
+        coverUrl: "",
+        coverUrls: [] as string[],
+        tracks: downloadedTracks,
         revision: 0,
       };
     }
@@ -245,7 +275,7 @@ function LibraryPlaylistContent() {
 
   const handleReorderCommit = useCallback(
     (fromIndex: number, toIndex: number, movingTrack: Track) => {
-      if (!decodedId || !viewData || isLikesMode) return;
+      if (!decodedId || !viewData || isVirtualMode) return;
       if (fromIndex === toIndex || !movingTrack.playlistItemId) return;
 
       const nextList = [...currentTracks];
@@ -264,7 +294,7 @@ function LibraryPlaylistContent() {
         revision: viewData.revision,
       });
     },
-    [currentTracks, decodedId, isLikesMode, reorderTracks, viewData],
+    [currentTracks, decodedId, isVirtualMode, reorderTracks, viewData],
   );
 
   const {
@@ -491,6 +521,11 @@ function LibraryPlaylistContent() {
                       viewData.coverUrls ??
                       (viewData.coverUrl ? [viewData.coverUrl] : []);
                     if (urls.length === 0) {
+                      if (isDownloadsMode) {
+                        return (
+                          <Download2Fill size={48} className={hasCustomBg ? "text-white" : "text-zinc-400 dark:text-zinc-500"} />
+                        );
+                      }
                       return isLikesMode ? (
                         <HeartFill size={48} className={hasCustomBg ? "text-white" : "text-zinc-400 dark:text-zinc-500"} />
                       ) : (
@@ -539,11 +574,11 @@ function LibraryPlaylistContent() {
                   <h1
                     ref={titleRef}
                     className={`${SIDEBAR_TITLE_CLASS} ${
-                      isLikesMode
+                      isVirtualMode
                         ? ""
                         : "cursor-text outline-none transition-colors"
                     } ${isEditingTitle ? "bg-border-alpha-14 rounded-[4px] -ml-[4px] px-[4px]" : ""}`}
-                      contentEditable={isLikesMode ? false : isEditingTitle}
+                      contentEditable={isVirtualMode ? false : isEditingTitle}
                       suppressContentEditableWarning
                       onBlur={(e) => {
                         if (!isEditingTitle) return;
@@ -569,14 +604,18 @@ function LibraryPlaylistContent() {
                         }
                       }}
                       onClick={() => {
-                        if (!isLikesMode) setIsEditingTitle(true);
+                        if (!isVirtualMode) setIsEditingTitle(true);
                       }}
                     >
                       {viewData.title}
                     </h1>
                   }
                   subtitle={
-                    isLikesMode ? undefined : viewData.bio || isEditingDescription ? (
+                    isDownloadsMode ? (
+                      <p className={SIDEBAR_SUBTITLE_CLASS}>
+                        {t(offlineMode ? "playlist.downloaded_offline_hint" : "playlist.downloaded_hint")}
+                      </p>
+                    ) : isLikesMode ? undefined : viewData.bio || isEditingDescription ? (
                       <p
                         ref={descriptionRef}
                         className={`${SIDEBAR_SUBTITLE_CLASS} cursor-text outline-none transition-colors empty:min-h-[21px] ${
@@ -712,7 +751,19 @@ function LibraryPlaylistContent() {
                           <LuShuffle size={16} />
                         </Button>
 
-                        {!isLikesMode && (
+                        {isDownloadsMode && offlineMode && (
+                          <Button
+                            variant={hasCustomBg ? "glass-action" : "outline"}
+                            onClick={() => void retryConnectivity()}
+                            disabled={connectivityRunning}
+                            className="!h-[36px] !w-[36px] shrink-0 !p-0 flex items-center justify-center text-text-primary"
+                            title={t("connectivity.retry")}
+                          >
+                            <Refresh1Line size={16} className={connectivityRunning ? "animate-spin" : undefined} />
+                          </Button>
+                        )}
+
+                        {!isVirtualMode && (
                           <DropdownMenu
                             trigger={
                               <Button
@@ -786,13 +837,13 @@ function LibraryPlaylistContent() {
                       className="m-0 text-[15px] font-[500] text-text-primary"
                       style={{ fontFamily: "var(--font-inter), sans-serif" }}
                     >
-                      {t("playlist.empty_title")}
+                      {t(isDownloadsMode ? "playlist.downloaded_empty_title" : "playlist.empty_title")}
                     </p>
                     <p
                       className="m-0 text-[13px] text-text-tertiary"
                       style={{ fontFamily: "var(--font-inter), sans-serif" }}
                     >
-                      {t("playlist.empty_subtitle")}
+                      {t(isDownloadsMode ? "playlist.downloaded_empty_subtitle" : "playlist.empty_subtitle")}
                     </p>
                   </div>
                 </div>
@@ -840,7 +891,7 @@ function LibraryPlaylistContent() {
                   }
 
                   const canReorder = Boolean(
-                    !isLikesMode && decodedId && track.playlistItemId,
+                    !isVirtualMode && decodedId && track.playlistItemId,
                   );
 
                   return (
@@ -849,7 +900,7 @@ function LibraryPlaylistContent() {
                         track.playlistItemId ?? `${track.id}-${index}`
                       }
                       track={track}
-                      playlistId={isLikesMode ? undefined : (decodedId ?? undefined)}
+                      playlistId={isVirtualMode ? undefined : (decodedId ?? undefined)}
                       playlistTitle={viewData.title}
                       playlistCoverUrl={viewData.coverUrl}
                       allTracks={currentTracks}
@@ -893,7 +944,7 @@ function LibraryPlaylistContent() {
                     artistId={draggedItem.artistId}
                     artistList={draggedItem.artistList}
                     coverUrl={draggedItem.coverUrl || viewData.coverUrl}
-                    playlistId={isLikesMode ? undefined : (decodedId ?? undefined)}
+                    playlistId={isVirtualMode ? undefined : (decodedId ?? undefined)}
                     playlistItemId={draggedItem.playlistItemId}
                     playlistTitle={viewData.title}
                     duration={

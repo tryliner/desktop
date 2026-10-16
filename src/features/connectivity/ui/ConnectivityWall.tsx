@@ -1,5 +1,6 @@
-import { useMemo, useState } from "react";
-import { WifiOffLine, CopyLine, DownloadLine, MailLine, CloseLine } from "@mingcute/react";
+import { useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { WifiOffLine, CopyLine, DownloadLine, MailLine, CloseLine, Music2Line } from "@mingcute/react";
 import Button from "@/shared/ui/Button";
 import { useTranslation } from "@/languages";
 import { useToast } from "@/shared/ui";
@@ -8,8 +9,23 @@ import type { DiagCheck } from "../lib/diagnostics";
 import { DIAG_ENDPOINTS } from "../lib/diagnostics";
 import { buildOfflineDump, copyDump, downloadDump } from "../lib/dump";
 import { isServerOutage } from "../lib/failureKind";
+import { getAuthUserId } from "@/shared/api/auth-session";
+import {
+  DOWNLOADS_PLAYLIST_ID,
+  loadDownloadedTracks,
+} from "@/features/library/hooks/useDownloadedTracks";
 
 const SUPPORT_MAIL = "dev@tryliner.fun";
+
+// pages that work from the local cache: the downloads playlist, the player, and the
+// library that links to the downloads (it shows its own error line for the rest)
+export function isOfflineRoute(pathname: string, search: string): boolean {
+  if (pathname === "/player" || pathname === "/library") return true;
+  return (
+    pathname === "/library/playlist" &&
+    new URLSearchParams(search).get("id") === DOWNLOADS_PLAYLIST_ID
+  );
+}
 
 function StatusDot({ status }: { status: DiagCheck["status"] }) {
   const color =
@@ -34,6 +50,41 @@ export default function ConnectivityWall() {
   const retry = useConnectivityStore((s) => s.retry);
   const reset = useConnectivityStore((s) => s.reset);
   const runDiagnostics = useConnectivityStore((s) => s.runDiagnostics);
+  const enterOfflineMode = useConnectivityStore((s) => s.enterOfflineMode);
+  const navigate = useNavigate();
+  const [downloadedCount, setDownloadedCount] = useState(0);
+
+  useEffect(() => {
+    if (!visible) return;
+    let active = true;
+    void loadDownloadedTracks().then((tracks) => {
+      if (active) setDownloadedCount(tracks.length);
+    });
+    return () => {
+      active = false;
+    };
+  }, [visible]);
+
+  const location = useLocation();
+
+  // offline mode only covers the offline routes: anywhere else the
+  // user needs the server, so the wall comes back on the next failures.
+  // runs on navigation only, entering offline mode happens together with a navigation.
+  useEffect(() => {
+    const state = useConnectivityStore.getState();
+    if (state.offlineMode && !isOfflineRoute(location.pathname, location.search)) {
+      state.exitOfflineMode();
+    }
+  }, [location.pathname, location.search]);
+
+  // offline mode ends on its own (a request got through) or after a successful retry
+  useEffect(() => {
+    return useConnectivityStore.subscribe((state, prev) => {
+      if (state.restoredAt && state.restoredAt !== prev.restoredAt) {
+        toast(t("connectivity.back_online"), "info");
+      }
+    });
+  }, [toast, t]);
 
   const dump = useMemo(
     () =>
@@ -60,6 +111,13 @@ export default function ConnectivityWall() {
   const checkLabel = (check: DiagCheck): string => {
     const base = t(`connectivity.check_${check.id}`);
     return check.host ? `${base} · ${check.host}` : base;
+  };
+
+  const canOpenDownloads = downloadedCount > 0 && getAuthUserId() !== null;
+
+  const handleOpenDownloads = () => {
+    navigate(`/library/playlist?id=${DOWNLOADS_PLAYLIST_ID}`);
+    enterOfflineMode();
   };
 
   const handleCopy = async () => {
@@ -190,6 +248,16 @@ export default function ConnectivityWall() {
           >
             {running ? t("connectivity.retrying") : t("connectivity.retry")}
           </Button>
+          {canOpenDownloads ? (
+            <Button
+              variant="outline"
+              onClick={handleOpenDownloads}
+              className="!h-[38px] px-[14px] !text-[13px] flex items-center gap-[6px]"
+            >
+              <Music2Line size={15} />
+              {t("connectivity.open_downloads", { count: downloadedCount })}
+            </Button>
+          ) : null}
           <Button
             variant="outline"
             onClick={() => void handleCopy()}

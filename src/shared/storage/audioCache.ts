@@ -77,8 +77,9 @@ class AudioCache {
     trackId: string,
     blob: Blob,
     mimeType: string = "audio/ogg",
+    ownerId?: string | null,
   ): Promise<void> {
-    await linerDb.putAudio(trackId, blob, mimeType);
+    await linerDb.putAudio(trackId, blob, mimeType, undefined, ownerId);
     await this.enforceCacheLimit();
   }
 
@@ -86,13 +87,14 @@ class AudioCache {
     trackId: string,
     url: string,
     mimeType?: string,
+    ownerId?: string | null,
   ): Promise<void> {
     try {
       const response = await fetch(url);
       if (!response.ok) return;
       const blob = await response.blob();
       const resolvedMime = mimeType || blob.type || "audio/ogg";
-      await this.saveAudioBlob(trackId, blob, resolvedMime);
+      await this.saveAudioBlob(trackId, blob, resolvedMime, ownerId);
     } catch {}
   }
 

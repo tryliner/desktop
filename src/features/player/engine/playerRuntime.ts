@@ -1,6 +1,7 @@
 import { usePlayerStore } from "../store/playerStore";
 import { api, mediaUrl, ApiError } from "@/shared/api";
 import { getClientVisitorData } from "@/shared/api/visitorSession";
+import { getAuthUserId } from "@/shared/api/auth-session";
 import { log } from "@/shared/utils/logger";
 import { telemetry } from "@/shared/telemetry";
 import { linerDb } from "@/shared/storage";
@@ -497,6 +498,7 @@ export class PlayerRuntime {
     const controller = new AbortController();
     this.preloadAbortController = controller;
     this.preloadingTrackId = track.id;
+    const ownerId = getAuthUserId();
 
     const promise = (async () => {
       try {
@@ -540,7 +542,7 @@ export class PlayerRuntime {
           response.headers.get("content-type") ||
           "audio/webm";
         const blob = new Blob([arrayBuffer], { type: mimeType });
-        await linerDb.putAudio(track.id, blob, mimeType);
+        await linerDb.putAudio(track.id, blob, mimeType, undefined, ownerId);
         await linerDb.putTrack(track);
         log(
           "green",
@@ -633,6 +635,7 @@ export class PlayerRuntime {
       if (cachedAudio) {
         this.currentSessionExpiresAt = null;
         void linerDb.putTrack(track);
+        void linerDb.addAudioOwner(track.id, getAuthUserId());
         const blobUrl = URL.createObjectURL(cachedAudio.blob);
         this.activeBlobUrl = blobUrl;
         this.audio.src = blobUrl;
@@ -966,6 +969,8 @@ export class PlayerRuntime {
     signal?: AbortSignal,
   ) {
     if (track.durationMs && track.durationMs > 20 * 60 * 1000) return;
+    // the account that started playback owns the file, even if it signs out before the download ends
+    const ownerId = getAuthUserId();
     fetch(url, { headers: { Range: "bytes=0-" }, signal })
       .then(async (res) => {
         if (!res.ok && res.status !== 206) return;
@@ -977,7 +982,7 @@ export class PlayerRuntime {
         }
         const mimeType = preferredMimeType || res.headers.get("content-type") || "audio/webm";
         const blob = new Blob([arrayBuffer], { type: mimeType });
-        await linerDb.putAudio(track.id, blob, mimeType);
+        await linerDb.putAudio(track.id, blob, mimeType, undefined, ownerId);
         await linerDb.putTrack(track);
         log("green", "playback", `background cached: ${track.title} (${Math.round(blob.size / 1024)} KB)`);
       })

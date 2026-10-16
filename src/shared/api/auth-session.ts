@@ -31,6 +31,10 @@ export function getAuthSession(): AuthTokens | null {
   return session;
 }
 
+export function getAuthUserId(): string | null {
+  return getAuthSession()?.user?.id ?? null;
+}
+
 export function setAuthSession(next: AuthTokens | null): void {
   session = next;
   if (typeof window !== "undefined") {

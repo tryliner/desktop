@@ -28,3 +28,9 @@ export {
   useLikeTrack,
   useUnlikeTrack,
 } from "./useLibraryMutations";
+export {
+  useDownloadedTracks,
+  loadDownloadedTracks,
+  cachedRecordToTrack,
+  DOWNLOADS_PLAYLIST_ID,
+} from "./useDownloadedTracks";

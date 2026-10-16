@@ -3,6 +3,7 @@ import { playerRuntime, PlayerRuntime } from "./playerRuntime";
 import { usePlayerStore } from "../store/playerStore";
 import { api } from "@/shared/api";
 import { linerDb } from "@/shared/storage";
+import { setAuthSession } from "@/shared/api/auth-session";
 import type { Track } from "@/shared/types";
 
 const track: Track = {
@@ -292,5 +293,148 @@ describe("PlayerRuntime audio caching", () => {
     } finally {
       delete (audio as any).error;
     }
+  });
+});
+
+describe("PlayerRuntime cache ownership for the offline downloads list", () => {
+  const signIn = (id: string) =>
+    setAuthSession({
+      accessToken: "a",
+      refreshToken: "r",
+      accessTokenExpiresAt: new Date(Date.now() + 3_600_000).toISOString(),
+      user: { id },
+    });
+  const webm = () =>
+    new Response(new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 1, 2, 3, 4, 0, 0, 0, 0, 0, 0, 0, 0]), {
+      status: 206,
+      headers: { "content-type": "audio/webm" },
+    });
+  const session = (trackId: string) => ({
+    sessionId: `pb_${trackId}`,
+    trackId,
+    transport: "proxy" as const,
+    playbackId: `pb_${trackId}`,
+    streamUrl: `/v1/playback/pb_${trackId}/media`,
+    mimeType: "audio/webm",
+    codec: "opus" as const,
+    bitrate: 128000,
+    expiresAt: new Date(Date.now() + 600_000).toISOString(),
+  });
+
+  beforeEach(async () => {
+    await linerDb.clearAll();
+    if (!globalThis.URL.createObjectURL) {
+      globalThis.URL.createObjectURL = vi.fn((_blob: Blob) => "blob:mock-object-url");
+    } else {
+      vi.spyOn(globalThis.URL, "createObjectURL").mockReturnValue("blob:mock-object-url");
+    }
+    if (!globalThis.URL.revokeObjectURL) {
+      globalThis.URL.revokeObjectURL = vi.fn();
+    } else {
+      vi.spyOn(globalThis.URL, "revokeObjectURL").mockImplementation(() => {});
+    }
+  });
+
+  afterEach(() => {
+    setAuthSession(null);
+    vi.restoreAllMocks();
+  });
+
+  it("tags a file cached during playback with the account that played it", async () => {
+    signIn("user-a");
+    vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue();
+    vi.spyOn(api, "createPlaybackSession").mockResolvedValue(session("own-1") as never);
+    vi.spyOn(globalThis, "fetch").mockImplementation(async () => webm());
+    const owned: Track = { ...track, id: "own-1", title: "Owned" };
+
+    await playerRuntime!.loadAndPlay(owned);
+    (playerRuntime as any).audio.dispatchEvent(new Event("playing"));
+
+    await vi.waitFor(async () => {
+      expect((await linerDb.getAudio("own-1"))?.ownerIds).toEqual(["user-a"]);
+    });
+    expect((await linerDb.getDownloadedTracks("user-a")).map((t) => t.id)).toEqual(["own-1"]);
+    expect(await linerDb.getDownloadedTracks("user-b")).toEqual([]);
+  });
+
+  it("tags a preloaded file with the signed-in account", async () => {
+    signIn("user-a");
+    vi.spyOn(api, "createPlaybackSession").mockResolvedValue(session("pre-1") as never);
+    vi.spyOn(globalThis, "fetch").mockImplementation(async () => webm());
+
+    await playerRuntime!.preloadTrack({ ...track, id: "pre-1", title: "Preloaded" });
+
+    expect((await linerDb.getAudio("pre-1"))?.ownerIds).toEqual(["user-a"]);
+  });
+
+  it("adds a second account when it plays a file another account cached", async () => {
+    await linerDb.putAudio("shared-1", new Blob(["x"], { type: "audio/webm" }), "audio/webm", undefined, "user-a");
+    signIn("user-b");
+    vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue();
+
+    await playerRuntime!.loadAndPlay({ ...track, id: "shared-1", title: "Shared" });
+
+    await vi.waitFor(async () => {
+      expect((await linerDb.getAudio("shared-1"))?.ownerIds).toEqual(["user-a", "user-b"]);
+    });
+  });
+
+  it("keeps the owner that started the background download when the account switches mid-download", async () => {
+    signIn("user-a");
+    vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue();
+    vi.spyOn(api, "createPlaybackSession").mockResolvedValue(session("switch-1") as never);
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async () => {
+      await gate;
+      return webm();
+    });
+
+    await playerRuntime!.loadAndPlay({ ...track, id: "switch-1", title: "Switch" });
+    (playerRuntime as any).audio.dispatchEvent(new Event("playing"));
+    await vi.waitFor(() => expect(fetchSpy).toHaveBeenCalled());
+
+    setAuthSession(null);
+    signIn("user-b");
+    release();
+
+    await vi.waitFor(async () => {
+      expect((await linerDb.getAudio("switch-1"))?.ownerIds).toEqual(["user-a"]);
+    });
+  });
+
+  it("keeps the owner that started a preload when the account signs out mid-download", async () => {
+    signIn("user-a");
+    vi.spyOn(api, "createPlaybackSession").mockResolvedValue(session("switch-2") as never);
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async () => {
+      await gate;
+      return webm();
+    });
+
+    const pending = playerRuntime!.preloadTrack({ ...track, id: "switch-2", title: "Switch preload" });
+    await vi.waitFor(() => expect(fetchSpy).toHaveBeenCalled());
+    setAuthSession(null);
+    signIn("user-b");
+    release();
+    await pending;
+
+    expect((await linerDb.getAudio("switch-2"))?.ownerIds).toEqual(["user-a"]);
+  });
+
+  it("caches without an owner when nobody is signed in", async () => {
+    vi.spyOn(api, "createPlaybackSession").mockResolvedValue(session("anon-1") as never);
+    vi.spyOn(globalThis, "fetch").mockImplementation(async () => webm());
+
+    await playerRuntime!.preloadTrack({ ...track, id: "anon-1", title: "Anonymous" });
+
+    const record = await linerDb.getAudio("anon-1");
+    expect(record).not.toBeNull();
+    expect(record?.ownerIds).toBeUndefined();
   });
 });

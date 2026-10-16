@@ -13,8 +13,10 @@ import {
   usePlaylistsList,
   useExternalItems,
   useLikedTrackCount,
+  useDownloadedTracks,
+  DOWNLOADS_PLAYLIST_ID,
 } from "../hooks";
-import { HeartFill, AddLine } from "@mingcute/react";
+import { HeartFill, AddLine, Download2Fill } from "@mingcute/react";
 import { useTranslation } from "@/languages";
 import { useModalStore } from "../store/modalStore";
 import { useImportStore } from "../store/importStore";
@@ -52,12 +54,17 @@ function sortByRecent(items: LibraryItemViewModel[]) {
   return sorted;
 }
 
-function LikesPlaylistCard({
+// client-side playlists (liked songs, downloaded music) shown ahead of the user's playlists
+function VirtualPlaylistCard({
+  icon: Icon,
+  title,
   count,
   isLoading,
   onClick,
   viewMode = "grid",
 }: {
+  icon: typeof HeartFill;
+  title: string;
   count?: number;
   isLoading?: boolean;
   onClick: () => void;
@@ -78,7 +85,7 @@ function LikesPlaylistCard({
               hasCustomBg ? "apple-glass-static" : "bg-bg-panel"
             }`}
           >
-            <HeartFill
+            <Icon
               size={26}
               className={hasCustomBg ? "text-white" : "text-zinc-400 dark:text-zinc-500"}
             />
@@ -92,7 +99,7 @@ function LikesPlaylistCard({
                 fontWeight: 400,
               }}
             >
-              {t("library.liked_songs")}
+              {title}
             </h3>
             <p
               className="m-0 flex min-w-0 items-center text-[15px] leading-[1.2] overflow-hidden text-text-secondary"
@@ -124,14 +131,14 @@ function LikesPlaylistCard({
           hasCustomBg ? "apple-glass-static" : "bg-bg-panel"
         }`}
       >
-        <HeartFill
+        <Icon
           size={52}
           className={hasCustomBg ? "text-white" : "text-zinc-400 dark:text-zinc-500"}
         />
       </div>
       <div className="flex flex-col gap-[4px]">
         <span className="truncate text-[14px] font-[500] text-text-primary">
-          {t("library.liked_songs")}
+          {title}
         </span>
         {isLoading || count === undefined ? (
           <div className="h-[13px] w-[56%] animate-pulse rounded bg-border-alpha-14" />
@@ -185,6 +192,8 @@ export default function LibraryPage() {
   const { data: externalPlaylistItems = [] } = useExternalItems("playlist");
   const { data: likedCount, isLoading: likedCountLoading } =
     useLikedTrackCount();
+  const { data: downloadedTracks } = useDownloadedTracks();
+  const downloadedCount = downloadedTracks?.length ?? 0;
   const openCreatePlaylist = useModalStore((state) => state.openCreatePlaylist);
   const hasCustomBg = useIsContentTransparent();
 
@@ -419,8 +428,10 @@ export default function LibraryPage() {
                   prependNodes={
                     activeTab === "playlists" && !hasSearchQuery
                       ? [
-                          <LikesPlaylistCard
+                          <VirtualPlaylistCard
                             key="likes-playlist-card"
+                            icon={HeartFill}
+                            title={t("library.liked_songs")}
                             count={likedCount}
                             isLoading={likedCountLoading}
                             viewMode={viewMode}
@@ -428,6 +439,22 @@ export default function LibraryPage() {
                               navigate("/library/playlist?id=likes")
                             }
                           />,
+                          ...(downloadedCount > 0
+                            ? [
+                                <VirtualPlaylistCard
+                                  key="downloads-playlist-card"
+                                  icon={Download2Fill}
+                                  title={t("playlist.downloaded_title")}
+                                  count={downloadedCount}
+                                  viewMode={viewMode}
+                                  onClick={() =>
+                                    navigate(
+                                      `/library/playlist?id=${DOWNLOADS_PLAYLIST_ID}`,
+                                    )
+                                  }
+                                />,
+                              ]
+                            : []),
                           ...(isImporting && importJob
                             ? [
                                 <ImportingPlaylistCard

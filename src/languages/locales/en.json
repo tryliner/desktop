@@ -389,6 +389,11 @@
   "playlist": {
     "playlist": "Playlist",
     "liked_songs": "Liked songs",
+    "downloaded_title": "Downloaded music",
+    "downloaded_hint": "Tracks saved on this computer. They play even when Liner is offline.",
+    "downloaded_offline_hint": "You are offline. These tracks play from this computer until Liner's servers are back.",
+    "downloaded_empty_title": "No downloaded music yet",
+    "downloaded_empty_subtitle": "Tracks you listen to are saved here automatically.",
     "untitled_playlist": "Untitled Playlist",
     "play_all": "Play all",
     "add_to_queue": "Add playlist to a queue",
@@ -853,6 +858,8 @@
     "sign_out": "Sign out"
   },
   "connectivity": {
+    "open_downloads": "Downloaded music ({count})",
+    "back_online": "Liner is back online.",
     "wall_title": "Connection failed",
     "wall_subtitle": "Liner can't reach its servers. Your music and library are safe.",
     "wall_title_server": "Liner's servers are having trouble",

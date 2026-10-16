@@ -393,6 +393,11 @@
   "playlist": {
     "playlist": "Плейліст",
     "liked_songs": "Вподобані",
+    "downloaded_title": "Завантажена музика",
+    "downloaded_hint": "Треки, збережені на цьому комп'ютері. Вони грають, навіть коли Liner офлайн.",
+    "downloaded_offline_hint": "Ви офлайн. Ці треки грають з цього комп'ютера, доки сервери Liner не повернуться.",
+    "downloaded_empty_title": "Завантаженої музики ще немає",
+    "downloaded_empty_subtitle": "Треки, які ви слухаєте, зберігаються тут автоматично.",
     "untitled_playlist": "Плейліст без назви",
     "play_all": "Грати все",
     "add_to_queue": "Додати плейлист в чергу",
@@ -890,6 +895,8 @@
     "sign_out": "Вийти"
   },
   "connectivity": {
+    "open_downloads": "Завантажена музика ({count})",
+    "back_online": "Liner знову в мережі.",
     "wall_title": "Немає з'єднання",
     "wall_subtitle": "Liner не може зв'язатися із серверами. Ваша музика й бібліотека в безпеці.",
     "wall_title_server": "Проблеми на серверах Liner",

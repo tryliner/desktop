@@ -26,8 +26,10 @@ import { showToast } from "@/shared/ui/Toast";
 import { createTranslatorSync, getStoredLocale } from "@/languages";
 import {
   isConnectivityFailure,
+  isOfflineModeActive,
   isPlaybackPath,
   recordConnectivityFailure,
+  recordConnectivitySuccess,
   statusOf,
   stripQuery,
 } from "@/features/connectivity";
@@ -83,10 +85,12 @@ async function fetchWithTimeout(
     return res;
   } catch (err: any) {
     if (didTimeout) {
-      showToast(translate("common.error_timeout_title"), "error", {
-        id: "network-timeout-toast",
-        description: translate("common.error_network"),
-      });
+      if (!isOfflineModeActive()) {
+        showToast(translate("common.error_timeout_title"), "error", {
+          id: "network-timeout-toast",
+          description: translate("common.error_network"),
+        });
+      }
       throw new ApiError(
         0,
         "Request timed out. Please check your network connection.",
@@ -96,10 +100,12 @@ async function fetchWithTimeout(
     if (userSignal?.aborted) {
       throw err;
     }
-    showToast(translate("common.error_network_title"), "error", {
-      id: "network-error-toast",
-      description: translate("common.error_network"),
-    });
+    if (!isOfflineModeActive()) {
+      showToast(translate("common.error_network_title"), "error", {
+        id: "network-error-toast",
+        description: translate("common.error_network"),
+      });
+    }
     throw new ApiError(
       0,
       "Network error. Unable to reach server.",
@@ -407,6 +413,10 @@ async function executeRequest<T>(
   const durationMs = Math.round(performance.now() - startTime);
   telemetry.trackNetwork(method, path, res.status, durationMs, requestId);
 
+  if (res.ok) {
+    recordConnectivitySuccess();
+  }
+
   if (!res.ok) {
     const body = (await res.json().catch(() => ({}))) as Record<
       string,
@@ -420,7 +430,7 @@ async function executeRequest<T>(
         ? body.requestId
         : undefined);
 
-    if (res.status >= 500) {
+    if (res.status >= 500 && !isOfflineModeActive()) {
       showToast(translate("common.error_server_title"), "error", {
         id: `server-error-${res.status}`,
         description: translate("common.error_server"),
