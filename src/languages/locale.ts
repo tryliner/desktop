@@ -1,11 +1,11 @@
-export type Locale = "en" | "ru" | "uk" | "es";
+export type Locale = "en" | "ru" | "uk" | "es" | "vi";
 
 const LOCALE_STORAGE_KEY = "liner_locale";
 
 export function getStoredLocale(): Locale {
   if (typeof window === "undefined" || !window.localStorage) return "en";
   const stored = window.localStorage.getItem(LOCALE_STORAGE_KEY);
-  if (stored === "en" || stored === "ru" || stored === "uk" || stored === "es") return stored;
+  if (stored === "en" || stored === "ru" || stored === "uk" || stored === "es" || stored === "vi") return stored;
   // Handle legacy stored 'ua'
   if (stored === "ua") {
     storeLocale("uk");
@@ -28,6 +28,7 @@ export function getBrowserLocale(): Locale {
     if (code === "en") return "en";
     if (code === "es") return "es";
     if (code === "ru") return "ru";
+    if (code === "vi") return "vi";
     if (code === "uk" || code === "ua") return "uk";
   }
   return "ru";

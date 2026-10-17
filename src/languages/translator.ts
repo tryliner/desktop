@@ -37,7 +37,7 @@ function getFlatDict(locale: Locale): Record<string, string> {
   return flat;
 }
 
-const ALL_LOCALES: Locale[] = ["en", "ru", "uk", "es"];
+const ALL_LOCALES: Locale[] = ["en", "ru", "uk", "es", "vi"];
 
 export function getTranslationsForAllLocales(key: string): string[] {
   const results: string[] = [];
