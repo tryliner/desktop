@@ -92,7 +92,9 @@ export function useAppIconSync() {
       if (!active || !dataUrl) return;
 
       if (window.linerElectron?.setAppIcon) {
-        window.linerElectron.setAppIcon(dataUrl);
+        window.linerElectron.setAppIcon(dataUrl, {
+          isDefault: accentVariant === "default",
+        });
       }
 
       let favicon = document.querySelector<HTMLLinkElement>("link[rel~='icon']");

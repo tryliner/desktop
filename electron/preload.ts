@@ -74,7 +74,10 @@ export interface LinerElectronApi {
     canceled?: boolean;
     error?: string;
   }>;
-  setAppIcon: (dataUrl: string) => Promise<void>;
+  setAppIcon: (
+    dataUrl: string,
+    options?: { isDefault?: boolean },
+  ) => Promise<void>;
   getAppVersion: () => Promise<string>;
   getCacheStats: () => Promise<ElectronCacheStats>;
   openCacheFolder: () => Promise<boolean>;
@@ -162,7 +165,8 @@ const api: LinerElectronApi = {
   openDownloads: (customPath) => ipcRenderer.invoke("shell:open-downloads", customPath),
   openExportFolder: (customPath) => ipcRenderer.invoke("shell:open-export-folder", customPath),
   saveDump: (input) => ipcRenderer.invoke("dialog:save-dump", input),
-  setAppIcon: (dataUrl) => ipcRenderer.invoke("app:set-icon", dataUrl),
+  setAppIcon: (dataUrl, options) =>
+    ipcRenderer.invoke("app:set-icon", dataUrl, options),
   getAppVersion: () => ipcRenderer.invoke("app:get-version"),
   getCacheStats: () => ipcRenderer.invoke("storage:get-cache-stats"),
   openCacheFolder: () => ipcRenderer.invoke("shell:open-cache-folder"),
