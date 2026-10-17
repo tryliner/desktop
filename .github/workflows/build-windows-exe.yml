@@ -1,0 +1,141 @@
+name: Build Windows EXE & Release
+
+# Builds the Windows NSIS installer (Liner-Setup-<version>.exe) and publishes it
+# as a GitHub Release.
+#
+# Triggers:
+#   - push of a tag named `win-v*` (e.g. `win-v0.1.35`) -> build + release
+#   - manual run (Actions > this workflow > Run workflow) -> build + release
+#     using the version from package.json (tag `win-v<version>`), or build only
+#     if `create_release` is unchecked.
+
+on:
+  push:
+    tags:
+      - 'win-v*'
+  workflow_dispatch:
+    inputs:
+      create_release:
+        description: 'Create a GitHub Release with the .exe'
+        type: boolean
+        default: true
+      prerelease:
+        description: 'Mark the release as pre-release'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-windows-exe-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-windows:
+    name: Build Windows EXE
+    runs-on: windows-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      - name: Resolve version and tag
+        id: version
+        shell: bash
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          if [[ "$GITHUB_REF" == refs/tags/win-v* ]]; then
+            TAG="${GITHUB_REF_NAME}"
+          else
+            TAG="win-v${VERSION}"
+          fi
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "Version: ${VERSION}, Tag: ${TAG}"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run tests
+        run: pnpm test
+
+      - name: Build Windows installer (NSIS .exe)
+        run: pnpm exec tsc -b && pnpm exec vite build && pnpm exec electron-builder --win --publish never
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VITE_API_URL: https://api.tryliner.fun
+          VITE_COVERS_PROXY_URL: https://covers.tryliner.fun
+
+      - name: Verify EXE was produced
+        shell: bash
+        run: |
+          ls -la release/
+          test -n "$(ls release/*.exe 2>/dev/null)" || { echo "No .exe found"; exit 1; }
+
+      - name: Upload EXE artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-exe
+          path: |
+            release/*.exe
+            release/*.blockmap
+            release/latest.yml
+          if-no-files-found: error
+
+  release:
+    name: Create GitHub Release
+    needs: build-windows
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || inputs.create_release
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download EXE artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-exe
+          path: dist-release
+
+      - name: Create or update GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.build-windows.outputs.tag }}
+          VERSION: ${{ needs.build-windows.outputs.version }}
+          PRERELEASE: ${{ inputs.prerelease }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          EXE=$(ls dist-release/*.exe | head -n1)
+          echo "Publishing ${EXE} as ${TAG}"
+          FLAGS=()
+          if [[ "${PRERELEASE:-false}" == "true" ]]; then FLAGS+=(--prerelease); fi
+          NOTES="Windows installer for Liner **v${VERSION}**.
+
+          Download \`$(basename "$EXE")\` and run it to install.
+          Built automatically from commit \`${GITHUB_SHA::7}\`."
+
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" dist-release/* --clobber
+            gh release edit "$TAG" --title "Liner v${VERSION} (Windows)" --notes "$NOTES"
+          else
+            gh release create "$TAG" dist-release/* \
+              --target "$GITHUB_SHA" \
+              --title "Liner v${VERSION} (Windows)" \
+              --notes "$NOTES" \
+              "${FLAGS[@]}"
+          fi

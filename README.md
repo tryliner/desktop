@@ -135,6 +135,15 @@ bun run electron:build:win
 
 Compiled distributions will be placed in the `release/` directory.
 
+### Build the Windows `.exe` on GitHub Actions
+
+No local setup is needed. The workflow [`build-windows-exe.yml`](./.github/workflows/build-windows-exe.yml) builds the NSIS installer (`Liner-Setup-<version>.exe`) on a Windows runner and publishes it as a GitHub Release:
+
+- **Tag build:** push a tag named `win-v<version>` (e.g. `git tag win-v0.1.35 && git push origin win-v0.1.35`).
+- **Manual build:** go to *Actions → Build Windows EXE & Release → Run workflow*. Uncheck *Create a GitHub Release* to only produce the artifact.
+
+The `.exe` is available under the run's *Artifacts* and, if a release was created, on the *Releases* page.
+
 ---
 
 ## Contributing
