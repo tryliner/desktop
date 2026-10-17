@@ -443,6 +443,7 @@
       "about": "Acerca de",
       "playback": "Reproducción",
       "overlay": "Superposición",
+      "discord": "Discord RPC",
       "privacy": "Privacidad"
     },
     "playback": {
@@ -476,6 +477,58 @@
       "always_on_top": {
         "title": "Siempre encima",
         "description": "Mantiene el reproductor flotando por encima de otras ventanas."
+      }
+    },
+    "discord": {
+      "description": "Muestra lo que estás escuchando en Discord con carátula, foto del artista y barra de progreso.",
+      "section_display": "Opciones de visualización",
+      "section_buttons": "Botones de perfil",
+      "section_advanced": "Avanzado",
+      "enable": {
+        "title": "Discord Rich Presence",
+        "description": "Transmite tu música en reproducción activa a tu perfil de Discord."
+      },
+      "status_display": {
+        "title": "Línea de estado",
+        "description": "Elige qué se muestra en la cabecera 'Escuchando a...' de Discord.",
+        "artist": "Artista (Por defecto)",
+        "song": "Canción",
+        "artist_song": "Artista - Canción",
+        "song_artist": "Canción - Artista",
+        "app": "Liner (Nombre de app)"
+      },
+      "show_timeline": {
+        "title": "Línea de tiempo de reproducción",
+        "description": "Muestra una barra de progreso interactiva con el tiempo transcurrido y restante."
+      },
+      "show_artwork": {
+        "title": "Carátula de la canción",
+        "description": "Muestra la carátula de la pista o álbum en la tarjeta de actividad de Discord."
+      },
+      "show_artist_image": {
+        "title": "Insignia con foto del artista",
+        "description": "Muestra la foto del artista en una pequeña insignia circular en la esquina inferior."
+      },
+      "show_paused": {
+        "title": "Mostrar en pausa",
+        "description": "Mantiene el estado visible en Discord con un indicador de pausa al pausar la música."
+      },
+      "show_button": {
+        "title": "Botón 'Escuchar en Liner'",
+        "description": "Añade un botón interactivo con enlace a la canción en Liner."
+      },
+      "show_download_button": {
+        "title": "Botón 'Descargar Liner'",
+        "description": "Añade un botón interactivo que enlaza a tryliner.fun para descargar la aplicación."
+      },
+      "client_id": {
+        "title": "ID de aplicación de Discord",
+        "description": "ID de aplicación personalizado de Discord. Déjalo por defecto o crea tu propia app en el Discord Developer Portal.",
+        "reset": "Restablecer por defecto"
+      },
+      "status": {
+        "connected": "Conectado a Discord ({user})",
+        "disconnected": "Discord no conectado"
       }
     },
     "customization": {

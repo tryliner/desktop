@@ -443,6 +443,7 @@
       "about": "О приложении",
       "playback": "Воспроизведение",
       "overlay": "Оверлей",
+      "discord": "Discord RPC",
       "privacy": "Конфиденциальность"
     },
     "playback": {
@@ -476,6 +477,58 @@
       "always_on_top": {
         "title": "Поверх всех окон",
         "description": "Держать оверлей поверх остальных окон."
+      }
+    },
+    "discord": {
+      "description": "Отображение текущего трека в Discord с обложкой, фото артиста и прогресс-баром.",
+      "section_display": "Параметры отображения",
+      "section_buttons": "Кнопки профиля",
+      "section_advanced": "Дополнительно",
+      "enable": {
+        "title": "Discord Rich Presence",
+        "description": "Транслировать текущую воспроизводимую музыку в ваш профиль Discord."
+      },
+      "status_display": {
+        "title": "Формат статуса",
+        "description": "Выберите, что отображается в заголовке статуса «Слушает...» в Discord.",
+        "artist": "Исполнитель (По умолчанию)",
+        "song": "Название трека",
+        "artist_song": "Исполнитель — Трек",
+        "song_artist": "Трек — Исполнитель",
+        "app": "Liner (Название приложения)"
+      },
+      "show_timeline": {
+        "title": "Шкала времени трека",
+        "description": "Отображать интерактивный прогресс-бар с прошедшим и оставшимся временем."
+      },
+      "show_artwork": {
+        "title": "Обложка трека",
+        "description": "Показывать обложку альбома или песни в карточке активности Discord."
+      },
+      "show_artist_image": {
+        "title": "Мини-фото артиста",
+        "description": "Отображать фото исполнителя в маленьком значке в углу обложки."
+      },
+      "show_paused": {
+        "title": "Показывать при паузе",
+        "description": "Сохранять статус в Discord с индикатором паузы при остановке музыки."
+      },
+      "show_button": {
+        "title": "Кнопка «Слушать в Liner»",
+        "description": "Добавлять интерактивную кнопку со ссылкой на трек в Liner."
+      },
+      "show_download_button": {
+        "title": "Кнопка «Скачать Liner»",
+        "description": "Добавлять интерактивную кнопку со ссылкой на tryliner.fun для загрузки приложения."
+      },
+      "client_id": {
+        "title": "ID приложения Discord",
+        "description": "Пользовательский Application ID из Discord Developer Portal для кастомного названия.",
+        "reset": "По умолчанию"
+      },
+      "status": {
+        "connected": "Подключено к Discord ({user})",
+        "disconnected": "Discord не подключен"
       }
     },
     "miniplayer": {

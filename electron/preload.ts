@@ -119,6 +119,9 @@ export interface LinerElectronApi {
   updateOverlaySettings: (settings: any) => void;
   onOverlaySettingsChanged: (cb: (settings: any) => void) => () => void;
   onOverlayVisibility: (cb: (visible: boolean) => void) => () => void;
+  discordUpdateState: (state: any) => void;
+  discordUpdateSettings: (settings: any) => void;
+  getDiscordStatus: () => Promise<{ connected: boolean; username?: string }>;
 }
 
 const isHyprland = Boolean(
@@ -298,6 +301,13 @@ const api: LinerElectronApi = {
       ipcRenderer.removeListener("overlay:visibility", listener);
     };
   },
+  discordUpdateState: (state) => {
+    ipcRenderer.send("discord:update-state", state);
+  },
+  discordUpdateSettings: (settings) => {
+    ipcRenderer.send("discord:update-settings", settings);
+  },
+  getDiscordStatus: () => ipcRenderer.invoke("discord:get-status"),
 };
 
 contextBridge.exposeInMainWorld("linerElectron", api);

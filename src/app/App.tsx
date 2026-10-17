@@ -10,6 +10,7 @@ import { usePresenceSync } from "@/shared/presence";
 import { useThemeCustomizationSync } from "@/features/settings";
 import { useTouchBarSync } from "@/features/touchbar";
 import { OverlayPlayer, useOverlaySync } from "@/features/overlay";
+import { useDiscordSync } from "@/features/discord";
 import { AppRoutes } from "./routes";
 import DeeplinkHandler from "./DeeplinkHandler";
 import EnvironmentWarning from "./EnvironmentWarning";
@@ -38,6 +39,11 @@ function TouchBarSync() {
 
 function OverlaySync() {
   useOverlaySync();
+  return null;
+}
+
+function DiscordSync() {
+  useDiscordSync();
   return null;
 }
 
@@ -73,6 +79,7 @@ export default function App() {
         <PresenceSync />
         <TouchBarSync />
         <OverlaySync />
+        <DiscordSync />
         <AppleEmojiProvider>
           <I18nProvider>
             <ToastProvider>

@@ -35,6 +35,7 @@ import { TouchBarManager } from "./touchbar.js";
 import { OverlayManager } from "./overlay.js";
 import { BundleManager } from "./bundle-manager.js";
 import { createSleepBlocker } from "./sleep-blocker.js";
+import { DiscordRpcManager } from "./discord.js";
 
 // root error handling for main process
 process.on("uncaughtException", (error) => {
@@ -68,6 +69,7 @@ let mainWindow: BrowserWindow | null = null;
 let touchBarManager: TouchBarManager | null = null;
 let overlayManager: OverlayManager | null = null;
 let bundleManager: BundleManager | null = null;
+let discordRpcManager: DiscordRpcManager | null = null;
 
 // liner:// deeplink support (share links bounce here from link.tryliner.fun)
 
@@ -192,8 +194,15 @@ function createWindow() {
     mainWindow.loadFile(bundleManager.getEffectiveIndexPath());
   }
 
+  mainWindow.once("ready-to-show", () => {
+    mainWindow?.show();
+    mainWindow?.focus();
+  });
+
   // renderer ready, deliver any cold-start deeplink waiting in the queue
   mainWindow.webContents.on("did-finish-load", () => {
+    mainWindow?.show();
+    mainWindow?.focus();
     flushPendingDeeplink();
   });
 
@@ -221,6 +230,7 @@ if (!gotTheLock) {
       createWindow();
     } else {
       if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.show();
       mainWindow.focus();
     }
     if (raw) deliverDeeplink(parseDeeplink(raw));
@@ -257,6 +267,8 @@ if (!gotTheLock) {
     );
     overlayManager.setMainWindow(mainWindow);
     overlayManager.registerShortcut();
+
+    discordRpcManager = new DiscordRpcManager();
 
     const isHyprland = Boolean(
       process.env.HYPRLAND_INSTANCE_SIGNATURE ||
@@ -1020,4 +1032,6 @@ app.on("will-quit", () => {
   touchBarManager?.unregisterShortcut();
   overlayManager?.unregisterShortcut();
   overlayManager?.destroy();
+  discordRpcManager?.destroy();
+  discordRpcManager = null;
 });
