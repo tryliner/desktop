@@ -1,97 +1,13 @@
 import { usePlayerStore } from "../store/playerStore";
 import { api, mediaUrl, ApiError } from "@/shared/api";
-import { getClientVisitorData } from "@/shared/api/visitorSession";
+import { resolveDirectInnertubeStream } from "@/shared/api/directInnertube";
 import { log } from "@/shared/utils/logger";
 import { telemetry } from "@/shared/telemetry";
-import { linerDb } from "@/shared/storage";
+import { linerDb, audioCache } from "@/shared/storage";
 import { isStandaloneAudioFile } from "@/shared/storage/audioFormat";
 import type { Track } from "@/shared/types";
 import { pitchShifter } from "./pitchShifter";
 
-interface ResolvedAudioStream {
-  url: string;
-  mimeType: string;
-  codec: string;
-  bitrate: number;
-  expiresAt: string | null;
-}
-
-async function resolveDirectInnertubeStream(plan: {
-  endpoint: string;
-  method?: string;
-  headers: Record<string, string>;
-  body: Record<string, unknown>;
-}, signal?: AbortSignal): Promise<ResolvedAudioStream> {
-  // Obtain fresh local client visitorData so YouTube trusts the residential IP
-  const localVisitorData = await getClientVisitorData().catch(() => "");
-
-  const headers = { ...plan.headers };
-  const body = JSON.parse(JSON.stringify(plan.body)) as Record<string, any>;
-
-  if (localVisitorData) {
-    headers["x-goog-visitor-id"] = localVisitorData;
-    if (body.context?.client) {
-      body.context.client.visitorData = localVisitorData;
-    }
-  }
-
-  // Remove datacenter-bound poToken from direct requests to prevent botguard failure
-  if (body.context?.serviceIntegrityDimensions) {
-    delete body.context.serviceIntegrityDimensions;
-  }
-
-  const res = await fetch(plan.endpoint, {
-    method: plan.method || 'POST',
-    headers,
-    body: JSON.stringify(body),
-    signal,
-  });
-
-  if (!res.ok) {
-    throw new Error(`Innertube player returned HTTP ${res.status}`);
-  }
-
-  const data = await res.json();
-  const playability = data.playabilityStatus?.status;
-  if (playability && playability !== 'OK') {
-    throw new Error(data.playabilityStatus?.reason || 'Track not playable via direct Innertube');
-  }
-
-  const formats: any[] = data.streamingData?.adaptiveFormats || [];
-  const audioFormats = formats.filter(
-    (f: any) => typeof f.mimeType === 'string' && f.mimeType.includes('audio') && f.url,
-  );
-
-  if (audioFormats.length === 0) {
-    throw new Error('No direct audio formats returned by Innertube');
-  }
-
-  // Prefer Opus (audio/webm, itag 251) or highest bitrate audio/mp4
-  const opus = audioFormats.find((f: any) => f.mimeType.includes('webm') || f.mimeType.includes('opus'));
-  const best = opus || audioFormats.sort((a: any, b: any) => (b.bitrate || 0) - (a.bitrate || 0))[0];
-
-  const codec = best.mimeType.includes('opus') ? 'opus' : 'aac';
-  const mimeType = best.mimeType.split(';')[0] || 'audio/webm';
-  const bitrate = best.bitrate || best.averageBitrate || 160000;
-
-  // Extract expiration timestamp if present in query params (&expire=...)
-  let expiresAt: string | null = null;
-  try {
-    const u = new URL(best.url);
-    const exp = u.searchParams.get('expire');
-    if (exp) {
-      expiresAt = new Date(Number(exp) * 1000).toISOString();
-    }
-  } catch {}
-
-  return {
-    url: best.url,
-    mimeType,
-    codec,
-    bitrate,
-    expiresAt,
-  };
-}
 
 export class PlayerRuntime {
   private audio: HTMLAudioElement;
@@ -111,6 +27,8 @@ export class PlayerRuntime {
   private backgroundCacheAbortController: AbortController | null = null;
   private currentSessionExpiresAt: number | null = null;
   private recoveryAttempts = 0;
+  private hasPlaybackStarted = false;
+  private deviceListenerReady = false;
   public onEnded?: () => void;
   public onError?: (info: { trackId: string; message: string }) => void;
 
@@ -131,7 +49,6 @@ export class PlayerRuntime {
     }
     this.audio = audio;
     this.setupAudioListeners(this.audio);
-    pitchShifter.attach(this.audio);
 
     const initialVolume = usePlayerStore.getState().volume;
     this.audio.volume = initialVolume;
@@ -158,13 +75,13 @@ export class PlayerRuntime {
       }
     });
 
-    this.setupDeviceChangeListener();
     this.setupMediaSession();
     log("green", "boot", "player runtime initialized");
   }
 
   private setupDeviceChangeListener() {
-    if (typeof navigator === "undefined" || !navigator.mediaDevices) return;
+    if (this.deviceListenerReady || typeof navigator === "undefined" || !navigator.mediaDevices) return;
+    this.deviceListenerReady = true;
 
     let initial = true;
     const onDeviceChange = () => {
@@ -180,7 +97,7 @@ export class PlayerRuntime {
 
     try {
       navigator.mediaDevices.addEventListener("devicechange", onDeviceChange);
-      void navigator.mediaDevices.enumerateDevices().then(() => {
+      void navigator.mediaDevices.enumerateDevices().catch(() => {}).then(() => {
         initial = false;
       });
     } catch {
@@ -288,7 +205,7 @@ export class PlayerRuntime {
     audioEl.addEventListener("playing", () => {
       if (this.isResetting || audioEl !== this.audio) return;
       log("green", "audio", "playing");
-      this.applyPlaybackRateAndPitch();
+      this.preparePlayback();
 
       if (this.stallStartTime !== null) {
         const stallDurationMs = Math.round(performance.now() - this.stallStartTime);
@@ -393,12 +310,13 @@ export class PlayerRuntime {
       // Audio element not initialized or properties unsupported
     }
 
+    if (!this.hasPlaybackStarted) return;
+
     try {
       const isPitchLinked = store.isPitchLinked ?? true;
       const pitchSemitones = store.pitchSemitones ?? 0;
       const isReverbEnabled = store.isReverbEnabled ?? false;
       const reverbLevel = store.reverbLevel ?? 0.35;
-      pitchShifter.attach(this.audio);
       pitchShifter.update({
         pitchSemitones,
         isPitchLinked,
@@ -408,6 +326,12 @@ export class PlayerRuntime {
     } catch (err) {
       console.error("[PlayerRuntime] applyPlaybackRateAndPitch error:", err);
     }
+  }
+
+  private preparePlayback(): void {
+    this.hasPlaybackStarted = true;
+    this.setupDeviceChangeListener();
+    this.applyPlaybackRateAndPitch();
   }
 
   private cancelFade(): void {
@@ -531,16 +455,16 @@ export class PlayerRuntime {
 
         if (!response.ok && response.status !== 206) return;
 
-        const arrayBuffer = await response.arrayBuffer();
+        const blob = await response.blob();
+        const head = new Uint8Array(await blob.slice(0, 16).arrayBuffer());
         if (controller.signal.aborted) return;
-        if (!isStandaloneAudioFile(new Uint8Array(arrayBuffer, 0, Math.min(16, arrayBuffer.byteLength)))) return;
+        if (!isStandaloneAudioFile(head)) return;
 
         const mimeType =
           streamMimeType ||
           response.headers.get("content-type") ||
           "audio/webm";
-        const blob = new Blob([arrayBuffer], { type: mimeType });
-        await linerDb.putAudio(track.id, blob, mimeType);
+        await audioCache.saveAudioBlob(track.id, blob, mimeType);
         await linerDb.putTrack(track);
         log(
           "green",
@@ -638,7 +562,7 @@ export class PlayerRuntime {
         this.audio.src = blobUrl;
         this.audio.volume = 0;
         this.audio.load();
-        this.applyPlaybackRateAndPitch();
+        this.preparePlayback();
 
         const targetPosition =
           this.pendingStartPositionMs > 0
@@ -687,6 +611,10 @@ export class PlayerRuntime {
         return;
       }
 
+      if (store.playbackContext?.startsWith("offline:")) {
+        throw new Error("Downloaded audio is no longer available. Retry the download.");
+      }
+
       const session = await api.createPlaybackSession(
         track.id,
         undefined,
@@ -733,7 +661,7 @@ export class PlayerRuntime {
       this.audio.src = url;
       this.audio.volume = 0;
       this.audio.load();
-      this.applyPlaybackRateAndPitch();
+      this.preparePlayback();
 
       const targetPosition =
         this.pendingStartPositionMs > 0
@@ -868,7 +796,7 @@ export class PlayerRuntime {
     const targetVolume = usePlayerStore.getState().volume;
     usePlayerStore.getState().setStatus("playing");
     pitchShifter.resumeContext();
-    this.applyPlaybackRateAndPitch();
+    this.preparePlayback();
     log("cyan", "audio", "resume requested (fading in)");
 
     const currentTrack = usePlayerStore.getState().currentTrack;
@@ -969,15 +897,15 @@ export class PlayerRuntime {
     fetch(url, { headers: { Range: "bytes=0-" }, signal })
       .then(async (res) => {
         if (!res.ok && res.status !== 206) return;
-        const arrayBuffer = await res.arrayBuffer();
+        const blob = await res.blob();
+        const head = new Uint8Array(await blob.slice(0, 16).arrayBuffer());
         if (signal?.aborted) return;
-        if (!isStandaloneAudioFile(new Uint8Array(arrayBuffer, 0, Math.min(16, arrayBuffer.byteLength)))) {
+        if (!isStandaloneAudioFile(head)) {
           log("yellow", "playback", `not caching ${track.title}: stream is not a standalone audio file`);
           return;
         }
         const mimeType = preferredMimeType || res.headers.get("content-type") || "audio/webm";
-        const blob = new Blob([arrayBuffer], { type: mimeType });
-        await linerDb.putAudio(track.id, blob, mimeType);
+        await audioCache.saveAudioBlob(track.id, blob, mimeType);
         await linerDb.putTrack(track);
         log("green", "playback", `background cached: ${track.title} (${Math.round(blob.size / 1024)} KB)`);
       })

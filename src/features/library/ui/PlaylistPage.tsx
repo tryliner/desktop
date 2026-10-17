@@ -34,6 +34,7 @@ import type { Track } from "@/shared/types";
 import { useTranslation } from "@/languages";
 import { api } from "@/shared/api";
 import { useIsContentTransparent } from "@/features/settings/store/customizationStore";
+import { DownloadButton } from "@/features/downloads/ui/DownloadButton";
 
 interface TrackItemProps {
   track: Track;
@@ -656,6 +657,9 @@ function LibraryPlaylistContent() {
                   }
                   primaryAction={
                     <div className="flex flex-col gap-[8px] w-full">
+                      {!isLikesMode && decodedId && <DownloadButton
+                        id={decodedId} title={viewData.title} tracks={currentTracks}
+                      />}
                       <Button
                         variant={hasCustomBg ? "glass-primary" : "primary"}
                         onClick={handlePlayAll}

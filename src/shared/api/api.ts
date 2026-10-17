@@ -82,8 +82,10 @@ async function fetchWithTimeout(
     });
     return res;
   } catch (err: any) {
+    const browsingDownloads = typeof window !== "undefined" &&
+      window.location.hash.split("?")[0] === "#/downloads";
     if (didTimeout) {
-      showToast(translate("common.error_timeout_title"), "error", {
+      if (!browsingDownloads) showToast(translate("common.error_timeout_title"), "error", {
         id: "network-timeout-toast",
         description: translate("common.error_network"),
       });
@@ -96,7 +98,7 @@ async function fetchWithTimeout(
     if (userSignal?.aborted) {
       throw err;
     }
-    showToast(translate("common.error_network_title"), "error", {
+    if (!browsingDownloads) showToast(translate("common.error_network_title"), "error", {
       id: "network-error-toast",
       description: translate("common.error_network"),
     });

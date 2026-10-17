@@ -14,7 +14,7 @@ export default function CoverImage({
   crossOrigin = "anonymous",
   ...rest
 }: CoverImageProps) {
-  const centralSrc = useCoverSrc(src);
+  const centralSrc = useCoverSrc(src, false);
   const [localFallback, setLocalFallback] = useState<string | undefined>(undefined);
   const [retryCount, setRetryCount] = useState(0);
   const [corsMode, setCorsMode] = useState<ImageProps["crossOrigin"]>(crossOrigin || undefined);

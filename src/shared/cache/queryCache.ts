@@ -9,14 +9,37 @@ class QueryCacheStore {
   private store = new Map<string, CacheRecord<any>>();
   private listeners = new Map<string, Set<(data: any) => void>>();
   private inFlight = new Map<string, Promise<any>>();
+  private expiryTimer: ReturnType<typeof setTimeout> | null = null;
+
+  private collectExpired(): void {
+    const now = Date.now();
+    for (const [key, record] of this.store) {
+      if (now - record.timestamp >= record.gcTimeMs) this.store.delete(key);
+    }
+  }
+
+  private scheduleExpiry(): void {
+    if (this.expiryTimer !== null) clearTimeout(this.expiryTimer);
+    this.expiryTimer = null;
+    if (!this.store.size) return;
+    const next = Math.min(...[...this.store.values()].map((record) => record.timestamp + record.gcTimeMs));
+    this.expiryTimer = setTimeout(() => {
+      this.expiryTimer = null;
+      this.collectExpired();
+      this.scheduleExpiry();
+    }, Math.max(1, next - Date.now()));
+    this.expiryTimer.unref?.();
+  }
 
   public get<T>(key: string): T | undefined {
     const record = this.store.get(key);
     if (!record) return undefined;
-    if (Date.now() - record.timestamp > record.gcTimeMs) {
+    if (Date.now() - record.timestamp >= record.gcTimeMs) {
       this.store.delete(key);
       return undefined;
     }
+    this.store.delete(key);
+    this.store.set(key, record);
     return record.data as T;
   }
 
@@ -32,25 +55,33 @@ class QueryCacheStore {
     staleTimeMs: number = 5 * 60 * 1000,
     gcTimeMs: number = 30 * 60 * 1000,
   ): void {
+    this.collectExpired();
+    this.store.delete(key);
     this.store.set(key, {
       data,
       timestamp: Date.now(),
       staleTimeMs,
       gcTimeMs,
     });
+    while (this.store.size > 100) this.store.delete(this.store.keys().next().value!);
+    this.scheduleExpiry();
     this.notify(key, data);
   }
 
   public delete(key: string): void {
     this.store.delete(key);
+    this.scheduleExpiry();
   }
 
   public clear(): void {
     this.store.clear();
     this.inFlight.clear();
+    if (this.expiryTimer !== null) clearTimeout(this.expiryTimer);
+    this.expiryTimer = null;
   }
 
   public getStats(): { count: number; bytes: number } {
+    this.collectExpired();
     let bytes = 0;
     for (const [key, record] of this.store.entries()) {
       try {

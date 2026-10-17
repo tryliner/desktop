@@ -255,6 +255,16 @@ describe("PlayerRuntime audio caching", () => {
     expect(usePlayerStore.getState().status).toBe("playing");
   });
 
+  it("rejects standalone-incompatible media fragments during preload", async () => {
+    vi.spyOn(api, "createPlaybackSession").mockResolvedValue({ streamUrl: "/fragment" });
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(
+      new Uint8Array([0, 0, 0, 24, 115, 116, 121, 112, 0, 0, 0, 0, 0, 0, 0, 0]),
+      { headers: { "content-type": "audio/mp4" } },
+    ));
+    await playerRuntime!.preloadTrack({ ...track, id: "fragment-preload" });
+    expect(await linerDb.getAudio("fragment-preload")).toBeNull();
+  });
+
   it("drops an unreadable cached file and recovers from the network once instead of looping", async () => {
     vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue();
     const sessionSpy = vi.spyOn(api, "createPlaybackSession").mockResolvedValue({

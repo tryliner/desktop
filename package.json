@@ -132,6 +132,7 @@
     "electron": "^44.0.0",
     "electron-builder": "^26.15.3",
     "eslint": "^9",
+    "fake-indexeddb": "^6.2.5",
     "jsdom": "^30.0.1",
     "tailwindcss": "^4",
     "ts-node": "^10.9.2",

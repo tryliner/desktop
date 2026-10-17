@@ -43,8 +43,14 @@ class AudioCache {
     let evictedBytes = 0;
 
     const oldest = await linerDb.getOldestAudioRecords();
+    const pinned = new Set(
+      (await linerDb.getOfflinePlaylists()).flatMap((playlist) =>
+        playlist.tracks.map((track) => track.id),
+      ),
+    );
     for (const item of oldest) {
       if (evictedBytes >= bytesToEvict) break;
+      if (pinned.has(item.trackId)) continue;
       const size = item.byteSize || item.blob?.size || 0;
       await this.deleteAudio(item.trackId);
       evictedBytes += size;

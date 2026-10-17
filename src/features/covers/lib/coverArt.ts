@@ -35,6 +35,19 @@ interface CoverEntry {
 const entries = new Map<string, CoverEntry>();
 const listeners = new Map<string, Set<() => void>>();
 
+function trimUnusedCovers(): void {
+  const unused = [...entries].filter(([url, entry]) => !listeners.has(url) && entry.status !== "loading");
+  const bytes = (entry: CoverEntry) => (entry.element?.naturalWidth ?? 0) * (entry.element?.naturalHeight ?? 0) * 4;
+  let retainedBytes = unused.reduce((sum, [, entry]) => sum + bytes(entry), 0);
+  let count = unused.length;
+  for (const [url, entry] of unused) {
+    if (count <= 32 && retainedBytes <= 16 * 1024 * 1024) break;
+    entries.delete(url);
+    retainedBytes -= bytes(entry);
+    count--;
+  }
+}
+
 function notify(url: string): void {
   const set = listeners.get(url);
   if (set) for (const listener of set) listener();
@@ -49,7 +62,10 @@ function subscribe(url: string, listener: () => void): () => void {
   set.add(listener);
   return () => {
     set!.delete(listener);
-    if (set!.size === 0) listeners.delete(url);
+    if (set!.size === 0) {
+      listeners.delete(url);
+      trimUnusedCovers();
+    }
   };
 }
 
@@ -109,10 +125,12 @@ export function markCoverReady(url: string | undefined, effectiveUrl?: string, e
     if (prevStatus !== "loaded" || prevEffective !== resolved || (!prevElement && element)) {
       notify(url);
     }
+    trimUnusedCovers();
     return;
   }
   entries.set(url, { status: "loaded", effectiveUrl: resolved, element, promise: Promise.resolve() });
   notify(url);
+  trimUnusedCovers();
 }
 
 /**
@@ -157,6 +175,7 @@ export function preloadCoverArt(url: string | undefined): Promise<void> {
       }
       notify(url);
       resolve();
+      trimUnusedCovers();
     };
     img.onload = () => settle("loaded", img.src);
     img.onerror = () => {
@@ -221,14 +240,14 @@ function effectiveCoverSrc(url: string | undefined): string | undefined {
  * to have failed. Shares the single registry/loader, so it costs no extra
  * request beyond what `CoverImage`/`useCoverReady` already issue for the cover.
  */
-export function useCoverSrc(url: string | undefined): string | undefined {
+export function useCoverSrc(url: string | undefined, preload = true): string | undefined {
   const subscribeToUrl = useCallback(
     (onChange: () => void) => {
       if (!url) return () => {};
-      void preloadCoverArt(url);
+      if (preload) void preloadCoverArt(url);
       return subscribe(url, onChange);
     },
-    [url],
+    [url, preload],
   );
 
   return useSyncExternalStore(

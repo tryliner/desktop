@@ -7,6 +7,7 @@ import {
   LuPlus,
   LuTrash2,
   LuFolderPlus,
+  LuDownload,
 } from "react-icons/lu";
 import type { DropdownMenuItem } from "@/shared/ui/DropdownMenu";
 import { playerEngine } from "../engine/playerEngine";
@@ -19,6 +20,7 @@ import {
 } from "@/features/library";
 import { useTranslation } from "@/languages";
 import { showToast } from "@/shared/ui";
+import { useDownloadStore } from "@/features/downloads/store/downloadStore";
 
 export interface SongMenuContext {
   id?: string;
@@ -35,6 +37,7 @@ export interface SongMenuContext {
 }
 
 export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
+  const activeDownload = useDownloadStore((state) => state.activeId);
   const { t } = useTranslation();
   const {
     id,
@@ -273,5 +276,20 @@ export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
     t,
   ]);
 
-  return buildMenu();
+  const items = buildMenu();
+  if (id && (!searchType || searchType === "track")) {
+    items.push({
+      id: "save-offline",
+      label: t("downloads.save"),
+      icon: <LuDownload size={15} />,
+      disabled: Boolean(activeDownload),
+      onClick: () => {
+        showToast(t("downloads.started"), "info");
+        void useDownloadStore.getState().save(`track:${id}`, title, [{
+          id, title, artists, coverUrl, durationMs: durationMs ?? 0, playCount: 0,
+        }]);
+      },
+    });
+  }
+  return items;
 }

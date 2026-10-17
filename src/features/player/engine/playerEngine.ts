@@ -216,6 +216,7 @@ class PlaybackTelemetryTracker {
   }
 
   private sendEvent(payload: RecordPlaybackEventRequest) {
+    if (payload.context?.type === "offline") return;
     void api.recordPlaybackEvent(payload).catch((err) => {
       log(
         "yellow",
@@ -945,6 +946,7 @@ class PlayerEngine {
     session: number,
     seedTrackId: string,
   ): void {
+    if (usePlayerStore.getState().playbackContext?.startsWith("offline:")) return;
     if (this.radioAppendTimeout) {
       clearTimeout(this.radioAppendTimeout);
       this.radioAppendTimeout = null;
@@ -960,6 +962,7 @@ class PlayerEngine {
     seedTrackId: string,
   ): Promise<void> {
     const currentState = usePlayerStore.getState();
+    if (currentState.playbackContext?.startsWith("offline:")) return;
     if (!currentState.autoplaySimilar) return;
 
     const historyIds = currentState.queue.map((track) => track.id);
@@ -1048,6 +1051,7 @@ class PlayerEngine {
   }
 
   private async prefetchLyrics(trackId: string): Promise<void> {
+    if (usePlayerStore.getState().playbackContext?.startsWith("offline:")) return;
     if (!trackId) return;
 
     if (lyricsCache.has(trackId)) return;
@@ -1184,7 +1188,7 @@ class PlayerEngine {
       const lastChecked = (cached as any).lastCheckedAt || (cached as any).timestamp || 0;
       log("cyan", "lyrics", `cache hit for "${track.title}" (age: ${Math.round((Date.now() - lastChecked) / 1000)}s)`);
       const isStale = Date.now() - lastChecked >= SEVEN_DAYS_MS;
-      if (!isStale || (cached as any).userLocked) {
+      if (!isStale || (cached as any).userLocked || usePlayerStore.getState().playbackContext?.startsWith("offline:")) {
         return;
       }
 
@@ -1203,6 +1207,11 @@ class PlayerEngine {
         activeProvider: null,
         availableProviders: [],
       });
+    }
+
+    if (usePlayerStore.getState().playbackContext?.startsWith("offline:")) {
+      lyricsStore.setLyricsState({ lyricsLoading: false });
+      return;
     }
 
     if (this.inFlightLyricsPrefetches.has(trackId)) {

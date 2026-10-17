@@ -48,8 +48,16 @@ export interface CachedArtistRecord {
   lastCheckedAt: number;
 }
 
+export interface OfflinePlaylist {
+  id: string;
+  title: string;
+  tracks: Track[];
+  downloadedIds: string[];
+  savedAt: number;
+}
+
 const DB_NAME = "liner_db_v1";
-const DB_VERSION = 4;
+const DB_VERSION = 5;
 
 class LinerDb {
   private dbPromise: Promise<IDBDatabase> | null = null;
@@ -59,6 +67,20 @@ class LinerDb {
   private memAudio = new Map<string, CachedAudioRecord>();
   private memLyrics = new Map<string, CachedLyricsRecord>();
   private memArtists = new Map<string, CachedArtistRecord>();
+
+  private rememberAudio(record: CachedAudioRecord, persistenceFailed = false): void {
+    // IndexedDB owns durable audio; the fallback must not retain a listening history of Blobs.
+    this.memAudio.delete(record.trackId);
+    if (this.isSupported && !persistenceFailed) return;
+    if (record.byteSize > 32 * 1024 * 1024) return;
+    this.memAudio.set(record.trackId, record);
+    let bytes = [...this.memAudio.values()].reduce((sum, item) => sum + item.byteSize, 0);
+    for (const [id, item] of this.memAudio) {
+      if (this.memAudio.size <= 4 && bytes <= 32 * 1024 * 1024) break;
+      this.memAudio.delete(id);
+      bytes -= item.byteSize;
+    }
+  }
 
   private handleDbError(err: unknown) {
     this.dbPromise = null;
@@ -83,6 +105,10 @@ class LinerDb {
 
       request.onupgradeneeded = (event) => {
         const db = request.result;
+
+        if (!db.objectStoreNames.contains("downloads")) {
+          db.createObjectStore("downloads", { keyPath: "id" });
+        }
 
         if (!db.objectStoreNames.contains("tracks")) {
           const trackStore = db.createObjectStore("tracks", { keyPath: "id" });
@@ -200,6 +226,81 @@ class LinerDb {
     return this.memTracks.get(id) || null;
   }
 
+  async getOfflinePlaylists(): Promise<OfflinePlaylist[]> {
+    if (!this.isSupported) return [];
+    const db = await this.open();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction("downloads", "readonly");
+      const request = tx.objectStore("downloads").getAll();
+      tx.oncomplete = () => resolve(request.result);
+      tx.onabort = () => reject(tx.error ?? new Error("Unable to read downloads"));
+      tx.onerror = () => reject(tx.error);
+    });
+  }
+
+  private async writeOffline(
+    operation: (tx: IDBTransaction) => void,
+  ): Promise<void> {
+    const db = await this.open();
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(["downloads", "audio"], "readwrite");
+      tx.oncomplete = () => resolve();
+      tx.onabort = () => reject(tx.error ?? new Error("Unable to save download"));
+      tx.onerror = () => reject(tx.error);
+      operation(tx);
+    });
+  }
+
+  async putOfflinePlaylist(playlist: OfflinePlaylist): Promise<void> {
+    await this.writeOffline((tx) => tx.objectStore("downloads").put(playlist));
+  }
+
+  async saveOfflineTrack(
+    playlist: OfflinePlaylist,
+    trackId: string,
+    blob: Blob,
+    mimeType: string,
+  ): Promise<void> {
+    const record: CachedAudioRecord = {
+      trackId, blob, mimeType, byteSize: blob.size, savedAt: Date.now(),
+    };
+    await this.writeOffline((tx) => {
+      tx.objectStore("audio").put(record);
+      tx.objectStore("downloads").put(playlist);
+    });
+    this.rememberAudio(record);
+  }
+
+  async removeOfflinePlaylist(id: string): Promise<void> {
+    const removed: string[] = [];
+    await this.writeOffline((tx) => {
+      const downloads = tx.objectStore("downloads");
+      const request = downloads.getAll();
+      request.onsuccess = () => {
+        const playlists = request.result as OfflinePlaylist[];
+        const target = playlists.find((playlist) => playlist.id === id);
+        const shared = new Set(playlists.filter((playlist) => playlist.id !== id)
+          .flatMap((playlist) => playlist.tracks.map((track) => track.id)));
+        for (const track of target?.tracks ?? []) {
+          if (!shared.has(track.id)) {
+            tx.objectStore("audio").delete(track.id);
+            removed.push(track.id);
+          }
+        }
+        downloads.delete(id);
+      };
+    });
+    removed.forEach((trackId) => this.memAudio.delete(trackId));
+  }
+
+  async clearTemporaryAudio(): Promise<void> {
+    const pinned = new Set((await this.getOfflinePlaylists())
+      .flatMap((playlist) => playlist.tracks.map((track) => track.id)));
+    for (const record of await this.getOldestAudioRecords()) {
+      if (!pinned.has(record.trackId)) await this.deleteAudio(record.trackId);
+    }
+  }
+
   async putTrack(track: Track): Promise<void> {
     const record: CachedTrackRecord = {
       id: track.id,
@@ -265,7 +366,6 @@ class LinerDb {
     });
 
     if (result) {
-      this.memAudio.set(trackId, result);
       return result;
     }
     return this.memAudio.get(trackId) || null;
@@ -282,30 +382,28 @@ class LinerDb {
       savedAt: existing?.savedAt ?? now,
       lastPlayedAt: lastPlayedAt ?? now,
     };
-    this.memAudio.set(trackId, record);
-
-    await this.runTransaction("audio", "readwrite", (store) => {
-      return new Promise<void>((resolve, reject) => {
+    const persisted = await this.runTransaction("audio", "readwrite", (store) => {
+      return new Promise<boolean>((resolve, reject) => {
         const req = store.put(record);
-        req.onsuccess = () => resolve();
+        store.transaction.oncomplete = () => resolve(true);
         req.onerror = () => reject(req.error);
       });
     });
+    this.rememberAudio(record, !persisted);
   }
 
   async touchAudio(trackId: string): Promise<void> {
     const record = await this.getAudio(trackId);
     if (!record) return;
     record.lastPlayedAt = Date.now();
-    this.memAudio.set(trackId, record);
-
-    await this.runTransaction("audio", "readwrite", (store) => {
-      return new Promise<void>((resolve) => {
+    const persisted = await this.runTransaction("audio", "readwrite", (store) => {
+      return new Promise<boolean>((resolve, reject) => {
         const req = store.put(record);
-        req.onsuccess = () => resolve();
-        req.onerror = () => resolve();
+        store.transaction.oncomplete = () => resolve(true);
+        req.onerror = () => reject(req.error);
       });
     });
+    this.rememberAudio(record, !persisted);
   }
 
   async getOldestAudioRecords(): Promise<CachedAudioRecord[]> {
@@ -351,15 +449,23 @@ class LinerDb {
   }
 
   async deleteAudio(trackId: string): Promise<void> {
-    this.memAudio.delete(trackId);
-
-    await this.runTransaction("audio", "readwrite", (store) => {
-      return new Promise<void>((resolve) => {
-        const req = store.delete(trackId);
-        req.onsuccess = () => resolve();
-        req.onerror = () => resolve();
-      });
+    if (!this.isSupported) {
+      this.memAudio.delete(trackId);
+      return;
+    }
+    let deleted = false;
+    await this.writeOffline((tx) => {
+      const request = tx.objectStore("downloads").getAll();
+      request.onsuccess = () => {
+        const pinned = (request.result as OfflinePlaylist[]).some((playlist) =>
+          playlist.tracks.some((track) => track.id === trackId));
+        if (!pinned) {
+          tx.objectStore("audio").delete(trackId);
+          deleted = true;
+        }
+      };
     });
+    if (deleted) this.memAudio.delete(trackId);
   }
 
   async getTotalAudioBytes(): Promise<number> {
@@ -644,6 +750,9 @@ class LinerDb {
     await this.clearStore("tracks");
     await this.clearStore("lyrics");
     await this.clearStore("artists");
+    if (this.isSupported) {
+      await this.writeOffline((tx) => tx.objectStore("downloads").clear());
+    }
   }
 }
 

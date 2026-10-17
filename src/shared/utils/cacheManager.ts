@@ -369,12 +369,13 @@ export async function clearStorageCategories(categoryIds: StorageCategoryId[]): 
 
   if (set.has("audio")) {
     audioCache.revokeAll();
-    await linerDb.clearStore("audio");
-    await linerDb.clearStore("tracks");
-    if (isAllCategories) {
+    const hasDownloads = (await linerDb.getOfflinePlaylists()).length > 0;
+    await linerDb.clearTemporaryAudio();
+    if (!hasDownloads) await linerDb.clearStore("tracks");
+    if (isAllCategories && !hasDownloads) {
       await linerDb.close();
     }
-    if (typeof window !== "undefined" && window.linerElectron?.clearAudioCache) {
+    if (!hasDownloads && typeof window !== "undefined" && window.linerElectron?.clearAudioCache) {
       await window.linerElectron.clearAudioCache(isAllCategories);
     }
   }

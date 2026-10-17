@@ -110,6 +110,21 @@ bun run dev
 
 ---
 
+## Offline downloads
+
+Choose **Save offline** on a library playlist or in a track's menu, then open
+**Library > Downloads** to view progress, cancel, retry, play, or remove it.
+Completed tracks remain playable when a download is interrupted. Downloads save
+a snapshot of the playlist; remove and save it again to include later edits.
+
+With a previously saved sign-in session, launching without a connection opens
+Downloads. Audio and track details are stored locally; artwork is saved when
+available. Downloaded queues do not fetch radio continuations or new lyrics.
+Downloads are protected from the temporary audio-cache limit and cache cleanup;
+remove them from Downloads to reclaim their space. Shared tracks are retained
+until the last download using them is removed. Available disk space still limits
+downloads, and clearing the app's data outside Liner removes them.
+
 ## Testing
 
 ```bash

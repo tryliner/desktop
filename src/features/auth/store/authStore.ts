@@ -40,6 +40,10 @@ export const useAuthStore = create<AuthState>((set) => ({
     if (stored.user) {
       set({ status: "authenticated", user: stored.user });
     }
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      set({ status: "authenticated", user: stored.user });
+      return;
+    }
     try {
       const getMePromise = api.getMe();
       const timeoutPromise = new Promise<null>((_, reject) =>

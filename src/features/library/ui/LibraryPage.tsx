@@ -20,6 +20,7 @@ import { useModalStore } from "../store/modalStore";
 import { useImportStore } from "../store/importStore";
 import { useIsContentTransparent } from "@/features/settings/store/customizationStore";
 import ImportingPlaylistCard from "./ImportingPlaylistCard";
+import Button from "@/shared/ui/Button";
 
 const PAGE_SIZE = 24;
 
@@ -371,6 +372,7 @@ export default function LibraryPage() {
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-[10px] px-[32px] pb-[10px]">
+            <Button variant="outline" size="sm" onClick={() => navigate("/downloads")}>{t("downloads.title")}</Button>
             <LibraryTabs activeTab={activeTab} onChange={setActiveTab} />
             <LibraryControls
               activeTab={activeTab}

@@ -29,6 +29,9 @@ export function AuthLock({ children }: { children: React.ReactNode }) {
     if (status === "authenticated" && pathname === "/login") {
       navigate("/", { replace: true });
     }
+    if (status === "authenticated" && pathname === "/" && !navigator.onLine) {
+      navigate("/downloads", { replace: true });
+    }
   }, [pathname, navigate, status]);
 
   if (

@@ -410,21 +410,6 @@ export class PitchShifterController {
     arg3?: boolean,
     arg4?: number,
   ): void {
-    if (!this.isConnected || !this.context || !this.graph) {
-      if (typeof window !== "undefined") {
-        const win = window as any;
-        const audio = win.__liner_audio || (typeof document !== "undefined" && document.getElementById("liner-audio"));
-        if (audio) {
-          this.attach(audio);
-        }
-      }
-      if (!this.isConnected || !this.context || !this.graph) {
-        return;
-      }
-    }
-
-    this.resumeContext();
-
     let semitones = 0;
     let isPitchLinked = true;
     let isReverbEnabled = false;
@@ -443,6 +428,17 @@ export class PitchShifterController {
     }
 
     const isPitchActive = !isPitchLinked && Math.abs(semitones) >= 0.05;
+    if (!this.isConnected || !this.context || !this.graph) {
+      if (!isPitchActive && !(isReverbEnabled && reverbLevel > 0.01)) return;
+      if (typeof window !== "undefined") {
+        const win = window as any;
+        const audio = win.__liner_audio || document.getElementById("liner-audio");
+        if (audio) this.attach(audio);
+      }
+      if (!this.isConnected || !this.context || !this.graph) return;
+    }
+
+    this.resumeContext();
     const now = this.context.currentTime;
 
     // Pitch shift routing
@@ -468,13 +464,6 @@ export class PitchShifterController {
 }
 
 export const pitchShifter = new PitchShifterController();
-if (typeof window !== "undefined") {
-  const win = window as any;
-  const audio = win.__liner_audio || (typeof document !== "undefined" && document.getElementById("liner-audio"));
-  if (audio) {
-    pitchShifter.attach(audio);
-  }
-}
 
 if (import.meta.hot) {
   import.meta.hot.accept();

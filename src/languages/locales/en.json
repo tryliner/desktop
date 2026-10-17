@@ -888,6 +888,25 @@
     "support": "Contact support",
     "support_hint": "Attach the saved report file so support sees the full picture."
   },
+  "downloads": {
+    "title": "Downloads",
+    "description": "Saved music stays on this device until you remove it here. Clearing temporary cache keeps your downloads.",
+    "started": "Download started. See progress in Library > Downloads.",
+    "loading": "Loading downloads...",
+    "empty": "No downloads yet. Open a playlist or a track's menu and choose Save offline.",
+    "save": "Save offline",
+    "saved": "Downloaded",
+    "cancel": "Cancel download",
+    "retry": "Retry download",
+    "remove": "Remove download",
+    "show_tracks": "Show downloaded tracks",
+    "progress": "Downloading {done} of {total} tracks",
+    "complete": "{done} of {total} tracks available offline",
+    "partial": "{done} of {total} tracks saved. Retry to finish downloading.",
+    "error_network": "Download interrupted. Check your connection and retry; saved tracks are kept.",
+    "error_storage": "Could not save or read downloads. Free disk space or check storage access, then retry.",
+    "error_unavailable": "This track could not be downloaded as audio. Retry later."
+  },
   "updater": {
     "modal_title": "New Update Available",
     "modal_desc": "A new version of Liner (v{version}) is ready to download.",
