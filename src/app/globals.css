@@ -348,12 +348,16 @@ button.apple-glass-action:hover,
   transform: scale(var(--line-scale));
   opacity: var(--line-opacity);
   filter: var(--line-filter);
-  transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1),
-              opacity 0.32s cubic-bezier(0.22, 1, 0.36, 1),
-              filter 0.32s ease,
-              color 0.32s ease;
+  transition: transform 0.32s cubic-bezier(0.65, 0, 0.35, 1),
+              opacity 0.32s cubic-bezier(0.65, 0, 0.35, 1),
+              filter 0.32s cubic-bezier(0.65, 0, 0.35, 1),
+              color 0.32s cubic-bezier(0.65, 0, 0.35, 1);
   will-change: transform, opacity, filter;
   cursor: pointer;
+}
+
+.lyric-word {
+  filter: brightness(calc(0.86 + var(--word-emphasis, 0) * 0.14));
 }
 
 .lyric-line:not(.lyric-line--active):hover {
