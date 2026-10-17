@@ -241,4 +241,51 @@ describe("linerDb storage layer", () => {
     await audioCache.setLimitBytes(5 * 1024 * 1024 * 1024);
     expect(audioCache.getLimitBytes()).toBe(5 * 1024 * 1024 * 1024);
   });
+
+  it("retrieves all cached tracks and count", async () => {
+    await linerDb.putTrack({
+      id: "track_c_1",
+      title: "Cached Song 1",
+      artists: "Artist A",
+      durationMs: 120000,
+      coverUrl: "http://cover.jpg",
+      playCount: 0,
+    });
+    await linerDb.putTrack({
+      id: "track_c_2",
+      title: "Cached Song 2",
+      artists: "Artist B",
+      durationMs: 200000,
+      coverUrl: "",
+      playCount: 0,
+    });
+
+    // Only track_c_1 has audio
+    await linerDb.putAudio("track_c_1", new Blob(["audio1"]), "audio/ogg");
+
+    const count = await linerDb.getCachedTrackCount();
+    expect(count).toBe(1);
+
+    const cachedList = await linerDb.getAllCachedTracks();
+    expect(cachedList.length).toBe(1);
+    expect(cachedList[0].id).toBe("track_c_1");
+    expect(cachedList[0].title).toBe("Cached Song 1");
+    expect(cachedList[0].artists).toBe("Artist A");
+
+    // Add audio for track_c_2
+    await linerDb.putAudio("track_c_2", new Blob(["audio2"]), "audio/ogg");
+    const count2 = await linerDb.getCachedTrackCount();
+    expect(count2).toBe(2);
+
+    const cachedList2 = await linerDb.getAllCachedTracks();
+    expect(cachedList2.length).toBe(2);
+
+    // Delete cached track
+    await linerDb.deleteCachedTrack("track_c_1");
+    expect(await linerDb.getCachedTrackCount()).toBe(1);
+    const cachedList3 = await linerDb.getAllCachedTracks();
+    expect(cachedList3.length).toBe(1);
+    expect(cachedList3[0].id).toBe("track_c_2");
+  });
 });
+

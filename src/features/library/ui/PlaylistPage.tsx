@@ -14,10 +14,20 @@ import {
   CheckLine,
   ArrowLeftLine,
   ShareForwardLine,
+  DownloadLine,
+  Upload2Line,
+  WifiOffLine,
+  Refresh1Line,
 } from "@mingcute/react";
 import { AnimatePresence, motion } from "framer-motion";
 import { LuPencil, LuTrash2, LuText, LuShuffle } from "react-icons/lu";
 import { buildShareUrl } from "@/shared/utils/share";
+import {
+  addTrackToOfflinePlaylist,
+  updateOfflinePlaylist,
+  syncOfflinePlaylistToServer,
+} from "@/shared/storage/offlinePlaylists";
+import { linerDb } from "@/shared/storage";
 import Button from "@/shared/ui/Button";
 import DropdownMenu from "@/shared/ui/DropdownMenu";
 import SongCardWithMenu from "@/features/player/ui/SongCardWithMenu";
@@ -26,6 +36,7 @@ import { useModalStore } from "../store/modalStore";
 import {
   usePlaylist,
   useLikedTracks,
+  useCachedTracks,
   useReorderPlaylistTracks,
 } from "../hooks";
 import { useListReorder } from "@/shared/hooks";
@@ -76,6 +87,7 @@ const TrackItem = memo(function TrackItem({
         artistId={track.artistId}
         artistList={track.artistList}
         coverUrl={track.coverUrl || playlistCoverUrl}
+        albumTitle={track.album?.title}
         playlistId={playlistId}
         playlistItemId={track.playlistItemId}
         playlistTitle={playlistTitle}
@@ -101,6 +113,8 @@ function LibraryPlaylistContent() {
   const [searchParams] = useSearchParams();
   const id = searchParams.get("id");
   const isLikesMode = id === "likes";
+  const isCachedMode = id === "cached";
+  const isSpecialCollection = isLikesMode || isCachedMode;
   const decodedId = id ? decodeURIComponent(id) : null;
   const scrollRef = useRef<HTMLDivElement>(null);
   const { t } = useTranslation();
@@ -116,13 +130,19 @@ function LibraryPlaylistContent() {
     data: playlistDetail,
     isLoading: playlistLoading,
     error: playlistError,
-  } = usePlaylist(isLikesMode ? null : decodedId);
+  } = usePlaylist(isSpecialCollection ? null : decodedId);
 
   const { data: likesData, isLoading: likesLoading } = useLikedTracks(
     isLikesMode ? { limit: 1000, offset: 0 } : undefined,
   );
 
-  const isLoading = isLikesMode ? likesLoading : playlistLoading;
+  const { data: cachedData, isLoading: cachedLoading } = useCachedTracks();
+
+  const isLoading = isLikesMode
+    ? likesLoading
+    : isCachedMode
+      ? cachedLoading
+      : playlistLoading;
 
   const viewData = (() => {
     if (isLikesMode) {
@@ -137,6 +157,26 @@ function LibraryPlaylistContent() {
         countLabel: t("common.tracks", { count: tracks.length }),
         coverUrl: "",
         coverUrls: [] as string[],
+        tracks,
+        revision: 0,
+      };
+    }
+    if (isCachedMode) {
+      if (!cachedData) return null;
+      const tracks: Track[] = (cachedData.tracks ?? []).map((t) => ({
+        ...t,
+        playCount: 0,
+      }));
+      const coverUrls = tracks
+        .map((t) => t.coverUrl)
+        .filter(Boolean)
+        .slice(0, 4);
+      return {
+        title: t("playlist.cached_songs"),
+        bio: t("playlist.cached_songs_desc"),
+        countLabel: t("common.tracks", { count: tracks.length }),
+        coverUrl: "",
+        coverUrls,
         tracks,
         revision: 0,
       };
@@ -233,7 +273,38 @@ function LibraryPlaylistContent() {
     return () => clearTimeout(timer);
   }, [currentTracks, viewData, toast, t]);
 
+  const isOfflinePlaylist = Boolean(decodedId?.startsWith("offline_pl_"));
+  const hasLocalTracks = useMemo(() => {
+    return currentTracks.some((t) => t.id?.startsWith("local_"));
+  }, [currentTracks]);
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  const handleSyncToServer = useCallback(async () => {
+    if (!decodedId || isSyncing) return;
+    if (hasLocalTracks) {
+      toast(t("playlist.cannot_sync_local_tracks"), "error");
+      return;
+    }
+    setIsSyncing(true);
+    try {
+      const res = await syncOfflinePlaylistToServer(decodedId);
+      toast(t("playlist.synced_success"), "checkmark", {
+        description: res.title,
+      });
+      navigate(`/library/playlist?id=${encodeURIComponent(res.serverPlaylistId)}`, { replace: true });
+    } catch (err: any) {
+      console.error("[PlaylistPage] Failed to sync offline playlist:", err);
+      toast(err?.message || t("playlist.sync_failed"), "error");
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [decodedId, isSyncing, hasLocalTracks, navigate, toast, t]);
+
   const handleShare = useCallback(() => {
+    if (isOfflinePlaylist) {
+      toast(t("playlist.sync_first_to_share"), "info");
+      return;
+    }
     if (typeof navigator !== "undefined" && navigator.clipboard && decodedId) {
       navigator.clipboard.writeText(buildShareUrl("playlist", decodedId));
       void api.updatePlaylist(decodedId, { isPublic: true }).catch(() => {});
@@ -241,11 +312,120 @@ function LibraryPlaylistContent() {
         description: viewData?.title || undefined,
       });
     }
-  }, [decodedId, viewData?.title, toast, t]);
+  }, [decodedId, isOfflinePlaylist, viewData?.title, toast, t]);
+
+  const dragCounterRef = useRef(0);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+
+  const processImportedFiles = useCallback(
+    async (files: FileList | File[]) => {
+      setIsImporting(true);
+      try {
+        const { importAudioFilesToCache } = await import(
+          "@/shared/utils/localAudioImporter"
+        );
+        const imported = await importAudioFilesToCache(files);
+        if (imported.length > 0) {
+          if (isOfflinePlaylist && decodedId) {
+            for (const track of imported) {
+              addTrackToOfflinePlaylist(decodedId, track);
+            }
+            window.dispatchEvent(new Event("library:changed"));
+            toast(
+              t("playlist.added_to_playlist_success", { count: imported.length }),
+              "checkmark",
+              {
+                description: viewData?.title || undefined,
+              },
+            );
+          } else {
+            // Local files cannot be added directly to cloud playlists
+            useModalStore.getState().openImportAudio(Array.from(files));
+            toast(t("playlist.local_files_offline_only"), "info");
+          }
+        } else {
+          toast(t("playlist.no_audio_files_found"), "info");
+        }
+      } catch (err) {
+        console.error("[PlaylistPage] Failed to import audio files:", err);
+        toast(t("playlist.import_failed"), "error");
+      } finally {
+        setIsImporting(false);
+      }
+    },
+    [isOfflinePlaylist, decodedId, viewData?.title, toast, t],
+  );
+
+  useEffect(() => {
+    const handlePlaylistDropAudio = (e: Event) => {
+      const customEvent = e as CustomEvent<{ files: File[] }>;
+      if (customEvent.detail?.files?.length) {
+        void processImportedFiles(customEvent.detail.files);
+      }
+    };
+    window.addEventListener("liner:playlist_drop_audio", handlePlaylistDropAudio);
+    return () => {
+      window.removeEventListener("liner:playlist_drop_audio", handlePlaylistDropAudio);
+    };
+  }, [processImportedFiles]);
+
+  const handleDragEnter = useCallback(
+    (e: React.DragEvent) => {
+      if (isLikesMode) return;
+      if (e.dataTransfer.types && Array.from(e.dataTransfer.types).includes("Files")) {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounterRef.current += 1;
+        setIsDragOver(true);
+      }
+    },
+    [isLikesMode],
+  );
+
+  const handleDragOver = useCallback(
+    (e: React.DragEvent) => {
+      if (isLikesMode) return;
+      if (e.dataTransfer.types && Array.from(e.dataTransfer.types).includes("Files")) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.dataTransfer.dropEffect = "copy";
+      }
+    },
+    [isLikesMode],
+  );
+
+  const handleDragLeave = useCallback(
+    (e: React.DragEvent) => {
+      if (isLikesMode) return;
+      e.preventDefault();
+      e.stopPropagation();
+      dragCounterRef.current -= 1;
+      if (dragCounterRef.current <= 0) {
+        dragCounterRef.current = 0;
+        setIsDragOver(false);
+      }
+    },
+    [isLikesMode],
+  );
+
+  const handleDrop = useCallback(
+    async (e: React.DragEvent) => {
+      if (isLikesMode) return;
+      e.preventDefault();
+      e.stopPropagation();
+      dragCounterRef.current = 0;
+      setIsDragOver(false);
+      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        await processImportedFiles(e.dataTransfer.files);
+      }
+    },
+    [isLikesMode, processImportedFiles],
+  );
 
   const handleReorderCommit = useCallback(
     (fromIndex: number, toIndex: number, movingTrack: Track) => {
-      if (!decodedId || !viewData || isLikesMode) return;
+      if (!decodedId || !viewData || isSpecialCollection) return;
       if (fromIndex === toIndex || !movingTrack.playlistItemId) return;
 
       const nextList = [...currentTracks];
@@ -264,7 +444,7 @@ function LibraryPlaylistContent() {
         revision: viewData.revision,
       });
     },
-    [currentTracks, decodedId, isLikesMode, reorderTracks, viewData],
+    [currentTracks, decodedId, isSpecialCollection, reorderTracks, viewData],
   );
 
   const {
@@ -427,14 +607,39 @@ function LibraryPlaylistContent() {
         <span className="text-text-secondary">
           {isLikesMode
             ? t("playlist.likes_empty")
-            : t("playlist.not_found")}
+            : isCachedMode
+              ? t("playlist.cached_empty")
+              : t("playlist.not_found")}
         </span>
       </div>
     );
   }
 
   return (
-    <div className="relative h-full w-full overflow-hidden bg-transparent">
+    <div
+      className="relative h-full w-full overflow-hidden bg-transparent"
+      onDragEnter={handleDragEnter}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
+      {isDragOver && isOfflinePlaylist && (
+        <div className="absolute inset-0 z-50 pointer-events-none flex flex-col items-center justify-center bg-black/60 backdrop-blur-md border-2 border-dashed border-accent/80 rounded-2xl m-3 animate-in fade-in duration-150">
+          <div className="flex flex-col items-center gap-3 p-6 text-center select-none">
+            <div className="w-16 h-16 rounded-full bg-accent/20 flex items-center justify-center text-accent shadow-lg">
+              <Upload2Line size={32} />
+            </div>
+            <div className="flex flex-col gap-1">
+              <p className="text-[16px] font-[600] text-white m-0">
+                {t("playlist.drop_audio_files")}
+              </p>
+              <p className="text-[13px] text-white/70 m-0">
+                MP3, WAV, FLAC, M4A, OGG, OPUS, AAC
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="absolute top-0 left-0 right-0 h-[56px] z-10 flex flex-row items-stretch select-none pointer-events-none">
         <div
@@ -493,6 +698,8 @@ function LibraryPlaylistContent() {
                     if (urls.length === 0) {
                       return isLikesMode ? (
                         <HeartFill size={48} className={hasCustomBg ? "text-white" : "text-zinc-400 dark:text-zinc-500"} />
+                      ) : isCachedMode ? (
+                        <DownloadLine size={48} className={hasCustomBg ? "text-white" : "text-zinc-400 dark:text-zinc-500"} />
                       ) : (
                         <PlaylistFill size={48} className={hasCustomBg ? "text-white" : "text-border-alpha-33"} />
                       );
@@ -539,21 +746,26 @@ function LibraryPlaylistContent() {
                   <h1
                     ref={titleRef}
                     className={`${SIDEBAR_TITLE_CLASS} ${
-                      isLikesMode
+                      isSpecialCollection
                         ? ""
                         : "cursor-text outline-none transition-colors"
                     } ${isEditingTitle ? "bg-border-alpha-14 rounded-[4px] -ml-[4px] px-[4px]" : ""}`}
-                      contentEditable={isLikesMode ? false : isEditingTitle}
+                      contentEditable={isSpecialCollection ? false : isEditingTitle}
                       suppressContentEditableWarning
                       onBlur={(e) => {
                         if (!isEditingTitle) return;
                         const title = e.currentTarget.textContent?.trim();
                         if (title && decodedId && title !== viewData.title) {
-                          void api
-                            .updatePlaylist(decodedId, { title })
-                            .then(() =>
-                              window.dispatchEvent(new Event("library:changed")),
-                            );
+                          if (isOfflinePlaylist) {
+                            updateOfflinePlaylist(decodedId, { title });
+                            window.dispatchEvent(new Event("library:changed"));
+                          } else {
+                            void api
+                              .updatePlaylist(decodedId, { title })
+                              .then(() =>
+                                window.dispatchEvent(new Event("library:changed")),
+                              );
+                          }
                         }
                         setIsEditingTitle(false);
                       }}
@@ -569,14 +781,20 @@ function LibraryPlaylistContent() {
                         }
                       }}
                       onClick={() => {
-                        if (!isLikesMode) setIsEditingTitle(true);
+                        if (!isSpecialCollection) setIsEditingTitle(true);
                       }}
                     >
                       {viewData.title}
                     </h1>
                   }
                   subtitle={
-                    isLikesMode ? undefined : viewData.bio || isEditingDescription ? (
+                    isSpecialCollection ? (
+                      isCachedMode && viewData.bio ? (
+                        <p className={SIDEBAR_SUBTITLE_CLASS}>
+                          {viewData.bio}
+                        </p>
+                      ) : undefined
+                    ) : viewData.bio || isEditingDescription ? (
                       <p
                         ref={descriptionRef}
                         className={`${SIDEBAR_SUBTITLE_CLASS} cursor-text outline-none transition-colors empty:min-h-[21px] ${
@@ -588,11 +806,16 @@ function LibraryPlaylistContent() {
                           if (!isEditingDescription) return;
                           const next = e.currentTarget.textContent?.trim() ?? "";
                           if (decodedId && next !== viewData.bio) {
-                            void api
-                              .updatePlaylist(decodedId, { description: next })
-                              .then(() =>
-                                window.dispatchEvent(new Event("library:changed")),
-                              );
+                            if (isOfflinePlaylist) {
+                              updateOfflinePlaylist(decodedId, { description: next });
+                              window.dispatchEvent(new Event("library:changed"));
+                            } else {
+                              void api
+                                .updatePlaylist(decodedId, { description: next })
+                                .then(() =>
+                                  window.dispatchEvent(new Event("library:changed")),
+                                );
+                            }
                           }
                           setIsEditingDescription(false);
                         }}
@@ -624,6 +847,18 @@ function LibraryPlaylistContent() {
                   }
                   meta={
                     <div className="flex items-center flex-wrap gap-[6px]">
+                      {isOfflinePlaylist && (
+                        <div
+                          className={`inline-flex h-[26px] items-center gap-[6px] rounded-md px-[8px] text-[12px] font-[500] select-none ${
+                            hasCustomBg
+                              ? "apple-glass-pill text-amber-300"
+                              : "bg-amber-500/15 border border-amber-500/30 text-amber-400"
+                          }`}
+                        >
+                          <WifiOffLine size={13} />
+                          <span>{t("playlist.offline_badge")}</span>
+                        </div>
+                      )}
                       <div
                         className={`inline-flex h-[26px] items-center gap-[6px] rounded-md px-[8px] text-[12px] font-[400] select-none ${
                           hasCustomBg
@@ -723,42 +958,91 @@ function LibraryPlaylistContent() {
                                 <More2Line size={18} />
                               </Button>
                             }
-                            items={[
-                              {
-                                id: "rename",
-                                icon: <LuPencil size={15} />,
-                                label: t("common.rename"),
-                                onClick: () => setIsEditingTitle(true),
-                              },
-                              {
-                                id: "edit-description",
-                                icon: <LuText size={15} />,
-                                label: t("common.edit_description"),
-                                onClick: () => setIsEditingDescription(true),
-                              },
-                              {
-                                id: "share",
-                                icon: <ShareForwardLine size={15} />,
-                                label: t("common.share"),
-                                onClick: handleShare,
-                              },
-                              {
-                                id: "delete",
-                                icon: <LuTrash2 size={15} />,
-                                label: t("common.delete"),
-                                danger: true,
-                                onClick: () => {
-                                  if (!decodedId) return;
-                                  useModalStore.getState().openRemoveFromLibrary({
-                                    id: decodedId,
-                                    title: viewData.title,
-                                    coverUrl: viewData.coverUrl,
-                                    type: "playlist",
-                                    isOwned: true,
-                                  });
-                                },
-                              },
-                            ]}
+                            items={
+                              isCachedMode
+                                ? [
+                                    {
+                                      id: "clear-cache",
+                                      icon: <LuTrash2 size={15} />,
+                                      label: t("playlist.clear_cached_songs"),
+                                      danger: true,
+                                      onClick: async () => {
+                                        await linerDb.clearStore("audio");
+                                        await linerDb.clearStore("tracks");
+                                        if (typeof window !== "undefined") {
+                                          window.dispatchEvent(
+                                            new CustomEvent("liner:cache_changed"),
+                                          );
+                                        }
+                                        toast(
+                                          t("playlist.clear_cached_songs"),
+                                          "checkmark",
+                                        );
+                                      },
+                                    },
+                                  ]
+                                : [
+                                    ...(isOfflinePlaylist && !hasLocalTracks
+                                      ? [
+                                          {
+                                            id: "sync",
+                                            icon: (
+                                              <Refresh1Line
+                                                size={15}
+                                                className={
+                                                  isSyncing ? "animate-spin" : ""
+                                                }
+                                              />
+                                            ),
+                                            label: isSyncing
+                                              ? t("playlist.syncing")
+                                              : t("playlist.sync_to_server"),
+                                            onClick: handleSyncToServer,
+                                          },
+                                        ]
+                                      : []),
+                                    {
+                                      id: "rename",
+                                      icon: <LuPencil size={15} />,
+                                      label: t("common.rename"),
+                                      onClick: () => setIsEditingTitle(true),
+                                    },
+                                    {
+                                      id: "edit-description",
+                                      icon: <LuText size={15} />,
+                                      label: t("common.edit_description"),
+                                      onClick: () => setIsEditingDescription(true),
+                                    },
+                                    ...(!isOfflinePlaylist
+                                      ? [
+                                          {
+                                            id: "share",
+                                            icon: <ShareForwardLine size={15} />,
+                                            label: t("common.share"),
+                                            onClick: handleShare,
+                                          },
+                                        ]
+                                      : []),
+                                    {
+                                      id: "delete",
+                                      icon: <LuTrash2 size={15} />,
+                                      label: t("common.delete"),
+                                      danger: true,
+                                      onClick: () => {
+                                        if (!decodedId) return;
+                                        useModalStore
+                                          .getState()
+                                          .openRemoveFromLibrary({
+                                            id: decodedId,
+                                            title: viewData.title,
+                                            coverUrl: viewData.coverUrl,
+                                            type: "playlist",
+                                            isOwned: true,
+                                          });
+                                      },
+                                    },
+                                  ]
+                            }
                           />
                         )}
                       </div>
@@ -780,19 +1064,23 @@ function LibraryPlaylistContent() {
               >
               {currentTracks.length === 0 ? (
                 <div className="flex min-h-[50vh] flex-col items-center justify-center gap-[12px] text-center">
-                  <PlaylistFill size={40} className="text-border-alpha-33" />
-                  <div className="flex flex-col gap-[4px]">
+                  {isCachedMode ? (
+                    <DownloadLine size={40} className="text-border-alpha-33" />
+                  ) : (
+                    <PlaylistFill size={40} className="text-border-alpha-33" />
+                  )}
+                  <div className="flex flex-col gap-[4px] max-w-[340px]">
                     <p
                       className="m-0 text-[15px] font-[500] text-text-primary"
                       style={{ fontFamily: "var(--font-inter), sans-serif" }}
                     >
-                      {t("playlist.empty_title")}
+                      {isCachedMode ? t("playlist.cached_empty") : t("playlist.empty_title")}
                     </p>
                     <p
                       className="m-0 text-[13px] text-text-tertiary"
                       style={{ fontFamily: "var(--font-inter), sans-serif" }}
                     >
-                      {t("playlist.empty_subtitle")}
+                      {isCachedMode ? t("playlist.cached_empty_desc") : t("playlist.empty_subtitle")}
                     </p>
                   </div>
                 </div>
@@ -840,7 +1128,7 @@ function LibraryPlaylistContent() {
                   }
 
                   const canReorder = Boolean(
-                    !isLikesMode && decodedId && track.playlistItemId,
+                    !isSpecialCollection && decodedId && track.playlistItemId,
                   );
 
                   return (
@@ -849,7 +1137,7 @@ function LibraryPlaylistContent() {
                         track.playlistItemId ?? `${track.id}-${index}`
                       }
                       track={track}
-                      playlistId={isLikesMode ? undefined : (decodedId ?? undefined)}
+                      playlistId={isCachedMode ? "cached" : isSpecialCollection ? undefined : (decodedId ?? undefined)}
                       playlistTitle={viewData.title}
                       playlistCoverUrl={viewData.coverUrl}
                       allTracks={currentTracks}
@@ -893,7 +1181,8 @@ function LibraryPlaylistContent() {
                     artistId={draggedItem.artistId}
                     artistList={draggedItem.artistList}
                     coverUrl={draggedItem.coverUrl || viewData.coverUrl}
-                    playlistId={isLikesMode ? undefined : (decodedId ?? undefined)}
+                    albumTitle={draggedItem.album?.title}
+                    playlistId={isCachedMode ? "cached" : isSpecialCollection ? undefined : (decodedId ?? undefined)}
                     playlistItemId={draggedItem.playlistItemId}
                     playlistTitle={viewData.title}
                     duration={

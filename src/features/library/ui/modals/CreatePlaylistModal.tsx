@@ -2,11 +2,12 @@ import { useEffect, useRef, useState } from "react";
 import Button from "@/shared/ui/Button";
 import TextInput from "@/shared/ui/TextInput";
 import Tooltip from "@/shared/ui/Tooltip";
-import { CheckLine, InformationLine, LinkLine } from "@mingcute/react";
+import { CheckLine, InformationLine, LinkLine, WifiOffLine } from "@mingcute/react";
 import { useAddPlaylistTracks, useCreatePlaylist } from "../../hooks";
 import { notifyLibraryChanged } from "../../hooks/usePlaylists";
+import { createOfflinePlaylist } from "@/shared/storage/offlinePlaylists";
 import Dialog from "@/shared/ui/Dialog";
-import { useToast } from "@/shared/ui";
+import { useToast, ToggleSwitch } from "@/shared/ui";
 import { useTranslation } from "@/languages";
 import { useModalStore } from "../../store/modalStore";
 import { useImportStore } from "../../store/importStore";
@@ -55,6 +56,7 @@ export default function CreatePlaylistModal() {
   const [importing, setImporting] = useState(false);
   const [createError, setCreateError] = useState("");
   const [importError, setImportError] = useState("");
+  const [isOfflineOnly, setIsOfflineOnly] = useState(false);
 
   const titleRef = useRef<HTMLInputElement>(null);
   const linkRef = useRef<HTMLInputElement>(null);
@@ -73,11 +75,12 @@ export default function CreatePlaylistModal() {
       setImportUrl(initialUrl || "");
       setCreateError("");
       setImportError("");
+      setIsOfflineOnly(Boolean(pendingTrack?.id?.startsWith("local_")));
       requestAnimationFrame(() =>
         (initialUrl ? linkRef : titleRef).current?.focus(),
       );
     }
-  }, [open, initialUrl]);
+  }, [open, initialUrl, pendingTrack]);
 
   async function handleCreate() {
     if (createPlaylist.isPending) return;
@@ -87,6 +90,37 @@ export default function CreatePlaylistModal() {
       return;
     }
     setCreateError("");
+
+    const createOffline = () => {
+      try {
+        const offlinePlaylist = createOfflinePlaylist(
+          trimmed.slice(0, TITLE_MAX),
+          description.trim() || undefined,
+          pendingTrack
+            ? {
+                id: pendingTrack.id,
+                title: pendingTrack.title,
+                artists: pendingTrack.artists,
+                coverUrl: pendingTrack.coverUrl,
+                durationMs: pendingTrack.durationMs,
+              }
+            : undefined,
+        );
+        notifyLibraryChanged();
+        toast(t("playlist.created_offline_fallback"), "checkmark", {
+          description: offlinePlaylist.title || trimmed,
+        });
+        close();
+      } catch {
+        setCreateError(t("common.failed_create_playlist"));
+      }
+    };
+
+    if (isOfflineOnly || (typeof navigator !== "undefined" && !navigator.onLine)) {
+      createOffline();
+      return;
+    }
+
     try {
       const playlist = await createPlaylist.mutateAsync({
         title: trimmed.slice(0, TITLE_MAX),
@@ -107,7 +141,7 @@ export default function CreatePlaylistModal() {
 
       close();
     } catch {
-      setCreateError(t("common.failed_create_playlist"));
+      createOffline();
     }
   }
 
@@ -229,12 +263,50 @@ export default function CreatePlaylistModal() {
                 {createError}
               </span>
             )}
+            <div
+              onClick={() => setIsOfflineOnly((prev) => !prev)}
+              className="flex items-center justify-between gap-[16px] py-[6px] my-[2px] cursor-pointer select-none group"
+            >
+              <div className="flex min-w-0 flex-col gap-[2px]">
+                <span
+                  className="text-text-primary text-[13px] font-[500] leading-snug flex items-center gap-[6px]"
+                  style={font}
+                >
+                  <WifiOffLine
+                    size={14}
+                    className={
+                      isOfflineOnly
+                        ? "text-amber-400"
+                        : "text-text-tertiary transition-colors group-hover:text-text-secondary"
+                    }
+                  />
+                  {t("playlist.create_offline_checkbox")}
+                </span>
+                <span
+                  className="text-text-tertiary text-[11.5px] leading-relaxed"
+                  style={font}
+                >
+                  {t("playlist.create_offline_checkbox_desc")}
+                </span>
+              </div>
+              <div onClick={(e) => e.stopPropagation()}>
+                <ToggleSwitch
+                  checked={isOfflineOnly}
+                  onChange={setIsOfflineOnly}
+                  ariaLabel={t("playlist.create_offline_checkbox")}
+                />
+              </div>
+            </div>
             <div className="flex items-center justify-end gap-[8px] mt-[2px]">
               <Button type="button" variant="ghost" size="sm" onClick={close}>
                 {t("common.cancel")}
               </Button>
               <Button type="submit" variant="primary" size="sm" disabled={createPlaylist.isPending}>
-                {createPlaylist.isPending ? t("common.adding") : t("common.create")}
+                {createPlaylist.isPending
+                  ? t("common.adding")
+                  : isOfflineOnly
+                    ? t("playlist.create_offline")
+                    : t("common.create")}
               </Button>
             </div>
           </form>

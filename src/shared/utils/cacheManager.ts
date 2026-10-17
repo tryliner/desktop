@@ -427,6 +427,10 @@ export async function clearStorageCategories(categoryIds: StorageCategoryId[]): 
   if (typeof window !== "undefined" && window.linerElectron?.clearHttpCache) {
     await window.linerElectron.clearHttpCache();
   }
+
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("liner:cache_changed"));
+  }
 }
 
 export async function openCacheFolder(): Promise<boolean> {

@@ -31,6 +31,7 @@ export interface SongCardWithMenuProps {
   playlistTitle?: string;
   onNavigate?: () => void;
   compact?: boolean;
+  albumTitle?: string;
   icon?: React.ReactNode;
   showReorderHandle?: boolean;
   onGrabStart?: (e: React.PointerEvent<HTMLDivElement>) => void;
@@ -59,6 +60,7 @@ function SongCardWithMenu({
   playlistTitle,
   onNavigate,
   compact,
+  albumTitle,
   icon,
   showReorderHandle,
   onGrabStart,
@@ -88,6 +90,7 @@ function SongCardWithMenu({
     playlistId,
     playlistItemId,
     playlistTitle,
+    albumTitle,
   });
 
   const [menuOpen, setMenuOpen] = useState(false);
@@ -154,6 +157,7 @@ function SongCardWithMenu({
       artists={artists}
       artistId={artistId}
       artistList={artistList}
+      artistsClickable={!id?.startsWith("local_")}
       coverUrl={coverUrl}
       className={className}
       onPlay={onPlay}

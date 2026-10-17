@@ -21,6 +21,7 @@ import { usePlayerStore, type AccentVariant } from "@/features/player";
 import { useModalStore } from "@/features/library";
 import { useCustomizationStore, getBlockStyle } from "@/features/settings";
 import { Tooltip } from "@/shared/ui";
+import { Upload2Line } from "@mingcute/react";
 
 
 const brandingLogos: Record<Exclude<AccentVariant, "default">, string> = {
@@ -49,6 +50,8 @@ function Sidebar({ searchOpen, onSearchToggle }: SidebarProps) {
   const accentVariant = usePlayerStore((state) => state.accentVariant);
   const settingsOpen = useModalStore((state) => state.settingsOpen);
   const toggleSettings = useModalStore((state) => state.toggleSettings);
+  const importAudioOpen = useModalStore((state) => state.importAudioOpen);
+  const openImportAudio = useModalStore((state) => state.openImportAudio);
 
   const isRouteActive = (href: string) => {
     if (href === "/") {
@@ -198,6 +201,26 @@ function Sidebar({ searchOpen, onSearchToggle }: SidebarProps) {
 
         <nav className="relative flex-1 flex flex-col items-center gap-[24px] pt-[12px]">
           {renderNavItems()}
+          <Tooltip
+            content={t("common.import_audio")}
+            side="right"
+            sideOffset={12}
+          >
+            <button
+              type="button"
+              aria-label={t("common.import_audio")}
+              aria-pressed={importAudioOpen}
+              onClick={() => openImportAudio()}
+              className="group relative inline-flex items-center justify-center bg-transparent border-0 p-0 cursor-pointer active:scale-[0.96] transition-transform duration-100"
+            >
+              <Upload2Line
+                size={26}
+                className={`relative z-10 text-text-primary transition-opacity duration-150 ease-out ${
+                  importAudioOpen ? "opacity-100" : "opacity-55 group-hover:opacity-90"
+                }`}
+              />
+            </button>
+          </Tooltip>
         </nav>
 
         <div className="pt-[16px] pb-[16px] shrink-0 flex justify-center items-center">

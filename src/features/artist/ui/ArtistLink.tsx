@@ -17,6 +17,7 @@ export interface ArtistLinkProps {
   className?: string;
   separator?: string;
   onNavigate?: () => void;
+  disabled?: boolean;
 }
 
 export default function ArtistLink({
@@ -27,12 +28,20 @@ export default function ArtistLink({
   className = "",
   separator = ", ",
   onNavigate,
+  disabled = false,
 }: ArtistLinkProps) {
   const navigate = useNavigate();
   const outerRef = useRef<HTMLSpanElement>(null);
   const innerRef = useRef<HTMLSpanElement>(null);
   const [delta, setDelta] = useState(0);
   const [hovered, setHovered] = useState(false);
+
+  const isLocalArtist = Boolean(
+    artistId?.startsWith("local_") ||
+      name === "Local File" ||
+      artists === "Local File",
+  );
+  const isInteractivityDisabled = Boolean(disabled || isLocalArtist);
 
   const measure = useCallback(() => {
     if (!outerRef.current || !innerRef.current) return;
@@ -51,7 +60,24 @@ export default function ArtistLink({
 
   let innerContent: React.ReactNode = null;
 
-  if (artistList && artistList.length > 0) {
+  if (isInteractivityDisabled) {
+    if (artistList && artistList.length > 0) {
+      innerContent = artistList.map((artist, index) => (
+        <Fragment key={artist.id || `${artist.name}-${index}`}>
+          {index > 0 && (
+            <span className="select-none whitespace-pre">
+              {separator}
+            </span>
+          )}
+          <span>{artist.name}</span>
+        </Fragment>
+      ));
+    } else {
+      const text = name ?? artists;
+      if (!text) return null;
+      innerContent = <span>{text}</span>;
+    }
+  } else if (artistList && artistList.length > 0) {
     innerContent = artistList.map((artist, index) => {
       const targetId =
         artist.id && artist.id !== "unknown"

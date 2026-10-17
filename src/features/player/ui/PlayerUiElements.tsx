@@ -178,6 +178,7 @@ export function PlayerUiElements({
               name={trackArtists}
               artistId={track?.artistId}
               artistList={track?.artistList}
+              disabled={Boolean(track?.id?.startsWith("local_"))}
               onNavigate={() => {
                 if (location.pathname !== "/player") {
                   onClose?.();

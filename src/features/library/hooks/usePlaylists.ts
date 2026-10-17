@@ -2,6 +2,11 @@ import { useEffect, useState, useSyncExternalStore } from "react";
 import { api, getAuthSession, mediaUrl, toClientTrack, type ApiUserPlaylistItem } from "@/shared/api";
 import { queryCache } from "@/shared/cache/queryCache";
 import type { Track } from "@/shared/types";
+import {
+  getOfflinePlaylists,
+  getOfflinePlaylist,
+  deleteOfflinePlaylist,
+} from "@/shared/storage/offlinePlaylists";
 
 export interface LibraryPlaylistSummary {
   id: string;
@@ -13,6 +18,7 @@ export interface LibraryPlaylistSummary {
   updatedAt: string;
   createdAt: string;
   revision: number;
+  isOffline?: boolean;
 }
 
 export interface LibraryPlaylistDetail {
@@ -24,6 +30,7 @@ export interface LibraryPlaylistDetail {
   coverUrls: string[];
   revision: number;
   tracks: Track[];
+  isOffline?: boolean;
 }
 
 type PlaylistList = { playlists: LibraryPlaylistSummary[]; total: number };
@@ -62,6 +69,9 @@ export function notifyLibraryChanged() {
 
 // optimistically drop playlist from store so ui reacts instantly without waiting on network
 export function evictPlaylistFromCache(id: string) {
+  if (id.startsWith("offline_pl_")) {
+    deleteOfflinePlaylist(id);
+  }
   cache = {
     playlists: cache.playlists.filter((p) => p.id !== id),
     total: Math.max(0, cache.total - 1),
@@ -86,67 +96,93 @@ function snapshot() {
 
 const SERVER_SNAPSHOT = { data: EMPTY, error: undefined as unknown, isLoading: true };
 
+function getOfflineSummaries(): LibraryPlaylistSummary[] {
+  return getOfflinePlaylists().map((pl) => ({
+    id: pl.id,
+    title: pl.title,
+    description: pl.description,
+    trackCount: pl.tracks.length,
+    coverUrl: pl.coverUrl || (pl.coverUrls && pl.coverUrls[0]) || "",
+    coverUrls: pl.coverUrls || [],
+    updatedAt: pl.updatedAt,
+    createdAt: pl.createdAt,
+    revision: 1,
+    isOffline: true,
+  }));
+}
+
 function load(force = false): Promise<void> {
   if (request) return request;
+  const offlineList = getOfflineSummaries();
   const session = getAuthSession();
   if (!session?.accessToken) {
-    cache = EMPTY;
-    loaded = false;
+    cache = { playlists: offlineList, total: offlineList.length };
+    loaded = true;
     emit();
     return Promise.resolve();
   }
   if (loaded && !force) return Promise.resolve();
 
   if (!loaded) {
-    view = { data: cache, error: undefined, isLoading: true };
+    view = { data: { playlists: offlineList, total: offlineList.length }, error: undefined, isLoading: true };
     emit();
   }
 
   request = (async () => {
     const coverCache = readCoverCache();
-    const response = await api.listPlaylists();
+    let serverPlaylists: LibraryPlaylistSummary[] = [];
 
-    const playlists = await Promise.all(
-      response.items.map(async (playlist) => {
-        const cached = coverCache[playlist.id];
+    try {
+      const response = await api.listPlaylists();
 
-        if (cached && cached.updatedAt === playlist.updatedAt) {
+      serverPlaylists = await Promise.all(
+        response.items.map(async (playlist) => {
+          const cached = coverCache[playlist.id];
+
+          if (cached && cached.updatedAt === playlist.updatedAt) {
+            return {
+              ...playlist,
+              trackCount: cached.trackCount,
+              coverUrl: cached.coverUrls[0] ?? "",
+              coverUrls: cached.coverUrls,
+            };
+          }
+
+          const detail = await api.getUserPlaylist(playlist.id);
+          const covers = extractCovers(detail.items);
+          const entry: CoverCacheEntry = {
+            coverUrls: covers,
+            trackCount: detail.items.length,
+            updatedAt: playlist.updatedAt,
+          };
+          coverCache[playlist.id] = entry;
           return {
             ...playlist,
-            trackCount: cached.trackCount,
-            coverUrl: cached.coverUrls[0] ?? "",
-            coverUrls: cached.coverUrls,
+            trackCount: detail.items.length,
+            coverUrl: covers[0] ?? "",
+            coverUrls: covers,
           };
-        }
+        })
+      );
 
-        const detail = await api.getUserPlaylist(playlist.id);
-        const covers = extractCovers(detail.items);
-        const entry: CoverCacheEntry = {
-          coverUrls: covers,
-          trackCount: detail.items.length,
-          updatedAt: playlist.updatedAt,
-        };
-        coverCache[playlist.id] = entry;
-        return {
-          ...playlist,
-          trackCount: detail.items.length,
-          coverUrl: covers[0] ?? "",
-          coverUrls: covers,
-        };
-      })
-    );
-
-    const liveIds = new Set(response.items.map((p) => p.id));
-    for (const id of Object.keys(coverCache)) {
-      if (!liveIds.has(id)) delete coverCache[id];
+      const liveIds = new Set(response.items.map((p) => p.id));
+      for (const id of Object.keys(coverCache)) {
+        if (!liveIds.has(id)) delete coverCache[id];
+      }
+      writeCoverCache(coverCache);
+    } catch (err) {
+      console.warn("[usePlaylists] Failed to fetch server playlists, preserving offline/cached:", err);
+      view.error = err;
     }
-    writeCoverCache(coverCache);
 
-    cache = { playlists, total: playlists.length };
+    const currentOffline = getOfflineSummaries();
+    const combined = [...currentOffline, ...serverPlaylists];
+    cache = { playlists: combined, total: combined.length };
     loaded = true;
   })()
     .catch((err) => {
-      if (!loaded) cache = EMPTY;
+      const currentOffline = getOfflineSummaries();
+      cache = { playlists: currentOffline, total: currentOffline.length };
       loaded = true;
       view.error = err;
     })
@@ -161,7 +197,8 @@ if (typeof window !== "undefined") {
   const handleRefresh = () => {
     const session = getAuthSession();
     if (!session?.accessToken) {
-      cache = EMPTY;
+      const offlineList = getOfflineSummaries();
+      cache = { playlists: offlineList, total: offlineList.length };
       loaded = false;
       emit();
     } else {
@@ -189,20 +226,64 @@ export function usePlaylistsList() {
 }
 
 export function usePlaylist(id: string | null) {
-  const cacheKey = id ? `playlist:detail:${id}` : null;
+  const isOffline = Boolean(id?.startsWith("offline_pl_"));
+  const cacheKey = id && !isOffline ? `playlist:detail:${id}` : null;
   const cached = cacheKey ? queryCache.get<LibraryPlaylistDetail>(cacheKey) : undefined;
-  const [data, setData] = useState<LibraryPlaylistDetail | null>(cached ?? null);
+  const [data, setData] = useState<LibraryPlaylistDetail | null>(() => {
+    if (isOffline && id) {
+      const pl = getOfflinePlaylist(id);
+      if (pl) {
+        return {
+          id: pl.id,
+          title: pl.title,
+          description: pl.description,
+          trackCount: pl.tracks.length,
+          coverUrl: pl.coverUrl || (pl.coverUrls && pl.coverUrls[0]) || "",
+          coverUrls: pl.coverUrls,
+          revision: 1,
+          tracks: pl.tracks,
+          isOffline: true,
+        };
+      }
+    }
+    return cached ?? null;
+  });
   const [error, setError] = useState<unknown>();
-  const [isLoading, setIsLoading] = useState(!cached && Boolean(id));
+  const [isLoading, setIsLoading] = useState(!cached && Boolean(id) && !isOffline);
 
   useEffect(() => {
-    if (!id || !cacheKey) {
+    if (!id) {
       setData(null);
       setIsLoading(false);
       return;
     }
 
-    const initial = queryCache.get<LibraryPlaylistDetail>(cacheKey);
+    if (id.startsWith("offline_pl_")) {
+      const loadOffline = () => {
+        const pl = getOfflinePlaylist(id);
+        if (pl) {
+          setData({
+            id: pl.id,
+            title: pl.title,
+            description: pl.description,
+            trackCount: pl.tracks.length,
+            coverUrl: pl.coverUrl || (pl.coverUrls && pl.coverUrls[0]) || "",
+            coverUrls: pl.coverUrls,
+            revision: 1,
+            tracks: pl.tracks,
+            isOffline: true,
+          });
+        } else {
+          setData(null);
+        }
+        setIsLoading(false);
+      };
+      loadOffline();
+      window.addEventListener("library:changed", loadOffline);
+      return () => window.removeEventListener("library:changed", loadOffline);
+    }
+
+    const initial = cacheKey ? queryCache.get<LibraryPlaylistDetail>(cacheKey) : undefined;
     if (initial) {
       setData(initial);
       setIsLoading(false);
@@ -213,7 +294,7 @@ export function usePlaylist(id: string | null) {
     let active = true;
 
     const fetchDetail = async (isBackground = false) => {
-      if (!isBackground && !queryCache.get(cacheKey)) setIsLoading(true);
+      if (!isBackground && cacheKey && !queryCache.get(cacheKey)) setIsLoading(true);
       try {
         const response = await api.getUserPlaylist(id);
         if (!active) return;
@@ -238,7 +319,7 @@ export function usePlaylist(id: string | null) {
           revision: response.playlist.revision,
           tracks: response.items.map(toTrack),
         };
-        queryCache.set(cacheKey, detail);
+        if (cacheKey) queryCache.set(cacheKey, detail);
         setData(detail);
       } catch (err) {
         if (active) setError(err);

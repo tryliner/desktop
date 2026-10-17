@@ -724,6 +724,7 @@ function MiniPlayer({
                   name={trackArtists}
                   artistId={player.currentTrack?.artistId}
                   artistList={player.currentTrack?.artistList}
+                  disabled={Boolean(player.currentTrack?.id?.startsWith("local_"))}
                   className="text-text-tertiary pointer-events-auto"
                 />
               </p>

@@ -30,17 +30,25 @@ export default function AddToPlaylistModal() {
   const { data: playlistData } = usePlaylistsList();
   const addTrack = useAddPlaylistTracks();
 
+  const isLocalTrack = Boolean(track?.id?.startsWith("local_"));
   const rawPlaylists = track?.playlists ?? playlistData?.playlists ?? [];
 
+  const availablePlaylists = useMemo(() => {
+    if (isLocalTrack) {
+      return rawPlaylists.filter((p) => p.id.startsWith("offline_pl_"));
+    }
+    return rawPlaylists;
+  }, [rawPlaylists, isLocalTrack]);
+
   const playlists = useMemo(() => {
-    if (!searchQuery.trim()) return rawPlaylists;
+    if (!searchQuery.trim()) return availablePlaylists;
     const q = searchQuery.toLowerCase().trim();
-    return rawPlaylists.filter(
+    return availablePlaylists.filter(
       (p) =>
         p.title.toLowerCase().includes(q) ||
         (p.description ? p.description.toLowerCase().includes(q) : false),
     );
-  }, [rawPlaylists, searchQuery]);
+  }, [availablePlaylists, searchQuery]);
 
   // update dynamic top and bottom scroll fade mask
   const updateScrollMask = useCallback(() => {
@@ -76,13 +84,23 @@ export default function AddToPlaylistModal() {
     const targetPlaylist = playlists.find((p) => p.id === playlistId);
     setAddingTo(playlistId);
     try {
-      await addTrack.mutateAsync({ playlistId, trackId: track.id });
+      await addTrack.mutateAsync({
+        playlistId,
+        trackId: track.id,
+        track: {
+          id: track.id,
+          title: track.title,
+          artists: track.artists,
+          coverUrl: track.coverUrl,
+          durationMs: track.durationMs,
+        },
+      });
       toast(t("common.added_to_playlist"), "checkmark", {
         description: targetPlaylist?.title || undefined,
       });
       close();
-    } catch (error) {
-      if (error instanceof ApiError && error.status === 409) {
+    } catch (error: any) {
+      if ((error instanceof ApiError && error.status === 409) || error?.status === 409) {
         toast(t("common.track_already_in_playlist"), "error", {
           description: track.title || undefined,
         });

@@ -28,3 +28,9 @@ export {
   useLikeTrack,
   useUnlikeTrack,
 } from "./useLibraryMutations";
+export {
+  useCachedTracks,
+  useCachedTrackCount,
+  removeCachedTrack,
+} from "./useCachedTracks";
+

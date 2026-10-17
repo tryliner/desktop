@@ -2,6 +2,12 @@ import { useCallback, useState } from "react";
 import { api } from "@/shared/api";
 import { notifyLibraryChanged, evictPlaylistFromCache } from "./usePlaylists";
 import { applyOptimisticLike, applyOptimisticUnlike } from "./useLikedTracks";
+import {
+  addTrackToOfflinePlaylist,
+  removeTrackFromOfflinePlaylist,
+  reorderOfflinePlaylistTracks,
+  deleteOfflinePlaylist,
+} from "@/shared/storage/offlinePlaylists";
 
 type Options = {
   onSuccess?: (...args: any[]) => void;
@@ -37,20 +43,46 @@ function useMutation<T, R = unknown>(action: (input: T) => Promise<R>) {
 }
 
 export function useAddPlaylistTracks() {
-  return useMutation(({ playlistId, trackId }: { playlistId: string; trackId: string }) =>
-    api.addPlaylistTrack(playlistId, trackId)
+  return useMutation(
+    async ({
+      playlistId,
+      trackId,
+      track,
+    }: {
+      playlistId: string;
+      trackId: string;
+      track?: { id: string; title: string; artists?: string; coverUrl?: string; durationMs?: number };
+    }) => {
+      if (playlistId.startsWith("offline_pl_")) {
+        const added = addTrackToOfflinePlaylist(
+          playlistId,
+          track || { id: trackId, title: "" },
+        );
+        if (!added) {
+          const err = new Error("Track already in playlist");
+          (err as any).status = 409;
+          throw err;
+        }
+        return;
+      }
+      return api.addPlaylistTrack(playlistId, trackId);
+    },
   );
 }
 
 export function useRemovePlaylistTracks() {
-  return useMutation(({ playlistId, itemId }: { playlistId: string; itemId: string }) =>
-    api.removePlaylistItem(playlistId, itemId)
-  );
+  return useMutation(async ({ playlistId, itemId }: { playlistId: string; itemId: string }) => {
+    if (playlistId.startsWith("offline_pl_")) {
+      removeTrackFromOfflinePlaylist(playlistId, itemId);
+      return;
+    }
+    return api.removePlaylistItem(playlistId, itemId);
+  });
 }
 
 export function useReorderPlaylistTracks() {
   return useMutation(
-    ({
+    async ({
       playlistId,
       itemId,
       beforeItemId,
@@ -60,7 +92,13 @@ export function useReorderPlaylistTracks() {
       itemId: string;
       beforeItemId: string | null;
       revision: number;
-    }) => api.movePlaylistItem(playlistId, itemId, beforeItemId, revision)
+    }) => {
+      if (playlistId.startsWith("offline_pl_")) {
+        reorderOfflinePlaylistTracks(playlistId, itemId, beforeItemId);
+        return;
+      }
+      return api.movePlaylistItem(playlistId, itemId, beforeItemId, revision);
+    },
   );
 }
 
@@ -73,6 +111,10 @@ export function useCreatePlaylist() {
 export function useDeletePlaylist() {
   return useMutation(async ({ playlistId }: { playlistId: string }) => {
     evictPlaylistFromCache(playlistId);
+    if (playlistId.startsWith("offline_pl_")) {
+      deleteOfflinePlaylist(playlistId);
+      return;
+    }
     return api.deletePlaylist(playlistId);
   });
 }
@@ -96,6 +138,10 @@ export function useRemoveExternalItem() {
     }) => {
       if (type === "playlist") {
         evictPlaylistFromCache(id);
+        if (id.startsWith("offline_pl_")) {
+          deleteOfflinePlaylist(id);
+          return;
+        }
         if (isOwned === false) {
           return api.removeCollection("playlists", id);
         }

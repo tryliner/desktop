@@ -104,6 +104,29 @@ interface ModalState {
   openSettings: () => void;
   closeSettings: () => void;
   toggleSettings: () => void;
+
+  // Import local audio modal
+  importAudioOpen: boolean;
+  importAudioInitialFiles: File[] | null;
+  importAudioTargetPlaylistId: string | null;
+  openImportAudio: (initialFiles?: File[], targetPlaylistId?: string) => void;
+  closeImportAudio: () => void;
+  toggleImportAudio: () => void;
+
+  // Edit track metadata modal
+  editTrackMetadataOpen: boolean;
+  editTrackMetadataDetail: EditTrackMetadataDetail | null;
+  openEditTrackMetadata: (detail: EditTrackMetadataDetail) => void;
+  closeEditTrackMetadata: () => void;
+}
+
+export interface EditTrackMetadataDetail {
+  id: string;
+  title: string;
+  artists: string;
+  albumTitle?: string;
+  coverUrl: string;
+  durationMs?: number;
 }
 
 export const useModalStore = create<ModalState>((set) => ({
@@ -191,4 +214,33 @@ export const useModalStore = create<ModalState>((set) => ({
   openSettings: () => set({ settingsOpen: true }),
   closeSettings: () => set({ settingsOpen: false }),
   toggleSettings: () => set((state) => ({ settingsOpen: !state.settingsOpen })),
+
+  importAudioOpen: false,
+  importAudioInitialFiles: null,
+  importAudioTargetPlaylistId: null,
+  openImportAudio: (initialFiles?: File[], targetPlaylistId?: string) =>
+    set({
+      importAudioOpen: true,
+      importAudioInitialFiles: initialFiles ?? null,
+      importAudioTargetPlaylistId: targetPlaylistId ?? null,
+    }),
+  closeImportAudio: () =>
+    set({
+      importAudioOpen: false,
+      importAudioInitialFiles: null,
+      importAudioTargetPlaylistId: null,
+    }),
+  toggleImportAudio: () =>
+    set((state) => ({
+      importAudioOpen: !state.importAudioOpen,
+      importAudioInitialFiles: null,
+      importAudioTargetPlaylistId: null,
+    })),
+
+  editTrackMetadataOpen: false,
+  editTrackMetadataDetail: null,
+  openEditTrackMetadata: (detail) =>
+    set({ editTrackMetadataOpen: true, editTrackMetadataDetail: detail }),
+  closeEditTrackMetadata: () =>
+    set({ editTrackMetadataOpen: false, editTrackMetadataDetail: null }),
 }));

@@ -222,6 +222,25 @@ class LinerDb {
     });
   }
 
+  async getAllTracks(): Promise<CachedTrackRecord[]> {
+    const result = await this.runTransaction("tracks", "readonly", (store) => {
+      return new Promise<CachedTrackRecord[]>((resolve) => {
+        const req = store.getAll();
+        req.onsuccess = () => resolve((req.result as CachedTrackRecord[]) || []);
+        req.onerror = () => resolve([]);
+      });
+    });
+
+    if (result && result.length > 0) {
+      for (const item of result) {
+        this.memTracks.set(item.id, item);
+      }
+      return result;
+    }
+
+    return Array.from(this.memTracks.values());
+  }
+
   async getTotalTrackBytes(): Promise<number> {
     const result = await this.runTransaction("tracks", "readonly", (store) => {
       return new Promise<number>((resolve) => {
@@ -360,6 +379,81 @@ class LinerDb {
         req.onerror = () => resolve();
       });
     });
+  }
+
+  async getAllAudioTrackIds(): Promise<string[]> {
+    const result = await this.runTransaction("audio", "readonly", (store) => {
+      return new Promise<string[]>((resolve) => {
+        const req = store.getAllKeys();
+        req.onsuccess = () => resolve((req.result as string[]) || []);
+        req.onerror = () => resolve([]);
+      });
+    });
+
+    if (result && result.length > 0) {
+      return result;
+    }
+
+    return Array.from(this.memAudio.keys());
+  }
+
+  async getCachedTrackCount(): Promise<number> {
+    const ids = await this.getAllAudioTrackIds();
+    return ids.length;
+  }
+
+  async getAllCachedTracks(): Promise<Track[]> {
+    const [audioIds, cachedTracks] = await Promise.all([
+      this.getAllAudioTrackIds(),
+      this.getAllTracks(),
+    ]);
+
+    const audioIdSet = new Set(audioIds);
+    const trackMap = new Map<string, CachedTrackRecord>();
+    for (const record of cachedTracks) {
+      if (audioIdSet.has(record.id)) {
+        trackMap.set(record.id, record);
+      }
+    }
+
+    const tracks: Track[] = [];
+    for (const audioId of audioIds) {
+      const record = trackMap.get(audioId);
+      tracks.push({
+        id: audioId,
+        title: record?.title || audioId,
+        artists: record?.artists || "",
+        album: record?.albumTitle
+          ? { id: record?.albumId || "", title: record.albumTitle }
+          : undefined,
+        coverUrl: record?.coverUrl || "",
+        durationMs: record?.durationMs || 0,
+        playCount: 0,
+      });
+    }
+
+    tracks.sort((a, b) => {
+      const aSaved = trackMap.get(a.id)?.savedAt ?? 0;
+      const bSaved = trackMap.get(b.id)?.savedAt ?? 0;
+      return bSaved - aSaved;
+    });
+
+    return tracks;
+  }
+
+  async deleteCachedTrack(trackId: string): Promise<void> {
+    await this.deleteAudio(trackId);
+    this.memTracks.delete(trackId);
+    await this.runTransaction("tracks", "readwrite", (store) => {
+      return new Promise<void>((resolve) => {
+        const req = store.delete(trackId);
+        req.onsuccess = () => resolve();
+        req.onerror = () => resolve();
+      });
+    });
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("liner:cache_changed"));
+    }
   }
 
   async getTotalAudioBytes(): Promise<number> {

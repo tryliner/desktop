@@ -17,6 +17,7 @@ import {
   User2Fill,
   AlbumFill,
   PlaylistFill,
+  Upload2Line,
 } from "@mingcute/react";
 import Sidebar from "./Sidebar";
 import WindowControls from "./WindowControls";
@@ -50,6 +51,8 @@ import {
   ImportLikesModal,
   ImportReviewModal,
   CreatePlaylistModal,
+  ImportAudioModal,
+  EditTrackMetadataModal,
   useModalStore,
 } from "@/features/library";
 import { SettingsModal, useCustomizationStore, getBlockStyle } from "@/features/settings";
@@ -82,6 +85,72 @@ export default function AppFrame({ children }: AppFrameProps) {
   const closeSearch = useModalStore((state) => state.closeSearch);
   const toggleSearch = useModalStore((state) => state.toggleSearch);
   const openSettings = useModalStore((state) => state.openSettings);
+  const openImportAudio = useModalStore((state) => state.openImportAudio);
+
+  const [isGlobalDraggingFiles, setIsGlobalDraggingFiles] = useState(false);
+  const globalDragCounterRef = useRef(0);
+
+  useEffect(() => {
+    const handleWindowDragEnter = (e: DragEvent) => {
+      if (e.dataTransfer?.types && Array.from(e.dataTransfer.types).includes("Files")) {
+        e.preventDefault();
+        e.stopPropagation();
+        globalDragCounterRef.current += 1;
+        setIsGlobalDraggingFiles(true);
+      }
+    };
+
+    const handleWindowDragOver = (e: DragEvent) => {
+      if (e.dataTransfer?.types && Array.from(e.dataTransfer.types).includes("Files")) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.dataTransfer.dropEffect = "copy";
+      }
+    };
+
+    const handleWindowDragLeave = (e: DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      globalDragCounterRef.current -= 1;
+      if (globalDragCounterRef.current <= 0) {
+        globalDragCounterRef.current = 0;
+        setIsGlobalDraggingFiles(false);
+      }
+    };
+
+    const handleWindowDrop = (e: DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      globalDragCounterRef.current = 0;
+      setIsGlobalDraggingFiles(false);
+
+      if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
+        const files = Array.from(e.dataTransfer.files);
+        const params = new URLSearchParams(search);
+        const playlistId = params.get("id");
+
+        if (pathname === "/library/playlist" && playlistId && playlistId !== "likes") {
+          window.dispatchEvent(
+            new CustomEvent("liner:playlist_drop_audio", { detail: { files } }),
+          );
+        } else {
+          openImportAudio(files);
+        }
+      }
+    };
+
+    window.addEventListener("dragenter", handleWindowDragEnter);
+    window.addEventListener("dragover", handleWindowDragOver);
+    window.addEventListener("dragleave", handleWindowDragLeave);
+    window.addEventListener("drop", handleWindowDrop);
+
+    return () => {
+      window.removeEventListener("dragenter", handleWindowDragEnter);
+      window.removeEventListener("dragover", handleWindowDragOver);
+      window.removeEventListener("dragleave", handleWindowDragLeave);
+      window.removeEventListener("drop", handleWindowDrop);
+    };
+  }, [openImportAudio, pathname, search]);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [queuePopupOpen, setQueuePopupOpen] = useState(false);
@@ -1063,9 +1132,31 @@ export default function AppFrame({ children }: AppFrameProps) {
       <ImportLikesModal />
       <CreatePlaylistModal />
       <ImportReviewModal />
+      <ImportAudioModal />
+      <EditTrackMetadataModal />
       <SettingsModal />
       <UpdateModal />
       <UpdateToastBridge />
+
+      {isGlobalDraggingFiles && (
+        <div className="fixed inset-0 z-[100] pointer-events-none flex flex-col items-center justify-center bg-black/70 backdrop-blur-xl animate-in fade-in duration-150">
+          <div className="flex flex-col items-center gap-4 p-8 rounded-3xl bg-bg-panel/95 border-2 border-dashed border-accent shadow-2xl max-w-[400px] text-center m-4">
+            <div className="w-20 h-20 rounded-full bg-accent/20 flex items-center justify-center text-accent animate-bounce">
+              <Upload2Line size={40} />
+            </div>
+            <div className="flex flex-col items-center gap-1.5">
+              <p className="text-[17px] font-[600] text-text-primary m-0">
+                {pathname === "/library/playlist" && new URLSearchParams(search).get("id") !== "likes"
+                  ? t("playlist.drop_audio_to_add")
+                  : t("common.drop_audio_to_import")}
+              </p>
+              <p className="text-[13px] text-text-tertiary m-0">
+                MP3, WAV, FLAC, M4A, OGG, OPUS, AAC
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
       <WindowControls
         isFullscreen={isFullscreenPlayer}
         style={{
