@@ -5,6 +5,9 @@ import {
   Pause,
   SkipNext,
   SkipPrevious,
+  VolumeCross,
+  VolumeSmall,
+  VolumeLoud,
 } from "@solar-icons/react";
 import { HeartFill, HeartLine } from "@mingcute/react";
 import CoverImage from "@/features/covers/ui/CoverImage";
@@ -342,12 +345,37 @@ export function OverlayPlayer() {
             </div>
           </div>
 
-          {/* Right: Like Button + Playback Controls (Previous, Play/Pause, Next) */}
+          {/* Right: Volume + Like Button + Playback Controls (Previous, Play/Pause, Next) */}
           <div
             className="flex items-center gap-0.5 shrink-0 pl-1"
             style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
             onMouseDown={(e) => e.stopPropagation()}
           >
+            <button
+              type="button"
+              tabIndex={-1}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+              onWheel={(e) => {
+                // scroll up/down adjusts the volume (same pipeline as the
+                // overlay's ArrowUp/ArrowDown shortcuts)
+                e.stopPropagation();
+                e.preventDefault();
+                sendAction({ type: e.deltaY < 0 ? "volumeUp" : "volumeDown" });
+              }}
+              className="flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-lg border-0 bg-transparent text-white/40 hover:text-white active:scale-90 transition-all outline-none cursor-pointer"
+              title="Volume — scroll to adjust"
+            >
+              {state.volume === 0 ? (
+                <VolumeCross size={16} weight="Bold" />
+              ) : state.volume < 0.4 ? (
+                <VolumeSmall size={16} weight="Bold" />
+              ) : (
+                <VolumeLoud size={16} weight="Bold" />
+              )}
+            </button>
             <button
               type="button"
               tabIndex={-1}
