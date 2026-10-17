@@ -623,6 +623,14 @@
       "dark": "Oscuro",
       "system": "Sistema"
     },
+    "artwork_size": {
+      "title": "Tamaño de la carátula en pantalla completa",
+      "description": "Elige el tamaño de la carátula en el reproductor a pantalla completa.",
+      "small": "Pequeño",
+      "medium": "Mediano",
+      "large": "Grande",
+      "default": "Predeterminado"
+    },
     "branding": {
       "title": "Color de énfasis",
       "description": "Elige el color de acento para el logotipo y detalles.",

@@ -23,6 +23,7 @@ import { VolumePicker } from "./VolumePicker";
 import { TimelineSlider } from "./TimelineSlider";
 
 import { useTranslation } from "@/languages";
+import { useCustomizationStore, FULLSCREEN_ARTWORK_SIZE_PX } from "@/features/settings/store/customizationStore";
 
 const iconButtonClass =
   "inline-flex h-[28px] w-[28px] items-center justify-center text-white opacity-70 transition-all duration-150 ease-out hover:opacity-100 active:scale-[0.94] shrink-0 border-none bg-transparent cursor-pointer";
@@ -78,6 +79,10 @@ export function PlayerUiElements({
   }, [track, isLiked, likeMutation, unlikeMutation]);
 
   const isCoverLoaded = useCoverReady(coverUrl);
+  const fullscreenArtworkSize = useCustomizationStore(
+    (state) => state.fullscreenArtworkSize,
+  );
+  const artworkPx = FULLSCREEN_ARTWORK_SIZE_PX[fullscreenArtworkSize];
 
   const { t } = useTranslation();
 
@@ -85,9 +90,10 @@ export function PlayerUiElements({
     <>
       {/* Artwork (Compact, flat, no drop shadows) */}
       <div
-        className={`relative shrink-0 overflow-hidden rounded-xl w-[280px] h-[280px] bg-black/20 ${
+        className={`relative shrink-0 overflow-hidden rounded-xl bg-black/20 transition-[width,height] duration-200 ease-out ${
           coverUrl && !isCoverLoaded ? "animate-pulse" : ""
         }`}
+        style={{ width: artworkPx, height: artworkPx }}
       >
         <AnimatePresence>
           <motion.div
@@ -104,7 +110,7 @@ export function PlayerUiElements({
                 src={coverUrl}
                 alt={trackTitle}
                 fill
-                sizes="280px"
+                sizes={`${artworkPx}px`}
                 priority
                 unoptimized
                 className="rounded-xl object-cover"
@@ -162,15 +168,21 @@ export function PlayerUiElements({
       </div>
 
       {/* Track info */}
-      <div className="w-[280px] flex items-start justify-center min-w-0">
+      <div
+        className="flex items-start justify-center min-w-0"
+        style={{ width: artworkPx }}
+      >
         <div className="flex flex-col gap-[2px] min-w-0 text-center">
           <p
-            className="m-0 text-[15px] font-[600] text-white flex items-center justify-center gap-[6px] max-w-[280px]"
-            style={{ letterSpacing: "-0.03em" }}
+            className="m-0 text-[15px] font-[600] text-white flex items-center justify-center gap-[6px]"
+            style={{ letterSpacing: "-0.03em", maxWidth: artworkPx }}
           >
             <span className="min-w-0 truncate">{trackTitle}</span>
           </p>
-          <p className="m-0 flex items-center justify-center gap-[5px] text-[12px] text-white/60 leading-snug max-w-[320px] overflow-hidden">
+          <p
+            className="m-0 flex items-center justify-center gap-[5px] text-[12px] text-white/60 leading-snug overflow-hidden"
+            style={{ maxWidth: Math.max(artworkPx, 320) }}
+          >
             {track?.explicit && (
               <ExplicitBadge className="!bg-white/60 !text-black !pb-0 !leading-none shrink-0" />
             )}
@@ -190,14 +202,19 @@ export function PlayerUiElements({
       </div>
 
       {/* Timeline (Compact, with smooth spring pill, no thumb) */}
-      <TimelineSlider
-        positionMs={player.positionMs}
-        durationMs={player.durationMs}
-        onSeek={(pos) => playerEngine.seek(pos)}
-        showTime
-        size="md"
-        className="w-[320px]"
-      />
+      <div
+        className="min-w-0"
+        style={{ width: Math.max(artworkPx, 320) }}
+      >
+        <TimelineSlider
+          positionMs={player.positionMs}
+          durationMs={player.durationMs}
+          onSeek={(pos) => playerEngine.seek(pos)}
+          showTime
+          size="md"
+          className="w-full"
+        />
+      </div>
 
       {/* Primary Playback Controls */}
       <div className="flex items-center gap-[14px]">

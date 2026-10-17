@@ -9,8 +9,11 @@ import { Select } from "@/shared/ui";
 import {
   useCustomizationStore,
   selectIsGlassThemeActive,
+  FULLSCREEN_ARTWORK_SIZE_PX,
+  DEFAULT_FULLSCREEN_ARTWORK_SIZE,
+  type FullscreenArtworkSize,
 } from "../../store/customizationStore";
-import { SettingBlock, SettingRow, SettingSection } from "../controls";
+import { SettingBlock, SettingRow, SettingSection, SegmentedControl } from "../controls";
 import defaultLogo from "@/assets/branding/logo-default.svg";
 import spotifyLogo from "@/assets/branding/logo-spotify.svg";
 import discordLogo from "@/assets/branding/logo-discord.svg";
@@ -179,6 +182,20 @@ export function AppearanceTab({ searchQuery }: { searchQuery?: string }) {
   const accentVariant = usePlayerStore((state) => state.accentVariant);
   const setAccentVariant = usePlayerStore((state) => state.setAccentVariant);
   const isGlassActive = useCustomizationStore(selectIsGlassThemeActive);
+  const fullscreenArtworkSize = useCustomizationStore(
+    (state) => state.fullscreenArtworkSize,
+  );
+  const setFullscreenArtworkSize = useCustomizationStore(
+    (state) => state.setFullscreenArtworkSize,
+  );
+
+  const artworkSizeOptions = (
+    [
+      { value: "small", label: t("settings.artwork_size.small") },
+      { value: "medium", label: t("settings.artwork_size.medium") },
+      { value: "large", label: t("settings.artwork_size.large") },
+    ] as const
+  ) satisfies readonly { value: FullscreenArtworkSize; label: string }[];
 
   useEffect(() => {
     setMounted(true);
@@ -254,6 +271,34 @@ export function AppearanceTab({ searchQuery }: { searchQuery?: string }) {
                 />
               );
             })}
+          </div>
+        ) : null}
+      </SettingBlock>
+
+      <SettingBlock
+        title={t("settings.artwork_size.title")}
+        description={t("settings.artwork_size.description")}
+        titleKey="settings.artwork_size.title"
+        descKey="settings.artwork_size.description"
+        searchQuery={searchQuery}
+      >
+        {mounted ? (
+          <div className="flex items-center gap-[12px]">
+            <SegmentedControl<FullscreenArtworkSize>
+              options={artworkSizeOptions}
+              value={fullscreenArtworkSize}
+              onChange={setFullscreenArtworkSize}
+              ariaLabel={t("settings.artwork_size.title")}
+            />
+            <span
+              className="text-[12px] text-text-tertiary whitespace-nowrap"
+              style={font}
+            >
+              {FULLSCREEN_ARTWORK_SIZE_PX[fullscreenArtworkSize]}px
+              {fullscreenArtworkSize === DEFAULT_FULLSCREEN_ARTWORK_SIZE
+                ? ` · ${t("settings.artwork_size.default")}`
+                : ""}
+            </span>
           </div>
         ) : null}
       </SettingBlock>

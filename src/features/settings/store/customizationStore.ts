@@ -9,6 +9,32 @@ export interface BlockCustomization {
   dim: number;
 }
 
+export type FullscreenArtworkSize = "small" | "medium" | "large";
+
+export const DEFAULT_FULLSCREEN_ARTWORK_SIZE: FullscreenArtworkSize = "medium";
+
+// px sizes for the fullscreen player's artwork presets
+export const FULLSCREEN_ARTWORK_SIZE_PX: Record<FullscreenArtworkSize, number> =
+  {
+    small: 200,
+    medium: 280,
+    large: 360,
+  };
+
+const FULLSCREEN_ARTWORK_SIZES: readonly FullscreenArtworkSize[] = [
+  "small",
+  "medium",
+  "large",
+];
+
+// keeps malformed (persisted) values on a safe preset
+export const resolveFullscreenArtworkSize = (
+  value: unknown,
+): FullscreenArtworkSize =>
+  FULLSCREEN_ARTWORK_SIZES.includes(value as FullscreenArtworkSize)
+    ? (value as FullscreenArtworkSize)
+    : DEFAULT_FULLSCREEN_ARTWORK_SIZE;
+
 export interface CustomizationState {
   backgroundImage: string | null;
   backgroundBlur: number;
@@ -16,10 +42,12 @@ export interface CustomizationState {
   sidebar: BlockCustomization;
   contentView: BlockCustomization;
   miniplayer: BlockCustomization;
+  fullscreenArtworkSize: FullscreenArtworkSize;
 
   setBackgroundImage: (image: string | null) => void;
   setBackgroundBlur: (blur: number) => void;
   setBackgroundDim: (dim: number) => void;
+  setFullscreenArtworkSize: (size: FullscreenArtworkSize) => void;
   setBlockConfig: (
     block: "sidebar" | "contentView" | "miniplayer",
     patch: Partial<BlockCustomization>,
@@ -148,6 +176,7 @@ export const useCustomizationStore = create<CustomizationState>()(
       sidebar: { ...DEFAULT_BLOCK_CONFIG },
       contentView: { ...DEFAULT_BLOCK_CONFIG },
       miniplayer: { ...DEFAULT_BLOCK_CONFIG },
+      fullscreenArtworkSize: DEFAULT_FULLSCREEN_ARTWORK_SIZE,
 
       setBackgroundImage: (image) => {
         const prev = get().backgroundImage;
@@ -196,6 +225,10 @@ export const useCustomizationStore = create<CustomizationState>()(
         set({ backgroundDim: clamped });
       },
 
+      setFullscreenArtworkSize: (size) => {
+        set({ fullscreenArtworkSize: resolveFullscreenArtworkSize(size) });
+      },
+
       setBlockConfig: (block, patch) => {
         set((state) => ({
           [block]: {
@@ -236,6 +269,7 @@ export const useCustomizationStore = create<CustomizationState>()(
           sidebar: { ...DEFAULT_BLOCK_CONFIG },
           contentView: { ...DEFAULT_BLOCK_CONFIG },
           miniplayer: { ...DEFAULT_BLOCK_CONFIG },
+          fullscreenArtworkSize: DEFAULT_FULLSCREEN_ARTWORK_SIZE,
         });
       },
     }),
@@ -248,12 +282,16 @@ export const useCustomizationStore = create<CustomizationState>()(
         sidebar: state.sidebar,
         contentView: state.contentView,
         miniplayer: state.miniplayer,
+        fullscreenArtworkSize: state.fullscreenArtworkSize,
       }),
       onRehydrateStorage: () => (state) => {
         if (!state) return;
         state.sidebar = clampBlockConfig(state.sidebar || {});
         state.contentView = clampBlockConfig(state.contentView || {});
         state.miniplayer = clampBlockConfig(state.miniplayer || {});
+        state.fullscreenArtworkSize = resolveFullscreenArtworkSize(
+          state.fullscreenArtworkSize,
+        );
         void loadPersistedWallpaper().then((img) => {
           if (img) {
             useCustomizationStore.setState({ backgroundImage: img });

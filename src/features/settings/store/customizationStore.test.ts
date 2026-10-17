@@ -4,6 +4,9 @@ import {
   clampBlockConfig,
   getBlockStyle,
   isGlassThemeActive,
+  resolveFullscreenArtworkSize,
+  FULLSCREEN_ARTWORK_SIZE_PX,
+  DEFAULT_FULLSCREEN_ARTWORK_SIZE,
   MIN_OPACITY,
   MAX_OPACITY,
   MIN_BLUR,
@@ -109,5 +112,33 @@ describe("customizationStore", () => {
     // resetting all clears wallpaper and deactivates glass
     store.resetAll();
     expect(isGlassThemeActive(useCustomizationStore.getState())).toBe(false);
+  });
+
+  it("manages fullscreen artwork size presets", () => {
+    // default keeps the current 280px look
+    expect(useCustomizationStore.getState().fullscreenArtworkSize).toBe(
+      DEFAULT_FULLSCREEN_ARTWORK_SIZE,
+    );
+    expect(DEFAULT_FULLSCREEN_ARTWORK_SIZE).toBe("medium");
+    expect(FULLSCREEN_ARTWORK_SIZE_PX).toEqual({
+      small: 200,
+      medium: 280,
+      large: 360,
+    });
+
+    const store = useCustomizationStore.getState();
+    store.setFullscreenArtworkSize("large");
+    expect(useCustomizationStore.getState().fullscreenArtworkSize).toBe("large");
+    expect(FULLSCREEN_ARTWORK_SIZE_PX.large).toBe(360);
+
+    // malformed persisted values fall back to the default preset
+    expect(resolveFullscreenArtworkSize("bogus")).toBe("medium");
+    expect(resolveFullscreenArtworkSize(undefined)).toBe("medium");
+    expect(resolveFullscreenArtworkSize("small")).toBe("small");
+
+    // resetting all restores the default preset
+    store.setFullscreenArtworkSize("small");
+    useCustomizationStore.getState().resetAll();
+    expect(useCustomizationStore.getState().fullscreenArtworkSize).toBe("medium");
   });
 });

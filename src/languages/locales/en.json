@@ -620,6 +620,14 @@
       "dark": "Dark",
       "system": "System"
     },
+    "artwork_size": {
+      "title": "Fullscreen artwork size",
+      "description": "Choose the cover art size in the fullscreen player.",
+      "small": "Small",
+      "medium": "Medium",
+      "large": "Large",
+      "default": "Default"
+    },
     "branding": {
       "title": "Branding",
       "description": "Choose the logo accent color.",
