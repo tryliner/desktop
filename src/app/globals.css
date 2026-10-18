@@ -434,3 +434,7 @@ button.apple-glass-action:hover,
     display: none;
   }
 }
+
+body[data-edge-to-edge="true"] {
+  padding: 0 !important;
+}

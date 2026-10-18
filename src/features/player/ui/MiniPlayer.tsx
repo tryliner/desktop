@@ -194,6 +194,7 @@ export interface MiniPlayerProps {
   onQueueToggle?: () => void;
   onFullscreenOpen?: () => void;
   embedded?: boolean;
+  isEdgeToEdge?: boolean;
 }
 
 function MiniPlayer({
@@ -201,6 +202,7 @@ function MiniPlayer({
   onQueueToggle,
   onFullscreenOpen,
   embedded = false,
+  isEdgeToEdge = false,
 }: MiniPlayerProps) {
   const player = usePlayerState();
   const { t } = useTranslation();
@@ -630,7 +632,9 @@ function MiniPlayer({
                 hasCustomBg ? "" : "bg-bg-primary"
               }`
             : embedded
-              ? `rounded-sm rounded-br-xl ${
+              ? `rounded-sm ${
+                  isEdgeToEdge ? "rounded-br-none" : "rounded-br-xl"
+                } ${
                   hasCustomBg ? "" : "bg-bg-primary"
                 }`
               : `rounded-3xl border-[0.5px] border-border-tertiary ${
