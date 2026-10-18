@@ -242,14 +242,12 @@ export function validateCanvasMatch(options: {
 
   if (requestedAlbum) {
     const normRequestedAlbum = normalizeName(requestedAlbum);
-    // The player can fill the album field with the track title (singles and
-    // radio entries); such a value carries no album information, so the
-    // strict album comparison is skipped for it.
-    const albumFieldCarriesTitle =
-      normRequestedAlbum === normRequestedTitle ||
-      normRequestedTitle.includes(normRequestedAlbum) ||
-      normRequestedAlbum.includes(normRequestedTitle);
-    if (!albumFieldCarriesTitle) {
+    // The player can fill the album field with the bare track title (singles
+    // and radio entries); that exact mirror carries no album information, so
+    // the strict album comparison is skipped for it. A real album whose name
+    // merely contains the title ("Title (Remixes)") still goes through the
+    // strict comparison.
+    if (normRequestedAlbum !== normRequestedTitle) {
       if (!canvasAlbum) return false;
       const normCanvasAlbum = normalizeName(canvasAlbum);
       const albumMatches =

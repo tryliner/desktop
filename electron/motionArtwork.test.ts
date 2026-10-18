@@ -306,6 +306,41 @@ describe("MotionArtworkManager", () => {
     expect(calls).toHaveLength(1);
   });
 
+  it("rejects a partially mirroring album name that contains the title", async () => {
+    // A real album whose name merely contains the title ("Blinding Lights
+    // (Remixes)") must still pass the strict album comparison.
+    const routes: FakeRoute[] = [
+      { urlIncludes: "/us/browse", body: BROWSE_HTML },
+      { urlIncludes: "/assets/index~abc123.js", body: SCRIPT_BODY },
+      { urlIncludes: "/catalog/us/search", body: SEARCH_BODY },
+      { urlIncludes: `/catalog/us/songs/${SONG_ID}`, body: SONG_LOOKUP_BODY },
+      {
+        urlIncludes: `/catalog/us/albums/${ALBUM_ID}`,
+        body: JSON.stringify({
+          data: [
+            {
+              id: ALBUM_ID,
+              attributes: {
+                name: "After Hours (Deluxe)",
+                artistName: "The Weeknd",
+                editorialVideo: { motionDetailSquare: { video: ALBUM_CANVAS_URL } },
+              },
+            },
+          ],
+        }),
+      },
+    ];
+    const manager = new MotionArtworkManager({ fetchImpl: fakeFetchImpl(routes) });
+    await expect(
+      manager.get({
+        title: "Blinding Lights",
+        artist: "The Weeknd",
+        album: "Blinding Lights (Remixes)",
+        storefront: "us",
+      }),
+    ).resolves.toBeNull();
+  });
+
   it("accepts a canvas when the album field mirrors the song title", async () => {
     // Real Liner data: singles and radio entries fill track.album with the
     // track title, so the request must downgrade to title + artist matching.
