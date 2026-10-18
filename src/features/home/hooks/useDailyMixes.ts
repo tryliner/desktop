@@ -77,7 +77,8 @@ export function useDailyMixes() {
     const onAuthChanged = () => {
       const nextAccount = getAuthSession()?.user?.id || "guest";
       setCurrentAccount(nextAccount);
-      userCache.delete(nextAccount);
+      userCache.clear();
+      queryCache.clear();
     };
 
     window.addEventListener("auth:changed", onAuthChanged);
@@ -120,6 +121,8 @@ export function useDailyMixes() {
             tracks: mix.tracks,
             isDailyMix: true,
           };
+          queryCache.set(`collection:playlist:${currentAccount}:${mix.id}`, collectionData);
+          queryCache.set(`collection:playlist:${currentAccount}:${encodeURIComponent(mix.id)}`, collectionData);
           queryCache.set(`collection:playlist:${mix.id}`, collectionData);
           queryCache.set(`collection:playlist:${encodeURIComponent(mix.id)}`, collectionData);
         }

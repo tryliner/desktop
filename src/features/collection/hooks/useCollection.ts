@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api, mediaUrl, toClientTrack } from "@/shared/api";
+import { api, getAuthSession, mediaUrl, toClientTrack } from "@/shared/api";
 import { queryCache } from "@/shared/cache/queryCache";
 import type { Track } from "@/shared/types";
 import { getDailyMixArtists } from "@/features/home/hooks/useDailyMixes";
@@ -18,10 +18,38 @@ export interface CollectionPageData {
 }
 
 export function useCollection(type: string | null, id: string | null) {
-  const cacheKey = type && id ? `collection:${type}:${id}` : null;
+  const accountId = getAuthSession()?.user?.id || "guest";
+  const decodedId = id ? decodeURIComponent(id) : "";
+  const isDailyMix = Boolean(
+    id &&
+      (decodedId.startsWith("daily-mix") ||
+        decodedId.startsWith("mix-") ||
+        id.startsWith("daily-mix") ||
+        id.startsWith("mix-"))
+  );
+  const cacheKey =
+    type && id
+      ? isDailyMix
+        ? `collection:playlist:${accountId}:${decodedId || id}`
+        : `collection:${type}:${id}`
+      : null;
   const cached = cacheKey ? queryCache.get<CollectionPageData>(cacheKey) : undefined;
   const [data, setData] = useState<CollectionPageData | null>(cached ?? null);
   const [loading, setLoading] = useState<boolean>(!cached && Boolean(type && id));
+
+  useEffect(() => {
+    const onAuthChanged = () => {
+      queryCache.clear();
+      if (isDailyMix) {
+        setData(null);
+        setLoading(true);
+      }
+    };
+    window.addEventListener("auth:changed", onAuthChanged);
+    return () => {
+      window.removeEventListener("auth:changed", onAuthChanged);
+    };
+  }, [isDailyMix]);
 
   useEffect(() => {
     if (!type || !id || !cacheKey) {
@@ -61,6 +89,8 @@ export function useCollection(type: string | null, id: string | null) {
 
           if (type === "playlist" && isDailyMix) {
             const cached =
+              queryCache.get<CollectionPageData>(`collection:playlist:${accountId}:${decodedId}`) ||
+              queryCache.get<CollectionPageData>(`collection:playlist:${accountId}:${id}`) ||
               queryCache.get<CollectionPageData>(cacheKey) ||
               queryCache.get<CollectionPageData>(`collection:playlist:${decodedId}`) ||
               queryCache.get<CollectionPageData>(`collection:playlist:${id}`);
@@ -100,6 +130,8 @@ export function useCollection(type: string | null, id: string | null) {
                 tracks: foundGenerated.tracks,
                 isDailyMix: true,
               };
+              queryCache.set(`collection:playlist:${accountId}:${foundGenerated.id}`, formatted);
+              queryCache.set(`collection:playlist:${accountId}:${encodeURIComponent(foundGenerated.id)}`, formatted);
               queryCache.set(`collection:playlist:${foundGenerated.id}`, formatted);
               queryCache.set(`collection:playlist:${encodeURIComponent(foundGenerated.id)}`, formatted);
               return formatted;
