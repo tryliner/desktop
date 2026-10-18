@@ -59,6 +59,11 @@ export function useCollection(type: string | null, id: string | null) {
             id.startsWith("mix-");
 
           if (type === "playlist" && isDailyMix) {
+            const cached =
+              queryCache.get<CollectionPageData>(cacheKey) ||
+              queryCache.get<CollectionPageData>(`collection:playlist:${decodedId}`) ||
+              queryCache.get<CollectionPageData>(`collection:playlist:${id}`);
+            if (cached) return cached;
             const mixesRes = await api.getDailyMixes();
             const found = mixesRes.items?.find((m) => m.id === id || m.id === decodedId);
             if (found) {

@@ -39,7 +39,7 @@ export default function HomePage() {
     usePopularTracksAllTime(20);
   const { data: recentlyPlayed, isLoading: recentLoading } =
     useRecentlyPlayed(20);
-  const { data: dailyMixes } = useDailyMixes();
+  const { data: dailyMixes, isLoading: dailyMixesLoading } = useDailyMixes();
 
   const isDataLoading =
     tracksLoading ||
@@ -191,12 +191,11 @@ export default function HomePage() {
             )}
 
             {/* Daily Mixes (Made For You) */}
-            {dailyMixes && dailyMixes.length > 0 && (
-              <DailyMixesSection
-                mixes={dailyMixes}
-                headingMarginTop="mt-[22px]"
-              />
-            )}
+            <DailyMixesSection
+              mixes={dailyMixes}
+              isLoading={dailyMixesLoading}
+              headingMarginTop="mt-[22px]"
+            />
 
           {/* Listening Right Now (Trending Chart) */}
           {popularTracksOnly && popularTracksOnly.length > 0 && (

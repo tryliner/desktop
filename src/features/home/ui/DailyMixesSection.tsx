@@ -160,12 +160,17 @@ function DailyMixCard({ mix }: DailyMixCardProps) {
 
 export interface DailyMixesSectionProps {
   mixes: DailyMix[];
+  isLoading?: boolean;
   headingMarginTop?: string;
 }
 
-function DailyMixesSection({ mixes, headingMarginTop = "mt-[22px]" }: DailyMixesSectionProps) {
+function DailyMixesSection({
+  mixes,
+  isLoading = false,
+  headingMarginTop = "mt-[22px]",
+}: DailyMixesSectionProps) {
   const { t } = useTranslation();
-  if (mixes.length === 0) return null;
+  if (!isLoading && mixes.length === 0) return null;
 
   return (
     <div className="flex flex-col">
@@ -183,11 +188,27 @@ function DailyMixesSection({ mixes, headingMarginTop = "mt-[22px]" }: DailyMixes
         </div>
       </div>
 
-      <ScrollableRow className="flex gap-[28px] pl-8 pr-8 mt-[12px] overflow-x-auto pb-[2px]">
-        {mixes.map((mix, index) => (
-          <DailyMixCard key={`daily-mix-${mix.id}-${index}`} mix={mix} />
-        ))}
-      </ScrollableRow>
+      {isLoading && mixes.length === 0 ? (
+        <div className="flex gap-[28px] pl-8 pr-8 mt-[12px] overflow-hidden pb-[2px] transition-opacity duration-300">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="flex-shrink-0 w-[175px]">
+              <div className="relative aspect-square w-full overflow-hidden rounded-md bg-border-alpha-14">
+                <div className="skeleton-shimmer w-full h-full" />
+              </div>
+              <div className="flex flex-col mt-[8px] gap-1.5">
+                <div className="skeleton-shimmer h-[14px] w-[65%] rounded-[4px]" />
+                <div className="skeleton-shimmer h-[12px] w-[85%] rounded-[4px]" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <ScrollableRow className="flex gap-[28px] pl-8 pr-8 mt-[12px] overflow-x-auto pb-[2px] transition-opacity duration-300">
+          {mixes.map((mix, index) => (
+            <DailyMixCard key={`daily-mix-${mix.id}-${index}`} mix={mix} />
+          ))}
+        </ScrollableRow>
+      )}
     </div>
   );
 }

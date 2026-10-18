@@ -28,6 +28,7 @@ import {
 } from "@/features/lyrics";
 import { preloadCoverArt } from "@/features/covers";
 import { linerDb, type CachedLyricsRecord } from "@/shared/storage";
+import { recordLocalListening } from "@/features/home/services/localHistoryService";
 import { showToast } from "@/shared/ui";
 import { createTranslatorSync, getStoredLocale } from "@/languages";
 import type { Track } from "@/shared/types";
@@ -201,6 +202,14 @@ class PlaybackTelemetryTracker {
 
     if (this.playedDurationMs >= 3000 || this.completed) {
       const snap = this.activeTrack;
+      if (snap) {
+        recordLocalListening(
+          snap,
+          Math.round(this.playedDurationMs),
+          this.completed,
+          this.loopCount
+        );
+      }
       const artistsList = snap?.artistList?.length
         ? snap.artistList.map((a) => ({ id: a.id || "unknown", name: a.name }))
         : (snap?.artists

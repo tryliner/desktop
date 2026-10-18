@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { api, toClientTrack, mediaUrl } from "@/shared/api";
 import { queryCache } from "@/shared/cache/queryCache";
+import { generateYtDailyMixes } from "../services/ytDailyMixesService";
 import type { Track } from "@/shared/types";
 import type { CollectionPageData } from "@/features/collection/hooks/useCollection";
 
@@ -17,7 +17,7 @@ export interface DailyMix {
 export function getDailyMixArtists(
   clusterArtists?: string[],
   tracks?: Track[],
-  targetCount: number = 4,
+  targetCount = 4
 ): string[] {
   const seen = new Set<string>();
   const result: string[] = [];
@@ -60,12 +60,10 @@ export function getDailyMixArtists(
 }
 
 const cache = { data: [] as DailyMix[], timestamp: 0 };
-const CACHE_TTL = 120_000;
+const CACHE_TTL = 300_000;
 
 export function useDailyMixes() {
-  const [data, setData] = useState<DailyMix[]>(() => {
-    return cache.data.length > 0 ? cache.data : [];
-  });
+  const [data, setData] = useState<DailyMix[]>(() => cache.data);
   const [isLoading, setIsLoading] = useState(() => cache.data.length === 0);
 
   useEffect(() => {
@@ -75,57 +73,48 @@ export function useDailyMixes() {
       return;
     }
 
+    const controller = new AbortController();
     let active = true;
-    api
-      .getDailyMixes()
-      .then((res) => {
+
+    const timeoutId = setTimeout(() => {
+      if (active) {
+        controller.abort();
+        setIsLoading(false);
+      }
+    }, 30_000);
+
+    generateYtDailyMixes(controller.signal)
+      .then((mixes) => {
         if (!active) return;
-        const mixes: DailyMix[] = (res.items || []).map((mix) => {
-          const clientTracks = (mix.tracks || []).map((t) => toClientTrack(t));
-          const primaryCover =
-            mix.cover?.url ? mediaUrl(mix.cover.url) :
-            (clientTracks[0]?.coverUrl ||
-            clientTracks[1]?.coverUrl);
-
-          const computedArtists = getDailyMixArtists(mix.clusterArtists, clientTracks, 4);
-
-          const mixItem: DailyMix = {
-            id: mix.id,
-            title: mix.title,
-            description: mix.description,
-            clusterArtists: computedArtists,
-            coverUrl: primaryCover,
-            trackCount: mix.trackCount || clientTracks.length,
-            tracks: clientTracks,
-          };
-
-          // Pre-cache collection playlist page so clicking opens instantly
+        for (const mix of mixes) {
           const collectionData: CollectionPageData = {
             type: "playlist",
             title: mix.title,
-            author: computedArtists.length > 0 ? computedArtists.join(", ") : "Daily Mix",
+            author: mix.clusterArtists.length > 0 ? mix.clusterArtists.join(", ") : "Daily Mix",
             description: mix.description,
-            coverUrl: primaryCover || "",
-            tracks: clientTracks,
+            coverUrl: mix.coverUrl || "",
+            tracks: mix.tracks,
+            isDailyMix: true,
           };
           queryCache.set(`collection:playlist:${mix.id}`, collectionData);
-
-          return mixItem;
-        });
-
+          queryCache.set(`collection:playlist:${encodeURIComponent(mix.id)}`, collectionData);
+        }
         cache.data = mixes;
         cache.timestamp = Date.now();
         setData(mixes);
       })
       .catch(() => {
-        if (active) setData([]);
+        if (active && cache.data.length === 0) setData([]);
       })
       .finally(() => {
+        clearTimeout(timeoutId);
         if (active) setIsLoading(false);
       });
 
     return () => {
       active = false;
+      clearTimeout(timeoutId);
+      controller.abort();
     };
   }, []);
 
