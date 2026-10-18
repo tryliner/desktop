@@ -24,6 +24,7 @@ import { useCoverReady, CoverImage } from "@/features/covers";
 import ExplicitBadge from "@/shared/ui/ExplicitBadge";
 import { VolumePicker } from "./VolumePicker";
 import { TimelineSlider } from "./TimelineSlider";
+import { MotionArtworkCanvas, useMotionArtwork } from "@/features/motionArtwork";
 
 import { useTranslation } from "@/languages";
 
@@ -94,6 +95,17 @@ export function PlayerUiElements({
 
   const isCoverLoaded = useCoverReady(coverUrl);
 
+  const motionResolution = useMotionArtwork(
+    track
+      ? {
+          title: track.title,
+          artists: track.artists,
+          albumTitle: track.album?.title,
+        }
+      : null,
+  );
+  const isMotionPlaying = player.status === "playing";
+
   const { t } = useTranslation();
 
   return (
@@ -131,6 +143,12 @@ export function PlayerUiElements({
             )}
           </motion.div>
         </AnimatePresence>
+        {motionResolution && (
+          <MotionArtworkCanvas
+            resolution={motionResolution}
+            isPlaying={isMotionPlaying}
+          />
+        )}
         {/* like button on the cover corner (no tooltip; aria-label names it) */}
         <button
           type="button"

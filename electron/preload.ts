@@ -132,6 +132,12 @@ export interface LinerElectronApi {
   discordUpdateState: (state: any) => void;
   discordUpdateSettings: (settings: any) => void;
   getDiscordStatus: () => Promise<{ connected: boolean; username?: string }>;
+  getMotionArtwork: (input: {
+    title: string;
+    artist: string;
+    album?: string;
+    storefront?: string;
+  }) => Promise<{ videoUrl: string; tallVideoUrl?: string; albumName?: string } | null>;
   mintPoToken: (identifier: string) => Promise<string>;
 }
 
@@ -347,6 +353,7 @@ const api: LinerElectronApi = {
     ipcRenderer.send("discord:update-settings", settings);
   },
   getDiscordStatus: () => ipcRenderer.invoke("discord:get-status"),
+  getMotionArtwork: (input) => ipcRenderer.invoke("motion-artwork:get", input),
   mintPoToken: (identifier) => ipcRenderer.invoke("potoken:mint", identifier),
 };
 

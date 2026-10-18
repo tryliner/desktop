@@ -1,12 +1,15 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "@/languages";
 import { usePlayerStore } from "@/features/player";
+import { useMotionArtworkSettingsStore } from "@/features/motionArtwork";
 import { ToggleSwitch } from "@/shared/ui";
 import { SettingRow, SettingSection, SegmentedControl } from "../controls";
 
 export function PlaybackTab({ searchQuery }: { searchQuery?: string }) {
   const { t } = useTranslation();
   const [mounted, setMounted] = useState(false);
+  const motionArtworkEnabled = useMotionArtworkSettingsStore((s) => s.enabled);
+  const setMotionArtworkEnabled = useMotionArtworkSettingsStore((s) => s.setEnabled);
   const autoplaySimilar = usePlayerStore((state) => state.autoplaySimilar);
   const setAutoplaySimilar = usePlayerStore(
     (state) => state.setAutoplaySimilar,
@@ -36,6 +39,20 @@ export function PlaybackTab({ searchQuery }: { searchQuery?: string }) {
 
   return (
     <SettingSection>
+
+      <SettingRow
+        title={t("settings.motion_artwork.title")}
+        description={t("settings.motion_artwork.description")}
+        titleKey="settings.motion_artwork.title"
+        descKey="settings.motion_artwork.description"
+        searchQuery={searchQuery}
+        control={
+          <ToggleSwitch
+            checked={motionArtworkEnabled}
+            onChange={setMotionArtworkEnabled}
+          />
+        }
+      />
 
       <SettingRow
         title={t("settings.autoplay_similar.title")}

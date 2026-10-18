@@ -658,6 +658,10 @@
       "label": "Language",
       "description": "Select the interface language"
     },
+    "motion_artwork": {
+      "title": "Animated album artwork",
+      "description": "Plays the animated cover video from Apple's catalog in place of the static artwork."
+    },
     "autoplay_similar": {
       "title": "Autoplay similar tracks",
       "description": "Automatically add similar songs when your queue ends."

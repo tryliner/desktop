@@ -538,6 +538,10 @@
       "label": "Idioma",
       "description": "Selecione o idioma da interface"
     },
+    "motion_artwork": {
+      "title": "Capa de álbum animada",
+      "description": "Reproduz o vídeo de capa animado do catálogo da Apple no lugar da capa estática."
+    },
     "autoplay_similar": {
       "title": "Reproduzir faixas similares automaticamente",
       "description": "Adiciona músicas similares automaticamente quando a sua fila termina."

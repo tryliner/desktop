@@ -41,6 +41,7 @@ import { createSleepBlocker } from "./sleep-blocker.js";
 import { createShutdown } from "./shutdown.js";
 import { computeDragBounds } from "./window-drag.js";
 import { DiscordRpcManager } from "./discord.js";
+import { MotionArtworkManager } from "./motionArtwork.js";
 import { PoTokenService } from "./potoken.js";
 
 // root error handling for main process
@@ -76,6 +77,7 @@ let touchBarManager: TouchBarManager | null = null;
 let overlayManager: OverlayManager | null = null;
 let bundleManager: BundleManager | null = null;
 let discordRpcManager: DiscordRpcManager | null = null;
+let motionArtworkManager: MotionArtworkManager | null = null;
 let poTokenService: PoTokenService | null = null;
 
 // every helper process we spawn (tracert, icon cache refresh, ...) is tracked so
@@ -378,6 +380,8 @@ if (!gotTheLock) {
     overlayManager.registerShortcut();
 
     discordRpcManager = new DiscordRpcManager();
+    motionArtworkManager = new MotionArtworkManager();
+    motionArtworkManager.register();
     poTokenService = new PoTokenService(path.join(__dirname, "preload.cjs"));
 
     const isHyprland = Boolean(
