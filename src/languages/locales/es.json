@@ -51,6 +51,7 @@
       "home": "Inicio",
       "search": "Buscar",
       "library": "Biblioteca",
+      "local": "Archivos locales",
       "settings": "Ajustes"
     },
     "loading": "Cargando",
@@ -961,5 +962,19 @@
     "downloaded_desc": "Reinicia Liner para instalar la versión {version}.",
     "install_button": "Instalar",
     "error_title": "Error en la actualización"
+  },
+  "local": {
+    "title": "Archivos locales",
+    "search": "Buscar",
+    "rescan": "Volver a escanear",
+    "choose_folder": "Elegir carpeta de música",
+    "change_folder": "Cambiar carpeta",
+    "scanning": "Escaneando…",
+    "scanning_progress": "Escaneando… {done} / {total}",
+    "pick_hint": "Elige la carpeta donde guardas tu música. También se escanean las subcarpetas (mp3, flac, m4a, ogg, opus, wav, aac).",
+    "no_files": "No se encontraron archivos de audio en esta carpeta.",
+    "play": "Reproducir",
+    "error_desktop_only": "La biblioteca local requiere la aplicación de escritorio.",
+    "error_scan_failed": "No se pudo escanear esta carpeta."
   }
 }

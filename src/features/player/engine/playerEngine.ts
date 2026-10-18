@@ -31,6 +31,7 @@ import { linerDb, type CachedLyricsRecord } from "@/shared/storage";
 import { showToast } from "@/shared/ui";
 import { createTranslatorSync, getStoredLocale } from "@/languages";
 import type { Track } from "@/shared/types";
+import { isLocalTrackId } from "@/shared/utils/localTrack";
 
 const MAX_CONSECUTIVE_AUTO_SKIPS = 3;
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
@@ -241,6 +242,7 @@ class PlaybackTelemetryTracker {
   }
 
   private sendEvent(payload: RecordPlaybackEventRequest) {
+    if (isLocalTrackId((payload as { trackId?: string }).trackId)) return;
     void api.recordPlaybackEvent(payload).catch((err) => {
       log(
         "yellow",
@@ -522,6 +524,7 @@ class PlayerEngine {
   }
 
   public async startRadioStation(track: Track): Promise<void> {
+    if (isLocalTrackId(track.id)) return this.playTrack(track);
     const store = usePlayerStore.getState();
     this.sessionId += 1;
     const mySession = this.sessionId;
@@ -984,6 +987,7 @@ class PlayerEngine {
     session: number,
     seedTrackId: string,
   ): Promise<void> {
+    if (isLocalTrackId(seedTrackId)) return;
     const currentState = usePlayerStore.getState();
     if (!currentState.autoplaySimilar) return;
 
@@ -1073,7 +1077,7 @@ class PlayerEngine {
   }
 
   private async prefetchLyrics(trackId: string, hint?: LyricsHint): Promise<void> {
-    if (!trackId) return;
+    if (!trackId || isLocalTrackId(trackId)) return;
 
     if (lyricsCache.has(trackId)) return;
     if (this.inFlightLyricsPrefetches.has(trackId)) {
@@ -1155,6 +1159,11 @@ class PlayerEngine {
     }
 
     const trackId = track.id;
+    if (isLocalTrackId(trackId)) {
+      this.currentLyricsTrackId = trackId;
+      lyricsStore.reset();
+      return;
+    }
     if (
       this.currentLyricsTrackId === trackId &&
       lyricsStore.currentLyricsTrackId === trackId

@@ -16,6 +16,8 @@ export interface Track {
   durationMs: number;
   playCount: number;
   explicit?: boolean;
+  /** set for tracks from the user's local library (liner-local:// stream URL) */
+  localUrl?: string;
   releaseDate?: string;
   album?: {
     id: string;

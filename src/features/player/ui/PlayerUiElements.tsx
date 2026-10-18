@@ -16,6 +16,7 @@ import {
 } from "./morphPlayerIcons";
 import { usePlayerState } from "../hooks/usePlayerState";
 import { playerEngine } from "../engine/playerEngine";
+import { isLocalTrackId } from "@/shared/utils/localTrack";
 import { useIsTrackLiked, useLikeTrack, useUnlikeTrack } from "@/features/library/hooks";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArtistLink } from "@/features/artist";
@@ -132,48 +133,50 @@ export function PlayerUiElements({
           </motion.div>
         </AnimatePresence>
         {/* tooltip wrapper positioned on cover corner */}
-        <Tooltip
-          content={isLiked ? t("common.unlike") : t("common.like")}
-          side="top"
-          wrapperClassName="!absolute bottom-2.5 left-2.5 z-20"
-        >
-          <button
-            type="button"
-            aria-label={isLiked ? t("common.unlike") : t("common.like")}
-            className={`relative inline-flex h-[30px] w-[30px] items-center justify-center rounded-full transition-all duration-200 ease-out active:scale-[0.92] bg-black/40 backdrop-blur-md border-none ${
-              isLiked
-                ? "text-white hover:bg-black/60"
-                : "text-white/70 hover:text-white hover:bg-black/60"
-            }`}
-            onClick={handleLikeToggle}
-            style={{ cursor: "pointer" }}
+        {!isLocalTrackId(track?.id) && (
+          <Tooltip
+            content={isLiked ? t("common.unlike") : t("common.like")}
+            side="top"
+            wrapperClassName="!absolute bottom-2.5 left-2.5 z-20"
           >
-            <motion.div
-              initial={false}
-              animate={{
-                scale: isLiked ? 1 : 0.5,
-                opacity: isLiked ? 1 : 0,
-                rotate: isLiked ? 0 : -45,
-              }}
-              transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-              className="absolute inset-0 flex items-center justify-center"
+            <button
+              type="button"
+              aria-label={isLiked ? t("common.unlike") : t("common.like")}
+              className={`relative inline-flex h-[30px] w-[30px] items-center justify-center rounded-full transition-all duration-200 ease-out active:scale-[0.92] bg-black/40 backdrop-blur-md border-none ${
+                isLiked
+                  ? "text-white hover:bg-black/60"
+                  : "text-white/70 hover:text-white hover:bg-black/60"
+              }`}
+              onClick={handleLikeToggle}
+              style={{ cursor: "pointer" }}
             >
-              <CheckFill size={16} />
-            </motion.div>
-            <motion.div
-              initial={false}
-              animate={{
-                scale: !isLiked ? 1 : 0.5,
-                opacity: !isLiked ? 1 : 0,
-                rotate: !isLiked ? 0 : 45,
-              }}
-              transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-              className="absolute inset-0 flex items-center justify-center"
-            >
-              <AddLine size={16} />
-            </motion.div>
-          </button>
-        </Tooltip>
+              <motion.div
+                initial={false}
+                animate={{
+                  scale: isLiked ? 1 : 0.5,
+                  opacity: isLiked ? 1 : 0,
+                  rotate: isLiked ? 0 : -45,
+                }}
+                transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+                className="absolute inset-0 flex items-center justify-center"
+              >
+                <CheckFill size={16} />
+              </motion.div>
+              <motion.div
+                initial={false}
+                animate={{
+                  scale: !isLiked ? 1 : 0.5,
+                  opacity: !isLiked ? 1 : 0,
+                  rotate: !isLiked ? 0 : 45,
+                }}
+                transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+                className="absolute inset-0 flex items-center justify-center"
+              >
+                <AddLine size={16} />
+              </motion.div>
+            </button>
+          </Tooltip>
+        )}
       </div>
 
       {/* Track info */}

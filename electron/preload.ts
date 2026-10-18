@@ -36,7 +36,24 @@ export interface WindowState {
   isVisible?: boolean;
 }
 
+export interface LocalTrackInfo {
+  id: string;
+  path: string;
+  url: string;
+  coverUrl: string;
+  title: string;
+  artists: string;
+  album: string;
+  albumId: string;
+  year?: string;
+  durationMs: number;
+}
+
 export interface LinerElectronApi {
+  localPickFolder: () => Promise<string | null>;
+  localScanFolder: (folder: string) => Promise<LocalTrackInfo[]>;
+  localLoadLibrary: () => Promise<{ folder: string; tracks: LocalTrackInfo[] } | null>;
+  onLocalScanProgress: (cb: (p: { done: number; total: number }) => void) => () => void;
   platform: string;
   isHyprland: boolean;
   minimize: () => Promise<void>;
@@ -136,6 +153,16 @@ const isHyprland = Boolean(
 );
 
 const api: LinerElectronApi = {
+  localPickFolder: () => ipcRenderer.invoke("local:pick-folder"),
+  localScanFolder: (folder) => ipcRenderer.invoke("local:scan", folder),
+  localLoadLibrary: () => ipcRenderer.invoke("local:load"),
+  onLocalScanProgress: (cb) => {
+    const listener = (_event: unknown, p: { done: number; total: number }) => cb(p);
+    ipcRenderer.on("local:scan-progress", listener);
+    return () => {
+      ipcRenderer.removeListener("local:scan-progress", listener);
+    };
+  },
   platform: process.platform,
   isHyprland,
   minimize: () => ipcRenderer.invoke("window:minimize"),

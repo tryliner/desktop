@@ -51,6 +51,7 @@
       "home": "Home",
       "search": "Search",
       "library": "Library",
+      "local": "Local Files",
       "settings": "Settings"
     },
     "loading": "Loading",
@@ -957,5 +958,19 @@
     "downloaded_desc": "Restart Liner to install version {version}.",
     "install_button": "Install",
     "error_title": "Update failed"
+  },
+  "local": {
+    "title": "Local Files",
+    "search": "Search",
+    "rescan": "Rescan",
+    "choose_folder": "Choose music folder",
+    "change_folder": "Change folder",
+    "scanning": "Scanning…",
+    "scanning_progress": "Scanning… {done} / {total}",
+    "pick_hint": "Pick the folder where your music is stored. Subfolders are scanned too (mp3, flac, m4a, ogg, opus, wav, aac).",
+    "no_files": "No audio files found in this folder.",
+    "play": "Play",
+    "error_desktop_only": "Local library needs the desktop app.",
+    "error_scan_failed": "Could not scan this folder."
   }
 }
