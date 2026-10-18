@@ -32,14 +32,22 @@ export function MotionArtworkCanvas({ resolution, isPlaying }: MotionArtworkCanv
     };
 
     try {
-      const nativeHlsSupported =
-        typeof video.canPlayType === "function" &&
-        video.canPlayType("application/vnd.apple.mpegurl") !== "";
+      // Chromium builds report HLS via canPlayType but streaming m3u8 through
+      // video.src does not reliably produce playback; hls.js (MSE) is the
+      // dependable path, native demuxer stays as the no-MSE fallback.
+      const useHlsJs = resolution.videoUrl.includes(".m3u8") && Hls.isSupported();
 
-      if (resolution.videoUrl.includes(".m3u8") && !nativeHlsSupported && Hls.isSupported()) {
+      if (useHlsJs) {
         hlsInstance = new Hls({ enableWorker: true });
         hlsInstance.loadSource(resolution.videoUrl);
         hlsInstance.attachMedia(video);
+        hlsInstance.on(Hls.Events.ERROR, (_event, data) => {
+          if (data.fatal) {
+            console.warn(`[motion:video] hls fatal ${data.type} ${data.details ?? ""}`);
+            hlsInstance?.destroy();
+            hlsInstance = null;
+          }
+        });
       } else {
         video.src = resolution.videoUrl;
       }
