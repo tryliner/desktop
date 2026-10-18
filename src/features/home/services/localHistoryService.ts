@@ -1,4 +1,5 @@
 import type { Track } from "@/shared/types";
+import { getAuthSession } from "@/shared/api";
 
 export interface LocalHistoryEntry {
   trackId: string;
@@ -12,7 +13,13 @@ export interface LocalHistoryEntry {
   timestamp: number;
 }
 
-const STORAGE_KEY = "liner_local_listening_history";
+function getStorageKey(): string {
+  const userId = getAuthSession()?.user?.id;
+  return userId
+    ? `liner_local_listening_history_${userId}`
+    : "liner_local_listening_history_guest";
+}
+
 const MAX_HISTORY_ITEMS = 200;
 
 export function recordLocalListening(
@@ -40,15 +47,24 @@ export function recordLocalListening(
       0,
       MAX_HISTORY_ITEMS
     );
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    localStorage.setItem(getStorageKey(), JSON.stringify(updated));
   } catch {}
 }
 
 export function getLocalListeningHistory(): LocalHistoryEntry[] {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(getStorageKey());
     return raw ? (JSON.parse(raw) as LocalHistoryEntry[]) : [];
   } catch {
     return [];
   }
+}
+
+export function clearLocalListeningHistory(userId?: string): void {
+  try {
+    const key = userId
+      ? `liner_local_listening_history_${userId}`
+      : getStorageKey();
+    localStorage.removeItem(key);
+  } catch {}
 }

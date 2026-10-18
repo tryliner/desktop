@@ -3,6 +3,7 @@ import { api, mediaUrl, toClientTrack } from "@/shared/api";
 import { queryCache } from "@/shared/cache/queryCache";
 import type { Track } from "@/shared/types";
 import { getDailyMixArtists } from "@/features/home/hooks/useDailyMixes";
+import { generateYtDailyMixes } from "@/features/home/services/ytDailyMixesService";
 
 export interface CollectionPageData {
   type?: "playlist" | "album";
@@ -64,7 +65,7 @@ export function useCollection(type: string | null, id: string | null) {
               queryCache.get<CollectionPageData>(`collection:playlist:${decodedId}`) ||
               queryCache.get<CollectionPageData>(`collection:playlist:${id}`);
             if (cached) return cached;
-            const mixesRes = await api.getDailyMixes();
+            const mixesRes = await api.getDailyMixes().catch(() => ({ items: [] }));
             const found = mixesRes.items?.find((m) => m.id === id || m.id === decodedId);
             if (found) {
               const clientTracks = (found.tracks || []).map((t) => toClientTrack(t));
@@ -81,6 +82,26 @@ export function useCollection(type: string | null, id: string | null) {
                 tracks: clientTracks,
                 isDailyMix: true,
               };
+              return formatted;
+            }
+
+            const generatedMixes = await generateYtDailyMixes().catch(() => []);
+            const foundGenerated = generatedMixes.find((m) => m.id === id || m.id === decodedId);
+            if (foundGenerated) {
+              const formatted: CollectionPageData = {
+                type: "playlist",
+                title: foundGenerated.title,
+                author:
+                  foundGenerated.clusterArtists.length > 0
+                    ? foundGenerated.clusterArtists.join(", ")
+                    : "Daily Mix",
+                description: foundGenerated.description,
+                coverUrl: foundGenerated.coverUrl || "",
+                tracks: foundGenerated.tracks,
+                isDailyMix: true,
+              };
+              queryCache.set(`collection:playlist:${foundGenerated.id}`, formatted);
+              queryCache.set(`collection:playlist:${encodeURIComponent(foundGenerated.id)}`, formatted);
               return formatted;
             }
           }

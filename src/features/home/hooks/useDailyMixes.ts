@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { getAuthSession } from "@/shared/api";
 import { queryCache } from "@/shared/cache/queryCache";
 import { generateYtDailyMixes } from "../services/ytDailyMixesService";
 import type { Track } from "@/shared/types";
@@ -59,19 +60,42 @@ export function getDailyMixArtists(
   return result;
 }
 
-const cache = { data: [] as DailyMix[], timestamp: 0 };
+const userCache = new Map<string, { data: DailyMix[]; timestamp: number }>();
 const CACHE_TTL = 300_000;
 
 export function useDailyMixes() {
-  const [data, setData] = useState<DailyMix[]>(() => cache.data);
-  const [isLoading, setIsLoading] = useState(() => cache.data.length === 0);
+  const [currentAccount, setCurrentAccount] = useState(
+    () => getAuthSession()?.user?.id || "guest"
+  );
+  const cached = userCache.get(currentAccount);
+  const [data, setData] = useState<DailyMix[]>(() => cached?.data ?? []);
+  const [isLoading, setIsLoading] = useState(
+    () => !cached || cached.data.length === 0
+  );
 
   useEffect(() => {
-    if (cache.data.length > 0 && Date.now() - cache.timestamp < CACHE_TTL) {
-      setData(cache.data);
+    const onAuthChanged = () => {
+      const nextAccount = getAuthSession()?.user?.id || "guest";
+      setCurrentAccount(nextAccount);
+      userCache.delete(nextAccount);
+    };
+
+    window.addEventListener("auth:changed", onAuthChanged);
+    return () => {
+      window.removeEventListener("auth:changed", onAuthChanged);
+    };
+  }, []);
+
+  useEffect(() => {
+    const current = userCache.get(currentAccount);
+    if (current && current.data.length > 0 && Date.now() - current.timestamp < CACHE_TTL) {
+      setData(current.data);
       setIsLoading(false);
       return;
     }
+
+    setData(current?.data ?? []);
+    setIsLoading(true);
 
     const controller = new AbortController();
     let active = true;
@@ -99,12 +123,14 @@ export function useDailyMixes() {
           queryCache.set(`collection:playlist:${mix.id}`, collectionData);
           queryCache.set(`collection:playlist:${encodeURIComponent(mix.id)}`, collectionData);
         }
-        cache.data = mixes;
-        cache.timestamp = Date.now();
+        userCache.set(currentAccount, { data: mixes, timestamp: Date.now() });
         setData(mixes);
       })
       .catch(() => {
-        if (active && cache.data.length === 0) setData([]);
+        if (active) {
+          const fallback = userCache.get(currentAccount)?.data ?? [];
+          setData(fallback);
+        }
       })
       .finally(() => {
         clearTimeout(timeoutId);
@@ -116,7 +142,7 @@ export function useDailyMixes() {
       clearTimeout(timeoutId);
       controller.abort();
     };
-  }, []);
+  }, [currentAccount]);
 
   return { data, isLoading };
 }

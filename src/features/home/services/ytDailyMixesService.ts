@@ -119,9 +119,59 @@ export async function generateYtDailyMixes(signal?: AbortSignal): Promise<DailyM
   }));
 }
 
+async function fetchRemoteHistoryBounded(
+  signal?: AbortSignal,
+  timeoutMs = 3500
+): Promise<{ items?: any[] }> {
+  return new Promise((resolve) => {
+    let settled = false;
+
+    const timer = setTimeout(() => {
+      if (!settled) {
+        settled = true;
+        resolve({ items: [] });
+      }
+    }, timeoutMs);
+
+    const onAbort = () => {
+      if (!settled) {
+        settled = true;
+        clearTimeout(timer);
+        resolve({ items: [] });
+      }
+    };
+
+    if (signal?.aborted) {
+      onAbort();
+      return;
+    }
+
+    signal?.addEventListener("abort", onAbort, { once: true });
+
+    api
+      .getHistory(undefined, 50)
+      .then((res) => {
+        if (!settled) {
+          settled = true;
+          clearTimeout(timer);
+          signal?.removeEventListener("abort", onAbort);
+          resolve(res || { items: [] });
+        }
+      })
+      .catch(() => {
+        if (!settled) {
+          settled = true;
+          clearTimeout(timer);
+          signal?.removeEventListener("abort", onAbort);
+          resolve({ items: [] });
+        }
+      });
+  });
+}
+
 async function resolveUserMixSeeds(signal?: AbortSignal): Promise<MixSeed[]> {
   const localHistory = getLocalListeningHistory();
-  const remoteHistory = await api.getHistory(undefined, 50).catch(() => ({ items: [] }));
+  const remoteHistory = await fetchRemoteHistoryBounded(signal, 3500);
 
   const artistAffinity = new Map<
     string,
