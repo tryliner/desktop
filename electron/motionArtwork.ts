@@ -241,16 +241,23 @@ export function validateCanvasMatch(options: {
   if (!titleMatches) return false;
 
   if (requestedAlbum) {
-    if (!canvasAlbum) return false;
-    const normCanvasAlbum = normalizeName(canvasAlbum);
     const normRequestedAlbum = normalizeName(requestedAlbum);
-    const albumMatches =
-      normCanvasAlbum === normRequestedAlbum ||
-      normCanvasAlbum.includes(normRequestedAlbum) ||
-      normRequestedAlbum.includes(normCanvasAlbum);
-    // Song-derived canvases can carry the song title as the canvas name, so a
-    // canvas named after the requested song also passes the album check.
-    if (!albumMatches && normCanvasTitle !== normRequestedTitle) return false;
+    // The player can fill the album field with the track title (singles and
+    // radio entries); such a value carries no album information, so the
+    // strict album comparison is skipped for it.
+    const albumFieldCarriesTitle =
+      normRequestedAlbum === normRequestedTitle ||
+      normRequestedTitle.includes(normRequestedAlbum) ||
+      normRequestedAlbum.includes(normRequestedTitle);
+    if (!albumFieldCarriesTitle) {
+      if (!canvasAlbum) return false;
+      const normCanvasAlbum = normalizeName(canvasAlbum);
+      const albumMatches =
+        normCanvasAlbum === normRequestedAlbum ||
+        normCanvasAlbum.includes(normRequestedAlbum) ||
+        normRequestedAlbum.includes(normCanvasAlbum);
+      if (!albumMatches) return false;
+    }
   }
   return true;
 }
@@ -318,6 +325,7 @@ export class MotionArtworkManager {
   private async resolve(input: MotionArtworkRequest): Promise<MotionArtworkResponse | null> {
     try {
       const headers = await this.catalogHeaders();
+      if (!headers) return null;
       const searchUrl =
         `${AMP_BASE}/v1/catalog/${input.storefront}/search` +
         `?term=${encodeURIComponent(`${input.artist} ${input.title} ${input.album ?? ""}`.trim())}` +
@@ -428,8 +436,9 @@ export class MotionArtworkManager {
     return this.fetchImpl(url, { headers, signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) });
   }
 
-  private async catalogHeaders(): Promise<Record<string, string>> {
+  private async catalogHeaders(): Promise<Record<string, string> | null> {
     const token = await this.getOrRefreshToken();
+    if (!token) return null;
     return {
       Authorization: `Bearer ${token}`,
       Origin: "https://music.apple.com",
@@ -438,19 +447,23 @@ export class MotionArtworkManager {
     };
   }
 
-  private async getOrRefreshToken(): Promise<string> {
+  private async getOrRefreshToken(): Promise<string | null> {
     const now = this.now();
     if (this.cachedToken && now < this.tokenExpiresAtMs - 60_000) return this.cachedToken;
     try {
       return await this.refreshToken(now);
     } catch {
-      return FALLBACK_WEB_TOKEN;
+      const fallbackPayload = decodeJwtPayload(FALLBACK_WEB_TOKEN);
+      const exp = typeof fallbackPayload?.exp === "number" ? fallbackPayload.exp : 0;
+      if (exp * 1000 > this.now()) return FALLBACK_WEB_TOKEN;
+      return null;
     }
   }
 
   private async refreshToken(now: number): Promise<string> {
     const page = await this.fetchImpl("https://music.apple.com/us/browse", {
       headers: { "User-Agent": WEB_UA },
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     });
     if (!page.ok) throw new Error("browse page unavailable");
     const html = await page.text();
@@ -461,6 +474,7 @@ export class MotionArtworkManager {
     for (const path of [...new Set(scriptUrls)].slice(0, 12)) {
       const script = await this.fetchImpl(`https://music.apple.com${path}`, {
         headers: { "User-Agent": WEB_UA },
+        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
       });
       if (!script.ok) continue;
       const text = await script.text();

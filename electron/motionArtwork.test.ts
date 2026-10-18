@@ -295,6 +295,73 @@ describe("MotionArtworkManager", () => {
     expect(calls.length).toBeGreaterThan(5);
   });
 
+  it("fails fast when no valid token is available", async () => {
+    const calls: string[] = [];
+    const routes: FakeRoute[] = [
+      { urlIncludes: "/us/browse", status: 403, body: "denied" },
+    ];
+    const manager = new MotionArtworkManager({ fetchImpl: fakeFetchImpl(routes, calls) });
+    await expect(manager.get(input)).resolves.toBeNull();
+    // only the browse attempt: the expired hardcoded fallback must not be sent
+    expect(calls).toHaveLength(1);
+  });
+
+  it("accepts a canvas when the album field mirrors the song title", async () => {
+    // Real Liner data: singles and radio entries fill track.album with the
+    // track title, so the request must downgrade to title + artist matching.
+    const routes: FakeRoute[] = [
+      { urlIncludes: "/us/browse", body: BROWSE_HTML },
+      { urlIncludes: "/assets/index~abc123.js", body: SCRIPT_BODY },
+      { urlIncludes: "/catalog/us/search", body: SEARCH_BODY },
+      { urlIncludes: `/catalog/us/songs/${SONG_ID}`, body: SONG_LOOKUP_BODY },
+      {
+        urlIncludes: `/catalog/us/albums/${ALBUM_ID}`,
+        body: JSON.stringify({
+          data: [
+            {
+              id: ALBUM_ID,
+              attributes: {
+                name: "After Hours (Deluxe)",
+                artistName: "The Weeknd",
+                editorialVideo: { motionDetailSquare: { video: ALBUM_CANVAS_URL } },
+              },
+            },
+          ],
+        }),
+      },
+    ];
+    const manager = new MotionArtworkManager({ fetchImpl: fakeFetchImpl(routes) });
+    await expect(
+      manager.get({ title: "Blinding Lights", artist: "The Weeknd", album: "Blinding Lights", storefront: "us" }),
+    ).resolves.toMatchObject({ videoUrl: ALBUM_CANVAS_URL });
+  });
+
+  it("rejects a canvas whose album differs from the requested one", async () => {
+    const routes: FakeRoute[] = [
+      { urlIncludes: "/us/browse", body: BROWSE_HTML },
+      { urlIncludes: "/assets/index~abc123.js", body: SCRIPT_BODY },
+      { urlIncludes: "/catalog/us/search", body: SEARCH_BODY },
+      { urlIncludes: `/catalog/us/songs/${SONG_ID}`, body: SONG_LOOKUP_BODY },
+      {
+        urlIncludes: `/catalog/us/albums/${ALBUM_ID}`,
+        body: JSON.stringify({
+          data: [
+            {
+              id: ALBUM_ID,
+              attributes: {
+                name: "Completely Different Album",
+                artistName: "The Weeknd",
+                editorialVideo: { motionDetailSquare: { video: ALBUM_CANVAS_URL } },
+              },
+            },
+          ],
+        }),
+      },
+    ];
+    const manager = new MotionArtworkManager({ fetchImpl: fakeFetchImpl(routes) });
+    await expect(manager.get(input)).resolves.toBeNull();
+  });
+
   it("rejects blacklisted album names", async () => {
     const routes: FakeRoute[] = [
       { urlIncludes: "/us/browse", body: BROWSE_HTML },
