@@ -18,7 +18,10 @@ export interface CollectionPageData {
 }
 
 export function useCollection(type: string | null, id: string | null) {
-  const accountId = getAuthSession()?.user?.id || "guest";
+  const [currentAccount, setCurrentAccount] = useState(
+    () => getAuthSession()?.user?.id || "guest"
+  );
+  const accountId = currentAccount;
   const decodedId = id ? decodeURIComponent(id) : "";
   const isDailyMix = Boolean(
     id &&
@@ -39,17 +42,21 @@ export function useCollection(type: string | null, id: string | null) {
 
   useEffect(() => {
     const onAuthChanged = () => {
-      queryCache.clear();
-      if (isDailyMix) {
-        setData(null);
-        setLoading(true);
+      const nextAccount = getAuthSession()?.user?.id || "guest";
+      if (nextAccount !== currentAccount) {
+        setCurrentAccount(nextAccount);
+        queryCache.clear();
+        if (isDailyMix) {
+          setData(null);
+          setLoading(true);
+        }
       }
     };
     window.addEventListener("auth:changed", onAuthChanged);
     return () => {
       window.removeEventListener("auth:changed", onAuthChanged);
     };
-  }, [isDailyMix]);
+  }, [currentAccount, isDailyMix]);
 
   useEffect(() => {
     if (!type || !id || !cacheKey) {

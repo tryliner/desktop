@@ -76,16 +76,18 @@ export function useDailyMixes() {
   useEffect(() => {
     const onAuthChanged = () => {
       const nextAccount = getAuthSession()?.user?.id || "guest";
-      setCurrentAccount(nextAccount);
-      userCache.clear();
-      queryCache.clear();
+      if (nextAccount !== currentAccount) {
+        setCurrentAccount(nextAccount);
+        userCache.clear();
+        queryCache.clear();
+      }
     };
 
     window.addEventListener("auth:changed", onAuthChanged);
     return () => {
       window.removeEventListener("auth:changed", onAuthChanged);
     };
-  }, []);
+  }, [currentAccount]);
 
   useEffect(() => {
     const current = userCache.get(currentAccount);
@@ -103,6 +105,7 @@ export function useDailyMixes() {
 
     const timeoutId = setTimeout(() => {
       if (active) {
+        active = false;
         controller.abort();
         setIsLoading(false);
       }
