@@ -8,7 +8,7 @@ const DEEP_LINK_IDS: Record<string, RegExp> = {
   // channel id. Keep those bounded and free of control characters; the value
   // is always re-encoded before it is placed in the renderer route.
   artist:
-    /^(?:UC[A-Za-z0-9_-]{22}|[A-Za-z0-9_-]{1,22}|(?=.*[^A-Za-z0-9_-])[^\u0000-\u001F\u007F/\\]{1,160})$/,
+    /^(?:UC[A-Za-z0-9_-]{22}|[A-Za-z0-9_-]{1,22}|(?=.*[^A-Za-z0-9_-])[^\u0000-\u001F\u007F-\u009F/\\]{1,160})$/,
   // innertube album browse ids, e.g. MPREb_xCxkOKReFZv
   album: /^MPRE[A-Za-z0-9_-]{4,64}$/,
   // catalog playlists (VLPL…/PL…) and user playlists (uuid / pl-…),
