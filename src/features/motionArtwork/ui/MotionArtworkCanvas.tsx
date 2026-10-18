@@ -44,6 +44,7 @@ export function MotionArtworkCanvas({ resolution, isPlaying }: MotionArtworkCanv
         hlsInstance.on(Hls.Events.ERROR, (_event, data) => {
           if (data.fatal) {
             console.warn(`[motion:video] hls fatal ${data.type} ${data.details ?? ""}`);
+            setReady(false);
             hlsInstance?.destroy();
             hlsInstance = null;
           }
