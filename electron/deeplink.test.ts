@@ -20,6 +20,13 @@ describe("parseDeeplink", () => {
     });
   });
 
+  it("accepts artist names used when a track has no channel id", () => {
+    expect(parseDeeplink("liner://artist?id=LATIN%20MAFIA")).toEqual({
+      type: "artist",
+      id: "LATIN MAFIA",
+    });
+  });
+
   it("rejects smuggled urls", () => {
     expect(parseDeeplink("https://evil.com")).toBeNull();
     expect(parseDeeplink("javascript:alert(1)")).toBeNull();
