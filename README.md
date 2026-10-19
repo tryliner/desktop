@@ -127,10 +127,29 @@ pnpm test
 # Build desktop packages for your current OS:
 
 # Linux (AppImage & .deb)
+pnpm run electron:build:linux
+# or
 bun run electron:build:linux
 
 # Windows (.exe installer)
+pnpm run electron:build:win
+# or
 bun run electron:build:win
+
+# macOS (.dmg & .zip, for both Intel and Apple Silicon)
+pnpm run electron:build:mac
+# or
+bun run electron:build:mac
+```
+
+The macOS build produces `x64` (Intel) and `arm64` (Apple Silicon) packages. To build only one, pass the architecture flag:
+
+```bash
+# Apple Silicon only
+pnpm run electron:build:mac --arm64
+
+# Intel only
+pnpm run electron:build:mac --x64
 ```
 
 Compiled distributions will be placed in the `release/` directory.
