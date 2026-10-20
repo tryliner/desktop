@@ -24,6 +24,8 @@ export async function findYoutubeStandIn(track: PlayableTrack, signal?: AbortSig
   );
   if (outcome.status !== "approved") return null;
   const videoId = toVideoId(outcome.track.id);
-  if (videoId) matchedVideoIds.set(track.id, videoId);
-  return videoId;
+  if (videoId && videoId !== track.id && videoId !== toVideoId(track.id)) {
+    matchedVideoIds.set(track.id, videoId);
+  }
+  return videoId && videoId !== track.id && videoId !== toVideoId(track.id) ? videoId : null;
 }

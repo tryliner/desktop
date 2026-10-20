@@ -36,6 +36,19 @@ async function resolveSoundCloud(track: PlayableTrack, signal?: AbortSignal): Pr
 
 export async function resolvePlaybackStream(track: PlayableTrack, signal?: AbortSignal): Promise<PlaybackStream> {
   if (toSoundCloudTrackId(track.id)) return resolveSoundCloud(track, signal);
-  if (toVideoId(track.id)) return fromInnertubeStream(await resolveDirectAudioStream(track.id, { signal }));
+  if (toVideoId(track.id)) {
+    try {
+      return fromInnertubeStream(await resolveDirectAudioStream(track.id, { signal }));
+    } catch (directError) {
+      if (isAbortError(directError, signal)) throw directError;
+      log("yellow", "playback", `direct resolution failed for "${track.title}" (${track.id}): ${String(directError)}`);
+      try {
+        return await resolveYoutubeStandIn(track, signal);
+      } catch (standInError) {
+        if (isAbortError(standInError, signal)) throw standInError;
+        throw directError;
+      }
+    }
+  }
   return resolveYoutubeStandIn(track, signal);
 }
