@@ -190,7 +190,17 @@
     "songs_other": "{count} utworu",
     "songs_plural": "{count} utworów",
     "env_warning": "Aplikacja powinna działać w Electronie: deeplinki, sprawdzanie trybu offline i udostępnianie wymagają mostu desktopowego.",
-    "env_skip": "Pomiń"
+    "env_skip": "Pomiń",
+    "import_spotify_likes": "Importuj polubione z Spotify z pliku CSV",
+    "import_spotify_description": "Wyeksportuj polubione jako CSV i polub każdy utwór tutaj",
+    "spotify_csv_choose": "Wybierz plik CSV",
+    "spotify_csv_invalid": "Nie znaleziono utworów w tym pliku",
+    "spotify_csv_ready": "Gotowe — {count} utworów",
+    "spotify_csv_progress": "Importowanie {done} / {total}",
+    "spotify_csv_done": "Polubione {liked} · pominięte {skipped} · bez dopasowania {failed}",
+    "spotify_csv_stop": "Zatrzymaj",
+    "spotify_csv_rerun": "Uruchom ponownie",
+    "spotify_csv_hint": "Polubione utwory można wyeksportować jako CSV na {url}"
   },
   "home": {
     "speedDial": "Szybki dostęp",

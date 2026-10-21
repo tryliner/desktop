@@ -188,7 +188,17 @@
     "tracks_plural": "{count} tracks",
     "songs_plural": "{count} songs",
     "env_warning": "App should run inside Electron — deeplinks, offline checks and sharing need the desktop bridge.",
-    "env_skip": "Skip"
+    "env_skip": "Skip",
+    "import_spotify_likes": "Import Spotify Likes from CSV",
+    "import_spotify_description": "Export your Liked Songs as CSV and like every track here",
+    "spotify_csv_choose": "Choose CSV file",
+    "spotify_csv_invalid": "No tracks found in this file",
+    "spotify_csv_ready": "Ready — {count} tracks",
+    "spotify_csv_progress": "Importing {done} / {total}",
+    "spotify_csv_done": "Liked {liked} · skipped {skipped} · unmatched {failed}",
+    "spotify_csv_stop": "Stop",
+    "spotify_csv_rerun": "Run again",
+    "spotify_csv_hint": "Liked Songs can be exported as CSV at {url}"
   },
   "home": {
     "speedDial": "Speed dial",

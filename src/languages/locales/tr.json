@@ -186,7 +186,17 @@
     "songs_other": "{count} şarkı",
     "songs_plural": "{count} şarkı",
     "env_warning": "Uygulama Electron içinde çalışmalı: derin bağlantılar, çevrimdışı kontroller ve paylaşım masaüstü köprüsünü gerektirir.",
-    "env_skip": "Atla"
+    "env_skip": "Atla",
+    "import_spotify_likes": "Spotify beğenilenleri CSV'den içe aktar",
+    "import_spotify_description": "Beğenilenlerinizi CSV olarak dışa aktarın ve burada her parçayı beğenin",
+    "spotify_csv_choose": "CSV dosyası seç",
+    "spotify_csv_invalid": "Bu dosyada parça bulunamadı",
+    "spotify_csv_ready": "Hazır — {count} parça",
+    "spotify_csv_progress": "İçe aktarılıyor {done} / {total}",
+    "spotify_csv_done": "Beğenilen {liked} · atlanan {skipped} · eşleşmeyen {failed}",
+    "spotify_csv_stop": "Durdur",
+    "spotify_csv_rerun": "Tekrar çalıştır",
+    "spotify_csv_hint": "Beğenilenler {url} adresinden CSV olarak dışa aktarılabilir"
   },
   "home": {
     "speedDial": "Hızlı erişim",

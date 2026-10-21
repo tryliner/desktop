@@ -282,6 +282,14 @@ export default function CreatePlaylistModal() {
                 {importError}
               </span>
             )}
+            <button
+              type="button"
+              onClick={() => useModalStore.getState().openImportSpotifyCsv()}
+              className="self-start border-none bg-transparent p-0 text-[12px] text-text-tertiary hover:text-text-primary transition-colors cursor-pointer"
+              style={font}
+            >
+              {t("common.import_spotify_likes")}
+            </button>
             <div className="flex items-center justify-end gap-[8px] mt-[2px]">
               <Button type="button" variant="ghost" size="sm" onClick={close}>
                 {t("common.cancel")}

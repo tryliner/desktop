@@ -188,7 +188,17 @@
     "songs_few": "{count} песни",
     "songs_many": "{count} песен",
     "env_warning": "Приложение должно работать внутри Electron — диплинки, проверки соединения и шаринг нуждаются в десктоп-мосте.",
-    "env_skip": "Пропустить"
+    "env_skip": "Пропустить",
+    "import_spotify_likes": "Импорт понравившихся из Spotify из CSV",
+    "import_spotify_description": "Экспортируйте понравившиеся в CSV и лайкните каждый трек здесь",
+    "spotify_csv_choose": "Выбрать CSV-файл",
+    "spotify_csv_invalid": "В этом файле не найдено треков",
+    "spotify_csv_ready": "Готово — {count} треков",
+    "spotify_csv_progress": "Импорт {done} / {total}",
+    "spotify_csv_done": "Лайкнуто {liked} · пропущено {skipped} · без совпадений {failed}",
+    "spotify_csv_stop": "Остановить",
+    "spotify_csv_rerun": "Запустить снова",
+    "spotify_csv_hint": "Понравившиеся можно экспортировать в CSV на {url}"
   },
   "home": {
     "speedDial": "Быстрый доступ",

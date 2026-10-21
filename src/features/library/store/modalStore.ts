@@ -85,6 +85,11 @@ interface ModalState {
   openImportLikes: (initialUsername?: string) => void;
   closeImportLikes: () => void;
 
+  // Import Spotify likes from a csv export
+  importSpotifyCsvOpen: boolean;
+  openImportSpotifyCsv: () => void;
+  closeImportSpotifyCsv: () => void;
+
   // Import Review / Decisions
   importReviewOpen: boolean;
   importReviewJobId: string | null;
@@ -157,6 +162,12 @@ export const useModalStore = create<ModalState>((set) => ({
     set({ importLikesOpen: true, importLikesInitialUsername: initialUsername }),
   closeImportLikes: () =>
     set({ importLikesOpen: false, importLikesInitialUsername: "" }),
+
+  importSpotifyCsvOpen: false,
+  openImportSpotifyCsv: () =>
+    set({ importSpotifyCsvOpen: true }),
+  closeImportSpotifyCsv: () =>
+    set({ importSpotifyCsvOpen: false }),
 
   importReviewOpen: false,
   importReviewJobId: null,

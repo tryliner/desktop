@@ -188,7 +188,17 @@
     "songs_other": "{count} canciones",
     "songs_plural": "{count} canciones",
     "env_warning": "La aplicación debe ejecutarse dentro de Electron: los enlaces profundos, verificaciones sin conexión y funciones de compartir necesitan el puente de escritorio.",
-    "env_skip": "Omitir"
+    "env_skip": "Omitir",
+    "import_spotify_likes": "Importar Me gusta de Spotify desde CSV",
+    "import_spotify_description": "Exporta tus Me gusta como CSV y dale a me gusta a cada pista aquí",
+    "spotify_csv_choose": "Elegir archivo CSV",
+    "spotify_csv_invalid": "No se encontraron pistas en este archivo",
+    "spotify_csv_ready": "Listo — {count} pistas",
+    "spotify_csv_progress": "Importando {done} / {total}",
+    "spotify_csv_done": "Con me gusta {liked} · omitidas {skipped} · sin coincidencia {failed}",
+    "spotify_csv_stop": "Detener",
+    "spotify_csv_rerun": "Ejecutar de nuevo",
+    "spotify_csv_hint": "Las canciones con me gusta se pueden exportar como CSV en {url}"
   },
   "home": {
     "speedDial": "Acceso rápido",

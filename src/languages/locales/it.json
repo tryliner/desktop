@@ -186,7 +186,17 @@
     "songs_other": "{count} brani",
     "songs_plural": "{count} brani",
     "env_warning": "L'app deve essere eseguita in Electron: deeplink, controlli offline e condivisione richiedono il bridge desktop.",
-    "env_skip": "Salta"
+    "env_skip": "Salta",
+    "import_spotify_likes": "Importa i preferiti di Spotify da CSV",
+    "import_spotify_description": "Esporta i tuoi preferiti in CSV e metti like a ogni brano qui",
+    "spotify_csv_choose": "Scegli file CSV",
+    "spotify_csv_invalid": "Nessun brano trovato in questo file",
+    "spotify_csv_ready": "Pronto — {count} brani",
+    "spotify_csv_progress": "Importazione {done} / {total}",
+    "spotify_csv_done": "Con like {liked} · saltati {skipped} · senza corrispondenza {failed}",
+    "spotify_csv_stop": "Ferma",
+    "spotify_csv_rerun": "Esegui di nuovo",
+    "spotify_csv_hint": "I preferiti possono essere esportati come CSV su {url}"
   },
   "home": {
     "speedDial": "Accesso rapido",

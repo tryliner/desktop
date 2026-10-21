@@ -192,7 +192,17 @@
     "songs_other": "{count} músicas",
     "songs_plural": "{count} músicas",
     "env_warning": "O app deve rodar dentro do Electron — deeplinks, verificações offline e compartilhamento precisam da ponte do desktop.",
-    "env_skip": "Pular"
+    "env_skip": "Pular",
+    "import_spotify_likes": "Importar curtidas do Spotify de CSV",
+    "import_spotify_description": "Exporte suas curtidas como CSV e curta cada faixa aqui",
+    "spotify_csv_choose": "Escolher arquivo CSV",
+    "spotify_csv_invalid": "Nenhuma faixa encontrada neste arquivo",
+    "spotify_csv_ready": "Pronto — {count} faixas",
+    "spotify_csv_progress": "Importando {done} / {total}",
+    "spotify_csv_done": "Curtidas {liked} · ignoradas {skipped} · sem correspondência {failed}",
+    "spotify_csv_stop": "Parar",
+    "spotify_csv_rerun": "Executar novamente",
+    "spotify_csv_hint": "As curtidas podem ser exportadas como CSV em {url}"
   },
   "home": {
     "speedDial": "Acesso rápido",

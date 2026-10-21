@@ -186,7 +186,17 @@
     "tracks_plural": "{count} Titel",
     "songs_plural": "{count} Titel",
     "env_warning": "Die App sollte in Electron laufen – Deeplinks, Offline-Prüfungen und Teilen benötigen die Desktop-Bridge.",
-    "env_skip": "Überspringen"
+    "env_skip": "Überspringen",
+    "import_spotify_likes": "Spotify-Lieblingssongs aus CSV importieren",
+    "import_spotify_description": "Exportiere deine Lieblingssongs als CSV und like hier jeden Track",
+    "spotify_csv_choose": "CSV-Datei wählen",
+    "spotify_csv_invalid": "In dieser Datei wurden keine Tracks gefunden",
+    "spotify_csv_ready": "Bereit — {count} Tracks",
+    "spotify_csv_progress": "Import läuft {done} / {total}",
+    "spotify_csv_done": "Geliked {liked} · übersprungen {skipped} · ohne Treffer {failed}",
+    "spotify_csv_stop": "Stoppen",
+    "spotify_csv_rerun": "Erneut ausführen",
+    "spotify_csv_hint": "Lieblingssongs lassen sich unter {url} als CSV exportieren"
   },
   "home": {
     "speedDial": "Schnellzugriff",

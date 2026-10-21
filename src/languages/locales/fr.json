@@ -188,7 +188,17 @@
     "songs_other": "{count} titres",
     "songs_plural": "{count} titres",
     "env_warning": "L'application doit être exécutée dans Electron : les liens profonds, les vérifications hors ligne et le partage nécessitent le pont de bureau.",
-    "env_skip": "Ignorer"
+    "env_skip": "Ignorer",
+    "import_spotify_likes": "Importer les titres likés Spotify depuis un CSV",
+    "import_spotify_description": "Exportez vos titres likés en CSV et likez chaque titre ici",
+    "spotify_csv_choose": "Choisir un fichier CSV",
+    "spotify_csv_invalid": "Aucun titre trouvé dans ce fichier",
+    "spotify_csv_ready": "Prêt — {count} titres",
+    "spotify_csv_progress": "Importation {done} / {total}",
+    "spotify_csv_done": "Likés {liked} · ignorés {skipped} · sans correspondance {failed}",
+    "spotify_csv_stop": "Arrêter",
+    "spotify_csv_rerun": "Relancer",
+    "spotify_csv_hint": "Les titres likés peuvent être exportés en CSV sur {url}"
   },
   "home": {
     "speedDial": "Accès rapide",
