@@ -1,6 +1,7 @@
 import { BrowserWindow, ipcMain, screen, globalShortcut, app } from "electron";
 import path from "node:path";
 import fs from "node:fs";
+import { shouldShowOnBackground } from "./overlay-autoshow";
 
 export type OverlayPosition = "top-left" | "top-center" | "top-right";
 
@@ -71,6 +72,7 @@ export class OverlayManager {
   private moveAnimationTimer: NodeJS.Timeout | null = null;
   private currentAnimatedX: number | null = null;
   private closeTimeout: NodeJS.Timeout | null = null;
+  private blurTimeout: NodeJS.Timeout | null = null;
 
   constructor(preloadPath: string, rendererDist: string) {
     this.preloadPath = preloadPath;
@@ -158,14 +160,64 @@ export class OverlayManager {
         }
       });
 
+      // Alt+Tab: the window loses focus without being minimized
+      this.mainWindow.on("blur", () => {
+        this.clearBlurTimeout();
+        // wait for the newly focused window to be known
+        this.blurTimeout = setTimeout(() => {
+          this.blurTimeout = null;
+          const main = this.mainWindow;
+          if (!main || main.isDestroyed()) return;
+          const show = shouldShowOnBackground({
+            enabled: this.enabled,
+            autoShow: this.autoShowOnMinimize,
+            mainMinimized: main.isMinimized(),
+            mainVisible: main.isVisible(),
+            mainFocused: main.isFocused(),
+            appWindowFocused: BrowserWindow.getFocusedWindow() !== null,
+            overlayShown: this.isOverlayShown(),
+          });
+          if (!show) return;
+          this.wasAutoOpened = true;
+          this.showOverlay();
+        }, 150);
+      });
+
+      this.mainWindow.on("focus", () => {
+        this.clearBlurTimeout();
+        // some window managers send focus while minimizing; restore handles that case
+        if (this.mainWindow?.isMinimized()) return;
+        if (this.wasAutoOpened) {
+          this.wasAutoOpened = false;
+          this.closeOverlay();
+        }
+      });
+
       this.mainWindow.on("closed", () => {
         this.destroy();
       });
     }
   }
 
+  private clearBlurTimeout() {
+    if (this.blurTimeout) {
+      clearTimeout(this.blurTimeout);
+      this.blurTimeout = null;
+    }
+  }
+
+  private isOverlayShown(): boolean {
+    return Boolean(
+      this.overlayWindow &&
+        !this.overlayWindow.isDestroyed() &&
+        this.overlayWindow.isVisible() &&
+        !this.closeTimeout,
+    );
+  }
+
   public destroy() {
     this.stopMoveAnimation();
+    this.clearBlurTimeout();
     if (this.closeTimeout) {
       clearTimeout(this.closeTimeout);
       this.closeTimeout = null;
