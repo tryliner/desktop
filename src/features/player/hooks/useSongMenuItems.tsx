@@ -7,6 +7,7 @@ import {
   LuPlus,
   LuTrash2,
   LuFolderPlus,
+  LuShare2,
 } from "react-icons/lu";
 import type { DropdownMenuItem } from "@/shared/ui/DropdownMenu";
 import { playerEngine } from "../engine/playerEngine";
@@ -19,6 +20,7 @@ import {
 } from "@/features/library";
 import { useTranslation } from "@/languages";
 import { showToast } from "@/shared/ui";
+import { shareStoryWithToast } from "../lib/shareStory";
 
 export interface SongMenuContext {
   id?: string;
@@ -68,6 +70,15 @@ export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
 
   const buildMenu = useCallback((): DropdownMenuItem[] => {
     const isTrack = searchType === "track" || !searchType;
+
+    const shareItem: DropdownMenuItem = {
+      id: "share-story",
+      label: t("common.share_story"),
+      icon: <LuShare2 size={15} />,
+      onClick: () => {
+        void shareStoryWithToast({ title, artists, coverUrl }, t);
+      },
+    };
 
     if (isTrack) {
       if (playlistId) {
@@ -134,6 +145,7 @@ export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
             ),
             onClick: handleLike,
           },
+          shareItem,
           {
             id: "remove-from-playlist",
             label: t("common.remove_from_playlist"),
@@ -234,6 +246,7 @@ export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
             });
           },
         },
+        shareItem,
       ];
     }
 

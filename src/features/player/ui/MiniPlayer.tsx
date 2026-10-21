@@ -18,6 +18,8 @@ import {
   Shuffle,
 } from "@solar-icons/react";
 import { HeartFill, HeartLine } from "@mingcute/react";
+import { LuShare2 } from "react-icons/lu";
+import { shareStoryWithToast } from "../lib/shareStory";
 
 import {
   PlayerMorphIcon,
@@ -338,6 +340,24 @@ function MiniPlayer({
       likeMutation.mutate(currentTrack.id, { onSettled });
     }
   }, [currentTrack, isLiked, likeMutation, unlikeMutation]);
+
+  const [sharingStory, setSharingStory] = useState(false);
+  const handleShareStory = useCallback(async () => {
+    if (!currentTrack || sharingStory) return;
+    setSharingStory(true);
+    try {
+      await shareStoryWithToast(
+        {
+          title: currentTrack.title,
+          artists: currentTrack.artists,
+          coverUrl: currentTrack.coverUrl,
+        },
+        t,
+      );
+    } finally {
+      setSharingStory(false);
+    }
+  }, [currentTrack, sharingStory, t]);
 
   const durationMs =
     player.durationMs > 0
@@ -925,6 +945,18 @@ function MiniPlayer({
                 }}
               >
                 <MaximizeSquare3 size={18} weight="Outline" />
+              </button>
+              <button
+                type="button"
+                aria-label={t("common.share_story")}
+                title={t("common.share_story")}
+                disabled={!currentTrack || sharingStory}
+                className={`${iconButtonClass} disabled:opacity-50`}
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={() => void handleShareStory()}
+                style={{ cursor: "pointer" }}
+              >
+                <LuShare2 size={18} />
               </button>
               <span
                 className="mx-[3px] h-[16px] w-px bg-border-toolbox-divider"
