@@ -135,6 +135,15 @@ bun run electron:build:win
 
 Compiled distributions will be placed in the `release/` directory.
 
+### Arch Linux
+
+Arch packages live in [`packaging/aur/`](./packaging/aur):
+
+- `liner-desktop-bin` — repacks the prebuilt Linux build
+- `liner-desktop-git` — builds from these sources
+
+See [`packaging/aur/README.md`](./packaging/aur/README.md) for the build and AUR publishing instructions.
+
 ---
 
 ## Contributing

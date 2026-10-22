@@ -1,0 +1,163 @@
+# Maintainer: Liner Desktop packaging <dev@tryliner.fun>
+#
+# Builds Liner from the upstream git sources. Unlike ../liner-desktop-bin this
+# does not use the prebuilt upstream artifact, so it also works on aarch64
+# (upstream only publishes x86_64 Linux builds).
+#
+# This package follows the upstream default branch, so it always builds the
+# latest upstream state. The version is derived from the git history; the
+# pkgver below is only the fallback used before the first build.
+
+pkgname=liner-desktop-git
+pkgver=0.1.40.r32.g5d7e457
+pkgrel=1
+pkgdesc='Music player with syllable-synced lyrics and reactive dynamic visuals'
+arch=('x86_64' 'aarch64')
+url='https://github.com/tryliner/desktop'
+license=('custom:Liner-Source-Available')
+options=('!strip' '!debug')
+depends=(
+  # libasound.so.2, linked directly by the electron binary (audio)
+  'alsa-lib'
+  # libgcc_s.so.1, linked directly by the electron binary
+  'gcc-libs'
+  # libgtk-3.so.0, linked directly by the electron binary. gtk3 also pulls in
+  # cairo, pango, at-spi2-core, dbus, expat, mesa, nss/nspr, wayland, the x11
+  # libraries and libcups (chromium links the print backend, so the library
+  # has to be present even though the app never prints)
+  'gtk3'
+  # libnotify.so.4, loaded at runtime (desktop notifications)
+  'libnotify'
+  # libpulse.so.0, loaded at runtime (pipewire/pulse audio output)
+  'libpulse'
+  # libsecret-1.so.0, loaded at runtime (keyring for electron's safe storage)
+  'libsecret'
+  # xdg-open, used to open external links
+  'xdg-utils'
+)
+optdepends=(
+  'gtk4: use the gtk4 ui backend'
+  'krb5: kerberos proxy authentication'
+  'libva: va-api video acceleration'
+  'nvidia-utils: nvidia GLX driver'
+  'pipewire: webrtc desktop sharing under wayland'
+  'speech-dispatcher: spoken feedback'
+  'vulkan-radeon: vulkan rendering'
+)
+makedepends=(
+  'git'
+  'gcc'
+  'make'
+  'nodejs-lts-krypton'
+  'npm'
+  'pkgconf'
+  'python'
+)
+conflicts=('liner-desktop-bin')
+source=(
+  'git+https://github.com/tryliner/desktop.git'
+  'liner.desktop'
+  'liner-wrapper.sh'
+)
+b2sums=(
+  'SKIP'
+  'abc1bf06f5c406543f5f9c27a2261e6878484eaf1b05fa0ce22a7a08bf6c6793d516b72b7b9590d507c2e585f3fa837e9499b07242badcc396c6dd750a425f80'
+  'afebea3f81c83efaaa41dc31b78e563383f3f10ab8939b397fbb9228e27571f12fa0cef641ea83dffccdc1726a2d5911d31f1709367fb9f36c300bac3dcda680'
+)
+
+pkgver() {
+  cd "${srcdir}/desktop"
+
+  local tag
+  tag="$(git describe --tags --abbrev=0 2>/dev/null || echo v0.0.0)"
+
+  printf '%s.r%s.g%s\n' \
+    "${tag#v}" \
+    "$(git rev-list --count "${tag}..HEAD" 2>/dev/null || echo 0)" \
+    "$(git rev-parse --short=7 HEAD)"
+}
+
+prepare() {
+  cd "${srcdir}/desktop"
+
+  # upstream CI builds with pnpm 10 and ships a v9.0 lockfile; arch's pnpm is
+  # newer than that, so pin the same major version to keep the install
+  # reproducible against the lockfile
+  export npm_config_cache="${srcdir}/.npm-cache"
+  npm install --prefix "${srcdir}/.pnpm-home" pnpm@10
+
+  # keep every download inside the build directory
+  export npm_config_store_dir="${srcdir}/.pnpm-store"
+  export npm_config_cache="${srcdir}/.npm-cache"
+  export ELECTRON_CACHE="${srcdir}/.electron-cache"
+  export ELECTRON_BUILDER_CACHE="${srcdir}/.electron-builder-cache"
+  export PATH="${srcdir}/.pnpm-home/node_modules/.bin:${PATH}"
+}
+
+build() {
+  cd "${srcdir}/desktop"
+
+  export PATH="${srcdir}/.pnpm-home/node_modules/.bin:${PATH}"
+  export ELECTRON_CACHE="${srcdir}/.electron-cache"
+  export ELECTRON_BUILDER_CACHE="${srcdir}/.electron-builder-cache"
+
+  # the registry is not always fast; retry instead of failing the whole build
+  pnpm install --frozen-lockfile --store-dir "${srcdir}/.pnpm-store" \
+    --fetch-retries=5 --fetch-retry-factor=2 \
+    --fetch-retry-mintimeout=10000 --fetch-retry-maxtimeout=120000 \
+    --network-concurrency=8
+
+  # pnpm >= 10 does not run dependency build scripts unless they are allowed;
+  # electron's postinstall downloads the runtime we package against
+  if [ ! -d node_modules/electron/dist ]; then
+    node node_modules/electron/install.js
+  fi
+
+  # baked into the bundle at build time, same values as the upstream CI
+  export VITE_API_URL="https://api.tryliner.fun"
+  export VITE_COVERS_PROXY_URL="https://covers.tryliner.fun"
+
+  pnpm run build
+
+  case "${CARCH}" in
+    x86_64) _electron_arch=x64 ;;
+    aarch64) _electron_arch=arm64 ;;
+    *) echo "unsupported architecture: ${CARCH}" >&2; return 1 ;;
+  esac
+
+  # the core version should show which upstream commit it was built from:
+  # makepkg's 0.1.40.r23.g3b19e35 becomes the semver 0.1.40-r23.g3b19e35
+  _version="$(printf '%s' "${pkgver}" | sed -E 's/^([0-9]+\.[0-9]+\.[0-9]+)\./\1-/')"
+
+  # --dir only produces the unpacked tree, no AppImage/deb tooling needed
+  pnpm exec electron-builder --linux --"${_electron_arch}" --dir --publish never \
+    --config.npmRebuild=false \
+    --config.extraMetadata.version="${_version}"
+}
+
+package() {
+  _unpacked="${srcdir}/desktop/release/linux-unpacked"
+  [ -d "${_unpacked}" ] || _unpacked="${srcdir}/desktop/release/linux-arm64-unpacked"
+
+  install -dm755 "${pkgdir}/opt/liner"
+  cp -a "${_unpacked}/." "${pkgdir}/opt/liner/"
+
+  # the wrapper marks the install as a packaging build for the about screen
+  install -dm755 "${pkgdir}/usr/bin"
+  install -Dm755 "${srcdir}/liner-wrapper.sh" "${pkgdir}/usr/bin/liner"
+
+  install -Dm644 "${srcdir}/liner.desktop" "${pkgdir}/usr/share/applications/liner.desktop"
+
+  for _size in 16 32 48 64 128 256 512; do
+    install -Dm644 "${srcdir}/desktop/build/icons/${_size}x${_size}.png" \
+      "${pkgdir}/usr/share/icons/hicolor/${_size}x${_size}/apps/liner.png"
+  done
+
+  install -Dm644 "${srcdir}/desktop/LICENSE" "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+
+  # chrome-sandbox stays 0755: arch enables unprivileged user namespaces by
+  # default, so chromium's namespace sandbox works without the setuid bit
+  chmod 0755 "${pkgdir}/opt/liner/chrome-sandbox"
+
+  chmod -R go-w "${pkgdir}"
+}

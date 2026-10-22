@@ -1,0 +1,71 @@
+name: AUR sync
+
+# Keeps the AUR packages in sync with the upstream releases:
+#   liner-desktop-bin   repacks the prebuilt upstream .deb
+#   liner-desktop-git   builds from the upstream git sources
+#
+# The automatic path on a tag push lives in release.yml (the sync-aur job),
+# which waits for the release to be published so the .deb is already there.
+# This workflow is the manual override and the daily refresh:
+#
+#   - dispatch with a version     bump to that version and publish
+#   - dispatch without a version  refresh the recorded version of -git
+#   - daily cron                  same as the above: liner-desktop-git tracks
+#                                 main, so only its displayed version moves
+#
+# Needs an AUR_SSH_KEY repository secret holding the private ssh key of the
+# AUR account that owns both package bases.
+
+on:
+  schedule:
+    - cron: '23 4 * * *'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Upstream version to publish (leave empty to only refresh the recorded -git version)'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+# the sync job below carries the concurrency group, so the whole run does not
+# have to fight over the same lock its own job needs
+
+jobs:
+  sync:
+    name: Sync AUR packages
+    runs-on: ubuntu-latest
+    # the same group as release.yml's sync-aur job: a tag being pushed at
+    # 04:23 must not collide with the cron's refresh. concurrency groups are
+    # repo-wide, so this serializes against release.yml across workflows.
+    concurrency:
+      group: aur-sync
+      cancel-in-progress: false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up ssh for the AUR
+        run: |
+          set -euo pipefail
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "${{ secrets.AUR_SSH_KEY }}" > ~/.ssh/id_aur
+          chmod 600 ~/.ssh/id_aur
+          cat > ~/.ssh/known_hosts <<'EOF'
+          aur.archlinux.org ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEuBKrPzbawxA/k2g6NcyV5jmqwJ2s+zpgZGZ7tpLIcN
+          aur.archlinux.org ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBLMiLrP8pVi5BFX2i3vepSUnpedeiewE5XptnUnau+ZoeUOPkpoCgZZuYfpaIQfhhJJI5qgnjJmr4hyJbe/zxow=
+          EOF
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Publish
+        env:
+          VERSION_INPUT: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          export GIT_SSH_COMMAND="ssh -i ~/.ssh/id_aur -o IdentitiesOnly=yes"
+          if [ -n "${VERSION_INPUT:-}" ]; then
+            ./packaging/aur/publish.sh "${VERSION_INPUT:-}"
+          else
+            ./packaging/aur/publish.sh
+          fi

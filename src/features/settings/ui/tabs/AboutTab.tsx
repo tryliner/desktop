@@ -45,6 +45,7 @@ export function AboutTab({ searchQuery }: { searchQuery?: string }) {
   const accentVariant = usePlayerStore((state) => state.accentVariant);
 
   const [appVersion, setAppVersion] = useState(APP_VERSION);
+  const [buildFlavor, setBuildFlavor] = useState("");
   const [bundleInfo, setBundleInfo] = useState<{
     bundleVersion: string;
     isOta: boolean;
@@ -60,6 +61,14 @@ export function AboutTab({ searchQuery }: { searchQuery?: string }) {
         .getAppVersion?.()
         .then((ver) => {
           if (ver) setAppVersion(ver);
+        })
+        .catch(() => {});
+
+      // marker for builds that are not an official release build
+      window.linerElectron
+        .getBuildFlavor?.()
+        .then((flavor) => {
+          if (flavor) setBuildFlavor(flavor);
         })
         .catch(() => {});
 
@@ -174,6 +183,7 @@ export function AboutTab({ searchQuery }: { searchQuery?: string }) {
           {bundleInfo?.isOta
             ? `Client ${bundleInfo.bundleVersion}${bundleInfo.sha256 ? ` (${bundleInfo.sha256.slice(0, 7)})` : ""} · Core ${appVersion}`
             : `Client ${appVersion} (native)`}
+          {buildFlavor ? ` · ${buildFlavor}` : ""}
           {lastCheckedTime ? ` · ${lastCheckedTime}` : ""}
         </span>
 

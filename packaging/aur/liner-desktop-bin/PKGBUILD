@@ -1,0 +1,84 @@
+# Maintainer: Liner Desktop packaging <dev@tryliner.fun>
+#
+# Repacks the official upstream Linux build (electron-builder .deb) into an
+# Arch package. The upstream artifact is fetched straight from the GitHub
+# release, so what lands in /opt is byte-identical to the upstream release.
+#
+# The source-built counterpart lives in ../liner-desktop-git.
+
+pkgname=liner-desktop-bin
+pkgver=0.1.40
+pkgrel=1
+pkgdesc='Music player with syllable-synced lyrics and reactive dynamic visuals'
+arch=('x86_64')
+url='https://github.com/tryliner/desktop'
+license=('custom:Liner-Source-Available')
+options=('!strip' '!debug')
+depends=(
+  # libasound.so.2, linked directly by the electron binary (audio)
+  'alsa-lib'
+  # libgcc_s.so.1, linked directly by the electron binary
+  'gcc-libs'
+  # libgtk-3.so.0, linked directly by the electron binary. gtk3 also pulls in
+  # cairo, pango, at-spi2-core, dbus, expat, mesa, nss/nspr, wayland, the x11
+  # libraries and libcups (chromium links the print backend, so the library
+  # has to be present even though the app never prints)
+  'gtk3'
+  # libnotify.so.4, loaded at runtime (desktop notifications)
+  'libnotify'
+  # libpulse.so.0, loaded at runtime (pipewire/pulse audio output)
+  'libpulse'
+  # libsecret-1.so.0, loaded at runtime (keyring for electron's safe storage)
+  'libsecret'
+  # xdg-open, used to open external links
+  'xdg-utils'
+)
+optdepends=(
+  'gtk4: use the gtk4 ui backend'
+  'krb5: kerberos proxy authentication'
+  'libva: va-api video acceleration'
+  'nvidia-utils: nvidia GLX driver'
+  'pipewire: webrtc desktop sharing under wayland'
+  'speech-dispatcher: spoken feedback'
+  'vulkan-radeon: vulkan rendering'
+)
+conflicts=('liner-desktop-git')
+source=(
+  "liner_${pkgver}_amd64.deb::https://github.com/tryliner/desktop/releases/download/v${pkgver}/liner_${pkgver}_amd64.deb"
+  "LICENSE::https://raw.githubusercontent.com/tryliner/desktop/v${pkgver}/LICENSE"
+  'liner.desktop'
+  'liner-wrapper.sh'
+)
+b2sums=(
+  '6316439cf92e86c66f7ef5c25b403073f5bf2ab1177405a2bb5b22b55669e00504b43d9e62323f721bbe0a88a2eb2c859e3a494794642a4475e572f42deb692c'
+  'e22c78e244f47827f804ed19878fc512bebacfbb86e11b8eefc8bdcea7084ff9ec87b713a0ae77884cbb55375cf213fa2d240f5a3ca0c36e91f0a0a399767cfa'
+  'abc1bf06f5c406543f5f9c27a2261e6878484eaf1b05fa0ce22a7a08bf6c6793d516b72b7b9590d507c2e585f3fa837e9499b07242badcc396c6dd750a425f80'
+  'afebea3f81c83efaaa41dc31b78e563383f3f10ab8939b397fbb9228e27571f12fa0cef641ea83dffccdc1726a2d5911d31f1709367fb9f36c300bac3dcda680'
+)
+
+package() {
+  # the upstream .deb is an ar archive (debian-binary, control.tar.xz, data.tar.xz)
+  bsdtar -C "${srcdir}" -xf "${srcdir}/liner_${pkgver}_amd64.deb"
+  tar -xJf "${srcdir}/data.tar.xz" -C "${pkgdir}" --no-same-owner
+
+  # debian layout -> arch layout
+  mv "${pkgdir}/opt/Liner" "${pkgdir}/opt/liner"
+  rm -f "${pkgdir}/opt/liner/resources/apparmor-profile"
+  rm -rf "${pkgdir}/usr/share/doc"
+
+  # the upstream desktop entry points into /opt/Liner, ours points at the wrapper
+  rm -f "${pkgdir}/usr/share/applications/liner.desktop"
+  install -Dm644 "${srcdir}/liner.desktop" "${pkgdir}/usr/share/applications/liner.desktop"
+
+  # the wrapper marks the install as a packaging build for the about screen
+  install -dm755 "${pkgdir}/usr/bin"
+  install -Dm755 "${srcdir}/liner-wrapper.sh" "${pkgdir}/usr/bin/liner"
+
+  install -Dm644 "${srcdir}/LICENSE" "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+
+  # chrome-sandbox stays 0755: arch enables unprivileged user namespaces by
+  # default, so chromium's namespace sandbox works without the setuid bit
+  chmod 0755 "${pkgdir}/opt/liner/chrome-sandbox"
+
+  chmod -R go-w "${pkgdir}"
+}

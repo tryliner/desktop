@@ -84,6 +84,7 @@ export interface LinerElectronApi {
     options?: { isDefault?: boolean },
   ) => Promise<void>;
   getAppVersion: () => Promise<string>;
+  getBuildFlavor: () => Promise<string>;
   getCacheStats: () => Promise<ElectronCacheStats>;
   openCacheFolder: () => Promise<boolean>;
   clearCoversCache: () => Promise<boolean>;
@@ -206,6 +207,7 @@ const api: LinerElectronApi = {
   setAppIcon: (dataUrl, options) =>
     ipcRenderer.invoke("app:set-icon", dataUrl, options),
   getAppVersion: () => ipcRenderer.invoke("app:get-version"),
+  getBuildFlavor: () => ipcRenderer.invoke("app:get-build-flavor"),
   getCacheStats: () => ipcRenderer.invoke("storage:get-cache-stats"),
   openCacheFolder: () => ipcRenderer.invoke("shell:open-cache-folder"),
   clearCoversCache: () => ipcRenderer.invoke("storage:clear-covers-cache"),

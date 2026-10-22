@@ -516,6 +516,14 @@ if (!gotTheLock) {
       return app.getVersion();
     });
 
+    // build marker for installs that are not an official release build
+    // (packaging builds set LINER_BUILD_FLAVOR, e.g. "AUR BUILD"). it lives
+    // in the core on purpose: the renderer bundle can be replaced by an OTA
+    // update, the core cannot
+    ipcMain.handle("app:get-build-flavor", () => {
+      return (process.env.LINER_BUILD_FLAVOR || "").trim();
+    });
+
     let lastIconBytes: Buffer | null = null;
     // serialize fs work on the icon theme so rapid accent switches cannot
     // leave an install and a remove interleaved

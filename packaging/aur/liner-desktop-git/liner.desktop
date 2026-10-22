@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Liner
+Comment=Open-source music player with syllable-synced lyrics and reactive dynamic visuals
+Exec=/usr/bin/liner %U
+Icon=liner
+Terminal=false
+Categories=Audio;AudioVideo;Player;Music;
+MimeType=x-scheme-handler/liner;
+StartupWMClass=liner
+Keywords=music;player;lyrics;streaming;song;

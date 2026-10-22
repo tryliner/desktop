@@ -1,0 +1,16 @@
+# makepkg build artifacts
+src/
+pkg/
+pkgdir/
+*.pkg.tar.*
+*.pkg.tar.zst
+.BUILDINFO
+.MTREE
+.PKGINFO
+
+# downloaded sources
+liner_*.deb
+LICENSE
+
+# makepkg vcs mirror clone (named after the upstream repository)
+liner-desktop-git/desktop/

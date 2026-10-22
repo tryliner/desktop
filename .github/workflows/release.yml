@@ -157,3 +157,37 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  # Repacks the Arch Linux recipes (packaging/aur/) and pushes them to the AUR.
+  # Gated on publish-release so the .deb is already on the release page when
+  # bump.sh downloads it to hash it.
+  sync-aur:
+    name: Sync AUR packages
+    needs: publish-release
+    runs-on: ubuntu-latest
+    # same group as aur-sync.yml: a tag at 04:23 must not collide with the cron
+    concurrency:
+      group: aur-sync
+      cancel-in-progress: false
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up ssh for the AUR
+        run: |
+          set -euo pipefail
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "${{ secrets.AUR_SSH_KEY }}" > ~/.ssh/id_aur
+          chmod 600 ~/.ssh/id_aur
+          cat > ~/.ssh/known_hosts <<'EOF'
+          aur.archlinux.org ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEuBKrPzbawxA/k2g6NcyV5jmqwJ2s+zpgZGZ7tpLIcN
+          aur.archlinux.org ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBLMiLrP8pVi5BFX2i3vepSUnpedeiewE5XptnUnau+ZoeUOPkpoCgZZuYfpaIQfhhJJI5qgnjJmr4hyJbe/zxow=
+          EOF
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Publish to the AUR
+        run: |
+          set -euo pipefail
+          export GIT_SSH_COMMAND="ssh -i ~/.ssh/id_aur -o IdentitiesOnly=yes"
+          ./packaging/aur/publish.sh "${GITHUB_REF_NAME#v}"
+
