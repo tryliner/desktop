@@ -1,13 +1,13 @@
 import { useState, useEffect, useRef, memo, useCallback, useMemo } from "react";
-import { AnimatePresence, motion } from "framer-motion";
-import { usePlayerState, playerEngine } from "@/features/player";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { usePlayerState, usePlayerStore, playerEngine } from "@/features/player";
 import SongCardWithMenu from "@/features/player/ui/SongCardWithMenu";
 import { useLyricsStore, type WordData, useLyricsAnimator } from "@/features/lyrics";
 import { useTranslation } from "@/languages";
-import { useToast, ReorderDropPlaceholder, FloatingDragCard } from "@/shared/ui";
+import { useToast, ReorderDropPlaceholder, FloatingDragCard, showToast } from "@/shared/ui";
 import { useListReorder } from "@/shared/hooks";
 import { FiMusic } from "react-icons/fi";
-import { ArrowLeftLine } from "@mingcute/react";
+import { ArrowLeftLine, Back2Line } from "@mingcute/react";
 import { useTheme } from "next-themes";
 import {
   useIsContentTransparent,
@@ -16,6 +16,7 @@ import {
 } from "@/features/settings/store/customizationStore";
 
 const QUEUE_ITEM_HEIGHT = 68;
+const REMOVE_MS = 220;
 
 const QueueList = memo(function QueueList({
   queue,
@@ -46,6 +47,33 @@ const QueueList = memo(function QueueList({
   const handleReorder = useCallback((fromIndex: number, toIndex: number) => {
     playerEngine.reorderQueue(fromIndex, toIndex);
   }, []);
+
+  const { t } = useTranslation();
+  const reduceMotion = useReducedMotion();
+  const [removingIndex, setRemovingIndex] = useState<number | null>(null);
+  // slide the row out to the left, then drop it once the animation is done
+  const handleRemove = useCallback(
+    (index: number, id: string) => {
+      setRemovingIndex(index);
+      window.setTimeout(() => {
+        const track = usePlayerStore.getState().queue[index];
+        // the queue may have changed during the animation: only remove that same track
+        const undo = track?.id === id ? playerEngine.removeFromQueue(index) : null;
+        if (track && undo) {
+          showToast(t("common.removed_from_queue"), "checkmark", {
+            description: track.artists ? `${track.title} — ${track.artists}` : track.title,
+            action: {
+              label: t("common.undo"),
+              icon: <Back2Line size={14} />,
+              onClick: undo,
+            },
+          });
+        }
+        setRemovingIndex(null);
+      }, reduceMotion ? 0 : REMOVE_MS);
+    },
+    [reduceMotion, t],
+  );
 
   const {
     isDragging,
@@ -92,6 +120,7 @@ const QueueList = memo(function QueueList({
       {visibleQueue.map((item, index) => {
         const isCurrent = index === currentIndex;
         const isThisDragged = isDragging && index === dragIndex;
+        const isRemoving = removingIndex === index;
 
         let shiftY = 0;
         if (isDragging && dragIndex !== null && dropIndex !== null && index !== dragIndex) {
@@ -101,6 +130,7 @@ const QueueList = memo(function QueueList({
             if (index >= dropIndex && index < dragIndex) shiftY = QUEUE_ITEM_HEIGHT;
           }
         }
+        if (removingIndex !== null && index > removingIndex) shiftY = -QUEUE_ITEM_HEIGHT;
 
         return (
           <div
@@ -111,11 +141,17 @@ const QueueList = memo(function QueueList({
               left: 0,
               width: "100%",
               height: `${QUEUE_ITEM_HEIGHT}px`,
-              transform: shiftY ? `translateY(${shiftY}px)` : undefined,
+              transform: isRemoving
+                ? "translateX(-100%)"
+                : shiftY
+                  ? `translateY(${shiftY}px)`
+                  : undefined,
               transition: isDragging
                 ? "transform 180ms cubic-bezier(0.2, 0, 0, 1)"
-                : undefined,
-              opacity: isThisDragged ? 0 : 1,
+                : removingIndex !== null
+                  ? `transform ${REMOVE_MS}ms cubic-bezier(0.4, 0, 0.2, 1), opacity ${REMOVE_MS}ms ease-out`
+                  : undefined,
+              opacity: isThisDragged || isRemoving ? 0 : 1,
               zIndex: 1,
             }}
             className="px-0 py-[2px]"
@@ -132,8 +168,13 @@ const QueueList = memo(function QueueList({
                 item.coverUrl ?? (item as { cover_url?: string }).cover_url ?? ""
               }
               showReorderHandle
+              onRemoveFromQueue={
+                index <= currentIndex || removingIndex !== null
+                  ? undefined
+                  : () => handleRemove(index, item.id)
+              }
               onGrabStart={
-                !isDragging
+                !isDragging && removingIndex === null
                   ? (e) => handleCardGrab(index, item, e)
                   : undefined
               }

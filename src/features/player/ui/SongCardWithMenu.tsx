@@ -35,6 +35,8 @@ export interface SongCardWithMenuProps {
   showReorderHandle?: boolean;
   onGrabStart?: (e: React.PointerEvent<HTMLDivElement>) => void;
   highlight?: string;
+  /** play queue rows: adds "Remove from queue" to the card menu */
+  onRemoveFromQueue?: () => void;
 }
 
 function SongCardWithMenu({
@@ -64,6 +66,7 @@ function SongCardWithMenu({
   showReorderHandle,
   onGrabStart,
   highlight,
+  onRemoveFromQueue,
 }: SongCardWithMenuProps) {
   const resolvedDurationMs = useMemo(() => {
     if (durationMs !== undefined) return durationMs;
@@ -90,6 +93,7 @@ function SongCardWithMenu({
     playlistId,
     playlistItemId,
     playlistTitle,
+    onRemoveFromQueue,
   });
 
   const [menuOpen, setMenuOpen] = useState(false);

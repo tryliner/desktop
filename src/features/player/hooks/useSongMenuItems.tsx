@@ -32,6 +32,8 @@ export interface SongMenuContext {
   playlistId?: string;
   playlistItemId?: string;
   playlistTitle?: string;
+  /** play queue rows: adds "Remove from queue" (the queue animates the row out) */
+  onRemoveFromQueue?: () => void;
 }
 
 export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
@@ -48,6 +50,7 @@ export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
     playlistId,
     playlistItemId,
     playlistTitle,
+    onRemoveFromQueue,
   } = ctx;
 
   const { data: playlistsData } = usePlaylistsList();
@@ -234,6 +237,17 @@ export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
             });
           },
         },
+        ...(onRemoveFromQueue
+          ? [
+              {
+                id: "remove-from-queue",
+                label: t("common.remove_from_queue"),
+                icon: <LuTrash2 size={15} />,
+                danger: true,
+                onClick: onRemoveFromQueue,
+              },
+            ]
+          : []),
       ];
     }
 
@@ -267,6 +281,7 @@ export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
     playlistId,
     playlistItemId,
     playlistTitle,
+    onRemoveFromQueue,
     liked,
     handleLike,
     playlistsData,

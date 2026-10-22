@@ -508,7 +508,9 @@ export default function AppFrame({ children }: AppFrameProps) {
         target instanceof Element &&
         (target.closest("[data-dialog-container]") ||
           target.closest("[data-dialog-backdrop]") ||
-          target.closest("[data-dropdown-menu]"))
+          target.closest("[data-dropdown-menu]") ||
+          // a toast action (e.g. Undo after removing a queue track) must not close the open drawer
+          target.closest("[data-toast]"))
       ) {
         return;
       }

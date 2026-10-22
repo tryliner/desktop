@@ -677,7 +677,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <ToastContext.Provider value={{ toast: toastCallable, dismiss: remove }}>
       {children}
-      <div className="fixed top-[44px] left-1/2 -translate-x-1/2 z-[9999] pointer-events-none">
+      <div data-toast className="fixed top-[44px] left-1/2 -translate-x-1/2 z-[9999] pointer-events-none">
         <motion.div
           layout
           transition={{ type: "spring", stiffness: 480, damping: 38 }}
