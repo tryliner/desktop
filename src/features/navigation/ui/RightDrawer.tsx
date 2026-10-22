@@ -597,7 +597,7 @@ function RightDrawer({ activeTab, onTabChange, onClose }: RightDrawerProps) {
       return (
         <span key={key} className="inline">
           <span
-            className={`bg-clip-text text-transparent ${className}`}
+            className={`lyric-word bg-clip-text text-transparent ${className}`}
             style={{
               backgroundImage:
                 "linear-gradient(to right, var(--color-text-primary) 0%, var(--color-text-tertiary) 0%)",
