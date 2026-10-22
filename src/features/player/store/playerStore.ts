@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import type { Track } from "@/shared/types";
 import { debouncedStorage } from "@/shared/utils/storage";
+import { EQ_BAND_COUNT, clampBandDb, normalizeBands } from "../engine/eqMath";
 
 export { debouncedStorage };
 
@@ -63,6 +64,9 @@ export interface SessionState {
   keepSpeedAcrossTracks: boolean;
   isReverbEnabled: boolean;
   reverbLevel: number;
+  /** 10-band graphic equaliser (see engine/eqMath) */
+  eqEnabled: boolean;
+  eqBands: number[];
 }
 
 export type PlayerState = TransportState &
@@ -117,6 +121,9 @@ export interface PlayerStore extends PlayerState {
   setKeepSpeedAcrossTracks: (keep: boolean) => void;
   setIsReverbEnabled: (enabled: boolean) => void;
   setReverbLevel: (level: number) => void;
+  setEqEnabled: (enabled: boolean) => void;
+  setEqBand: (index: number, db: number) => void;
+  setEqBands: (bands: readonly number[]) => void;
   resetSpeedAndPitch: () => void;
   clearQueue: () => void;
   resetPlayback: () => void;
@@ -161,6 +168,8 @@ export const usePlayerStore = create<PlayerStore>()(
       keepSpeedAcrossTracks: true,
       isReverbEnabled: false,
       reverbLevel: 0.35,
+      eqEnabled: false,
+      eqBands: new Array<number>(EQ_BAND_COUNT).fill(0),
 
       dispatch: () => {
         // Implementation injected by PlayerEngine
@@ -211,6 +220,14 @@ export const usePlayerStore = create<PlayerStore>()(
       setIsReverbEnabled: (isReverbEnabled: boolean) => set({ isReverbEnabled }),
       setReverbLevel: (reverbLevel: number) =>
         set({ reverbLevel: Math.max(0, Math.min(1, reverbLevel)) }),
+      setEqEnabled: (eqEnabled: boolean) => set({ eqEnabled }),
+      setEqBand: (index: number, db: number) => {
+        if (index < 0 || index >= EQ_BAND_COUNT) return;
+        const next = [...get().eqBands];
+        next[index] = clampBandDb(db);
+        set({ eqBands: next });
+      },
+      setEqBands: (bands: readonly number[]) => set({ eqBands: normalizeBands(bands) }),
       resetSpeedAndPitch: () => set({ playbackRate: 1, pitchSemitones: 0 }),
       resetPlayback: () =>
         set({
@@ -294,6 +311,10 @@ export const usePlayerStore = create<PlayerStore>()(
           if (typeof state.reverbLevel !== "number" || isNaN(state.reverbLevel)) {
             state.reverbLevel = 0.35;
           }
+          if (typeof state.eqEnabled !== "boolean") {
+            state.eqEnabled = false;
+          }
+          state.eqBands = normalizeBands(state.eqBands);
         }
       },
       partialize: (state) => ({
@@ -325,6 +346,8 @@ export const usePlayerStore = create<PlayerStore>()(
         keepSpeedAcrossTracks: state.keepSpeedAcrossTracks,
         isReverbEnabled: state.isReverbEnabled,
         reverbLevel: state.reverbLevel,
+        eqEnabled: state.eqEnabled,
+        eqBands: state.eqBands,
       }),
     },
   ),

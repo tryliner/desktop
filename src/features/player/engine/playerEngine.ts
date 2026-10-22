@@ -7,6 +7,7 @@ import {
 } from "../store/playerStore";
 import { playerRuntime } from "./playerRuntime";
 import { isRadioContext, shouldRefillRadio } from "./radioMode";
+import { EQ_PRESETS, type EqPresetId } from "./eqMath";
 import { pitchShifter } from "./pitchShifter";
 import {
   api,
@@ -756,6 +757,30 @@ class PlayerEngine {
   public setReverbLevel(level: number): void {
     pitchShifter.resumeContext();
     usePlayerStore.getState().setReverbLevel(level);
+  }
+
+  public setEqEnabled(enabled: boolean): void {
+    pitchShifter.resumeContext();
+    usePlayerStore.getState().setEqEnabled(enabled);
+  }
+
+  /** dragging a band also switches the eq on, so the change is audible */
+  public setEqBand(index: number, db: number): void {
+    pitchShifter.resumeContext();
+    const store = usePlayerStore.getState();
+    store.setEqBand(index, db);
+    if (!store.eqEnabled) store.setEqEnabled(true);
+  }
+
+  public applyEqPreset(id: EqPresetId): void {
+    pitchShifter.resumeContext();
+    const store = usePlayerStore.getState();
+    store.setEqBands(EQ_PRESETS[id]);
+    if (id !== "flat" && !store.eqEnabled) store.setEqEnabled(true);
+  }
+
+  public resetEq(): void {
+    usePlayerStore.getState().setEqBands(EQ_PRESETS.flat);
   }
 
   public resetSpeedAndPitch(): void {

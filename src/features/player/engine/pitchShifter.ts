@@ -198,6 +198,15 @@ function createReverbImpulseResponse(context: AudioContext): AudioBuffer {
   return buffer;
 }
 
+import {
+  EQ_BAND_COUNT,
+  EQ_FREQUENCIES,
+  EQ_PEAKING_Q,
+  autoPreampDb,
+  bandKind,
+  isFlat,
+} from "./eqMath";
+
 interface AudioEffectsGraph {
   ctx: AudioContext;
   sourceNode: MediaElementAudioSourceNode;
@@ -211,6 +220,9 @@ interface AudioEffectsGraph {
   convolver: ConvolverNode;
   reverbHighpass: BiquadFilterNode;
   reverbWetGain: GainNode;
+  /** anti-clipping gain in front of the eq bands */
+  eqPreamp: GainNode;
+  eqFilters: BiquadFilterNode[];
 }
 
 export interface AudioEffectsParams {
@@ -218,6 +230,8 @@ export interface AudioEffectsParams {
   isPitchLinked?: boolean;
   isReverbEnabled?: boolean;
   reverbLevel?: number;
+  eqEnabled?: boolean;
+  eqBands?: readonly number[];
 }
 
 export class PitchShifterController {
@@ -286,7 +300,10 @@ export class PitchShifterController {
           g.pitchStageOutput &&
           g.masterOutputGain &&
           g.masterDryGain &&
-          g.shifter
+          g.shifter &&
+          g.eqPreamp &&
+          Array.isArray(g.eqFilters) &&
+          g.eqFilters.length === EQ_BAND_COUNT
         );
       };
 
@@ -309,6 +326,8 @@ export class PitchShifterController {
             (graph as any).convolver?.disconnect();
             (graph as any).reverbHighpass?.disconnect();
             (graph as any).reverbWetGain?.disconnect();
+            (graph as any).eqPreamp?.disconnect();
+            for (const f of (graph as any).eqFilters ?? []) f?.disconnect?.();
           } catch {}
         }
         delete audioObj.__liner_pitch_graph;
@@ -367,7 +386,25 @@ export class PitchShifterController {
         reverbHighpass.connect(reverbWetGain);
         reverbWetGain.connect(masterOutputGain);
 
-        masterOutputGain.connect(ctx.destination);
+        // Equaliser stage: master -> preamp -> 10 bands -> speakers.
+        // At 0 dB every band (and the preamp) is exactly unity.
+        const eqPreamp = ctx.createGain();
+        eqPreamp.gain.value = 1.0;
+        const eqFilters = EQ_FREQUENCIES.map((freq, i) => {
+          const filter = ctx.createBiquadFilter();
+          filter.type = bandKind(i);
+          filter.frequency.value = freq;
+          if (filter.type === "peaking") filter.Q.value = EQ_PEAKING_Q;
+          filter.gain.value = 0;
+          return filter;
+        });
+        masterOutputGain.connect(eqPreamp);
+        let eqTail: AudioNode = eqPreamp;
+        for (const filter of eqFilters) {
+          eqTail.connect(filter);
+          eqTail = filter;
+        }
+        eqTail.connect(ctx.destination);
 
         graph = {
           ctx,
@@ -382,6 +419,8 @@ export class PitchShifterController {
           convolver,
           reverbHighpass,
           reverbWetGain,
+          eqPreamp,
+          eqFilters,
         };
 
         audioObj.__liner_pitch_graph = graph;
@@ -433,12 +472,16 @@ export class PitchShifterController {
     let isPitchLinked = true;
     let isReverbEnabled = false;
     let reverbLevel = 0.35;
+    let eqEnabled = false;
+    let eqBands: readonly number[] = [];
 
     if (typeof arg1 === "object" && arg1 !== null) {
       semitones = arg1.pitchSemitones ?? 0;
       isPitchLinked = arg1.isPitchLinked ?? true;
       isReverbEnabled = arg1.isReverbEnabled ?? false;
       reverbLevel = arg1.reverbLevel ?? 0.35;
+      eqEnabled = arg1.eqEnabled ?? false;
+      eqBands = arg1.eqBands ?? [];
     } else {
       semitones = typeof arg1 === "number" ? arg1 : 0;
       isPitchLinked = arg2 ?? true;
@@ -468,6 +511,14 @@ export class PitchShifterController {
     } else {
       this.graph.reverbWetGain.gain.setTargetAtTime(0, now, 0.020);
     }
+
+    // Equaliser: short glide so dragging a band never clicks
+    const eqActive = eqEnabled && eqBands.length === EQ_BAND_COUNT && !isFlat(eqBands);
+    const preampDb = eqActive ? autoPreampDb(eqBands, this.context.sampleRate) : 0;
+    this.graph.eqPreamp.gain.setTargetAtTime(Math.pow(10, preampDb / 20), now, 0.03);
+    this.graph.eqFilters.forEach((filter, i) => {
+      filter.gain.setTargetAtTime(eqActive ? eqBands[i] : 0, now, 0.03);
+    });
   }
 }
 
