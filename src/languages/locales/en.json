@@ -421,6 +421,16 @@
   },
   "search": {
     "placeholder": "Search tracks, artists, albums...",
+    "sources": {
+      "label": "Sources",
+      "all": "All sources",
+      "youtube": "YouTube Music",
+      "soundcloud": "SoundCloud",
+      "coming_soon": "More sources coming soon",
+      "coming_soon_message": "Spotify, Apple Music, TIDAL, and Deezer are coming soon."
+    },
+    "partial_results": "Some sources are unavailable: {sources}",
+    "open_on_source": "Open on {source}",
     "all": "All",
     "songs": "Songs",
     "artists": "Artists",
@@ -456,7 +466,18 @@
       "shortcuts": "Shortcuts",
       "overlay": "Overlay",
       "discord": "Discord RPC",
+      "sources": "Sources",
       "privacy": "Privacy"
+    },
+    "sources": {
+      "description": "Choose which music catalogs are available in search.",
+      "available_title": "Available sources",
+      "youtube_description": "Search and play music from YouTube Music inside Liner.",
+      "soundcloud_description": "Search and play music from SoundCloud inside Liner.",
+      "enable_youtube": "Enable YouTube Music",
+      "enable_soundcloud": "Enable SoundCloud",
+      "coming_soon_description": "Spotify, Apple Music, TIDAL, and Deezer are planned for future integrations.",
+      "coming_soon_button": "Coming soon"
     },
     "playback": {
       "description": "Queue behavior, click actions and audio output."

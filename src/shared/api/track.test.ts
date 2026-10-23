@@ -53,6 +53,33 @@ describe("toClientTrack", () => {
     expect(t.album).toEqual({ id: "alb1", title: "Abbey Road" });
   });
 
+  it("preserves catalog source and external URL", () => {
+    const track = toClientTrack({
+      id: "sc:7",
+      title: "Night Drive",
+      artists: [{ id: "sc_user_3", name: "Artist" }],
+      durationMs: 180_000,
+      cover: { url: "https://i1.sndcdn.com/artworks-7-large.jpg" },
+      source: "soundcloud",
+      externalUrl: "https://soundcloud.com/u/t",
+    });
+
+    expect(track.source).toBe("soundcloud");
+    expect(track.externalUrl).toBe("https://soundcloud.com/u/t");
+  });
+
+  it("keeps legacy tracks without source metadata compatible", () => {
+    const track = toClientTrack({
+      id: "legacy-track",
+      title: "Legacy",
+      artists: [{ id: "legacy-artist", name: "Artist" }],
+      durationMs: 180_000,
+      cover: { url: "https://example.com/cover.jpg" },
+    });
+
+    expect(track.source).toBeUndefined();
+    expect(track.externalUrl).toBeUndefined();
+  });
 
   it("renders ArtistLink and tests click behavior", async () => {
     const { createRoot } = await import("react-dom/client");
@@ -149,4 +176,3 @@ describe("toClientTrack", () => {
     document.body.removeChild(container);
   });
 });
-

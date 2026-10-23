@@ -42,6 +42,8 @@ import { useCoverReady, CoverImage } from "@/features/covers";
 import { useCustomizationStore, getBlockStyle } from "@/features/settings";
 import ExplicitBadge from "@/shared/ui/ExplicitBadge";
 import { ArtistLink } from "@/features/artist";
+import CatalogSourceIcon from "@/shared/ui/CatalogSourceIcon";
+import { catalogSourceForTrack } from "@/shared/media/catalogSource";
 
 
 function rgbToHsl(r: number, g: number, b: number): [number, number, number] {
@@ -320,6 +322,10 @@ function MiniPlayer({
   const lastNonZeroVolumeRef = useRef<number>(0.7);
 
   const currentTrack = player.currentTrack;
+  const currentTrackSource = catalogSourceForTrack(
+    currentTrack?.id,
+    currentTrack?.source,
+  );
   const volumeLevel = toVolumeLevel(player.volume);
   const isLiked = useIsTrackLiked(currentTrack?.id);
   const likeMutation = useLikeTrack();
@@ -362,11 +368,15 @@ function MiniPlayer({
       return (
         <SongCard
           key={`${item.id}-${index}`}
+          id={item.id}
           title={item.title}
           artists={item.artists}
           artistId={item.artistId}
           artistList={item.artistList}
           coverUrl={item.coverUrl || ""}
+          source={item.source}
+          externalUrl={item.externalUrl}
+          showSource
           duration={
             item.durationMs
               ? `${Math.floor(item.durationMs / 60000)}:${Math.floor(
@@ -792,6 +802,14 @@ function MiniPlayer({
                   artistList={player.currentTrack?.artistList}
                   className="text-text-tertiary pointer-events-auto"
                 />
+                {currentTrackSource && (
+                  <span className="inline-flex shrink-0 pointer-events-auto">
+                    <CatalogSourceIcon
+                      source={currentTrackSource}
+                      externalUrl={currentTrack?.externalUrl}
+                    />
+                  </span>
+                )}
               </p>
             </div>
             <button

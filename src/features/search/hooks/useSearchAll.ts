@@ -1,17 +1,19 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { api, type ApiSearchItem } from "@/shared/api";
+import { api, type ApiSearchItem, type CatalogSource, type SearchSource } from "@/shared/api";
+import { isAbortError } from "@/shared/utils/abort";
 
 export interface UseSearchAllOptions {
   enabled: boolean;
   limit: number;
   debounceMs: number;
+  source?: SearchSource;
 }
 
 export interface UseSearchAllResult {
   items: ApiSearchItem[];
   loading: boolean;
   hasLoaded: boolean;
-  partialWarning?: string;
+  failedSources?: CatalogSource[];
   runNow: () => void;
 }
 
@@ -19,78 +21,108 @@ export function useSearchAll(
   query: string,
   options: UseSearchAllOptions,
 ): UseSearchAllResult {
+  const { source = "all" } = options;
   const [items, setItems] = useState<ApiSearchItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
-  const [partialWarning, setPartialWarning] = useState<string | undefined>();
+  const [failedSources, setFailedSources] = useState<CatalogSource[] | undefined>();
 
   const latestRequestIdRef = useRef(0);
-  const lastFetchedQueryRef = useRef("");
+  const activeControllerRef = useRef<AbortController | null>(null);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const previousSearchKeyRef = useRef<string | null>(null);
+  const completedSearchKeyRef = useRef<string | null>(null);
   const trimmed = query.trim();
+  const searchKey = `${source}\u0000${trimmed}`;
   const shouldRunSearch = options.enabled && trimmed.length >= 2;
 
   const runRequest = useCallback(
-    async (requestId: number, q: string) => {
+    async (requestId: number, q: string, key: string, controller: AbortController) => {
       setLoading(true);
       try {
-        const res = await api.search(q, "all");
+        const res = await api.search(q, "all", source, controller.signal);
         if (requestId !== latestRequestIdRef.current) return;
         setItems(res.items);
-        setPartialWarning(undefined);
-        lastFetchedQueryRef.current = q;
+        setFailedSources(res.failedSources);
         setHasLoaded(true);
-      } catch {
+        completedSearchKeyRef.current = key;
+      } catch (error) {
+        if (controller.signal.aborted || isAbortError(error)) return;
         if (requestId !== latestRequestIdRef.current) return;
         setItems([]);
-        setPartialWarning(undefined);
+        setFailedSources(undefined);
         setHasLoaded(true);
+        completedSearchKeyRef.current = key;
       } finally {
         if (requestId === latestRequestIdRef.current) setLoading(false);
+        if (activeControllerRef.current === controller) activeControllerRef.current = null;
       }
     },
-    [],
+    [source],
   );
 
   useEffect(() => {
-    if (trimmed.length < 2) {
-      latestRequestIdRef.current += 1;
-      setItems([]);
-      setHasLoaded(false);
-      setLoading(false);
-      setPartialWarning(undefined);
-      lastFetchedQueryRef.current = "";
-      return;
+    activeControllerRef.current?.abort();
+    activeControllerRef.current = null;
+    if (debounceTimerRef.current !== null) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
     }
 
-    if (!options.enabled) return;
-
-    if (lastFetchedQueryRef.current === trimmed && items.length > 0) {
+    const requestId = ++latestRequestIdRef.current;
+    const keyChanged = previousSearchKeyRef.current !== searchKey;
+    previousSearchKeyRef.current = searchKey;
+    if (keyChanged) {
+      completedSearchKeyRef.current = null;
+      setItems([]);
+      setHasLoaded(false);
+      setFailedSources(undefined);
+    }
+    if (!shouldRunSearch) {
       setLoading(false);
-      setHasLoaded(true);
+      return;
+    }
+    if (completedSearchKeyRef.current === searchKey) {
+      setLoading(false);
       return;
     }
 
     setLoading(true);
-    const requestId = ++latestRequestIdRef.current;
     const timer = setTimeout(() => {
-      if (lastFetchedQueryRef.current === trimmed && items.length > 0) {
-        setLoading(false);
-        setHasLoaded(true);
-        return;
-      }
-      void runRequest(requestId, trimmed);
+      debounceTimerRef.current = null;
+      const controller = new AbortController();
+      activeControllerRef.current = controller;
+      void runRequest(requestId, trimmed, searchKey, controller);
     }, options.debounceMs ?? 320);
+    debounceTimerRef.current = timer;
 
     return () => {
-      clearTimeout(timer);
+      if (debounceTimerRef.current === timer) {
+        clearTimeout(timer);
+        debounceTimerRef.current = null;
+      }
+      activeControllerRef.current?.abort();
+      activeControllerRef.current = null;
+      latestRequestIdRef.current += 1;
     };
-  }, [items.length, options.debounceMs, options.enabled, runRequest, trimmed]);
+  }, [options.debounceMs, runRequest, searchKey, shouldRunSearch, trimmed]);
 
   const runNow = useCallback(() => {
     if (!shouldRunSearch) return;
+    if (debounceTimerRef.current !== null) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+    }
+    activeControllerRef.current?.abort();
+    completedSearchKeyRef.current = null;
     const requestId = ++latestRequestIdRef.current;
-    void runRequest(requestId, trimmed);
-  }, [runRequest, shouldRunSearch, trimmed]);
+    const controller = new AbortController();
+    activeControllerRef.current = controller;
+    setItems([]);
+    setHasLoaded(false);
+    setFailedSources(undefined);
+    void runRequest(requestId, trimmed, searchKey, controller);
+  }, [runRequest, searchKey, shouldRunSearch, trimmed]);
 
-  return { items, loading, hasLoaded, partialWarning, runNow };
+  return { items, loading, hasLoaded, failedSources, runNow };
 }

@@ -3,9 +3,10 @@ import { CloseLine, Search3Line } from "@mingcute/react";
 import SongCardWithMenu from "@/features/player/ui/SongCardWithMenu";
 import { useTranslation } from "@/languages";
 import { useSearchHistoryStore } from "../store/searchHistoryStore";
+import type { SearchSource } from "@/shared/contracts";
 
 export interface SearchHistoryListProps {
-  onSelectQuery: (query: string) => void;
+  onSelectQuery: (query: string, source: SearchSource) => void;
   onPlayTrack: (track: any) => void;
   onNavigateItem: (item: any) => void;
   scrollRef?: React.RefObject<HTMLDivElement | null>;
@@ -60,7 +61,7 @@ export const SearchHistoryList = memo(function SearchHistoryList({
             return (
               <div
                 key={item.id}
-                onClick={() => onSelectQuery(item.title)}
+                onClick={() => onSelectQuery(item.title, item.source ?? "all")}
                 className="group flex items-center w-full min-w-0 rounded-[8px] hover:bg-border-alpha-14 cursor-pointer transition-colors select-none"
               >
                 <div className="flex flex-1 items-center gap-[12px] min-w-0 pl-[12px] py-[9px]">
@@ -95,6 +96,8 @@ export const SearchHistoryList = memo(function SearchHistoryList({
                 durationMs={item.durationMs}
                 searchType={item.type}
                 totalTracks={data?.totalTracks ?? data?.total_tracks}
+                source={data?.source}
+                externalUrl={data?.externalUrl}
                 onPlay={
                   item.type === "track"
                     ? () => onPlayTrack(data)

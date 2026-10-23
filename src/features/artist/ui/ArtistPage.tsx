@@ -482,6 +482,8 @@ function ArtistContent() {
                         artistId={track.artistId}
                         artistList={track.artistList}
                         coverUrl={track.coverUrl || data.coverUrl}
+                        source={track.source}
+                        externalUrl={track.externalUrl}
                         duration={
                           track.durationMs
                             ? `${Math.floor(track.durationMs / 60000)}:${Math.floor(
@@ -523,6 +525,8 @@ function ArtistContent() {
                               artistId={track.artistId}
                               artistList={track.artistList}
                               coverUrl={track.coverUrl || data.coverUrl}
+                              source={track.source}
+                              externalUrl={track.externalUrl}
                               duration={
                                 track.durationMs
                                   ? `${Math.floor(track.durationMs / 60000)}:${Math.floor(

@@ -11,6 +11,8 @@ import type { Track } from "@/shared/types";
 import ArtistLink from "@/features/artist/ui/ArtistLink";
 import CoverImage from "@/features/covers/ui/CoverImage";
 import ExplicitBadge from "@/shared/ui/ExplicitBadge";
+import CatalogSourceIcon from "@/shared/ui/CatalogSourceIcon";
+import { catalogSourceForTrack } from "@/shared/media/catalogSource";
 import { useTranslation } from "@/languages";
 
 export interface PopularTracksSectionProps {
@@ -40,6 +42,7 @@ function TrackCard({
   const trackDoubleClickBehavior = usePlayerStore(
     (state) => state.trackDoubleClickBehavior,
   );
+  const source = catalogSourceForTrack(item.item.id, item.item.source);
 
   const menuItems = useSongMenuItems({
     id: item.item.id,
@@ -85,6 +88,8 @@ function TrackCard({
     if (trackDoubleClickBehavior === "queue") {
       playerEngine.addToQueue({
         id: item.item.id,
+        source: item.item.source,
+        externalUrl: item.item.externalUrl,
         title: item.item.title,
         artists: item.item.artists,
         coverUrl: item.item.coverUrl,
@@ -167,6 +172,14 @@ function TrackCard({
             artistList={item.item.artistList}
             className="text-[13px] text-text-tertiary"
           />
+          {source && (
+            <span className="ml-[5px] inline-flex shrink-0">
+              <CatalogSourceIcon
+                source={source}
+                externalUrl={item.item.externalUrl}
+              />
+            </span>
+          )}
         </div>
       </div>
 

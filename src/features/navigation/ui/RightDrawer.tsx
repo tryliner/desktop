@@ -128,6 +128,8 @@ const QueueList = memo(function QueueList({
               artistList={item.artistList}
               explicit={item.explicit}
               durationMs={item.durationMs}
+              source={item.source}
+              externalUrl={item.externalUrl}
               coverUrl={
                 item.coverUrl ?? (item as { cover_url?: string }).cover_url ?? ""
               }
@@ -175,6 +177,8 @@ const QueueList = memo(function QueueList({
             artistList={draggedItem.artistList}
             explicit={draggedItem.explicit}
             durationMs={draggedItem.durationMs}
+            source={draggedItem.source}
+            externalUrl={draggedItem.externalUrl}
             coverUrl={
               draggedItem.coverUrl ??
               (draggedItem as { cover_url?: string }).cover_url ??

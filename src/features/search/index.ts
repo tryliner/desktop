@@ -24,11 +24,30 @@ export {
 } from "./hooks/useSearchPlaylists";
 export {
   useSearchHistoryStore,
+  queryHistoryId,
   type SearchHistoryItem,
   type SearchHistoryItemType,
   type SearchHistoryState,
 } from "./store/searchHistoryStore";
 export {
+  AVAILABLE_SEARCH_SOURCES,
+  effectiveSearchSource,
+  useSearchSourceStore,
+  type SearchSourceState,
+} from "./store/searchSourceStore";
+export {
   SearchHistoryList,
   type SearchHistoryListProps,
 } from "./ui/SearchHistoryList";
+export {
+  SearchSourceHub,
+} from "./ui/SearchSourceHub";
+export {
+  SearchFilterBar,
+  type SearchFilterBarProps,
+  type SearchFilterKey,
+} from "./ui/SearchFilterBar";
+export {
+  SearchSourceBadge,
+  type SearchSourceBadgeProps,
+} from "./ui/SearchSourceBadge";

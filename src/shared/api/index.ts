@@ -7,7 +7,6 @@ export type {
   ApiArtist,
   ApiAlbum,
   ApiPlaylist,
-  ApiSearchItem,
   SearchResponse,
   ApiTrackDetails,
   ApiRadioTrack,
@@ -35,6 +34,13 @@ export type {
   PopularTrackItem,
   PopularTracksResponse,
 } from "./api";
+
+export type {
+  ApiSearchItem,
+  CatalogSource,
+  SearchSource,
+  SourcedSearchResult,
+} from "@/shared/contracts";
 
 export type {
   PublicUser,

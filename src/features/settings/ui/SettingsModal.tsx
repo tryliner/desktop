@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { motion } from "framer-motion";
-import { CloseLine, Search2Line, CloseCircleFill, ExitLine, DiscordFill, KeyboardLine } from "@mingcute/react";
+import { CloseLine, Search2Line, CloseCircleFill, ExitLine, DiscordFill, KeyboardLine, Music2Fill } from "@mingcute/react";
 import {
   Play,
   Palette,
@@ -27,15 +27,17 @@ import {
   AboutTab,
   OverlayTab,
   DiscordTab,
+  SourcesTab,
 } from "./tabs";
 
-type TabId = "Playback" | "Shortcuts" | "Overlay" | "Discord" | "Appearance" | "Customization" | "Audio" | "Storage" | "About";
+type TabId = "Playback" | "Shortcuts" | "Overlay" | "Discord" | "Sources" | "Appearance" | "Customization" | "Audio" | "Storage" | "About";
 
 const TAB_ICONS: Record<TabId, React.ComponentType<any>> = {
   Playback: Play,
   Shortcuts: KeyboardLine,
   Overlay: Widget5,
   Discord: DiscordFill,
+  Sources: Music2Fill,
   Appearance: Palette,
   Customization: Gallery,
   Audio: HeadphonesRound,
@@ -44,7 +46,7 @@ const TAB_ICONS: Record<TabId, React.ComponentType<any>> = {
 };
 
 const TAB_GROUPS: { labelKey: "preferences" | "application"; ids: TabId[] }[] = [
-  { labelKey: "preferences", ids: ["Playback", "Shortcuts", "Overlay", "Discord", "Audio", "Appearance", "Customization"] },
+  { labelKey: "preferences", ids: ["Playback", "Shortcuts", "Overlay", "Discord", "Sources", "Audio", "Appearance", "Customization"] },
   { labelKey: "application", ids: ["Storage", "About"] },
 ];
 
@@ -81,6 +83,12 @@ const SETTING_ITEMS: { tabId: TabId; titleKey: string; descKey?: string }[] = [
   { tabId: "Discord", titleKey: "settings.discord.show_paused.title", descKey: "settings.discord.show_paused.description" },
   { tabId: "Discord", titleKey: "settings.discord.show_button.title", descKey: "settings.discord.show_button.description" },
   { tabId: "Discord", titleKey: "settings.discord.show_download_button.title", descKey: "settings.discord.show_download_button.description" },
+
+  // Sources
+  { tabId: "Sources", titleKey: "settings.tabs.sources", descKey: "settings.sources.description" },
+  { tabId: "Sources", titleKey: "search.sources.youtube", descKey: "settings.sources.youtube_description" },
+  { tabId: "Sources", titleKey: "search.sources.soundcloud", descKey: "settings.sources.soundcloud_description" },
+  { tabId: "Sources", titleKey: "search.sources.coming_soon", descKey: "settings.sources.coming_soon_description" },
 
   // Appearance
   { tabId: "Appearance", titleKey: "settings.language.label", descKey: "settings.language.description" },
@@ -126,6 +134,7 @@ export default function SettingsModal() {
     Shortcuts: t("settings.tabs.shortcuts") || "Shortcuts",
     Overlay: t("settings.tabs.overlay") || "Overlay",
     Discord: t("settings.tabs.discord") || "Discord RPC",
+    Sources: t("settings.tabs.sources") || "Sources",
     Appearance: t("settings.tabs.appearance"),
     Customization: t("settings.tabs.customization") || "Customization",
     Audio: t("settings.tabs.audio"),
@@ -138,6 +147,7 @@ export default function SettingsModal() {
     Shortcuts: t("settings.shortcuts.description") || "System-wide and player keyboard shortcuts.",
     Overlay: t("settings.overlay.description") || "Desktop overlay behavior, position and lyrics display.",
     Discord: t("settings.discord.description") || "Show what you're listening to on Discord with artwork, artist badge and progress bar.",
+    Sources: t("settings.sources.description") || "Choose which music catalogs are available in search.",
     Appearance: t("settings.theme.description"),
     Customization: t("settings.customization.description") || "Window background wallpaper, transparency and block blur effects.",
     Audio: t("settings.audio.description"),
@@ -155,6 +165,7 @@ export default function SettingsModal() {
       Shortcuts: "settings.tabs.shortcuts",
       Overlay: "settings.tabs.overlay",
       Discord: "settings.tabs.discord",
+      Sources: "settings.tabs.sources",
       Appearance: "settings.theme.title",
       Customization: "settings.tabs.customization",
       Audio: "settings.tabs.audio",
@@ -167,6 +178,7 @@ export default function SettingsModal() {
       Shortcuts: "settings.shortcuts.description",
       Overlay: "settings.overlay.description",
       Discord: "settings.discord.description",
+      Sources: "settings.sources.description",
       Appearance: "settings.theme.description",
       Customization: "settings.customization.description",
       Audio: "settings.audio.description",
@@ -415,6 +427,7 @@ export default function SettingsModal() {
             {activeTab === "Shortcuts" && <ShortcutsTab searchQuery={searchQuery} />}
             {activeTab === "Overlay" && <OverlayTab searchQuery={searchQuery} />}
             {activeTab === "Discord" && <DiscordTab searchQuery={searchQuery} />}
+            {activeTab === "Sources" && <SourcesTab searchQuery={searchQuery} />}
             {activeTab === "Appearance" && <AppearanceTab searchQuery={searchQuery} />}
             {activeTab === "Customization" && <CustomizationTab searchQuery={searchQuery} />}
             {activeTab === "Audio" && <AudioTab searchQuery={searchQuery} />}

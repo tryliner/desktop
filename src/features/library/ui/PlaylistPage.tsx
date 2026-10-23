@@ -85,6 +85,8 @@ const TrackItem = memo(function TrackItem({
         artistId={track.artistId}
         artistList={track.artistList}
         coverUrl={track.coverUrl || playlistCoverUrl}
+        source={track.source}
+        externalUrl={track.externalUrl}
         playlistId={playlistId}
         playlistItemId={track.playlistItemId}
         playlistTitle={playlistTitle}
@@ -957,6 +959,8 @@ function LibraryPlaylistContent() {
                     artistId={draggedItem.artistId}
                     artistList={draggedItem.artistList}
                     coverUrl={draggedItem.coverUrl || viewData.coverUrl}
+                    source={draggedItem.source}
+                    externalUrl={draggedItem.externalUrl}
                     playlistId={isLikesMode ? undefined : (decodedId ?? undefined)}
                     playlistItemId={draggedItem.playlistItemId}
                     playlistTitle={viewData.title}

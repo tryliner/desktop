@@ -1,5 +1,5 @@
 import { innertubeCatalog } from "@/shared/media/innertube";
-import { isSoundCloudCatalogId, isSoundCloudUrl, resolveSoundCloudUrl, soundcloudCatalog } from "@/shared/media/soundcloud";
+import { isSoundCloudCatalogId, soundcloudCatalog } from "@/shared/media/soundcloud";
 import { isAbortError } from "@/shared/utils/abort";
 import { log } from "@/shared/utils/logger";
 import type {
@@ -7,11 +7,14 @@ import type {
   ArtistDetails,
   CatalogPlaylistDetails,
   RadioResponse,
+  SearchResult,
   SearchResponse,
+  SearchSource,
   SearchType,
   Track,
   TrackDetails,
 } from "@/shared/contracts";
+import { searchCatalogs } from "./catalogSearch";
 
 export function isClientCatalogId(id: string): boolean {
   return !isSoundCloudCatalogId(id);
@@ -57,13 +60,14 @@ async function resolveSnapshot(id: string): Promise<Track | undefined> {
 export const clientCatalog = {
   resolveSnapshot,
 
-  async search(query: string, type: SearchType, server: () => Promise<SearchResponse>): Promise<SearchResponse> {
-    if (isSoundCloudUrl(query)) return { items: await resolveSoundCloudUrl(query, type).catch(() => []) };
-    return preferClient(
-      "search",
-      async () => ({ items: await innertubeCatalog.search(query, type) }),
-      server,
-    );
+  search(
+    query: string,
+    type: SearchType,
+    server: () => Promise<{ items: SearchResult[] }>,
+    source: SearchSource = "all",
+    signal?: AbortSignal,
+  ): Promise<SearchResponse> {
+    return searchCatalogs(query, type, source, server, signal);
   },
 
   getTrack(id: string, server: () => Promise<TrackDetails>): Promise<TrackDetails> {

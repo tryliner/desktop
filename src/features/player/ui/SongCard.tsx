@@ -9,6 +9,9 @@ import ExplicitBadge from "@/shared/ui/ExplicitBadge";
 import CoverImage from "@/features/covers/ui/CoverImage";
 import { isCoverReady } from "@/features/covers/lib/coverArt";
 import type { TrackArtist } from "@/shared/types";
+import type { CatalogSource } from "@/shared/contracts";
+import CatalogSourceIcon from "@/shared/ui/CatalogSourceIcon";
+import { catalogSourceForTrack } from "@/shared/media/catalogSource";
 
 export interface SongCardProps {
   id?: string;
@@ -35,6 +38,10 @@ export interface SongCardProps {
   onNavigate?: () => void;
   compact?: boolean;
   icon?: React.ReactNode;
+  trailingControl?: React.ReactNode;
+  source?: CatalogSource;
+  externalUrl?: string;
+  showSource?: boolean;
   showReorderHandle?: boolean;
   onGrabStart?: (e: React.PointerEvent<HTMLDivElement>) => void;
   /** search query whose matches get marked in the title */
@@ -42,6 +49,7 @@ export interface SongCardProps {
 }
 
 function SongCard({
+  id,
   title,
   artists,
   artistId,
@@ -65,11 +73,16 @@ function SongCard({
   onNavigate,
   compact = false,
   icon,
+  trailingControl,
+  source,
+  externalUrl,
+  showSource = false,
   showReorderHandle,
   onGrabStart,
   highlight,
 }: SongCardProps) {
   const { t } = useTranslation();
+  const resolvedSource = source ?? (showSource ? catalogSourceForTrack(id) : undefined);
   const [imageLoaded, setImageLoaded] = useState(() => isCoverReady(coverUrl));
   const clickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -225,6 +238,11 @@ function SongCard({
             ) : (
               <span className="truncate select-none">{artists}</span>
             )}
+            {resolvedSource && (
+              <span className="ml-[6px] inline-flex shrink-0">
+                <CatalogSourceIcon source={resolvedSource} externalUrl={externalUrl} />
+              </span>
+            )}
           </p>
         </div>
       </div>
@@ -252,6 +270,7 @@ function SongCard({
             {duration}
           </span>
         )}
+        {trailingControl}
         {menuItems && menuItems.length > 0 && (
           <DropdownMenu
             trigger={

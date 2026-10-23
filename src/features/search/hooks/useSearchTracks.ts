@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { api, type ApiTrack } from "@/shared/api";
+import { api, type CatalogSource, type SearchSource } from "@/shared/api";
 import { toClientTrack } from "@/shared/api";
 import type { Track } from "@/shared/types";
+import { isAbortError } from "@/shared/utils/abort";
 
 export interface UseSearchTracksOptions {
   enabled?: boolean;
   limit?: number;
   debounceMs?: number;
+  source?: SearchSource;
 }
 
 export interface UseSearchTracksResult {
@@ -14,7 +16,7 @@ export interface UseSearchTracksResult {
   loading: boolean;
   hasLoaded: boolean;
   error: Error | null;
-  partialWarning?: string;
+  failedSources?: CatalogSource[];
   runNow: () => void;
 }
 
@@ -22,86 +24,114 @@ export function useSearchTracks(
   query: string,
   options: UseSearchTracksOptions = {},
 ): UseSearchTracksResult {
-  const { enabled = true, debounceMs = 250 } = options;
+  const { enabled = true, debounceMs = 250, source = "all" } = options;
   const [tracks, setTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
   const [error, setError] = useState<Error | null>(null);
-  const [partialWarning, setPartialWarning] = useState<string | undefined>();
+  const [failedSources, setFailedSources] = useState<CatalogSource[] | undefined>();
 
   const latestRequestIdRef = useRef(0);
-  const lastFetchedQueryRef = useRef("");
+  const activeControllerRef = useRef<AbortController | null>(null);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const previousSearchKeyRef = useRef<string | null>(null);
+  const completedSearchKeyRef = useRef<string | null>(null);
   const trimmed = query.trim();
+  const searchKey = `${source}\u0000${trimmed}`;
   const shouldRunSearch = enabled && trimmed.length >= 2;
 
-  const runRequest = useCallback(async (requestId: number, q: string) => {
+  const runRequest = useCallback(async (requestId: number, q: string, key: string, controller: AbortController) => {
     setLoading(true);
     try {
-      const res = await api.search(q, "track");
+      const res = await api.search(q, "track", source, controller.signal);
       if (requestId !== latestRequestIdRef.current) return;
       setTracks(
         res.items
-          .filter(
-            (it): it is ApiTrack & { type: "track" } => it.type === "track",
-          )
+          .filter((it) => it.type === "track")
           .map(toClientTrack),
       );
       setError(null);
-      setPartialWarning(undefined);
-      lastFetchedQueryRef.current = q;
+      setFailedSources(res.failedSources);
       setHasLoaded(true);
+      completedSearchKeyRef.current = key;
     } catch (err) {
+      if (controller.signal.aborted || isAbortError(err)) return;
       if (requestId !== latestRequestIdRef.current) return;
       setTracks([]);
       setError(err instanceof Error ? err : new Error(String(err)));
-      setPartialWarning(undefined);
+      setFailedSources(undefined);
       setHasLoaded(true);
+      completedSearchKeyRef.current = key;
     } finally {
       if (requestId === latestRequestIdRef.current) setLoading(false);
+      if (activeControllerRef.current === controller) activeControllerRef.current = null;
     }
-  }, []);
+  }, [source]);
 
   useEffect(() => {
-    if (trimmed.length < 2) {
-      latestRequestIdRef.current += 1;
-      setTracks([]);
-      setHasLoaded(false);
-      setLoading(false);
-      setError(null);
-      setPartialWarning(undefined);
-      lastFetchedQueryRef.current = "";
-      return;
+    activeControllerRef.current?.abort();
+    activeControllerRef.current = null;
+    if (debounceTimerRef.current !== null) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
     }
 
-    if (!enabled) return;
-
-    if (lastFetchedQueryRef.current === trimmed && tracks.length > 0) {
+    const requestId = ++latestRequestIdRef.current;
+    const keyChanged = previousSearchKeyRef.current !== searchKey;
+    previousSearchKeyRef.current = searchKey;
+    if (keyChanged) {
+      completedSearchKeyRef.current = null;
+      setTracks([]);
+      setHasLoaded(false);
+      setError(null);
+      setFailedSources(undefined);
+    }
+    if (!shouldRunSearch) {
       setLoading(false);
-      setHasLoaded(true);
+      return;
+    }
+    if (completedSearchKeyRef.current === searchKey) {
+      setLoading(false);
       return;
     }
 
     setLoading(true);
-    const requestId = ++latestRequestIdRef.current;
     const timer = setTimeout(() => {
-      if (lastFetchedQueryRef.current === trimmed && tracks.length > 0) {
-        setLoading(false);
-        setHasLoaded(true);
-        return;
-      }
-      void runRequest(requestId, trimmed);
+      debounceTimerRef.current = null;
+      const controller = new AbortController();
+      activeControllerRef.current = controller;
+      void runRequest(requestId, trimmed, searchKey, controller);
     }, debounceMs);
+    debounceTimerRef.current = timer;
 
     return () => {
-      clearTimeout(timer);
+      if (debounceTimerRef.current === timer) {
+        clearTimeout(timer);
+        debounceTimerRef.current = null;
+      }
+      activeControllerRef.current?.abort();
+      activeControllerRef.current = null;
+      latestRequestIdRef.current += 1;
     };
-  }, [debounceMs, enabled, runRequest, tracks.length, trimmed]);
+  }, [debounceMs, runRequest, searchKey, shouldRunSearch, trimmed]);
 
   const runNow = useCallback(() => {
     if (!shouldRunSearch) return;
+    if (debounceTimerRef.current !== null) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+    }
+    activeControllerRef.current?.abort();
+    completedSearchKeyRef.current = null;
     const requestId = ++latestRequestIdRef.current;
-    void runRequest(requestId, trimmed);
-  }, [runRequest, shouldRunSearch, trimmed]);
+    const controller = new AbortController();
+    activeControllerRef.current = controller;
+    setTracks([]);
+    setHasLoaded(false);
+    setError(null);
+    setFailedSources(undefined);
+    void runRequest(requestId, trimmed, searchKey, controller);
+  }, [runRequest, searchKey, shouldRunSearch, trimmed]);
 
-  return { tracks, loading, hasLoaded, error, partialWarning, runNow };
+  return { tracks, loading, hasLoaded, error, failedSources, runNow };
 }

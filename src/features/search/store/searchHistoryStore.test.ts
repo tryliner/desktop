@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { useSearchHistoryStore } from "./searchHistoryStore";
+import { queryHistoryId, useSearchHistoryStore } from "./searchHistoryStore";
 import { clearSearchAndQueryCache } from "@/shared/utils/cacheManager";
 import { debouncedStorage } from "@/shared/utils/storage";
 
@@ -76,6 +76,63 @@ describe("searchHistoryStore", () => {
     const items = useSearchHistoryStore.getState().items;
     expect(items.length).toBe(1);
     expect(items[0].title).toBe("cupsize");
+  });
+
+  it("keeps the same query once per source", () => {
+    useSearchHistoryStore.getState().addItem({
+      id: queryHistoryId("weeknd", "youtube"),
+      type: "query",
+      title: "weeknd",
+      source: "youtube",
+    });
+    useSearchHistoryStore.getState().addItem({
+      id: queryHistoryId("weeknd", "soundcloud"),
+      type: "query",
+      title: "weeknd",
+      source: "soundcloud",
+    });
+
+    expect(useSearchHistoryStore.getState().items).toHaveLength(2);
+  });
+
+  it("deduplicates the same query within one source case-insensitively", () => {
+    useSearchHistoryStore.getState().addItem({
+      id: queryHistoryId("WEEKND", "youtube"),
+      type: "query",
+      title: "WEEKND",
+      source: "youtube",
+    });
+    useSearchHistoryStore.getState().addItem({
+      id: queryHistoryId("weeknd", "youtube"),
+      type: "query",
+      title: "weeknd",
+      source: "youtube",
+    });
+
+    const items = useSearchHistoryStore.getState().items;
+    expect(items).toHaveLength(1);
+    expect(items[0]).toMatchObject({ title: "weeknd", source: "youtube" });
+  });
+
+  it("treats a legacy query without source as all", () => {
+    useSearchHistoryStore.setState({
+      items: [{ id: "query:weeknd", type: "query", title: "WEEKND", timestamp: 1 }],
+    });
+
+    useSearchHistoryStore.getState().addItem({
+      id: queryHistoryId("weeknd", "all"),
+      type: "query",
+      title: "weeknd",
+      source: "all",
+    });
+
+    expect(useSearchHistoryStore.getState().items).toHaveLength(1);
+    expect(useSearchHistoryStore.getState().items[0]?.source).toBe("all");
+  });
+
+  it("builds stable source-aware query IDs", () => {
+    expect(queryHistoryId("  The Weeknd  ", "youtube")).toBe("query:youtube:the weeknd");
+    expect(queryHistoryId("THE WEEKND", "soundcloud")).toBe("query:soundcloud:the weeknd");
   });
 
   it("removes individual items", () => {

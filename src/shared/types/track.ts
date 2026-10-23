@@ -1,4 +1,4 @@
-import type { TrackArtist as ContractTrackArtist } from "../contracts";
+import type { CatalogSource, TrackArtist as ContractTrackArtist } from "../contracts";
 
 export interface TrackArtist {
   id?: string;
@@ -7,6 +7,8 @@ export interface TrackArtist {
 
 export interface Track {
   id: string;
+  source?: CatalogSource;
+  externalUrl?: string;
   playlistItemId?: string;
   title: string;
   artists: string;

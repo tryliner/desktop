@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { debouncedStorage } from "@/shared/utils/storage";
+import type { SearchSource } from "@/shared/contracts";
 
 export type SearchHistoryItemType =
   | "track"
@@ -19,7 +20,16 @@ export interface SearchHistoryItem {
   duration?: string;
   durationMs?: number;
   itemData?: any;
+  source?: SearchSource;
   timestamp: number;
+}
+
+function normalizedQuery(title: string): string {
+  return title.trim().toLowerCase();
+}
+
+export function queryHistoryId(title: string, source: SearchSource): string {
+  return `query:${source}:${normalizedQuery(title)}`;
 }
 
 export interface SearchHistoryState {
@@ -40,7 +50,9 @@ export const useSearchHistoryStore = create<SearchHistoryState>()(
         set((state) => {
           const filtered = state.items.filter((it) => {
             if (item.type === "query" && it.type === "query") {
-              return it.title.trim().toLowerCase() !== item.title.trim().toLowerCase();
+              const sameQuery = normalizedQuery(it.title) === normalizedQuery(item.title);
+              const sameSource = (it.source ?? "all") === (item.source ?? "all");
+              return !(sameQuery && sameSource);
             }
             return it.id !== item.id;
           });

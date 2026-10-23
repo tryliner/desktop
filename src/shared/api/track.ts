@@ -76,6 +76,8 @@ export function toClientTrack(source: any): Track {
 
   return {
     id: source.id,
+    source: source.source,
+    externalUrl: source.externalUrl,
     title: source.title,
     artists: artistsString,
     artistList: artistsList.length > 0 ? artistsList : undefined,
@@ -87,4 +89,3 @@ export function toClientTrack(source: any): Track {
     album: album && (album.id || album.title) ? album : undefined,
   };
 }
-

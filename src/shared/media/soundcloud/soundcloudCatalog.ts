@@ -21,6 +21,7 @@ import {
 } from "./soundcloudMappers";
 import { hydrateSoundCloudStubs } from "./soundcloudStubs";
 import { toSoundCloudTrackId } from "./soundcloudTrack";
+import { searchSoundCloud } from "./soundcloudSearch";
 
 const ARTIST_TRACK_LIMIT = "50";
 const ARTIST_TOP_LIMIT = "10";
@@ -126,6 +127,7 @@ async function getRadio(trackId: string, k = DEFAULT_RADIO_SIZE, signal?: AbortS
 }
 
 export const soundcloudCatalog = {
+  search: searchSoundCloud,
   getArtist,
   getArtistImage,
   getAlbum,

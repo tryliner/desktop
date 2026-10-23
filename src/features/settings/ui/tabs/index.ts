@@ -7,3 +7,4 @@ export { StorageTab } from "./StorageTab";
 export { AboutTab } from "./AboutTab";
 export { OverlayTab } from "./OverlayTab";
 export { DiscordTab } from "./DiscordTab";
+export { SourcesTab } from "./SourcesTab";

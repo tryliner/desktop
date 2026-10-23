@@ -117,7 +117,6 @@ export function SearchModal({
     loading: allLoading,
     hasLoaded: allHasLoaded,
     runNow: runAllSearchNow,
-    partialWarning,
   } = useSearchAll(searchQuery, {
     enabled: isOpen && isAllSearchFilter,
     limit: 20,
@@ -583,7 +582,6 @@ export function SearchModal({
                         WebkitMaskImage: searchScrollMask,
                         maskImage: searchScrollMask,
                       }}
-                      partialWarning={partialWarning}
                     />
                   </motion.div>
                 ) : null}

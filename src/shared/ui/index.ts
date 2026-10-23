@@ -46,8 +46,11 @@ export {
 export { default as Slider, type SliderProps } from "./Slider";
 export { default as GlobalTooltip } from "./GlobalTooltip";
 export {
+  default as CatalogSourceIcon,
+  type CatalogSourceIconProps,
+} from "./CatalogSourceIcon";
+export {
   default as WindowAnimationContainer,
   useWindowAnimationStore,
   type WindowAnimationPhase,
 } from "./WindowAnimationContainer";
-

@@ -168,6 +168,8 @@ export default function HomePage() {
                           title={track.title}
                           artists={track.artists}
                           coverUrl={track.coverUrl ?? ""}
+                          source={track.source}
+                          externalUrl={track.externalUrl}
                           durationMs={track.durationMs}
                           explicit={track.explicit}
                           onPlay={() => {

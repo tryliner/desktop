@@ -2,6 +2,8 @@ import type { Cover } from './cover';
 import type { Track, ApiTrack } from './track';
 
 export type SearchType = 'all' | 'track' | 'artist' | 'album' | 'playlist';
+export type CatalogSource = 'youtube' | 'soundcloud';
+export type SearchSource = 'all' | CatalogSource;
 
 export const SEARCH_TYPES: readonly SearchType[] = ['all', 'track', 'artist', 'album', 'playlist'];
 
@@ -35,11 +37,26 @@ export type SearchResult =
   | SearchAlbumItem
   | SearchPlaylistItem;
 
-export type ApiSearchItem = SearchResult;
-export type SearchResponse = { items: ApiSearchItem[] };
-export type ApiArtist = SearchArtistItem;
-export type ApiAlbum = SearchAlbumItem;
-export type ApiPlaylist = SearchPlaylistItem;
+export type SourcedSearchResult = SearchResult & {
+  source: CatalogSource;
+  externalUrl?: string;
+};
+
+export type SourcedSearchArtist = SearchArtistItem &
+  Pick<SourcedSearchResult, 'source' | 'externalUrl'>;
+export type SourcedSearchAlbum = SearchAlbumItem &
+  Pick<SourcedSearchResult, 'source' | 'externalUrl'>;
+export type SourcedSearchPlaylist = SearchPlaylistItem &
+  Pick<SourcedSearchResult, 'source' | 'externalUrl'>;
+
+export type ApiSearchItem = SourcedSearchResult;
+export type SearchResponse = {
+  items: SourcedSearchResult[];
+  failedSources?: CatalogSource[];
+};
+export type ApiArtist = SourcedSearchArtist;
+export type ApiAlbum = SourcedSearchAlbum;
+export type ApiPlaylist = SourcedSearchPlaylist;
 
 export interface ArtistAlbum {
   id: string;

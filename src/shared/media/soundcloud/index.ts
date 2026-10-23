@@ -18,6 +18,7 @@ export {
   type SoundCloudUrlStream,
 } from "./soundcloudStream";
 export { soundcloudCatalog } from "./soundcloudCatalog";
+export { searchSoundCloud, SOUNDCLOUD_SEARCH_LIMIT } from "./soundcloudSearch";
 export { SoundCloudCatalogError } from "./soundcloudCatalogRequest";
 export { hydrateSoundCloudStubs } from "./soundcloudStubs";
 export {

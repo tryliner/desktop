@@ -586,6 +586,8 @@ function CollectionContent() {
                       artistId={track.artistId}
                       artistList={track.artistList}
                       coverUrl={track.coverUrl || data.coverUrl}
+                      source={track.source}
+                      externalUrl={track.externalUrl}
                       highlight={search.activeQuery || undefined}
                       trackNumber={isAlbum ? index + 1 : undefined}
                       duration={
