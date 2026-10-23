@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { usePlayerState } from "@/features/player/hooks/usePlayerState";
 import { playerEngine } from "@/features/player/engine/playerEngine";
+import { playerRuntime } from "@/features/player/engine/playerRuntime";
 import { usePlayerStore } from "@/features/player/store/playerStore";
 import { useLyricsStore } from "@/features/lyrics";
 import {
@@ -141,9 +142,10 @@ export function useTouchBarSync() {
 
     const syncLoop = () => {
       const audioEl =
-        typeof document !== "undefined"
+        playerRuntime?.audio ??
+        (typeof document !== "undefined"
           ? (document.getElementById("liner-audio") as HTMLAudioElement | null)
-          : null;
+          : null);
 
       if (audioEl && !Number.isNaN(audioEl.currentTime)) {
         const currentMs = audioEl.currentTime * 1000;
@@ -187,9 +189,10 @@ export function useTouchBarSync() {
     let activeIndex = -1;
 
     const audioEl =
-      typeof document !== "undefined"
+      playerRuntime?.audio ??
+      (typeof document !== "undefined"
         ? (document.getElementById("liner-audio") as HTMLAudioElement | null)
-        : null;
+        : null);
     const currentAudioMs =
       audioEl && !Number.isNaN(audioEl.currentTime) && !audioEl.seeking
         ? Math.round(audioEl.currentTime * 1000)

@@ -15,7 +15,11 @@ const RECOVERY_HOLD_MS = 3000;
 const WAITING_GRACE_MS = 300; // a buffering hiccup shorter than this never shows // must play this far past a recovery before it may retry again
 
 export class PlayerRuntime {
-  private audio: HTMLAudioElement;
+  private decks: [HTMLAudioElement, HTMLAudioElement];
+  private activeDeckIndex: 0 | 1 = 0;
+  private activeBlobUrls: [string | null, string | null] = [null, null];
+  private isTransitioning = false;
+  private crossfadeAttemptedTrackId: string | null = null;
   private currentTrackId: string | null = null;
   private loadEpoch = 0;
   private loadAbortController: AbortController | null = null;
@@ -25,10 +29,6 @@ export class PlayerRuntime {
   private loadStartTime = 0;
   private ttfbMs = 0;
   private activePlayPromise: Promise<void> | null = null;
-  private activeBlobUrl: string | null = null;
-  // track whose audio is attached to the element right now. During a skip the old
-  // source stays attached (paused) until the next one is ready, so this can lag
-  // currentTrackId for a moment.
   private attachedTrackId: string | null = null;
   private preloadingTrackId: string | null = null;
   private preloadingPromise: Promise<void> | null = null;
@@ -46,24 +46,81 @@ export class PlayerRuntime {
   private waitingTimer: ReturnType<typeof setTimeout> | null = null;
   public onEnded?: () => void;
   public onError?: (info: { trackId: string; message: string }) => void;
+  public getUpcomingTrack?: () => Track | null;
+  public onCrossfadeStart?: (nextTrack: Track) => void;
+  public onCrossfadeComplete?: (nextTrack: Track) => void;
+
+
+  public get audio(): HTMLAudioElement {
+    return this.decks[this.activeDeckIndex];
+  }
+
+  public set audio(el: HTMLAudioElement) {
+    this.decks[this.activeDeckIndex] = el;
+  }
+
+  private get activeBlobUrl(): string | null {
+    return this.activeBlobUrls[this.activeDeckIndex];
+  }
+
+  private set activeBlobUrl(url: string | null) {
+    this.activeBlobUrls[this.activeDeckIndex] = url;
+  }
+
+  public syncActiveDeckDom(): void {
+    if (!this.decks || this.decks.length < 2) return;
+    const active = this.decks[this.activeDeckIndex];
+    const inactive = this.decks[1 - this.activeDeckIndex];
+    if (active) {
+      active.id = "liner-audio";
+    }
+    if (inactive) {
+      inactive.id = "liner-audio-b";
+    }
+    if (typeof window !== "undefined") {
+      const win = window as any;
+      win.__liner_audio = active;
+      win.__liner_audio_b = inactive;
+      try {
+        win.dispatchEvent(
+          new CustomEvent("liner:active-audio-change", {
+            detail: { audio: active },
+          }),
+        );
+      } catch {}
+    }
+  }
 
   constructor() {
     const win = typeof window !== "undefined" ? (window as any) : null;
-    let audio = (win?.__liner_audio || (typeof document !== "undefined" && document.getElementById("liner-audio"))) as HTMLAudioElement | null;
-    if (!audio) {
-      audio = new Audio();
-      audio.id = "liner-audio";
-      audio.crossOrigin = "anonymous";
-      audio.preload = "auto";
+    let deckA = (win?.__liner_audio || (typeof document !== "undefined" && document.getElementById("liner-audio"))) as HTMLAudioElement | null;
+    if (!deckA) {
+      deckA = new Audio();
+      deckA.id = "liner-audio";
+      deckA.crossOrigin = "anonymous";
+      deckA.preload = "auto";
       if (typeof document !== "undefined") {
-        document.body.appendChild(audio);
+        document.body.appendChild(deckA);
+      }
+    }
+    let deckB = (win?.__liner_audio_b || (typeof document !== "undefined" && document.getElementById("liner-audio-b"))) as HTMLAudioElement | null;
+    if (!deckB) {
+      deckB = new Audio();
+      deckB.id = "liner-audio-b";
+      deckB.crossOrigin = "anonymous";
+      deckB.preload = "auto";
+      if (typeof document !== "undefined") {
+        document.body.appendChild(deckB);
       }
     }
     if (win) {
-      win.__liner_audio = audio;
+      win.__liner_audio = deckA;
+      win.__liner_audio_b = deckB;
     }
-    this.audio = audio;
-    this.setupAudioListeners(this.audio);
+    this.decks = [deckA, deckB];
+    this.syncActiveDeckDom();
+    this.setupAudioListeners(deckA);
+    this.setupAudioListeners(deckB);
 
     const initialVolume = usePlayerStore.getState().volume;
     this.audio.volume = initialVolume;
@@ -231,8 +288,13 @@ export class PlayerRuntime {
   }
 
   private setupAudioListeners(audioEl: HTMLAudioElement) {
+    const audioObj = audioEl as any;
+    if (audioObj.__liner_listeners_attached) return;
+    audioObj.__liner_listeners_attached = true;
+
     audioEl.addEventListener("timeupdate", () => {
-      if (this.isResetting || audioEl !== this.audio) return;
+      if (this.isResetting) return;
+      if (audioEl !== this.audio) return;
       if (!this.currentTrackId) return;
       if (usePlayerStore.getState().status === "loading") return;
       if (Number.isNaN(audioEl.currentTime)) return;
@@ -243,12 +305,20 @@ export class PlayerRuntime {
         this.recoveryHoldUntilMs = null;
         this.recoveryAttempts = 0;
       }
+      this.checkCrossfadeTrigger(audioEl);
     });
 
     audioEl.addEventListener("durationchange", () => {
-      if (this.isResetting || audioEl !== this.audio) return;
+      if (this.isResetting) return;
+      if (audioEl !== this.audio) return;
       if (!this.currentTrackId) return;
-      if (Number.isNaN(audioEl.duration) || audioEl.duration <= 0) return;
+      if (Number.isNaN(audioEl.duration) || audioEl.duration <= 0 || !Number.isFinite(audioEl.duration)) return;
+
+      const track = usePlayerStore.getState().currentTrack;
+      // Do not overwrite accurate metadata duration with a partial streaming chunk duration
+      if (track?.durationMs && track.durationMs > 15_000 && (audioEl.duration * 1000) < track.durationMs * 0.75) {
+        return;
+      }
 
       usePlayerStore.getState().setDuration(Math.round(audioEl.duration * 1000));
       this.syncMediaSessionPosition();
@@ -287,23 +357,21 @@ export class PlayerRuntime {
     }
 
     audioEl.addEventListener("ended", () => {
-      if (this.isResetting || audioEl !== this.audio) return;
+      if (this.isResetting) return;
+      if (audioEl !== this.audio) return;
       if (!this.currentTrackId) return;
       if (this.attachedTrackId !== this.currentTrackId) return;
 
-      // Ensure the track truly finished playing (not an empty media load or teardown artefact)
-      const duration = audioEl.duration;
-      const currentTime = audioEl.currentTime;
-      if (duration > 0 && currentTime >= Math.max(0, duration - 1.5)) {
-        log("cyan", "audio", "ended — skipping to next");
-        this.onEnded?.();
-        const state = usePlayerStore.getState();
-        state.dispatch({ type: "SKIP_NEXT", isAutoEnd: true });
-      }
+      log("cyan", "audio", "track ended naturally — advancing to next");
+      this.isTransitioning = false;
+      this.onEnded?.();
+      const state = usePlayerStore.getState();
+      state.dispatch({ type: "SKIP_NEXT", isAutoEnd: true });
     });
 
     audioEl.addEventListener("playing", () => {
-      if (this.isResetting || audioEl !== this.audio) return;
+      if (this.isResetting) return;
+      if (audioEl !== this.audio) return;
       log("green", "audio", "playing");
       if (this.recoveryHoldUntilMs === null) this.recoveryAttempts = 0;
       this.applyPlaybackRateAndPitch();
@@ -327,7 +395,9 @@ export class PlayerRuntime {
     });
 
     audioEl.addEventListener("pause", () => {
-      if (this.isResetting || audioEl !== this.audio) return;
+      if (this.isResetting) return;
+      if (this.isTransitioning) return;
+      if (audioEl !== this.audio) return;
       log("cyan", "audio", "paused");
       const st = usePlayerStore.getState().status;
       if (st === "playing") {
@@ -336,7 +406,12 @@ export class PlayerRuntime {
     });
 
     audioEl.addEventListener("error", () => {
-      if (this.isResetting || audioEl !== this.audio) return;
+      if (this.isResetting) return;
+      if (this.isTransitioning && audioEl !== this.audio) {
+        this.isTransitioning = false;
+        return;
+      }
+      if (audioEl !== this.audio) return;
       if (!this.currentTrackId || !audioEl.src || audioEl.src === window.location.href) return;
       // the previous track's source is still attached while the next one loads
       if (this.attachedTrackId !== this.currentTrackId) return;
@@ -386,6 +461,235 @@ export class PlayerRuntime {
       usePlayerStore.getState().setStatus("error", message);
       this.onError?.({ trackId: this.currentTrackId, message });
     });
+  }
+
+  private checkCrossfadeTrigger(audioEl: HTMLAudioElement): void {
+    const store = usePlayerStore.getState();
+    if (!store.crossfadeEnabled) return;
+    if (this.isTransitioning) return;
+    if (store.status !== "playing") return;
+    if (store.repeat === "one") return;
+
+    const currentTime = audioEl.currentTime;
+    if (!currentTime || currentTime <= 0) return;
+
+    // Use authoritative total duration from metadata or media element
+    const currentTrack = store.currentTrack;
+    const metadataDurationSec =
+      currentTrack?.durationMs && currentTrack.durationMs > 0
+        ? currentTrack.durationMs / 1000
+        : 0;
+    const mediaDurationSec =
+      audioEl.duration &&
+      !Number.isNaN(audioEl.duration) &&
+      Number.isFinite(audioEl.duration) &&
+      audioEl.duration > 0
+        ? audioEl.duration
+        : 0;
+
+    const duration = Math.max(metadataDurationSec, mediaDurationSec);
+    if (!duration || duration < 15) return;
+
+    // Never trigger crossfade during the first 70% of a song!
+    // Outro crossfade only happens in the final 30% of the track.
+    if (currentTime < duration * 0.7) return;
+
+    const configuredDuration = store.crossfadeDuration || 5;
+    const remainingSec = duration - currentTime;
+
+    // Trigger crossfade in the outro when remainingSec is within configured range (and >= 1.0s)
+    if (remainingSec <= configuredDuration && remainingSec >= 1.0) {
+      const nextTrack = this.getUpcomingTrack?.();
+      if (!nextTrack || nextTrack.id === this.currentTrackId) return;
+      if (this.crossfadeAttemptedTrackId === nextTrack.id) return;
+
+      this.crossfadeAttemptedTrackId = nextTrack.id;
+      const effectiveDuration = Math.min(configuredDuration, Math.max(1, remainingSec));
+      log(
+        "cyan",
+        "crossfade",
+        `Crossfade starting to "${nextTrack.title}" (${remainingSec.toFixed(1)}s remaining, duration: ${effectiveDuration.toFixed(1)}s)`,
+      );
+      void this.startCrossfade(nextTrack, effectiveDuration);
+    }
+  }
+
+  public async startCrossfade(
+    nextTrack: Track,
+    durationSec: number,
+  ): Promise<void> {
+    if (this.isTransitioning) return;
+    this.isTransitioning = true;
+    const currentEpoch = ++this.loadEpoch;
+
+    const outgoingIndex = this.activeDeckIndex;
+    const outgoingDeck = this.decks[outgoingIndex];
+    const incomingIndex = (1 - outgoingIndex) as 0 | 1;
+    const incomingDeck = this.decks[incomingIndex];
+
+    try {
+      // 1. Resolve stream or cache for next track
+      const cached = await linerDb.getAudio(nextTrack.id);
+      if (currentEpoch !== this.loadEpoch) {
+        this.isTransitioning = false;
+        return;
+      }
+
+      let streamUrl: string;
+      if (cached?.blob && cached.blob.size > 0) {
+        const blobUrl = URL.createObjectURL(cached.blob);
+        this.activeBlobUrls[incomingIndex] = blobUrl;
+        streamUrl = blobUrl;
+      } else {
+        const stream = await resolvePlaybackStream(nextTrack);
+        if (currentEpoch !== this.loadEpoch) {
+          this.isTransitioning = false;
+          return;
+        }
+        streamUrl = stream.blob ? URL.createObjectURL(stream.blob) : stream.url;
+        if (stream.blob) this.activeBlobUrls[incomingIndex] = streamUrl;
+      }
+
+      // Check if outgoing deck paused or ended during async stream resolution
+      if (outgoingDeck.paused || outgoingDeck.ended) {
+        this.isTransitioning = false;
+        if (outgoingDeck.ended) {
+          usePlayerStore.getState().dispatch({ type: "SKIP_NEXT", isAutoEnd: true });
+        }
+        return;
+      }
+
+      const store = usePlayerStore.getState();
+      const userRate = store.playbackRate ?? 1;
+
+      incomingDeck.src = streamUrl;
+      incomingDeck.volume = 0;
+      incomingDeck.currentTime = 0;
+      incomingDeck.load();
+
+      try {
+        incomingDeck.playbackRate = userRate;
+        incomingDeck.defaultPlaybackRate = userRate;
+        incomingDeck.preservesPitch = !store.isPitchLinked;
+      } catch {}
+
+      if (incomingDeck.readyState < 3) {
+        await new Promise<void>((resolve, reject) => {
+          const timeout = setTimeout(() => {
+            if (incomingDeck.readyState >= 2) {
+              resolve();
+            } else {
+              reject(new Error("Incoming deck buffering timeout"));
+            }
+          }, 3000);
+          const onReady = () => {
+            clearTimeout(timeout);
+            incomingDeck.removeEventListener("canplay", onReady);
+            incomingDeck.removeEventListener("error", onError);
+            resolve();
+          };
+          const onError = () => {
+            clearTimeout(timeout);
+            incomingDeck.removeEventListener("canplay", onReady);
+            incomingDeck.removeEventListener("error", onError);
+            reject(new Error("Incoming deck media error"));
+          };
+          incomingDeck.addEventListener("canplay", onReady, { once: true });
+          incomingDeck.addEventListener("error", onError, { once: true });
+        });
+      }
+
+      if (currentEpoch !== this.loadEpoch) {
+        this.isTransitioning = false;
+        this.resetDeck(incomingIndex);
+        return;
+      }
+
+      await incomingDeck.play();
+
+      const upcomingTrack = this.getUpcomingTrack ? this.getUpcomingTrack() : nextTrack;
+      if (currentEpoch !== this.loadEpoch || upcomingTrack?.id !== nextTrack.id) {
+        this.isTransitioning = false;
+        this.resetDeck(incomingIndex);
+        return;
+      }
+
+      // Immediately transfer active deck and track ownership to the incoming track!
+      // This ensures:
+      // 1. timeupdate & position tracking track the incoming song (starting at 0:00).
+      // 2. Outgoing deck's "ended" event (when it finishes its outro) is ignored because audioEl !== this.audio.
+      // 3. User controls (pause, seek, volume) target the incoming deck.
+      this.activeDeckIndex = incomingIndex;
+      this.currentTrackId = nextTrack.id;
+      this.attachedTrackId = nextTrack.id;
+      this.crossfadeAttemptedTrackId = null;
+      this.syncActiveDeckDom();
+
+      this.applyPlaybackRateAndPitch();
+      this.updateMediaSessionMetadata(nextTrack);
+      this.onCrossfadeStart?.(nextTrack);
+
+      const durationMs = Math.max(1000, durationSec * 1000);
+      const startTime = performance.now();
+
+      // Equal-power crossfade loop: smooth transition between decks
+      await new Promise<void>((resolve) => {
+        const tick = () => {
+          if (currentEpoch !== this.loadEpoch) {
+            resolve();
+            return;
+          }
+
+          const elapsed = performance.now() - startTime;
+          const progress = Math.min(1, elapsed / durationMs);
+          const masterVol = usePlayerStore.getState().volume;
+
+          const gainOut = Math.cos(progress * 0.5 * Math.PI);
+          const gainIn = Math.sin(progress * 0.5 * Math.PI);
+
+          if (!outgoingDeck.ended) {
+            outgoingDeck.volume = Math.max(0, Math.min(1, masterVol * gainOut));
+          }
+          incomingDeck.volume = Math.max(0, Math.min(1, masterVol * gainIn));
+
+          if (progress < 1 && !incomingDeck.paused) {
+            setTimeout(tick, 16);
+          } else {
+            resolve();
+          }
+        };
+        setTimeout(tick, 16);
+      });
+
+      if (currentEpoch !== this.loadEpoch) {
+        this.isTransitioning = false;
+        this.resetDeck(outgoingIndex);
+        return;
+      }
+
+      // Finalize: stop outgoing deck and reset its source
+      this.resetDeck(outgoingIndex);
+
+      incomingDeck.volume = usePlayerStore.getState().volume;
+      this.applyPlaybackRateAndPitch();
+
+      this.isTransitioning = false;
+      this.onCrossfadeComplete?.(nextTrack);
+      log("green", "crossfade", `Crossfade complete: now playing "${nextTrack.title}"`);
+    } catch (err) {
+      log("yellow", "crossfade", `Crossfade interrupted or failed: ${err}`);
+      this.isTransitioning = false;
+
+      // Clean up incoming deck if failed
+      try {
+        this.resetDeck(incomingIndex);
+      } catch {}
+
+      // If outgoing deck already ended while resolving incoming track, skip to next immediately
+      if (outgoingDeck.ended || outgoingDeck.currentTime >= Math.max(0, outgoingDeck.duration - 1.0)) {
+        usePlayerStore.getState().dispatch({ type: "SKIP_NEXT", isAutoEnd: true });
+      }
+    }
   }
 
   public getCurrentTrackId(): string | null {
@@ -486,19 +790,30 @@ export class PlayerRuntime {
     this.fadeTimer = setTimeout(tick, 16);
   }
 
+  private resetDeck(index: 0 | 1): void {
+    const deck = this.decks[index];
+    deck.pause();
+    if (this.activeBlobUrls[index]) {
+      URL.revokeObjectURL(this.activeBlobUrls[index]!);
+      this.activeBlobUrls[index] = null;
+    }
+    deck.removeAttribute("src");
+    deck.load();
+    deck.volume = usePlayerStore.getState().volume;
+  }
+
   private safeResetAudioElement() {
     this.isResetting = true;
+    this.isTransitioning = false;
+    this.crossfadeAttemptedTrackId = null;
     this.currentSessionExpiresAt = null;
     try {
       this.cancelFade();
-      this.audio.pause();
-      if (this.activeBlobUrl) {
-        URL.revokeObjectURL(this.activeBlobUrl);
-        this.activeBlobUrl = null;
+      for (let i = 0; i < 2; i++) {
+        this.resetDeck(i as 0 | 1);
       }
-      this.audio.removeAttribute("src");
-      this.audio.load();
       this.attachedTrackId = null;
+      this.syncActiveDeckDom();
     } catch {
     } finally {
       this.isResetting = false;
@@ -873,6 +1188,10 @@ export class PlayerRuntime {
     this.fadeVolume(0, 180, () => {
       if (epoch !== this.loadEpoch) return;
       this.audio.pause();
+      if (this.isTransitioning) {
+        const standbyIndex = 1 - this.activeDeckIndex;
+        this.decks[standbyIndex].pause();
+      }
     });
   }
 
@@ -941,6 +1260,7 @@ export class PlayerRuntime {
 
   public seek(positionMs: number) {
     if (!this.audio.src || this.audio.src === window.location.href) return;
+    this.crossfadeAttemptedTrackId = null;
     try {
       if (this.audio.readyState >= 1) {
         this.audio.currentTime = positionMs / 1000;

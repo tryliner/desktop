@@ -598,6 +598,12 @@
       "title": "Reproducir canciones similares automáticamente",
       "description": "Añade canciones similares de forma automática cuando finalice la cola."
     },
+    "crossfade": {
+      "title": "Transición suave (Crossfade)",
+      "description": "Solapa y desvanece suavemente el final de cada canción con el inicio de la siguiente.",
+      "duration_title": "Duración de la transición",
+      "duration_description": "Tiempo en segundos durante el cual ambas canciones se solapan al terminar."
+    },
     "track_double_click": {
       "title": "Doble clic en una canción",
       "description": "Elige qué ocurre al hacer doble clic en la tarjeta de una canción.",

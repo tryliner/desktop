@@ -29,6 +29,18 @@ export function PlaybackTab({ searchQuery }: { searchQuery?: string }) {
   const setPauseOnDeviceChange = usePlayerStore(
     (state) => state.setPauseOnDeviceChange,
   );
+  const crossfadeEnabled = usePlayerStore(
+    (state) => state.crossfadeEnabled,
+  );
+  const setCrossfadeEnabled = usePlayerStore(
+    (state) => state.setCrossfadeEnabled,
+  );
+  const crossfadeDuration = usePlayerStore(
+    (state) => state.crossfadeDuration,
+  );
+  const setCrossfadeDuration = usePlayerStore(
+    (state) => state.setCrossfadeDuration,
+  );
 
   useEffect(() => {
     setMounted(true);
@@ -36,6 +48,48 @@ export function PlaybackTab({ searchQuery }: { searchQuery?: string }) {
 
   return (
     <SettingSection>
+      <SettingRow
+        title={t("settings.crossfade.title")}
+        description={t("settings.crossfade.description")}
+        titleKey="settings.crossfade.title"
+        descKey="settings.crossfade.description"
+        searchQuery={searchQuery}
+        control={
+          <ToggleSwitch
+            checked={crossfadeEnabled}
+            onChange={setCrossfadeEnabled}
+          />
+        }
+      />
+
+      {crossfadeEnabled && (
+        <SettingRow
+          title={t("settings.crossfade.duration_title")}
+          description={t("settings.crossfade.duration_description")}
+          titleKey="settings.crossfade.duration_title"
+          descKey="settings.crossfade.duration_description"
+          searchQuery={searchQuery}
+          control={
+            mounted ? (
+              <SegmentedControl
+                ariaLabel={t("settings.crossfade.duration_title")}
+                value={String(crossfadeDuration)}
+                onChange={(val) => setCrossfadeDuration(Number(val))}
+                options={[
+                  { value: "2", label: "2s" },
+                  { value: "4", label: "4s" },
+                  { value: "5", label: "5s" },
+                  { value: "8", label: "8s" },
+                  { value: "10", label: "10s" },
+                  { value: "12", label: "12s" },
+                ]}
+              />
+            ) : (
+              <span />
+            )
+          }
+        />
+      )}
 
       <SettingRow
         title={t("settings.autoplay_similar.title")}

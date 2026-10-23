@@ -354,7 +354,7 @@
     "volume": "Volume",
     "previous": "Previous",
     "open_player": "Open player",
-    "next":"Next",
+    "next": "Next",
     "repeat": "Repeat",
     "lyrics_upgraded": "Lyrics upgraded!",
     "playing_from": "Playing from",
@@ -636,7 +636,6 @@
       "file_too_large": "File size must be under 30 MB",
       "read_error": "Failed to read image file"
     },
-
     "audio_data": {
       "description": "Streaming quality, offline cache and connection diagnostics."
     },
@@ -661,6 +660,12 @@
     "autoplay_similar": {
       "title": "Autoplay similar tracks",
       "description": "Automatically add similar songs when your queue ends."
+    },
+    "crossfade": {
+      "title": "Smooth Transition (Crossfade)",
+      "description": "Seamlessly overlaps and fades the end of each track into the beginning of the next.",
+      "duration_title": "Transition Duration",
+      "duration_description": "Time in seconds during which both songs overlap when changing tracks."
     },
     "track_double_click": {
       "title": "Double-click on track",

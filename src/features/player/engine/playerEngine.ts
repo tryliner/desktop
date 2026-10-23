@@ -282,6 +282,24 @@ class PlayerEngine {
         this.telemetry.onTrackCompleted(isRepeatOne);
       };
       playerRuntime.onError = (info) => this.handlePlaybackError(info);
+      playerRuntime.getUpcomingTrack = () => this.getUpcomingTrack();
+      playerRuntime.onCrossfadeStart = (nextTrack) => {
+        const store = usePlayerStore.getState();
+        const nextIndex = this.computeNextIndex(true);
+        if (nextIndex !== null) {
+          this.sessionId += 1;
+          const mySession = this.sessionId;
+          this.telemetry.onTrackCompleted(false);
+          store.setCurrentTrack(nextTrack, nextIndex);
+          store.setPosition(0);
+          store.setDuration(nextTrack.durationMs ?? 0);
+          this.maybeExtendQueue(mySession, nextTrack.id, nextIndex, store.queue.length);
+        }
+      };
+      playerRuntime.onCrossfadeComplete = (_nextTrack) => {
+        const store = usePlayerStore.getState();
+        this.preloadNextTrack(store);
+      };
     }
 
     if (typeof window !== "undefined") {
@@ -586,7 +604,11 @@ class PlayerEngine {
     if (wasLoading) {
       playerRuntime?.cancelPendingLoad();
     }
-    const audioEl = document.getElementById("liner-audio") as HTMLAudioElement | null;
+    const audioEl =
+      playerRuntime?.audio ??
+      (typeof document !== "undefined"
+        ? (document.getElementById("liner-audio") as HTMLAudioElement | null)
+        : null);
     if (audioEl && !Number.isNaN(audioEl.currentTime)) {
       store.setPosition(Math.round(audioEl.currentTime * 1000));
     }
@@ -1138,6 +1160,13 @@ class PlayerEngine {
     if (playerRuntime) {
       void playerRuntime.preloadTrack(nextTrack);
     }
+  }
+
+  private getUpcomingTrack(): Track | null {
+    const store = usePlayerStore.getState();
+    const nextIndex = this.computeNextIndex(true);
+    if (nextIndex === null) return null;
+    return store.queue[nextIndex] || null;
   }
 
   private async prefetchLyrics(trackId: string, hint?: LyricsHint): Promise<void> {

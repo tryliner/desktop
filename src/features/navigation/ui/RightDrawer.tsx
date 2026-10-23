@@ -332,6 +332,12 @@ function RightDrawer({ activeTab, onTabChange, onClose }: RightDrawerProps) {
     if (trackId !== prevTrackIdRef.current) {
       prevTrackIdRef.current = trackId;
       prevQualityRef.current = lyricsQuality;
+      currentFollowedIndexRef.current = null;
+      isInFreeSearchRef.current = false;
+      const container = lyricsContainerRef.current;
+      if (container) {
+        container.scrollTo({ top: 0, behavior: "auto" });
+      }
       return;
     }
 
