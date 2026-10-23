@@ -695,8 +695,8 @@ export default function AppFrame({ children }: AppFrameProps) {
     >
       {hasCustomBg && backgroundImage && (
         <div
-          className={`absolute inset-0 z-0 pointer-events-none overflow-hidden ${
-            isEdgeToEdge ? "rounded-none" : "rounded-5xl"
+          className={`absolute z-0 pointer-events-none overflow-hidden ${
+            isEdgeToEdge ? "inset-0 rounded-none" : "inset-1.5 rounded-5xl"
           }`}
           aria-hidden="true"
         >

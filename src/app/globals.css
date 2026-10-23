@@ -177,14 +177,19 @@
   --font-mono: var(--font-geist-mono);
 }
 
-html, body {
-  background: transparent;
-  margin: 0;
-  padding: 0;
-  height: 100%;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
+/* Unlayered rules beat Tailwind's utility layer, so this lives in @layer base:
+   body's .p-1 (index.html) owns the transparent 4px ring of the floating
+   window, while body[data-edge-to-edge] flattens it back to zero. */
+@layer base {
+  html, body {
+    background: transparent;
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
 }
 
 /* Hide scrollbar for Chrome, Safari and Opera */
