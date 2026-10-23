@@ -1,3 +1,11 @@
+import { useProfileViewModel } from "@/features/profile/hooks/useProfileViewModel";
+
 export function useProfile() {
-  return { data: null, isLoading: false };
+  const { profile, isLoading, error, saveProfile } = useProfileViewModel();
+  return {
+    data: profile,
+    isLoading,
+    error,
+    updateProfile: saveProfile,
+  };
 }

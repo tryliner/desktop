@@ -1,6 +1,7 @@
 import { resolveDirectAudioStream, toVideoId } from "@/shared/media/innertube";
 import { resolveSoundCloudStream, toSoundCloudTrackId } from "@/shared/media/soundcloud";
 import { resolveLinerStream } from "@/shared/media/liner/linerPlayback";
+import { audioCache } from "@/shared/storage/audioCache";
 import { isAbortError } from "@/shared/utils/abort";
 import { log } from "@/shared/utils/logger";
 import {
@@ -46,6 +47,22 @@ async function resolveYoutubeTrack(track: PlayableTrack, videoId: string, signal
 }
 
 export async function resolvePlaybackStream(track: PlayableTrack, signal?: AbortSignal): Promise<PlaybackStream> {
+  try {
+    const cachedUrl = await audioCache.getAudioSrc(track.id);
+    if (cachedUrl) {
+      log("green", "playback", `playing cached audio for "${track.title}"`);
+      return {
+        url: cachedUrl,
+        mimeType: "audio/ogg",
+        codec: "opus",
+        bitrate: 160000,
+        expiresAtMs: null,
+      };
+    }
+  } catch {
+    // ignore cache lookup errors and proceed with remote resolution
+  }
+
   if (toSoundCloudTrackId(track.id)) return resolveSoundCloud(track, signal);
   const videoId = toVideoId(track.id);
   if (videoId) return resolveYoutubeTrack(track, videoId, signal);

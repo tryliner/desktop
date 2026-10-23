@@ -44,6 +44,8 @@ import { computeDragBounds, isInTopSnapZone, restoreUnderCursor } from "./window
 import { isWindows11, loadSnapPreviewAddon, NativeSnapPreview } from "./snap-native.js";
 import { DiscordRpcManager } from "./discord.js";
 import { PoTokenService } from "./potoken.js";
+import { MediaShortcutsController } from "./mediaShortcuts.js";
+import type { SmtcMediaUpdatePayload } from "./preload.js";
 
 // root error handling for main process
 process.on("uncaughtException", (error) => {
@@ -77,6 +79,7 @@ let mainWindow: BrowserWindow | null = null;
 let touchBarManager: TouchBarManager | null = null;
 let overlayManager: OverlayManager | null = null;
 let thumbar: ThumbarController | null = null;
+let mediaShortcuts: MediaShortcutsController | null = null;
 let bundleManager: BundleManager | null = null;
 let discordRpcManager: DiscordRpcManager | null = null;
 let poTokenService: PoTokenService | null = null;
@@ -146,6 +149,10 @@ const shutdown = createShutdown({
     () => {
       poTokenService?.destroy();
       poTokenService = null;
+    },
+    () => {
+      mediaShortcuts?.destroy();
+      mediaShortcuts = null;
     },
     () => globalShortcut.unregisterAll(),
     () => {
@@ -422,9 +429,30 @@ if (!gotTheLock) {
     thumbar = new ThumbarController(
       () => mainWindow,
       (type) => {
-        if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send("overlay:action", { type });
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send("desktop:media-action", type);
+          mainWindow.webContents.send("overlay:action", { type });
+        }
       },
     );
+
+    mediaShortcuts = new MediaShortcutsController(() => mainWindow);
+    mediaShortcuts.register();
+
+    ipcMain.on("desktop:media-update", (_event, payload: SmtcMediaUpdatePayload) => {
+      updateSleepBlocker(payload.status);
+      thumbar?.update({ status: payload.status, track: payload.track });
+      if (process.platform === "win32" && mainWindow && !mainWindow.isDestroyed()) {
+        if (payload.status === "playing" && payload.durationMs > 0) {
+          mainWindow.setProgressBar(Math.min(1, Math.max(0, payload.positionMs / payload.durationMs)));
+        } else if (payload.status === "paused" && payload.durationMs > 0) {
+          mainWindow.setProgressBar(Math.min(1, Math.max(0, payload.positionMs / payload.durationMs)), { mode: "paused" });
+        } else {
+          mainWindow.setProgressBar(-1);
+        }
+      }
+    });
+
     ipcMain.on("touchbar:update-state", (_event, state: { status: string; track?: unknown }) => {
       updateSleepBlocker(state.status);
       thumbar?.update(state);

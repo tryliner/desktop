@@ -104,6 +104,12 @@ interface ModalState {
   openSettings: () => void;
   closeSettings: () => void;
   toggleSettings: () => void;
+
+  // Spotify Playlists modal
+  spotifyPlaylistsOpen: boolean;
+  openSpotifyPlaylists: () => void;
+  closeSpotifyPlaylists: () => void;
+  toggleSpotifyPlaylists: () => void;
 }
 
 export const useModalStore = create<ModalState>((set) => ({
@@ -191,4 +197,9 @@ export const useModalStore = create<ModalState>((set) => ({
   openSettings: () => set({ settingsOpen: true }),
   closeSettings: () => set({ settingsOpen: false }),
   toggleSettings: () => set((state) => ({ settingsOpen: !state.settingsOpen })),
+
+  spotifyPlaylistsOpen: false,
+  openSpotifyPlaylists: () => set({ spotifyPlaylistsOpen: true }),
+  closeSpotifyPlaylists: () => set({ spotifyPlaylistsOpen: false }),
+  toggleSpotifyPlaylists: () => set((state) => ({ spotifyPlaylistsOpen: !state.spotifyPlaylistsOpen })),
 }));

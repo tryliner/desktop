@@ -17,6 +17,7 @@ export { default as RemoveFromPlaylistModal } from "./ui/modals/RemoveFromPlayli
 export { default as RemoveFromLibraryModal } from "./ui/modals/RemoveFromLibraryModal";
 export { default as ImportLikesModal } from "./ui/modals/ImportLikesModal";
 export { default as ImportReviewModal } from "./ui/modals/ImportReviewModal";
+export { default as SpotifyPlaylistsModal } from "./ui/modals/SpotifyPlaylistsModal";
 
 // Types
 export * from "./types";

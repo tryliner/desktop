@@ -12,6 +12,8 @@ describe("detectImportSource", () => {
     expect(detectImportSource("https://m.soundcloud.com/user/sets/playlist")).toBe("soundcloud");
     expect(detectImportSource("soundcloud.com/angels007kapter/likes")).toBe("soundcloud");
     expect(detectImportSource("https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M")).toBe("spotify");
+    expect(detectImportSource("37i9dQZF1DXcBWIGoYBM5M")).toBe("spotify");
+    expect(detectImportSource("spotify:playlist:37i9dQZF1DXcBWIGoYBM5M")).toBe("spotify");
     expect(detectImportSource("https://spotify.link/abc")).toBe("spotify");
     expect(detectImportSource("https://www.deezer.com/playlist/123456")).toBe("deezer");
     expect(detectImportSource("https://music.apple.com/ru/playlist/хиты/pl.123")).toBe("apple_music");
@@ -63,6 +65,35 @@ describe("parseSpotifyUrl", () => {
       type: "track",
       id: "4cOdK2wGLETKBW3PvgPWqT",
     });
+  });
+
+  it("parses raw 22-character Spotify IDs and Spotify URIs", () => {
+    expect(parseSpotifyUrl("37i9dQZF1DXcBWIGoYBM5M")).toEqual({
+      type: "playlist",
+      id: "37i9dQZF1DXcBWIGoYBM5M",
+    });
+    expect(parseSpotifyUrl("  37i9dQZF1DXcBWIGoYBM5M  ")).toEqual({
+      type: "playlist",
+      id: "37i9dQZF1DXcBWIGoYBM5M",
+    });
+    expect(parseSpotifyUrl("spotify:playlist:37i9dQZF1DXcBWIGoYBM5M")).toEqual({
+      type: "playlist",
+      id: "37i9dQZF1DXcBWIGoYBM5M",
+    });
+    expect(parseSpotifyUrl("spotify:album:4m2880jivSbbyEGAKfITCa")).toEqual({
+      type: "album",
+      id: "4m2880jivSbbyEGAKfITCa",
+    });
+    expect(parseSpotifyUrl("spotify:track:4cOdK2wGLETKBW3PvgPWqT")).toEqual({
+      type: "track",
+      id: "4cOdK2wGLETKBW3PvgPWqT",
+    });
+  });
+
+  it("rejects invalid Spotify identifiers and URLs", () => {
+    expect(() => parseSpotifyUrl("")).toThrow("Spotify playlist URL or ID is invalid.");
+    expect(() => parseSpotifyUrl("short-id")).toThrow("Spotify playlist URL or ID is invalid.");
+    expect(() => parseSpotifyUrl("https://unknown.com/playlist/xyz")).toThrow("Spotify playlist URL or ID is invalid.");
   });
 });
 

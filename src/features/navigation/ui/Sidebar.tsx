@@ -21,6 +21,8 @@ import { usePlayerStore, type AccentVariant } from "@/features/player";
 import { useModalStore } from "@/features/library";
 import { useCustomizationStore, getBlockStyle } from "@/features/settings";
 import { Tooltip } from "@/shared/ui";
+import { useAuthStore } from "@/features/auth/store/authStore";
+import { UserAvatar } from "@/shared/ui/UserAvatar";
 
 
 const brandingLogos: Record<Exclude<AccentVariant, "default">, string> = {
@@ -69,7 +71,7 @@ function Sidebar({ searchOpen, onSearchToggle, isEdgeToEdge = false }: SidebarPr
 
   const renderNavItems = () =>
     sidebarNavItems
-      .filter((item) => item.id !== "settings")
+      .filter((item) => item.id !== "settings" && item.id !== "profile")
       .map((item) => {
       const active = isItemActive(item.id, item.href);
       const Icon = item.Icon;
@@ -123,6 +125,31 @@ function Sidebar({ searchOpen, onSearchToggle, isEdgeToEdge = false }: SidebarPr
         </Tooltip>
       );
       });
+
+  const renderProfileButton = () => {
+    const user = useAuthStore((state) => state.user);
+    const active = isRouteActive("/profile");
+    const label = user?.displayName || user?.username || t("common.sidebar.profile") || "Profile";
+
+    return (
+      <Tooltip content={label} side="right" sideOffset={12}>
+        <Link
+          to="/profile"
+          aria-current={active ? "page" : undefined}
+          aria-label={label}
+          className={`group relative inline-flex items-center justify-center cursor-pointer active:scale-[0.96] transition-transform duration-100 ${
+            active ? "ring-2 ring-text-primary rounded-full p-[1px]" : ""
+          }`}
+        >
+          <UserAvatar
+            user={user}
+            size={28}
+            className="rounded-full shadow-sm"
+          />
+        </Link>
+      </Tooltip>
+    );
+  };
 
   const renderSettingsButton = () => {
     const settingsItem = sidebarNavItems.find((item) => item.id === "settings");
@@ -203,7 +230,8 @@ function Sidebar({ searchOpen, onSearchToggle, isEdgeToEdge = false }: SidebarPr
           {renderNavItems()}
         </nav>
 
-        <div className="pt-[16px] pb-[16px] shrink-0 flex justify-center items-center">
+        <div className="pt-[16px] pb-[16px] shrink-0 flex flex-col items-center gap-[16px]">
+          {renderProfileButton()}
           {renderSettingsButton()}
         </div>
       </div>

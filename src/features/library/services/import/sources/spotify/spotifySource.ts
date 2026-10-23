@@ -3,7 +3,7 @@ import { rethrowIfAborted } from "@/shared/utils/abort";
 import { log } from "@/shared/utils/logger";
 import { fetchSpotifyEmbed } from "./spotifyEmbed";
 import { fetchSpotifyPlaylistTracks, type PathfinderResult } from "./spotifyPathfinder";
-import { parseSpotifyUrl, resolveSpotifyUrl, type SpotifyEntityType } from "./spotifyUrl";
+import { parseSpotifyUrl, resolveSpotifyUrl, toSpotifyUrl, type SpotifyEntityType } from "./spotifyUrl";
 
 function defaultTitle(entityType: SpotifyEntityType): string {
   if (entityType === "album") return "Imported Spotify album";
@@ -12,6 +12,20 @@ function defaultTitle(entityType: SpotifyEntityType): string {
 }
 
 const EMBED_TRACK_CAP = 100;
+
+export function sanitizeHtml(input: string | undefined): string | undefined {
+  if (!input) return undefined;
+  const decoded = input
+    .replace(/<[^>]*>/g, "")
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;|&apos;|&#x27;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&nbsp;/g, " ")
+    .trim();
+  return decoded || undefined;
+}
 
 async function tryPathfinder(entityId: string, signal?: AbortSignal): Promise<PathfinderResult> {
   try {
@@ -39,19 +53,31 @@ function pickPlaylistTracks(full: PathfinderResult, embed: ClientImportedTrack[]
 export async function importSpotify(rawUrl: string, signal?: AbortSignal): Promise<ClientImportedPlaylist> {
   const resolvedUrl = await resolveSpotifyUrl(rawUrl, signal);
   const { type: entityType, id: entityId } = parseSpotifyUrl(resolvedUrl);
-  const embed = await fetchSpotifyEmbed(entityType, entityId, defaultTitle(entityType), signal);
-  const title = embed.title ?? defaultTitle(entityType);
+
+  const canonicalUrl = toSpotifyUrl(entityType, entityId);
+
+  // Parallelize embed and Pathfinder queries concurrently
+  const embedPromise = fetchSpotifyEmbed(entityType, entityId, defaultTitle(entityType), signal);
+  const pathfinderPromise =
+    entityType === "playlist" ? tryPathfinder(entityId, signal) : Promise.resolve({ tracks: [], total: undefined });
+
+  const [embed, full] = await Promise.all([embedPromise, pathfinderPromise]);
+
+  const rawTitle = embed.title ?? defaultTitle(entityType);
+  const title = sanitizeHtml(rawTitle) ?? defaultTitle(entityType);
+  const description = sanitizeHtml(embed.description);
+
   const base = {
     source: "spotify" as const,
-    sourceUrl: rawUrl,
+    sourceUrl: canonicalUrl,
     title,
-    ...(embed.description ? { description: embed.description } : {}),
+    ...(description ? { description } : {}),
   };
 
   if (entityType === "playlist") {
-    const tracks = pickPlaylistTracks(await tryPathfinder(entityId, signal), embed.tracks);
+    const tracks = pickPlaylistTracks(full, embed.tracks);
     if (tracks.length > 0) return { ...base, tracks };
   }
   if (embed.tracks.length > 0) return { ...base, tracks: embed.tracks };
-  throw new Error("No tracks found in the Spotify playlist.");
+  throw new Error("No tracks found in the Spotify playlist. Make sure the playlist is public and contains available tracks.");
 }

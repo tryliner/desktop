@@ -24,3 +24,19 @@ export {
   type SyncedLine,
 } from "./hooks/useLyricsAnimator";
 export { LyricsProviderIsland } from "./ui/LyricsProviderIsland";
+export {
+  parseLrc,
+  getActiveLyricIndex,
+  computeLyricScrollOffset,
+  computeLrcDurations,
+  type SyncedLrcLine,
+} from "./engine/lrcParser";
+export {
+  useLyricsScrollOverride,
+  type UseLyricsScrollOverrideOptions,
+  type UseLyricsScrollOverrideResult,
+} from "./hooks/useLyricsScrollOverride";
+export {
+  SyncedLyricsView,
+  type SyncedLyricsViewProps,
+} from "./ui/SyncedLyricsView";

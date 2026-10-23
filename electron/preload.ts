@@ -38,6 +38,21 @@ export interface WindowState {
   isVisible?: boolean;
 }
 
+export interface SmtcMediaUpdatePayload {
+  status: "playing" | "paused" | "loading" | "idle";
+  track: {
+    id: string;
+    title: string;
+    artists: string;
+    coverUrl?: string;
+    durationMs: number;
+  } | null;
+  positionMs: number;
+  durationMs: number;
+}
+
+export type SmtcMediaAction = "play" | "pause" | "togglePlay" | "next" | "prev" | "stop";
+
 export interface LinerElectronApi {
   platform: string;
   isHyprland: boolean;
@@ -135,6 +150,8 @@ export interface LinerElectronApi {
   discordUpdateSettings: (settings: any) => void;
   getDiscordStatus: () => Promise<{ connected: boolean; username?: string }>;
   mintPoToken: (identifier: string) => Promise<string>;
+  sendMediaUpdate: (payload: SmtcMediaUpdatePayload) => void;
+  onMediaAction: (cb: (action: SmtcMediaAction) => void) => () => void;
 }
 
 const isHyprland = Boolean(
@@ -281,6 +298,16 @@ const api: LinerElectronApi = {
     ipcRenderer.on("deeplink:open", listener);
     return () => {
       ipcRenderer.removeListener("deeplink:open", listener);
+    };
+  },
+  sendMediaUpdate: (payload) => {
+    ipcRenderer.send("desktop:media-update", payload);
+  },
+  onMediaAction: (cb) => {
+    const listener = (_event: unknown, action: SmtcMediaAction) => cb(action);
+    ipcRenderer.on("desktop:media-action", listener);
+    return () => {
+      ipcRenderer.removeListener("desktop:media-action", listener);
     };
   },
   touchbarUpdateState: (state) => {

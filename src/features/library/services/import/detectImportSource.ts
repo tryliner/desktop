@@ -1,5 +1,6 @@
 import type { ImportSource } from "@/shared/contracts";
 import { normalizeImportUrl } from "./shared/url";
+import { isSpotifyId, isSpotifyUri } from "./sources/spotify/spotifyUrl";
 
 export class ImportUrlError extends Error {
   constructor(message: string) {
@@ -17,6 +18,11 @@ function hostMatches(host: string, domain: string): boolean {
 }
 
 export function detectImportSource(rawUrl: string): ImportSource {
+  const trimmed = rawUrl.trim();
+  if (isSpotifyId(trimmed) || isSpotifyUri(trimmed)) {
+    return "spotify";
+  }
+
   let url: URL;
   try {
     url = new URL(normalizeImportUrl(rawUrl));

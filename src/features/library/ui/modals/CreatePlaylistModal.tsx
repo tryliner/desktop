@@ -11,6 +11,13 @@ import { useTranslation } from "@/languages";
 import { useModalStore } from "../../store/modalStore";
 import { useImportStore } from "../../store/importStore";
 import { resolveApiErrorMessage } from "@/shared/api";
+import {
+  isSpotifyId,
+  isSpotifyUri,
+  toSpotifyPlaylistUrl,
+  toSpotifyUrl,
+  parseSpotifyUrl,
+} from "../../services/import/sources/spotify/spotifyUrl";
 
 type Tab = "create" | "import";
 
@@ -18,15 +25,20 @@ const TITLE_MAX = 20;
 
 // mirrors backend detectImportSource, labels only
 function detectSourceLabel(raw: string): string | null {
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  if (isSpotifyId(trimmed) || isSpotifyUri(trimmed)) {
+    return "Spotify";
+  }
   try {
-    let text = raw.trim();
+    let text = trimmed;
     if (!text.startsWith("http://") && !text.startsWith("https://")) {
       text = `https://${text}`;
     }
     const host = new URL(text).hostname.toLowerCase().replace(/^www\./, "");
     if (["youtube.com", "music.youtube.com", "m.youtube.com", "youtu.be"].includes(host)) return "YouTube";
     if (host === "soundcloud.com" || host.endsWith(".soundcloud.com")) return "SoundCloud";
-    if (host === "open.spotify.com") return "Spotify";
+    if (["open.spotify.com", "spotify.com", "spotify.link"].includes(host) || host.endsWith(".spotify.com")) return "Spotify";
     if (host === "deezer.com" || host.endsWith(".deezer.com")) return "Deezer";
     if (["music.apple.com", "geo.music.apple.com", "itunes.apple.com"].includes(host) || host.endsWith(".music.apple.com")) return "Apple Music";
   } catch {
@@ -119,7 +131,12 @@ export default function CreatePlaylistModal() {
       return;
     }
 
-    if (!target.startsWith("http://") && !target.startsWith("https://")) {
+    if (isSpotifyId(target)) {
+      target = toSpotifyPlaylistUrl(target);
+    } else if (isSpotifyUri(target)) {
+      const parsed = parseSpotifyUrl(target);
+      target = toSpotifyUrl(parsed.type, parsed.id);
+    } else if (!target.startsWith("http://") && !target.startsWith("https://")) {
       target = `https://${target}`;
     }
 
@@ -282,13 +299,26 @@ export default function CreatePlaylistModal() {
                 {importError}
               </span>
             )}
-            <div className="flex items-center justify-end gap-[8px] mt-[2px]">
-              <Button type="button" variant="ghost" size="sm" onClick={close}>
-                {t("common.cancel")}
+            <div className="flex items-center justify-between gap-[8px] mt-[2px]">
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  close();
+                  useModalStore.getState().openSpotifyPlaylists();
+                }}
+              >
+                Browse Spotify Playlists
               </Button>
-              <Button type="submit" variant="primary" size="sm" disabled={importing}>
-                {importing ? t("common.importing") : t("common.import")}
-              </Button>
+              <div className="flex items-center gap-[8px]">
+                <Button type="button" variant="ghost" size="sm" onClick={close}>
+                  {t("common.cancel")}
+                </Button>
+                <Button type="submit" variant="primary" size="sm" disabled={importing}>
+                  {importing ? t("common.importing") : t("common.import")}
+                </Button>
+              </div>
             </div>
           </form>
         )}

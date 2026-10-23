@@ -75,3 +75,10 @@ export type LyricsStreamEvent =
       };
       status?: 'not_found';
     };
+
+export interface SyncedLrcLine {
+  id: string;
+  timeMs: number;
+  durationMs?: number;
+  text: string;
+}

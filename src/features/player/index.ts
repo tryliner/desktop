@@ -12,6 +12,15 @@ export {
 export { usePlayerState } from "./hooks/usePlayerState";
 export { useAppIconSync } from "./hooks/useAppIconSync";
 export {
+  useWindowsMediaSync,
+  WindowsMediaSync,
+  sanitizeForSmtc,
+  createSmtcPayload,
+  handleSmtcAction,
+  type SmtcMediaAction,
+  type SmtcMediaUpdatePayload,
+} from "./hooks/useWindowsMediaSync";
+export {
   useSongMenuItems,
   type SongMenuContext,
 } from "./hooks/useSongMenuItems";

@@ -51,6 +51,7 @@ import {
   ImportLikesModal,
   ImportReviewModal,
   CreatePlaylistModal,
+  SpotifyPlaylistsModal,
   useModalStore,
 } from "@/features/library";
 import { SettingsModal, useCustomizationStore, getBlockStyle } from "@/features/settings";
@@ -1073,6 +1074,7 @@ export default function AppFrame({ children }: AppFrameProps) {
       <ImportLikesModal />
       <CreatePlaylistModal />
       <ImportReviewModal />
+      <SpotifyPlaylistsModal />
       <SettingsModal />
       <UpdateModal />
       <UpdateToastBridge />

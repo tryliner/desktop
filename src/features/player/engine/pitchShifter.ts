@@ -146,7 +146,8 @@ class HannPitchShifter {
   }
 }
 
-function createReverbImpulseResponse(context: AudioContext): AudioBuffer {
+function createReverbImpulseResponse(context: AudioContext): AudioBuffer | null {
+  if (typeof context.createBuffer !== "function") return null;
   const duration = 2.8; // 2.8s lush reverb tail
   const decay = 2.4;
   const sampleRate = context.sampleRate;
@@ -211,6 +212,7 @@ interface AudioEffectsGraph {
   convolver: ConvolverNode;
   reverbHighpass: BiquadFilterNode;
   reverbWetGain: GainNode;
+  analyserNode: AnalyserNode;
 }
 
 export interface AudioEffectsParams {
@@ -286,7 +288,8 @@ export class PitchShifterController {
           g.pitchStageOutput &&
           g.masterOutputGain &&
           g.masterDryGain &&
-          g.shifter
+          g.shifter &&
+          g.analyserNode
         );
       };
 
@@ -309,6 +312,7 @@ export class PitchShifterController {
             (graph as any).convolver?.disconnect();
             (graph as any).reverbHighpass?.disconnect();
             (graph as any).reverbWetGain?.disconnect();
+            (graph as any).analyserNode?.disconnect();
           } catch {}
         }
         delete audioObj.__liner_pitch_graph;
@@ -330,7 +334,17 @@ export class PitchShifterController {
         masterDryGain.gain.value = 1.0;
         masterOutputGain.gain.value = 1.0;
 
-        const shifter = new HannPitchShifter(ctx);
+        const hasAdvancedAudio =
+          typeof ctx.createBuffer === "function" &&
+          typeof (ctx as any).createDelay === "function";
+
+        const shifter = hasAdvancedAudio
+          ? new HannPitchShifter(ctx)
+          : ({
+              input: ctx.createGain(),
+              output: ctx.createGain(),
+              setPitchOffset: () => {},
+            } as any);
 
         // Pitch stage routing
         sourceNode.connect(pitchDryGain);
@@ -348,15 +362,26 @@ export class PitchShifterController {
         const reverbSendGain = ctx.createGain();
         reverbSendGain.gain.value = 1.0;
 
-        const convolver = ctx.createConvolver();
-        convolver.normalize = true;
-        convolver.buffer = createReverbImpulseResponse(ctx);
+        let convolver: ConvolverNode;
+        let reverbHighpass: BiquadFilterNode;
+        if (
+          hasAdvancedAudio &&
+          typeof (ctx as any).createConvolver === "function" &&
+          typeof (ctx as any).createBiquadFilter === "function"
+        ) {
+          convolver = ctx.createConvolver();
+          convolver.normalize = true;
+          const impulse = createReverbImpulseResponse(ctx);
+          if (impulse) convolver.buffer = impulse;
 
-        // Filter out sub-bass mud from reverb (keeps kick/808 tight)
-        const reverbHighpass = ctx.createBiquadFilter();
-        reverbHighpass.type = "highpass";
-        reverbHighpass.frequency.value = 120;
-        reverbHighpass.Q.value = 0.7;
+          reverbHighpass = ctx.createBiquadFilter();
+          reverbHighpass.type = "highpass";
+          reverbHighpass.frequency.value = 120;
+          reverbHighpass.Q.value = 0.7;
+        } else {
+          convolver = ctx.createGain() as any;
+          reverbHighpass = ctx.createGain() as any;
+        }
 
         const reverbWetGain = ctx.createGain();
         reverbWetGain.gain.value = 0.0; // Disabled by default
@@ -367,7 +392,16 @@ export class PitchShifterController {
         reverbHighpass.connect(reverbWetGain);
         reverbWetGain.connect(masterOutputGain);
 
-        masterOutputGain.connect(ctx.destination);
+        // Create and configure AnalyserNode for audio visualization
+        const analyserNode = ctx.createAnalyser();
+        analyserNode.fftSize = 2048;
+        analyserNode.smoothingTimeConstant = 0.8;
+        analyserNode.minDecibels = -100;
+        analyserNode.maxDecibels = -30;
+
+        // Routing: masterOutputGain -> analyserNode -> ctx.destination
+        masterOutputGain.connect(analyserNode);
+        analyserNode.connect(ctx.destination);
 
         graph = {
           ctx,
@@ -382,10 +416,12 @@ export class PitchShifterController {
           convolver,
           reverbHighpass,
           reverbWetGain,
+          analyserNode,
         };
 
         audioObj.__liner_pitch_graph = graph;
         win.__liner_pitch_graph = graph;
+        win.__liner_audio_analyser = analyserNode;
       }
 
       this.context = graph.ctx;
@@ -406,6 +442,26 @@ export class PitchShifterController {
     if (this.context && this.context.state === "suspended") {
       void this.context.resume().catch(() => {});
     }
+  }
+
+  public async suspendContext(): Promise<void> {
+    if (this.context && this.context.state === "running") {
+      await this.context.suspend();
+    }
+  }
+
+  public getAnalyser(): AnalyserNode | null {
+    return (
+      this.graph?.analyserNode ??
+      (typeof window !== "undefined" ? (window as any).__liner_audio_analyser ?? null : null)
+    );
+  }
+
+  public getContext(): AudioContext | null {
+    return (
+      this.context ??
+      (typeof window !== "undefined" ? (window as any).__liner_audio_context ?? null : null)
+    );
   }
 
   public update(
