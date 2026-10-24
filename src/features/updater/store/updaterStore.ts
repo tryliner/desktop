@@ -46,6 +46,7 @@ export const useUpdaterStore = create<UpdaterState>((set, get) => ({
         const info: UpdateInfo = {
           version: res.version,
           releaseNotes: res.releaseNotes,
+          manualOnly: res.manualOnly,
         };
         const isDismissed = get().dismissedVersion === res.version;
         set({
@@ -94,6 +95,8 @@ export const useUpdaterStore = create<UpdaterState>((set, get) => ({
   },
 
   startDownload: async () => {
+    if (get().updateInfo?.manualOnly) return;
+
     if (get().isTestMode) {
       set({ isDialogOpen: false, status: "downloading", error: null });
       let currentPercent = 0;
@@ -137,6 +140,8 @@ export const useUpdaterStore = create<UpdaterState>((set, get) => ({
   },
 
   installUpdate: async () => {
+    if (get().updateInfo?.manualOnly) return;
+
     const electron = window.linerElectron;
     if (!electron?.quitAndInstall) {
       if (get().isTestMode) {

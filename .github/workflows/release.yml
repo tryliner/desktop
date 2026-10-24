@@ -35,7 +35,6 @@ jobs:
       - name: Build Linux packages (AppImage & deb)
         run: pnpm run electron:build:linux
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VITE_API_URL: https://api.tryliner.fun
           VITE_COVERS_PROXY_URL: https://covers.tryliner.fun
 
@@ -72,7 +71,6 @@ jobs:
       - name: Build Windows installer (NSIS)
         run: pnpm run electron:build:win
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VITE_API_URL: https://api.tryliner.fun
           VITE_COVERS_PROXY_URL: https://covers.tryliner.fun
 
@@ -93,6 +91,8 @@ jobs:
           name: windows-installer
           path: |
             release/*.exe
+            release/latest.yml
+            release/*.blockmap
           if-no-files-found: error
 
   build-macos:
@@ -101,6 +101,30 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Require macOS signing and notarization credentials
+        shell: bash
+        env:
+          CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.MAC_CSC_KEY_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          missing=()
+          for name in CSC_LINK CSC_KEY_PASSWORD APPLE_ID APPLE_APP_SPECIFIC_PASSWORD APPLE_TEAM_ID; do
+            if [[ -z "${!name}" ]]; then
+              missing+=("$name")
+            fi
+          done
+          if (( ${#missing[@]} > 0 )); then
+            echo "::error::Missing required macOS release credentials: ${missing[*]}. Configure MAC_CSC_LINK (base64 Developer ID Application .p12), MAC_CSC_KEY_PASSWORD, APPLE_ID, APPLE_APP_SPECIFIC_PASSWORD, and APPLE_TEAM_ID."
+            exit 1
+          fi
+          if [[ ! "$APPLE_TEAM_ID" =~ ^[A-Z0-9]{10}$ ]]; then
+            echo "::error::APPLE_TEAM_ID must contain the 10-character Apple Developer Team ID."
+            exit 1
+          fi
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -116,13 +140,24 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Clean previous macOS build output
+        run: rm -rf release
+
       - name: Build macOS packages (DMG & ZIP)
         run: pnpm run electron:build:mac
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CSC_IDENTITY_AUTO_DISCOVERY: false
+          CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.MAC_CSC_KEY_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           VITE_API_URL: https://api.tryliner.fun
           VITE_COVERS_PROXY_URL: https://covers.tryliner.fun
+
+      - name: Verify built macOS artifacts
+        run: bash scripts/verify-macos-artifacts.sh release
+        env:
+          EXPECTED_APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
 
       - name: Upload macOS Artifacts
         uses: actions/upload-artifact@v4
@@ -131,18 +166,24 @@ jobs:
           path: |
             release/*.dmg
             release/*.zip
+            release/latest-mac.yml
           if-no-files-found: error
 
   publish-release:
     name: Publish Release
     needs: [build-linux, build-windows, build-macos]
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     if: startsWith(github.ref, 'refs/tags/')
     steps:
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
           path: artifacts
+
+      - name: Verify downloaded macOS release artifacts
+        run: bash scripts/verify-macos-artifacts.sh artifacts/macos-packages
+        env:
+          EXPECTED_APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
 
       - name: Publish to GitHub Release
         uses: softprops/action-gh-release@v2
@@ -151,9 +192,12 @@ jobs:
             artifacts/linux-packages/*.AppImage
             artifacts/linux-packages/*.deb
             artifacts/windows-installer/*.exe
+            artifacts/windows-installer/latest.yml
+            artifacts/windows-installer/*.blockmap
             artifacts/macos-packages/*.dmg
             artifacts/macos-packages/*.zip
-          fail_on_unmatched_files: false
+            artifacts/macos-packages/latest-mac.yml
+          fail_on_unmatched_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

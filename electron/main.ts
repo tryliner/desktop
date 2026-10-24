@@ -57,6 +57,10 @@ import { detectCompositor } from "./compositor/index.js";
 import { BundleManager } from "./bundle-manager.js";
 import { createBundleErrorStamp } from "./bundle-stamp.js";
 import { createSleepBlocker } from "./sleep-blocker.js";
+import {
+  getMacUpdateCapability,
+  type MacUpdateCapability,
+} from "./mac-signature.js";
 import { withOpenCors } from "./cors.js";
 import { createShutdown } from "./shutdown.js";
 import {
@@ -1767,6 +1771,25 @@ if (!gotTheLock) {
       },
     );
 
+    let macUpdateCapabilityPromise: Promise<MacUpdateCapability> | undefined;
+    const getNativeUpdateCapability = (): Promise<MacUpdateCapability> => {
+      if (process.platform !== "darwin") {
+        return Promise.resolve({ supported: true });
+      }
+      if (!app.isPackaged) {
+        return Promise.resolve({
+          supported: false,
+          reason: "The app is not packaged.",
+        });
+      }
+      macUpdateCapabilityPromise ??= getMacUpdateCapability({
+        platform: process.platform,
+        isPackaged: app.isPackaged,
+        executablePath: app.getPath("exe"),
+      });
+      return macUpdateCapabilityPromise;
+    };
+
     // updater config: production github releases only, no prereleases or auto-install on close
     autoUpdater.autoDownload = false;
     autoUpdater.autoInstallOnAppQuit = false;
@@ -1774,11 +1797,14 @@ if (!gotTheLock) {
     autoUpdater.allowDowngrade = false;
 
     autoUpdater.on("update-available", (info) => {
-      mainWindow?.webContents.send("updater:update-available", {
-        version: info.version,
-        releaseDate: info.releaseDate,
-        releaseNotes:
-          typeof info.releaseNotes === "string" ? info.releaseNotes : undefined,
+      void getNativeUpdateCapability().then((capability) => {
+        mainWindow?.webContents.send("updater:update-available", {
+          version: info.version,
+          releaseDate: info.releaseDate,
+          releaseNotes:
+            typeof info.releaseNotes === "string" ? info.releaseNotes : undefined,
+          manualOnly: !capability.supported,
+        });
       });
     });
 
@@ -1802,8 +1828,12 @@ if (!gotTheLock) {
         "\x1b[31m updater \x1b[0m autoUpdater error:",
         err?.message || err,
       );
-      mainWindow?.webContents.send("updater:error", {
-        message: err?.message || "Update check failed",
+      void getNativeUpdateCapability().then((capability) => {
+        if (capability.supported) {
+          mainWindow?.webContents.send("updater:error", {
+            message: err?.message || "Update check failed",
+          });
+        }
       });
     });
 
@@ -1811,6 +1841,7 @@ if (!gotTheLock) {
       if (!app.isPackaged) {
         return { available: false, error: "Updater is disabled in dev mode" };
       }
+      const capability = await getNativeUpdateCapability();
       try {
         const result = await autoUpdater.checkForUpdates();
         return {
@@ -1823,11 +1854,16 @@ if (!gotTheLock) {
             typeof result?.updateInfo?.releaseNotes === "string"
               ? result.updateInfo.releaseNotes
               : undefined,
+          manualOnly: !capability.supported,
         };
       } catch (err: any) {
         return {
-          available: false,
-          error: err?.message || "Failed to check for updates",
+          available: !capability.supported,
+          version: capability.supported ? undefined : "latest",
+          error: capability.supported
+            ? err?.message || "Failed to check for updates"
+            : undefined,
+          manualOnly: !capability.supported,
         };
       }
     });
@@ -1835,6 +1871,15 @@ if (!gotTheLock) {
     ipcMain.handle("updater:download-update", async () => {
       if (!app.isPackaged) {
         return { success: false, error: "Updater is disabled in dev mode" };
+      }
+      const capability = await getNativeUpdateCapability();
+      if (!capability.supported) {
+        return {
+          success: false,
+          error:
+            capability.reason ||
+            "Native updates are unavailable for this build.",
+        };
       }
       try {
         await autoUpdater.downloadUpdate();
@@ -1847,7 +1892,10 @@ if (!gotTheLock) {
       }
     });
 
-    ipcMain.handle("updater:quit-and-install", () => {
+    ipcMain.handle("updater:quit-and-install", async () => {
+      if (!app.isPackaged) return false;
+      const capability = await getNativeUpdateCapability();
+      if (!capability.supported) return false;
       setImmediate(() => {
         autoUpdater.quitAndInstall(false, true);
       });

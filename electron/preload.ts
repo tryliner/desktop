@@ -35,6 +35,7 @@ export interface UpdateInfo {
   version: string;
   releaseNotes?: string;
   releaseDate?: string;
+  manualOnly?: boolean;
 }
 
 export interface UpdateDownloadProgress {
@@ -121,6 +122,7 @@ export interface LinerElectronApi {
     version?: string;
     releaseNotes?: string;
     error?: string;
+    manualOnly?: boolean;
   }>;
   downloadUpdate: () => Promise<{ success: boolean; error?: string }>;
   quitAndInstall: () => Promise<boolean>;
