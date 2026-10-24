@@ -313,6 +313,7 @@ export class PitchShifterController {
             (graph as any).convolver?.disconnect();
             (graph as any).reverbHighpass?.disconnect();
             (graph as any).reverbWetGain?.disconnect();
+            (graph as any).eightDEffect?.destroy();
           } catch {}
         }
         delete audioObj.__liner_pitch_graph;

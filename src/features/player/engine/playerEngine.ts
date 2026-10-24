@@ -398,6 +398,9 @@ class PlayerEngine {
       case "SET_PITCH_SEMITONES":
         this.setPitchSemitones(command.semitones);
         break;
+      case "SET_8D_ENABLED":
+        this.setIs8DEnabled(command.enabled);
+        break;
       case "TOGGLE_PLAY_PAUSE":
         this.togglePlayPause();
         break;

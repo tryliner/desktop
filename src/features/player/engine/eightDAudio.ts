@@ -57,11 +57,9 @@ export class EightDAudioEffect {
         const now = this.context.currentTime;
         const endTime = now + FADE_TIME_S;
 
-        this.dryGain.gain.cancelScheduledValues(now);
-        this.wetGain.gain.cancelScheduledValues(now);
+        this.dryGain.gain.cancelAndHoldAtTime(now);
+        this.wetGain.gain.cancelAndHoldAtTime(now);
 
-        this.dryGain.gain.setValueAtTime(this.dryGain.gain.value, now);
-        this.wetGain.gain.setValueAtTime(this.wetGain.gain.value, now);
 
         if (enabled) {
             this.dryGain.gain.linearRampToValueAtTime(0, endTime);
