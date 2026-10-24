@@ -1,28 +1,14 @@
 import { useEffect } from "react";
 import { useTheme } from "next-themes";
 import logo from "@/assets/logo.svg";
+import { APP_ICON_SIZE, drawAppIconArtwork } from "./appIconArtwork";
 
 async function renderIconDataUrl(isLight: boolean): Promise<string> {
   const canvas = document.createElement("canvas");
-  canvas.width = 512;
-  canvas.height = 512;
+  canvas.width = APP_ICON_SIZE;
+  canvas.height = APP_ICON_SIZE;
   const ctx = canvas.getContext("2d");
   if (!ctx) return "";
-
-  ctx.beginPath();
-  if (typeof ctx.roundRect === "function") {
-    ctx.roundRect(0, 0, 512, 512, 112);
-  } else {
-    ctx.rect(0, 0, 512, 512);
-  }
-  ctx.fillStyle = isLight ? "#f5f5f7" : "#0d0d10";
-  ctx.fill();
-
-  ctx.lineWidth = 2;
-  ctx.strokeStyle = isLight
-    ? "rgba(0, 0, 0, 0.08)"
-    : "rgba(255, 255, 255, 0.08)";
-  ctx.stroke();
 
   const img = new Image();
   img.crossOrigin = "anonymous";
@@ -32,11 +18,7 @@ async function renderIconDataUrl(isLight: boolean): Promise<string> {
     img.src = logo;
   });
 
-  if (isLight) {
-    ctx.filter = "invert(1)";
-  }
-
-  ctx.drawImage(img, 112, 144, 288, 224);
+  drawAppIconArtwork(ctx, img, isLight);
   return canvas.toDataURL("image/png");
 }
 

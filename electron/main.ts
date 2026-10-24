@@ -451,6 +451,17 @@ if (!gotTheLock) {
   });
 
   app.whenReady().then(() => {
+    if (process.platform === "darwin" && app.dock) {
+      app.dock.show();
+      if (app.isPackaged) {
+        // Keep the packaged mark authoritative for older cached OTA renderers.
+        const bundleIcon = nativeImage.createFromPath(
+          path.join(process.resourcesPath, "icon.icns"),
+        );
+        if (!bundleIcon.isEmpty()) app.dock.setIcon(bundleIcon);
+      }
+    }
+
     if (!app.isPackaged && process.env.LINER_DEV_SIGNING_SECRET) {
       setDevSigningSecret(process.env.LINER_DEV_SIGNING_SECRET);
       console.log(
@@ -699,10 +710,9 @@ if (!gotTheLock) {
         try {
           const icon = nativeImage.createFromDataURL(dataUrl);
           if (!icon.isEmpty()) {
+            // Renderer updates may change the window icon, but leave the macOS
+            // Dock icon backed by the packaged icon.icns.
             mainWindow.setIcon(icon);
-            if (process.platform === "darwin" && app.dock) {
-              app.dock.setIcon(icon);
-            }
             // linux: apply to the icon dash/taskbar actually shows. only in the
             // packaged app so dev runs do not pollute the user's icon theme.
             if (process.platform === "linux" && app.isPackaged) {
@@ -1916,6 +1926,7 @@ if (!gotTheLock) {
     }
 
     app.on("activate", () => {
+      if (process.platform === "darwin") app.dock?.show();
       if (
         !shutdown.isQuitting() &&
         BrowserWindow.getAllWindows().length === 0
