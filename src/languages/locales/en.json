@@ -398,7 +398,9 @@
     "preset_nightcore": "1.35x Nightcore",
     "reverb": "Reverb",
     "reverb_hint": "Atmospheric space & ambient depth",
-    "reverb_amount": "Reverb"
+    "reverb_amount": "Reverb",
+    "8d_audio": "8D Audio",
+    "8d_audio_hint": "Spatial audio rotating around your head"
   },
   "playlist": {
     "playlist": "Playlist",

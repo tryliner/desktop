@@ -14,6 +14,7 @@
  * to protect sub-bass/808s.
  * Perfectly tuned for the authentic "Slowed + Reverb" aesthetic.
  */
+import { EightDAudioEffect } from "./eightDAudio";
 
 const GRAIN_PERIOD = 0.038; // 38ms grain window
 const NUM_TAPS = 4;
@@ -211,6 +212,7 @@ interface AudioEffectsGraph {
   convolver: ConvolverNode;
   reverbHighpass: BiquadFilterNode;
   reverbWetGain: GainNode;
+  eightDEffect: EightDAudioEffect;
 }
 
 export interface AudioEffectsParams {
@@ -218,6 +220,7 @@ export interface AudioEffectsParams {
   isPitchLinked?: boolean;
   isReverbEnabled?: boolean;
   reverbLevel?: number;
+  is8DEnabled?: boolean;
 }
 
 export class PitchShifterController {
@@ -286,7 +289,8 @@ export class PitchShifterController {
           g.pitchStageOutput &&
           g.masterOutputGain &&
           g.masterDryGain &&
-          g.shifter
+          g.shifter &&
+          g.eightDEffect
         );
       };
 
@@ -309,6 +313,7 @@ export class PitchShifterController {
             (graph as any).convolver?.disconnect();
             (graph as any).reverbHighpass?.disconnect();
             (graph as any).reverbWetGain?.disconnect();
+            (graph as any).eightDEffect?.destroy();
           } catch {}
         }
         delete audioObj.__liner_pitch_graph;
@@ -367,7 +372,9 @@ export class PitchShifterController {
         reverbHighpass.connect(reverbWetGain);
         reverbWetGain.connect(masterOutputGain);
 
-        masterOutputGain.connect(ctx.destination);
+        const eightDEffect = new EightDAudioEffect(ctx);
+
+        eightDEffect.attach(masterOutputGain, ctx.destination);
 
         graph = {
           ctx,
@@ -382,6 +389,7 @@ export class PitchShifterController {
           convolver,
           reverbHighpass,
           reverbWetGain,
+          eightDEffect,
         };
 
         audioObj.__liner_pitch_graph = graph;
@@ -400,6 +408,10 @@ export class PitchShifterController {
 
   public isAttached(): boolean {
     return this.isConnected;
+  }
+
+  public getEightDEffect(): EightDAudioEffect | undefined {
+    return this.graph?.eightDEffect;
   }
 
   public resumeContext(): void {
@@ -433,12 +445,14 @@ export class PitchShifterController {
     let isPitchLinked = true;
     let isReverbEnabled = false;
     let reverbLevel = 0.35;
+    let is8DEnabled = false;
 
     if (typeof arg1 === "object" && arg1 !== null) {
       semitones = arg1.pitchSemitones ?? 0;
       isPitchLinked = arg1.isPitchLinked ?? true;
       isReverbEnabled = arg1.isReverbEnabled ?? false;
       reverbLevel = arg1.reverbLevel ?? 0.35;
+      is8DEnabled = arg1.is8DEnabled ?? false;
     } else {
       semitones = typeof arg1 === "number" ? arg1 : 0;
       isPitchLinked = arg2 ?? true;
@@ -467,6 +481,11 @@ export class PitchShifterController {
       this.graph.reverbWetGain.gain.setTargetAtTime(targetWet, now, 0.020);
     } else {
       this.graph.reverbWetGain.gain.setTargetAtTime(0, now, 0.020);
+    }
+
+    // 8D Audio routie
+    if (this.graph.eightDEffect) {
+      this.graph.eightDEffect.setEnabled(is8DEnabled);
     }
   }
 }

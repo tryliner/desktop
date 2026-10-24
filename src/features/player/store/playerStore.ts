@@ -63,6 +63,7 @@ export interface SessionState {
   keepSpeedAcrossTracks: boolean;
   isReverbEnabled: boolean;
   reverbLevel: number;
+  is8DEnabled: boolean;
 }
 
 export type PlayerState = TransportState &
@@ -88,6 +89,7 @@ export type PlayerCommand =
   | { type: "SET_PITCH_SEMITONES"; semitones: number }
   | { type: "SET_REVERB_ENABLED"; enabled: boolean }
   | { type: "SET_REVERB_LEVEL"; level: number }
+  | { type: "SET_8D_ENABLED"; enabled: boolean }
   | { type: "TOGGLE_PLAY_PAUSE" };
 
 export interface PlayerStore extends PlayerState {
@@ -117,6 +119,7 @@ export interface PlayerStore extends PlayerState {
   setKeepSpeedAcrossTracks: (keep: boolean) => void;
   setIsReverbEnabled: (enabled: boolean) => void;
   setReverbLevel: (level: number) => void;
+  setIs8DEnabled: (enabled: boolean) => void;
   resetSpeedAndPitch: () => void;
   clearQueue: () => void;
   resetPlayback: () => void;
@@ -161,6 +164,7 @@ export const usePlayerStore = create<PlayerStore>()(
       keepSpeedAcrossTracks: true,
       isReverbEnabled: false,
       reverbLevel: 0.35,
+      is8DEnabled: false,
 
       dispatch: () => {
         // Implementation injected by PlayerEngine
@@ -211,6 +215,7 @@ export const usePlayerStore = create<PlayerStore>()(
       setIsReverbEnabled: (isReverbEnabled: boolean) => set({ isReverbEnabled }),
       setReverbLevel: (reverbLevel: number) =>
         set({ reverbLevel: Math.max(0, Math.min(1, reverbLevel)) }),
+      setIs8DEnabled: (is8DEnabled: boolean) => set({ is8DEnabled }),
       resetSpeedAndPitch: () => set({ playbackRate: 1, pitchSemitones: 0 }),
       resetPlayback: () =>
         set({
@@ -294,6 +299,9 @@ export const usePlayerStore = create<PlayerStore>()(
           if (typeof state.reverbLevel !== "number" || isNaN(state.reverbLevel)) {
             state.reverbLevel = 0.35;
           }
+          if (typeof state.is8DEnabled !== "boolean") {
+            state.is8DEnabled = false;
+          }
         }
       },
       partialize: (state) => ({
@@ -325,6 +333,7 @@ export const usePlayerStore = create<PlayerStore>()(
         keepSpeedAcrossTracks: state.keepSpeedAcrossTracks,
         isReverbEnabled: state.isReverbEnabled,
         reverbLevel: state.reverbLevel,
+        is8DEnabled: state.is8DEnabled,
       }),
     },
   ),

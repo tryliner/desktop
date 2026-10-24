@@ -235,6 +235,7 @@ export const SpeedPitchPicker = memo(function SpeedPitchPicker({
   const keepSpeedAcrossTracks = player.keepSpeedAcrossTracks ?? true;
   const isReverbEnabled = player.isReverbEnabled ?? false;
   const reverbLevel = player.reverbLevel ?? 0.35;
+  const is8DEnabled = player.is8DEnabled ?? false;
 
   const handleSpeedChange = useCallback((rate: number) => {
     playerEngine.setPlaybackRate(rate);
@@ -254,6 +255,10 @@ export const SpeedPitchPicker = memo(function SpeedPitchPicker({
     }
     playerEngine.setIsReverbEnabled(enabled);
   }, [player.reverbLevel]);
+
+  const handle8DToggle = useCallback((enabled: boolean) => {
+    playerEngine.setIs8DEnabled(enabled);
+  }, []);
 
   const handlePresetClick = useCallback(
     (rate: number) => {
@@ -430,6 +435,26 @@ export const SpeedPitchPicker = memo(function SpeedPitchPicker({
               </motion.div>
             )}
           </AnimatePresence>
+        </div>
+
+        {/* 8D Audio group */}
+        <div className="flex flex-col pt-[2px]">
+          <div className="flex items-center justify-between gap-[8px]">
+            <div className="flex flex-col">
+                <span className="flex items-center gap-[6px] text-[12px] font-medium text-text-primary">
+                  {t("player.8d_audio")}
+                  <SparklesFill size={13} className="text-blue-400 shrink-0" />
+                </span>
+              <span className="text-[10px] text-text-tertiary leading-tight">
+                  {t("player.8d_audio_hint")}
+                </span>
+            </div>
+            <ToggleSwitch
+                checked={is8DEnabled}
+                onChange={handle8DToggle}
+                ariaLabel={t("player.8d_audio")}
+            />
+          </div>
         </div>
       </div>
     </div>

@@ -398,6 +398,9 @@ class PlayerEngine {
       case "SET_PITCH_SEMITONES":
         this.setPitchSemitones(command.semitones);
         break;
+      case "SET_8D_ENABLED":
+        this.setIs8DEnabled(command.enabled);
+        break;
       case "TOGGLE_PLAY_PAUSE":
         this.togglePlayPause();
         break;
@@ -756,6 +759,11 @@ class PlayerEngine {
   public setReverbLevel(level: number): void {
     pitchShifter.resumeContext();
     usePlayerStore.getState().setReverbLevel(level);
+  }
+
+  public setIs8DEnabled(enabled: boolean): void {
+    pitchShifter.resumeContext();
+    usePlayerStore.getState().setIs8DEnabled(enabled);
   }
 
   public resetSpeedAndPitch(): void {
