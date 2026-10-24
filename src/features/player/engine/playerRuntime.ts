@@ -85,8 +85,9 @@ export class PlayerRuntime {
         state.isPitchLinked !== prevState.isPitchLinked ||
         state.pitchSemitones !== prevState.pitchSemitones ||
         state.isReverbEnabled !== prevState.isReverbEnabled ||
-        state.reverbLevel !== prevState.reverbLevel
-      ) {
+        state.reverbLevel !== prevState.reverbLevel ||
+        state.is8DEnabled !== prevState.is8DEnabled
+    ) {
         const rate = state.playbackRate ?? 1;
         const preservesPitch = !state.isPitchLinked;
         this.applyPlaybackRateAndPitch(rate, preservesPitch);
@@ -428,7 +429,8 @@ export class PlayerRuntime {
       const pitchSemitones = store.pitchSemitones ?? 0;
       const isReverbEnabled = store.isReverbEnabled ?? false;
       const reverbLevel = store.reverbLevel ?? 0.35;
-      const needsEffects = isReverbEnabled || (!isPitchLinked && Math.abs(pitchSemitones) >= 0.05);
+      const is8DEnabled = store.is8DEnabled ?? false;
+      const needsEffects = isReverbEnabled || is8DEnabled || (!isPitchLinked && Math.abs(pitchSemitones) >= 0.05);
       if (!needsEffects && !pitchShifter.isAttached()) return;
       pitchShifter.attach(this.audio);
       pitchShifter.update({
@@ -436,6 +438,7 @@ export class PlayerRuntime {
         isPitchLinked,
         isReverbEnabled,
         reverbLevel,
+        is8DEnabled,
       });
     } catch (err) {
       console.error("[PlayerRuntime] applyPlaybackRateAndPitch error:", err);

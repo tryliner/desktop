@@ -758,6 +758,11 @@ class PlayerEngine {
     usePlayerStore.getState().setReverbLevel(level);
   }
 
+  public setIs8DEnabled(enabled: boolean): void {
+    pitchShifter.resumeContext();
+    usePlayerStore.getState().setIs8DEnabled(enabled);
+  }
+
   public resetSpeedAndPitch(): void {
     usePlayerStore.getState().resetSpeedAndPitch();
   }

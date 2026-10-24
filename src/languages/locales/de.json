@@ -396,7 +396,9 @@
     "preset_nightcore": "1,35x Nightcore",
     "reverb": "Hall",
     "reverb_hint": "Atmosphärischer Raum & Tiefe",
-    "reverb_amount": "Hall"
+    "reverb_amount": "Hall",
+    "8d_audio": "8D Audio",
+    "8d_audio_hint": "Räumlicher Klang, der um den Kopf kreist"
   },
   "playlist": {
     "playlist": "Playlist",
