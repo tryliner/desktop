@@ -77,6 +77,7 @@ const electron = vi.hoisted(() => {
 });
 
 vi.mock("electron", () => electron.module);
+vi.mock("./compositor/index.js", () => ({ createCompositorBridge: () => null }));
 
 import { OverlayManager } from "./overlay";
 

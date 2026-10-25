@@ -3,11 +3,13 @@ import { extractAppleMusicToken } from "./appleMusic/appleMusicToken";
 import { mapAppleMusicTrack } from "./appleMusic/appleMusicTracks";
 import { createSoundCloudCollection } from "./soundcloud/soundcloudCollection";
 import { applySoundCloudHydration } from "./soundcloud/soundcloudHydration";
-import { mapSoundCloudTrack, soundCloudCanonicalId } from "./soundcloud/soundcloudTracks";
+import {
+  mapSoundCloudTrack,
+  soundCloudCanonicalId,
+} from "./soundcloud/soundcloudTracks";
 import { parseSpotifyEmbedHtml } from "./spotify/spotifyEmbed";
 import { extractSpotifySecret } from "./spotify/spotifySecret";
 import { generateTotp } from "./spotify/spotifyTotp";
-import { extractInnertubeContinuationToken } from "./youtube/youtubeContinuation";
 
 describe("spotify parsers", () => {
   it("generates RFC 6238 SHA-1 TOTP codes via WebCrypto", async () => {
@@ -18,12 +20,19 @@ describe("spotify parsers", () => {
   });
 
   it("extracts the totp secret from the web player bundle", () => {
-    expect(extractSpotifySecret('x=[{secret:"abc",version:12}]')).toEqual({ secret: "abc", version: 12 });
+    expect(extractSpotifySecret('x=[{secret:"abc",version:12}]')).toEqual({
+      secret: "abc",
+      version: 12,
+    });
     expect(extractSpotifySecret("nothing")).toBeUndefined();
     expect(
-      extractSpotifySecret(`ej=[{secret:',7/*F("rLJ2oxaKL^f+E1xvP@N',version:61},{secret:'OmE{ZA.J^":0FG\\Uz?[@WW',version:60}]`),
+      extractSpotifySecret(
+        `ej=[{secret:',7/*F("rLJ2oxaKL^f+E1xvP@N',version:61},{secret:'OmE{ZA.J^":0FG\\Uz?[@WW',version:60}]`,
+      ),
     ).toEqual({ secret: ',7/*F("rLJ2oxaKL^f+E1xvP@N', version: 61 });
-    expect(extractSpotifySecret(String.raw`[{secret:'a\'b',version:3}]`)).toEqual({ secret: "a'b", version: 3 });
+    expect(
+      extractSpotifySecret(String.raw`[{secret:'a\'b',version:3}]`),
+    ).toEqual({ secret: "a'b", version: 3 });
   });
 
   it("parses embed __NEXT_DATA__ track lists", () => {
@@ -31,25 +40,50 @@ describe("spotify parsers", () => {
       title: "Люблю москву",
       subtitle: "borlinium",
       trackList: [
-        { title: "Скажи мне кто ты", subtitle: "xxxmanera", uri: "spotify:track:2HX", duration: 132162 },
-        { title: "Jealous", subtitle: "9mice, Egor Kreed", uri: "spotify:track:J" },
+        {
+          title: "Скажи мне кто ты",
+          subtitle: "xxxmanera",
+          uri: "spotify:track:2HX",
+          duration: 132162,
+        },
+        {
+          title: "Jealous",
+          subtitle: "9mice, Egor Kreed",
+          uri: "spotify:track:J",
+        },
       ],
     };
-    const html = `<script id="__NEXT_DATA__" type="application/json">${JSON.stringify({
-      props: { pageProps: { state: { data: { entity } } } },
-    })}</script>`;
-    const parsed = parseSpotifyEmbedHtml(html, "playlist", "pl", "Imported Spotify playlist");
+    const html = `<script id="__NEXT_DATA__" type="application/json">${JSON.stringify(
+      {
+        props: { pageProps: { state: { data: { entity } } } },
+      },
+    )}</script>`;
+    const parsed = parseSpotifyEmbedHtml(
+      html,
+      "playlist",
+      "pl",
+      "Imported Spotify playlist",
+    );
     expect(parsed.title).toBe("Люблю москву");
     expect(parsed.description).toBe("borlinium");
-    expect(parsed.tracks[0]).toEqual({ sourceId: "2HX", title: "Скажи мне кто ты", artists: ["xxxmanera"], durationMs: 132162 });
+    expect(parsed.tracks[0]).toEqual({
+      sourceId: "2HX",
+      title: "Скажи мне кто ты",
+      artists: ["xxxmanera"],
+      durationMs: 132162,
+    });
     expect(parsed.tracks[1].artists).toEqual(["9mice", "Egor Kreed"]);
   });
 });
 
 describe("apple music parsers", () => {
   it("extracts developer token from bundle", () => {
-    expect(extractAppleMusicToken('const a="eyJhbGciOiJtoken";x={developerToken:a}')).toBe("eyJhbGciOiJtoken");
-    expect(extractAppleMusicToken("foo eyJhbGciOiJabc.def bar")).toBe("eyJhbGciOiJabc.def");
+    expect(
+      extractAppleMusicToken('const a="eyJhbGciOiJtoken";x={developerToken:a}'),
+    ).toBe("eyJhbGciOiJtoken");
+    expect(extractAppleMusicToken("foo eyJhbGciOiJabc.def bar")).toBe(
+      "eyJhbGciOiJabc.def",
+    );
   });
 
   it("maps catalog tracks", () => {
@@ -77,9 +111,17 @@ describe("apple music parsers", () => {
 
 describe("soundcloud parsers", () => {
   it("reads playlist hydration", () => {
-    const hydration = [{ hydratable: "playlist", data: { title: " ніков ", tracks: [{ id: 1 }, { id: 2, title: "t" }] } }];
+    const hydration = [
+      {
+        hydratable: "playlist",
+        data: { title: " ніков ", tracks: [{ id: 1 }, { id: 2, title: "t" }] },
+      },
+    ];
     const collection = createSoundCloudCollection();
-    applySoundCloudHydration(`<script>window.__sc_hydration = ${JSON.stringify(hydration)};</script>`, collection);
+    applySoundCloudHydration(
+      `<script>window.__sc_hydration = ${JSON.stringify(hydration)};</script>`,
+      collection,
+    );
     expect(collection.title).toBe("ніков");
     expect(collection.rawTracks).toHaveLength(2);
   });
@@ -118,14 +160,5 @@ describe("soundcloud parsers", () => {
     const collection = createSoundCloudCollection();
     applySoundCloudHydration(`<script>window.__sc_hydration = ${JSON.stringify(hydration)};</script>`, collection);
     expect(collection.artworkUrl).toBe("https://i1.sndcdn.com/artworks-set-large.jpg");
-  });
-});
-
-describe("youtube continuation", () => {
-  it("finds continuation tokens in several shapes", () => {
-    const item = { continuationItemRenderer: { continuationEndpoint: { continuationCommand: { token: " a " } } } };
-    expect(extractInnertubeContinuationToken({ contents: [item] })).toBe("a");
-    expect(extractInnertubeContinuationToken({ x: { nextContinuationData: { continuation: "b" } } })).toBe("b");
-    expect(extractInnertubeContinuationToken({})).toBeUndefined();
   });
 });

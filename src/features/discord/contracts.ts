@@ -1,9 +1,5 @@
 export type DiscordStatusDisplayType =
-  | "artist"
-  | "title"
-  | "artist_title"
-  | "title_artist"
-  | "app";
+  "artist" | "title" | "artist_title" | "title_artist" | "app";
 
 export interface DiscordRpcSettings {
   enabled: boolean;
@@ -44,3 +40,10 @@ export const DEFAULT_DISCORD_SETTINGS: DiscordRpcSettings = {
   showButton: true,
   showDownloadButton: true,
 };
+
+export interface DiscordConnectionStatus {
+  connected: boolean;
+  username?: string;
+  avatarUrl?: string;
+  viaArrpc?: boolean;
+}

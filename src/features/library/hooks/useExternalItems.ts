@@ -4,8 +4,11 @@ import type { LibraryItemViewModel } from "../types";
 
 export type EntityType = "album" | "artist" | "playlist";
 
+const cache = new Map<EntityType, LibraryItemViewModel[]>();
+
 export function useExternalItems(type: EntityType) {
-  const [data, setData] = useState<LibraryItemViewModel[]>([]);
+  const [data, setData] = useState<LibraryItemViewModel[]>(() => cache.get(type) ?? []);
+  const [isLoading, setIsLoading] = useState(() => !cache.has(type));
   useEffect(() => {
     let active = true;
     const load = async () => {
@@ -14,7 +17,7 @@ export function useExternalItems(type: EntityType) {
           type === "album" ? "albums" : type === "artist" ? "artists" : "playlists";
         const response = await api.listSavedCollections(collectionType);
         if (!active) return;
-        setData(response.items.map((entry: any) => {
+        const items: LibraryItemViewModel[] = response.items.map((entry: any) => {
           const value = entry[type];
           const rawCover = value.cover ? mediaUrl(value.cover.url) : "";
           const cover = type === "artist" ? toMaxQualityAvatarUrl(rawCover) : rawCover;
@@ -39,18 +42,29 @@ export function useExternalItems(type: EntityType) {
             trackCount: value.trackCount,
             isOwned: false,
           };
-        }));
-      } catch { if (active) setData([]); }
+        });
+        cache.set(type, items);
+        setData(items);
+      } catch {
+        if (active && !cache.has(type)) setData([]);
+      } finally {
+        if (active) setIsLoading(false);
+      }
     };
     void load();
     const refresh = () => void load();
+    const resetForAccount = () => {
+      cache.delete(type);
+      setData([]);
+      void load();
+    };
     window.addEventListener("library:changed", refresh);
-    window.addEventListener("auth:changed", refresh);
+    window.addEventListener("auth:changed", resetForAccount);
     return () => {
       active = false;
       window.removeEventListener("library:changed", refresh);
-      window.removeEventListener("auth:changed", refresh);
+      window.removeEventListener("auth:changed", resetForAccount);
     };
   }, [type]);
-  return { data };
+  return { data, isLoading };
 }

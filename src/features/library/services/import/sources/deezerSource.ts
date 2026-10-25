@@ -1,5 +1,14 @@
-import { asArray, asRecord, type JsonRecord, numberValue, stringValue } from "@/shared/utils/json";
-import type { ClientImportedPlaylist, ClientImportedTrack } from "../importTypes";
+import {
+  asArray,
+  asRecord,
+  type JsonRecord,
+  numberValue,
+  stringValue,
+} from "@/shared/utils/json";
+import type {
+  ClientImportedPlaylist,
+  ClientImportedTrack,
+} from "../importTypes";
 import { tryFetchJson } from "@/shared/api/tryFetch";
 import { requireOk } from "../shared/http";
 
@@ -69,9 +78,13 @@ async function fillRemainingTracks(
   }
 }
 
-export async function importDeezer(rawUrl: string, signal?: AbortSignal): Promise<ClientImportedPlaylist> {
+export async function importDeezer(
+  rawUrl: string,
+  signal?: AbortSignal,
+): Promise<ClientImportedPlaylist> {
   const id = new URL(rawUrl).pathname.split("/").filter(Boolean).at(-1);
-  if (!id || !/^\d+$/.test(id)) throw new Error("Deezer playlist URL is invalid.");
+  if (!id || !/^\d+$/.test(id))
+    throw new Error("Deezer playlist URL is invalid.");
   const response = await fetch(`${DEEZER_API}/playlist/${id}`, { signal });
   requireOk(response, "Deezer");
   const body = asRecord((await response.json()) as unknown);
@@ -79,7 +92,11 @@ export async function importDeezer(rawUrl: string, signal?: AbortSignal): Promis
   const trackPage = asRecord(body?.tracks);
   appendTracks(tracks, asArray(trackPage?.data));
 
-  const pageCount = await followNextPages(stringValue(trackPage?.next), tracks, signal);
+  const pageCount = await followNextPages(
+    stringValue(trackPage?.next),
+    tracks,
+    signal,
+  );
   await fillRemainingTracks(id, body, tracks, pageCount, signal);
 
   return {

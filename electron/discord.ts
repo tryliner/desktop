@@ -1,6 +1,8 @@
 import { Client, StatusDisplayType, type SetActivity } from "@xhayper/discord-rpc";
 import { ipcMain } from "electron";
 
+const ARRPC_USERNAME = "arrpc";
+
 export type DiscordStatusDisplayType =
   | "artist"
   | "title"
@@ -103,9 +105,14 @@ export class DiscordRpcManager {
     });
 
     ipcMain.handle("discord:get-status", () => {
+      const user = this.client?.user;
+      if (user?.username === ARRPC_USERNAME) {
+        return { connected: this.isConnected, viaArrpc: true };
+      }
       return {
         connected: this.isConnected,
-        username: this.client?.user?.username,
+        username: user?.username,
+        avatarUrl: user?.avatar ? user.avatarUrl : undefined,
       };
     });
   }

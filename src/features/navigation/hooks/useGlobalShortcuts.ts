@@ -1,5 +1,10 @@
 import { useEffect, useRef } from "react";
-import { playerEngine, usePlayerStore, toVolumeGain, toVolumeLevel } from "@/features/player";
+import {
+  playerEngine,
+  usePlayerStore,
+  toVolumeGain,
+  toVolumeLevel,
+} from "@/features/player";
 import { useShortcutsStore, matchesShortcut } from "@/features/shortcuts";
 import {
   isBlockingOverlayOpen,
@@ -22,16 +27,13 @@ const REPEATABLE_CODES = new Set([
   "ArrowRight",
 ]);
 
-export type RightPanelTab = "queue" | "lyrics";
-
 export interface GlobalShortcutsOptions {
   enabled?: boolean;
   searchOpen: boolean;
   openSearch: () => void;
   closeSearch: () => void;
   rightPanelOpen: boolean;
-  rightPanelTab: RightPanelTab;
-  openRightPanel: (tab: RightPanelTab) => void;
+  openRightPanel: () => void;
   closeRightPanel: () => void;
   fullscreenOpen: boolean;
   openFullscreen: () => void;
@@ -131,15 +133,8 @@ export function useGlobalShortcuts(options: GlobalShortcutsOptions): void {
 
       if (matchesShortcut(event, mainApp.toggleQueue)) {
         event.preventDefault();
-        if (opts.rightPanelOpen && opts.rightPanelTab === "queue") opts.closeRightPanel();
-        else opts.openRightPanel("queue");
-        return;
-      }
-
-      if (matchesShortcut(event, mainApp.toggleLyrics)) {
-        event.preventDefault();
-        if (opts.rightPanelOpen && opts.rightPanelTab === "lyrics") opts.closeRightPanel();
-        else opts.openRightPanel("lyrics");
+        if (opts.rightPanelOpen) opts.closeRightPanel();
+        else opts.openRightPanel();
         return;
       }
 
@@ -173,7 +168,8 @@ export function useGlobalShortcuts(options: GlobalShortcutsOptions): void {
       if (matchesShortcut(event, mainApp.seekForward)) {
         event.preventDefault();
         const { positionMs, durationMs } = usePlayerStore.getState();
-        const upperBound = durationMs > 0 ? durationMs : positionMs + SEEK_STEP_MS;
+        const upperBound =
+          durationMs > 0 ? durationMs : positionMs + SEEK_STEP_MS;
         playerEngine.seek(Math.min(upperBound, positionMs + SEEK_STEP_MS));
         return;
       }

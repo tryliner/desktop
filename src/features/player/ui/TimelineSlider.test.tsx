@@ -10,22 +10,31 @@ vi.mock("framer-motion", () => {
   const cache: Record<string, any> = {};
   return {
     AnimatePresence: ({ children }: any) => <>{children}</>,
-    motion: new Proxy({}, {
-      get: (_target, prop: string) => {
-        if (!cache[prop]) {
-          cache[prop] = React.forwardRef(({ children, className, style, ...props }: any, ref: any) => {
-            const cleanProps = { ...props };
-            delete cleanProps.layout;
-            delete cleanProps.initial;
-            delete cleanProps.animate;
-            delete cleanProps.exit;
-            delete cleanProps.transition;
-            return React.createElement(prop, { ref, className, style, ...cleanProps }, children);
-          });
-        }
-        return cache[prop];
+    motion: new Proxy(
+      {},
+      {
+        get: (_target, prop: string) => {
+          if (!cache[prop]) {
+            cache[prop] = React.forwardRef(
+              ({ children, className, style, ...props }: any, ref: any) => {
+                const cleanProps = { ...props };
+                delete cleanProps.layout;
+                delete cleanProps.initial;
+                delete cleanProps.animate;
+                delete cleanProps.exit;
+                delete cleanProps.transition;
+                return React.createElement(
+                  prop,
+                  { ref, className, style, ...cleanProps },
+                  children,
+                );
+              },
+            );
+          }
+          return cache[prop];
+        },
       },
-    }),
+    ),
   };
 });
 
@@ -63,7 +72,7 @@ describe("TimelineSlider Component", () => {
           durationMs={180000}
           onSeek={handleSeek}
           showTime
-        />
+        />,
       );
     });
 
@@ -81,28 +90,36 @@ describe("TimelineSlider Component", () => {
           positionMs={30000}
           durationMs={180000}
           onSeek={handleSeek}
-        />
+        />,
       );
     });
 
     const slider = container?.querySelector('[role="slider"]') as HTMLElement;
     act(() => {
-      slider.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }));
+      slider.dispatchEvent(
+        new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }),
+      );
     });
     expect(handleSeek).toHaveBeenCalledWith(35000);
 
     act(() => {
-      slider.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true }));
+      slider.dispatchEvent(
+        new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true }),
+      );
     });
     expect(handleSeek).toHaveBeenCalledWith(25000);
 
     act(() => {
-      slider.dispatchEvent(new KeyboardEvent("keydown", { key: "Home", bubbles: true }));
+      slider.dispatchEvent(
+        new KeyboardEvent("keydown", { key: "Home", bubbles: true }),
+      );
     });
     expect(handleSeek).toHaveBeenCalledWith(0);
 
     act(() => {
-      slider.dispatchEvent(new KeyboardEvent("keydown", { key: "End", bubbles: true }));
+      slider.dispatchEvent(
+        new KeyboardEvent("keydown", { key: "End", bubbles: true }),
+      );
     });
     expect(handleSeek).toHaveBeenCalledWith(180000);
   });

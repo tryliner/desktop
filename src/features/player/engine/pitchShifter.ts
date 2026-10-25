@@ -30,7 +30,11 @@ function createHannBuffer(context: AudioContext, period: number): AudioBuffer {
   return buffer;
 }
 
-function createRampBuffer(context: AudioContext, period: number, rampDown: boolean): AudioBuffer {
+function createRampBuffer(
+  context: AudioContext,
+  period: number,
+  rampDown: boolean,
+): AudioBuffer {
   const length = Math.max(1, Math.floor(period * context.sampleRate));
   const buffer = context.createBuffer(1, length, context.sampleRate);
   const p = buffer.getChannelData(0);
@@ -252,10 +256,14 @@ export class PitchShifterController {
       }
 
       const audioObj = audio as any;
-      let sourceNode = audioObj.__liner_source_node as MediaElementAudioSourceNode | undefined;
+      let sourceNode = audioObj.__liner_source_node as
+        MediaElementAudioSourceNode | undefined;
 
       if (!sourceNode) {
-        if (win.__liner_media_source_node && win.__liner_media_source_node.mediaElement === audio) {
+        if (
+          win.__liner_media_source_node &&
+          win.__liner_media_source_node.mediaElement === audio
+        ) {
           sourceNode = win.__liner_media_source_node;
           audioObj.__liner_source_node = sourceNode;
         } else {
@@ -294,7 +302,8 @@ export class PitchShifterController {
         );
       };
 
-      let graph = (audioObj.__liner_pitch_graph || win.__liner_pitch_graph) as AudioEffectsGraph | undefined;
+      let graph = (audioObj.__liner_pitch_graph || win.__liner_pitch_graph) as
+        AudioEffectsGraph | undefined;
 
       if (!isCompleteGraph(graph)) {
         // Disconnect any legacy/stale nodes from the old graph
@@ -429,7 +438,10 @@ export class PitchShifterController {
     if (!this.isConnected || !this.context || !this.graph) {
       if (typeof window !== "undefined") {
         const win = window as any;
-        const audio = win.__liner_audio || (typeof document !== "undefined" && document.getElementById("liner-audio"));
+        const audio =
+          win.__liner_audio ||
+          (typeof document !== "undefined" &&
+            document.getElementById("liner-audio"));
         if (audio) {
           this.attach(audio);
         }
@@ -478,9 +490,9 @@ export class PitchShifterController {
     if (isReverbEnabled && reverbLevel > 0.01) {
       // Natural wet scaling
       const targetWet = Math.min(1.2, Math.max(0, reverbLevel));
-      this.graph.reverbWetGain.gain.setTargetAtTime(targetWet, now, 0.020);
+      this.graph.reverbWetGain.gain.setTargetAtTime(targetWet, now, 0.02);
     } else {
-      this.graph.reverbWetGain.gain.setTargetAtTime(0, now, 0.020);
+      this.graph.reverbWetGain.gain.setTargetAtTime(0, now, 0.02);
     }
 
     // 8D Audio routie

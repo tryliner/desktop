@@ -202,6 +202,7 @@
     "mostListened": "Les plus écoutés de tous les temps",
     "jumpBackIn": "Reprendre l'écoute",
     "popularAlbums": "Top albums",
+    "mostSaved": "Les plus enregistrés",
     "popularArtists": "Artistes tendance",
     "popularPlaylists": "Playlists populaires",
     "dailyMixes": "Mix quotidiens",
@@ -214,9 +215,11 @@
     "songs": "titres",
     "track": "titre",
     "tracks": "titres",
+    "tab_all": "Tout",
     "tab_playlists": "Playlists",
     "tab_albums": "Albums",
     "tab_artists": "Artistes",
+    "search_all": "Rechercher dans la bibliothèque",
     "search_playlists": "Rechercher des playlists",
     "search_albums": "Rechercher des albums",
     "search_artists": "Rechercher des artistes",
@@ -245,7 +248,6 @@
     "auth_subtitle_register": "Créez un compte et commencez à construire votre bibliothèque personnelle.",
     "profile_setup_title": "Configurez votre profil",
     "profile_setup_subtitle": "Choisissez votre identifiant unique et votre nom affiché.",
-    "step_indicator": "Étape {step} sur {total}",
     "btn_continue": "Continuer",
     "btn_back": "Retour",
     "username_hint": "3 à 30 caractères : lettres minuscules, chiffres ou tirets bas.",
@@ -344,6 +346,10 @@
     }
   },
   "player": {
+    "mute": "Couper le son",
+    "unmute": "Rétablir le son",
+    "decrease": "Diminuer",
+    "increase": "Augmenter",
     "repeat_off": "Répéter : désactivé",
     "repeat_all": "Répéter : tout",
     "repeat_one": "Répéter : titre",
@@ -431,6 +437,9 @@
     "save_preferences": "Enregistrer les préférences",
     "groups": {
       "preferences": "Préférences",
+      "player": "Lecteur",
+      "interface": "Interface",
+      "integrations": "Intégrations",
       "application": "Application",
       "help": "Aide"
     },
@@ -440,8 +449,6 @@
     "tabs": {
       "general": "Général",
       "appearance": "Apparence",
-      "customization": "Personnalisation",
-      "audio": "Audio",
       "storage": "Cache et stockage",
       "system": "Système",
       "account": "Compte",
@@ -486,8 +493,6 @@
       "search_desc": "Ouvre rapidement la recherche.",
       "toggle_queue": "File d'attente",
       "toggle_queue_desc": "Ouvre ou ferme le panneau de la file d'attente.",
-      "toggle_lyrics": "Paroles",
-      "toggle_lyrics_desc": "Ouvre ou ferme le panneau des paroles synchronisées.",
       "toggle_fullscreen": "Plein écran / Vue lecteur",
       "toggle_fullscreen_desc": "Active ou désactive la vue immersive du lecteur en plein écran.",
       "like_track": "J'aime / Je n'aime plus",
@@ -542,45 +547,6 @@
         "description": "Garde l'overlay au-dessus des autres fenêtres."
       }
     },
-    "customization": {
-      "description": "Fond d'écran de la fenêtre, transparence et flou des blocs.",
-      "apply_to_overlay": "Appliquer au mini-lecteur en overlay",
-      "apply_to_overlay_desc": "Utilise le fond personnalisé et l'effet verre sur le mini-lecteur flottant.",
-      "dark_theme_only": "La personnalisation n'est disponible qu'avec le thème sombre",
-      "wallpaper_title": "Fond d'écran de la fenêtre",
-      "wallpaper_description": "Définissez une image ou un GIF animé comme fond de toute la fenêtre.",
-      "upload_title": "Choisir une image ou un GIF animé",
-      "upload_hint": "PNG, JPEG, GIF, WebP (jusqu'à 30 Mo)",
-      "change_button": "Changer",
-      "remove_button": "Retirer",
-      "wallpaper_blur": "Flou du fond d'écran",
-      "wallpaper_dim": "Assombrissement du fond d'écran",
-      "blocks_title": "Effet verre des blocs de l'interface",
-      "blocks_description": "Réglez la transparence, le flou d'arrière-plan et l'assombrissement de chaque zone de l'interface.",
-      "block_sidebar": "Barre latérale",
-      "block_content": "Zone de contenu",
-      "block_miniplayer": "Mini-lecteur",
-      "opacity": "Opacité (transparence)",
-      "opacity_desc": "Niveau d'opacité du fond (25 % min.)",
-      "blur": "Flou d'arrière-plan",
-      "blur_desc": "Intensité de l'effet verre dépoli",
-      "dim": "Assombrissement",
-      "dim_desc": "Voile sombre pour une meilleure lisibilité",
-      "apply_all": "À tous",
-      "apply_all_title": "Appliquer les réglages à tous les blocs",
-      "applied_to_all": "Réglages appliqués à tous les blocs",
-      "reset_block": "Réinitialiser",
-      "block_reset": "Réglages du bloc réinitialisés",
-      "reset_all": "Réinitialiser toute la personnalisation",
-      "reset_all_desc": "Rétablit l'apparence par défaut, retire l'image de fond et les effets verre des blocs.",
-      "all_reset": "Personnalisation réinitialisée",
-      "applied": "Fond d'écran appliqué",
-      "removed": "Fond d'écran retiré",
-      "invalid_file_type": "Choisissez une image ou un fichier GIF",
-      "file_too_large": "Le fichier doit faire moins de 30 Mo",
-      "read_error": "Impossible de lire le fichier image"
-    },
-
     "audio_data": {
       "description": "Qualité du streaming, cache hors ligne et diagnostic de connexion."
     },
@@ -683,7 +649,6 @@
     "theme": {
       "title": "Thème",
       "description": "Choisissez l'apparence générale de l'application.",
-      "disabled_for_glass": "Le thème clair est désactivé avec l'effet verre et un fond d'écran personnalisé.",
       "light": "Clair",
       "dark": "Sombre",
       "system": "Système"
@@ -706,8 +671,6 @@
       "vhs": "Chrome"
     },
     "audio": {
-      "title": "Qualité du streaming",
-      "description": "Choisissez la qualité audio par défaut pour la lecture.",
       "pause_on_device_change": {
         "title": "Pause au changement de périphérique",
         "description": "Met automatiquement la lecture en pause quand la sortie audio change."
@@ -715,11 +678,7 @@
       "download_current_song": {
         "title": "Télécharger le titre en cours",
         "description": "Télécharge le titre en cours de lecture au format MP3."
-      },
-      "low": "Qualité basse (économie de données)",
-      "standard": "Qualité standard (Opus 64kbps / MP3 128kbps)",
-      "high": "Haute qualité (AAC 256kbps)",
-      "lossless": "Sans perte (FLAC/ALAC) - Indisponible"
+      }
     },
     "profile": {
       "title": "Profil",
@@ -814,16 +773,12 @@
       "license_notice": "Distribué sous la licence Liner Source-Available & Non-Commercial."
     },
     "connection": {
-      "title": "Connexion",
-      "description": "Lancez tous les tests de connectivité et enregistrez le rapport hors ligne.",
-      "checks_title": "Rapport hors ligne",
-      "button": "Lancer les tests et enregistrer",
-      "checking": "Vérification…",
-      "saved": "Rapport enregistré, joignez-le à votre message pour l'assistance.",
-      "failed": "Impossible d'enregistrer le rapport.",
-      "never_run": "Les tests n'ont pas encore été lancés.",
-      "last_run": "{ok}/{total} tests réussis · {time}",
       "open_folder": "Ouvrir l'emplacement"
+    },
+    "cover_glow": {
+      "title": "Halo de pochette",
+      "description": "Halo flouté de la pochette derrière les pages. Désactivez pour un fond uni.",
+      "disabled_for_light": "Désactivé en thème clair."
     }
   },
   "toast": {
@@ -948,12 +903,7 @@
     "check_trace": "Traçage de la route",
     "check_platform": "Plateforme",
     "check_main": "Tests de l'application",
-    "copy_dump": "Copier le rapport",
-    "dump_copied": "Rapport copié, collez-le dans votre message pour l'assistance.",
-    "dump_copy_failed": "Impossible d'accéder au presse-papiers.",
-    "download_dump": "Enregistrer le rapport",
-    "support": "Contacter l'assistance",
-    "support_hint": "Joignez le fichier du rapport pour que l'assistance ait une vue d'ensemble."
+    "support": "Contacter l'assistance"
   },
   "updater": {
     "modal_title": "Nouvelle mise à jour disponible",
@@ -970,9 +920,15 @@
   "track_search": {
     "placeholder_playlist": "Rechercher dans la playlist",
     "placeholder_album": "Rechercher dans l’album",
-    "button": "Rechercher des titres",
     "count": "{count} sur {total}",
     "no_results": "Aucun titre ne correspond à « {query} »",
     "clear": "Effacer la recherche"
+  },
+  "track_sort": {
+    "label": "Trier",
+    "default": "Par défaut",
+    "title": "Par titre (A–Z)",
+    "duration": "Par durée",
+    "popularity": "Par popularité"
   }
 }

@@ -1,11 +1,25 @@
-import { asArray, asRecord, isRecord, type JsonRecord, numberValue, recordAt, stringValue } from "@/shared/utils/json";
+import {
+  asArray,
+  asRecord,
+  isRecord,
+  type JsonRecord,
+  numberValue,
+  recordAt,
+  stringValue,
+} from "@/shared/utils/json";
 import type { ClientImportedTrack } from "../../importTypes";
 import { delay } from "../../shared/http";
-import { getSpotifyGuestSession, resetSpotifySessionCache, SPOTIFY_CLIENT_VERSION, type SpotifySession } from "./spotifyAuth";
+import {
+  getSpotifyGuestSession,
+  resetSpotifySessionCache,
+  SPOTIFY_CLIENT_VERSION,
+  type SpotifySession,
+} from "./spotifyAuth";
 import { rethrowIfAborted } from "@/shared/utils/abort";
 import { log } from "@/shared/utils/logger";
 
-const SPOTIFY_PATHFINDER_HASH = "86dde7b9d9356e2369414647cf6950cfed96e778e129cfdfc99aea6c1613b3b0";
+const SPOTIFY_PATHFINDER_HASH =
+  "86dde7b9d9356e2369414647cf6950cfed96e778e129cfdfc99aea6c1613b3b0";
 const PAGE_LIMIT = 100;
 const MAX_PAGES = 60;
 const PAGE_ATTEMPTS = 3;
@@ -18,8 +32,14 @@ export interface PathfinderResult {
 function pathfinderUrl(playlistId: string, offset: number): string {
   const params = new URLSearchParams({
     operationName: "fetchPlaylistContents",
-    variables: JSON.stringify({ uri: `spotify:playlist:${playlistId}`, offset, limit: PAGE_LIMIT }),
-    extensions: JSON.stringify({ persistedQuery: { version: 1, sha256Hash: SPOTIFY_PATHFINDER_HASH } }),
+    variables: JSON.stringify({
+      uri: `spotify:playlist:${playlistId}`,
+      offset,
+      limit: PAGE_LIMIT,
+    }),
+    extensions: JSON.stringify({
+      persistedQuery: { version: 1, sha256Hash: SPOTIFY_PATHFINDER_HASH },
+    }),
   });
   return `https://api-partner.spotify.com/pathfinder/v1/query?${params.toString()}`;
 }
@@ -36,10 +56,14 @@ function pathfinderHeaders(session: SpotifySession): Record<string, string> {
 
 function artistName(raw: unknown): string | undefined {
   const artist = asRecord(raw);
-  return stringValue(recordAt(artist, "profile")?.name) ?? stringValue(artist?.name);
+  return (
+    stringValue(recordAt(artist, "profile")?.name) ?? stringValue(artist?.name)
+  );
 }
 
-export function mapPathfinderItem(item: JsonRecord): ClientImportedTrack | undefined {
+export function mapPathfinderItem(
+  item: JsonRecord,
+): ClientImportedTrack | undefined {
   const track = recordAt(item, "itemV2", "data");
   if (!track || track.__typename !== "Track") return undefined;
   const title = typeof track.name === "string" ? track.name.trim() : undefined;
@@ -51,8 +75,12 @@ export function mapPathfinderItem(item: JsonRecord): ClientImportedTrack | undef
   const uri = typeof track.uri === "string" ? track.uri : "";
   const album = recordAt(track, "albumOfTrack");
   const albumName = stringValue(album?.name);
-  const coverUrl = stringValue(asRecord(asArray(recordAt(album, "coverArt")?.sources)[0])?.url);
-  const durationMs = numberValue(recordAt(track, "trackDuration")?.totalMilliseconds);
+  const coverUrl = stringValue(
+    asRecord(asArray(recordAt(album, "coverArt")?.sources)[0])?.url,
+  );
+  const durationMs = numberValue(
+    recordAt(track, "trackDuration")?.totalMilliseconds,
+  );
 
   return {
     sourceId: uri.split(":").pop() || String(track.id ?? ""),
@@ -64,13 +92,23 @@ export function mapPathfinderItem(item: JsonRecord): ClientImportedTrack | undef
   };
 }
 
-async function fetchPage(playlistId: string, offset: number, signal?: AbortSignal): Promise<JsonRecord | undefined> {
+async function fetchPage(
+  playlistId: string,
+  offset: number,
+  signal?: AbortSignal,
+): Promise<JsonRecord | undefined> {
   let session = await getSpotifyGuestSession(signal);
   for (let attempt = 1; attempt <= PAGE_ATTEMPTS; attempt += 1) {
     try {
-      const response = await fetch(pathfinderUrl(playlistId, offset), { headers: pathfinderHeaders(session), signal });
+      const response = await fetch(pathfinderUrl(playlistId, offset), {
+        headers: pathfinderHeaders(session),
+        signal,
+      });
       if (response.status === 429) {
-        await delay(Number(response.headers.get("retry-after") || 3) * 1000, signal);
+        await delay(
+          Number(response.headers.get("retry-after") || 3) * 1000,
+          signal,
+        );
         continue;
       }
       if (response.status === 401 || response.status === 403) {
@@ -91,19 +129,30 @@ async function fetchPage(playlistId: string, offset: number, signal?: AbortSigna
       return content;
     } catch (error) {
       rethrowIfAborted(signal);
-      log("yellow", "import", `spotify page at ${offset} failed (attempt ${attempt}): ${String(error)}`);
+      log(
+        "yellow",
+        "import",
+        `spotify page at ${offset} failed (attempt ${attempt}): ${String(error)}`,
+      );
       if (attempt < PAGE_ATTEMPTS) await delay(500 * attempt, signal);
     }
   }
   return undefined;
 }
 
-export async function fetchSpotifyPlaylistTracks(playlistId: string, signal?: AbortSignal): Promise<PathfinderResult> {
+export async function fetchSpotifyPlaylistTracks(
+  playlistId: string,
+  signal?: AbortSignal,
+): Promise<PathfinderResult> {
   const tracks: ClientImportedTrack[] = [];
   let total: number | undefined;
   let offset = 0;
 
-  for (let page = 0; page < MAX_PAGES && (total === undefined || offset < total); page += 1) {
+  for (
+    let page = 0;
+    page < MAX_PAGES && (total === undefined || offset < total);
+    page += 1
+  ) {
     const content = await fetchPage(playlistId, offset, signal);
     if (!content) {
       if (page === 0) throw new Error("spotify pathfinder returned nothing");

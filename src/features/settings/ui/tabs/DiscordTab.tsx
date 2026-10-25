@@ -1,19 +1,16 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "@/languages";
 import {
+  DiscordAccountCard,
   useDiscordSettingsStore,
   type DiscordStatusDisplayType,
 } from "@/features/discord";
-import { ToggleSwitch, Select } from "@/shared/ui";
+import { ToggleSwitch, MenuSelect } from "@/shared/ui";
 import { SettingRow, SettingSection } from "../controls";
 
 export function DiscordTab({ searchQuery }: { searchQuery?: string }) {
   const { t } = useTranslation();
   const [mounted, setMounted] = useState(false);
-  const [discordStatus, setDiscordStatus] = useState<{
-    connected: boolean;
-    username?: string;
-  }>({ connected: false });
 
   const enabled = useDiscordSettingsStore((s) => s.enabled);
   const setEnabled = useDiscordSettingsStore((s) => s.setEnabled);
@@ -41,48 +38,11 @@ export function DiscordTab({ searchQuery }: { searchQuery?: string }) {
 
   useEffect(() => {
     setMounted(true);
-
-    const checkStatus = () => {
-      if (window.linerElectron?.getDiscordStatus) {
-        window.linerElectron.getDiscordStatus().then((status) => {
-          if (status) setDiscordStatus(status);
-        });
-      }
-    };
-
-    checkStatus();
-    const interval = setInterval(checkStatus, 4000);
-    return () => clearInterval(interval);
   }, []);
 
   return (
     <div className="flex flex-col gap-[18px]">
-      {/* Discord Connection Status */}
-      <div className="flex items-center justify-between px-[14px] py-[10px] rounded-lg bg-border-alpha-10">
-        <div className="flex items-center gap-[10px]">
-          <span
-            className={`w-[8px] h-[8px] rounded-full shrink-0 ${
-              discordStatus.connected
-                ? "bg-[#23a55a] shadow-[0_0_8px_rgba(35,165,90,0.5)]"
-                : "bg-text-tertiary/40"
-            }`}
-          />
-          <span className="text-[13px] text-text-primary font-medium">
-            {discordStatus.connected
-              ? t("settings.discord.status.connected", {
-                  user: discordStatus.username || "Discord",
-                }) || `Connected to Discord (${discordStatus.username || "Active"})`
-              : t("settings.discord.status.disconnected") || "Discord not connected"}
-          </span>
-        </div>
-        <span className="text-[12px] text-text-tertiary font-mono">
-          {enabled
-            ? discordStatus.connected
-              ? t("settings.discord.status.ready") || "Ready"
-              : t("settings.discord.status.waiting") || "Waiting for Discord"
-            : t("settings.discord.status.disabled") || "Disabled"}
-        </span>
-      </div>
+      {!searchQuery?.trim() && <DiscordAccountCard />}
 
       {/* Main enable switch */}
       <SettingSection>
@@ -113,12 +73,13 @@ export function DiscordTab({ searchQuery }: { searchQuery?: string }) {
             t("settings.discord.status_display.description") ||
             "Choose what appears in Discord's 'Listening to...' status header."
           }
+          explained
           titleKey="settings.discord.status_display.title"
           descKey="settings.discord.status_display.description"
           searchQuery={searchQuery}
           control={
             mounted ? (
-              <Select<DiscordStatusDisplayType>
+              <MenuSelect<DiscordStatusDisplayType>
                 aria-label={t("settings.discord.status_display.title") || "Status Format"}
                 className="w-[210px]"
                 value={statusDisplayType}
@@ -160,6 +121,7 @@ export function DiscordTab({ searchQuery }: { searchQuery?: string }) {
             t("settings.discord.show_timeline.description") ||
             "Display interactive progress bar with elapsed and remaining track time."
           }
+          explained
           titleKey="settings.discord.show_timeline.title"
           descKey="settings.discord.show_timeline.description"
           searchQuery={searchQuery}
@@ -198,6 +160,7 @@ export function DiscordTab({ searchQuery }: { searchQuery?: string }) {
             t("settings.discord.show_artist_image.description") ||
             "Display the artist photo in a small circular badge on the bottom corner."
           }
+          explained
           titleKey="settings.discord.show_artist_image.title"
           descKey="settings.discord.show_artist_image.description"
           searchQuery={searchQuery}
@@ -217,6 +180,7 @@ export function DiscordTab({ searchQuery }: { searchQuery?: string }) {
             t("settings.discord.show_paused.description") ||
             "Keep status visible on Discord with a paused indicator when music is paused."
           }
+          explained
           titleKey="settings.discord.show_paused.title"
           descKey="settings.discord.show_paused.description"
           searchQuery={searchQuery}

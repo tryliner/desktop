@@ -1,6 +1,8 @@
-export type LibraryTab = "playlists" | "albums" | "artists";
+export type LibraryTab = "all" | "playlists" | "albums" | "artists";
 
 export type LibraryItemKind = "playlist" | "album" | "artist";
+
+export type LibraryItemSource = "youtube";
 
 export interface LibraryItemViewModel {
   id: string;
@@ -14,6 +16,7 @@ export interface LibraryItemViewModel {
   addedAt: string;
   trackCount?: number;
   isOwned?: boolean;
+  source?: LibraryItemSource;
 }
 export type LibrarySortOption = "recent" | "title" | "creator";
 

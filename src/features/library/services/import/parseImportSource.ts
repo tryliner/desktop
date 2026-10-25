@@ -8,7 +8,10 @@ import { importSoundCloud } from "./sources/soundcloud/soundcloudSource";
 import { importSpotify } from "./sources/spotify/spotifySource";
 import { importYoutube } from "./sources/youtube/youtubeSource";
 
-type SourceParser = (url: string, signal?: AbortSignal) => Promise<ClientImportedPlaylist>;
+type SourceParser = (
+  url: string,
+  signal?: AbortSignal,
+) => Promise<ClientImportedPlaylist>;
 
 const PARSERS: Record<ImportSource, SourceParser> = {
   youtube: importYoutube,
@@ -18,7 +21,10 @@ const PARSERS: Record<ImportSource, SourceParser> = {
   apple_music: importAppleMusic,
 };
 
-export async function parseImportSource(url: string, signal?: AbortSignal): Promise<ClientImportedPlaylist> {
+export async function parseImportSource(
+  url: string,
+  signal?: AbortSignal,
+): Promise<ClientImportedPlaylist> {
   const source = detectImportSource(url);
   signal?.throwIfAborted();
   const playlist = await PARSERS[source](normalizeImportUrl(url), signal);

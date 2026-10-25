@@ -202,9 +202,10 @@
     "mostListened": "Most listened of all time",
     "jumpBackIn": "Jump back in",
     "popularAlbums": "Top Albums",
+    "mostSaved": "Most saved",
     "popularArtists": "Trending Artists",
     "popularPlaylists": "Popular Playlists",
-    "dailyMixes": "Daily Mixes",
+    "dailyMixes": "Your Mixes",
     "dailyMixesSubtitle": "Fresh playlists curated around your favorite artists and genres"
   },
   "library": {
@@ -214,9 +215,11 @@
     "songs": "songs",
     "track": "track",
     "tracks": "tracks",
+    "tab_all": "All",
     "tab_playlists": "Playlists",
     "tab_albums": "Albums",
     "tab_artists": "Artists",
+    "search_all": "Search library",
     "search_playlists": "Search playlists",
     "search_albums": "Search albums",
     "search_artists": "Search artists",
@@ -245,7 +248,6 @@
     "auth_subtitle_register": "Create an account and start building your personal library.",
     "profile_setup_title": "Set up your profile",
     "profile_setup_subtitle": "Choose your unique handle and display name.",
-    "step_indicator": "Step {step} of {total}",
     "btn_continue": "Continue",
     "btn_back": "Back",
     "username_hint": "3-30 lowercase characters, numbers or underscores.",
@@ -352,9 +354,13 @@
     "queue": "Queue",
     "lyrics": "Lyrics",
     "volume": "Volume",
+    "mute": "Mute",
+    "unmute": "Unmute",
+    "decrease": "Decrease",
+    "increase": "Increase",
     "previous": "Previous",
     "open_player": "Open player",
-    "next":"Next",
+    "next": "Next",
     "repeat": "Repeat",
     "lyrics_upgraded": "Lyrics upgraded!",
     "playing_from": "Playing from",
@@ -439,6 +445,9 @@
     "save_preferences": "Save preferences",
     "groups": {
       "preferences": "Preferences",
+      "player": "Player",
+      "interface": "Interface",
+      "integrations": "Integrations",
       "application": "Application",
       "help": "Help"
     },
@@ -448,8 +457,6 @@
     "tabs": {
       "general": "General",
       "appearance": "Appearance",
-      "customization": "Customization",
-      "audio": "Audio",
       "storage": "Cache & Storage",
       "system": "System",
       "account": "Account",
@@ -458,6 +465,7 @@
       "shortcuts": "Shortcuts",
       "overlay": "Overlay",
       "discord": "Discord RPC",
+      "youtube": "YouTube",
       "privacy": "Privacy"
     },
     "playback": {
@@ -495,8 +503,6 @@
       "search_desc": "Quickly open the search dialog.",
       "toggle_queue": "Queue",
       "toggle_queue_desc": "Open or close the playback queue panel.",
-      "toggle_lyrics": "Lyrics",
-      "toggle_lyrics_desc": "Open or close synchronized lyrics panel.",
       "toggle_fullscreen": "Fullscreen / Player view",
       "toggle_fullscreen_desc": "Toggle immersive fullscreen player view.",
       "like_track": "Like / Unlike",
@@ -551,6 +557,26 @@
         "description": "Keep the overlay floating above other windows."
       }
     },
+    "youtube": {
+      "description": "Sign in to your YouTube account to prevent playback errors.",
+      "section_playback": "Playback",
+      "account_playback": {
+        "title": "Play through your account",
+        "description": "Request YouTube audio with your signed-in account so streams are not blocked."
+      },
+      "prompt_sign_in": {
+        "title": "Ask to sign in",
+        "description": "Show the sign-in card when YouTube blocks playback instead of skipping the track."
+      },
+      "sync_library": {
+        "title": "Sync library",
+        "description": "Show playlists from your YouTube account in the library next to Liner playlists."
+      },
+      "sign_out": "Sign out",
+      "sign_in": "Sign in",
+      "signed_out_title": "Not signed in",
+      "signed_out_description": "Sign in to keep YouTube playback working"
+    },
     "discord": {
       "description": "Show what you're listening to on Discord with album art, artist badge and progress bar.",
       "section_display": "Display Options",
@@ -597,48 +623,10 @@
         "disconnected": "Discord not connected",
         "ready": "Ready",
         "waiting": "Waiting for Discord",
-        "disabled": "Disabled"
+        "disabled": "Disabled",
+        "via_arrpc": "Connected via arRPC"
       }
     },
-    "customization": {
-      "description": "Window background wallpaper, transparency and block blur effects.",
-      "apply_to_overlay": "Apply to overlay mini player",
-      "apply_to_overlay_desc": "Render the custom background and glass styling on the floating mini player.",
-      "dark_theme_only": "Customization is only available for dark theme",
-      "wallpaper_title": "Window Wallpaper",
-      "wallpaper_description": "Set a custom image or animated GIF as the full window background.",
-      "upload_title": "Select image or animated GIF",
-      "upload_hint": "PNG, JPEG, GIF, WebP (up to 30MB)",
-      "change_button": "Change",
-      "remove_button": "Remove",
-      "wallpaper_blur": "Wallpaper blur",
-      "wallpaper_dim": "Wallpaper dimming",
-      "blocks_title": "Interface Blocks Glassmorphism",
-      "blocks_description": "Adjust transparency, backdrop blur and dimming for each interface area.",
-      "block_sidebar": "Sidebar",
-      "block_content": "Content View",
-      "block_miniplayer": "Miniplayer",
-      "opacity": "Opacity (transparency)",
-      "opacity_desc": "Background opacity level (min. 25%)",
-      "blur": "Backdrop blur",
-      "blur_desc": "Frosted glass blur intensity",
-      "dim": "Dimming",
-      "dim_desc": "Dark overlay for enhanced readability",
-      "apply_all": "To all",
-      "apply_all_title": "Apply settings to all blocks",
-      "applied_to_all": "Settings applied to all blocks",
-      "reset_block": "Reset",
-      "block_reset": "Block settings reset",
-      "reset_all": "Reset all customization",
-      "reset_all_desc": "Restore default appearance, clear background image and block glass effects.",
-      "all_reset": "All customization reset",
-      "applied": "Wallpaper applied",
-      "removed": "Wallpaper removed",
-      "invalid_file_type": "Please select an image or GIF file",
-      "file_too_large": "File size must be under 30 MB",
-      "read_error": "Failed to read image file"
-    },
-
     "audio_data": {
       "description": "Streaming quality, offline cache and connection diagnostics."
     },
@@ -741,7 +729,6 @@
     "theme": {
       "title": "Theme",
       "description": "Choose the overall appearance of the app.",
-      "disabled_for_glass": "Light theme is disabled when using custom wallpaper glassmorphism.",
       "light": "Light",
       "dark": "Dark",
       "system": "System"
@@ -764,8 +751,6 @@
       "vhs": "Chrome"
     },
     "audio": {
-      "title": "Streaming Quality",
-      "description": "Select the default audio quality for playback.",
       "pause_on_device_change": {
         "title": "Pause on device change",
         "description": "Automatically pause playback when the audio output device changes."
@@ -773,11 +758,7 @@
       "download_current_song": {
         "title": "Download current song",
         "description": "Download the currently playing track as an MP3 file."
-      },
-      "low": "Low Quality (Data Saver)",
-      "standard": "Standard Quality (Opus 64kbps / MP3 128kbps)",
-      "high": "High Quality (AAC 256kbps)",
-      "lossless": "Lossless (FLAC/ALAC) - Unavailable"
+      }
     },
     "profile": {
       "title": "Profile",
@@ -872,16 +853,12 @@
       "license_notice": "Distributed under Liner Source-Available & Non-Commercial License."
     },
     "connection": {
-      "title": "Connection",
-      "description": "Run every connectivity probe and save the offline report.",
-      "checks_title": "Offline report",
-      "button": "Run checks and save",
-      "checking": "Checking…",
-      "saved": "Report saved, attach it to your support message.",
-      "failed": "Couldn't save the report.",
-      "never_run": "Checks have not been run yet.",
-      "last_run": "{ok}/{total} checks ok · {time}",
       "open_folder": "Open saved location"
+    },
+    "cover_glow": {
+      "title": "Cover glow",
+      "description": "Blurred artwork glow behind pages. Turn off to keep a plain background.",
+      "disabled_for_light": "Off in light theme."
     }
   },
   "toast": {
@@ -1006,12 +983,7 @@
     "check_trace": "Route trace",
     "check_platform": "Platform",
     "check_main": "Desktop checks",
-    "copy_dump": "Copy report",
-    "dump_copied": "Report copied, paste it into your support message.",
-    "dump_copy_failed": "Couldn't access the clipboard.",
-    "download_dump": "Save report",
-    "support": "Contact support",
-    "support_hint": "Attach the saved report file so support sees the full picture."
+    "support": "Contact support"
   },
   "updater": {
     "modal_title": "New Update Available",
@@ -1028,9 +1000,26 @@
   "track_search": {
     "placeholder_playlist": "Search in playlist",
     "placeholder_album": "Search in album",
-    "button": "Search tracks",
     "count": "{count} of {total}",
     "no_results": "No tracks match “{query}”",
     "clear": "Clear search"
+  },
+  "track_sort": {
+    "label": "Sort",
+    "default": "Default",
+    "title": "By title (A–Z)",
+    "duration": "By duration",
+    "popularity": "By popularity"
+  },
+  "youtube_auth": {
+    "title": "Sign in to YouTube to keep listening",
+    "description": "YouTube blocks audio streams without sign-in (BotGuard check). Signing in with your Google/YouTube account confirms you are a real listener and lifts the limits.",
+    "waiting": "Waiting for sign-in…",
+    "retry": "Try again",
+    "not_now": "Not now",
+    "or_enter_code": "or enter the code at",
+    "copy_code": "Copy code",
+    "connected": "YouTube connected",
+    "qr_label": "Sign-in QR code"
   }
 }

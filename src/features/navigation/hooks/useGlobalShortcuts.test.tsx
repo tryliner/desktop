@@ -41,7 +41,6 @@ function baseOptions(overrides: Partial<GlobalShortcutsOptions> = {}): GlobalSho
     openSearch: vi.fn(),
     closeSearch: vi.fn(),
     rightPanelOpen: false,
-    rightPanelTab: "queue",
     openRightPanel: vi.fn(),
     closeRightPanel: vi.fn(),
     fullscreenOpen: false,
@@ -153,11 +152,11 @@ describe("useGlobalShortcuts", () => {
     expect(openFullscreen).not.toHaveBeenCalled();
   });
 
-  it("Q opens the right panel on the Queue tab when closed, and closes it when already on Queue", () => {
+  it("Q opens the queue panel when closed and closes it when open", () => {
     const openRightPanel = vi.fn();
     mounted = mount(baseOptions({ rightPanelOpen: false, openRightPanel }));
     press("KeyQ");
-    expect(openRightPanel).toHaveBeenCalledWith("queue");
+    expect(openRightPanel).toHaveBeenCalledTimes(1);
     expect(playerEngine.togglePlayPause).not.toHaveBeenCalled();
     expect(playerEngine.seek).not.toHaveBeenCalled();
 
@@ -165,46 +164,16 @@ describe("useGlobalShortcuts", () => {
     document.body.removeChild(mounted.container);
 
     const closeRightPanel = vi.fn();
-    mounted = mount(baseOptions({ rightPanelOpen: true, rightPanelTab: "queue", closeRightPanel }));
+    mounted = mount(baseOptions({ rightPanelOpen: true, closeRightPanel }));
     press("KeyQ");
     expect(closeRightPanel).toHaveBeenCalledTimes(1);
   });
 
-  it("Q switches to the Queue tab (without closing) when the panel is open on Lyrics", () => {
-    const openRightPanel = vi.fn();
-    const closeRightPanel = vi.fn();
-    mounted = mount(
-      baseOptions({ rightPanelOpen: true, rightPanelTab: "lyrics", openRightPanel, closeRightPanel }),
-    );
-    press("KeyQ");
-    expect(openRightPanel).toHaveBeenCalledWith("queue");
-    expect(closeRightPanel).not.toHaveBeenCalled();
-  });
-
-  it("L opens the right panel on the Lyrics tab when closed, and closes it when already on Lyrics", () => {
+  it("L does not open the queue panel", () => {
     const openRightPanel = vi.fn();
     mounted = mount(baseOptions({ rightPanelOpen: false, openRightPanel }));
     press("KeyL");
-    expect(openRightPanel).toHaveBeenCalledWith("lyrics");
-
-    act(() => mounted!.root.unmount());
-    document.body.removeChild(mounted.container);
-
-    const closeRightPanel = vi.fn();
-    mounted = mount(baseOptions({ rightPanelOpen: true, rightPanelTab: "lyrics", closeRightPanel }));
-    press("KeyL");
-    expect(closeRightPanel).toHaveBeenCalledTimes(1);
-  });
-
-  it("L switches to the Lyrics tab (without closing) when the panel is open on Queue", () => {
-    const openRightPanel = vi.fn();
-    const closeRightPanel = vi.fn();
-    mounted = mount(
-      baseOptions({ rightPanelOpen: true, rightPanelTab: "queue", openRightPanel, closeRightPanel }),
-    );
-    press("KeyL");
-    expect(openRightPanel).toHaveBeenCalledWith("lyrics");
-    expect(closeRightPanel).not.toHaveBeenCalled();
+    expect(openRightPanel).not.toHaveBeenCalled();
   });
 
   it("M mutes and restores the previous volume level on toggle", () => {

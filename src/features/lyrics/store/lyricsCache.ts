@@ -137,7 +137,7 @@ class LyricsCache {
 
     // hydrate provider map if missing from older storage schemas
     const providers: Record<string, LyricsCandidate> = {
-      ...(parsed.providers || {}),
+      ...parsed.providers,
     };
     if (parsed.candidate && shouldCacheLyricsCandidate(parsed.candidate)) {
       const key = normalizeProviderKey(parsed.candidate.provider);
@@ -226,7 +226,7 @@ class LyricsCache {
 
     const existing = this.get(trackId);
     const providers: Record<string, LyricsCandidate> = {
-      ...(existing?.providers || {}),
+      ...existing?.providers,
     };
     providers[normalizeProviderKey(candidate.provider)] = candidate;
 
@@ -269,7 +269,7 @@ class LyricsCache {
   ) {
     const existing = this.get(trackId);
     const providers: Record<string, LyricsCandidate> = {
-      ...(existing?.providers || {}),
+      ...existing?.providers,
     };
 
     if (shouldCacheLyricsCandidate(candidate)) {
@@ -299,10 +299,9 @@ class LyricsCache {
       }))
       .sort((a, b) => compareLyricsCandidates(a.candidate, b.candidate));
 
-    const bestCandidate =
-      shouldCacheLyricsCandidate(candidate)
-        ? candidate
-        : validOptions[0].candidate;
+    const bestCandidate = shouldCacheLyricsCandidate(candidate)
+      ? candidate
+      : validOptions[0].candidate;
 
     const item: CachedLyricsItem = {
       trackId,

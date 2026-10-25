@@ -1,6 +1,6 @@
 import { initTelemetry } from "@/shared/telemetry";
 import { initBackgroundStorageAnalytics } from "@/shared/utils/cacheManager";
-import { initClientVisitorSession } from "@/shared/api/visitorSession";
+import { initClientVisitorSession } from "@/shared/youtube";
 import { initBundleStampLog } from "@/shared/utils/bundleStampLog";
 
 export function initMainWindowServices() {

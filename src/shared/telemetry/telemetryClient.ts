@@ -38,12 +38,21 @@ export interface ClientTelemetryEvent {
 
 export function getClientEnvironment() {
   return {
-    platform: typeof navigator !== "undefined" ? navigator.platform || "desktop" : "desktop",
+    platform:
+      typeof navigator !== "undefined"
+        ? navigator.platform || "desktop"
+        : "desktop",
     userAgent: typeof navigator !== "undefined" ? navigator.userAgent : "",
     webglEnabled: false,
     language: typeof navigator !== "undefined" ? navigator.language : "en",
-    hardwareConcurrency: typeof navigator !== "undefined" ? navigator.hardwareConcurrency : undefined,
-    deviceMemory: typeof navigator !== "undefined" ? (navigator as any).deviceMemory : undefined,
+    hardwareConcurrency:
+      typeof navigator !== "undefined"
+        ? navigator.hardwareConcurrency
+        : undefined,
+    deviceMemory:
+      typeof navigator !== "undefined"
+        ? (navigator as any).deviceMemory
+        : undefined,
   };
 }
 

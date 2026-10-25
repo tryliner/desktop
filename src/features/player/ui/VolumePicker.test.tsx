@@ -11,22 +11,31 @@ vi.mock("framer-motion", () => {
   const cache: Record<string, any> = {};
   return {
     AnimatePresence: ({ children }: any) => <>{children}</>,
-    motion: new Proxy({}, {
-      get: (_target, prop: string) => {
-        if (!cache[prop]) {
-          cache[prop] = React.forwardRef(({ children, className, style, ...props }: any, ref: any) => {
-            const cleanProps = { ...props };
-            delete cleanProps.layout;
-            delete cleanProps.initial;
-            delete cleanProps.animate;
-            delete cleanProps.exit;
-            delete cleanProps.transition;
-            return React.createElement(prop, { ref, className, style, ...cleanProps }, children);
-          });
-        }
-        return cache[prop];
+    motion: new Proxy(
+      {},
+      {
+        get: (_target, prop: string) => {
+          if (!cache[prop]) {
+            cache[prop] = React.forwardRef(
+              ({ children, className, style, ...props }: any, ref: any) => {
+                const cleanProps = { ...props };
+                delete cleanProps.layout;
+                delete cleanProps.initial;
+                delete cleanProps.animate;
+                delete cleanProps.exit;
+                delete cleanProps.transition;
+                return React.createElement(
+                  prop,
+                  { ref, className, style, ...cleanProps },
+                  children,
+                );
+              },
+            );
+          }
+          return cache[prop];
+        },
       },
-    }),
+    ),
   };
 });
 
@@ -61,7 +70,9 @@ describe("VolumePicker Component", () => {
 
   it("calls onVolumeChange when keyboard navigation is used", () => {
     const handleVolumeChange = vi.fn();
-    const setVolumeSpy = vi.spyOn(playerEngine, "setVolume").mockImplementation(() => {});
+    const setVolumeSpy = vi
+      .spyOn(playerEngine, "setVolume")
+      .mockImplementation(() => {});
 
     act(() => {
       root?.render(<VolumePicker onVolumeChange={handleVolumeChange} />);
@@ -69,7 +80,9 @@ describe("VolumePicker Component", () => {
 
     const slider = container?.querySelector('[role="slider"]') as HTMLElement;
     act(() => {
-      slider.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true }));
+      slider.dispatchEvent(
+        new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true }),
+      );
     });
 
     expect(handleVolumeChange).toHaveBeenCalled();

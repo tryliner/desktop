@@ -3,11 +3,15 @@ import { getTranslationsForAllLocales } from "@/languages";
 
 const font = { fontFamily: "var(--font-inter), sans-serif" } as const;
 
+const rowCard = "rounded-[12px] bg-black/[0.04] px-[16px] dark:bg-white/[0.08]";
+
 // single-line row: label on the left, control pinned right, like the reference mock
 export function SettingRow({
   title,
   description,
   control,
+  icon,
+  explained = false,
   titleKey,
   descKey,
   searchQuery,
@@ -15,6 +19,8 @@ export function SettingRow({
   title: string;
   description?: string;
   control?: ReactNode;
+  icon?: ReactNode;
+  explained?: boolean;
   titleKey?: string;
   descKey?: string;
   searchQuery?: string;
@@ -36,17 +42,22 @@ export function SettingRow({
   }
 
   return (
-    <div className="flex items-center justify-between gap-[16px] py-[13px]">
-      <div className="flex min-w-0 max-w-[360px] flex-col gap-[2px]">
+    <div
+      className={`${rowCard} flex min-h-[46px] items-center justify-between gap-[12px] py-[10px]`}
+    >
+      {icon ? (
+        <span className="flex shrink-0 text-text-primary">{icon}</span>
+      ) : null}
+      <div className="flex min-w-0 flex-1 flex-col gap-[2px]">
         <span
-          className="text-text-primary text-[13px] font-[500] leading-snug"
+          className="truncate text-text-primary text-[14px] font-[500] leading-snug"
           style={font}
         >
           {title}
         </span>
-        {description ? (
+        {explained && description ? (
           <span
-            className="text-text-tertiary text-[12.5px] leading-relaxed"
+            className="max-w-[420px] text-text-tertiary text-[12px] leading-[1.4]"
             style={font}
           >
             {description}
@@ -91,17 +102,17 @@ export function SettingBlock({
   }
 
   return (
-    <div className="flex flex-col gap-[10px] py-[13px]">
+    <div className={`${rowCard} flex flex-col gap-[10px] py-[13px]`}>
       <div className="flex min-w-0 max-w-[460px] flex-col gap-[2px]">
         <span
-          className="text-text-primary text-[13px] font-[500] leading-snug"
+          className="text-text-primary text-[14px] font-[500] leading-snug"
           style={font}
         >
           {title}
         </span>
         {description ? (
           <span
-            className="text-text-tertiary text-[12.5px] leading-relaxed"
+            className="text-text-tertiary text-[12px] leading-[1.45]"
             style={font}
           >
             {description}
@@ -125,15 +136,13 @@ export function SettingSection({
     <section className="flex flex-col">
       {label ? (
         <h4
-          className="text-text-tertiary text-[11px] font-[600] uppercase tracking-[0.07em] m-0 pt-[4px]"
+          className="text-text-secondary text-[14px] font-[500] m-0 pt-[4px] pb-[10px]"
           style={font}
         >
           {label}
         </h4>
       ) : null}
-      <div className="flex flex-col divide-y divide-solid divide-border-primary">
-        {children}
-      </div>
+      <div className="flex flex-col gap-[8px]">{children}</div>
     </section>
   );
 }
@@ -156,10 +165,8 @@ export function SegmentedControl<T extends string>({
     <div
       role={ariaLabel ? "group" : undefined}
       aria-label={ariaLabel}
-      className={`inline-flex w-fit shrink-0 items-center gap-[1px] rounded-lg p-[3px] transition-opacity ${
-        disabled
-          ? "bg-border-alpha-10 opacity-50 cursor-not-allowed pointer-events-none"
-          : "bg-border-alpha-14"
+      className={`inline-flex w-fit shrink-0 items-center gap-[6px] transition-opacity ${
+        disabled ? "opacity-50 cursor-not-allowed pointer-events-none" : ""
       }`}
     >
       {options.map((opt) => {
@@ -171,14 +178,14 @@ export function SegmentedControl<T extends string>({
             disabled={disabled}
             onClick={() => !disabled && onChange(opt.value)}
             aria-pressed={isActive}
-            className={`inline-flex h-[26px] items-center whitespace-nowrap rounded-md border-0 px-[11px] text-[12.5px] leading-none transition-colors ${
+            className={`inline-flex h-[32px] items-center whitespace-nowrap rounded-[10px] border-0 px-[14px] text-[13px] leading-none transition-colors ${
               disabled
                 ? isActive
-                  ? "bg-bg-primary/50 text-text-tertiary cursor-not-allowed"
-                  : "bg-transparent text-text-tertiary/70 cursor-not-allowed"
+                  ? "bg-text-primary/40 text-bg-primary/80 cursor-not-allowed"
+                  : "bg-black/[0.06] text-text-tertiary cursor-not-allowed dark:bg-black/30"
                 : isActive
-                  ? "bg-bg-primary text-text-primary cursor-pointer"
-                  : "bg-transparent text-text-secondary hover:text-text-primary cursor-pointer"
+                  ? "bg-text-primary/70 text-bg-primary cursor-pointer"
+                  : "bg-black/[0.06] text-text-primary hover:bg-black/[0.1] cursor-pointer dark:bg-black/30 dark:hover:bg-black/40"
             }`}
             style={{ ...font, fontWeight: isActive ? 500 : 400 }}
           >

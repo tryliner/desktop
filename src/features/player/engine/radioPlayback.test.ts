@@ -13,7 +13,14 @@ const mk = (id: string): Track => ({
 });
 
 const radioItems = (ids: string[]) =>
-  ({ items: ids.map((id) => ({ id, title: `Track ${id}`, artists: `Artist ${id}`, durationMs: 180000 })) }) as any;
+  ({
+    items: ids.map((id) => ({
+      id,
+      title: `Track ${id}`,
+      artists: `Artist ${id}`,
+      durationMs: 180000,
+    })),
+  }) as any;
 
 describe("radio playback", () => {
   let getRadio: ReturnType<typeof vi.spyOn>;
@@ -51,12 +58,22 @@ describe("radio playback", () => {
   it("refills when one track is left, even with autoplay-similar off", async () => {
     getRadio.mockResolvedValueOnce(radioItems(["b", "c"])); // station start
     await playerEngine.startRadioStation(mk("a"));
-    expect(usePlayerStore.getState().queue.map((t) => t.id)).toEqual(["a", "b", "c"]);
+    expect(usePlayerStore.getState().queue.map((t) => t.id)).toEqual([
+      "a",
+      "b",
+      "c",
+    ]);
 
     getRadio.mockResolvedValueOnce(radioItems(["d", "e"]));
     await playerEngine.skipNext(); // on "b": one left after it -> refill
     await vi.advanceTimersByTimeAsync(500);
-    expect(usePlayerStore.getState().queue.map((t) => t.id)).toEqual(["a", "b", "c", "d", "e"]);
+    expect(usePlayerStore.getState().queue.map((t) => t.id)).toEqual([
+      "a",
+      "b",
+      "c",
+      "d",
+      "e",
+    ]);
   });
 
   it("never wraps to the first track; at the end it fetches more and keeps going", async () => {

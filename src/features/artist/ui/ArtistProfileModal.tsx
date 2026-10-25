@@ -260,6 +260,7 @@ export default function ArtistProfileModal({
               <path
                 d="M6.75977 11.7573L8.17399 10.343L11.0024 13.1715L16.6593 7.51465L18.0735 8.92886L11.0024 15.9999L6.75977 11.7573Z"
                 fill="#ffffff"
+                transform="translate(-0.42 0.24)"
               />
             </svg>
             ) : null}

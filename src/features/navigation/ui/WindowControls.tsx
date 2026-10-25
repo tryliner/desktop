@@ -1,14 +1,20 @@
+import { motion } from "framer-motion";
 import { useTranslation } from "@/languages";
-import { LuMinus, LuSquare, LuX } from "react-icons/lu";
-import { useIsContentTransparent } from "@/features/settings/store/customizationStore";
-import { useWindowState } from "../hooks/useWindowState";
+import { cn } from "@/shared/lib";
 import { useWindowAnimationStore } from "@/shared/ui";
+import { useWindowState } from "../hooks/useWindowState";
+import { CloseIcon, MaximizeIcon, MinimizeIcon } from "./WindowControlIcons";
+
+export const WINDOW_CONTROLS_LAYOUT_ID = "window-controls-pill";
+export const WINDOW_CONTROLS_MORPH = { duration: 0.28, ease: [0.22, 1, 0.36, 1] } as const;
 
 export interface WindowControlsProps {
   className?: string;
   variant?: "default" | "glass" | "island";
   style?: React.CSSProperties;
   isFullscreen?: boolean;
+  embedded?: boolean;
+  bare?: boolean;
 }
 
 // the window goes away right under the cursor (minimize / into the overlay), so
@@ -39,14 +45,16 @@ function suppressStaleHover() {
 
 export default function WindowControls({
   className = "",
-  variant = "default",
   style,
+  embedded = false,
+  bare = false,
   isFullscreen = false,
 }: WindowControlsProps) {
   const { t } = useTranslation();
   const { isFullScreen: isWindowFullScreen, isMaximized: isWindowMaximized } = useWindowState();
 
   const isHyprland = window.linerElectron?.isHyprland ?? false;
+  const isMinimizeDisabled = isWindowFullScreen || isHyprland;
 
   const handleMinimize = () => {
     // macos fullscreen spaces and hyprland tiling wm prohibit/ignore minimizing
@@ -63,98 +71,97 @@ export default function WindowControls({
     useWindowAnimationStore.getState().triggerClose();
   };
 
-  const isDarkMode = isFullscreen;
-  const isMinimizeDisabled = isWindowFullScreen || isHyprland;
-  const hasCustomBg = useIsContentTransparent();
-  const isGlass = hasCustomBg || variant === "glass";
+  const onDarkGlass = isFullscreen || !bare;
+
+  const buttonClass = cn(
+    "flex items-center justify-center rounded-md border-0 bg-transparent p-0 cursor-pointer select-none pointer-events-auto transition-[background-color,color,opacity] duration-150 active:scale-95",
+    isFullscreen ? "w-[26px] h-[26px]" : bare ? "w-[30px] h-[30px]" : "w-[34px] h-[34px]",
+    onDarkGlass
+      ? "text-white opacity-70 hover:opacity-100 hover:bg-white/12"
+      : "text-text-primary opacity-55 hover:opacity-100 hover:bg-border-alpha-14",
+  );
+
+  const buttons = (
+    <>
+      <button
+        type="button"
+        onClick={isMinimizeDisabled ? undefined : handleMinimize}
+        disabled={isMinimizeDisabled}
+        aria-disabled={isMinimizeDisabled}
+        data-no-tooltip="true"
+        className={cn(
+          buttonClass,
+          isMinimizeDisabled &&
+            "!opacity-25 cursor-not-allowed pointer-events-none",
+        )}
+        aria-label="Minimize"
+      >
+        <MinimizeIcon />
+      </button>
+
+      <button
+        type="button"
+        onClick={handleMaximize}
+        data-no-tooltip="true"
+        className={buttonClass}
+        aria-label={
+          isWindowFullScreen
+            ? t("common.exitFullscreen")
+            : isWindowMaximized
+              ? t("common.restore")
+              : t("common.maximize")
+        }
+      >
+        <MaximizeIcon isMaximized={isWindowMaximized || isWindowFullScreen} />
+      </button>
+
+      <button
+        type="button"
+        onClick={handleClose}
+        data-no-tooltip="true"
+        className={cn(buttonClass, "hover:!bg-[#E81123] hover:!text-white")}
+        aria-label="Close"
+      >
+        <CloseIcon />
+      </button>
+    </>
+  );
+
+  if (bare) {
+    return buttons;
+  }
+
+  const capsule = (
+    <motion.div
+      layoutId={isFullscreen && embedded ? WINDOW_CONTROLS_LAYOUT_ID : undefined}
+      transition={WINDOW_CONTROLS_MORPH}
+      data-no-window-drag
+      data-window-controls
+      data-no-tooltip="true"
+      className={cn(
+        "flex items-center gap-[2px] select-none pointer-events-auto",
+        isFullscreen
+          ? "h-[32px] px-[3px] rounded-lg bg-black/50 backdrop-blur-xl"
+          : "h-[46px] px-[6px] rounded-xl apple-glass-pill",
+      )}
+    >
+      {buttons}
+    </motion.div>
+  );
+
+  if (embedded) {
+    return capsule;
+  }
 
   return (
     <div
       style={style}
-      className={`absolute top-[12px] right-[12px] z-[62] flex items-center justify-end pointer-events-none select-none ${className}`.trim()}
+      className={cn(
+        "absolute top-[6px] right-[6px] z-[62] flex items-center justify-end pointer-events-none select-none",
+        className,
+      )}
     >
-      <div
-        data-no-window-drag
-        data-no-tooltip="true"
-        data-window-controls
-        className={`flex items-center h-[32px] min-h-[32px] max-h-[32px] box-border px-[3px] gap-[2px] rounded-lg pointer-events-auto transition-colors ${
-          isFullscreen
-            ? "apple-glass-pill-dark text-white"
-            : isGlass
-              ? "apple-glass-pill text-text-primary"
-              : isDarkMode
-                ? "bg-black/50 text-white backdrop-blur-xl"
-                : "bg-bg-panel/90 text-text-primary backdrop-blur-xl"
-        }`}
-      >
-        <button
-          type="button"
-          onClick={isMinimizeDisabled ? undefined : handleMinimize}
-          disabled={isMinimizeDisabled}
-          aria-disabled={isMinimizeDisabled}
-          data-no-tooltip="true"
-          className={`flex items-center justify-center w-[26px] h-[26px] min-w-[26px] min-h-[26px] max-h-[26px] rounded-md border-none bg-transparent transition-colors ${
-            isMinimizeDisabled
-              ? "opacity-30 cursor-not-allowed pointer-events-none"
-              : isFullscreen
-                ? "text-white/80 hover:text-white hover:bg-white/10 active:scale-95 cursor-pointer"
-                : isGlass
-                  ? "text-text-primary hover:bg-black/10 dark:hover:bg-white/10 active:scale-95 cursor-pointer"
-                  : isDarkMode
-                    ? "text-white/70 hover:text-white hover:bg-white/10 active:scale-95 cursor-pointer"
-                    : "text-text-primary hover:bg-border-alpha-14 active:scale-95 cursor-pointer"
-          }`}
-          aria-label="Minimize"
-        >
-          <LuMinus size={13} />
-        </button>
-        <button
-          type="button"
-          onClick={handleMaximize}
-          data-no-tooltip="true"
-          className={`flex items-center justify-center w-[26px] h-[26px] min-w-[26px] min-h-[26px] max-h-[26px] rounded-md cursor-pointer border-none bg-transparent transition-colors active:scale-95 ${
-            isFullscreen
-              ? "text-white/80 hover:text-white hover:bg-white/10"
-              : isGlass
-                ? "text-text-primary hover:bg-black/10 dark:hover:bg-white/10"
-                : isDarkMode
-                  ? "text-white/70 hover:text-white hover:bg-white/10"
-                  : "text-text-primary hover:bg-border-alpha-14"
-          }`}
-          aria-label={
-            isWindowFullScreen
-              ? t("common.exitFullscreen")
-              : isWindowMaximized
-                ? t("common.restore")
-                : t("common.maximize")
-          }
-        >
-          <LuSquare size={11} />
-        </button>
-        <button
-          type="button"
-          onClick={handleClose}
-          data-no-tooltip="true"
-          className={`flex items-center justify-center w-[26px] h-[26px] min-w-[26px] min-h-[26px] max-h-[26px] rounded-md cursor-pointer border-none bg-transparent transition-colors hover:bg-[#E81123] hover:text-white active:scale-95 ${
-            isFullscreen
-              ? "text-white/80 hover:text-white hover:bg-[#E81123]"
-              : isGlass
-                ? "text-text-primary hover:bg-[#E81123]"
-                : isDarkMode
-                  ? "text-white/70 hover:text-white"
-                  : "text-text-primary"
-          }`}
-          aria-label="Close"
-        >
-          <LuX size={13} />
-        </button>
-      </div>
+      {capsule}
     </div>
   );
 }
-
-
-
-
-
-

@@ -1,20 +1,42 @@
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { useCallback, useEffect, useMemo, useRef, useState, memo, Suspense } from "react";
+import { useSearchParams } from "react-router-dom";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  memo,
+  Suspense,
+} from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import PlaylistPageSkeleton from "./PlaylistPageSkeleton";
-import { useToast, ReorderDropPlaceholder, FloatingDragCard, EntitySidebar, SIDEBAR_TITLE_CLASS, SIDEBAR_SUBTITLE_CLASS } from "@/shared/ui";
+import {
+  useToast,
+  ReorderDropPlaceholder,
+  FloatingDragCard,
+  EntityHero,
+  HERO_TITLE_CLASS,
+  HERO_SUBTITLE_CLASS,
+  HERO_CHIP_CLASS,
+  HERO_BUTTON_CLASS,
+  HERO_GLASS_BUTTON_CLASS,
+  HERO_GLASS_CLASS,
+} from "@/shared/ui";
+import { usePageBackdrop } from "@/shared/lib";
+import { useClassicSurfaces } from "@/features/settings/store/customizationStore";
+import { useLikesCover } from "../hooks/useLikesCover";
+import { useAuthStore } from "@/features/auth";
+import { userDisplayName } from "@/entities/user";
 import {
   AddLine,
   PlayFill,
-  More2Line,
-  HeartFill,
+  More1Fill,
   PlaylistFill,
   PlaylistLine,
   MusicLine,
   CheckLine,
-  ArrowLeftLine,
   ShareForwardLine,
-  Search2Line,
 } from "@mingcute/react";
 import { AnimatePresence, motion } from "framer-motion";
 import { LuPencil, LuTrash2, LuText, LuShuffle } from "react-icons/lu";
@@ -34,13 +56,12 @@ import { playerEngine } from "@/features/player";
 import type { Track } from "@/shared/types";
 import { useTranslation } from "@/languages";
 import { api } from "@/shared/api";
-import { useIsContentTransparent } from "@/features/settings/store/customizationStore";
 import {
   useTrackSearch,
-  useTrackSearchButtonLabel,
   TrackSearchField,
   TrackSearchEmpty,
 } from "./TrackSearch";
+import { useTrackSort, TrackSortMenu } from "./TrackSort";
 
 interface TrackItemProps {
   track: Track;
@@ -68,12 +89,7 @@ const TrackItem = memo(function TrackItem({
   const handlePlay = useCallback(() => {
     if (typeof window !== "undefined" && window.__linerWasDragging) return;
     const context = playlistId ? `playlist:${playlistId}` : playlistTitle;
-    playerEngine.playTrack(
-      track,
-      allTracks,
-      context,
-      playlistCoverUrl,
-    );
+    playerEngine.playTrack(track, allTracks, context, playlistCoverUrl);
   }, [track, allTracks, playlistId, playlistTitle, playlistCoverUrl]);
 
   return (
@@ -107,14 +123,14 @@ const TrackItem = memo(function TrackItem({
 });
 
 function LibraryPlaylistContent() {
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const id = searchParams.get("id");
   const isLikesMode = id === "likes";
+  const currentUser = useAuthStore((state) => state.user);
+  const likesOwnerName = userDisplayName(currentUser);
   const decodedId = id ? decodeURIComponent(id) : null;
   const scrollRef = useRef<HTMLDivElement>(null);
   const { t } = useTranslation();
-  const hasCustomBg = useIsContentTransparent();
 
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [isEditingDescription, setIsEditingDescription] = useState(false);
@@ -165,6 +181,12 @@ function LibraryPlaylistContent() {
       revision: playlistDetail.revision,
     };
   })();
+  const likesCover = useLikesCover();
+  const classicSurfaces = useClassicSurfaces();
+  usePageBackdrop(
+    isLikesMode ? likesCover : (viewData?.coverUrls?.[0] ?? viewData?.coverUrl),
+    { dim: 0.05 },
+  );
 
   useEffect(() => {
     if (isEditingTitle && titleRef.current) {
@@ -191,7 +213,9 @@ function LibraryPlaylistContent() {
   }, [isEditingDescription]);
 
   const trackListContainerRef = useRef<HTMLDivElement>(null);
-  const [optimisticTracks, setOptimisticTracks] = useState<Track[] | null>(null);
+  const [optimisticTracks, setOptimisticTracks] = useState<Track[] | null>(
+    null,
+  );
 
   useEffect(() => {
     setOptimisticTracks(null);
@@ -201,55 +225,59 @@ function LibraryPlaylistContent() {
     return optimisticTracks ?? viewData?.tracks ?? [];
   }, [optimisticTracks, viewData?.tracks]);
 
-  const search = useTrackSearch(currentTracks, id);
-  const searchButtonLabel = useTrackSearchButtonLabel();
+  const sort = useTrackSort(currentTracks, id);
+  const sortedTracks = sort.sorted;
+  const isSorted = sort.option !== "default";
+  const search = useTrackSearch(sortedTracks, id);
   const isFiltering = search.matches !== null;
   const visibleTracks = useMemo(
-    () => search.matches ?? currentTracks.map((track, index) => ({ track, index })),
-    [search.matches, currentTracks],
+    () =>
+      search.matches ?? sortedTracks.map((track, index) => ({ track, index })),
+    [search.matches, sortedTracks],
   );
 
   // results start at the top, not wherever the full list was scrolled to
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: 0 });
-  }, [search.activeQuery]);
+  }, [search.activeQuery, sort.option]);
 
   const handleSearchSubmit = useCallback(() => {
     const first = search.matches?.[0];
     if (!first || !viewData) return;
     const context = decodedId ? `playlist:${decodedId}` : viewData.title;
-    playerEngine.playTrack(first.track, currentTracks, context, viewData.coverUrl);
-  }, [search.matches, viewData, decodedId, currentTracks]);
+    playerEngine.playTrack(
+      first.track,
+      sortedTracks,
+      context,
+      viewData.coverUrl,
+    );
+  }, [search.matches, viewData, decodedId, sortedTracks]);
 
   const handlePlayAll = useCallback(() => {
-    if (!currentTracks.length || !viewData) return;
+    if (!sortedTracks.length || !viewData) return;
     const context = decodedId ? `playlist:${decodedId}` : viewData.title;
     playerEngine.clearQueue();
     playerEngine.playTrack(
-      currentTracks[0],
-      currentTracks,
+      sortedTracks[0],
+      sortedTracks,
       context,
       viewData.coverUrl,
     );
-  }, [currentTracks, viewData, decodedId]);
+  }, [sortedTracks, viewData, decodedId]);
 
   const handleShufflePlay = useCallback(() => {
-    if (!currentTracks.length || !viewData) return;
+    if (!sortedTracks.length || !viewData) return;
     const context = decodedId ? `playlist:${decodedId}` : viewData.title;
     playerEngine.clearQueue();
-    void playerEngine.playShuffled(
-      currentTracks,
-      context,
-      viewData.coverUrl,
-    );
-  }, [currentTracks, viewData, decodedId]);
+    void playerEngine.playShuffled(sortedTracks, context, viewData.coverUrl);
+  }, [sortedTracks, viewData, decodedId]);
 
   const { toast } = useToast();
   const [addedToQueue, setAddedToQueue] = useState(false);
 
   const handleAddToQueue = useCallback(() => {
-    if (!currentTracks.length || !viewData) return;
-    for (const track of currentTracks) {
+    if (!sortedTracks.length || !viewData) return;
+    for (const track of sortedTracks) {
       playerEngine.addToQueue(track);
     }
     const playlistTitle = viewData.title || t("playlist.untitled_playlist");
@@ -261,7 +289,7 @@ function LibraryPlaylistContent() {
       setAddedToQueue(false);
     }, 1200);
     return () => clearTimeout(timer);
-  }, [currentTracks, viewData, toast, t]);
+  }, [sortedTracks, viewData, toast, t]);
 
   const handleShare = useCallback(() => {
     if (typeof navigator !== "undefined" && navigator.clipboard && decodedId) {
@@ -316,7 +344,14 @@ function LibraryPlaylistContent() {
     maxScrollSpeed: 22,
   });
 
+  const [listScrollMargin, setListScrollMargin] = useState(0);
+  useLayoutEffect(() => {
+    const el = trackListContainerRef.current;
+    if (el) setListScrollMargin(el.offsetTop);
+  });
+
   const rowVirtualizer = useVirtualizer({
+    scrollMargin: listScrollMargin,
     count: visibleTracks.length,
     getScrollElement: () => scrollRef.current,
     estimateSize: () => 64,
@@ -326,57 +361,6 @@ function LibraryPlaylistContent() {
       visibleTracks[index]?.track.id ??
       index,
   });
-
-  const handleBack = useCallback(() => {
-    if (window.history.length > 1) {
-      navigate(-1);
-    } else {
-      navigate("/library");
-    }
-  }, [navigate]);
-
-  const targetScrollTopRef = useRef<number | null>(null);
-  const rafIdRef = useRef<number | null>(null);
-
-  const handleTopWheel = useCallback((e: React.WheelEvent) => {
-    const container = scrollRef.current;
-    if (!container) return;
-
-    const maxScroll = container.scrollHeight - container.clientHeight;
-    if (maxScroll <= 0) return;
-
-    const current = targetScrollTopRef.current ?? container.scrollTop;
-    const target = Math.max(0, Math.min(maxScroll, current + e.deltaY));
-    targetScrollTopRef.current = target;
-
-    if (rafIdRef.current === null) {
-      const step = () => {
-        if (!scrollRef.current || targetScrollTopRef.current === null) {
-          rafIdRef.current = null;
-          return;
-        }
-        const now = scrollRef.current.scrollTop;
-        const diff = targetScrollTopRef.current - now;
-        if (Math.abs(diff) < 0.5) {
-          scrollRef.current.scrollTop = targetScrollTopRef.current;
-          targetScrollTopRef.current = null;
-          rafIdRef.current = null;
-          return;
-        }
-        scrollRef.current.scrollTop = now + diff * 0.25;
-        rafIdRef.current = requestAnimationFrame(step);
-      };
-      rafIdRef.current = requestAnimationFrame(step);
-    }
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (rafIdRef.current !== null) {
-        cancelAnimationFrame(rafIdRef.current);
-      }
-    };
-  }, []);
 
   const urlsToPreload = useMemo(() => {
     if (!viewData) return [];
@@ -455,9 +439,7 @@ function LibraryPlaylistContent() {
     return (
       <div className="h-full w-full bg-transparent flex items-center justify-center">
         <span className="text-text-secondary">
-          {isLikesMode
-            ? t("playlist.likes_empty")
-            : t("playlist.not_found")}
+          {isLikesMode ? t("playlist.likes_empty") : t("playlist.not_found")}
         </span>
       </div>
     );
@@ -465,51 +447,6 @@ function LibraryPlaylistContent() {
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-transparent">
-
-      <div className="absolute top-0 left-0 right-0 h-[56px] z-10 flex flex-row items-stretch select-none pointer-events-none">
-        <div
-          data-window-drag
-          onContextMenu={(e) => e.preventDefault()}
-          className="w-[328px] shrink-0 h-full pointer-events-auto"
-        />
-        <div
-          data-window-drag
-          onContextMenu={(e) => e.preventDefault()}
-          onWheel={handleTopWheel}
-          className="flex-1 min-w-0 h-full pointer-events-auto"
-        />
-      </div>
-      <button
-        type="button"
-        onClick={handleBack}
-        aria-label={t("common.back")}
-        data-no-tooltip="true"
-        data-no-window-drag
-        className={`absolute top-[12px] left-[32px] z-20 group inline-flex h-[32px] shrink-0 items-center gap-[6px] rounded-md px-[10px] active:scale-[0.94] transition-all cursor-pointer select-none pointer-events-auto text-[13px] font-[500] border-0 !border-none ${
-          hasCustomBg
-            ? "apple-glass-pill !border-none"
-            : "bg-bg-panel/85 backdrop-blur-xl text-text-primary hover:bg-bg-panel border-0 !border-none"
-        }`}
-        style={{ fontFamily: "var(--font-inter), sans-serif" }}
-      >
-        <ArrowLeftLine
-          size={16}
-          className="transition-transform duration-150 group-hover:-translate-x-0.5"
-        />
-        <span className="relative -left-[1.5px] top-[1px]">{t("common.back")}</span>
-      </button>
-      {/* track search sits centred in the page header */}
-      {viewData && isReady && (
-        <div className="absolute top-[12px] left-0 right-0 z-20 flex justify-center pointer-events-none">
-          <TrackSearchField
-            search={search}
-            totalCount={currentTracks.length}
-            placeholder={t("track_search.placeholder_playlist")}
-            glass={hasCustomBg}
-            onSubmit={handleSearchSubmit}
-          />
-        </div>
-      )}
       <div className="relative z-1 grid grid-cols-1 w-full h-full min-h-0 overflow-hidden">
         {viewData && (
           <div
@@ -517,26 +454,31 @@ function LibraryPlaylistContent() {
               isReady ? "opacity-100" : "opacity-0 pointer-events-none"
             }`}
           >
-            <div className="relative z-10 flex flex-row items-stretch gap-[16px] pl-[32px] pr-[16px] h-full w-full min-h-0 box-border">
-              <div
-                className="shrink-0 w-[280px] self-start pt-[56px] pb-[24px]"
-                data-no-window-drag
-              >
-                <EntitySidebar
-                coverClassName={
-                  hasCustomBg && (viewData.coverUrls?.length ?? (viewData.coverUrl ? 1 : 0)) === 0
-                    ? "apple-glass-static pointer-events-none"
-                    : undefined
-                }
-                cover={(() => {
+            <div
+              ref={scrollRef}
+              data-no-window-drag
+              className="relative z-10 flex flex-col h-full w-full min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain box-border pt-(--page-inset-top) pb-(--page-inset-bottom)"
+              style={{ willChange: "scroll-position" }}
+            >
+              <div className="shrink-0 pl-[16px] pr-[12px] pt-[8px]" data-no-window-drag>
+                <EntityHero
+                  cover={(() => {
                     const urls =
                       viewData.coverUrls ??
                       (viewData.coverUrl ? [viewData.coverUrl] : []);
                     if (urls.length === 0) {
                       return isLikesMode ? (
-                        <HeartFill size={48} className={hasCustomBg ? "text-white" : "text-zinc-400 dark:text-zinc-500"} />
+                        <img
+                          src={likesCover}
+                          alt={viewData.title}
+                          draggable={false}
+                          className="absolute inset-0 h-full w-full object-cover select-none"
+                        />
                       ) : (
-                        <PlaylistFill size={48} className={hasCustomBg ? "text-white" : "text-border-alpha-33"} />
+                        <PlaylistFill
+                          size={48}
+                          className="text-border-alpha-33"
+                        />
                       );
                     }
                     if (urls.length === 1) {
@@ -545,7 +487,7 @@ function LibraryPlaylistContent() {
                           src={urls[0]}
                           alt={viewData.title}
                           fill
-                          sizes="280px"
+                          sizes="180px"
                           className="object-cover"
                           draggable={false}
                           unoptimized
@@ -577,14 +519,14 @@ function LibraryPlaylistContent() {
                       </div>
                     );
                   })()}
-                title={
-                  <h1
-                    ref={titleRef}
-                    className={`${SIDEBAR_TITLE_CLASS} ${
-                      isLikesMode
-                        ? ""
-                        : "cursor-text outline-none transition-colors"
-                    } ${isEditingTitle ? "bg-border-alpha-14 rounded-[4px] -ml-[4px] px-[4px]" : ""}`}
+                  title={
+                    <h1
+                      ref={titleRef}
+                      className={`${HERO_TITLE_CLASS} ${
+                        isLikesMode
+                          ? ""
+                          : "cursor-text outline-none transition-colors"
+                      } ${isEditingTitle ? "bg-border-alpha-14 rounded-[4px] -ml-[4px] px-[4px]" : ""}`}
                       contentEditable={isLikesMode ? false : isEditingTitle}
                       suppressContentEditableWarning
                       onBlur={(e) => {
@@ -594,7 +536,9 @@ function LibraryPlaylistContent() {
                           void api
                             .updatePlaylist(decodedId, { title })
                             .then(() =>
-                              window.dispatchEvent(new Event("library:changed")),
+                              window.dispatchEvent(
+                                new Event("library:changed"),
+                              ),
                             );
                         }
                         setIsEditingTitle(false);
@@ -618,22 +562,31 @@ function LibraryPlaylistContent() {
                     </h1>
                   }
                   subtitle={
-                    isLikesMode ? undefined : viewData.bio || isEditingDescription ? (
+                    isLikesMode ? (
+                      likesOwnerName ? (
+                        <p className={HERO_SUBTITLE_CLASS}>{likesOwnerName}</p>
+                      ) : undefined
+                    ) : viewData.bio || isEditingDescription ? (
                       <p
                         ref={descriptionRef}
-                        className={`${SIDEBAR_SUBTITLE_CLASS} cursor-text outline-none transition-colors empty:min-h-[21px] ${
-                          isEditingDescription ? "bg-border-alpha-14 rounded-[4px] -ml-[4px] px-[4px]" : ""
+                        className={`${HERO_SUBTITLE_CLASS} cursor-text outline-none transition-colors empty:min-h-[21px] ${
+                          isEditingDescription
+                            ? "bg-border-alpha-14 rounded-[4px] -ml-[4px] px-[4px]"
+                            : ""
                         }`}
                         contentEditable={isEditingDescription}
                         suppressContentEditableWarning
                         onBlur={(e) => {
                           if (!isEditingDescription) return;
-                          const next = e.currentTarget.textContent?.trim() ?? "";
+                          const next =
+                            e.currentTarget.textContent?.trim() ?? "";
                           if (decodedId && next !== viewData.bio) {
                             void api
                               .updatePlaylist(decodedId, { description: next })
                               .then(() =>
-                                window.dispatchEvent(new Event("library:changed")),
+                                window.dispatchEvent(
+                                  new Event("library:changed"),
+                                ),
                               );
                           }
                           setIsEditingDescription(false);
@@ -666,17 +619,14 @@ function LibraryPlaylistContent() {
                   }
                   meta={
                     <div className="flex items-center flex-wrap gap-[6px]">
-                      <div
-                        className={`inline-flex h-[26px] items-center gap-[6px] rounded-md px-[8px] text-[12px] font-[400] select-none ${
-                          hasCustomBg
-                            ? "apple-glass-pill"
-                            : "bg-bg-panel border border-border-primary/40 text-text-tertiary"
-                        }`}
-                      >
-                        <MusicLine size={13} className={hasCustomBg ? "text-white shrink-0" : "text-text-tertiary shrink-0"} />
+                      <div className={HERO_CHIP_CLASS}>
+                        <MusicLine
+                          size={13}
+                          className="text-text-secondary shrink-0"
+                        />
                         <span>{viewData.countLabel}</span>
                         <span
-                          className={`w-[3px] h-[3px] rounded-full shrink-0 ${hasCustomBg ? "bg-white/50" : "bg-text-tertiary/40"}`}
+                          className="w-[3px] h-[3px] rounded-full shrink-0 bg-text-secondary/50"
                           aria-hidden
                         />
                         <span>
@@ -689,293 +639,310 @@ function LibraryPlaylistContent() {
                             if (totalMins > 60) {
                               return `${Math.floor(totalMins / 60)} ${t("playlist.hr")} ${totalMins % 60} ${t("playlist.min")}`;
                             }
-                            const totalSecs = Math.floor((totalMs % 60000) / 1000);
+                            const totalSecs = Math.floor(
+                              (totalMs % 60000) / 1000,
+                            );
                             return `${totalMins} ${t("playlist.min")} ${totalSecs} ${t("playlist.sec")}`;
                           })()}
                         </span>
                       </div>
                     </div>
                   }
-                  primaryAction={
-                    <div className="flex flex-col gap-[8px] w-full">
+                  actions={
+                    <>
                       <Button
-                        variant={hasCustomBg ? "glass-primary" : "primary"}
+                        variant="primary"
                         onClick={handlePlayAll}
                         disabled={currentTracks.length === 0}
-                        className="!h-[36px] w-full !text-[13.5px] !font-[500] px-[16px] flex items-center justify-center gap-[6px]"
+                        className={`${HERO_BUTTON_CLASS} px-[22px]`}
                       >
                         <PlayFill size={16} />
                         <span>{t("common.play_all")}</span>
                       </Button>
-
-                      <div className="flex items-center gap-[8px] w-full">
-                        <Button
-                          variant={hasCustomBg ? "glass-action" : "outline"}
-                          onClick={handleAddToQueue}
-                          disabled={currentTracks.length === 0}
-                          className={`!h-[36px] flex-1 min-w-0 !text-[13px] !font-[500] px-[12px] flex items-center justify-center gap-[6px] ${
-                            // optical centring: with three icon buttons beside it the label reads 1px right
-                            !isLikesMode ? "[&>*]:-translate-x-px" : ""
-                          }`}
-                          title={t("common.add_to_queue")}
-                        >
-                          <AnimatePresence mode="wait">
-                            {addedToQueue ? (
-                              <motion.span
-                                key="check"
-                                initial={{ opacity: 0, scale: 0.5 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.5 }}
-                                transition={{ duration: 0.08 }}
-                                className="flex items-center justify-center text-emerald-400 shrink-0"
-                              >
-                                <CheckLine size={16} />
-                              </motion.span>
-                            ) : (
-                              <motion.span
-                                key="add"
-                                initial={{ opacity: 0, scale: 0.5 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.5 }}
-                                transition={{ duration: 0.08 }}
-                                className="flex items-center justify-center shrink-0"
-                              >
-                                <AddLine size={16} />
-                              </motion.span>
-                            )}
-                          </AnimatePresence>
-                          <span className="truncate">{t("common.add_to_queue")}</span>
-                        </Button>
-
-                        <Button
-                          variant={hasCustomBg ? "glass-action" : "outline"}
-                          onClick={handleShufflePlay}
-                          disabled={currentTracks.length === 0}
-                          className="!h-[36px] !w-[36px] shrink-0 !p-0 flex items-center justify-center text-text-primary"
-                          title={t("common.shuffle")}
-                        >
-                          <LuShuffle size={16} />
-                        </Button>
-
-                        <Button
-                          variant={hasCustomBg ? "glass-action" : "outline"}
-                          onClick={search.toggle}
-                          // keep focus in the field so its blur-to-close doesn't fire first
-                          onMouseDown={(e) => {
-                            if (search.isOpen) e.preventDefault();
-                          }}
-                          disabled={currentTracks.length === 0}
-                          className="!h-[36px] !w-[36px] shrink-0 !p-0 flex items-center justify-center text-text-primary"
-                          title={searchButtonLabel}
-                        >
-                          <Search2Line size={16} />
-                        </Button>
-
-                        {!isLikesMode && (
-                          <DropdownMenu
-                            trigger={
-                              <Button
-                                variant={hasCustomBg ? "glass-action" : "outline"}
-                                className="!h-[36px] !w-[36px] shrink-0 !p-0 flex items-center justify-center text-text-primary"
-                                title={t("common.more")}
-                              >
-                                <More2Line size={18} />
-                              </Button>
-                            }
-                            items={[
-                              {
-                                id: "rename",
-                                icon: <LuPencil size={15} />,
-                                label: t("common.rename"),
-                                onClick: () => setIsEditingTitle(true),
+                      <Button
+                        variant="secondary"
+                        onClick={handleShufflePlay}
+                        disabled={currentTracks.length === 0}
+                        className={`${HERO_BUTTON_CLASS} ${HERO_GLASS_BUTTON_CLASS} !w-[52px] !p-0 text-text-primary`}
+                        title={t("common.shuffle")}
+                      >
+                        <LuShuffle size={18} />
+                      </Button>
+                    </>
+                  }
+                  trailingActions={
+                    <>
+                      <TrackSearchField
+                        search={search}
+                        totalCount={currentTracks.length}
+                        placeholder={t("track_search.placeholder_playlist")}
+                        onSubmit={handleSearchSubmit}
+                        className={HERO_GLASS_CLASS}
+                      />
+                      <Button
+                        variant="secondary"
+                        onClick={handleAddToQueue}
+                        disabled={currentTracks.length === 0}
+                        className={`${HERO_BUTTON_CLASS} ${HERO_GLASS_BUTTON_CLASS} px-[22px] ${
+                          // optical centring: with three icon buttons beside it the label reads 1px right
+                          !isLikesMode ? "[&>*]:-translate-x-px" : ""
+                        }`}
+                        title={t("common.add_to_queue")}
+                      >
+                        <AnimatePresence mode="wait">
+                          {addedToQueue ? (
+                            <motion.span
+                              key="check"
+                              initial={{ opacity: 0, scale: 0.5 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              exit={{ opacity: 0, scale: 0.5 }}
+                              transition={{ duration: 0.08 }}
+                              className="flex items-center justify-center text-emerald-400 shrink-0"
+                            >
+                              <CheckLine size={16} />
+                            </motion.span>
+                          ) : (
+                            <motion.span
+                              key="add"
+                              initial={{ opacity: 0, scale: 0.5 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              exit={{ opacity: 0, scale: 0.5 }}
+                              transition={{ duration: 0.08 }}
+                              className="flex items-center justify-center shrink-0"
+                            >
+                              <AddLine size={16} />
+                            </motion.span>
+                          )}
+                        </AnimatePresence>
+                        <span className="truncate">
+                          {t("common.add_to_queue")}
+                        </span>
+                      </Button>
+                      <TrackSortMenu
+                        sort={sort}
+                        disabled={currentTracks.length < 2}
+                      />
+                      {!isLikesMode && (
+                        <DropdownMenu
+                          trigger={
+                            <Button
+                              variant="secondary"
+                              className={`${HERO_BUTTON_CLASS} ${HERO_GLASS_BUTTON_CLASS} !w-[52px] !p-0 text-text-primary`}
+                              title={t("common.more")}
+                            >
+                              <More1Fill size={20} />
+                            </Button>
+                          }
+                          items={[
+                            {
+                              id: "rename",
+                              icon: <LuPencil size={15} />,
+                              label: t("common.rename"),
+                              onClick: () => setIsEditingTitle(true),
+                            },
+                            {
+                              id: "edit-description",
+                              icon: <LuText size={15} />,
+                              label: t("common.edit_description"),
+                              onClick: () => setIsEditingDescription(true),
+                            },
+                            {
+                              id: "share",
+                              icon: <ShareForwardLine size={15} />,
+                              label: t("common.share"),
+                              onClick: handleShare,
+                            },
+                            {
+                              id: "delete",
+                              icon: <LuTrash2 size={15} />,
+                              label: t("common.delete"),
+                              danger: true,
+                              onClick: () => {
+                                if (!decodedId) return;
+                                useModalStore.getState().openRemoveFromLibrary({
+                                  id: decodedId,
+                                  title: viewData.title,
+                                  coverUrl: viewData.coverUrl,
+                                  type: "playlist",
+                                  isOwned: true,
+                                });
                               },
-                              {
-                                id: "edit-description",
-                                icon: <LuText size={15} />,
-                                label: t("common.edit_description"),
-                                onClick: () => setIsEditingDescription(true),
-                              },
-                              {
-                                id: "share",
-                                icon: <ShareForwardLine size={15} />,
-                                label: t("common.share"),
-                                onClick: handleShare,
-                              },
-                              {
-                                id: "delete",
-                                icon: <LuTrash2 size={15} />,
-                                label: t("common.delete"),
-                                danger: true,
-                                onClick: () => {
-                                  if (!decodedId) return;
-                                  useModalStore.getState().openRemoveFromLibrary({
-                                    id: decodedId,
-                                    title: viewData.title,
-                                    coverUrl: viewData.coverUrl,
-                                    type: "playlist",
-                                    isOwned: true,
-                                  });
-                                },
-                              },
-                            ]}
-                          />
-                        )}
-                      </div>
-                    </div>
+                            },
+                          ]}
+                        />
+                      )}
+                    </>
                   }
                 />
               </div>
 
               <div
-                ref={scrollRef}
-                data-no-window-drag
-                onScroll={() => {
-                  if (rafIdRef.current === null) {
-                    targetScrollTopRef.current = null;
-                  }
-                }}
-                className="min-w-0 flex-1 h-full min-h-0 overflow-y-auto overflow-x-hidden px-[8px] pt-[56px] pb-[24px] overscroll-contain"
-                style={{ willChange: "scroll-position" }}
-              >
-              {currentTracks.length === 0 ? (
-                <div className="flex min-h-[50vh] flex-col items-center justify-center gap-[12px] text-center">
-                  <PlaylistFill size={40} className="text-border-alpha-33" />
-                  <div className="flex flex-col gap-[4px]">
-                    <p
-                      className="m-0 text-[15px] font-[500] text-text-primary"
-                      style={{ fontFamily: "var(--font-inter), sans-serif" }}
-                    >
-                      {t("playlist.empty_title")}
-                    </p>
-                    <p
-                      className="m-0 text-[13px] text-text-tertiary"
-                      style={{ fontFamily: "var(--font-inter), sans-serif" }}
-                    >
-                      {t("playlist.empty_subtitle")}
-                    </p>
-                  </div>
-                </div>
-              ) : search.matches && search.matches.length === 0 ? (
-                <TrackSearchEmpty query={search.activeQuery} onClear={() => search.setQuery("")} />
-              ) : (
-              <div
-                ref={trackListContainerRef}
-                className="relative"
+                className={`grow shrink-0 mt-[20px] mx-[4px] rounded-t-[14px] bg-black/[0.03] dark:bg-white/[0.04] overflow-hidden px-[8px] pt-[8px] ${
+                  classicSurfaces ? "" : "backdrop-blur-xl"
+                }`}
                 style={{
-                  height: `${rowVirtualizer.getTotalSize()}px`,
+                  marginBottom: "calc(var(--page-inset-bottom) * -1)",
+                  paddingBottom: "calc(var(--page-inset-bottom) + 16px)",
                 }}
               >
-                {isDragging && dropIndex !== null && (
+                {currentTracks.length === 0 ? (
+                  <div className="flex min-h-[50vh] flex-col items-center justify-center gap-[12px] text-center">
+                    <PlaylistFill size={40} className="text-border-alpha-33" />
+                    <div className="flex flex-col gap-[4px]">
+                      <p
+                        className="m-0 text-[15px] font-[500] text-text-primary"
+                        style={{ fontFamily: "var(--font-inter), sans-serif" }}
+                      >
+                        {t("playlist.empty_title")}
+                      </p>
+                      <p
+                        className="m-0 text-[13px] text-text-tertiary"
+                        style={{ fontFamily: "var(--font-inter), sans-serif" }}
+                      >
+                        {t("playlist.empty_subtitle")}
+                      </p>
+                    </div>
+                  </div>
+                ) : search.matches && search.matches.length === 0 ? (
+                  <TrackSearchEmpty
+                    query={search.activeQuery}
+                    onClear={() => search.setQuery("")}
+                  />
+                ) : (
                   <div
+                    ref={trackListContainerRef}
+                    className="relative"
                     style={{
-                      position: "absolute",
-                      top: 0,
-                      left: 0,
-                      width: "100%",
-                      height: "64px",
-                      transform: `translateY(${dropIndex * 64}px)`,
-                      transition: "transform 180ms cubic-bezier(0.2, 0, 0, 1)",
-                      pointerEvents: "none",
-                      zIndex: 0,
+                      height: `${rowVirtualizer.getTotalSize()}px`,
                     }}
-                    className="px-0 py-[2px]"
                   >
-                    <ReorderDropPlaceholder />
+                    {isDragging && dropIndex !== null && (
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: 0,
+                          left: 0,
+                          width: "100%",
+                          height: "64px",
+                          transform: `translateY(${dropIndex * 64}px)`,
+                          transition:
+                            "transform 180ms cubic-bezier(0.2, 0, 0, 1)",
+                          pointerEvents: "none",
+                          zIndex: 0,
+                        }}
+                        className="px-0 py-[2px]"
+                      >
+                        <ReorderDropPlaceholder />
+                      </div>
+                    )}
+
+                    {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                      const entry = visibleTracks[virtualRow.index];
+                      if (!entry) return null;
+                      // original position; equals the row index whenever not filtering
+                      const { track, index } = entry;
+
+                      const isThisDragged = isDragging && index === dragIndex;
+
+                      let shiftY = 0;
+                      if (
+                        isDragging &&
+                        dragIndex !== null &&
+                        dropIndex !== null &&
+                        index !== dragIndex
+                      ) {
+                        if (dragIndex < dropIndex) {
+                          if (index > dragIndex && index <= dropIndex)
+                            shiftY = -64;
+                        } else if (dragIndex > dropIndex) {
+                          if (index >= dropIndex && index < dragIndex)
+                            shiftY = 64;
+                        }
+                      }
+
+                      // reordering a filtered view would be ambiguous, so it waits for the full list
+                      const canReorder = Boolean(
+                        !isLikesMode &&
+                        decodedId &&
+                        track.playlistItemId &&
+                        !isFiltering &&
+                        !isSorted,
+                      );
+
+                      return (
+                        <TrackItem
+                          key={track.playlistItemId ?? `${track.id}-${index}`}
+                          track={track}
+                          playlistId={
+                            isLikesMode ? undefined : (decodedId ?? undefined)
+                          }
+                          playlistTitle={viewData.title}
+                          playlistCoverUrl={viewData.coverUrl}
+                          allTracks={sortedTracks}
+                          showReorderHandle={canReorder}
+                          highlight={search.activeQuery || undefined}
+                          onGrabStart={
+                            canReorder && !isDragging
+                              ? (e) => handleCardGrab(index, track, e)
+                              : undefined
+                          }
+                          style={{
+                            position: "absolute",
+                            top: 0,
+                            left: 0,
+                            width: "100%",
+                            height: `${virtualRow.size}px`,
+                            transform: `translateY(${virtualRow.start - listScrollMargin + shiftY}px)`,
+                            transition: isDragging
+                              ? "transform 180ms cubic-bezier(0.2, 0, 0, 1)"
+                              : undefined,
+                            opacity: isThisDragged ? 0 : 1,
+                            zIndex: 1,
+                          }}
+                        />
+                      );
+                    })}
                   </div>
                 )}
 
-                {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-                  const entry = visibleTracks[virtualRow.index];
-                  if (!entry) return null;
-                  // original position; equals the row index whenever not filtering
-                  const { track, index } = entry;
-
-                  const isThisDragged = isDragging && index === dragIndex;
-
-                  let shiftY = 0;
-                  if (isDragging && dragIndex !== null && dropIndex !== null && index !== dragIndex) {
-                    if (dragIndex < dropIndex) {
-                      if (index > dragIndex && index <= dropIndex) shiftY = -64;
-                    } else if (dragIndex > dropIndex) {
-                      if (index >= dropIndex && index < dragIndex) shiftY = 64;
-                    }
-                  }
-
-                  // reordering a filtered view would be ambiguous, so it waits for the full list
-                  const canReorder = Boolean(
-                    !isLikesMode && decodedId && track.playlistItemId && !isFiltering,
-                  );
-
-                  return (
-                    <TrackItem
-                      key={
-                        track.playlistItemId ?? `${track.id}-${index}`
+                {isDragging && draggedItem && (
+                  <FloatingDragCard
+                    x={pointerPos.x}
+                    y={pointerPos.y}
+                    offsetX={grabOffset.x}
+                    offsetY={grabOffset.y}
+                    width={itemWidth}
+                  >
+                    <SongCardWithMenu
+                      id={draggedItem.id}
+                      title={draggedItem.title}
+                      artists={draggedItem.artists}
+                      artistId={draggedItem.artistId}
+                      artistList={draggedItem.artistList}
+                      coverUrl={draggedItem.coverUrl || viewData.coverUrl}
+                      playlistId={
+                        isLikesMode ? undefined : (decodedId ?? undefined)
                       }
-                      track={track}
-                      playlistId={isLikesMode ? undefined : (decodedId ?? undefined)}
+                      playlistItemId={draggedItem.playlistItemId}
                       playlistTitle={viewData.title}
-                      playlistCoverUrl={viewData.coverUrl}
-                      allTracks={currentTracks}
-                      showReorderHandle={canReorder}
-                      highlight={search.activeQuery || undefined}
-                      onGrabStart={
-                        canReorder && !isDragging
-                          ? (e) => handleCardGrab(index, track, e)
+                      duration={
+                        draggedItem.durationMs
+                          ? `${Math.floor(draggedItem.durationMs / 60000)}:${String(
+                              Math.floor(
+                                (draggedItem.durationMs % 60000) / 1000,
+                              ),
+                            ).padStart(2, "0")}`
                           : undefined
                       }
-                      style={{
-                        position: "absolute",
-                        top: 0,
-                        left: 0,
-                        width: "100%",
-                        height: `${virtualRow.size}px`,
-                        transform: `translateY(${virtualRow.start + shiftY}px)`,
-                        transition: isDragging
-                          ? "transform 180ms cubic-bezier(0.2, 0, 0, 1)"
-                          : undefined,
-                        opacity: isThisDragged ? 0 : 1,
-                        zIndex: 1,
-                      }}
+                      durationMs={draggedItem.durationMs}
+                      explicit={draggedItem.explicit}
+                      className="bg-transparent"
                     />
-                  );
-                })}
-              </div>
-              )}
-
-              {isDragging && draggedItem && (
-                <FloatingDragCard
-                  x={pointerPos.x}
-                  y={pointerPos.y}
-                  offsetX={grabOffset.x}
-                  offsetY={grabOffset.y}
-                  width={itemWidth}
-                >
-                  <SongCardWithMenu
-                    id={draggedItem.id}
-                    title={draggedItem.title}
-                    artists={draggedItem.artists}
-                    artistId={draggedItem.artistId}
-                    artistList={draggedItem.artistList}
-                    coverUrl={draggedItem.coverUrl || viewData.coverUrl}
-                    playlistId={isLikesMode ? undefined : (decodedId ?? undefined)}
-                    playlistItemId={draggedItem.playlistItemId}
-                    playlistTitle={viewData.title}
-                    duration={
-                      draggedItem.durationMs
-                        ? `${Math.floor(draggedItem.durationMs / 60000)}:${String(
-                            Math.floor((draggedItem.durationMs % 60000) / 1000),
-                          ).padStart(2, "0")}`
-                        : undefined
-                    }
-                    durationMs={draggedItem.durationMs}
-                    explicit={draggedItem.explicit}
-                    className="bg-transparent"
-                  />
-                </FloatingDragCard>
-              )}
-              </div>
+                  </FloatingDragCard>
+                )}
               </div>
             </div>
+          </div>
         )}
 
         {!skeletonExited && (

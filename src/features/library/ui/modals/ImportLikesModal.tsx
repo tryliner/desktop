@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import Button from "@/shared/ui/Button";
 import TextInput from "@/shared/ui/TextInput";
 import Dialog from "@/shared/ui/Dialog";
+import { DialogActions, DialogButton, DialogHeader } from "@/shared/ui";
 import { useTranslation } from "@/languages";
 import { useModalStore } from "../../store/modalStore";
 import { useImportStore } from "../../store/importStore";
@@ -54,25 +54,11 @@ export default function ImportLikesModal() {
 
   return (
     <Dialog open={open} onOpenChange={(next) => (!next ? close() : undefined)} maxWidth={360}>
-      <div className="flex flex-col gap-[12px] px-[16px] pb-[16px]">
-        {/* Header */}
-        <div className="flex flex-col gap-[2px]">
-          <p
-            className="text-text-primary text-[13px] font-[500] m-0"
-            style={{
-              fontFamily: "var(--font-inter), sans-serif",
-              letterSpacing: "-0.01em",
-            }}
-          >
-            {t("common.import_soundcloud_likes")}
-          </p>
-          <p
-            className="text-text-tertiary text-[12px] m-0 font-[350]"
-            style={{ fontFamily: "var(--font-inter), sans-serif" }}
-          >
-            {t("common.import_soundcloud_description")}
-          </p>
-        </div>
+      <div className="flex flex-col gap-[14px] px-[20px] pb-[20px]">
+        <DialogHeader
+          title={t("common.import_soundcloud_likes")}
+          description={t("common.import_soundcloud_description")}
+        />
 
         {/* Username input */}
         <TextInput
@@ -88,8 +74,7 @@ export default function ImportLikesModal() {
             if (e.key === "Enter") void handleImport();
           }}
           maxLength={100}
-          size="sm"
-          className="!rounded-md"
+          className="!rounded-[12px] !border-transparent !bg-black/[0.05] dark:!bg-white/[0.07]"
         />
 
         {importError && (
@@ -101,20 +86,16 @@ export default function ImportLikesModal() {
           </p>
         )}
 
-        <Button
-          type="button"
-          variant="primary"
-          size="sm"
-          onClick={() => void handleImport()}
-          disabled={importing}
-          className={`w-full !rounded-md ${importing ? "pointer-events-none" : ""}`}
-        >
-          {importing ? (
-            <span className="inline-block h-[13px] w-[13px] rounded-full border-[2px] border-btn-primary-text/30 border-t-btn-primary-text animate-spin" />
-          ) : (
-            t("common.import_likes")
-          )}
-        </Button>
+        <DialogActions>
+          <DialogButton
+            type="button"
+            variant="primary"
+            onClick={() => void handleImport()}
+            loading={importing}
+          >
+            {t("common.import_likes")}
+          </DialogButton>
+        </DialogActions>
       </div>
     </Dialog>
   );

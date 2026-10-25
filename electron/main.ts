@@ -1,4 +1,16 @@
-import { app, BaseWindow, BrowserWindow, globalShortcut, ipcMain, shell, screen, dialog, session, nativeImage, powerSaveBlocker } from "electron";
+import {
+  app,
+  BaseWindow,
+  BrowserWindow,
+  globalShortcut,
+  ipcMain,
+  shell,
+  screen,
+  dialog,
+  session,
+  nativeImage,
+  powerSaveBlocker,
+} from "electron";
 import type { Display, Rectangle } from "electron";
 import { autoUpdater } from "electron-updater";
 import path from "node:path";
@@ -8,12 +20,17 @@ import dns from "node:dns";
 import net from "node:net";
 import tls from "node:tls";
 import https from "node:https";
-import { execFile as nodeExecFile, type ChildProcess } from "node:child_process";
+import {
+  execFile as nodeExecFile,
+  type ChildProcess,
+} from "node:child_process";
 import { fileURLToPath } from "node:url";
 import {
   signCoverUrl,
+  signRequest,
   signMonitorRequest,
   signRawPayload,
+  setDevSigningSecret,
   syncServerTime,
   getServerTimeOffset,
   type SignRequestInput,
@@ -36,14 +53,28 @@ import { TouchBarManager } from "./touchbar.js";
 import { registerAuthSessionIpc } from "./auth-session-ipc.js";
 import { ThumbarController } from "./thumbar.js";
 import { OverlayManager } from "./overlay.js";
+import { detectCompositor } from "./compositor/index.js";
 import { BundleManager } from "./bundle-manager.js";
 import { createBundleErrorStamp } from "./bundle-stamp.js";
 import { createSleepBlocker } from "./sleep-blocker.js";
+import { withOpenCors } from "./cors.js";
 import { createShutdown } from "./shutdown.js";
-import { computeDragBounds, isInTopSnapZone, restoreUnderCursor } from "./window-drag.js";
-import { isWindows11, loadSnapPreviewAddon, NativeSnapPreview } from "./snap-native.js";
+import {
+  computeDragBounds,
+  isInTopSnapZone,
+  restoreUnderCursor,
+} from "./window-drag.js";
+import {
+  isWindows11,
+  loadSnapPreviewAddon,
+  NativeSnapPreview,
+} from "./snap-native.js";
 import { DiscordRpcManager } from "./discord.js";
-import { PoTokenService } from "./potoken.js";
+import { PoTokenService } from "./youtube/potoken.js";
+import {
+  YOUTUBE_REQUEST_URLS,
+  youtubeOriginFor,
+} from "./youtube/request-origin.js";
 
 // root error handling for main process
 process.on("uncaughtException", (error) => {
@@ -61,6 +92,9 @@ app.commandLine.appendSwitch("ignore-gpu-blocklist");
 app.commandLine.appendSwitch("enable-native-gpu-memory-buffers");
 // forces resilient http/1.1 to prevent chromium err_http2_ping_failed on dropped network frames
 app.commandLine.appendSwitch("disable-http2");
+if (detectCompositor() !== "none") {
+  app.commandLine.appendSwitch("enable-features", "GlobalShortcutsPortal");
+}
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -99,7 +133,8 @@ let snapPreview: BaseWindow | null = null;
 let nativeSnap: NativeSnapPreview | null = null;
 
 function syncResizable() {
-  if (process.platform !== "win32" || !mainWindow || mainWindow.isDestroyed()) return;
+  if (process.platform !== "win32" || !mainWindow || mainWindow.isDestroyed())
+    return;
   const locked = mainWindow.isMaximized() || mainWindow.isFullScreen();
   if (mainWindow.isResizable() === locked) mainWindow.setResizable(!locked);
 }
@@ -216,7 +251,7 @@ function createWindow() {
       sandbox: false,
       devTools: true,
       backgroundThrottling: false, // keeps audio timer and playback ticks running when app is in background or another workspace
-      webSecurity: false,
+      webSecurity: true,
     },
   });
 
@@ -269,7 +304,9 @@ function createWindow() {
   });
 
   mainWindow.webContents.on("unresponsive", () => {
-    console.warn("\x1b[43;30m window \x1b[0m window is temporarily unresponsive");
+    console.warn(
+      "\x1b[43;30m window \x1b[0m window is temporarily unresponsive",
+    );
   });
 
   mainWindow.webContents.on("responsive", () => {
@@ -280,7 +317,10 @@ function createWindow() {
     // clean devtools format directives for terminal readability
     const cleanMsg = message.replace(/%c/g, "").trim();
     try {
-      fs.appendFileSync(path.join(process.cwd(), "renderer.log"), `[${level}] ${cleanMsg}\n`);
+      fs.appendFileSync(
+        path.join(process.cwd(), "renderer.log"),
+        `[${level}] ${cleanMsg}\n`,
+      );
     } catch {}
     if (level >= 3) {
       console.error(`\x1b[41;37m renderer error \x1b[0m ${cleanMsg}`);
@@ -301,7 +341,8 @@ function createWindow() {
           sha256: active?.sha256 || null,
         };
       },
-      peekUpdate: async () => (bundleManager ? bundleManager.peekUpdate() : { kind: "inactive" }),
+      peekUpdate: async () =>
+        bundleManager ? bundleManager.peekUpdate() : { kind: "inactive" },
     },
     { emit: (line) => mainWindow?.webContents.send("bundle:stamp", line) },
   );
@@ -314,7 +355,9 @@ function createWindow() {
     if (input.type === "keyDown") {
       if (
         input.key === "F12" ||
-        ((input.control || input.meta) && input.shift && input.key.toLowerCase() === "i")
+        ((input.control || input.meta) &&
+          input.shift &&
+          input.key.toLowerCase() === "i")
       ) {
         mainWindow?.webContents.toggleDevTools();
       }
@@ -331,7 +374,8 @@ function createWindow() {
     const manager = bundleManager;
     const win = mainWindow;
     void (async () => {
-      if (app.isPackaged) await manager.updateBeforeLaunch().catch(() => undefined);
+      if (app.isPackaged)
+        await manager.updateBeforeLaunch().catch(() => undefined);
       if (!win.isDestroyed()) win.loadFile(manager.getEffectiveIndexPath());
     })();
   }
@@ -373,7 +417,7 @@ function createWindow() {
 const gotTheLock = app.requestSingleInstanceLock();
 if (!gotTheLock) {
   console.warn(
-    "\n\x1b[33m[Liner]\x1b[0m Another instance of Liner is already running in the background. Exiting development instance.\nTo run in development mode, please close the running Liner application first.\n"
+    "\n\x1b[33m[Liner]\x1b[0m Another instance of Liner is already running in the background. Exiting development instance.\nTo run in development mode, please close the running Liner application first.\n",
   );
   app.quit();
 } else {
@@ -384,7 +428,9 @@ if (!gotTheLock) {
       // this process is on its way out and can no longer show a window; the new
       // launch already handed over to us and exited, so start a fresh instance
       // once we are gone instead of swallowing the launch
-      app.relaunch({ args: process.argv.slice(1).filter((a) => !a.startsWith("--inspect")) });
+      app.relaunch({
+        args: process.argv.slice(1).filter((a) => !a.startsWith("--inspect")),
+      });
       app.exit(0);
       return;
     }
@@ -405,10 +451,19 @@ if (!gotTheLock) {
   });
 
   app.whenReady().then(() => {
+    if (!app.isPackaged && process.env.LINER_DEV_SIGNING_SECRET) {
+      setDevSigningSecret(process.env.LINER_DEV_SIGNING_SECRET);
+      console.log(
+        "\x1b[43;30m signer \x1b[0m dev signing secret active (unpackaged build only)",
+      );
+    }
+
     // register liner:// so browsers / xdg-open route share links to us
     // (on linux the packaged .desktop carries the mime handler too)
     if (process.defaultApp && process.argv.length >= 2) {
-      app.setAsDefaultProtocolClient(DEEP_LINK_SCHEME, process.execPath, [path.resolve(process.argv[1]!)]);
+      app.setAsDefaultProtocolClient(DEEP_LINK_SCHEME, process.execPath, [
+        path.resolve(process.argv[1]!),
+      ]);
     } else {
       app.setAsDefaultProtocolClient(DEEP_LINK_SCHEME);
     }
@@ -422,20 +477,26 @@ if (!gotTheLock) {
     thumbar = new ThumbarController(
       () => mainWindow,
       (type) => {
-        if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send("overlay:action", { type });
+        if (mainWindow && !mainWindow.isDestroyed())
+          mainWindow.webContents.send("overlay:action", { type });
       },
     );
-    ipcMain.on("touchbar:update-state", (_event, state: { status: string; track?: unknown }) => {
-      updateSleepBlocker(state.status);
-      thumbar?.update(state);
-    });
+    ipcMain.on(
+      "touchbar:update-state",
+      (_event, state: { status: string; track?: unknown }) => {
+        updateSleepBlocker(state.status);
+        thumbar?.update(state);
+      },
+    );
 
     overlayManager = new OverlayManager(
       path.join(__dirname, "preload.cjs"),
       RENDERER_DIST,
     );
     overlayManager.setIndexPathResolver(
-      () => bundleManager?.getEffectiveIndexPath() ?? path.join(RENDERER_DIST, "index.html"),
+      () =>
+        bundleManager?.getEffectiveIndexPath() ??
+        path.join(RENDERER_DIST, "index.html"),
     );
     overlayManager.setMainWindow(mainWindow);
     // F in the overlay: the window grows back out of the pill (windows 11 + add-on)
@@ -443,13 +504,21 @@ if (!gotTheLock) {
       const overlay = overlayManager;
       if (nativeSnap && overlay) {
         overlay.holdForTransition(); // it is closed (hidden) once the transform lands
-        void nativeSnap.fromOverlay(overlay.getWindow(), restore, () => overlay.closeOverlay());
+        void nativeSnap.fromOverlay(overlay.getWindow(), restore, () =>
+          overlay.closeOverlay(),
+        );
       } else restore();
     });
     overlayManager.setRestoreInterceptor(() => {
       const overlay = overlayManager;
-      if (!nativeSnap || !overlay || !nativeSnap.takeRestoredCloaked()) return false;
-      void nativeSnap.fromOverlay(overlay.getWindow(), () => {}, () => overlay.closeOverlay(), true);
+      if (!nativeSnap || !overlay || !nativeSnap.takeRestoredCloaked())
+        return false;
+      void nativeSnap.fromOverlay(
+        overlay.getWindow(),
+        () => {},
+        () => overlay.closeOverlay(),
+        true,
+      );
       return true;
     });
     overlayManager.registerShortcut();
@@ -468,7 +537,11 @@ if (!gotTheLock) {
       // cannot minimize a native fullscreen window or under hyprland tiling wm
       if (!mainWindow || mainWindow.isFullScreen() || isHyprland) return;
       // windows 11 + add-on: the window flies into the overlay pill it is about to become
-      if (nativeSnap && overlayManager?.willShowOnMinimize() && overlayManager.isReadyForTransition()) {
+      if (
+        nativeSnap &&
+        overlayManager?.willShowOnMinimize() &&
+        overlayManager.isReadyForTransition()
+      ) {
         const overlay = overlayManager;
         void nativeSnap.toOverlay(
           (beforeShow) => overlay.openForTransition(beforeShow),
@@ -559,7 +632,11 @@ if (!gotTheLock) {
       // gtk's icon cache is the only one our injected files affect;
       // update-desktop-database rebuilds the MIME cache and never touches
       // icons
-      tryOnce("gtk-update-icon-cache", ["-f", "-t", path.join(dataHome, "icons", "hicolor")]);
+      tryOnce("gtk-update-icon-cache", [
+        "-f",
+        "-t",
+        path.join(dataHome, "icons", "hicolor"),
+      ]);
     };
 
     // electron-builder writes `desktopName` into the packaged package.json
@@ -592,7 +669,9 @@ if (!gotTheLock) {
         } else {
           await fs.promises.writeFile(
             file,
-            source.resize({ width: size, height: size, quality: "best" }).toPNG(),
+            source
+              .resize({ width: size, height: size, quality: "best" })
+              .toPNG(),
           );
         }
       }
@@ -615,62 +694,64 @@ if (!gotTheLock) {
 
     ipcMain.handle(
       "app:set-icon",
-      async (
-        _event,
-        dataUrl: string,
-        options?: { isDefault?: boolean },
-      ) => {
-      if (!mainWindow || !dataUrl) return;
-      try {
-        const icon = nativeImage.createFromDataURL(dataUrl);
-        if (!icon.isEmpty()) {
-          mainWindow.setIcon(icon);
-          if (process.platform === "darwin" && app.dock) {
-            app.dock.setIcon(icon);
-          }
-          // linux: apply to the icon dash/taskbar actually shows. only in the
-          // packaged app so dev runs do not pollute the user's icon theme.
-          if (process.platform === "linux" && app.isPackaged) {
-            const png = /^data:image\/png;base64,(.+)$/.exec(dataUrl)?.[1];
-            if (png) {
-              const bytes = Buffer.from(png, "base64");
-              // chain onto the previous icon task so a fast accent switch
-              // (e.g. spotify then default) cannot interleave install/remove
-              const runIconTask = async () => {
-                try {
-                  if (options?.isDefault) {
-                    // branding back to stock: drop the injected icon and let the
-                    // packaged system icon win again
-                    lastIconBytes = null;
-                    await removeLinuxAppIcon(
-                      await resolveLinuxDesktopIconName(),
-                    );
-                  } else if (
-                    !lastIconBytes ||
-                    !lastIconBytes.equals(bytes)
-                  ) {
-                    lastIconBytes = bytes;
-                    await installLinuxAppIcon(
-                      await resolveLinuxDesktopIconName(),
-                      bytes,
+      async (_event, dataUrl: string, options?: { isDefault?: boolean }) => {
+        if (!mainWindow || !dataUrl) return;
+        try {
+          const icon = nativeImage.createFromDataURL(dataUrl);
+          if (!icon.isEmpty()) {
+            mainWindow.setIcon(icon);
+            if (process.platform === "darwin" && app.dock) {
+              app.dock.setIcon(icon);
+            }
+            // linux: apply to the icon dash/taskbar actually shows. only in the
+            // packaged app so dev runs do not pollute the user's icon theme.
+            if (process.platform === "linux" && app.isPackaged) {
+              const png = /^data:image\/png;base64,(.+)$/.exec(dataUrl)?.[1];
+              if (png) {
+                const bytes = Buffer.from(png, "base64");
+                // chain onto the previous icon task so a fast accent switch
+                // (e.g. spotify then default) cannot interleave install/remove
+                const runIconTask = async () => {
+                  try {
+                    if (options?.isDefault) {
+                      // branding back to stock: drop the injected icon and let the
+                      // packaged system icon win again
+                      lastIconBytes = null;
+                      await removeLinuxAppIcon(
+                        await resolveLinuxDesktopIconName(),
+                      );
+                    } else if (!lastIconBytes || !lastIconBytes.equals(bytes)) {
+                      lastIconBytes = bytes;
+                      await installLinuxAppIcon(
+                        await resolveLinuxDesktopIconName(),
+                        bytes,
+                      );
+                    }
+                  } catch (err) {
+                    console.error(
+                      "\x1b[41;37m icon \x1b[0m set-icon error:",
+                      err,
                     );
                   }
-                } catch (err) {
-                  console.error("\x1b[41;37m icon \x1b[0m set-icon error:", err);
-                }
-              };
-              linuxIconTask = linuxIconTask.then(runIconTask);
+                };
+                linuxIconTask = linuxIconTask.then(runIconTask);
+              }
             }
           }
+        } catch (err) {
+          console.error("\x1b[41;37m icon \x1b[0m set-icon error:", err);
         }
-      } catch (err) {
-        console.error("\x1b[41;37m icon \x1b[0m set-icon error:", err);
-      }
       },
     );
 
     session.defaultSession.webRequest.onBeforeSendHeaders(
-      { urls: ["*://*.youtube.com/*", "*://*.googlevideo.com/*", "*://api.music.apple.com/*", "*://amp-api.music.apple.com/*"] },
+      {
+        urls: [
+          ...YOUTUBE_REQUEST_URLS,
+          "*://api.music.apple.com/*",
+          "*://amp-api.music.apple.com/*",
+        ],
+      },
       (details, callback) => {
         const requestHeaders: Record<string, string> = {};
         let userAgentOverride: string | undefined;
@@ -684,14 +765,13 @@ if (!gotTheLock) {
         }
         const origin = details.url.includes("music.apple.com/")
           ? "https://music.apple.com"
-          : details.url.includes("://www.youtube.com/")
-            ? "https://www.youtube.com"
-            : "https://music.youtube.com";
+          : youtubeOriginFor(details.url);
         requestHeaders["Origin"] = origin;
         requestHeaders["Referer"] = `${origin}/`;
         if (userAgentOverride) {
           for (const name of Object.keys(requestHeaders)) {
-            if (name.toLowerCase() === "user-agent") delete requestHeaders[name];
+            if (name.toLowerCase() === "user-agent")
+              delete requestHeaders[name];
           }
           requestHeaders["User-Agent"] = userAgentOverride;
         }
@@ -700,11 +780,7 @@ if (!gotTheLock) {
     );
 
     session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
-      const responseHeaders = { ...(details.responseHeaders || {}) };
-      responseHeaders["access-control-allow-origin"] = ["*"];
-      responseHeaders["access-control-allow-headers"] = ["*"];
-      responseHeaders["access-control-allow-methods"] = ["GET, HEAD, OPTIONS"];
-      callback({ responseHeaders });
+      callback(withOpenCors(details.responseHeaders, details.method));
     });
 
     let lastSavedExportPath: string | null = null;
@@ -715,25 +791,6 @@ if (!gotTheLock) {
           lastSavedExportPath = item.getSavePath();
         }
       });
-    });
-
-    ipcMain.handle("dialog:save-dump", async (_event, { filename, content }: { filename: string; content: string }) => {
-      if (!mainWindow) return { success: false, canceled: true };
-      try {
-        const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
-          defaultPath: path.join(app.getPath("downloads"), filename),
-          filters: [{ name: "JSON", extensions: ["json"] }],
-        });
-        if (canceled || !filePath) {
-          return { success: false, canceled: true };
-        }
-        await fs.promises.writeFile(filePath, content, "utf-8");
-        lastSavedExportPath = filePath;
-        return { success: true, filePath };
-      } catch (err) {
-        console.error("\x1b[41;37m dialog \x1b[0m save-dump error:", err);
-        return { success: false, error: String(err) };
-      }
     });
 
     const openFolderOrItem = async (customPath?: string) => {
@@ -755,18 +812,27 @@ if (!gotTheLock) {
         await shell.openPath(downloadsPath);
         return true;
       } catch (err) {
-        console.error("\x1b[41;37m shell \x1b[0m open-export-folder error:", err);
+        console.error(
+          "\x1b[41;37m shell \x1b[0m open-export-folder error:",
+          err,
+        );
         return false;
       }
     };
 
-    ipcMain.handle("shell:open-downloads", async (_event, customPath?: string) => {
-      return openFolderOrItem(customPath);
-    });
+    ipcMain.handle(
+      "shell:open-downloads",
+      async (_event, customPath?: string) => {
+        return openFolderOrItem(customPath);
+      },
+    );
 
-    ipcMain.handle("shell:open-export-folder", async (_event, customPath?: string) => {
-      return openFolderOrItem(customPath);
-    });
+    ipcMain.handle(
+      "shell:open-export-folder",
+      async (_event, customPath?: string) => {
+        return openFolderOrItem(customPath);
+      },
+    );
 
     // locates provider path where cache is collected
     const getCacheDirectory = () => {
@@ -781,7 +847,9 @@ if (!gotTheLock) {
       let total = 0;
       try {
         if (!fs.existsSync(dirPath)) return 0;
-        const entries = await fs.promises.readdir(dirPath, { withFileTypes: true });
+        const entries = await fs.promises.readdir(dirPath, {
+          withFileTypes: true,
+        });
         for (const entry of entries) {
           const full = path.join(dirPath, entry.name);
           if (entry.isDirectory()) {
@@ -796,10 +864,14 @@ if (!gotTheLock) {
     };
 
     // recursively deletes all files and subdirectories inside dirPath safely
-    const clearDirectoryContentsSafe = async (dirPath: string): Promise<void> => {
+    const clearDirectoryContentsSafe = async (
+      dirPath: string,
+    ): Promise<void> => {
       try {
         if (!fs.existsSync(dirPath)) return;
-        const entries = await fs.promises.readdir(dirPath, { withFileTypes: true });
+        const entries = await fs.promises.readdir(dirPath, {
+          withFileTypes: true,
+        });
         for (const entry of entries) {
           const full = path.join(dirPath, entry.name);
           try {
@@ -813,12 +885,17 @@ if (!gotTheLock) {
     const clearIndexedDbBlobsSafe = async (idbDir: string): Promise<void> => {
       try {
         if (!fs.existsSync(idbDir)) return;
-        const entries = await fs.promises.readdir(idbDir, { withFileTypes: true });
+        const entries = await fs.promises.readdir(idbDir, {
+          withFileTypes: true,
+        });
         for (const entry of entries) {
           if (entry.isDirectory() && entry.name.endsWith(".indexeddb.blob")) {
             await clearDirectoryContentsSafe(path.join(idbDir, entry.name));
             try {
-              await fs.promises.rm(path.join(idbDir, entry.name), { recursive: true, force: true });
+              await fs.promises.rm(path.join(idbDir, entry.name), {
+                recursive: true,
+                force: true,
+              });
             } catch {}
           }
         }
@@ -830,7 +907,15 @@ if (!gotTheLock) {
         const userData = app.getPath("userData");
         const cachePath = getCacheDirectory();
 
-        const [sessionCache, diskHttpCache, diskCodeCache, swCache, idbCache, lsCache, blobCache] = await Promise.all([
+        const [
+          sessionCache,
+          diskHttpCache,
+          diskCodeCache,
+          swCache,
+          idbCache,
+          lsCache,
+          blobCache,
+        ] = await Promise.all([
           session.defaultSession.getCacheSize().catch(() => 0),
           getDirectorySizeSafe(path.join(userData, "Cache")),
           getDirectorySizeSafe(path.join(userData, "Code Cache")),
@@ -853,7 +938,10 @@ if (!gotTheLock) {
           cachePath,
         };
       } catch (err) {
-        console.error("\x1b[41;37m storage \x1b[0m get-cache-stats error:", err);
+        console.error(
+          "\x1b[41;37m storage \x1b[0m get-cache-stats error:",
+          err,
+        );
         return {
           cacheSize: 0,
           httpCacheSize: 0,
@@ -873,7 +961,10 @@ if (!gotTheLock) {
         await shell.openPath(cachePath);
         return true;
       } catch (err) {
-        console.error("\x1b[41;37m shell \x1b[0m open-cache-folder error:", err);
+        console.error(
+          "\x1b[41;37m shell \x1b[0m open-cache-folder error:",
+          err,
+        );
         return false;
       }
     });
@@ -887,28 +978,39 @@ if (!gotTheLock) {
         await clearDirectoryContentsSafe(path.join(userData, "Service Worker"));
         return true;
       } catch (err) {
-        console.error("\x1b[41;37m storage \x1b[0m clear-covers-cache error:", err);
+        console.error(
+          "\x1b[41;37m storage \x1b[0m clear-covers-cache error:",
+          err,
+        );
         return false;
       }
     });
 
-    ipcMain.handle("storage:clear-audio-cache", async (_event, clearEntireDb?: boolean) => {
-      try {
-        const userData = app.getPath("userData");
-        if (clearEntireDb) {
-          await session.defaultSession.clearStorageData({
-            storages: ["indexdb"],
-          }).catch(() => {});
+    ipcMain.handle(
+      "storage:clear-audio-cache",
+      async (_event, clearEntireDb?: boolean) => {
+        try {
+          const userData = app.getPath("userData");
+          if (clearEntireDb) {
+            await session.defaultSession
+              .clearStorageData({
+                storages: ["indexdb"],
+              })
+              .catch(() => {});
+          }
+          await clearIndexedDbBlobsSafe(path.join(userData, "IndexedDB"));
+          await clearDirectoryContentsSafe(path.join(userData, "blob_storage"));
+          await session.defaultSession.clearCache().catch(() => {});
+          return true;
+        } catch (err) {
+          console.error(
+            "\x1b[41;37m storage \x1b[0m clear-audio-cache error:",
+            err,
+          );
+          return false;
         }
-        await clearIndexedDbBlobsSafe(path.join(userData, "IndexedDB"));
-        await clearDirectoryContentsSafe(path.join(userData, "blob_storage"));
-        await session.defaultSession.clearCache().catch(() => {});
-        return true;
-      } catch (err) {
-        console.error("\x1b[41;37m storage \x1b[0m clear-audio-cache error:", err);
-        return false;
-      }
-    });
+      },
+    );
 
     // clears chromium http and v8 code cache
     ipcMain.handle("storage:clear-http-cache", async () => {
@@ -920,7 +1022,10 @@ if (!gotTheLock) {
         await clearDirectoryContentsSafe(path.join(userData, "Code Cache"));
         return true;
       } catch (err) {
-        console.error("\x1b[41;37m storage \x1b[0m clear-http-cache error:", err);
+        console.error(
+          "\x1b[41;37m storage \x1b[0m clear-http-cache error:",
+          err,
+        );
         return false;
       }
     });
@@ -932,7 +1037,12 @@ if (!gotTheLock) {
     // (see window-drag.ts)
     let dragStartCursor: { x: number; y: number } | null = null;
     let dragging = false; // between the renderer's drag-start and drag-end
-    let dragStartBounds: { x: number; y: number; width: number; height: number } | null = null;
+    let dragStartBounds: {
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+    } | null = null;
 
     const beginDrag = () => {
       if (!mainWindow) return;
@@ -955,7 +1065,8 @@ if (!gotTheLock) {
     // a windows 11 exclusive (elsewhere dragging to the top just moves the window)
     const snapEnabled = isWindows11();
     // acrylic needs windows 11 22h2 (build 22621)+; older builds get a flat tint
-    const acrylicSupported = snapEnabled && Number(os.release().split(".")[2] ?? 0) >= 22621;
+    const acrylicSupported =
+      snapEnabled && Number(os.release().split(".")[2] ?? 0) >= 22621;
     const SNAP_RELEASE_PX = 24; // armed snap holds until the cursor is this far below the edge
     const SNAP_INSET = 8; // gap between the preview and the work area edges
 
@@ -994,7 +1105,10 @@ if (!gotTheLock) {
         skipTaskbar: true,
         hasShadow: false,
         ...(acrylicSupported
-          ? { backgroundMaterial: "acrylic" as const, backgroundColor: "#29808080" }
+          ? {
+              backgroundMaterial: "acrylic" as const,
+              backgroundColor: "#29808080",
+            }
           : { transparent: true, backgroundColor: "#9a767676" }),
       });
       snapPreview = preview;
@@ -1007,7 +1121,12 @@ if (!gotTheLock) {
       // not on the first real snap
       const primary = screen.getPrimaryDisplay();
       const rect = previewRectFor(primary);
-      preview.setBounds({ x: -32000, y: -32000, width: rect.width, height: rect.height });
+      preview.setBounds({
+        x: -32000,
+        y: -32000,
+        width: rect.width,
+        height: rect.height,
+      });
       preview.showInactive();
       setTimeout(() => {
         if (preview.isDestroyed()) return;
@@ -1024,7 +1143,9 @@ if (!gotTheLock) {
           return;
         }
         // preferred: the compositor-driven native preview (smooth, no per-frame work)
-        const addon = loadSnapPreviewAddon(process.env.APP_ROOT ?? path.join(__dirname, ".."));
+        const addon = loadSnapPreviewAddon(
+          process.env.APP_ROOT ?? path.join(__dirname, ".."),
+        );
         if (addon) {
           nativeSnap = NativeSnapPreview.create(addon, () => mainWindow, {
             insetDip: SNAP_INSET,
@@ -1041,7 +1162,10 @@ if (!gotTheLock) {
             return;
           }
         }
-        if (!addon) console.warn("[snap-preview] native add-on not available (using the plain preview)");
+        if (!addon)
+          console.warn(
+            "[snap-preview] native add-on not available (using the plain preview)",
+          );
         // fallback: a plain acrylic window, shown / hidden without animation
         try {
           createSnapPreview();
@@ -1062,7 +1186,8 @@ if (!gotTheLock) {
     const lowerMain = () => {
       if (!mainRaised) return;
       mainRaised = false;
-      if (mainWindow && !mainWindow.isDestroyed()) mainWindow.setAlwaysOnTop(mainWasOnTop);
+      if (mainWindow && !mainWindow.isDestroyed())
+        mainWindow.setAlwaysOnTop(mainWasOnTop);
     };
 
     const hidePreview = () => {
@@ -1070,7 +1195,8 @@ if (!gotTheLock) {
         clearTimeout(previewHideTimer);
         previewHideTimer = null;
       }
-      if (previewVisible && snapPreview && !snapPreview.isDestroyed()) snapPreview.hide();
+      if (previewVisible && snapPreview && !snapPreview.isDestroyed())
+        snapPreview.hide();
       previewVisible = false;
       lowerMain();
     };
@@ -1111,7 +1237,12 @@ if (!gotTheLock) {
 
     const settleSnap = () => {
       const display = snapEnabled && snapArmed ? snapDisplay : null;
-      if (!display || !mainWindow || mainWindow.isDestroyed() || mainWindow.isMaximized()) {
+      if (
+        !display ||
+        !mainWindow ||
+        mainWindow.isDestroyed() ||
+        mainWindow.isMaximized()
+      ) {
         if (snapArmed || previewVisible) disarmSnap();
         else nativeSnap?.follow();
         return;
@@ -1124,10 +1255,17 @@ if (!gotTheLock) {
       // electron maximizes onto the display under the cursor
       const parked = {
         ...from,
-        x: from.width >= area.width ? area.x : Math.min(Math.max(from.x, area.x), area.x + area.width - from.width),
+        x:
+          from.width >= area.width
+            ? area.x
+            : Math.min(
+                Math.max(from.x, area.x),
+                area.x + area.width - from.width,
+              ),
         y: Math.max(from.y, area.y),
       };
-      if (parked.x !== from.x || parked.y !== from.y) mainWindow.setBounds(parked);
+      if (parked.x !== from.x || parked.y !== from.y)
+        mainWindow.setBounds(parked);
       // the window morphs into the screen over the blur (native add-on), or fills it at
       // once with the plain fallback preview
       if (nativeSnap) {
@@ -1148,7 +1286,9 @@ if (!gotTheLock) {
       // arms on the very top edge; once armed it holds until the cursor clearly
       // leaves (like windows), so a small wobble doesn't flicker it away
       const holding =
-        snapArmed && snapDisplay?.id === display.id && isInTopSnapZone(cursor, display.bounds, SNAP_RELEASE_PX);
+        snapArmed &&
+        snapDisplay?.id === display.id &&
+        isInTopSnapZone(cursor, display.bounds, SNAP_RELEASE_PX);
       if (holding || isInTopSnapZone(cursor, display.bounds)) {
         if (!snapArmed || snapDisplay?.id !== display.id) armSnap(display);
       } else if (snapArmed) {
@@ -1165,7 +1305,9 @@ if (!gotTheLock) {
       const maximized = mainWindow.getBounds();
       const normal = mainWindow.getNormalBounds();
       const restoredSize =
-        normal.width > 0 && normal.height > 0 && (normal.width < maximized.width || normal.height < maximized.height)
+        normal.width > 0 &&
+        normal.height > 0 &&
+        (normal.width < maximized.width || normal.height < maximized.height)
           ? normal
           : null;
       const targetUnderCursor = (size: { width: number; height: number }) =>
@@ -1173,7 +1315,9 @@ if (!gotTheLock) {
       const resize = () => {
         if (!mainWindow) return;
         mainWindow.unmaximize();
-        mainWindow.setBounds(targetUnderCursor(restoredSize ?? mainWindow.getBounds()));
+        mainWindow.setBounds(
+          targetUnderCursor(restoredSize ?? mainWindow.getBounds()),
+        );
         syncResizable();
         // the drag continues from where the window landed
         if (dragging) beginDrag();
@@ -1233,12 +1377,27 @@ if (!gotTheLock) {
     });
 
     ipcMain.handle(
+      "signer:sign-request",
+      (_event, request: SignRequestInput) => {
+        try {
+          return signRequest(request);
+        } catch (err: any) {
+          console.error("\x1b[41;37m signer \x1b[0m signRequest error:", err);
+          return { error: String(err?.message || err) };
+        }
+      },
+    );
+
+    ipcMain.handle(
       "signer:sign-monitor-request",
       (_event, request: SignRequestInput) => {
         try {
           return signMonitorRequest(request);
         } catch (err: any) {
-          console.error("\x1b[41;37m signer \x1b[0m signMonitorRequest error:", err);
+          console.error(
+            "\x1b[41;37m signer \x1b[0m signMonitorRequest error:",
+            err,
+          );
           return { error: String(err?.message || err) };
         }
       },
@@ -1251,7 +1410,10 @@ if (!gotTheLock) {
           const buf = Buffer.from(payload);
           return signRawPayload(buf);
         } catch (err) {
-          console.error("\x1b[41;37m signer \x1b[0m signRawPayload error:", err);
+          console.error(
+            "\x1b[41;37m signer \x1b[0m signRawPayload error:",
+            err,
+          );
           return "";
         }
       },
@@ -1263,7 +1425,10 @@ if (!gotTheLock) {
         try {
           return syncServerTime(dateHeaderOrMs);
         } catch (err) {
-          console.error("\x1b[41;37m signer \x1b[0m syncServerTime error:", err);
+          console.error(
+            "\x1b[41;37m signer \x1b[0m syncServerTime error:",
+            err,
+          );
           return 0;
         }
       },
@@ -1283,51 +1448,65 @@ if (!gotTheLock) {
 
     // offline-dump diagnostics: real dns + tcp from the user machine.
     // hosts come from the renderer but are re-validated here.
-    ipcMain.handle("net:diagnose", async (_event, hosts: unknown): Promise<MainNetResult> => {
-      const list = (
-        Array.isArray(hosts)
-          ? hosts.filter(
-              (h): h is string => typeof h === "string" && MAIN_NET_HOST_RE.test(h),
-            )
-          : []
-      ).slice(0, MAIN_NET_MAX_HOSTS);
+    ipcMain.handle(
+      "net:diagnose",
+      async (_event, hosts: unknown): Promise<MainNetResult> => {
+        const list = (
+          Array.isArray(hosts)
+            ? hosts.filter(
+                (h): h is string =>
+                  typeof h === "string" && MAIN_NET_HOST_RE.test(h),
+              )
+            : []
+        ).slice(0, MAIN_NET_MAX_HOSTS);
 
-      const timed = async <T>(
-        fn: () => Promise<T>,
-      ): Promise<{ ok: boolean; ms: number; value?: T; error?: string }> => {
-        const start = Date.now();
-        try {
-          return { ok: true, ms: Date.now() - start, value: await fn() };
-        } catch (err: any) {
-          return {
-            ok: false,
-            ms: Date.now() - start,
-            error: String(err?.code || err?.message || err).slice(0, 120),
-          };
-        }
-      };
+        const timed = async <T>(
+          fn: () => Promise<T>,
+        ): Promise<{ ok: boolean; ms: number; value?: T; error?: string }> => {
+          const start = Date.now();
+          try {
+            return { ok: true, ms: Date.now() - start, value: await fn() };
+          } catch (err: any) {
+            return {
+              ok: false,
+              ms: Date.now() - start,
+              error: String(err?.code || err?.message || err).slice(0, 120),
+            };
+          }
+        };
 
-      const dnsChecks = await Promise.all(
-        list.map(async (host) => {
-          const r = await timed(() => dns.promises.lookup(host));
-          return {
-            host,
-            ok: r.ok,
-            ...(r.value ? { addresses: [r.value.address] } : {}),
-            ms: r.ms,
-            ...(!r.ok ? { error: r.error } : {}),
-          };
-        }),
-      );
+        const dnsChecks = await Promise.all(
+          list.map(async (host) => {
+            const r = await timed(() => dns.promises.lookup(host));
+            return {
+              host,
+              ok: r.ok,
+              ...(r.value ? { addresses: [r.value.address] } : {}),
+              ms: r.ms,
+              ...(!r.ok ? { error: r.error } : {}),
+            };
+          }),
+        );
 
-      const tcpChecks = await Promise.all(
-        list.map(
-          (host) =>
-            new Promise<{ host: string; port: number; ok: boolean; ms: number; error?: string }>(
-              (resolve) => {
+        const tcpChecks = await Promise.all(
+          list.map(
+            (host) =>
+              new Promise<{
+                host: string;
+                port: number;
+                ok: boolean;
+                ms: number;
+                error?: string;
+              }>((resolve) => {
                 const start = Date.now();
                 const done = (ok: boolean, error?: string) =>
-                  resolve({ host, port: 443, ok, ms: Date.now() - start, ...(error ? { error } : {}) });
+                  resolve({
+                    host,
+                    port: 443,
+                    ok,
+                    ms: Date.now() - start,
+                    ...(error ? { error } : {}),
+                  });
                 const sock = new net.Socket();
                 sock.setTimeout(5000);
                 sock.once("connect", () => {
@@ -1340,163 +1519,253 @@ if (!gotTheLock) {
                 });
                 sock.once("error", (err) => {
                   sock.destroy();
-                  done(false, String((err as any)?.code || err.message).slice(0, 120));
+                  done(
+                    false,
+                    String((err as any)?.code || err.message).slice(0, 120),
+                  );
                 });
                 sock.connect(443, host);
-              },
-            ),
-        ),
-      );
+              }),
+          ),
+        );
 
-      // tls handshake with verification off on purpose: a portal or proxy
-      // still answers, and its (untrusted) cert + failed authorized flag
-      // is exactly the evidence support needs.
-      const tlsChecks = await Promise.all(
-        list.map(
-          (host) =>
-            new Promise<{
-              host: string;
-              ok: boolean;
-              protocol?: string;
-              authorized?: boolean;
-              subject?: string;
-              issuer?: string;
-              ms: number;
-              error?: string;
-            }>((resolve) => {
-              const start = Date.now();
-              const done = (patch: Record<string, unknown>) =>
-                resolve({ host, ms: Date.now() - start, ...patch } as any);
-              let sock: tls.TLSSocket;
-              try {
-                sock = tls.connect(
-                  { host, port: 443, servername: host, rejectUnauthorized: false, timeout: 5000 },
-                  () => {
-                    const cert = sock.getPeerCertificate() as any;
-                    const subject =
-                      cert?.subject?.CN || JSON.stringify(cert?.subject || {}).slice(0, 120) || undefined;
-                    const issuer =
-                      cert?.issuer?.O || cert?.issuer?.CN || JSON.stringify(cert?.issuer || {}).slice(0, 120) || undefined;
-                    const protocol = sock.getProtocol() || undefined;
-                    const authorized = sock.authorized;
-                    sock.destroy();
-                    done({ ok: true, protocol, authorized, ...(subject ? { subject } : {}), ...(issuer ? { issuer } : {}) });
-                  },
-                );
-              } catch (err: any) {
-                done({ ok: false, error: String(err?.message || err).slice(0, 120) });
-                return;
-              }
-              sock!.once("error", (err) => {
-                sock.destroy();
-                done({ ok: false, error: String((err as any)?.code || err.message).slice(0, 120) });
-              });
-              sock!.once("timeout", () => {
-                sock.destroy();
-                done({ ok: false, error: "timed out" });
-              });
-            }),
-        ),
-      );
-
-      // control endpoints outside our infra: if these pass but ours fail,
-      // the break is past the user's lan, not on their machine.
-      const fetchControl = (
-        name: string,
-        url: string,
-        pick?: (body: string) => string | undefined,
-      ): Promise<{ name: string; ok: boolean; status?: number; detail?: string; ms: number; error?: string }> =>
-        new Promise((resolve) => {
-          const start = Date.now();
-          const done = (patch: Record<string, unknown>) =>
-            resolve({ name, ms: Date.now() - start, ...patch } as any);
-          let req: ReturnType<typeof https.get>;
-          try {
-            req = https.get(
-              url,
-              { timeout: 6000, headers: { "user-agent": "liner-connectivity/1.0" } },
-              (res) => {
-                let body = "";
-                res.on("data", (chunk) => {
-                  if (body.length < 2048) body += chunk.toString().slice(0, 2048 - body.length);
-                });
-                res.on("end", () => {
-                  const detail = pick?.(body);
+        // tls handshake with verification off on purpose: a portal or proxy
+        // still answers, and its (untrusted) cert + failed authorized flag
+        // is exactly the evidence support needs.
+        const tlsChecks = await Promise.all(
+          list.map(
+            (host) =>
+              new Promise<{
+                host: string;
+                ok: boolean;
+                protocol?: string;
+                authorized?: boolean;
+                subject?: string;
+                issuer?: string;
+                ms: number;
+                error?: string;
+              }>((resolve) => {
+                const start = Date.now();
+                const done = (patch: Record<string, unknown>) =>
+                  resolve({ host, ms: Date.now() - start, ...patch } as any);
+                let sock: tls.TLSSocket;
+                try {
+                  sock = tls.connect(
+                    {
+                      host,
+                      port: 443,
+                      servername: host,
+                      rejectUnauthorized: false,
+                      timeout: 5000,
+                    },
+                    () => {
+                      const cert = sock.getPeerCertificate() as any;
+                      const subject =
+                        cert?.subject?.CN ||
+                        JSON.stringify(cert?.subject || {}).slice(0, 120) ||
+                        undefined;
+                      const issuer =
+                        cert?.issuer?.O ||
+                        cert?.issuer?.CN ||
+                        JSON.stringify(cert?.issuer || {}).slice(0, 120) ||
+                        undefined;
+                      const protocol = sock.getProtocol() || undefined;
+                      const authorized = sock.authorized;
+                      sock.destroy();
+                      done({
+                        ok: true,
+                        protocol,
+                        authorized,
+                        ...(subject ? { subject } : {}),
+                        ...(issuer ? { issuer } : {}),
+                      });
+                    },
+                  );
+                } catch (err: any) {
                   done({
-                    ok: (res.statusCode ?? 0) < 400,
-                    status: res.statusCode,
-                    ...(detail ? { detail } : {}),
+                    ok: false,
+                    error: String(err?.message || err).slice(0, 120),
+                  });
+                  return;
+                }
+                sock!.once("error", (err) => {
+                  sock.destroy();
+                  done({
+                    ok: false,
+                    error: String((err as any)?.code || err.message).slice(
+                      0,
+                      120,
+                    ),
                   });
                 });
+                sock!.once("timeout", () => {
+                  sock.destroy();
+                  done({ ok: false, error: "timed out" });
+                });
+              }),
+          ),
+        );
+
+        // control endpoints outside our infra: if these pass but ours fail,
+        // the break is past the user's lan, not on their machine.
+        const fetchControl = (
+          name: string,
+          url: string,
+          pick?: (body: string) => string | undefined,
+        ): Promise<{
+          name: string;
+          ok: boolean;
+          status?: number;
+          detail?: string;
+          ms: number;
+          error?: string;
+        }> =>
+          new Promise((resolve) => {
+            const start = Date.now();
+            const done = (patch: Record<string, unknown>) =>
+              resolve({ name, ms: Date.now() - start, ...patch } as any);
+            let req: ReturnType<typeof https.get>;
+            try {
+              req = https.get(
+                url,
+                {
+                  timeout: 6000,
+                  headers: { "user-agent": "liner-connectivity/1.0" },
+                },
+                (res) => {
+                  let body = "";
+                  res.on("data", (chunk) => {
+                    if (body.length < 2048)
+                      body += chunk.toString().slice(0, 2048 - body.length);
+                  });
+                  res.on("end", () => {
+                    const detail = pick?.(body);
+                    done({
+                      ok: (res.statusCode ?? 0) < 400,
+                      status: res.statusCode,
+                      ...(detail ? { detail } : {}),
+                    });
+                  });
+                },
+              );
+            } catch (err: any) {
+              done({
+                ok: false,
+                error: String(err?.message || err).slice(0, 120),
+              });
+              return;
+            }
+            req!.once("timeout", () => {
+              req.destroy(new Error("timed out"));
+            });
+            req!.once("error", (err) => {
+              done({
+                ok: false,
+                error: String((err as any)?.code || err.message).slice(0, 120),
+              });
+            });
+          });
+
+        const controls = await Promise.all([
+          fetchControl("google", "https://www.google.com/generate_204"),
+          fetchControl(
+            "cloudflare",
+            "https://cloudflare.com/cdn-cgi/trace",
+            (body) => {
+              // egress fingerprint for support: masked exit ip + colo, nothing else
+              const ip = /^ip=(.+)$/m.exec(body)?.[1]?.trim();
+              const loc = /^loc=(.+)$/m.exec(body)?.[1]?.trim();
+              return ip
+                ? `ip ${maskIp(ip)}${loc ? ` · ${loc}` : ""}`
+                : loc
+                  ? loc
+                  : undefined;
+            },
+          ),
+        ]);
+
+        // best-effort system traceroute to the api host, shows the dying hop.
+        // unprivileged udp mode, skipped quietly when the tool is missing.
+        const traceHost = list[0];
+        let trace: MainNetResult["trace"] = null;
+        if (traceHost) {
+          const start = Date.now();
+          const isWin = process.platform === "win32";
+          const cmd = isWin ? "tracert" : "traceroute";
+          const args = isWin
+            ? [
+                "-d",
+                "-w",
+                "1000",
+                "-h",
+                String(MAIN_NET_TRACE_MAX_HOPS),
+                traceHost,
+              ]
+            : [
+                "-n",
+                "-w",
+                "1",
+                "-q",
+                "1",
+                "-m",
+                String(MAIN_NET_TRACE_MAX_HOPS),
+                traceHost,
+              ];
+          trace = await new Promise((resolve) => {
+            execFile(
+              cmd,
+              args,
+              { timeout: 30000, maxBuffer: 16 * 1024 },
+              (err, stdout) => {
+                const hops = parseTraceOutput(String(stdout || ""));
+                if (err && (err as any)?.code === "ENOENT") {
+                  resolve({
+                    host: traceHost,
+                    ok: false,
+                    hops: [],
+                    ms: Date.now() - start,
+                    error: "traceroute not installed",
+                  });
+                } else {
+                  resolve({
+                    host: traceHost,
+                    ok: hops.length > 0,
+                    hops,
+                    ms: Date.now() - start,
+                    ...(!err
+                      ? {}
+                      : {
+                          error: String(
+                            (err as any)?.code || err.message,
+                          ).slice(0, 120),
+                        }),
+                  });
+                }
               },
             );
-          } catch (err: any) {
-            done({ ok: false, error: String(err?.message || err).slice(0, 120) });
-            return;
-          }
-          req!.once("timeout", () => {
-            req.destroy(new Error("timed out"));
           });
-          req!.once("error", (err) => {
-            done({ ok: false, error: String((err as any)?.code || err.message).slice(0, 120) });
-          });
-        });
+        }
 
-      const controls = await Promise.all([
-        fetchControl("google", "https://www.google.com/generate_204"),
-        fetchControl("cloudflare", "https://cloudflare.com/cdn-cgi/trace", (body) => {
-          // egress fingerprint for support: masked exit ip + colo, nothing else
-          const ip = /^ip=(.+)$/m.exec(body)?.[1]?.trim();
-          const loc = /^loc=(.+)$/m.exec(body)?.[1]?.trim();
-          return ip ? `ip ${maskIp(ip)}${loc ? ` · ${loc}` : ""}` : loc ? loc : undefined;
-        }),
-      ]);
+        let resolvers: string[] | undefined;
+        try {
+          resolvers = dns.getServers();
+        } catch {
+          resolvers = undefined;
+        }
 
-      // best-effort system traceroute to the api host, shows the dying hop.
-      // unprivileged udp mode, skipped quietly when the tool is missing.
-      const traceHost = list[0];
-      let trace: MainNetResult["trace"] = null;
-      if (traceHost) {
-        const start = Date.now();
-        const isWin = process.platform === "win32";
-        const cmd = isWin ? "tracert" : "traceroute";
-        const args = isWin
-          ? ["-d", "-w", "1000", "-h", String(MAIN_NET_TRACE_MAX_HOPS), traceHost]
-          : ["-n", "-w", "1", "-q", "1", "-m", String(MAIN_NET_TRACE_MAX_HOPS), traceHost];
-        trace = await new Promise((resolve) => {
-          execFile(cmd, args, { timeout: 30000, maxBuffer: 16 * 1024 }, (err, stdout) => {
-            const hops = parseTraceOutput(String(stdout || ""));
-            if (err && (err as any)?.code === "ENOENT") {
-              resolve({ host: traceHost, ok: false, hops: [], ms: Date.now() - start, error: "traceroute not installed" });
-            } else {
-              resolve({
-                host: traceHost,
-                ok: hops.length > 0,
-                hops,
-                ms: Date.now() - start,
-                ...(!err ? {} : { error: String((err as any)?.code || err.message).slice(0, 120) }),
-              });
-            }
-          });
-        });
-      }
-
-      let resolvers: string[] | undefined;
-      try {
-        resolvers = dns.getServers();
-      } catch {
-        resolvers = undefined;
-      }
-
-      return {
-        dns: dnsChecks.map((d) => ({ ...d, ...(resolvers ? { resolvers } : {}) })),
-        tcp: tcpChecks,
-        tls: tlsChecks,
-        controls,
-        trace,
-        platform: `${process.platform} ${process.arch}`,
-      };
-    });
+        return {
+          dns: dnsChecks.map((d) => ({
+            ...d,
+            ...(resolvers ? { resolvers } : {}),
+          })),
+          tcp: tcpChecks,
+          tls: tlsChecks,
+          controls,
+          trace,
+          platform: `${process.platform} ${process.arch}`,
+        };
+      },
+    );
 
     // updater config: production github releases only, no prereleases or auto-install on close
     autoUpdater.autoDownload = false;
@@ -1508,7 +1777,8 @@ if (!gotTheLock) {
       mainWindow?.webContents.send("updater:update-available", {
         version: info.version,
         releaseDate: info.releaseDate,
-        releaseNotes: typeof info.releaseNotes === "string" ? info.releaseNotes : undefined,
+        releaseNotes:
+          typeof info.releaseNotes === "string" ? info.releaseNotes : undefined,
       });
     });
 
@@ -1528,7 +1798,10 @@ if (!gotTheLock) {
     });
 
     autoUpdater.on("error", (err) => {
-      console.error("\x1b[31m updater \x1b[0m autoUpdater error:", err?.message || err);
+      console.error(
+        "\x1b[31m updater \x1b[0m autoUpdater error:",
+        err?.message || err,
+      );
       mainWindow?.webContents.send("updater:error", {
         message: err?.message || "Update check failed",
       });
@@ -1541,12 +1814,21 @@ if (!gotTheLock) {
       try {
         const result = await autoUpdater.checkForUpdates();
         return {
-          available: Boolean(result?.updateInfo?.version && result.updateInfo.version !== app.getVersion()),
+          available: Boolean(
+            result?.updateInfo?.version &&
+            result.updateInfo.version !== app.getVersion(),
+          ),
           version: result?.updateInfo?.version,
-          releaseNotes: typeof result?.updateInfo?.releaseNotes === "string" ? result.updateInfo.releaseNotes : undefined,
+          releaseNotes:
+            typeof result?.updateInfo?.releaseNotes === "string"
+              ? result.updateInfo.releaseNotes
+              : undefined,
         };
       } catch (err: any) {
-        return { available: false, error: err?.message || "Failed to check for updates" };
+        return {
+          available: false,
+          error: err?.message || "Failed to check for updates",
+        };
       }
     });
 
@@ -1558,7 +1840,10 @@ if (!gotTheLock) {
         await autoUpdater.downloadUpdate();
         return { success: true };
       } catch (err: any) {
-        return { success: false, error: err?.message || "Failed to download update" };
+        return {
+          success: false,
+          error: err?.message || "Failed to download update",
+        };
       }
     });
 
@@ -1572,7 +1857,10 @@ if (!gotTheLock) {
     // OTA bundle updater IPC handlers
     ipcMain.handle("bundle:check", async () => {
       if (!bundleManager) {
-        return { available: false, error: "Bundle updater inactive (dev mode)" };
+        return {
+          available: false,
+          error: "Bundle updater inactive (dev mode)",
+        };
       }
       return await bundleManager.checkForUpdates();
     });
@@ -1601,7 +1889,9 @@ if (!gotTheLock) {
         bundleVersion: activeState?.bundleVersion || app.getVersion(),
         isOta: Boolean(activeState),
         sha256: activeState?.sha256 || null,
-        effectivePath: bundleManager ? bundleManager.getEffectiveIndexPath() : RENDERER_DIST,
+        effectivePath: bundleManager
+          ? bundleManager.getEffectiveIndexPath()
+          : RENDERER_DIST,
       };
     });
 
@@ -1609,18 +1899,27 @@ if (!gotTheLock) {
     if (app.isPackaged) {
       setTimeout(() => {
         autoUpdater.checkForUpdates().catch((err) => {
-          console.error("\x1b[31m updater \x1b[0m background check error:", err?.message || err);
+          console.error(
+            "\x1b[31m updater \x1b[0m background check error:",
+            err?.message || err,
+          );
         });
       }, 4000);
 
       // check for OTA bundles every 15 minutes silently in background
-      setInterval(() => {
-        bundleManager?.checkForUpdates().catch(() => {});
-      }, 15 * 60 * 1000);
+      setInterval(
+        () => {
+          bundleManager?.checkForUpdates().catch(() => {});
+        },
+        15 * 60 * 1000,
+      );
     }
 
     app.on("activate", () => {
-      if (!shutdown.isQuitting() && BrowserWindow.getAllWindows().length === 0) {
+      if (
+        !shutdown.isQuitting() &&
+        BrowserWindow.getAllWindows().length === 0
+      ) {
         createWindow();
       }
     });

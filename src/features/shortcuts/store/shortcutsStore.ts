@@ -22,6 +22,18 @@ interface ShortcutsStoreState extends ShortcutsSettings {
   resetAll: () => void;
 }
 
+function pickKnownShortcuts<T extends object>(
+  defaults: T,
+  saved: Partial<T> | undefined,
+): T {
+  const result = { ...defaults };
+  for (const key of Object.keys(defaults) as (keyof T)[]) {
+    const value = saved?.[key];
+    if (value !== undefined) result[key] = value;
+  }
+  return result;
+}
+
 function notifyElectronGlobalShortcuts(global: GlobalShortcutsSettings) {
   if (typeof window !== "undefined" && window.linerElectron?.updateOverlaySettings) {
     window.linerElectron.updateOverlaySettings({
@@ -130,18 +142,12 @@ export const useShortcutsStore = create<ShortcutsStoreState>()(
         if (!state) return;
 
         // Ensure newly added actions have defaults
-        state.global = {
-          ...DEFAULT_SHORTCUTS.global,
-          ...(state.global || {}),
-        };
-        state.mainApp = {
-          ...DEFAULT_SHORTCUTS.mainApp,
-          ...(state.mainApp || {}),
-        };
-        state.miniplayer = {
-          ...DEFAULT_SHORTCUTS.miniplayer,
-          ...(state.miniplayer || {}),
-        };
+        state.global = pickKnownShortcuts(DEFAULT_SHORTCUTS.global, state.global);
+        state.mainApp = pickKnownShortcuts(DEFAULT_SHORTCUTS.mainApp, state.mainApp);
+        state.miniplayer = pickKnownShortcuts(
+          DEFAULT_SHORTCUTS.miniplayer,
+          state.miniplayer,
+        );
 
         // Normalize all rehydrated shortcuts
         for (const key of Object.keys(state.global) as (keyof GlobalShortcutsSettings)[]) {

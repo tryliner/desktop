@@ -1,5 +1,5 @@
 import type { AuthTokens, AuthUser } from "../contracts";
-import { syncServerTime } from "./serverTime";
+import { signApiRequest, syncServerTime } from "./requestSigner";
 
 export type { AuthTokens, AuthUser };
 
@@ -252,10 +252,12 @@ async function refreshHere(current: AuthTokens): Promise<AuthTokens | null> {
 
 async function postRefresh(refreshToken: string): Promise<Response> {
   const body = JSON.stringify({ refreshToken });
+  const signedHeaders = await signApiRequest("POST", "/v1/auth/refresh", body);
   const response = await fetch(`${getApiBaseUrl()}/v1/auth/refresh`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      ...signedHeaders,
     },
     body,
   });
@@ -294,11 +296,13 @@ export async function clearAuthSession(): Promise<void> {
   setAuthSession(null);
   if (!current?.refreshToken) return;
   const body = JSON.stringify({ refreshToken: current.refreshToken });
+  const signedHeaders = await signApiRequest("POST", "/v1/auth/logout", body);
   const response = await fetch(`${getApiBaseUrl()}/v1/auth/logout`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${current.accessToken}`,
+      ...signedHeaders,
     },
     body,
   }).catch(() => undefined);

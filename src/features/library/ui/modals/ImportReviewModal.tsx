@@ -10,7 +10,6 @@ import {
   TimeLine,
 } from "@mingcute/react";
 import Dialog from "@/shared/ui/Dialog";
-import Button from "@/shared/ui/Button";
 import CoverImage from "@/features/covers/ui/CoverImage";
 import { useTranslation } from "@/languages";
 import { useModalStore } from "../../store/modalStore";
@@ -24,7 +23,7 @@ import {
   type ImportReviewDecision,
 } from "@/shared/api";
 import { playerEngine, usePlayerState } from "@/features/player";
-import { useToast } from "@/shared/ui";
+import { useToast, DialogActions, DialogButton } from "@/shared/ui";
 import { notifyLibraryChanged } from "../../hooks/usePlaylists";
 
 function formatDuration(ms?: number): string {
@@ -567,41 +566,29 @@ export default function ImportReviewModal() {
       </div>
 
         {/* Footer actions */}
-        <div className="flex items-center justify-between pt-[8px] border-t border-border-primary mt-[4px]">
-          <Button
+        <DialogActions className="mt-[4px]">
+          <DialogButton type="button" onClick={close} disabled={submitting}>
+            {t("common.close")}
+          </DialogButton>
+          <DialogButton
             type="button"
-            variant="secondary"
-            size="sm"
             onClick={() => void handleSkipAll()}
             disabled={submitting || loading || items.length === 0}
-            className="!text-text-tertiary hover:!text-text-primary"
           >
             {t("import.skip_all")}
-          </Button>
-
-          <div className="flex items-center gap-[8px]">
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              onClick={close}
-              disabled={submitting}
-            >
-              {t("common.close")}
-            </Button>
-            <Button
-              type="button"
-              variant="primary"
-              size="sm"
-              onClick={() => void handleApply()}
-              disabled={submitting || loading || items.length === 0}
-            >
-              {submitting
-                ? t("import.applying")
-                : `${t("import.apply_decisions")} (${approvedCount})`}
-            </Button>
-          </div>
-        </div>
+          </DialogButton>
+          <DialogButton
+            type="button"
+            variant="primary"
+            onClick={() => void handleApply()}
+            disabled={loading || items.length === 0}
+            loading={submitting}
+          >
+            {submitting
+              ? t("import.applying")
+              : `${t("import.apply_decisions")} (${approvedCount})`}
+          </DialogButton>
+        </DialogActions>
       </div>
     </Dialog>
   );

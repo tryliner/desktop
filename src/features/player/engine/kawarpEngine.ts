@@ -1,5 +1,8 @@
 import { prepareCoverFallback } from "@/features/covers";
-import { isWindowVisible, onWindowVisibilityChange } from "@/shared/utils/windowVisibility";
+import {
+  isWindowVisible,
+  onWindowVisibilityChange,
+} from "@/shared/utils/windowVisibility";
 
 const BLUR_SIZE = 160;
 
@@ -196,11 +199,13 @@ export class KawarpEngine {
   private warpFBO: FboInfo;
 
   private animationId: number | null = null;
-  private readonly stopWatchingVisibility = onWindowVisibilityChange((visible) => {
-    if (!visible || !this.isPlaying || this.animationId !== null) return;
-    this.lastFrameTime = performance.now();
-    this.animationId = requestAnimationFrame(this.renderLoop);
-  });
+  private readonly stopWatchingVisibility = onWindowVisibilityChange(
+    (visible) => {
+      if (!visible || !this.isPlaying || this.animationId !== null) return;
+      this.lastFrameTime = performance.now();
+      this.animationId = requestAnimationFrame(this.renderLoop);
+    },
+  );
   private lastFrameTime = 0;
   private accumulatedTime = 0;
   private isPlaying = false;
@@ -222,25 +227,32 @@ export class KawarpEngine {
 
   private uniforms: any;
 
-  constructor(private readonly canvas: HTMLCanvasElement, options: KawarpOptions = {}) {
-    const gl = canvas.getContext('webgl', {
+  constructor(
+    private readonly canvas: HTMLCanvasElement,
+    options: KawarpOptions = {},
+  ) {
+    const gl = canvas.getContext("webgl", {
       alpha: false,
       antialias: false,
       depth: false,
       stencil: false,
       preserveDrawingBuffer: true,
-      powerPreference: 'high-performance',
+      powerPreference: "high-performance",
     });
-    if (!gl) throw new Error('WebGL not supported');
+    if (!gl) throw new Error("WebGL not supported");
     this.gl = gl;
 
-    if (options.warpIntensity !== undefined) this.warpIntensity = options.warpIntensity;
+    if (options.warpIntensity !== undefined)
+      this.warpIntensity = options.warpIntensity;
     if (options.blurPasses !== undefined) this.blurPasses = options.blurPasses;
-    if (options.animationSpeed !== undefined) this.animationSpeed = options.animationSpeed;
-    if (options.transitionDuration !== undefined) this.transitionDuration = options.transitionDuration;
+    if (options.animationSpeed !== undefined)
+      this.animationSpeed = options.animationSpeed;
+    if (options.transitionDuration !== undefined)
+      this.transitionDuration = options.transitionDuration;
     if (options.saturation !== undefined) this.saturation = options.saturation;
     if (options.tintColor !== undefined) this.tintColor = options.tintColor;
-    if (options.tintIntensity !== undefined) this.tintIntensity = options.tintIntensity;
+    if (options.tintIntensity !== undefined)
+      this.tintIntensity = options.tintIntensity;
     if (options.dithering !== undefined) this.dithering = options.dithering;
     if (options.scale !== undefined) this.scale = options.scale;
 
@@ -252,37 +264,44 @@ export class KawarpEngine {
 
     this.uniforms = {
       blur: {
-        resolution: gl.getUniformLocation(this.blurProgram, 'u_resolution'),
-        texture: gl.getUniformLocation(this.blurProgram, 'u_texture'),
-        offset: gl.getUniformLocation(this.blurProgram, 'u_offset'),
+        resolution: gl.getUniformLocation(this.blurProgram, "u_resolution"),
+        texture: gl.getUniformLocation(this.blurProgram, "u_texture"),
+        offset: gl.getUniformLocation(this.blurProgram, "u_offset"),
       },
       blend: {
-        texture1: gl.getUniformLocation(this.blendProgram, 'u_texture1'),
-        texture2: gl.getUniformLocation(this.blendProgram, 'u_texture2'),
-        blend: gl.getUniformLocation(this.blendProgram, 'u_blend'),
+        texture1: gl.getUniformLocation(this.blendProgram, "u_texture1"),
+        texture2: gl.getUniformLocation(this.blendProgram, "u_texture2"),
+        blend: gl.getUniformLocation(this.blendProgram, "u_blend"),
       },
       warp: {
-        texture: gl.getUniformLocation(this.warpProgram, 'u_texture'),
-        time: gl.getUniformLocation(this.warpProgram, 'u_time'),
-        intensity: gl.getUniformLocation(this.warpProgram, 'u_intensity'),
+        texture: gl.getUniformLocation(this.warpProgram, "u_texture"),
+        time: gl.getUniformLocation(this.warpProgram, "u_time"),
+        intensity: gl.getUniformLocation(this.warpProgram, "u_intensity"),
       },
       tint: {
-        texture: gl.getUniformLocation(this.tintProgram, 'u_texture'),
-        tintColor: gl.getUniformLocation(this.tintProgram, 'u_tintColor'),
-        tintIntensity: gl.getUniformLocation(this.tintProgram, 'u_tintIntensity'),
+        texture: gl.getUniformLocation(this.tintProgram, "u_texture"),
+        tintColor: gl.getUniformLocation(this.tintProgram, "u_tintColor"),
+        tintIntensity: gl.getUniformLocation(
+          this.tintProgram,
+          "u_tintIntensity",
+        ),
       },
       output: {
-        texture: gl.getUniformLocation(this.outputProgram, 'u_texture'),
-        saturation: gl.getUniformLocation(this.outputProgram, 'u_saturation'),
-        dithering: gl.getUniformLocation(this.outputProgram, 'u_dithering'),
-        time: gl.getUniformLocation(this.outputProgram, 'u_time'),
-        scale: gl.getUniformLocation(this.outputProgram, 'u_scale'),
-        resolution: gl.getUniformLocation(this.outputProgram, 'u_resolution'),
+        texture: gl.getUniformLocation(this.outputProgram, "u_texture"),
+        saturation: gl.getUniformLocation(this.outputProgram, "u_saturation"),
+        dithering: gl.getUniformLocation(this.outputProgram, "u_dithering"),
+        time: gl.getUniformLocation(this.outputProgram, "u_time"),
+        scale: gl.getUniformLocation(this.outputProgram, "u_scale"),
+        resolution: gl.getUniformLocation(this.outputProgram, "u_resolution"),
       },
     };
 
-    this.positionBuffer = this.createBuffer(new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]));
-    this.texCoordBuffer = this.createBuffer(new Float32Array([0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1]));
+    this.positionBuffer = this.createBuffer(
+      new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]),
+    );
+    this.texCoordBuffer = this.createBuffer(
+      new Float32Array([0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1]),
+    );
 
     this.sourceTexture = this.createTexture();
     this.blurFBO1 = this.createFramebuffer(BLUR_SIZE, BLUR_SIZE);
@@ -313,29 +332,33 @@ export class KawarpEngine {
     this.render(this.accumulatedTime, performance.now());
   }
 
-  public async loadImage(src: string, preDecoded?: HTMLImageElement): Promise<void> {
+  public async loadImage(
+    src: string,
+    preDecoded?: HTMLImageElement,
+  ): Promise<void> {
     if (!src) return;
     const loadId = ++this.loadSequenceId;
 
     let bitmap: ImageBitmap | HTMLImageElement | null =
-      preDecoded && preDecoded.complete && preDecoded.naturalWidth > 0 ? preDecoded : null;
+      preDecoded && preDecoded.complete && preDecoded.naturalWidth > 0
+        ? preDecoded
+        : null;
 
     if (!bitmap) {
       try {
-        const res = await fetch(src, { mode: 'cors' });
+        const res = await fetch(src, { mode: "cors" });
         if (res.ok) {
           const blob = await res.blob();
           bitmap = await createImageBitmap(blob);
         }
-      } catch {
-      }
+      } catch {}
     }
 
     if (!bitmap) {
       try {
         bitmap = await new Promise<HTMLImageElement>((resolve, reject) => {
           const img = new Image();
-          img.crossOrigin = 'anonymous';
+          img.crossOrigin = "anonymous";
           img.onload = () => resolve(img);
           img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
           img.src = src;
@@ -344,23 +367,25 @@ export class KawarpEngine {
         try {
           const fallback = await prepareCoverFallback(src);
           if (fallback && fallback !== src) {
-            const res = await fetch(fallback, { mode: 'cors' });
+            const res = await fetch(fallback, { mode: "cors" });
             if (res.ok) {
               const blob = await res.blob();
               bitmap = await createImageBitmap(blob);
             }
             if (!bitmap) {
-              bitmap = await new Promise<HTMLImageElement>((resolve, reject) => {
-                const img = new Image();
-                img.crossOrigin = 'anonymous';
-                img.onload = () => resolve(img);
-                img.onerror = () => reject(new Error(`Failed to load image: ${fallback}`));
-                img.src = fallback;
-              });
+              bitmap = await new Promise<HTMLImageElement>(
+                (resolve, reject) => {
+                  const img = new Image();
+                  img.crossOrigin = "anonymous";
+                  img.onload = () => resolve(img);
+                  img.onerror = () =>
+                    reject(new Error(`Failed to load image: ${fallback}`));
+                  img.src = fallback;
+                },
+              );
             }
           }
-        } catch {
-        }
+        } catch {}
         if (!bitmap) {
           throw err;
         }
@@ -369,7 +394,10 @@ export class KawarpEngine {
 
     // drop out-of-order stale loads
     if (loadId !== this.loadSequenceId) {
-      if ('close' in bitmap && typeof (bitmap as ImageBitmap).close === 'function') {
+      if (
+        "close" in bitmap &&
+        typeof (bitmap as ImageBitmap).close === "function"
+      ) {
         (bitmap as ImageBitmap).close();
       }
       return;
@@ -380,12 +408,19 @@ export class KawarpEngine {
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
 
     try {
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, bitmap);
+      gl.texImage2D(
+        gl.TEXTURE_2D,
+        0,
+        gl.RGBA,
+        gl.RGBA,
+        gl.UNSIGNED_BYTE,
+        bitmap,
+      );
     } catch {
       // If WebGL rejected a DOM element, fallback to clean CORS fetch/blob
       let cleanBitmap: ImageBitmap | null = null;
       try {
-        const res = await fetch(src, { mode: 'cors' });
+        const res = await fetch(src, { mode: "cors" });
         if (res.ok) {
           const blob = await res.blob();
           cleanBitmap = await createImageBitmap(blob);
@@ -396,7 +431,7 @@ export class KawarpEngine {
         try {
           const fallback = await prepareCoverFallback(src);
           if (fallback) {
-            const res = await fetch(fallback, { mode: 'cors' });
+            const res = await fetch(fallback, { mode: "cors" });
             if (res.ok) {
               const blob = await res.blob();
               cleanBitmap = await createImageBitmap(blob);
@@ -407,13 +442,23 @@ export class KawarpEngine {
 
       if (cleanBitmap) {
         if (loadId === this.loadSequenceId) {
-          gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, cleanBitmap);
+          gl.texImage2D(
+            gl.TEXTURE_2D,
+            0,
+            gl.RGBA,
+            gl.RGBA,
+            gl.UNSIGNED_BYTE,
+            cleanBitmap,
+          );
         }
         cleanBitmap.close();
       }
     }
 
-    if ('close' in bitmap && typeof (bitmap as ImageBitmap).close === 'function') {
+    if (
+      "close" in bitmap &&
+      typeof (bitmap as ImageBitmap).close === "function"
+    ) {
       (bitmap as ImageBitmap).close();
     }
 
@@ -606,7 +651,7 @@ export class KawarpEngine {
   private createShader(type: number, source: string): WebGLShader {
     const gl = this.gl;
     const shader = gl.createShader(type);
-    if (!shader) throw new Error('Failed to create shader');
+    if (!shader) throw new Error("Failed to create shader");
     gl.shaderSource(shader, source);
     gl.compileShader(shader);
     if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
@@ -617,16 +662,19 @@ export class KawarpEngine {
     return shader;
   }
 
-  private createProgram(vertexSource: string, fragmentSource: string): WebGLProgram {
+  private createProgram(
+    vertexSource: string,
+    fragmentSource: string,
+  ): WebGLProgram {
     const gl = this.gl;
     const vs = this.createShader(gl.VERTEX_SHADER, vertexSource);
     const fs = this.createShader(gl.FRAGMENT_SHADER, fragmentSource);
     const program = gl.createProgram();
-    if (!program) throw new Error('Failed to create program');
+    if (!program) throw new Error("Failed to create program");
     gl.attachShader(program, vs);
     gl.attachShader(program, fs);
-    gl.bindAttribLocation(program, 0, 'a_position');
-    gl.bindAttribLocation(program, 1, 'a_texCoord');
+    gl.bindAttribLocation(program, 0, "a_position");
+    gl.bindAttribLocation(program, 1, "a_texCoord");
     gl.linkProgram(program);
     if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
       const error = gl.getProgramInfoLog(program);
@@ -641,7 +689,7 @@ export class KawarpEngine {
   private createBuffer(data: Float32Array): WebGLBuffer {
     const gl = this.gl;
     const buffer = gl.createBuffer();
-    if (!buffer) throw new Error('Failed to create buffer');
+    if (!buffer) throw new Error("Failed to create buffer");
     gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
     gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
     return buffer;
@@ -650,7 +698,7 @@ export class KawarpEngine {
   private createTexture(): WebGLTexture {
     const gl = this.gl;
     const texture = gl.createTexture();
-    if (!texture) throw new Error('Failed to create texture');
+    if (!texture) throw new Error("Failed to create texture");
     gl.bindTexture(gl.TEXTURE_2D, texture);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
@@ -662,11 +710,27 @@ export class KawarpEngine {
   private createFramebuffer(width: number, height: number): FboInfo {
     const gl = this.gl;
     const texture = this.createTexture();
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+    gl.texImage2D(
+      gl.TEXTURE_2D,
+      0,
+      gl.RGBA,
+      width,
+      height,
+      0,
+      gl.RGBA,
+      gl.UNSIGNED_BYTE,
+      null,
+    );
     const framebuffer = gl.createFramebuffer();
-    if (!framebuffer) throw new Error('Failed to create framebuffer');
+    if (!framebuffer) throw new Error("Failed to create framebuffer");
     gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
-    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
+    gl.framebufferTexture2D(
+      gl.FRAMEBUFFER,
+      gl.COLOR_ATTACHMENT0,
+      gl.TEXTURE_2D,
+      texture,
+      0,
+    );
 
     return { framebuffer, texture, width, height };
   }

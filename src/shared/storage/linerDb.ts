@@ -1,5 +1,8 @@
 import type { Track } from "@/shared/types";
-import type { LyricsCandidate, LyricsSyncLevel } from "@/shared/contracts/lyrics";
+import type {
+  LyricsCandidate,
+  LyricsSyncLevel,
+} from "@/shared/contracts/lyrics";
 import type { LyricsProviderOption } from "@/features/lyrics/store/lyricsStore";
 import {
   shouldCacheLyricsCandidate,
@@ -92,20 +95,30 @@ class LinerDb {
         }
 
         if (!db.objectStoreNames.contains("audio")) {
-          const audioStore = db.createObjectStore("audio", { keyPath: "trackId" });
+          const audioStore = db.createObjectStore("audio", {
+            keyPath: "trackId",
+          });
           audioStore.createIndex("savedAt", "savedAt", { unique: false });
           audioStore.createIndex("byteSize", "byteSize", { unique: false });
-          audioStore.createIndex("lastPlayedAt", "lastPlayedAt", { unique: false });
+          audioStore.createIndex("lastPlayedAt", "lastPlayedAt", {
+            unique: false,
+          });
         } else {
           const audioStore = request.transaction?.objectStore("audio");
           if (audioStore && !audioStore.indexNames.contains("lastPlayedAt")) {
-            audioStore.createIndex("lastPlayedAt", "lastPlayedAt", { unique: false });
+            audioStore.createIndex("lastPlayedAt", "lastPlayedAt", {
+              unique: false,
+            });
           }
         }
 
         if (!db.objectStoreNames.contains("lyrics")) {
-          const lyricsStore = db.createObjectStore("lyrics", { keyPath: "trackId" });
-          lyricsStore.createIndex("lastCheckedAt", "lastCheckedAt", { unique: false });
+          const lyricsStore = db.createObjectStore("lyrics", {
+            keyPath: "trackId",
+          });
+          lyricsStore.createIndex("lastCheckedAt", "lastCheckedAt", {
+            unique: false,
+          });
           lyricsStore.createIndex("syncLevel", "syncLevel", { unique: false });
         } else if (event.oldVersion < 4) {
           // clear legacy lyrics store on v4 migration
@@ -115,8 +128,12 @@ class LinerDb {
         }
 
         if (!db.objectStoreNames.contains("artists")) {
-          const artistStore = db.createObjectStore("artists", { keyPath: "id" });
-          artistStore.createIndex("lastCheckedAt", "lastCheckedAt", { unique: false });
+          const artistStore = db.createObjectStore("artists", {
+            keyPath: "id",
+          });
+          artistStore.createIndex("lastCheckedAt", "lastCheckedAt", {
+            unique: false,
+          });
         }
       };
 
@@ -286,7 +303,12 @@ class LinerDb {
     return this.memAudio.get(trackId) || null;
   }
 
-  async putAudio(trackId: string, blob: Blob, mimeType: string, lastPlayedAt?: number): Promise<void> {
+  async putAudio(
+    trackId: string,
+    blob: Blob,
+    mimeType: string,
+    lastPlayedAt?: number,
+  ): Promise<void> {
     const existing = this.memAudio.get(trackId);
     const now = Date.now();
     const record: CachedAudioRecord = {
@@ -334,7 +356,10 @@ class LinerDb {
             records.push(cursor.value as CachedAudioRecord);
             cursor.continue();
           } else {
-            records.sort((a, b) => (a.lastPlayedAt ?? a.savedAt) - (b.lastPlayedAt ?? b.savedAt));
+            records.sort(
+              (a, b) =>
+                (a.lastPlayedAt ?? a.savedAt) - (b.lastPlayedAt ?? b.savedAt),
+            );
             resolve(records);
           }
         };
@@ -347,7 +372,9 @@ class LinerDb {
     }
 
     const memList = Array.from(this.memAudio.values());
-    memList.sort((a, b) => (a.lastPlayedAt ?? a.savedAt) - (b.lastPlayedAt ?? b.savedAt));
+    memList.sort(
+      (a, b) => (a.lastPlayedAt ?? a.savedAt) - (b.lastPlayedAt ?? b.savedAt),
+    );
     return memList;
   }
 
@@ -443,7 +470,7 @@ class LinerDb {
 
   async putLyrics(record: CachedLyricsRecord): Promise<void> {
     const providers: Record<string, LyricsCandidate> = {
-      ...(record.providers || {}),
+      ...record.providers,
     };
 
     if (record.candidate && shouldCacheLyricsCandidate(record.candidate)) {
@@ -625,7 +652,9 @@ class LinerDb {
     return total;
   }
 
-  async clearStore(storeName: "tracks" | "audio" | "lyrics" | "artists"): Promise<void> {
+  async clearStore(
+    storeName: "tracks" | "audio" | "lyrics" | "artists",
+  ): Promise<void> {
     if (storeName === "tracks") this.memTracks.clear();
     if (storeName === "audio") this.memAudio.clear();
     if (storeName === "lyrics") this.memLyrics.clear();

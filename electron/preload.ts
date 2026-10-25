@@ -1,7 +1,19 @@
 import { contextBridge, ipcRenderer } from "electron";
-import type { AuthRefreshResult, StoredAuthSession } from "./auth-session-store";
-import { startPoTokenWorker } from "./potoken-preload";
+import type {
+  AuthRefreshResult,
+  StoredAuthSession,
+} from "./auth-session-store";
+import { startPoTokenWorker } from "./youtube/potoken-preload";
+import type { TvSession as YoutubeTvSession } from "./youtube/tv-session";
+import type { SolveResult as YoutubeSolveResult } from "./youtube/n-solver";
 import type { MainNetResult } from "./netdiag";
+
+export interface DiscordStatus {
+  connected: boolean;
+  username?: string;
+  avatarUrl?: string;
+  viaArrpc?: boolean;
+}
 
 export interface DeeplinkTarget {
   type: "artist" | "album" | "playlist" | "track";
@@ -53,7 +65,23 @@ export interface LinerElectronApi {
   dragStart: () => void;
   dragMove: (deltaX: number, deltaY: number) => void;
   dragEnd: () => void;
-  signMonitorRequest: (input: { method: string; path: string; body?: string | null; timestamp?: number }) => Promise<{
+  signRequest: (input: {
+    method: string;
+    path: string;
+    body?: string | null;
+    timestamp?: number;
+  }) => Promise<{
+    signature?: string;
+    timestamp?: number;
+    nonce?: string;
+    error?: string;
+  }>;
+  signMonitorRequest: (input: {
+    method: string;
+    path: string;
+    body?: string | null;
+    timestamp?: number;
+  }) => Promise<{
     signature?: string;
     timestamp?: number;
     nonce?: string;
@@ -65,20 +93,19 @@ export interface LinerElectronApi {
   signRawPayload: (payload: number[] | Uint8Array) => Promise<string>;
   authSession?: {
     get: () => StoredAuthSession | null;
-    set: (next: { accessToken: string; refreshToken: string } | null) => Promise<StoredAuthSession | null>;
-    refresh: (input: { apiBaseUrl: string; refreshToken?: string }) => Promise<AuthRefreshResult>;
+    set: (
+      next: { accessToken: string; refreshToken: string } | null,
+    ) => Promise<StoredAuthSession | null>;
+    refresh: (input: {
+      apiBaseUrl: string;
+      refreshToken?: string;
+    }) => Promise<AuthRefreshResult>;
     onChange: (cb: (session: StoredAuthSession | null) => void) => () => void;
   };
   onDeeplink: (cb: (target: DeeplinkTarget) => void) => () => void;
   diagnoseNetwork: (hosts: string[]) => Promise<MainNetResult>;
   openDownloads: (customPath?: string) => Promise<boolean>;
   openExportFolder: (customPath?: string) => Promise<boolean>;
-  saveDump: (input: { filename: string; content: string }) => Promise<{
-    success: boolean;
-    filePath?: string;
-    canceled?: boolean;
-    error?: string;
-  }>;
   setAppIcon: (
     dataUrl: string,
     options?: { isDefault?: boolean },
@@ -89,16 +116,29 @@ export interface LinerElectronApi {
   clearCoversCache: () => Promise<boolean>;
   clearAudioCache: (clearEntireDb?: boolean) => Promise<boolean>;
   clearHttpCache: () => Promise<boolean>;
-  checkForUpdates: () => Promise<{ available: boolean; version?: string; releaseNotes?: string; error?: string }>;
+  checkForUpdates: () => Promise<{
+    available: boolean;
+    version?: string;
+    releaseNotes?: string;
+    error?: string;
+  }>;
   downloadUpdate: () => Promise<{ success: boolean; error?: string }>;
   quitAndInstall: () => Promise<boolean>;
   onUpdateAvailable: (cb: (info: UpdateInfo) => void) => () => void;
-  onUpdateDownloadProgress: (cb: (progress: UpdateDownloadProgress) => void) => () => void;
+  onUpdateDownloadProgress: (
+    cb: (progress: UpdateDownloadProgress) => void,
+  ) => () => void;
   onUpdateDownloaded: (cb: (info: { version: string }) => void) => () => void;
   onUpdateError: (cb: (err: { message: string }) => void) => () => void;
   // OTA Frontend Bundle Updater
-  bundleCheck: () => Promise<{ available: boolean; manifest?: any; reason?: string }>;
-  bundleDownloadAndInstall: (manifest: any) => Promise<{ success: boolean; error?: string }>;
+  bundleCheck: () => Promise<{
+    available: boolean;
+    manifest?: any;
+    reason?: string;
+  }>;
+  bundleDownloadAndInstall: (
+    manifest: any,
+  ) => Promise<{ success: boolean; error?: string }>;
   bundleHotSwap: () => Promise<boolean>;
   bundleRollback: () => Promise<boolean>;
   bundleGetStatus: () => Promise<{
@@ -109,7 +149,13 @@ export interface LinerElectronApi {
     effectivePath: string;
   }>;
   onBundleAvailable: (cb: (manifest: any) => void) => () => void;
-  onBundleDownloadProgress: (cb: (progress: { percent: number; transferred: number; total: number }) => void) => () => void;
+  onBundleDownloadProgress: (
+    cb: (progress: {
+      percent: number;
+      transferred: number;
+      total: number;
+    }) => void,
+  ) => () => void;
   onBundleReady: (cb: (state: any) => void) => () => void;
   onBundleStamp: (cb: (line: string) => void) => () => void;
   touchbarUpdateState: (state: any) => void;
@@ -133,8 +179,13 @@ export interface LinerElectronApi {
   setOverlayAuthenticated?: (authenticated: boolean) => void;
   discordUpdateState: (state: any) => void;
   discordUpdateSettings: (settings: any) => void;
-  getDiscordStatus: () => Promise<{ connected: boolean; username?: string }>;
+  getDiscordStatus: () => Promise<DiscordStatus>;
   mintPoToken: (identifier: string) => Promise<string>;
+  youtubeTvSession: () => Promise<YoutubeTvSession>;
+  youtubeSolveN: (
+    playerId: string,
+    values: string[],
+  ) => Promise<YoutubeSolveResult>;
 }
 
 const isHyprland = Boolean(
@@ -182,17 +233,23 @@ const api: LinerElectronApi = {
   dragEnd: () => {
     ipcRenderer.send("window:drag-end");
   },
-  signMonitorRequest: (input) => ipcRenderer.invoke("signer:sign-monitor-request", input),
-  syncServerTime: (dateHeaderOrMs) => ipcRenderer.invoke("signer:sync-time", dateHeaderOrMs),
+  signRequest: (input) => ipcRenderer.invoke("signer:sign-request", input),
+  signMonitorRequest: (input) =>
+    ipcRenderer.invoke("signer:sign-monitor-request", input),
+  syncServerTime: (dateHeaderOrMs) =>
+    ipcRenderer.invoke("signer:sync-time", dateHeaderOrMs),
   getServerTimeOffset: () => ipcRenderer.invoke("signer:get-time-offset"),
-  signCoverUrl: (payload) => ipcRenderer.invoke("signer:sign-cover-url", payload),
-  signRawPayload: (payload) => ipcRenderer.invoke("signer:sign-raw-payload", payload),
+  signCoverUrl: (payload) =>
+    ipcRenderer.invoke("signer:sign-cover-url", payload),
+  signRawPayload: (payload) =>
+    ipcRenderer.invoke("signer:sign-raw-payload", payload),
   authSession: {
     get: () => ipcRenderer.sendSync("auth:get-session") ?? null,
     set: (next) => ipcRenderer.invoke("auth:set-session", next),
     refresh: (input) => ipcRenderer.invoke("auth:refresh", input),
     onChange: (cb) => {
-      const listener = (_event: unknown, session: StoredAuthSession | null) => cb(session);
+      const listener = (_event: unknown, session: StoredAuthSession | null) =>
+        cb(session);
       ipcRenderer.on("auth:session-changed", listener);
       return () => {
         ipcRenderer.removeListener("auth:session-changed", listener);
@@ -200,16 +257,18 @@ const api: LinerElectronApi = {
     },
   },
   diagnoseNetwork: (hosts) => ipcRenderer.invoke("net:diagnose", hosts),
-  openDownloads: (customPath) => ipcRenderer.invoke("shell:open-downloads", customPath),
-  openExportFolder: (customPath) => ipcRenderer.invoke("shell:open-export-folder", customPath),
-  saveDump: (input) => ipcRenderer.invoke("dialog:save-dump", input),
+  openDownloads: (customPath) =>
+    ipcRenderer.invoke("shell:open-downloads", customPath),
+  openExportFolder: (customPath) =>
+    ipcRenderer.invoke("shell:open-export-folder", customPath),
   setAppIcon: (dataUrl, options) =>
     ipcRenderer.invoke("app:set-icon", dataUrl, options),
   getAppVersion: () => ipcRenderer.invoke("app:get-version"),
   getCacheStats: () => ipcRenderer.invoke("storage:get-cache-stats"),
   openCacheFolder: () => ipcRenderer.invoke("shell:open-cache-folder"),
   clearCoversCache: () => ipcRenderer.invoke("storage:clear-covers-cache"),
-  clearAudioCache: (clearEntireDb?: boolean) => ipcRenderer.invoke("storage:clear-audio-cache", clearEntireDb),
+  clearAudioCache: (clearEntireDb?: boolean) =>
+    ipcRenderer.invoke("storage:clear-audio-cache", clearEntireDb),
   clearHttpCache: () => ipcRenderer.invoke("storage:clear-http-cache"),
   checkForUpdates: () => ipcRenderer.invoke("updater:check-for-updates"),
   downloadUpdate: () => ipcRenderer.invoke("updater:download-update"),
@@ -222,7 +281,8 @@ const api: LinerElectronApi = {
     };
   },
   onUpdateDownloadProgress: (cb) => {
-    const listener = (_event: unknown, progress: UpdateDownloadProgress) => cb(progress);
+    const listener = (_event: unknown, progress: UpdateDownloadProgress) =>
+      cb(progress);
     ipcRenderer.on("updater:download-progress", listener);
     return () => {
       ipcRenderer.removeListener("updater:download-progress", listener);
@@ -244,7 +304,8 @@ const api: LinerElectronApi = {
   },
   // OTA Frontend Bundle Updater
   bundleCheck: () => ipcRenderer.invoke("bundle:check"),
-  bundleDownloadAndInstall: (manifest) => ipcRenderer.invoke("bundle:download-and-install", manifest),
+  bundleDownloadAndInstall: (manifest) =>
+    ipcRenderer.invoke("bundle:download-and-install", manifest),
   bundleHotSwap: () => ipcRenderer.invoke("bundle:hot-swap"),
   bundleRollback: () => ipcRenderer.invoke("bundle:rollback"),
   bundleGetStatus: () => ipcRenderer.invoke("bundle:get-status"),
@@ -296,7 +357,8 @@ const api: LinerElectronApi = {
   sendTouchBarAction: (action) => {
     ipcRenderer.send("touchbar:send-action", action);
   },
-  getTouchBarInitialState: () => ipcRenderer.invoke("touchbar:get-initial-state"),
+  getTouchBarInitialState: () =>
+    ipcRenderer.invoke("touchbar:get-initial-state"),
   onTouchBarRequestSync: (cb) => {
     const listener = () => cb();
     ipcRenderer.on("touchbar:request-sync", listener);
@@ -364,6 +426,9 @@ const api: LinerElectronApi = {
   },
   getDiscordStatus: () => ipcRenderer.invoke("discord:get-status"),
   mintPoToken: (identifier) => ipcRenderer.invoke("potoken:mint", identifier),
+  youtubeTvSession: () => ipcRenderer.invoke("youtube:tv-session"),
+  youtubeSolveN: (playerId, values) =>
+    ipcRenderer.invoke("youtube:solve-n", { playerId, values }),
 };
 
 if (location.hostname === "www.youtube.com") {

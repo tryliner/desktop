@@ -1,4 +1,4 @@
-import { innertubeCatalog } from "@/shared/media/innertube";
+import { innertubeCatalog } from "@/shared/youtube";
 import { isSoundCloudCatalogId, isSoundCloudUrl, resolveSoundCloudUrl, soundcloudCatalog } from "@/shared/media/soundcloud";
 import { isAbortError } from "@/shared/utils/abort";
 import { log } from "@/shared/utils/logger";

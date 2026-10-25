@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { memo, useCallback, useState } from "react";
+import { memo, useCallback, useState, type ReactNode } from "react";
 import { PlaylistFill } from "@mingcute/react";
 import DropdownMenu from "@/shared/ui/DropdownMenu";
 import type { DropdownMenuItem } from "@/shared/ui/DropdownMenu";
@@ -14,6 +14,7 @@ export interface PlaylistCardProps {
   variant?: PlaylistVariant;
   href?: string;
   onClick?: () => void;
+  badge?: ReactNode;
   className?: string;
   menuItems?: DropdownMenuItem[];
 }
@@ -70,6 +71,7 @@ function PlaylistCard({
   variant = "playlist",
   href,
   onClick,
+  badge,
   className = "",
   menuItems,
 }: PlaylistCardProps) {
@@ -142,8 +144,9 @@ function PlaylistCard({
         <span className="truncate text-[14px] font-[500] text-text-primary">
           {title}
         </span>
-        <span className="truncate text-[13px] text-text-tertiary">
-          {author}
+        <span className="flex min-w-0 items-center gap-[5px] text-[13px] text-text-tertiary">
+          {badge}
+          <span className="truncate">{author}</span>
         </span>
       </div>
     </>

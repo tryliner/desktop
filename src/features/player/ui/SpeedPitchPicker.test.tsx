@@ -12,25 +12,34 @@ vi.mock("framer-motion", () => {
   const cache: Record<string, any> = {};
   return {
     AnimatePresence: ({ children }: any) => <>{children}</>,
-    motion: new Proxy({}, {
-      get: (_target, prop: string) => {
-        if (!cache[prop]) {
-          cache[prop] = React.forwardRef(({ children, className, style, ...props }: any, ref: any) => {
-            const cleanProps = { ...props };
-            delete cleanProps.layout;
-            delete cleanProps.layoutId;
-            delete cleanProps.initial;
-            delete cleanProps.animate;
-            delete cleanProps.exit;
-            delete cleanProps.transition;
-            delete cleanProps.whileTap;
-            delete cleanProps.whileHover;
-            return React.createElement(prop, { ref, className, style, ...cleanProps }, children);
-          });
-        }
-        return cache[prop];
+    motion: new Proxy(
+      {},
+      {
+        get: (_target, prop: string) => {
+          if (!cache[prop]) {
+            cache[prop] = React.forwardRef(
+              ({ children, className, style, ...props }: any, ref: any) => {
+                const cleanProps = { ...props };
+                delete cleanProps.layout;
+                delete cleanProps.layoutId;
+                delete cleanProps.initial;
+                delete cleanProps.animate;
+                delete cleanProps.exit;
+                delete cleanProps.transition;
+                delete cleanProps.whileTap;
+                delete cleanProps.whileHover;
+                return React.createElement(
+                  prop,
+                  { ref, className, style, ...cleanProps },
+                  children,
+                );
+              },
+            );
+          }
+          return cache[prop];
+        },
       },
-    }),
+    ),
   };
 });
 
@@ -79,7 +88,9 @@ describe("SpeedPitchPicker Component", () => {
     });
 
     const buttons = container?.querySelectorAll("button");
-    const speedUpButton = Array.from(buttons || []).find((b) => b.textContent?.includes("x1.25"));
+    const speedUpButton = Array.from(buttons || []).find((b) =>
+      b.textContent?.includes("x1.25"),
+    );
     expect(speedUpButton).toBeDefined();
 
     act(() => {
@@ -101,9 +112,9 @@ describe("SpeedPitchPicker Component", () => {
       root?.render(<SpeedPitchPicker />);
     });
 
-    const normalButton = Array.from(container?.querySelectorAll("button") || []).find((b) =>
-      b.textContent?.includes("x1.0")
-    );
+    const normalButton = Array.from(
+      container?.querySelectorAll("button") || [],
+    ).find((b) => b.textContent?.includes("x1.0"));
     expect(normalButton).toBeDefined();
 
     act(() => {
@@ -121,13 +132,17 @@ describe("SpeedPitchPicker Component", () => {
     });
 
     expect(container?.textContent).toContain("Reverb");
-    expect(container?.textContent).toContain("Atmospheric space & ambient depth");
+    expect(container?.textContent).toContain(
+      "Atmospheric space & ambient depth",
+    );
 
     // Verify star icon SVG is present in reverb section
     const svgIcons = container?.querySelectorAll("svg");
     expect(svgIcons && svgIcons.length > 0).toBe(true);
 
-    const reverbToggle = container?.querySelector('button[aria-label="Reverb"]') as HTMLButtonElement | null;
+    const reverbToggle = container?.querySelector(
+      'button[aria-label="Reverb"]',
+    ) as HTMLButtonElement | null;
     expect(reverbToggle).not.toBeNull();
 
     act(() => {

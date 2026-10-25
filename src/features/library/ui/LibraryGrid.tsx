@@ -2,6 +2,7 @@ import { useMemo, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import AlbumCard from "@/features/collection/ui/AlbumCard";
 import PlaylistCard from "./PlaylistCard";
+import SourceBadge from "./SourceBadge";
 import CoverImage from "@/features/covers/ui/CoverImage";
 import DropdownMenu, { type DropdownMenuItem } from "@/shared/ui/DropdownMenu";
 import type {
@@ -62,6 +63,7 @@ function LoadingSkeletonList() {
 function useItemMenuItems(item: LibraryItemViewModel): DropdownMenuItem[] {
   const { t } = useTranslation();
   return useMemo(() => {
+    if (item.source) return [];
     const entityType =
       item.kind === "artist"
         ? "artist"
@@ -86,7 +88,7 @@ function useItemMenuItems(item: LibraryItemViewModel): DropdownMenuItem[] {
         },
       },
     ];
-  }, [item.id, item.title, item.imageUrl, item.subtitle, item.kind, item.isOwned, item.href, t]);
+  }, [item.id, item.title, item.imageUrl, item.subtitle, item.kind, item.isOwned, item.source, item.href, t]);
 }
 
 function LibraryItemCard({ item }: { item: LibraryItemViewModel }) {
@@ -99,6 +101,8 @@ function LibraryItemCard({ item }: { item: LibraryItemViewModel }) {
         title={item.title}
         coverUrl={item.imageUrl}
         trackCount={item.trackCount}
+        subtitle={item.source ? item.subtitle : undefined}
+        badge={<SourceBadge source={item.source} />}
         menuItems={menuItems}
       />
     );
@@ -112,6 +116,7 @@ function LibraryItemCard({ item }: { item: LibraryItemViewModel }) {
       coverUrls={item.coverUrls}
       variant={item.kind === "artist" ? "artist" : "playlist"}
       href={item.href}
+      badge={<SourceBadge source={item.source} />}
       menuItems={menuItems}
     />
   );
@@ -185,7 +190,10 @@ function LibraryItemRow({ item }: { item: LibraryItemViewModel }) {
               fontWeight: 350,
             }}
           >
-            {item.subtitle}
+            <span className="flex min-w-0 items-center gap-[6px]">
+              <SourceBadge source={item.source} size="md" />
+              <span className="truncate">{item.subtitle}</span>
+            </span>
           </p>
         </div>
       </div>
@@ -253,7 +261,7 @@ function EmptyLibraryState({
     );
   }
 
-  if (activeTab === "playlists") {
+  if (activeTab === "playlists" || activeTab === "all") {
     return (
       <div className="flex min-h-[320px] flex-col items-center justify-center gap-[14px] text-center px-[20px]">
         <div className="flex flex-col gap-[6px] max-w-[360px]">

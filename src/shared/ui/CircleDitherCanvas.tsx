@@ -58,7 +58,9 @@ export default function CircleDitherCanvas({
     if (!container || !canvas) return;
 
     const offscreenCanvas = document.createElement("canvas");
-    const offscreenCtx = offscreenCanvas.getContext("2d", { willReadFrequently: true });
+    const offscreenCtx = offscreenCanvas.getContext("2d", {
+      willReadFrequently: true,
+    });
     const ctx = canvas.getContext("2d");
     if (!ctx || !offscreenCtx) return;
 
@@ -134,7 +136,13 @@ export default function CircleDitherCanvas({
           ctx.lineTo(currentWidth - r, 0);
           ctx.arcTo(currentWidth, 0, currentWidth, r, r);
           ctx.lineTo(currentWidth, currentHeight - r);
-          ctx.arcTo(currentWidth, currentHeight, currentWidth - r, currentHeight, r);
+          ctx.arcTo(
+            currentWidth,
+            currentHeight,
+            currentWidth - r,
+            currentHeight,
+            r,
+          );
           ctx.lineTo(r, currentHeight);
           ctx.arcTo(0, currentHeight, 0, currentHeight - r, r);
           ctx.lineTo(0, r);
@@ -159,8 +167,10 @@ export default function CircleDitherCanvas({
       const isHex = gridType === "hex";
       const rowHeight = isHex ? size * 0.8660254 : size;
 
-      const cols = 1 + Math.floor((currentWidth - 2 * minPad - diameter) / size);
-      const rows = 1 + Math.floor((currentHeight - 2 * minPad - diameter) / rowHeight);
+      const cols =
+        1 + Math.floor((currentWidth - 2 * minPad - diameter) / size);
+      const rows =
+        1 + Math.floor((currentHeight - 2 * minPad - diameter) / rowHeight);
       if (cols <= 0 || rows <= 0) {
         ctx.restore();
         return;
@@ -194,7 +204,8 @@ export default function CircleDitherCanvas({
             } else if (x < R && y > currentHeight - R) {
               if (!isInsideCorner(x, y, R, currentHeight - R)) continue;
             } else if (x > currentWidth - R && y > currentHeight - R) {
-              if (!isInsideCorner(x, y, currentWidth - R, currentHeight - R)) continue;
+              if (!isInsideCorner(x, y, currentWidth - R, currentHeight - R))
+                continue;
             }
           }
 
@@ -274,12 +285,21 @@ export default function CircleDitherCanvas({
       if (settleTimer) clearTimeout(settleTimer);
       resizeObserver.disconnect();
     };
-  }, [loaded, dotSize, gap, edgePadding, cornerRadius, gridType, objectFit, backgroundColor]);
+  }, [
+    loaded,
+    dotSize,
+    gap,
+    edgePadding,
+    cornerRadius,
+    gridType,
+    objectFit,
+    backgroundColor,
+  ]);
 
   return (
     <div
       ref={containerRef}
-      className={`relative h-full w-full overflow-hidden rounded-5xl select-none ${className}`}
+      className={`relative h-full w-full overflow-hidden rounded-[12px] select-none ${className}`}
       style={style}
       aria-label={alt}
     >

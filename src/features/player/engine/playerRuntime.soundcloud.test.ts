@@ -4,7 +4,8 @@ import type { Track } from "@/shared/types";
 const mocks = vi.hoisted(() => ({ resolveSoundCloudStream: vi.fn() }));
 
 vi.mock("@/shared/media/soundcloud", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/shared/media/soundcloud")>();
+  const actual =
+    await importOriginal<typeof import("@/shared/media/soundcloud")>();
   return { ...actual, resolveSoundCloudStream: mocks.resolveSoundCloudStream };
 });
 
@@ -12,12 +13,26 @@ import { linerDb } from "@/shared/storage";
 import { playerRuntime } from "./playerRuntime";
 
 function soundCloudTrack(id: string): Track {
-  return { id, title: "Love Potions", artists: "Artist", durationMs: 173_000, coverUrl: "", playCount: 0 };
+  return {
+    id,
+    title: "Love Potions",
+    artists: "Artist",
+    durationMs: 173_000,
+    coverUrl: "",
+    playCount: 0,
+  };
 }
 
 function bufferedStream(bytes: number[]) {
   const blob = new Blob([new Uint8Array(bytes)], { type: "audio/mp4" });
-  return { blob, mimeType: "audio/mp4", codec: "aac", bitrate: 160_000, expiresAt: null, contentLength: bytes.length };
+  return {
+    blob,
+    mimeType: "audio/mp4",
+    codec: "aac",
+    bitrate: 160_000,
+    expiresAt: null,
+    contentLength: bytes.length,
+  };
 }
 
 beforeEach(() => {
@@ -43,7 +58,9 @@ describe("PlayerRuntime with soundcloud streams", () => {
 
     expect(URL.createObjectURL).toHaveBeenCalledWith(expect.any(Blob));
     expect(playerRuntime!.hasLoadedSourceFor(track.id)).toBe(true);
-    await vi.waitFor(async () => expect((await linerDb.getAudio(track.id))?.byteSize).toBe(3));
+    await vi.waitFor(async () =>
+      expect((await linerDb.getAudio(track.id))?.byteSize).toBe(3),
+    );
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
@@ -67,7 +84,11 @@ describe("PlayerRuntime with soundcloud streams", () => {
       bitrate: 128_000,
       expiresAt: "2030-01-01T00:10:00.000Z",
     });
-    vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(new Uint8Array([7]), { headers: { "content-type": "audio/mpeg" } }));
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(new Uint8Array([7]), {
+        headers: { "content-type": "audio/mpeg" },
+      }),
+    );
     const track = soundCloudTrack("sc:103");
 
     await playerRuntime!.loadAndPlay(track);

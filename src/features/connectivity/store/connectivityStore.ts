@@ -1,7 +1,6 @@
 import { create } from "zustand";
-import { DIAG_ENDPOINTS, runAllChecks, type DiagnosticsResult } from "../lib/diagnostics";
+import { runAllChecks, type DiagnosticsResult } from "../lib/diagnostics";
 import { isPlaybackPath } from "../lib/failureKind";
-import { buildOfflineDump, downloadDump, type SaveDumpResult } from "../lib/dump";
 
 export const TRIP_COUNT = 3;
 export const TRIP_WINDOW_MS = 60_000;
@@ -21,14 +20,11 @@ interface ConnectivityState {
   visible: boolean;
   running: boolean;
   checks: DiagnosticsResult["checks"];
-  main: DiagnosticsResult["main"];
   failures: FailureEntry[];
   lastRunAt?: number;
-  lastSavedDumpPath: string | null;
   recordFailure: (entry: Omit<FailureEntry, "at">) => void;
   runDiagnostics: () => Promise<void>;
   retry: () => Promise<void>;
-  runAndSaveDump: () => Promise<SaveDumpResult>;
   reset: () => void;
 }
 
@@ -37,10 +33,8 @@ export const useConnectivityStore = create<ConnectivityState>((set, get) => ({
   visible: false,
   running: false,
   checks: [],
-  main: null,
   failures: [],
   lastRunAt: undefined,
-  lastSavedDumpPath: null,
 
   recordFailure: (entry) => {
     if (isPlaybackPath(entry.path)) return;
@@ -59,8 +53,8 @@ export const useConnectivityStore = create<ConnectivityState>((set, get) => ({
     if (get().running) return;
     set({ running: true });
     try {
-      const { checks, main } = await runAllChecks();
-      set({ checks, main, lastRunAt: Date.now() });
+      const { checks } = await runAllChecks();
+      set({ checks, lastRunAt: Date.now() });
       const apiOk = checks.some((c) => c.id === "api" && c.status === "ok");
       if (apiOk && get().tripped) {
         set({ tripped: false, visible: false, failures: [] });
@@ -75,29 +69,6 @@ export const useConnectivityStore = create<ConnectivityState>((set, get) => ({
     const apiOk = get().checks.some((c) => c.id === "api" && c.status === "ok");
     if (apiOk) {
       set({ tripped: false, visible: false, failures: [] });
-    }
-  },
-
-  // manual trigger from settings: runs every probe and saves the dump file
-  // straight away, without showing the wall.
-  runAndSaveDump: async () => {
-    await get().runDiagnostics();
-    const state = get();
-    try {
-      const result = await downloadDump(
-        buildOfflineDump({
-          checks: state.checks,
-          failures: state.failures,
-          main: state.main,
-          endpoints: DIAG_ENDPOINTS,
-        }),
-      );
-      if (result.filePath) {
-        set({ lastSavedDumpPath: result.filePath });
-      }
-      return result;
-    } catch (err) {
-      return { success: false, error: String(err) };
     }
   },
 

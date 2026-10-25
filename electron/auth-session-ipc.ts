@@ -1,7 +1,21 @@
 import { app, BrowserWindow, ipcMain, net, safeStorage, type IpcMainEvent, type IpcMainInvokeEvent } from "electron";
 import path from "node:path";
 import { AuthSessionStore } from "./auth-session-store.js";
-import { syncServerTime } from "./crypto.js";
+import { signRequest, syncServerTime } from "./crypto.js";
+
+function signedRequestHeaders(method: string, path: string, body: string): Record<string, string> {
+  try {
+    const signed = signRequest({ method, path, body });
+    return {
+      "x-liner-signature": signed.signature,
+      "x-liner-timestamp": String(signed.timestamp),
+      "x-liner-nonce": signed.nonce,
+    };
+  } catch (err) {
+    console.error("\x1b[41;37m signer \x1b[0m auth refresh signing failed:", err);
+    return {};
+  }
+}
 
 function isAppUrl(url: string | undefined): boolean {
   if (!url) return false;
@@ -32,6 +46,7 @@ export function registerAuthSessionIpc(): AuthSessionStore {
       syncClock: (dateHeader) => {
         syncServerTime(dateHeader);
       },
+      signHeaders: signedRequestHeaders,
     },
   );
 

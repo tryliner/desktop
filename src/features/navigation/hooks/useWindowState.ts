@@ -20,7 +20,7 @@ const checkDomFullscreen = (): boolean => {
   if (typeof document === "undefined") return false;
   return Boolean(
     document.fullscreenElement ||
-      (window.matchMedia?.("(display-mode: fullscreen)")?.matches ?? false),
+    (window.matchMedia?.("(display-mode: fullscreen)")?.matches ?? false),
   );
 };
 
@@ -84,7 +84,10 @@ export function useWindowState(): WindowStateHookResult {
         if (activeF11Count === 0 && typeof window !== "undefined") {
           window.removeEventListener("keydown", handlePreventF11);
         }
-        document.removeEventListener("fullscreenchange", handleFullscreenChange);
+        document.removeEventListener(
+          "fullscreenchange",
+          handleFullscreenChange,
+        );
         window.removeEventListener("resize", handleFullscreenChange);
         mediaQuery?.removeEventListener?.("change", handleFullscreenChange);
       };
@@ -92,7 +95,8 @@ export function useWindowState(): WindowStateHookResult {
 
     // Hydrate initial os window state from electron
     const initialQuerySeq = pushSeq;
-    window.linerElectron.isFullScreen?.()
+    window.linerElectron
+      .isFullScreen?.()
       .then((fs) => {
         if (mounted && pushSeq === initialQuerySeq && typeof fs === "boolean") {
           setIsFullScreen(fs);
@@ -100,22 +104,29 @@ export function useWindowState(): WindowStateHookResult {
       })
       .catch(() => {});
 
-    window.linerElectron.isMaximized?.()
+    window.linerElectron
+      .isMaximized?.()
       .then((max) => {
-        if (mounted && pushSeq === initialQuerySeq && typeof max === "boolean") {
+        if (
+          mounted &&
+          pushSeq === initialQuerySeq &&
+          typeof max === "boolean"
+        ) {
           setIsMaximized(max);
         }
       })
       .catch(() => {});
 
     // Live sync across os fullscreen transitions & maximize toggles
-    const unsubscribe = window.linerElectron.onWindowStateChange?.((state: WindowState) => {
-      if (mounted && state) {
-        pushSeq++;
-        setIsFullScreen(Boolean(state.isFullScreen));
-        setIsMaximized(Boolean(state.isMaximized));
-      }
-    });
+    const unsubscribe = window.linerElectron.onWindowStateChange?.(
+      (state: WindowState) => {
+        if (mounted && state) {
+          pushSeq++;
+          setIsFullScreen(Boolean(state.isFullScreen));
+          setIsMaximized(Boolean(state.isMaximized));
+        }
+      },
+    );
 
     // Fallback sync on window resize for compositors (e.g. Wayland)
     const handleResize = () => {
@@ -125,14 +136,16 @@ export function useWindowState(): WindowStateHookResult {
         setIsFullScreen(true);
       }
       const resizeSeq = pushSeq;
-      window.linerElectron?.isMaximized?.()
+      window.linerElectron
+        ?.isMaximized?.()
         .then((max) => {
           if (mounted && pushSeq === resizeSeq && typeof max === "boolean") {
             setIsMaximized(max);
           }
         })
         .catch(() => {});
-      window.linerElectron?.isFullScreen?.()
+      window.linerElectron
+        ?.isFullScreen?.()
         .then((fs) => {
           if (mounted && pushSeq === resizeSeq && typeof fs === "boolean") {
             setIsFullScreen(fs || isDomFullscreen);
@@ -148,7 +161,8 @@ export function useWindowState(): WindowStateHookResult {
         setIsFullScreen(true);
       } else {
         const querySeq = pushSeq;
-        window.linerElectron?.isFullScreen?.()
+        window.linerElectron
+          ?.isFullScreen?.()
           .then((fs) => {
             if (mounted && pushSeq === querySeq && typeof fs === "boolean") {
               setIsFullScreen(fs);

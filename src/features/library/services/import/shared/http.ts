@@ -1,8 +1,12 @@
 export function requireOk(response: Response, provider: string): void {
-  if (!response.ok) throw new Error(`${provider} request failed (${response.status}).`);
+  if (!response.ok)
+    throw new Error(`${provider} request failed (${response.status}).`);
 }
 
-export function delay(milliseconds: number, signal?: AbortSignal): Promise<void> {
+export function delay(
+  milliseconds: number,
+  signal?: AbortSignal,
+): Promise<void> {
   return new Promise((resolve, reject) => {
     if (signal?.aborted) {
       reject(signal.reason);

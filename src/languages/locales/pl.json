@@ -204,6 +204,7 @@
     "mostListened": "Najczęściej słuchane wszech czasów",
     "jumpBackIn": "Wróć do słuchania",
     "popularAlbums": "Najlepsze albumy",
+    "mostSaved": "Najczęściej zapisywane",
     "popularArtists": "Popularni wykonawcy",
     "popularPlaylists": "Popularne playlisty",
     "dailyMixes": "Codzienne miksy",
@@ -216,9 +217,11 @@
     "songs": "utworów",
     "track": "utwór",
     "tracks": "utworów",
+    "tab_all": "Wszystko",
     "tab_playlists": "Playlisty",
     "tab_albums": "Albumy",
     "tab_artists": "Wykonawcy",
+    "search_all": "Szukaj w bibliotece",
     "search_playlists": "Szukaj playlist",
     "search_albums": "Szukaj albumów",
     "search_artists": "Szukaj wykonawców",
@@ -247,7 +250,6 @@
     "auth_subtitle_register": "Załóż konto i zacznij tworzyć własną bibliotekę.",
     "profile_setup_title": "Skonfiguruj profil",
     "profile_setup_subtitle": "Wybierz unikalny identyfikator i wyświetlaną nazwę.",
-    "step_indicator": "Krok {step} z {total}",
     "btn_continue": "Dalej",
     "btn_back": "Wstecz",
     "username_hint": "3–30 znaków: małe litery, cyfry lub podkreślenia.",
@@ -346,6 +348,10 @@
     }
   },
   "player": {
+    "mute": "Wycisz",
+    "unmute": "Wyłącz wyciszenie",
+    "decrease": "Zmniejsz",
+    "increase": "Zwiększ",
     "repeat_off": "Powtarzanie: wył.",
     "repeat_all": "Powtarzanie: wszystko",
     "repeat_one": "Powtarzanie: utwór",
@@ -433,6 +439,9 @@
     "save_preferences": "Zapisz preferencje",
     "groups": {
       "preferences": "Preferencje",
+      "player": "Odtwarzacz",
+      "interface": "Interfejs",
+      "integrations": "Integracje",
       "application": "Aplikacja",
       "help": "Pomoc"
     },
@@ -442,8 +451,6 @@
     "tabs": {
       "general": "Ogólne",
       "appearance": "Wygląd",
-      "customization": "Personalizacja",
-      "audio": "Dźwięk",
       "storage": "Pamięć podręczna",
       "system": "System",
       "account": "Konto",
@@ -488,8 +495,6 @@
       "search_desc": "Szybko otwiera okno wyszukiwania.",
       "toggle_queue": "Kolejka",
       "toggle_queue_desc": "Otwiera lub zamyka panel kolejki.",
-      "toggle_lyrics": "Tekst",
-      "toggle_lyrics_desc": "Otwiera lub zamyka panel zsynchronizowanego tekstu.",
       "toggle_fullscreen": "Pełny ekran / Widok odtwarzacza",
       "toggle_fullscreen_desc": "Włącza lub wyłącza pełnoekranowy widok odtwarzacza.",
       "like_track": "Polub / Cofnij polubienie",
@@ -544,45 +549,6 @@
         "description": "Utrzymuje nakładkę nad innymi oknami."
       }
     },
-    "customization": {
-      "description": "Tapeta okna, przezroczystość i rozmycie bloków.",
-      "apply_to_overlay": "Zastosuj do miniodtwarzacza w nakładce",
-      "apply_to_overlay_desc": "Używa własnego tła i efektu szkła także w pływającym miniodtwarzaczu.",
-      "dark_theme_only": "Personalizacja jest dostępna tylko w ciemnym motywie",
-      "wallpaper_title": "Tapeta okna",
-      "wallpaper_description": "Ustaw własny obraz lub animowany GIF jako tło całego okna.",
-      "upload_title": "Wybierz obraz lub animowany GIF",
-      "upload_hint": "PNG, JPEG, GIF, WebP (do 30 MB)",
-      "change_button": "Zmień",
-      "remove_button": "Usuń",
-      "wallpaper_blur": "Rozmycie tapety",
-      "wallpaper_dim": "Przyciemnienie tapety",
-      "blocks_title": "Efekt szkła bloków interfejsu",
-      "blocks_description": "Dostosuj przezroczystość, rozmycie tła i przyciemnienie każdego obszaru interfejsu.",
-      "block_sidebar": "Pasek boczny",
-      "block_content": "Obszar treści",
-      "block_miniplayer": "Miniodtwarzacz",
-      "opacity": "Krycie (przezroczystość)",
-      "opacity_desc": "Poziom krycia tła (min. 25%)",
-      "blur": "Rozmycie tła",
-      "blur_desc": "Siła efektu matowego szkła",
-      "dim": "Przyciemnienie",
-      "dim_desc": "Ciemna warstwa dla lepszej czytelności",
-      "apply_all": "Do wszystkich",
-      "apply_all_title": "Zastosuj ustawienia do wszystkich bloków",
-      "applied_to_all": "Zastosowano ustawienia do wszystkich bloków",
-      "reset_block": "Resetuj",
-      "block_reset": "Zresetowano ustawienia bloku",
-      "reset_all": "Resetuj całą personalizację",
-      "reset_all_desc": "Przywraca domyślny wygląd, usuwa obraz tła i efekty szkła bloków.",
-      "all_reset": "Zresetowano całą personalizację",
-      "applied": "Zastosowano tapetę",
-      "removed": "Usunięto tapetę",
-      "invalid_file_type": "Wybierz plik obrazu lub GIF",
-      "file_too_large": "Plik musi mieć mniej niż 30 MB",
-      "read_error": "Nie udało się odczytać pliku obrazu"
-    },
-
     "audio_data": {
       "description": "Jakość streamingu, pamięć podręczna offline i diagnostyka połączenia."
     },
@@ -685,7 +651,6 @@
     "theme": {
       "title": "Motyw",
       "description": "Wybierz ogólny wygląd aplikacji.",
-      "disabled_for_glass": "Jasny motyw jest wyłączony przy efekcie szkła z własną tapetą.",
       "light": "Jasny",
       "dark": "Ciemny",
       "system": "Systemowy"
@@ -708,8 +673,6 @@
       "vhs": "Chrom"
     },
     "audio": {
-      "title": "Jakość streamingu",
-      "description": "Wybierz domyślną jakość dźwięku.",
       "pause_on_device_change": {
         "title": "Pauza przy zmianie urządzenia",
         "description": "Automatycznie wstrzymuje odtwarzanie, gdy zmieni się urządzenie wyjściowe audio."
@@ -717,11 +680,7 @@
       "download_current_song": {
         "title": "Pobierz bieżący utwór",
         "description": "Pobiera odtwarzany utwór jako plik MP3."
-      },
-      "low": "Niska jakość (oszczędzanie danych)",
-      "standard": "Standardowa jakość (Opus 64kbps / MP3 128kbps)",
-      "high": "Wysoka jakość (AAC 256kbps)",
-      "lossless": "Bezstratna (FLAC/ALAC) - Niedostępna"
+      }
     },
     "profile": {
       "title": "Profil",
@@ -816,16 +775,12 @@
       "license_notice": "Rozpowszechniany na licencji Liner Source-Available & Non-Commercial."
     },
     "connection": {
-      "title": "Połączenie",
-      "description": "Uruchom wszystkie testy łączności i zapisz raport offline.",
-      "checks_title": "Raport offline",
-      "button": "Uruchom testy i zapisz",
-      "checking": "Sprawdzanie…",
-      "saved": "Raport zapisany, dołącz go do wiadomości do pomocy technicznej.",
-      "failed": "Nie udało się zapisać raportu.",
-      "never_run": "Testy nie zostały jeszcze uruchomione.",
-      "last_run": "Testy OK: {ok}/{total} · {time}",
       "open_folder": "Otwórz lokalizację zapisu"
+    },
+    "cover_glow": {
+      "title": "Poświata okładki",
+      "description": "Rozmyta poświata okładki za stronami. Wyłącz, aby zostawić jednolite tło.",
+      "disabled_for_light": "Wyłączone w jasnym motywie."
     }
   },
   "toast": {
@@ -950,12 +905,7 @@
     "check_trace": "Śledzenie trasy",
     "check_platform": "Platforma",
     "check_main": "Testy aplikacji",
-    "copy_dump": "Kopiuj raport",
-    "dump_copied": "Raport skopiowany, wklej go do wiadomości do pomocy technicznej.",
-    "dump_copy_failed": "Brak dostępu do schowka.",
-    "download_dump": "Zapisz raport",
-    "support": "Kontakt z pomocą techniczną",
-    "support_hint": "Dołącz zapisany plik raportu, aby pomoc techniczna miała pełny obraz sytuacji."
+    "support": "Kontakt z pomocą techniczną"
   },
   "updater": {
     "modal_title": "Dostępna aktualizacja",
@@ -972,9 +922,15 @@
   "track_search": {
     "placeholder_playlist": "Szukaj w playliście",
     "placeholder_album": "Szukaj w albumie",
-    "button": "Szukaj utworów",
     "count": "{count} z {total}",
     "no_results": "Brak utworów dla „{query}”",
     "clear": "Wyczyść wyszukiwanie"
+  },
+  "track_sort": {
+    "label": "Sortowanie",
+    "default": "Domyślnie",
+    "title": "Według tytułu (A–Z)",
+    "duration": "Według długości",
+    "popularity": "Według popularności"
   }
 }

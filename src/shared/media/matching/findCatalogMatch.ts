@@ -1,5 +1,5 @@
 import type { ImportedTrack, ImportReviewReason, SearchResult, Track } from "@/shared/contracts";
-import { searchRaw, videoThumbnailCover } from "@/shared/media/innertube";
+import { searchRaw, videoThumbnailCover } from "@/shared/youtube";
 import { cleanSoundCloudMetadata } from "./artistTitle";
 import { evaluateImportedTrack, type MatchDecision } from "./evaluate";
 

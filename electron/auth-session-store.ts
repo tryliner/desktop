@@ -25,6 +25,7 @@ export type SessionCipher = {
 export type AuthSessionStoreDeps = {
   fetch: (url: string, init: RequestInit) => Promise<Response>;
   syncClock: (dateHeader: string) => void;
+  signHeaders?: (method: string, path: string, body: string) => Record<string, string>;
 };
 
 export type AuthSessionListener = (session: StoredAuthSession | null, origin?: number) => void;
@@ -169,6 +170,7 @@ export class AuthSessionStore {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        ...this.deps.signHeaders?.("POST", REFRESH_PATH, body),
       },
       body,
       signal: AbortSignal.timeout(REFRESH_TIMEOUT_MS),

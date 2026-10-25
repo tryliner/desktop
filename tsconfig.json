@@ -23,6 +23,7 @@
     "src",
     "electron",
     "vite.config.ts",
+    "vite.csp.ts",
     "vitest.config.ts"
   ],
   "exclude": ["node_modules", "dist"]

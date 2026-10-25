@@ -1,0 +1,93 @@
+.container {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  overflow: hidden;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.base {
+  position: absolute;
+  inset: 0;
+  transition: background-color 0.8s ease;
+}
+
+.blobBottomRight {
+  position: absolute;
+  right: -6px;
+  bottom: -6px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  filter: blur(5px);
+  opacity: 0.95;
+  animation: fluidSwirl 4.5s ease-in-out infinite alternate;
+  will-change: transform;
+  transition: background-color 0.8s ease;
+}
+
+.blobCenterSwirl {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 24px;
+  height: 24px;
+  border-radius: 38% 62% 65% 35% / 45% 55% 45% 55%;
+  filter: blur(4px);
+  opacity: 0.8;
+  animation: fluidCenterSpin 6.5s cubic-bezier(0.42, 0, 0.58, 1) infinite;
+  will-change: transform;
+  transition: background-color 0.8s ease;
+}
+
+.blobTopLeft {
+  position: absolute;
+  left: -5px;
+  top: -5px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  filter: blur(4px);
+  opacity: 0.85;
+  animation: fluidDrift 5.5s ease-in-out infinite alternate;
+  will-change: transform;
+  transition: background-color 0.8s ease;
+}
+
+@keyframes fluidSwirl {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(-6px, -6px) scale(1.22);
+  }
+  100% {
+    transform: translate(-3px, -8px) scale(0.95);
+  }
+}
+
+@keyframes fluidCenterSpin {
+  0% {
+    transform: translate(-50%, -50%) rotate(0deg) scale(0.85, 1.2);
+  }
+  50% {
+    transform: translate(-50%, -50%) rotate(180deg) scale(1.25, 0.8);
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(360deg) scale(0.85, 1.2);
+  }
+}
+
+@keyframes fluidDrift {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(4px, 4px) scale(1.18);
+  }
+  100% {
+    transform: translate(1px, 6px) scale(0.92);
+  }
+}

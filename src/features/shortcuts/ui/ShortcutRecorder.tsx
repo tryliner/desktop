@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { CloseCircleFill } from "@mingcute/react";
 import { ResetIcon } from "./ResetIcon";
 import { useTranslation } from "@/languages";
 import {
@@ -197,7 +198,7 @@ export function ShortcutRecorder({
   const hasChanged = value !== defaultValue;
 
   return (
-    <div className="relative flex items-center gap-1.5 shrink-0 h-[24px]">
+    <div className="relative flex items-center gap-1.5 shrink-0 h-[30px]">
       {/* Per-row reset button hidden for now */}
       {/*
       <AnimatePresence>
@@ -245,10 +246,10 @@ export function ShortcutRecorder({
             ? "opacity-50 cursor-not-allowed bg-transparent"
             : isRecording
               ? errorMessage
-                ? "h-[24px] px-2.5 rounded-md bg-rose-500/20 text-rose-300"
+                ? "h-[30px] px-[12px] rounded-[8px] bg-rose-700/90 text-white"
                 : heldModifiers.length > 0
-                  ? "h-[24px] px-2.5 rounded-md bg-border-alpha-24 text-text-primary"
-                  : "h-[24px] px-2.5 rounded-md bg-border-alpha-20 text-text-primary"
+                  ? "h-[30px] px-[12px] rounded-[8px] bg-black/[0.12] text-text-primary dark:bg-black/50"
+                  : "h-[30px] px-[12px] rounded-[8px] bg-black/[0.08] text-text-secondary dark:bg-black/40"
               : "bg-transparent p-0"
         }`}
         style={{ fontFamily: "var(--font-inter), sans-serif" }}
@@ -267,11 +268,12 @@ export function ShortcutRecorder({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 2 }}
               transition={{ duration: 0.08, ease: "easeOut" }}
-              className="leading-none text-[12px] font-medium"
+              className="flex items-center gap-[8px] leading-none text-[13px] font-medium"
             >
               {heldModifiers.length > 0
                 ? `${heldModifiers.join(" + ")} + ...`
                 : t("settings.shortcuts.press_keys") || "···"}
+              {errorMessage && <CloseCircleFill size={15} className="shrink-0 opacity-80" />}
             </motion.span>
           ) : (
             <motion.div
@@ -285,7 +287,7 @@ export function ShortcutRecorder({
               {getAcceleratorKeycaps(value).map((chip, idx) => (
                 <span
                   key={idx}
-                  className="inline-flex items-center justify-center min-w-[22px] h-[24px] px-2 rounded-md bg-border-alpha-14 text-text-primary text-[12px] font-[500] leading-none tracking-tight group-hover:bg-border-alpha-20 transition-colors"
+                  className="inline-flex items-center justify-center min-w-[30px] h-[30px] px-[10px] rounded-[8px] bg-black/[0.08] text-text-primary text-[13px] font-[500] leading-none transition-colors group-hover:bg-black/[0.12] dark:bg-black/40 dark:group-hover:bg-black/50"
                 >
                   {chip}
                 </span>
@@ -303,7 +305,7 @@ export function ShortcutRecorder({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 4, scale: 0.95 }}
             transition={{ duration: 0.12, ease: "easeOut" }}
-            className="absolute right-0 top-full mt-1.5 z-40 pointer-events-none whitespace-nowrap px-2.5 py-1 rounded-lg bg-[#18181b] shadow-xl flex items-center gap-1.5 text-[11.5px] text-rose-400 select-none border-0"
+            className="absolute left-0 top-full mt-[6px] z-40 pointer-events-none whitespace-nowrap px-[10px] py-[6px] rounded-[8px] bg-rose-600 shadow-xl flex items-center gap-1.5 text-[12px] font-[500] text-white select-none border-0"
             style={{ fontFamily: "var(--font-inter), sans-serif" }}
           >
             <span>{errorMessage}</span>

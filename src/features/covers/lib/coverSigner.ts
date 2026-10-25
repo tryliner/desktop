@@ -1,3 +1,5 @@
+import { YOUTUBE_THUMBNAIL_HOST } from "@/shared/youtube/playlist/youtubeUrl";
+
 // client-side cover proxy url minting and signing
 // derives covers.tryliner.fun fallback url directly from track raw cover url
 // hmac token is computed in-memory via rust wasm module
@@ -21,7 +23,10 @@ const resolved = new Map<string, string | undefined>();
 const inflight = new Map<string, Promise<string | undefined>>();
 
 function isElectron(): boolean {
-  return typeof window !== "undefined" && typeof window.linerElectron?.signCoverUrl === "function";
+  return (
+    typeof window !== "undefined" &&
+    typeof window.linerElectron?.signCoverUrl === "function"
+  );
 }
 
 function base64UrlEncode(input: string): string {
@@ -35,7 +40,12 @@ function base64UrlEncode(input: string): string {
  * in the path filename (no options segment), so it passes through untouched.
  */
 function sizeAgnosticUrl(rawUrl: string, host: string): string {
-  if (host.endsWith(".sndcdn.com") || host === "sndcdn.com" || host === "i.ytimg.com") return rawUrl;
+  if (
+    host.endsWith(".sndcdn.com") ||
+    host === "sndcdn.com" ||
+    host === YOUTUBE_THUMBNAIL_HOST
+  )
+    return rawUrl;
   const eq = rawUrl.indexOf("=");
   return eq === -1 ? rawUrl : rawUrl.slice(0, eq);
 }
@@ -53,7 +63,10 @@ export async function signCoverUrl(payload: string): Promise<string> {
   }
 }
 
-export function getCoverProxyUrl(token: string, size = COVER_PROXY_SIZE): string {
+export function getCoverProxyUrl(
+  token: string,
+  size = COVER_PROXY_SIZE,
+): string {
   return `${COVER_PROXY_BASE}/c/${token}?size=${size}`;
 }
 
@@ -68,7 +81,10 @@ async function computeFallback(coverUrl: string): Promise<string | undefined> {
     return undefined;
   }
   const payload = base64UrlEncode(
-    JSON.stringify({ u: sizeAgnosticUrl(coverUrl, parsed.hostname), s: COVER_PROXY_SIZE }),
+    JSON.stringify({
+      u: sizeAgnosticUrl(coverUrl, parsed.hostname),
+      s: COVER_PROXY_SIZE,
+    }),
   );
   const token = await signCoverUrl(payload);
   return getCoverProxyUrl(token, COVER_PROXY_SIZE);
@@ -80,7 +96,9 @@ async function computeFallback(coverUrl: string): Promise<string | undefined> {
  * and safe to call repeatedly/eagerly — the first call per URL does the mint +
  * IPC sign, later calls reuse the cached result.
  */
-export function prepareCoverFallback(coverUrl: string | undefined): Promise<string | undefined> {
+export function prepareCoverFallback(
+  coverUrl: string | undefined,
+): Promise<string | undefined> {
   if (!coverUrl) return Promise.resolve(undefined);
 
   if (resolved.has(coverUrl)) return Promise.resolve(resolved.get(coverUrl));

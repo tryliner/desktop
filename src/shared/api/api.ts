@@ -8,7 +8,7 @@ import {
   type AuthTokens,
   type AuthUser,
 } from "./auth-session";
-import { syncServerTime } from "./serverTime";
+import { signApiRequest, syncServerTime } from "./requestSigner";
 import { clientCatalog } from "./clientCatalog";
 import { getLocalImportHandler } from "./localImports";
 import type { Track } from "@/shared/contracts";
@@ -180,6 +180,8 @@ async function executeRequest<T>(
 ): Promise<T> {
   const startTime = performance.now();
   const method = (init?.method ?? "GET").toUpperCase();
+  const rawBody = typeof init?.body === "string" ? init.body : null;
+  const signedHeaders = await signApiRequest(method, path, rawBody);
   const currentSession = getAuthSession();
   let accessToken = allowRefresh ? await getValidAccessToken() : null;
 
@@ -231,6 +233,7 @@ async function executeRequest<T>(
           ...(hasBody ? { "Content-Type": "application/json" } : {}),
           ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
           ...correlationHeaders,
+          ...signedHeaders,
           ...restHeaders,
         },
       },
@@ -297,6 +300,12 @@ async function executeRequest<T>(
       throw new ApiError(res.status, message, code, requestId);
     }
 
+    // Retry request with newly signed headers (synced server clock + fresh token if available)
+    const refreshedSignedHeaders = await signApiRequest(
+      method,
+      path,
+      rawBody,
+    );
     try {
       res = await fetchWithTimeout(
         getApiBaseUrl() + path,
@@ -306,6 +315,7 @@ async function executeRequest<T>(
             ...(hasBody ? { "Content-Type": "application/json" } : {}),
             ...correlationHeaders,
             ...restHeaders,
+            ...refreshedSignedHeaders,
             ...(nextToken ? { Authorization: `Bearer ${nextToken}` } : {}),
           },
         },
@@ -495,6 +505,9 @@ export type {
   PopularTimeWindow,
   PopularTrackItem,
   PopularTracksResponse,
+  PopularAlbumsResponse,
+  MostSavedResponse,
+  MostSavedType,
 } from "../contracts";
 
 import type {
@@ -517,6 +530,9 @@ import type {
   PlaybackHistoryResponse,
   PopularTimeWindow,
   PopularTracksResponse,
+  PopularAlbumsResponse,
+  MostSavedResponse,
+  MostSavedType,
 } from "../contracts";
 
 // ---- Endpoints --------------------------------------------------------------
@@ -617,12 +633,12 @@ export const api = {
   },
   search(q: string, type: SearchType = "all"): Promise<SearchResponse> {
     const params = new URLSearchParams({ q, type });
-    return clientCatalog.search(q, type, () => request<SearchResponse>(`/v1/search?${params}`));
+    return clientCatalog.search(q, type, () => request<SearchResponse>(`/v1/catalog/search?${params}`));
   },
 
   getTrack(id: string): Promise<ApiTrackDetails> {
     return clientCatalog.getTrack(id, () =>
-      request<ApiTrackDetails>(`/v1/tracks/${encodeURIComponent(id)}`),
+      request<ApiTrackDetails>(`/v1/catalog/tracks/${encodeURIComponent(id)}`),
     );
   },
 
@@ -675,7 +691,7 @@ export const api = {
 
   getAlbum(id: string): Promise<ApiAlbumDetails> {
     return clientCatalog.getAlbum(id, () =>
-      request<ApiAlbumDetails>(`/v1/albums/${encodeURIComponent(id)}`),
+      request<ApiAlbumDetails>(`/v1/catalog/albums/${encodeURIComponent(id)}`),
     );
   },
 
@@ -685,13 +701,13 @@ export const api = {
 
   getArtist(id: string): Promise<ApiArtistDetails> {
     return clientCatalog.getArtist(id, () =>
-      request<ApiArtistDetails>(`/v1/artists/${encodeURIComponent(id)}`),
+      request<ApiArtistDetails>(`/v1/catalog/artists/${encodeURIComponent(id)}`),
     );
   },
 
   getPlaylist(id: string): Promise<ApiCatalogPlaylistDetails> {
     return clientCatalog.getPlaylist(id, () =>
-      request<ApiCatalogPlaylistDetails>(`/v1/playlists/${encodeURIComponent(id)}`),
+      request<ApiCatalogPlaylistDetails>(`/v1/catalog/playlists/${encodeURIComponent(id)}`),
     );
   },
 
@@ -885,6 +901,7 @@ export const api = {
           }).toString()
         : "";
     const path = `/v1/tracks/${encodeURIComponent(id)}/lyrics${hintParams ? `?${hintParams}` : ""}`;
+    const signedHeaders = await signApiRequest("GET", path);
     const accessToken = await getValidAccessToken();
     const requestId =
       typeof crypto !== "undefined" && crypto.randomUUID
@@ -907,6 +924,7 @@ export const api = {
           headers: {
             ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
             ...correlationHeaders,
+            ...signedHeaders,
           },
         },
       );
@@ -996,6 +1014,21 @@ export const api = {
   ): Promise<PopularTracksResponse> {
     const params = new URLSearchParams({ window, limit: String(limit) });
     return request<PopularTracksResponse>(`/v1/explore/popular?${params}`);
+  },
+
+  getPopularAlbums(
+    window: PopularTimeWindow = "7d",
+    limit = 20,
+  ): Promise<PopularAlbumsResponse> {
+    const params = new URLSearchParams({ window, limit: String(limit) });
+    return request<PopularAlbumsResponse>(
+      `/v1/explore/popular/albums?${params}`,
+    );
+  },
+
+  getMostSaved(type: MostSavedType = "all", limit = 20): Promise<MostSavedResponse> {
+    const params = new URLSearchParams({ type, limit: String(limit) });
+    return request<MostSavedResponse>(`/v1/explore/most-saved?${params}`);
   },
 
   getDailyMixes(): Promise<DailyMixesResponse> {

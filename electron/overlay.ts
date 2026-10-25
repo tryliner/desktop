@@ -1,8 +1,18 @@
 import { BrowserWindow, ipcMain, screen, globalShortcut, app } from "electron";
 import path from "node:path";
 import fs from "node:fs";
+import {
+  createCompositorBridge,
+  type CompositorBridge,
+} from "./compositor/index.js";
 
 export type OverlayPosition = "top-left" | "top-center" | "top-right";
+
+const OVERLAY_TITLE = "Liner Overlay";
+const OVERLAY_MARGIN = 20;
+const TOGGLE_ACTION = "toggle-overlay";
+const LIKE_ACTION = "like-track";
+const COMPOSITOR_SETTLE_MS = 300;
 
 export interface OverlaySettings {
   enabled: boolean;
@@ -88,6 +98,7 @@ export class OverlayManager {
   private moveAnimationTimer: NodeJS.Timeout | null = null;
   private currentAnimatedX: number | null = null;
   private closeTimeout: NodeJS.Timeout | null = null;
+  private compositor: CompositorBridge | null = null;
   private rendererAuthenticated = false;
   private authSource: (() => boolean) | null = null;
   private contentReady = false;
@@ -109,6 +120,63 @@ export class OverlayManager {
     this.rendererDist = rendererDist;
     this.loadPersistedSettings();
     this.registerIpcHandlers();
+    this.compositor = createCompositorBridge((action) =>
+      this.handleCompositorAction(action),
+    );
+  }
+
+  private handleCompositorAction(action: string) {
+    if (action === TOGGLE_ACTION) {
+      if (this.isAuthenticated && this.enabled) this.toggleOverlay();
+      return;
+    }
+    if (action === LIKE_ACTION) this.triggerLike();
+  }
+
+  private triggerLike() {
+    if (!this.isAuthenticated) return;
+    if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+      this.mainWindow.webContents.send("overlay:action", {
+        type: "like",
+        payload: { fromGlobalShortcut: true },
+        fromGlobalShortcut: true,
+      });
+    }
+  }
+
+  private placeWithCompositor(): Promise<boolean> {
+    if (!this.compositor) return Promise.resolve(false);
+    const { width, height } = this.getWindowBounds();
+    return this.compositor.placeOverlay({
+      title: OVERLAY_TITLE,
+      width,
+      height,
+      anchor: this.position,
+      pinned: this.alwaysOnTop,
+      margin: OVERLAY_MARGIN,
+    });
+  }
+
+  private revealWindow() {
+    const win = this.overlayWindow;
+    if (!win || win.isDestroyed()) return;
+    const compositor = this.compositor;
+    if (!compositor) {
+      win.showInactive();
+      this.applyAlwaysOnTop();
+      return;
+    }
+    void compositor.captureFocus().finally(() => {
+      if (win.isDestroyed()) return;
+      win.showInactive();
+      void this.placeWithCompositor().then(() => {
+        setTimeout(() => {
+          if (!win.isDestroyed() && win.isVisible()) {
+            void this.placeWithCompositor();
+          }
+        }, COMPOSITOR_SETTLE_MS);
+      });
+    });
   }
 
   private getSettingsFilePath(): string {
@@ -226,6 +294,8 @@ export class OverlayManager {
   public dispose() {
     this.disposed = true;
     this.destroy();
+    void this.compositor?.dispose();
+    this.compositor = null;
   }
 
   public pauseShortcuts(paused: boolean) {
@@ -254,6 +324,22 @@ export class OverlayManager {
 
     if (this.shortcutsPaused || !this.enabled || !this.shortcut) return;
 
+    const shortcut = this.shortcut;
+    if (this.compositor) {
+      void this.compositor.bindShortcut(TOGGLE_ACTION, shortcut).then((ok) => {
+        if (!ok && !this.disposed && this.shortcut === shortcut) {
+          this.registerGlobalToggle();
+        }
+      });
+    } else {
+      this.registerGlobalToggle();
+    }
+
+    // Ensure like shortcut is also active
+    this.registerLikeShortcut();
+  }
+
+  private registerGlobalToggle() {
     try {
       const ok = globalShortcut.register(this.shortcut, () => {
         if (!this.isAuthenticated || !this.enabled) return;
@@ -267,12 +353,10 @@ export class OverlayManager {
     } catch (e) {
       console.error("[overlay] Error registering global shortcut:", e);
     }
-
-    // Ensure like shortcut is also active
-    this.registerLikeShortcut();
   }
 
   public unregisterShortcut() {
+    if (this.compositor) void this.compositor.unbindShortcut(TOGGLE_ACTION);
     if (this.currentRegisteredShortcut) {
       try {
         globalShortcut.unregister(this.currentRegisteredShortcut);
@@ -298,17 +382,25 @@ export class OverlayManager {
 
     if (this.shortcutsPaused || !this.likeShortcut) return;
 
+    if (this.compositor) {
+      const likeShortcut = this.likeShortcut;
+      void this.compositor
+        .bindShortcut(LIKE_ACTION, likeShortcut)
+        .then((ok) => {
+          if (!ok && !this.disposed && this.likeShortcut === likeShortcut) {
+            this.registerGlobalLike();
+          }
+        });
+      return;
+    }
+
+    this.registerGlobalLike();
+  }
+
+  private registerGlobalLike() {
+    if (!this.likeShortcut) return;
     try {
-      const ok = globalShortcut.register(this.likeShortcut, () => {
-        if (!this.isAuthenticated) return;
-        if (this.mainWindow && !this.mainWindow.isDestroyed()) {
-          this.mainWindow.webContents.send("overlay:action", {
-            type: "like",
-            payload: { fromGlobalShortcut: true },
-            fromGlobalShortcut: true,
-          });
-        }
-      });
+      const ok = globalShortcut.register(this.likeShortcut, () => this.triggerLike());
       if (ok) {
         this.currentRegisteredLikeShortcut = this.likeShortcut;
       } else {
@@ -320,6 +412,7 @@ export class OverlayManager {
   }
 
   public unregisterLikeShortcut() {
+    if (this.compositor) void this.compositor.unbindShortcut(LIKE_ACTION);
     if (this.currentRegisteredLikeShortcut) {
       try {
         globalShortcut.unregister(this.currentRegisteredLikeShortcut);
@@ -588,9 +681,8 @@ export class OverlayManager {
     }
     win.webContents.send("overlay:visibility", true);
     win.setOpacity(1);
-    win.showInactive();
     this.primed = true;
-    this.applyAlwaysOnTop();
+    this.revealWindow();
   }
 
   private ensureWindow(): BrowserWindow | null {
@@ -726,6 +818,11 @@ export class OverlayManager {
   private applyAlwaysOnTop() {
     if (!this.overlayWindow || this.overlayWindow.isDestroyed()) return;
 
+    if (this.compositor) {
+      if (this.overlayWindow.isVisible()) void this.placeWithCompositor();
+      return;
+    }
+
     if (!this.alwaysOnTop) {
       try {
         this.overlayWindow.setAlwaysOnTop(false, "normal");
@@ -783,7 +880,7 @@ export class OverlayManager {
     const bounds = this.getWindowBounds();
 
     this.overlayWindow = new BrowserWindow({
-      title: "Liner Overlay",
+      title: OVERLAY_TITLE,
       width: bounds.width,
       height: bounds.height,
       x: bounds.x,
@@ -831,6 +928,8 @@ export class OverlayManager {
         this.overlayWindow.webContents.send("overlay:state", this.latestState);
       }
     });
+
+    this.overlayWindow.on("page-title-updated", (event) => event.preventDefault());
 
     this.overlayWindow.on("closed", () => {
       if (this.overlayWindow !== win) return;
@@ -962,7 +1061,15 @@ export class OverlayManager {
         this.applyAlwaysOnTop();
       }
 
-      if (shouldAnimate) {
+      if (this.compositor) {
+        if (
+          this.overlayWindow &&
+          !this.overlayWindow.isDestroyed() &&
+          this.overlayWindow.isVisible()
+        ) {
+          void this.placeWithCompositor();
+        }
+      } else if (shouldAnimate) {
         const targetBounds = this.getWindowBounds();
         this.animateWindowBounds(targetBounds);
       } else if (this.overlayWindow && !this.overlayWindow.isDestroyed()) {

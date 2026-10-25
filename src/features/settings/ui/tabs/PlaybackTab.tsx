@@ -83,6 +83,7 @@ export function PlaybackTab({ searchQuery }: { searchQuery?: string }) {
       <SettingRow
         title={t("settings.default_playback_context.title")}
         description={t("settings.default_playback_context.description")}
+        explained
         titleKey="settings.default_playback_context.title"
         descKey="settings.default_playback_context.description"
         searchQuery={searchQuery}

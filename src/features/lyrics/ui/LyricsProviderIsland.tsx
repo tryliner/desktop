@@ -10,7 +10,7 @@ import {
   MinimizeLine,
   Refresh1Line,
 } from "@mingcute/react";
-import { useLyricsStore, hasSyncedLyricsSources } from "../store/lyricsStore";
+import { useLyricsStore } from "../store/lyricsStore";
 import { useTranslation } from "@/languages";
 
 function formatOffsetBadge(ms: number): string {
@@ -95,12 +95,6 @@ export function LyricsProviderIsland() {
     [unit, setOffset],
   );
 
-  const hasSyncedSources = hasSyncedLyricsSources(
-    availableProviders,
-    braccatoLyrics,
-    rawFormat,
-  );
-
   const isCurrentPlain =
     rawFormat === "plain" ||
     (braccatoLyrics.length > 0 &&
@@ -108,11 +102,7 @@ export function LyricsProviderIsland() {
         (l) => (l.startTimeMs ?? 0) === 0 && (l.durationMs ?? 0) === 0,
       ));
 
-  if (
-    availableProviders.length === 0 ||
-    braccatoLyrics.length === 0 ||
-    (!hasSyncedSources && availableProviders.length <= 1)
-  ) {
+  if (availableProviders.length === 0 || braccatoLyrics.length === 0) {
     return null;
   }
 
