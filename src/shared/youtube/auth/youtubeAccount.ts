@@ -83,6 +83,7 @@ export function markSelectedAccount(
 export async function fetchYoutubeAccounts(
   signal?: AbortSignal,
 ): Promise<YoutubeAccount[]> {
+  const pageId = getYoutubePageId();
   const body = await postInnertube(
     "account/accounts_list",
     {
@@ -96,9 +97,9 @@ export async function fetchYoutubeAccounts(
     { profile: TV_ACCOUNT_PROFILE, signal },
   );
   const accounts = parseYoutubeAccounts(body);
-  const pageId = getYoutubePageId();
   if (
     pageId &&
+    pageId === getYoutubePageId() &&
     accounts.length > 0 &&
     !accounts.some((account) => account.pageId === pageId)
   )

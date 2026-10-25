@@ -115,4 +115,11 @@ describe("fetchYoutubeAccounts", () => {
     await expect(fetchYoutubeAccounts()).rejects.toThrow("offline");
     expect(selectYoutubePageId).not.toHaveBeenCalled();
   });
+
+  it("keeps a brand account picked while the list was loading", async () => {
+    postInnertube.mockResolvedValue(body);
+    getYoutubePageId.mockReturnValueOnce("gone").mockReturnValue("picked");
+    await fetchYoutubeAccounts();
+    expect(selectYoutubePageId).not.toHaveBeenCalled();
+  });
 });
