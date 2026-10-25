@@ -85,7 +85,14 @@ export async function fetchYoutubeAccounts(
 ): Promise<YoutubeAccount[]> {
   const body = await postInnertube(
     "account/accounts_list",
-    {},
+    {
+      accountReadMask: {
+        returnOwner: true,
+        returnBrandAccounts: true,
+        returnPersonaAccounts: false,
+      },
+      callCircumstance: "SWITCHING_USERS_FULL",
+    },
     { profile: TV_ACCOUNT_PROFILE, signal },
   );
   return markSelectedAccount(parseYoutubeAccounts(body), getYoutubePageId());
