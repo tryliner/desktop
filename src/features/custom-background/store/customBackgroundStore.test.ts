@@ -7,7 +7,18 @@ import {
   DEFAULT_CUSTOM_BACKGROUND,
   MAX_BACKGROUND_BYTES,
 } from "./customBackgroundStore";
-import { loadBackgroundMedia } from "./backgroundMediaDb";
+import {
+  loadBackgroundMedia,
+  deleteBackgroundMedia,
+} from "./backgroundMediaDb";
+
+vi.mock("./backgroundMediaDb", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("./backgroundMediaDb")>();
+  return {
+    ...actual,
+    deleteBackgroundMedia: vi.fn(actual.deleteBackgroundMedia),
+  };
+});
 
 let urlCounter = 0;
 const createObjectURL = vi.fn(() => `blob:test/${++urlCounter}`);
@@ -189,12 +200,27 @@ describe("customBackgroundStore", () => {
     const s = useCustomBackgroundStore.getState();
     await s.setMediaFile(makeFile("one.mp4", "video/mp4"));
     const url = useCustomBackgroundStore.getState().mediaUrl;
-    await s.removeMedia();
+    expect(await s.removeMedia()).toBe(true);
     vi.runAllTimers();
     expect(useCustomBackgroundStore.getState().media).toBeNull();
     expect(useCustomBackgroundStore.getState().mediaUrl).toBeNull();
     expect(revokeObjectURL).toHaveBeenCalledWith(url);
     expect(await loadBackgroundMedia()).toBeNull();
+  });
+
+  it("keeps the wallpaper when the stored file can't be deleted", async () => {
+    const s = useCustomBackgroundStore.getState();
+    await s.setMediaFile(makeFile("keep.png", "image/png"));
+    const url = useCustomBackgroundStore.getState().mediaUrl;
+    vi.mocked(deleteBackgroundMedia).mockRejectedValueOnce(
+      new Error("tx aborted"),
+    );
+    expect(await s.removeMedia()).toBe(false);
+    vi.runAllTimers();
+    expect(useCustomBackgroundStore.getState().media?.name).toBe("keep.png");
+    expect(useCustomBackgroundStore.getState().mediaUrl).toBe(url);
+    expect(revokeObjectURL).not.toHaveBeenCalled();
+    expect((await loadBackgroundMedia())?.name).toBe("keep.png");
   });
 
   it("loads the stored file on startup", async () => {

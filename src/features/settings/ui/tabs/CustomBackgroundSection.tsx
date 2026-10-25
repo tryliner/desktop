@@ -97,9 +97,12 @@ export function CustomBackgroundSection({
     if (!busy) fileInputRef.current?.click();
   };
 
-  const handleRemove = () => {
-    void removeMedia();
-    toast(t("settings.background.removed"), "info");
+  const handleRemove = async () => {
+    setBusy(true);
+    const removed = await removeMedia();
+    setBusy(false);
+    if (removed) toast(t("settings.background.removed"), "info");
+    else toast(t("settings.background.error_remove"), "error");
   };
 
   const previewStyle = {
@@ -176,7 +179,7 @@ export function CustomBackgroundSection({
                   size="sm"
                   type="button"
                   disabled={busy}
-                  onClick={handleRemove}
+                  onClick={() => void handleRemove()}
                   className="!h-[28px] !px-[10px] gap-[5px] !text-[12px] rounded-[8px] !bg-black/60 hover:!bg-[#ff4d4d]/80 !text-white backdrop-blur-md"
                 >
                   <Delete2Line size={14} />

@@ -732,6 +732,7 @@
       "error_type": "Este tipo de arquivo não é compatível",
       "error_size": "O arquivo é grande demais (máx. 30 MB)",
       "error_save": "Não foi possível salvar o fundo",
+      "error_remove": "Não foi possível remover o fundo",
       "preview_alt": "Prévia do fundo"
     },
     "branding": {

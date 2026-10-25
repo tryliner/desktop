@@ -670,6 +670,7 @@
       "error_type": "Bu dosya türü desteklenmiyor",
       "error_size": "Dosya çok büyük (en fazla 30 MB)",
       "error_save": "Arka plan kaydedilemedi",
+      "error_remove": "Arka plan kaldırılamadı",
       "preview_alt": "Arka plan önizlemesi"
     },
     "branding": {

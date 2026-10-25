@@ -749,6 +749,7 @@
       "error_type": "This file type isn't supported",
       "error_size": "The file is too large (max 30 MB)",
       "error_save": "Couldn't save the background",
+      "error_remove": "Couldn't remove the background",
       "preview_alt": "Background preview"
     },
     "branding": {

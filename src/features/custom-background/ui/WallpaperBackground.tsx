@@ -178,10 +178,9 @@ function WallpaperBackgroundComponent({
     if (cleanupTimerRef.current) window.clearTimeout(cleanupTimerRef.current);
     cleanupTimerRef.current = window.setTimeout(() => {
       cleanupTimerRef.current = null;
-      setLayers((prev) => prev.filter((l) => l.id === layer.id));
-      setLoadedIds((prev) =>
-        prev.has(layer.id) ? new Set([layer.id]) : new Set(),
-      );
+      // a file picked during the fade is newer and has to survive
+      setLayers((prev) => prev.filter((l) => l.id >= layer.id));
+      setLoadedIds((prev) => new Set([...prev].filter((id) => id >= layer.id)));
     }, FADE_MS + 60);
   };
 

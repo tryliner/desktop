@@ -42,7 +42,8 @@ interface CustomBackgroundState extends CustomBackgroundSettings {
   setPanelTransparency: (value: number) => void;
   setUseCoversOnPages: (value: boolean) => void;
   setMediaFile: (file: File) => Promise<BackgroundFileError | null>;
-  removeMedia: () => Promise<void>;
+  /** false when the stored file couldn't be deleted; state is left as is */
+  removeMedia: () => Promise<boolean>;
   loadMedia: () => Promise<void>;
 }
 
@@ -270,11 +271,17 @@ export const useCustomBackgroundStore = create<CustomBackgroundState>()(
         },
 
         removeMedia: async () => {
+          // also stops a startup load that is still in flight
           mediaToken++;
+          try {
+            await deleteBackgroundMedia();
+          } catch {
+            return false;
+          }
           const previous = get().mediaUrl;
           set({ media: null, mediaUrl: null });
           revokeLater(previous);
-          await deleteBackgroundMedia();
+          return true;
         },
 
         loadMedia: async () => {

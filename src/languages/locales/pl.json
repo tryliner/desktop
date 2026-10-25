@@ -674,6 +674,7 @@
       "error_type": "Ten typ pliku nie jest obsługiwany",
       "error_size": "Plik jest za duży (maks. 30 MB)",
       "error_save": "Nie udało się zapisać tła",
+      "error_remove": "Nie udało się usunąć tła",
       "preview_alt": "Podgląd tła"
     },
     "branding": {

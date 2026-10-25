@@ -672,6 +672,7 @@
       "error_type": "Ce type de fichier n'est pas pris en charge",
       "error_size": "Le fichier est trop volumineux (30 Mo max.)",
       "error_save": "Impossible d'enregistrer l'arrière-plan",
+      "error_remove": "Impossible de supprimer l'arrière-plan",
       "preview_alt": "Aperçu de l'arrière-plan"
     },
     "branding": {

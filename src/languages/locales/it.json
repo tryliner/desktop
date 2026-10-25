@@ -670,6 +670,7 @@
       "error_type": "Questo tipo di file non è supportato",
       "error_size": "Il file è troppo grande (max 30 MB)",
       "error_save": "Impossibile salvare lo sfondo",
+      "error_remove": "Impossibile rimuovere lo sfondo",
       "preview_alt": "Anteprima dello sfondo"
     },
     "branding": {

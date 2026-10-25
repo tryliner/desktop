@@ -106,6 +106,39 @@ describe("WallpaperBackground", () => {
     expect(canvas.style.display).toBe("");
   });
 
+  it("keeps a file picked while the previous one is still fading in", () => {
+    vi.useFakeTimers();
+    try {
+      setMedia("image/png", "blob:test/a");
+      act(() => root.render(<WallpaperBackground visible paused={false} />));
+      act(() =>
+        container.querySelector("img")!.dispatchEvent(new Event("load")),
+      );
+
+      // pick another file before the cleanup for the first one has run
+      act(() =>
+        useCustomBackgroundStore.setState({
+          mediaUrl: "blob:test/b",
+          media: {
+            kind: "image",
+            type: "image/png",
+            name: "b",
+            size: 1,
+            savedAt: 2,
+          },
+        }),
+      );
+      act(() => vi.runAllTimers());
+
+      const srcs = [...container.querySelectorAll("img")].map((img) =>
+        img.getAttribute("src"),
+      );
+      expect(srcs).toContain("blob:test/b");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("applies blur and dimming", () => {
     setMedia("image/jpeg", "blob:test/jpg");
     useCustomBackgroundStore.setState({ blur: 20, dim: 40 });

@@ -112,12 +112,13 @@ export async function loadBackgroundMedia(): Promise<BackgroundMediaRecord | nul
   }
 }
 
+// rejects when the record couldn't be deleted, so callers don't report a
+// removal that would come back on the next start
 export async function deleteBackgroundMedia(): Promise<void> {
-  memRecord = null;
-  if (!hasIndexedDb()) return;
-  try {
+  if (hasIndexedDb()) {
     await run("readwrite", (store) => store.delete(ACTIVE_KEY));
-  } catch {}
+  }
+  memRecord = null;
 }
 
 export function dataUrlToBlob(dataUrl: string): Blob | null {

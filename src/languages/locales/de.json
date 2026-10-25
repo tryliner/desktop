@@ -614,6 +614,7 @@
       "error_type": "Dieser Dateityp wird nicht unterstützt",
       "error_size": "Die Datei ist zu groß (max. 30 MB)",
       "error_save": "Hintergrund konnte nicht gespeichert werden",
+      "error_remove": "Hintergrund konnte nicht entfernt werden",
       "preview_alt": "Hintergrundvorschau"
     },
     "branding": {
