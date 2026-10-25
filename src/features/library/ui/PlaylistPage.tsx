@@ -182,17 +182,19 @@ function LibraryPlaylistContent() {
     try {
       const isLiked = isAllLiked();
       const mutation = isLiked ? unlikeMutation : likeMutation;
+      const likedIds = new Set((likesData?.tracks ?? []).map((t) => t.id));
+      const targets = isLiked ? tracks : tracks.filter((item) => !likedIds.has(item.id));
 
       const BATCH_SIZE = 1;
       const DELAY_MS = 375;
 
-      for (let i = 0; i < tracks.length; i += BATCH_SIZE) {
-        const chunk = tracks.slice(i, i + BATCH_SIZE);
+      for (let i = 0; i < targets.length; i += BATCH_SIZE) {
+        const chunk = targets.slice(i, i + BATCH_SIZE);
         await Promise.all(
           chunk.map((item) => mutation.mutateAsync(item.id))
         );
 
-        if (i + BATCH_SIZE < tracks.length) {
+        if (i + BATCH_SIZE < targets.length) {
           await delay(DELAY_MS);
         }
       }
