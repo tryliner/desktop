@@ -1,5 +1,28 @@
-import { describe, expect, it } from "vitest";
-import { markSelectedAccount, parseYoutubeAccounts } from "./youtubeAccount";
+import { afterEach, describe, expect, it, vi } from "vitest";
+
+const { postInnertube, getYoutubePageId, selectYoutubePageId } = vi.hoisted(
+  () => ({
+    postInnertube: vi.fn(),
+    getYoutubePageId: vi.fn(),
+    selectYoutubePageId: vi.fn(),
+  }),
+);
+
+vi.mock("../innertube/innertubeClient", () => ({ postInnertube }));
+vi.mock("./youtubeAuthSession", () => ({
+  getYoutubePageId,
+  selectYoutubePageId,
+}));
+
+import {
+  fetchYoutubeAccounts,
+  markSelectedAccount,
+  parseYoutubeAccounts,
+} from "./youtubeAccount";
+
+afterEach(() => {
+  vi.clearAllMocks();
+});
 
 function accountItem(name: string, pageId?: string, isSelected = false) {
   return {
@@ -63,5 +86,33 @@ describe("youtube accounts", () => {
         { name: "Main" },
       ]);
     }
+  });
+});
+
+describe("fetchYoutubeAccounts", () => {
+  it("drops a stored brand account that youtube no longer lists", async () => {
+    postInnertube.mockResolvedValue(body);
+    getYoutubePageId.mockReturnValue("gone");
+    const accounts = await fetchYoutubeAccounts();
+    expect(selectYoutubePageId).toHaveBeenCalledWith(null);
+    expect(accounts.filter((account) => account.isSelected)).toMatchObject([
+      { name: "Main" },
+    ]);
+  });
+
+  it("keeps a stored brand account that is still listed", async () => {
+    postInnertube.mockResolvedValue(body);
+    getYoutubePageId.mockReturnValue("222");
+    await fetchYoutubeAccounts();
+    expect(selectYoutubePageId).not.toHaveBeenCalled();
+  });
+
+  it("keeps the stored brand account when the list is empty or fails", async () => {
+    getYoutubePageId.mockReturnValue("222");
+    postInnertube.mockResolvedValueOnce({});
+    await expect(fetchYoutubeAccounts()).resolves.toEqual([]);
+    postInnertube.mockRejectedValueOnce(new Error("offline"));
+    await expect(fetchYoutubeAccounts()).rejects.toThrow("offline");
+    expect(selectYoutubePageId).not.toHaveBeenCalled();
   });
 });

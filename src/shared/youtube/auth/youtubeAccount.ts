@@ -8,7 +8,7 @@ import {
 import { getText } from "../innertube/innertubeJson";
 import { postInnertube } from "../innertube/innertubeClient";
 import { TV_ACCOUNT_PROFILE } from "../innertube/playbackProfiles";
-import { getYoutubePageId } from "./youtubeAuthSession";
+import { getYoutubePageId, selectYoutubePageId } from "./youtubeAuthSession";
 
 export interface YoutubeAccount {
   name: string;
@@ -95,7 +95,15 @@ export async function fetchYoutubeAccounts(
     },
     { profile: TV_ACCOUNT_PROFILE, signal },
   );
-  return markSelectedAccount(parseYoutubeAccounts(body), getYoutubePageId());
+  const accounts = parseYoutubeAccounts(body);
+  const pageId = getYoutubePageId();
+  if (
+    pageId &&
+    accounts.length > 0 &&
+    !accounts.some((account) => account.pageId === pageId)
+  )
+    selectYoutubePageId(null);
+  return markSelectedAccount(accounts, pageId);
 }
 
 export function selectedYoutubeAccount(
