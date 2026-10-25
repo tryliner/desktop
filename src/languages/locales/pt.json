@@ -457,6 +457,7 @@
     "support": "Suporte",
     "manage_account": "Gerenciar conta",
     "tabs": {
+      "audio": "Áudio",
       "general": "Geral",
       "appearance": "Aparência",
       "storage": "Cache e armazenamento",
@@ -734,6 +735,58 @@
       "vhs": "Cromo"
     },
     "audio": {
+      "description": "Ajuste o som com um equalizador de dez bandas e perfis locais de aprimoramento.",
+      "enhancer": {
+        "title": "Alta qualidade",
+        "description": "Perfis DSP locais em tempo real inspirados no Riff. Eles ajustam o timbre e a dinâmica, mas não recuperam detalhes ausentes da fonte.",
+        "engine_label": "Motor de aprimoramento",
+        "engine_description": "Os perfis funcionam localmente com filtros Web Audio, saturação harmônica, compressão e limitador. Nenhum arquivo de modelo é baixado.",
+        "engines": {
+          "hqmusic_3": "hqmusic-3 (Restauração harmônica)",
+          "glyphs_7b": "glyphs-7B (Presença de estúdio)",
+          "fyro_1_1": "fyro1.1 (Profundidade dinâmica)"
+        },
+        "presets": {
+          "title": "Predefinição de aprimoramento",
+          "description": "Escolha valores iniciais para os três controles de aprimoramento.",
+          "studio": "Estúdio",
+          "vinyl": "Vinil",
+          "concert": "Concerto"
+        }
+      },
+      "vocal_clarity": {
+        "title": "Clareza vocal",
+        "description": "Ajuste a presença em torno de 2,5 kHz até ±4 dB."
+      },
+      "high_end_air": {
+        "title": "Ar nos agudos",
+        "description": "Ajuste os agudos em torno de 9 kHz até ±4 dB."
+      },
+      "bass_depth": {
+        "title": "Profundidade dos graves",
+        "description": "Ajuste os graves em torno de 80 Hz até ±4 dB."
+      },
+      "equalizer": {
+        "title": "Equalizador",
+        "description": "Ajuste dez bandas de 32 Hz a 16 kHz, até ±12 dB por banda.",
+        "bands_title": "Equalizador de 10 bandas",
+        "bands_description": "Arraste os controles verticais ou selecione um controle e use as setas do teclado.",
+        "flat": "Plano"
+      },
+      "low": {
+        "title": "Graves"
+      },
+      "mid": {
+        "title": "Médios"
+      },
+      "high": {
+        "title": "Agudos"
+      },
+      "reset_band": "Redefinir banda",
+      "reset": {
+        "title": "Repor efeitos de áudio",
+        "description": "Repõe EQ, melhoria, velocidade, tom e reverberação. O volume não muda."
+      },
       "pause_on_device_change": {
         "title": "Pausar ao trocar de dispositivo",
         "description": "Pausa automaticamente a reprodução quando o dispositivo de saída de áudio muda."

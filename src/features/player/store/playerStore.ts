@@ -2,6 +2,19 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import type { Track } from "@/shared/types";
 import { debouncedStorage } from "@/shared/utils/storage";
+import {
+  DEFAULT_AUDIO_SETTINGS,
+  ENHANCEMENT_PARAMETER_MAX,
+  ENHANCEMENT_PARAMETER_MIN,
+  EQUALIZER_GAIN_LIMIT,
+  clampAudioValue,
+  getEqualizerBandIndex,
+  sanitizeAudioSettings,
+  type AudioSettings,
+  type EnhancementEngine,
+  type EnhancementPreset,
+  type EqualizerBand,
+} from "./audioSettings";
 
 export { debouncedStorage };
 
@@ -45,7 +58,7 @@ export interface QueueState {
   playbackContextCover: string | null;
 }
 
-export interface SessionState {
+export interface SessionState extends AudioSettings {
   volume: number;
   repeat: RepeatMode;
   shuffle: boolean;
@@ -117,6 +130,15 @@ export interface PlayerStore extends PlayerState {
   setKeepSpeedAcrossTracks: (keep: boolean) => void;
   setIsReverbEnabled: (enabled: boolean) => void;
   setReverbLevel: (level: number) => void;
+  setIsEqualizerEnabled: (enabled: boolean) => void;
+  setEqualizerBand: (band: EqualizerBand, gain: number) => void;
+  setIsEnhancerEnabled: (enabled: boolean) => void;
+  setEnhancementEngine: (engine: EnhancementEngine) => void;
+  setEnhancementPreset: (preset: EnhancementPreset) => void;
+  setVocalClarity: (clarity: number) => void;
+  setHighEndAir: (air: number) => void;
+  setBassDepth: (depth: number) => void;
+  resetAudioEffects: () => void;
   resetSpeedAndPitch: () => void;
   clearQueue: () => void;
   resetPlayback: () => void;
@@ -144,6 +166,7 @@ export const usePlayerStore = create<PlayerStore>()(
       playbackContextCover: null,
 
       // SessionSlice
+      ...DEFAULT_AUDIO_SETTINGS,
       volume: 1,
       repeat: "off",
       shuffle: false,
@@ -214,6 +237,67 @@ export const usePlayerStore = create<PlayerStore>()(
         set({ isReverbEnabled }),
       setReverbLevel: (reverbLevel: number) =>
         set({ reverbLevel: Math.max(0, Math.min(1, reverbLevel)) }),
+      setIsEqualizerEnabled: (isEqualizerEnabled) =>
+        set({ isEqualizerEnabled }),
+      setEqualizerBand: (band, gain) => {
+        const index = getEqualizerBandIndex(band);
+        set((state) => {
+          const equalizerBands = [...state.equalizerBands];
+          equalizerBands[index] = clampAudioValue(
+            gain,
+            -EQUALIZER_GAIN_LIMIT,
+            EQUALIZER_GAIN_LIMIT,
+          );
+          return { equalizerBands };
+        });
+      },
+      setIsEnhancerEnabled: (isEnhancerEnabled) => set({ isEnhancerEnabled }),
+      setEnhancementEngine: (enhancementEngine) => set({ enhancementEngine }),
+      setEnhancementPreset: (enhancementPreset) => {
+        const values = {
+          studio: { vocalClarity: 0, highEndAir: 0, bassDepth: 0 },
+          vinyl: { vocalClarity: 15, highEndAir: -15, bassDepth: 25 },
+          concert: { vocalClarity: -10, highEndAir: 30, bassDepth: 15 },
+          custom: {},
+        } as const;
+        set({ enhancementPreset, ...values[enhancementPreset] });
+      },
+      setVocalClarity: (vocalClarity) =>
+        set({
+          vocalClarity: clampAudioValue(
+            vocalClarity,
+            ENHANCEMENT_PARAMETER_MIN,
+            ENHANCEMENT_PARAMETER_MAX,
+          ),
+          enhancementPreset: "custom",
+        }),
+      setHighEndAir: (highEndAir) =>
+        set({
+          highEndAir: clampAudioValue(
+            highEndAir,
+            ENHANCEMENT_PARAMETER_MIN,
+            ENHANCEMENT_PARAMETER_MAX,
+          ),
+          enhancementPreset: "custom",
+        }),
+      setBassDepth: (depth) =>
+        set({
+          bassDepth: clampAudioValue(
+            depth,
+            ENHANCEMENT_PARAMETER_MIN,
+            ENHANCEMENT_PARAMETER_MAX,
+          ),
+          enhancementPreset: "custom",
+        }),
+      resetAudioEffects: () =>
+        set({
+          ...DEFAULT_AUDIO_SETTINGS,
+          playbackRate: 1,
+          pitchSemitones: 0,
+          isPitchLinked: true,
+          isReverbEnabled: false,
+          reverbLevel: 0.35,
+        }),
       resetSpeedAndPitch: () => set({ playbackRate: 1, pitchSemitones: 0 }),
       resetPlayback: () =>
         set({
@@ -279,6 +363,7 @@ export const usePlayerStore = create<PlayerStore>()(
           state.accentVariant = "default";
         }
         if (state) {
+          Object.assign(state, sanitizeAudioSettings(state));
           if (
             typeof state.playbackRate !== "number" ||
             isNaN(state.playbackRate)
@@ -321,6 +406,14 @@ export const usePlayerStore = create<PlayerStore>()(
               durationMs: state.durationMs,
             }
           : {}),
+        isEqualizerEnabled: state.isEqualizerEnabled,
+        equalizerBands: state.equalizerBands,
+        isEnhancerEnabled: state.isEnhancerEnabled,
+        enhancementEngine: state.enhancementEngine,
+        enhancementPreset: state.enhancementPreset,
+        vocalClarity: state.vocalClarity,
+        highEndAir: state.highEndAir,
+        bassDepth: state.bassDepth,
         repeat: state.repeat,
         shuffle: state.shuffle,
         volume: state.volume,

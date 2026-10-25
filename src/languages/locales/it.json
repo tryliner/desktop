@@ -445,6 +445,7 @@
     "support": "Supporto",
     "manage_account": "Gestisci account",
     "tabs": {
+      "audio": "Audio",
       "general": "Generale",
       "appearance": "Aspetto",
       "storage": "Cache e archiviazione",
@@ -671,6 +672,58 @@
       "vhs": "Cromo"
     },
     "audio": {
+      "description": "Modella il suono con un equalizzatore a dieci bande e profili locali.",
+      "enhancer": {
+        "title": "Alta qualità",
+        "description": "Profili DSP locali in tempo reale ispirati a Riff. Modellano timbro e dinamica, ma non recuperano dettagli mancanti dalla sorgente.",
+        "engine_label": "Motore di miglioramento",
+        "engine_description": "I profili funzionano localmente con filtri Web Audio, saturazione armonica, compressione e limiter. Non vengono scaricati file modello.",
+        "engines": {
+          "hqmusic_3": "hqmusic-3 (Restauro armonico)",
+          "glyphs_7b": "glyphs-7B (Presenza studio)",
+          "fyro_1_1": "fyro1.1 (Profondità dinamica)"
+        },
+        "presets": {
+          "title": "Preset di miglioramento",
+          "description": "Scegli i valori iniziali per i tre controlli di miglioramento.",
+          "studio": "Studio",
+          "vinyl": "Vinile",
+          "concert": "Concerto"
+        }
+      },
+      "vocal_clarity": {
+        "title": "Chiarezza vocale",
+        "description": "Regola la presenza intorno a 2,5 kHz fino a ±4 dB."
+      },
+      "high_end_air": {
+        "title": "Aria sugli alti",
+        "description": "Regola la gamma alta intorno a 9 kHz fino a ±4 dB."
+      },
+      "bass_depth": {
+        "title": "Profondità dei bassi",
+        "description": "Regola la gamma bassa intorno a 80 Hz fino a ±4 dB."
+      },
+      "equalizer": {
+        "title": "Equalizzatore",
+        "description": "Regola dieci bande da 32 Hz a 16 kHz, fino a ±12 dB per banda.",
+        "bands_title": "Equalizzatore a 10 bande",
+        "bands_description": "Trascina i cursori verticali o selezionali e usa i tasti freccia.",
+        "flat": "Piatto"
+      },
+      "low": {
+        "title": "Bassi"
+      },
+      "mid": {
+        "title": "Medi"
+      },
+      "high": {
+        "title": "Alti"
+      },
+      "reset_band": "Reimposta banda",
+      "reset": {
+        "title": "Ripristina effetti audio",
+        "description": "Ripristina EQ, miglioramento, velocità, tonalità e riverbero. Il volume resta invariato."
+      },
       "pause_on_device_change": {
         "title": "Pausa al cambio di dispositivo",
         "description": "Metti automaticamente in pausa la riproduzione quando cambia il dispositivo di uscita audio."

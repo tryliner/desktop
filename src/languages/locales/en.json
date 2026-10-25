@@ -453,6 +453,7 @@
     "support": "Support",
     "manage_account": "Manage account",
     "tabs": {
+      "audio": "Audio",
       "general": "General",
       "appearance": "Appearance",
       "storage": "Cache & Storage",
@@ -751,6 +752,58 @@
       "vhs": "Chrome"
     },
     "audio": {
+      "description": "Shape your sound with a ten-band EQ and local enhancement profiles.",
+      "enhancer": {
+        "title": "High Quality",
+        "description": "Local real-time DSP profiles inspired by Riff. They shape tone and dynamics; they do not restore missing source detail.",
+        "engine_label": "Enhancement engine",
+        "engine_description": "These profiles run locally with Web Audio filters, harmonic saturation, compression, and limiting. No model files are downloaded.",
+        "engines": {
+          "hqmusic_3": "hqmusic-3 (Harmonic Restorer)",
+          "glyphs_7b": "glyphs-7B (Studio Presence)",
+          "fyro_1_1": "fyro1.1 (Dynamic Depth)"
+        },
+        "presets": {
+          "title": "Enhancement preset",
+          "description": "Choose a starting curve for the three enhancement controls.",
+          "studio": "Studio",
+          "vinyl": "Vinyl",
+          "concert": "Concert"
+        }
+      },
+      "vocal_clarity": {
+        "title": "Vocal Clarity",
+        "description": "Adjust presence around 2.5 kHz, up to ±4 dB."
+      },
+      "high_end_air": {
+        "title": "High-End Air",
+        "description": "Adjust the high shelf around 9 kHz, up to ±4 dB."
+      },
+      "bass_depth": {
+        "title": "Bass Depth",
+        "description": "Adjust the low shelf around 80 Hz, up to ±4 dB."
+      },
+      "equalizer": {
+        "title": "Equalizer",
+        "description": "Shape ten frequency bands from 32 Hz to 16 kHz, with up to ±12 dB per band.",
+        "bands_title": "10-band Equalizer",
+        "bands_description": "Drag a vertical slider or focus it and use the arrow keys.",
+        "flat": "Flat"
+      },
+      "low": {
+        "title": "Low"
+      },
+      "mid": {
+        "title": "Mid"
+      },
+      "high": {
+        "title": "High"
+      },
+      "reset_band": "Reset band",
+      "reset": {
+        "title": "Reset audio effects",
+        "description": "Reset EQ, enhancement, speed, pitch, and reverb. Volume stays unchanged."
+      },
       "pause_on_device_change": {
         "title": "Pause on device change",
         "description": "Automatically pause playback when the audio output device changes."

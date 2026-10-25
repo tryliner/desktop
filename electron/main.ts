@@ -54,6 +54,7 @@ import { registerAuthSessionIpc } from "./auth-session-ipc.js";
 import { ThumbarController } from "./thumbar.js";
 import { OverlayManager } from "./overlay.js";
 import { detectCompositor } from "./compositor/index.js";
+import { getRendererMode } from "./renderer-mode.js";
 import { BundleManager } from "./bundle-manager.js";
 import { createBundleErrorStamp } from "./bundle-stamp.js";
 import { createSleepBlocker } from "./sleep-blocker.js";
@@ -364,8 +365,18 @@ function createWindow() {
     }
   });
 
-  if (process.env.VITE_DEV_SERVER_URL) {
-    mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL);
+  const rendererMode = getRendererMode({
+    devServerUrl: process.env.VITE_DEV_SERVER_URL,
+    // Only local test bundles carry this marker. Cached OTA UI must not hide
+    // the changes being tested; normal releases keep their existing updater.
+    localTestBuild: fs.existsSync(
+      path.join(process.resourcesPath, "liner-local-test"),
+    ),
+  });
+  if (rendererMode === "development") {
+    mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL!);
+  } else if (rendererMode === "bundled") {
+    mainWindow.loadFile(path.join(RENDERER_DIST, "index.html"));
   } else {
     bundleManager = new BundleManager({
       defaultRendererDist: RENDERER_DIST,
@@ -1895,8 +1906,13 @@ if (!gotTheLock) {
       };
     });
 
-    // automatic update check after window initialization (packaged app only)
-    if (app.isPackaged) {
+    // Local test bundles have no release update feed; automatic checks would
+    // fail on their intentionally omitted app-update.yml. Normal OTA builds keep
+    // the standard background update check.
+    if (
+      app.isPackaged &&
+      !fs.existsSync(path.join(process.resourcesPath, "liner-local-test"))
+    ) {
       setTimeout(() => {
         autoUpdater.checkForUpdates().catch((err) => {
           console.error(

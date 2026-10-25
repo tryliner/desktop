@@ -94,7 +94,14 @@ export class PlayerRuntime {
         state.isPitchLinked !== prevState.isPitchLinked ||
         state.pitchSemitones !== prevState.pitchSemitones ||
         state.isReverbEnabled !== prevState.isReverbEnabled ||
-        state.reverbLevel !== prevState.reverbLevel
+        state.reverbLevel !== prevState.reverbLevel ||
+        state.isEqualizerEnabled !== prevState.isEqualizerEnabled ||
+        state.equalizerBands !== prevState.equalizerBands ||
+        state.isEnhancerEnabled !== prevState.isEnhancerEnabled ||
+        state.enhancementEngine !== prevState.enhancementEngine ||
+        state.vocalClarity !== prevState.vocalClarity ||
+        state.highEndAir !== prevState.highEndAir ||
+        state.bassDepth !== prevState.bassDepth
       ) {
         const rate = state.playbackRate ?? 1;
         const preservesPitch = !state.isPitchLinked;
@@ -489,7 +496,11 @@ export class PlayerRuntime {
       const isReverbEnabled = store.isReverbEnabled ?? false;
       const reverbLevel = store.reverbLevel ?? 0.35;
       const needsEffects =
-        isReverbEnabled || (!isPitchLinked && Math.abs(pitchSemitones) >= 0.05);
+        isReverbEnabled ||
+        (!isPitchLinked && Math.abs(pitchSemitones) >= 0.05) ||
+        (store.isEqualizerEnabled &&
+          store.equalizerBands.some((gain) => gain !== 0)) ||
+        store.isEnhancerEnabled;
       if (!needsEffects && !pitchShifter.isAttached()) return;
       pitchShifter.attach(this.audio);
       pitchShifter.update({
@@ -497,6 +508,14 @@ export class PlayerRuntime {
         isPitchLinked,
         isReverbEnabled,
         reverbLevel,
+        isEqualizerEnabled: store.isEqualizerEnabled,
+        equalizerBands: store.equalizerBands,
+        isEnhancerEnabled: store.isEnhancerEnabled,
+        enhancementEngine: store.enhancementEngine,
+        enhancementPreset: store.enhancementPreset,
+        vocalClarity: store.vocalClarity,
+        highEndAir: store.highEndAir,
+        bassDepth: store.bassDepth,
       });
     } catch (err) {
       console.error("[PlayerRuntime] applyPlaybackRateAndPitch error:", err);

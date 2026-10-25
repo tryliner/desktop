@@ -1,7 +1,9 @@
 import { useSyncExternalStore } from "react";
 import { playerEngine, type PlayerState } from "../engine/playerEngine";
+import { DEFAULT_AUDIO_SETTINGS } from "../store/audioSettings";
 
 const EMPTY_STATE: PlayerState = {
+  ...DEFAULT_AUDIO_SETTINGS,
   status: "idle",
   queue: [],
   currentIndex: -1,

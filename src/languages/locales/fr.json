@@ -447,6 +447,7 @@
     "support": "Assistance",
     "manage_account": "Gérer le compte",
     "tabs": {
+      "audio": "Audio",
       "general": "Général",
       "appearance": "Apparence",
       "storage": "Cache et stockage",
@@ -673,6 +674,58 @@
       "vhs": "Chrome"
     },
     "audio": {
+      "description": "Réglez le son avec un égaliseur à dix bandes et des profils locaux.",
+      "enhancer": {
+        "title": "Haute qualité",
+        "description": "Profils DSP locaux en temps réel inspirés de Riff. Ils modifient le timbre et la dynamique, sans restaurer les détails absents de la source.",
+        "engine_label": "Moteur d’amélioration",
+        "engine_description": "Les profils fonctionnent localement avec les filtres Web Audio, la saturation harmonique, la compression et le limiteur. Aucun fichier de modèle n’est téléchargé.",
+        "engines": {
+          "hqmusic_3": "hqmusic-3 (Restauration harmonique)",
+          "glyphs_7b": "glyphs-7B (Présence studio)",
+          "fyro_1_1": "fyro1.1 (Profondeur dynamique)"
+        },
+        "presets": {
+          "title": "Préréglage d’amélioration",
+          "description": "Choisissez les valeurs de départ des trois réglages.",
+          "studio": "Studio",
+          "vinyl": "Vinyle",
+          "concert": "Concert"
+        }
+      },
+      "vocal_clarity": {
+        "title": "Clarté des voix",
+        "description": "Réglez la présence autour de 2,5 kHz jusqu’à ±4 dB."
+      },
+      "high_end_air": {
+        "title": "Air dans les aigus",
+        "description": "Réglez les aigus autour de 9 kHz jusqu’à ±4 dB."
+      },
+      "bass_depth": {
+        "title": "Profondeur des basses",
+        "description": "Réglez les basses autour de 80 Hz jusqu’à ±4 dB."
+      },
+      "equalizer": {
+        "title": "Égaliseur",
+        "description": "Réglez dix bandes de 32 Hz à 16 kHz, jusqu’à ±12 dB par bande.",
+        "bands_title": "Égaliseur 10 bandes",
+        "bands_description": "Faites glisser les curseurs verticaux ou utilisez les flèches du clavier.",
+        "flat": "Neutre"
+      },
+      "low": {
+        "title": "Graves"
+      },
+      "mid": {
+        "title": "Médiums"
+      },
+      "high": {
+        "title": "Aigus"
+      },
+      "reset_band": "Réinitialiser la bande",
+      "reset": {
+        "title": "Réinitialiser les effets audio",
+        "description": "Réinitialise l’égaliseur, l’amélioration, la vitesse, la hauteur et la réverbération. Le volume reste inchangé."
+      },
       "pause_on_device_change": {
         "title": "Pause au changement de périphérique",
         "description": "Met automatiquement la lecture en pause quand la sortie audio change."

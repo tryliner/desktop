@@ -450,6 +450,7 @@
     "support": "Support",
     "manage_account": "Konto verwalten",
     "tabs": {
+      "audio": "Audio",
       "general": "Allgemein",
       "appearance": "Darstellung",
       "storage": "Cache & Speicher",
@@ -616,6 +617,58 @@
       "vhs": "Chrome"
     },
     "audio": {
+      "description": "Passe deinen Klang mit einem zehnbandigen EQ und lokalen Klangprofilen an.",
+      "enhancer": {
+        "title": "Hohe Qualität",
+        "description": "Lokale DSP-Profile in Echtzeit, inspiriert von Riff. Sie formen Klang und Dynamik, stellen aber keine fehlenden Quelldetails wieder her.",
+        "engine_label": "Klangprofil",
+        "engine_description": "Die Profile laufen lokal mit Web Audio-Filtern, harmonischer Sättigung, Kompression und Limiter. Es werden keine Modelldateien geladen.",
+        "engines": {
+          "hqmusic_3": "hqmusic-3 (Harmonische Restauration)",
+          "glyphs_7b": "glyphs-7B (Studio-Präsenz)",
+          "fyro_1_1": "fyro1.1 (Dynamische Tiefe)"
+        },
+        "presets": {
+          "title": "Klangvoreinstellung",
+          "description": "Wähle Ausgangswerte für die drei Klangregler.",
+          "studio": "Studio",
+          "vinyl": "Vinyl",
+          "concert": "Konzert"
+        }
+      },
+      "vocal_clarity": {
+        "title": "Klarheit der Stimme",
+        "description": "Präsenz um 2,5 kHz um bis zu ±4 dB anpassen."
+      },
+      "high_end_air": {
+        "title": "Höhenluft",
+        "description": "Höhenregler um 9 kHz um bis zu ±4 dB anpassen."
+      },
+      "bass_depth": {
+        "title": "Basstiefe",
+        "description": "Tiefenregler um 80 Hz um bis zu ±4 dB anpassen."
+      },
+      "equalizer": {
+        "title": "Equalizer",
+        "description": "Zehn Frequenzbänder von 32 Hz bis 16 kHz mit bis zu ±12 dB pro Band anpassen.",
+        "bands_title": "10-Band-Equalizer",
+        "bands_description": "Ziehe die vertikalen Regler oder fokussiere einen Regler und nutze die Pfeiltasten.",
+        "flat": "Neutral"
+      },
+      "low": {
+        "title": "Tiefen"
+      },
+      "mid": {
+        "title": "Mitten"
+      },
+      "high": {
+        "title": "Höhen"
+      },
+      "reset_band": "Band zurücksetzen",
+      "reset": {
+        "title": "Audioeffekte zurücksetzen",
+        "description": "Setzt EQ, Klangverbesserung, Tempo, Tonhöhe und Hall zurück. Die Lautstärke bleibt gleich."
+      },
       "pause_on_device_change": {
         "title": "Bei Gerätewechsel pausieren",
         "description": "Pausiert die Wiedergabe automatisch, wenn sich das Audioausgabegerät ändert."

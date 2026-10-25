@@ -445,6 +445,7 @@
     "support": "Destek",
     "manage_account": "Hesabı yönet",
     "tabs": {
+      "audio": "Ses",
       "general": "Genel",
       "appearance": "Görünüm",
       "storage": "Önbellek ve Depolama",
@@ -671,6 +672,58 @@
       "vhs": "Krom"
     },
     "audio": {
+      "description": "On bantlı ekolayzır ve yerel ses profilleriyle sesi şekillendirin.",
+      "enhancer": {
+        "title": "Yüksek Kalite",
+        "description": "Riff’ten esinlenen yerel, gerçek zamanlı DSP profilleri. Tonu ve dinamikleri şekillendirir; kaynakta bulunmayan ayrıntıları geri getirmez.",
+        "engine_label": "Ses iyileştirme motoru",
+        "engine_description": "Profiller Web Audio filtreleri, harmonik doygunluk, kompresör ve limiter ile yerel çalışır. Model dosyası indirilmez.",
+        "engines": {
+          "hqmusic_3": "hqmusic-3 (Harmonik Onarım)",
+          "glyphs_7b": "glyphs-7B (Stüdyo Varlığı)",
+          "fyro_1_1": "fyro1.1 (Dinamik Derinlik)"
+        },
+        "presets": {
+          "title": "İyileştirme ön ayarı",
+          "description": "Üç iyileştirme denetimi için başlangıç değerlerini seçin.",
+          "studio": "Stüdyo",
+          "vinyl": "Plak",
+          "concert": "Konser"
+        }
+      },
+      "vocal_clarity": {
+        "title": "Vokal Netliği",
+        "description": "2,5 kHz çevresindeki vokal varlığını ±4 dB’ye kadar ayarlayın."
+      },
+      "high_end_air": {
+        "title": "Tiz Havadarlığı",
+        "description": "9 kHz çevresindeki tiz rafını ±4 dB’ye kadar ayarlayın."
+      },
+      "bass_depth": {
+        "title": "Bas Derinliği",
+        "description": "80 Hz çevresindeki bas rafını ±4 dB’ye kadar ayarlayın."
+      },
+      "equalizer": {
+        "title": "Ekolayzır",
+        "description": "32 Hz ile 16 kHz arasındaki on bandı, her bantta ±12 dB’ye kadar ayarlayın.",
+        "bands_title": "10 bantlı ekolayzır",
+        "bands_description": "Dikey kaydırıcıları sürükleyin veya odaklayıp ok tuşlarını kullanın.",
+        "flat": "Düz"
+      },
+      "low": {
+        "title": "Bas"
+      },
+      "mid": {
+        "title": "Orta"
+      },
+      "high": {
+        "title": "Tiz"
+      },
+      "reset_band": "Bandı sıfırla",
+      "reset": {
+        "title": "Ses efektlerini sıfırla",
+        "description": "EQ, iyileştirme, hız, perde ve yankıyı sıfırlar. Ses düzeyi değişmez."
+      },
       "pause_on_device_change": {
         "title": "Cihaz değişince duraklat",
         "description": "Ses çıkış cihazı değiştiğinde çalmayı otomatik olarak duraklatır."

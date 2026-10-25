@@ -8,6 +8,7 @@ import {
   DiscordFill,
   KeyboardLine,
   YoutubeFill,
+  VolumeLine,
 } from "@mingcute/react";
 import {
   Play,
@@ -28,6 +29,7 @@ import { useAuthStore } from "@/features/auth";
 import { userDisplayName } from "@/entities/user";
 import {
   PlaybackTab,
+  AudioTab,
   ShortcutsTab,
   AppearanceTab,
   CustomizationTab,
@@ -40,6 +42,7 @@ import {
 
 type TabId =
   | "Playback"
+  | "Audio"
   | "Shortcuts"
   | "Overlay"
   | "Discord"
@@ -54,6 +57,7 @@ const navGroupClass =
 
 const TAB_ICONS: Record<TabId, React.ComponentType<any>> = {
   Playback: Play,
+  Audio: VolumeLine,
   Shortcuts: KeyboardLine,
   Overlay: Widget5,
   Discord: DiscordFill,
@@ -67,7 +71,7 @@ const TAB_ICONS: Record<TabId, React.ComponentType<any>> = {
 type TabGroupKey = "player" | "interface" | "integrations" | "application";
 
 const TAB_GROUPS: { labelKey: TabGroupKey; ids: TabId[] }[] = [
-  { labelKey: "player", ids: ["Playback", "Shortcuts"] },
+  { labelKey: "player", ids: ["Playback", "Audio", "Shortcuts"] },
   { labelKey: "interface", ids: ["Appearance", "Customization", "Overlay"] },
   { labelKey: "integrations", ids: ["Youtube", "Discord"] },
   { labelKey: "application", ids: ["Storage", "About"] },
@@ -95,6 +99,37 @@ const SETTING_ITEMS: { tabId: TabId; titleKey: string; descKey?: string }[] = [
     titleKey: "settings.audio.pause_on_device_change.title",
     descKey: "settings.audio.pause_on_device_change.description",
   },
+
+  ...[
+    "enhancer.title",
+    "enhancer.description",
+    "enhancer.engine_label",
+    "enhancer.engine_description",
+    "enhancer.engines.hqmusic_3",
+    "enhancer.engines.glyphs_7b",
+    "enhancer.engines.fyro_1_1",
+    "enhancer.presets.title",
+    "enhancer.presets.description",
+    "enhancer.presets.studio",
+    "enhancer.presets.vinyl",
+    "enhancer.presets.concert",
+    "vocal_clarity.title",
+    "vocal_clarity.description",
+    "high_end_air.title",
+    "high_end_air.description",
+    "bass_depth.title",
+    "bass_depth.description",
+    "equalizer.title",
+    "equalizer.description",
+    "equalizer.bands_title",
+    "equalizer.bands_description",
+    "equalizer.flat",
+    "reset.title",
+    "reset.description",
+  ].map((item) => ({
+    tabId: "Audio" as const,
+    titleKey: `settings.audio.${item}`,
+  })),
 
   // Shortcuts
   {
@@ -295,6 +330,7 @@ export default function SettingsModal() {
 
   const tabLabels: Record<TabId, string> = {
     Playback: t("settings.tabs.playback"),
+    Audio: t("settings.tabs.audio"),
     Shortcuts: t("settings.tabs.shortcuts") || "Shortcuts",
     Overlay: t("settings.tabs.overlay") || "Overlay",
     Discord: t("settings.tabs.discord") || "Discord RPC",
@@ -307,6 +343,7 @@ export default function SettingsModal() {
 
   const tabDescriptions: Record<TabId, string> = {
     Playback: t("settings.playback.description"),
+    Audio: t("settings.audio.description"),
     Shortcuts:
       t("settings.shortcuts.description") ||
       "System-wide and player keyboard shortcuts.",
@@ -334,6 +371,7 @@ export default function SettingsModal() {
 
     const TAB_LABEL_KEYS: Record<TabId, string> = {
       Playback: "settings.tabs.playback",
+      Audio: "settings.tabs.audio",
       Shortcuts: "settings.tabs.shortcuts",
       Overlay: "settings.tabs.overlay",
       Discord: "settings.tabs.discord",
@@ -346,6 +384,7 @@ export default function SettingsModal() {
 
     const TAB_DESC_KEYS: Record<TabId, string> = {
       Playback: "settings.playback.description",
+      Audio: "settings.audio.description",
       Shortcuts: "settings.shortcuts.description",
       Overlay: "settings.overlay.description",
       Discord: "settings.discord.description",
@@ -644,6 +683,7 @@ export default function SettingsModal() {
               {activeTab === "Playback" && (
                 <PlaybackTab searchQuery={searchQuery} />
               )}
+              {activeTab === "Audio" && <AudioTab searchQuery={searchQuery} />}
               {activeTab === "Shortcuts" && (
                 <ShortcutsTab searchQuery={searchQuery} />
               )}

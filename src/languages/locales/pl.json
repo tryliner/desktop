@@ -449,6 +449,7 @@
     "support": "Pomoc techniczna",
     "manage_account": "Zarządzaj kontem",
     "tabs": {
+      "audio": "Dźwięk",
       "general": "Ogólne",
       "appearance": "Wygląd",
       "storage": "Pamięć podręczna",
@@ -675,6 +676,58 @@
       "vhs": "Chrom"
     },
     "audio": {
+      "description": "Kształtuj dźwięk za pomocą dziesięciopasmowego korektora i lokalnych profili.",
+      "enhancer": {
+        "title": "Wysoka jakość",
+        "description": "Lokalne profile DSP działające w czasie rzeczywistym, inspirowane Riff. Kształtują barwę i dynamikę, ale nie odtwarzają brakujących szczegółów źródła.",
+        "engine_label": "Silnik ulepszania",
+        "engine_description": "Profile działają lokalnie przez Web Audio: filtry, nasycenie harmoniczne, kompresja i limiter. Pliki modeli nie są pobierane.",
+        "engines": {
+          "hqmusic_3": "hqmusic-3 (Odtwarzanie harmonicznych)",
+          "glyphs_7b": "glyphs-7B (Studyjna obecność)",
+          "fyro_1_1": "fyro1.1 (Dynamiczna głębia)"
+        },
+        "presets": {
+          "title": "Preset ulepszania",
+          "description": "Wybierz wartości początkowe dla trzech regulatorów.",
+          "studio": "Studio",
+          "vinyl": "Winyl",
+          "concert": "Koncert"
+        }
+      },
+      "vocal_clarity": {
+        "title": "Wyrazistość wokalu",
+        "description": "Regulacja obecności wokalu w okolicy 2,5 kHz do ±4 dB."
+      },
+      "high_end_air": {
+        "title": "Powietrze w górze",
+        "description": "Regulacja wysokich tonów w okolicy 9 kHz do ±4 dB."
+      },
+      "bass_depth": {
+        "title": "Głębia basu",
+        "description": "Regulacja niskich tonów w okolicy 80 Hz do ±4 dB."
+      },
+      "equalizer": {
+        "title": "Korektor",
+        "description": "Reguluj dziesięć pasm od 32 Hz do 16 kHz, do ±12 dB na pasmo.",
+        "bands_title": "Korektor 10-pasmowy",
+        "bands_description": "Przeciągaj pionowe suwaki lub zaznacz suwak i użyj klawiszy strzałek.",
+        "flat": "Płasko"
+      },
+      "low": {
+        "title": "Niskie"
+      },
+      "mid": {
+        "title": "Średnie"
+      },
+      "high": {
+        "title": "Wysokie"
+      },
+      "reset_band": "Resetuj pasmo",
+      "reset": {
+        "title": "Resetuj efekty dźwiękowe",
+        "description": "Resetuje korektor, wzbogacanie, prędkość, wysokość tonu i pogłos. Głośność pozostaje bez zmian."
+      },
       "pause_on_device_change": {
         "title": "Pauza przy zmianie urządzenia",
         "description": "Automatycznie wstrzymuje odtwarzanie, gdy zmieni się urządzenie wyjściowe audio."
