@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   fetchYoutubeAccountPlaylists,
-  getYoutubeAuthTokens,
+  getYoutubeSessionKey,
   isAlbumPlaylistId,
   onYoutubeAuthChanged,
   useYoutubePreferences,
@@ -18,7 +18,7 @@ const YOUTUBE_ORDER_ORIGIN = Date.UTC(2000, 0, 1);
 
 let cached: LoadedPlaylists | null = null;
 
-const currentSession = () => getYoutubeAuthTokens()?.refreshToken ?? null;
+const currentSession = getYoutubeSessionKey;
 
 function toLibraryItem(
   playlist: YoutubeAccountPlaylist,

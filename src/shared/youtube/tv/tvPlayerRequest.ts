@@ -1,4 +1,4 @@
-import { InnertubeError } from "../innertube/innertubeClient";
+import { buildUserContext, InnertubeError } from "../innertube/innertubeClient";
 import { TV_PROFILE } from "../innertube/playbackProfiles";
 import { USER_AGENT_HEADER_OVERRIDE } from "../innertube/userAgentOverride";
 import type { TvSession } from "./tvWorker";
@@ -58,7 +58,7 @@ export async function requestTvPlayer(
           visitorData: session.visitorData,
           tvAppInfo: { livingRoomPoTokenId: session.livingRoomPoTokenId },
         },
-        user: { lockedSafetyMode: false },
+        user: buildUserContext(request.authorization),
       },
       playbackContext: {
         contentPlaybackContext: {

@@ -1,45 +1,49 @@
 import { useEffect, useState } from "react";
 import {
-  fetchYoutubeAccount,
-  getYoutubeAuthTokens,
+  fetchYoutubeAccounts,
+  getYoutubeSessionKey,
   onYoutubeAuthChanged,
+  selectedYoutubeAccount,
   type YoutubeAccount,
 } from "@/shared/youtube";
 
 export interface YoutubeAccountState {
   signedIn: boolean;
   account: YoutubeAccount | null;
+  accounts: YoutubeAccount[];
   loading: boolean;
 }
 
-interface LoadedAccount {
+interface LoadedAccounts {
   session: string;
-  account: YoutubeAccount | null;
+  accounts: YoutubeAccount[];
 }
 
-const currentSession = () => getYoutubeAuthTokens()?.refreshToken ?? null;
+const currentSession = getYoutubeSessionKey;
 
 export function useYoutubeAccount(): YoutubeAccountState {
   const [session, setSession] = useState(currentSession);
-  const [loaded, setLoaded] = useState<LoadedAccount | null>(null);
+  const [loaded, setLoaded] = useState<LoadedAccounts | null>(null);
 
   useEffect(() => onYoutubeAuthChanged(() => setSession(currentSession())), []);
 
   useEffect(() => {
     if (!session) return;
     const controller = new AbortController();
-    fetchYoutubeAccount(controller.signal)
-      .catch(() => null)
-      .then((account) => {
-        if (!controller.signal.aborted) setLoaded({ session, account });
+    fetchYoutubeAccounts(controller.signal)
+      .catch((): YoutubeAccount[] => [])
+      .then((accounts) => {
+        if (!controller.signal.aborted) setLoaded({ session, accounts });
       });
     return () => controller.abort();
   }, [session]);
 
   const current = session && loaded?.session === session ? loaded : null;
+  const accounts = current?.accounts ?? [];
   return {
     signedIn: session !== null,
-    account: current?.account ?? null,
+    account: selectedYoutubeAccount(accounts),
+    accounts,
     loading: session !== null && current === null,
   };
 }

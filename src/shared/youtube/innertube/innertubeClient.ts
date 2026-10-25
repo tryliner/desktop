@@ -1,5 +1,8 @@
 import { getClientVisitorData, resetClientVisitorData } from "../session/visitorSession";
-import { getYoutubeAuthorization } from "../auth/youtubeAuthSession";
+import {
+  getYoutubeAuthorization,
+  getYoutubePageId,
+} from "../auth/youtubeAuthSession";
 import { USER_AGENT_HEADER_OVERRIDE } from "./userAgentOverride";
 
 export type InnertubeEndpoint =
@@ -60,6 +63,16 @@ function buildClientContext(
   };
 }
 
+export function buildUserContext(
+  authorization: string | null,
+): Record<string, unknown> {
+  const pageId = authorization ? getYoutubePageId() : null;
+  return {
+    lockedSafetyMode: false,
+    ...(pageId ? { onBehalfOfUser: pageId } : {}),
+  };
+}
+
 function buildHeaders(
   profile: InnertubeProfile,
   visitorData: string,
@@ -96,7 +109,7 @@ export async function postInnertube(
       ...body,
       context: {
         client: buildClientContext(profile, visitorData),
-        user: { lockedSafetyMode: false },
+        user: buildUserContext(authorization),
       },
     };
     try {

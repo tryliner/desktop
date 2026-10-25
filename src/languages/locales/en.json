@@ -557,6 +557,7 @@
     },
     "youtube": {
       "description": "Sign in to your YouTube account to prevent playback errors.",
+      "section_account": "Account",
       "section_playback": "Playback",
       "account_playback": {
         "title": "Play through your account",
