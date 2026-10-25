@@ -163,6 +163,8 @@
     "play_next": "Als Nächstes abspielen",
     "like": "Gefällt mir",
     "unlike": "Gefällt mir nicht mehr",
+    "like-all-in-playlist": "Alle Titel liken",
+    "unlike-all-in-playlist": "Alle Titel entliken",
     "add_to_playlist": "Zur Playlist hinzufügen",
     "remove_from_playlist": "Aus der Playlist entfernen",
     "no_items": "Noch keine Einträge",

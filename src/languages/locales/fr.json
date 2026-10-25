@@ -159,6 +159,8 @@
     "play_next": "Lire ensuite",
     "like": "J'aime",
     "unlike": "Je n'aime plus",
+    "like-all-in-playlist": "Tout aimer",
+    "unlike-all-in-playlist": "Tout retirer des favoris",
     "add_to_playlist": "Ajouter à la playlist",
     "remove_from_playlist": "Retirer de la playlist",
     "no_items": "Aucun élément pour l'instant",

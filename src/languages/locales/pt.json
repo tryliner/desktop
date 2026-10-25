@@ -165,6 +165,8 @@
     "play_next": "Reproduzir a seguir",
     "like": "Curtir",
     "unlike": "Remover curtida",
+    "like-all-in-playlist": "Gostar todas as faixas",
+    "unlike-all-in-playlist": "Descurtir todas as faixas",
     "add_to_playlist": "Adicionar à playlist",
     "remove_from_playlist": "Remover da playlist",
     "no_items": "Nenhum item ainda",

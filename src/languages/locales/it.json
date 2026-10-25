@@ -159,6 +159,8 @@
     "play_next": "Riproduci dopo",
     "like": "Mi piace",
     "unlike": "Non mi piace più",
+    "like-all-in-playlist": "Mi piace a tutti",
+    "unlike-all-in-playlist": "Rimuovi mi piace",
     "add_to_playlist": "Aggiungi alla playlist",
     "remove_from_playlist": "Rimuovi dalla playlist",
     "no_items": "Ancora nessun elemento",

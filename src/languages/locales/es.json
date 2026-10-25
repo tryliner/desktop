@@ -161,6 +161,8 @@
     "play_next": "Reproducir a continuación",
     "like": "Me gusta",
     "unlike": "Ya no me gusta",
+    "like-all-in-playlist": "Añadir todas a favoritas",
+    "unlike-all-in-playlist": "Eliminar todas de favoritas",
     "add_to_playlist": "Añadir a lista de reproducción",
     "remove_from_playlist": "Quitar de lista de reproducción",
     "no_items": "Aún no hay elementos",
