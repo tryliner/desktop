@@ -165,6 +165,8 @@
     "play_next": "Play next",
     "like": "Like",
     "unlike": "Unlike",
+    "like-all-in-playlist": "Like all tracks",
+    "unlike-all-in-playlist": "Unlike all tracks",
     "add_to_playlist": "Add to playlist",
     "remove_from_playlist": "Remove from playlist",
     "no_items": "No items yet",

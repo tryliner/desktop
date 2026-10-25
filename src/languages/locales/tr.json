@@ -159,6 +159,8 @@
     "play_next": "Sonra çal",
     "like": "Beğen",
     "unlike": "Beğenmekten vazgeç",
+    "like-all-in-playlist": "Tümünü beğen",
+    "unlike-all-in-playlist": "Beğenileri kaldır",
     "add_to_playlist": "Çalma listesine ekle",
     "remove_from_playlist": "Çalma listesinden kaldır",
     "no_items": "Henüz öğe yok",

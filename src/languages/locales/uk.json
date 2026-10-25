@@ -161,6 +161,8 @@
     "play_next": "Грати наступним",
     "like": "Подобається",
     "unlike": "Прибрати лайк",
+    "like-all-in-playlist": "Вподобати всі треки",
+    "unlike-all-in-playlist": "Прибрати вподобання з усіх треків",
     "add_to_playlist": "Додати в плейліст",
     "remove_from_playlist": "Видалити з плейлісту",
     "no_items": "Ще немає елементів",

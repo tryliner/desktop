@@ -159,6 +159,8 @@
     "play_next": "Odtwórz jako następny",
     "like": "Polub",
     "unlike": "Cofnij polubienie",
+    "like-all-in-playlist": "Polub wszystkie",
+    "unlike-all-in-playlist": "Usuń polubienia",
     "add_to_playlist": "Dodaj do playlisty",
     "remove_from_playlist": "Usuń z playlisty",
     "no_items": "Nic tu jeszcze nie ma",

@@ -40,9 +40,11 @@ import {
   MusicLine,
   CheckLine,
   ShareForwardLine,
+  Search2Line,
+  UserXFill,
 } from "@mingcute/react";
 import { AnimatePresence, motion } from "framer-motion";
-import { LuPencil, LuTrash2, LuText, LuShuffle } from "react-icons/lu";
+import { LuPencil, LuTrash2, LuText, LuShuffle, LuHeart } from "react-icons/lu";
 import { buildShareUrl } from "@/shared/utils/share";
 import Button from "@/shared/ui/Button";
 import DropdownMenu from "@/shared/ui/DropdownMenu";
@@ -65,6 +67,7 @@ import {
   TrackSearchEmpty,
 } from "./TrackSearch";
 import { useTrackSort, TrackSortMenu } from "./TrackSort";
+import { useLikeTrack, useUnlikeTrack } from "../hooks/useLibraryMutations";
 
 interface TrackItemProps {
   track: Track;
@@ -137,6 +140,7 @@ function LibraryPlaylistContent() {
 
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [isEditingDescription, setIsEditingDescription] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const reorderTracks = useReorderPlaylistTracks();
   const titleRef = useRef<HTMLHeadingElement>(null);
   const descriptionRef = useRef<HTMLParagraphElement>(null);
@@ -152,6 +156,50 @@ function LibraryPlaylistContent() {
   );
 
   const isLoading = isLikesMode ? likesLoading : playlistLoading;
+  
+  const tracks = playlistDetail?.tracks ?? [];
+
+  const likeMutation = useLikeTrack();
+  const unlikeMutation = useUnlikeTrack();
+  
+  const isAllLiked = () => {
+    const likedTracks = likesData?.tracks ?? [];
+    const likedIds = new Set(likedTracks.map((t) => t.id))
+
+    for (var track of tracks){
+      if ( !likedIds.has(track.id))
+        return false; 
+    }
+    return true;
+  }
+
+  const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  const handleAllLike = useCallback(async () => {
+    if (isProcessing || isLoading) return;
+
+    setIsProcessing(true);
+    try {
+      const isLiked = isAllLiked();
+      const mutation = isLiked ? unlikeMutation : likeMutation;
+
+      const BATCH_SIZE = 1;
+      const DELAY_MS = 375;
+
+      for (let i = 0; i < tracks.length; i += BATCH_SIZE) {
+        const chunk = tracks.slice(i, i + BATCH_SIZE);
+        await Promise.all(
+          chunk.map((item) => mutation.mutateAsync(item.id))
+        );
+
+        if (i + BATCH_SIZE < tracks.length) {
+          await delay(DELAY_MS);
+        }
+      }
+    }  finally {
+        setIsProcessing(false);
+    }
+  }, [isProcessing, isLoading, isAllLiked, likeMutation, unlikeMutation, tracks]); 
 
   const viewData = (() => {
     if (isLikesMode) {
@@ -755,6 +803,15 @@ function LibraryPlaylistContent() {
                               label: t("common.share"),
                               onClick: handleShare,
                             },
+                            {
+                              id: isAllLiked() ? "unlike-all-tracks" : "like-all-tracks",
+                              icon: <LuHeart 
+                                size={15}
+                                className={isAllLiked() ? "fill-red-500 text-red-500" : "text-text-secondary"} />,
+                              label: isAllLiked() ? t("common.unlike-all-in-playlist") : t("common.like-all-in-playlist"),
+                              onClick: handleAllLike,
+                              disabled: isProcessing,
+                            },
                             {
                               id: "delete",
                               icon: <LuTrash2 size={15} />,
