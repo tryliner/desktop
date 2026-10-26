@@ -7,6 +7,16 @@ describe("linerDb storage layer", () => {
     await linerDb.clearAll();
   });
 
+  it("keeps at most 500 tracks in memory, dropping the oldest written", async () => {
+    for (let i = 0; i <= 500; i++) {
+      await linerDb.putTrack({ id: `mem_${i}`, title: `T${i}`, artists: "A", durationMs: 1, coverUrl: "", playCount: 0 });
+    }
+    const memTracks = (linerDb as unknown as { memTracks: Map<string, unknown> }).memTracks;
+    expect(memTracks.size).toBe(500);
+    expect(memTracks.has("mem_0")).toBe(false);
+    expect(memTracks.has("mem_500")).toBe(true);
+  });
+
   it("stores and retrieves track metadata", async () => {
     await linerDb.putTrack({
       id: "track_test_1",

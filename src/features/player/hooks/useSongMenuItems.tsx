@@ -8,6 +8,7 @@ import {
   LuTrash2,
   LuFolderPlus,
 } from "react-icons/lu";
+import { ShareForwardLine } from "@mingcute/react";
 import type { DropdownMenuItem } from "@/shared/ui/DropdownMenu";
 import { playerEngine } from "../engine/playerEngine";
 import {
@@ -19,6 +20,7 @@ import {
 } from "@/features/library";
 import { useTranslation } from "@/languages";
 import { showToast } from "@/shared/ui";
+import { buildShareUrl } from "@/shared/utils/share";
 
 export interface SongMenuContext {
   id?: string;
@@ -32,6 +34,8 @@ export interface SongMenuContext {
   playlistId?: string;
   playlistItemId?: string;
   playlistTitle?: string;
+  /** play queue rows: adds "Remove from queue" (the queue animates the row out) */
+  onRemoveFromQueue?: () => void;
 }
 
 export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
@@ -48,6 +52,7 @@ export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
     playlistId,
     playlistItemId,
     playlistTitle,
+    onRemoveFromQueue,
   } = ctx;
 
   const { data: playlistsData } = usePlaylistsList();
@@ -65,6 +70,17 @@ export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
       likeMutation.mutate(id);
     }
   }, [id, liked, likeMutation, unlikeMutation]);
+
+  const handleShare = useCallback(() => {
+    if (!id) return;
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      const type = (searchType as "track" | "album" | "artist" | "playlist") || "track";
+      void navigator.clipboard.writeText(buildShareUrl(type, id));
+      showToast(t("common.link_copied"), "checkmark", {
+        description: artists ? `${title} — ${artists}` : title,
+      });
+    }
+  }, [id, searchType, title, artists, t]);
 
   const buildMenu = useCallback((): DropdownMenuItem[] => {
     const isTrack = searchType === "track" || !searchType;
@@ -135,6 +151,12 @@ export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
               />
             ),
             onClick: handleLike,
+          },
+          {
+            id: "share",
+            label: t("common.share"),
+            icon: <ShareForwardLine size={15} />,
+            onClick: handleShare,
           },
           {
             id: "remove-from-playlist",
@@ -238,6 +260,23 @@ export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
             });
           },
         },
+        {
+          id: "share",
+          label: t("common.share"),
+          icon: <ShareForwardLine size={15} />,
+          onClick: handleShare,
+        },
+        ...(onRemoveFromQueue
+          ? [
+              {
+                id: "remove-from-queue",
+                label: t("common.remove_from_queue"),
+                icon: <LuTrash2 size={15} />,
+                danger: true,
+                onClick: onRemoveFromQueue,
+              },
+            ]
+          : []),
       ];
     }
 
@@ -258,6 +297,12 @@ export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
           });
         },
       },
+      {
+        id: "share",
+        label: t("common.share"),
+        icon: <ShareForwardLine size={15} />,
+        onClick: handleShare,
+      },
     ];
   }, [
     id,
@@ -271,8 +316,10 @@ export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
     playlistId,
     playlistItemId,
     playlistTitle,
+    onRemoveFromQueue,
     liked,
     handleLike,
+    handleShare,
     playlistsData,
     t,
   ]);

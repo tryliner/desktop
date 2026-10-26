@@ -5,7 +5,9 @@ import { telemetry } from "@/shared/telemetry";
 import { linerDb, audioCache } from "@/shared/storage";
 import { isStandaloneAudioFile } from "@/shared/storage/audioFormat";
 import type { Track } from "@/shared/types";
+import { markLinerStreamFailed } from "@/shared/media/liner/linerPlayback";
 import { pitchShifter } from "./pitchShifter";
+import { FLAT_EQ, isEqActive } from "./equalizer";
 import { resolvePlaybackStream, type PlaybackStream } from "./streamResolver";
 import {
   downloadAudioBytes,
@@ -37,6 +39,8 @@ export class PlayerRuntime {
   // source stays attached (paused) until the next one is ready, so this can lag
   // currentTrackId for a moment.
   private attachedTrackId: string | null = null;
+  // the attached source is a presigned r2 url (not a blob, not youtube)
+  private attachedFromLiner = false;
   private preloadingTrackId: string | null = null;
   private preloadingPromise: Promise<void> | null = null;
   private preloadAbortController: AbortController | null = null;
@@ -94,7 +98,9 @@ export class PlayerRuntime {
         state.isPitchLinked !== prevState.isPitchLinked ||
         state.pitchSemitones !== prevState.pitchSemitones ||
         state.isReverbEnabled !== prevState.isReverbEnabled ||
-        state.reverbLevel !== prevState.reverbLevel
+        state.reverbLevel !== prevState.reverbLevel ||
+        state.isEqEnabled !== prevState.isEqEnabled ||
+        state.eqGains !== prevState.eqGains
       ) {
         const rate = state.playbackRate ?? 1;
         const preservesPitch = !state.isPitchLinked;
@@ -409,6 +415,11 @@ export class PlayerRuntime {
         });
       }
 
+      if (this.attachedFromLiner) {
+        this.attachedFromLiner = false;
+        markLinerStreamFailed(`media error ${code}`);
+      }
+
       if (this.activeBlobUrl) {
         URL.revokeObjectURL(this.activeBlobUrl);
         this.activeBlobUrl = null;
@@ -488,8 +499,12 @@ export class PlayerRuntime {
       const pitchSemitones = store.pitchSemitones ?? 0;
       const isReverbEnabled = store.isReverbEnabled ?? false;
       const reverbLevel = store.reverbLevel ?? 0.35;
+      const isEqEnabled = store.isEqEnabled ?? false;
+      const eqGains = store.eqGains ?? FLAT_EQ;
       const needsEffects =
-        isReverbEnabled || (!isPitchLinked && Math.abs(pitchSemitones) >= 0.05);
+        isReverbEnabled ||
+        isEqActive(isEqEnabled, eqGains) ||
+        (!isPitchLinked && Math.abs(pitchSemitones) >= 0.05);
       if (!needsEffects && !pitchShifter.isAttached()) return;
       pitchShifter.attach(this.audio);
       pitchShifter.update({
@@ -497,6 +512,8 @@ export class PlayerRuntime {
         isPitchLinked,
         isReverbEnabled,
         reverbLevel,
+        isEqEnabled,
+        eqGains,
       });
     } catch (err) {
       console.error("[PlayerRuntime] applyPlaybackRateAndPitch error:", err);
@@ -573,6 +590,7 @@ export class PlayerRuntime {
     if (this.activeBlobUrl) URL.revokeObjectURL(this.activeBlobUrl);
     this.activeBlobUrl = url;
     this.audio.src = url;
+    this.attachedFromLiner = false;
     this.applyPlaybackRateAndPitch();
     const settle = () => {
       this.isResetting = false;
@@ -629,6 +647,7 @@ export class PlayerRuntime {
     this.audio.src = url;
     this.activeBlobUrl = isBlob ? url : null;
     this.attachedTrackId = trackId;
+    this.attachedFromLiner = false;
     if (previousBlob && previousBlob !== url) URL.revokeObjectURL(previousBlob);
   }
 
@@ -869,6 +888,7 @@ export class PlayerRuntime {
       this.releaseStream();
       const url = stream.blob ? URL.createObjectURL(stream.blob) : stream.url;
       this.attachSource(url, Boolean(stream.blob), track.id);
+      this.attachedFromLiner = Boolean(stream.fromLiner);
       this.releaseActiveStream = stream.release ?? null;
       this.watchFullSource(track.id, stream);
       this.audio.volume = 0;
@@ -1111,10 +1131,17 @@ export class PlayerRuntime {
     if (stream.blob) return stream.blob;
     if (stream.completed) return stream.completed;
     const startedAt = performance.now();
-    const bytes = await downloadAudioBytes(stream.url, {
-      contentLength: stream.contentLength,
-      signal,
-    });
+    let bytes: Uint8Array<ArrayBuffer> | null;
+    try {
+      bytes = await downloadAudioBytes(stream.url, {
+        contentLength: stream.contentLength,
+        signal,
+      });
+    } catch (error) {
+      if (stream.fromLiner && !signal.aborted)
+        markLinerStreamFailed(`download: ${String(error)}`);
+      throw error;
+    }
     if (!bytes || signal.aborted) return null;
     const mimeType = stream.mimeType || "audio/webm";
     if (!mimeType.startsWith("audio/") && !mimeType.startsWith("video/"))

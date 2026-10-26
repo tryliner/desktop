@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from "react";
 import { playerEngine, type PlayerState } from "../engine/playerEngine";
+import { FLAT_EQ } from "../engine/equalizer";
 
 const EMPTY_STATE: PlayerState = {
   status: "idle",
@@ -29,6 +30,9 @@ const EMPTY_STATE: PlayerState = {
   keepSpeedAcrossTracks: true,
   isReverbEnabled: false,
   reverbLevel: 0.35,
+  isEqEnabled: false,
+  eqGains: FLAT_EQ,
+  eqCustomPresets: [],
 };
 
 export function usePlayerState(): PlayerState {

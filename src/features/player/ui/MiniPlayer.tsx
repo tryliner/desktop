@@ -10,6 +10,7 @@ import {
   TrashBin2,
   Bookmark,
   PlaybackSpeed,
+  Tuning2,
   VolumeCross,
   VolumeSmall,
   VolumeLoud,
@@ -36,6 +37,8 @@ import { usePlayerStore } from "../store/playerStore";
 import { toVolumeGain, toVolumeLevel } from "../engine/volume";
 import { VolumeColumn } from "./VolumeColumn";
 import { SpeedPitchPicker } from "./SpeedPitchPicker";
+import { EqualizerPicker } from "./EqualizerPicker";
+import { isEqActive } from "../engine/equalizer";
 import { TimelineSlider } from "./TimelineSlider";
 import { useTheme } from "next-themes";
 import { useCoverReady, CoverImage } from "@/features/covers";
@@ -324,12 +327,16 @@ function MiniPlayer({
   const [speedPopupStyle, setSpeedPopupStyle] = useState<React.CSSProperties>(
     {},
   );
+  const [eqOpen, setEqOpen] = useState(false);
+  const [eqPopupStyle, setEqPopupStyle] = useState<React.CSSProperties>({});
   const miniPlayerRootRef = useRef<HTMLDivElement>(null);
   const queuePopupRef = useRef<HTMLDivElement>(null);
   const volumePopupRef = useRef<HTMLDivElement>(null);
   const volumeToggleRef = useRef<HTMLButtonElement>(null);
   const speedPopupRef = useRef<HTMLDivElement>(null);
   const speedToggleRef = useRef<HTMLButtonElement>(null);
+  const eqPopupRef = useRef<HTMLDivElement>(null);
+  const eqToggleRef = useRef<HTMLButtonElement>(null);
   const volumeHoverCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
@@ -338,6 +345,7 @@ function MiniPlayer({
   const currentTrack = player.currentTrack;
   const volumeLevel = toVolumeLevel(player.volume);
   const isLiked = useIsTrackLiked(currentTrack?.id);
+  const eqActive = isEqActive(player.isEqEnabled, player.eqGains);
   const likeMutation = useLikeTrack();
   const unlikeMutation = useUnlikeTrack();
   const togglingRef = useRef(false);
@@ -467,11 +475,11 @@ function MiniPlayer({
   }, []);
 
   const handleVolumeMouseEnter = useCallback(() => {
-    if (speedOpen) return;
+    if (speedOpen || eqOpen) return;
     clearVolumeHoverTimer();
     updateVolumePopupPosition();
     setVolumeOpen(true);
-  }, [clearVolumeHoverTimer, updateVolumePopupPosition, speedOpen]);
+  }, [clearVolumeHoverTimer, updateVolumePopupPosition, speedOpen, eqOpen]);
 
   const handleVolumeMouseLeave = useCallback(() => {
     clearVolumeHoverTimer();
@@ -517,18 +525,19 @@ function MiniPlayer({
     updateVolumePopupPosition();
   }, [volumeOpen, updateVolumePopupPosition]);
 
-  useEffect(() => {
-    if (!speedOpen) return;
-    const toggle = speedToggleRef.current;
+  // measured in the click handler, before the popup mounts: positioning it in an
+  // effect afterwards moved it on its first open, and framer flew the active
+  // preset / tab pills in from the unpositioned spot outside the card
+  const popupStyleFor = (toggle: HTMLElement | null): React.CSSProperties => {
     const root = miniPlayerRootRef.current;
-    if (!toggle || !root) return;
+    if (!toggle || !root) return {};
     const toggleRect = toggle.getBoundingClientRect();
     const rootRect = root.getBoundingClientRect();
     const popupW = 300;
     const btnW = toggleRect.width;
     const right = rootRect.right - toggleRect.right + (btnW - popupW) / 2;
-    setSpeedPopupStyle({ right: Math.max(8, right) });
-  }, [speedOpen]);
+    return { right: Math.max(8, right) };
+  };
 
   useEffect(() => {
     const onDocumentPointerDown = (event: MouseEvent) => {
@@ -553,6 +562,14 @@ function MiniPlayer({
           setSpeedOpen(false);
         }
       }
+
+      if (eqOpen) {
+        const clickedEqPopup = eqPopupRef.current?.contains(target);
+        const clickedEqToggle = eqToggleRef.current?.contains(target);
+        if (!clickedEqPopup && !clickedEqToggle) {
+          setEqOpen(false);
+        }
+      }
     };
 
     const onDocumentKeyDown = (event: KeyboardEvent) => {
@@ -568,6 +585,11 @@ function MiniPlayer({
           event.stopPropagation();
           setSpeedOpen(false);
         }
+        if (eqOpen) {
+          event.preventDefault();
+          event.stopPropagation();
+          setEqOpen(false);
+        }
       }
     };
 
@@ -577,7 +599,7 @@ function MiniPlayer({
       document.removeEventListener("mousedown", onDocumentPointerDown, true);
       document.removeEventListener("keydown", onDocumentKeyDown, true);
     };
-  }, [clearVolumeHoverTimer, speedOpen, volumeOpen]);
+  }, [clearVolumeHoverTimer, eqOpen, speedOpen, volumeOpen]);
 
   const [scrubRatio, setScrubRatio] = useState<number | null>(null);
   const activeProgress = scrubRatio !== null ? scrubRatio : progress;
@@ -623,6 +645,24 @@ function MiniPlayer({
             onPointerDown={(e) => e.stopPropagation()}
           >
             <SpeedPitchPicker onClose={() => setSpeedOpen(false)} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {eqOpen && (
+          <motion.div
+            key="eq-popup"
+            ref={eqPopupRef}
+            initial={{ opacity: 0, y: 10, scale: 0.985 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.985 }}
+            transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
+            className="absolute bottom-[74px] z-[92] w-[300px] rounded-[14px] p-[16px] bg-black/[0.05] backdrop-blur-2xl backdrop-saturate-150 dark:bg-white/[0.07] prevent-seek"
+            style={eqPopupStyle}
+            onPointerDown={(e) => e.stopPropagation()}
+          >
+            <EqualizerPicker />
           </motion.div>
         )}
       </AnimatePresence>
@@ -872,6 +912,35 @@ function MiniPlayer({
                 {repeatIcon}
               </button>
               <button
+                ref={eqToggleRef}
+                type="button"
+                aria-label={t("player.equalizer")}
+                title={t("player.equalizer")}
+                className={`${iconButtonClass} ${
+                  eqOpen || eqActive ? "bg-white/[0.09] text-white" : ""
+                }`}
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={() => {
+                  setVolumeOpen(false);
+                  setSpeedOpen(false);
+                  onQueueOpenChange?.(false);
+                  if (!eqOpen)
+                    setEqPopupStyle(popupStyleFor(eqToggleRef.current));
+                  setEqOpen((prev) => !prev);
+                }}
+                style={{ cursor: "pointer" }}
+              >
+                <motion.div
+                  animate={{
+                    scale: eqOpen ? 1.08 : 1,
+                  }}
+                  transition={{ type: "spring", stiffness: 350, damping: 22 }}
+                  className="flex items-center justify-center"
+                >
+                  <Tuning2 size={18} weight={eqActive ? "Bold" : "Outline"} />
+                </motion.div>
+              </button>
+              <button
                 ref={speedToggleRef}
                 type="button"
                 aria-label="Speed and Pitch"
@@ -887,7 +956,10 @@ function MiniPlayer({
                 onClick={() => {
                   clearVolumeHoverTimer();
                   setVolumeOpen(false);
+                  setEqOpen(false);
                   onQueueOpenChange?.(false);
+                  if (!speedOpen)
+                    setSpeedPopupStyle(popupStyleFor(speedToggleRef.current));
                   setSpeedOpen((prev) => !prev);
                 }}
                 style={{ cursor: "pointer" }}
@@ -931,6 +1003,7 @@ function MiniPlayer({
                   volumePinnedRef.current = true;
                   updateVolumePopupPosition();
                   setSpeedOpen(false);
+                  setEqOpen(false);
                   onQueueOpenChange?.(false);
                   setVolumeOpen(true);
                 }}
@@ -952,6 +1025,7 @@ function MiniPlayer({
                 onPointerDown={(e) => e.stopPropagation()}
                 onClick={() => {
                   setSpeedOpen(false);
+                  setEqOpen(false);
                   setVolumeOpen(false);
                   onFullscreenOpen?.();
                 }}
@@ -970,6 +1044,7 @@ function MiniPlayer({
                 onPointerDown={(e) => e.stopPropagation()}
                 onClick={() => {
                   setSpeedOpen(false);
+                  setEqOpen(false);
                   setVolumeOpen(false);
                   setQueueLimit(50);
                   onQueueToggle?.();

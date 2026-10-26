@@ -2,6 +2,12 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import type { Track } from "@/shared/types";
 import { debouncedStorage } from "@/shared/utils/storage";
+import {
+  FLAT_EQ,
+  normalizeEqCustomPresets,
+  normalizeEqGains,
+  type EqCustomPreset,
+} from "../engine/equalizer";
 
 export { debouncedStorage };
 
@@ -63,6 +69,9 @@ export interface SessionState {
   keepSpeedAcrossTracks: boolean;
   isReverbEnabled: boolean;
   reverbLevel: number;
+  isEqEnabled: boolean;
+  eqGains: number[];
+  eqCustomPresets: EqCustomPreset[];
 }
 
 export type PlayerState = TransportState &
@@ -117,6 +126,9 @@ export interface PlayerStore extends PlayerState {
   setKeepSpeedAcrossTracks: (keep: boolean) => void;
   setIsReverbEnabled: (enabled: boolean) => void;
   setReverbLevel: (level: number) => void;
+  setIsEqEnabled: (enabled: boolean) => void;
+  setEqGains: (gains: number[]) => void;
+  setEqCustomPresets: (presets: EqCustomPreset[]) => void;
   resetSpeedAndPitch: () => void;
   clearQueue: () => void;
   resetPlayback: () => void;
@@ -161,6 +173,9 @@ export const usePlayerStore = create<PlayerStore>()(
       keepSpeedAcrossTracks: true,
       isReverbEnabled: false,
       reverbLevel: 0.35,
+      isEqEnabled: false,
+      eqGains: FLAT_EQ,
+      eqCustomPresets: [],
 
       dispatch: () => {
         // Implementation injected by PlayerEngine
@@ -214,6 +229,11 @@ export const usePlayerStore = create<PlayerStore>()(
         set({ isReverbEnabled }),
       setReverbLevel: (reverbLevel: number) =>
         set({ reverbLevel: Math.max(0, Math.min(1, reverbLevel)) }),
+      setIsEqEnabled: (isEqEnabled: boolean) => set({ isEqEnabled }),
+      setEqGains: (eqGains: number[]) =>
+        set({ eqGains: normalizeEqGains(eqGains) }),
+      setEqCustomPresets: (eqCustomPresets: EqCustomPreset[]) =>
+        set({ eqCustomPresets: normalizeEqCustomPresets(eqCustomPresets) }),
       resetSpeedAndPitch: () => set({ playbackRate: 1, pitchSemitones: 0 }),
       resetPlayback: () =>
         set({
@@ -306,6 +326,13 @@ export const usePlayerStore = create<PlayerStore>()(
           ) {
             state.reverbLevel = 0.35;
           }
+          if (typeof state.isEqEnabled !== "boolean") {
+            state.isEqEnabled = false;
+          }
+          state.eqGains = normalizeEqGains(state.eqGains);
+          state.eqCustomPresets = normalizeEqCustomPresets(
+            state.eqCustomPresets,
+          );
         }
       },
       partialize: (state) => ({
@@ -337,6 +364,9 @@ export const usePlayerStore = create<PlayerStore>()(
         keepSpeedAcrossTracks: state.keepSpeedAcrossTracks,
         isReverbEnabled: state.isReverbEnabled,
         reverbLevel: state.reverbLevel,
+        isEqEnabled: state.isEqEnabled,
+        eqGains: state.eqGains,
+        eqCustomPresets: state.eqCustomPresets,
       }),
     },
   ),

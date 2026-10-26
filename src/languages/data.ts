@@ -8,6 +8,7 @@ import fr from "./locales/fr.json";
 import pl from "./locales/pl.json";
 import tr from "./locales/tr.json";
 import pt from "./locales/pt.json";
+import id from "./locales/id.json";
 import type { Locale } from "./locale";
 
 export const translations: Record<Locale, Record<string, unknown>> = {
@@ -21,4 +22,5 @@ export const translations: Record<Locale, Record<string, unknown>> = {
   pl,
   tr,
   pt,
+  id,
 };

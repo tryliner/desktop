@@ -9,6 +9,7 @@ export const SUPPORTED_LOCALES = [
   "pl",
   "tr",
   "pt",
+  "id",
 ] as const;
 
 export type Locale = (typeof SUPPORTED_LOCALES)[number];

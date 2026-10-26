@@ -21,6 +21,7 @@ export interface UrlPlaybackStream extends PlaybackStreamFormat {
   completed?: Promise<Blob>;
   needsFullSource?: () => boolean;
   release?: () => void;
+  fromLiner?: boolean;
 }
 
 export interface BufferedPlaybackStream extends PlaybackStreamFormat {
@@ -30,6 +31,7 @@ export interface BufferedPlaybackStream extends PlaybackStreamFormat {
   completed?: undefined;
   needsFullSource?: undefined;
   release?: undefined;
+  fromLiner?: undefined;
 }
 
 export type PlaybackStream = UrlPlaybackStream | BufferedPlaybackStream;
@@ -118,6 +120,7 @@ export function fromLinerStream(
     url: stream.url,
     mimeType: stream.mimeType,
     codec: stream.codec ?? "opus",
+    fromLiner: true,
     bitrate: seconds > 0 ? Math.round((stream.size * 8) / seconds) : 0,
     expiresAtMs: toTimestamp(stream.expiresAt),
     ...(stream.size ? { contentLength: stream.size } : {}),

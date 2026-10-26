@@ -12,6 +12,10 @@ import { AnimatePresence, motion } from "framer-motion";
 import { PlayerUiElements } from "./PlayerUiElements";
 import { DownLine } from "@mingcute/react";
 import { preloadCoverArt, useCoverSrc } from "@/features/covers";
+import {
+  isWindowVisible,
+  onWindowVisibilityChange,
+} from "@/shared/utils/windowVisibility";
 import "@braccato/core/element";
 import "@braccato/core/styles/variables.css";
 import "@braccato/core/styles/lyrics.css";
@@ -181,6 +185,8 @@ function BraccatoLyricsView({ lyrics }: BraccatoLyricsViewProps) {
       let lastReportedIndex = -1;
 
       const checkActiveLine = () => {
+        // minimized or hidden: stop until the window shows again
+        if (!isWindowVisible()) return;
         const audioEl = document.getElementById(
           "liner-audio",
         ) as HTMLAudioElement | null;
@@ -211,6 +217,11 @@ function BraccatoLyricsView({ lyrics }: BraccatoLyricsViewProps) {
       };
 
       syncRafId = requestAnimationFrame(checkActiveLine);
+      const stopWatchingVisibility = onWindowVisibilityChange((visible) => {
+        if (!visible) return;
+        cancelAnimationFrame(syncRafId);
+        syncRafId = requestAnimationFrame(checkActiveLine);
+      });
 
       el.addEventListener("braccato:lyrics-loaded", onLyricsLoaded);
       el.addEventListener("braccato:line-click", handleBraccatoLineClick);
@@ -225,6 +236,7 @@ function BraccatoLyricsView({ lyrics }: BraccatoLyricsViewProps) {
 
       return () => {
         cancelAnimationFrame(syncRafId);
+        stopWatchingVisibility();
         useLyricsStore.getState().setActiveLineIndex(null);
         el.removeEventListener("braccato:lyrics-loaded", onLyricsLoaded);
         el.removeEventListener("braccato:line-click", handleBraccatoLineClick);

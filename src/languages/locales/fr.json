@@ -64,6 +64,9 @@
     "coming_soon": "Bientôt disponible",
     "play_all": "Tout lire",
     "add_to_queue": "Ajouter à la file d'attente",
+    "remove_from_queue": "Retirer de la file d'attente",
+    "removed_from_queue": "Retiré de la file d'attente",
+    "undo": "Annuler",
     "shuffle": "Lecture aléatoire",
     "remove_from_library": "Retirer de la bibliothèque",
     "save_to_library": "Enregistrer dans la bibliothèque",
@@ -188,7 +191,13 @@
     "songs_other": "{count} titres",
     "songs_plural": "{count} titres",
     "env_warning": "L'application doit être exécutée dans Electron : les liens profonds, les vérifications hors ligne et le partage nécessitent le pont de bureau.",
-    "env_skip": "Ignorer"
+    "env_skip": "Ignorer",
+    "minimize": "Réduire",
+    "exitFullscreen": "Quitter le plein écran",
+    "restore": "Restaurer",
+    "maximize": "Agrandir",
+    "add_to_library_desc": "Cet élément sera ajouté à votre bibliothèque.",
+    "failed_to_remove_library": "Impossible de retirer de la bibliothèque"
   },
   "home": {
     "speedDial": "Accès rapide",
@@ -401,7 +410,12 @@
     "preset_nightcore": "1.35x Nightcore",
     "reverb": "Réverbération",
     "reverb_hint": "Espace atmosphérique et profondeur d'ambiance",
-    "reverb_amount": "Réverbération"
+    "reverb_amount": "Réverbération",
+    "volume": "Volume",
+    "previous": "Précédent",
+    "open_player": "Ouvrir le lecteur",
+    "next": "Suivant",
+    "repeat": "Répéter"
   },
   "playlist": {
     "playlist": "Playlist",
@@ -419,7 +433,8 @@
     "min": "min",
     "sec": "s",
     "empty_title": "Cette playlist est vide",
-    "empty_subtitle": "Recherchez des titres à ajouter"
+    "empty_subtitle": "Recherchez des titres à ajouter",
+    "likes_empty": "Aucun titre aimé pour l'instant"
   },
   "search": {
     "placeholder": "Rechercher des titres, artistes, albums...",
@@ -458,7 +473,9 @@
       "playback": "Lecture",
       "shortcuts": "Raccourcis",
       "overlay": "Overlay",
-      "privacy": "Confidentialité"
+      "privacy": "Confidentialité",
+      "discord": "Discord RPC",
+      "youtube": "YouTube"
     },
     "playback": {
       "description": "Comportement de la file d'attente, actions au clic et sortie audio."
@@ -781,6 +798,76 @@
       "title": "Halo de pochette",
       "description": "Halo flouté de la pochette derrière les pages. Désactivez pour un fond uni.",
       "disabled_for_light": "Désactivé en thème clair."
+    },
+    "youtube": {
+      "description": "Connectez-vous à votre compte YouTube pour éviter les erreurs de lecture.",
+      "section_playback": "Lecture",
+      "account_playback": {
+        "title": "Lire via votre compte",
+        "description": "Demande l'audio YouTube avec votre compte connecté pour éviter que les flux ne soient bloqués."
+      },
+      "prompt_sign_in": {
+        "title": "Demander à se connecter",
+        "description": "Affiche la carte de connexion lorsque YouTube bloque la lecture au lieu de passer le titre."
+      },
+      "sync_library": {
+        "title": "Synchroniser la bibliothèque",
+        "description": "Affiche les playlists de votre compte YouTube dans la bibliothèque à côté des playlists Liner."
+      },
+      "sign_out": "Se déconnecter",
+      "sign_in": "Se connecter",
+      "signed_out_title": "Non connecté",
+      "signed_out_description": "Connectez-vous pour maintenir le bon fonctionnement de la lecture YouTube"
+    },
+    "discord": {
+      "description": "Affichez ce que vous écoutez sur Discord avec la pochette de l'album, le badge de l'artiste et la barre de progression.",
+      "section_display": "Options d'affichage",
+      "section_buttons": "Boutons du profil",
+      "enable": {
+        "title": "Discord Rich Presence",
+        "description": "Diffusez votre écoute musicale en cours sur votre profil Discord."
+      },
+      "status_display": {
+        "title": "Format du statut",
+        "description": "Choisissez ce qui apparaît dans l'en-tête du statut « Écoute... » sur Discord.",
+        "artist": "Artiste (Par défaut)",
+        "song": "Titre du morceau",
+        "artist_song": "Artiste - Titre",
+        "song_artist": "Titre - Artiste",
+        "app": "Liner (Nom de l'application)"
+      },
+      "show_timeline": {
+        "title": "Barre de progression",
+        "description": "Affiche une barre de progression interactive avec le temps écoulé et restant."
+      },
+      "show_artwork": {
+        "title": "Pochette du titre",
+        "description": "Affiche la pochette du titre ou de l'album sur la carte d'activité Discord."
+      },
+      "show_artist_image": {
+        "title": "Badge photo de l'artiste",
+        "description": "Affiche la photo de l'artiste dans un petit badge circulaire au coin inférieur."
+      },
+      "show_paused": {
+        "title": "Afficher en pause",
+        "description": "Garde le statut visible sur Discord avec un indicateur de pause lorsque la musique est en pause."
+      },
+      "show_button": {
+        "title": "Bouton « Écouter sur Liner »",
+        "description": "Ajoute un bouton interactif renvoyant vers le titre sur Liner."
+      },
+      "show_download_button": {
+        "title": "Bouton « Télécharger Liner »",
+        "description": "Ajoute un bouton interactif renvoyant vers tryliner.fun pour télécharger l'application."
+      },
+      "status": {
+        "connected": "Connecté à Discord ({user})",
+        "disconnected": "Discord non connecté",
+        "ready": "Prêt",
+        "waiting": "En attente de Discord",
+        "disabled": "Désactivé",
+        "via_arrpc": "Connecté via arRPC"
+      }
     }
   },
   "toast": {
@@ -932,5 +1019,16 @@
     "title": "Par titre (A–Z)",
     "duration": "Par durée",
     "popularity": "Par popularité"
+  },
+  "youtube_auth": {
+    "title": "Connectez-vous à YouTube pour continuer à écouter",
+    "description": "YouTube bloque les flux audio sans connexion (vérification BotGuard). Vous connecter avec votre compte Google/YouTube confirme que vous êtes un véritable auditeur et lève les restrictions.",
+    "waiting": "En attente de connexion…",
+    "retry": "Réessayer",
+    "not_now": "Pas maintenant",
+    "or_enter_code": "ou saisissez le code sur",
+    "copy_code": "Copier le code",
+    "connected": "YouTube connecté",
+    "qr_label": "Code QR de connexion"
   }
 }

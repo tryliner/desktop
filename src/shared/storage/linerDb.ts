@@ -55,6 +55,26 @@ const DB_NAME = "liner_db_v1";
 const DB_VERSION = 4;
 
 const MEM_AUDIO_LIMIT = 3;
+// the memory maps only sit in front of indexeddb: cap them so a long session doesn't keep every record it saw
+const MEM_TRACK_LIMIT = 500;
+const MEM_LYRICS_LIMIT = 100;
+const MEM_ARTIST_LIMIT = 100;
+
+// keeps the most recently written entries; maps iterate in insertion order, so the first key is the oldest
+function rememberLimited<T>(
+  map: Map<string, T>,
+  key: string,
+  value: T,
+  limit: number,
+): void {
+  map.delete(key);
+  map.set(key, value);
+  while (map.size > limit) {
+    const oldest = map.keys().next().value;
+    if (oldest === undefined) break;
+    map.delete(oldest);
+  }
+}
 
 class LinerDb {
   private dbPromise: Promise<IDBDatabase> | null = null;
@@ -213,7 +233,7 @@ class LinerDb {
     });
 
     if (result) {
-      this.memTracks.set(id, result);
+      rememberLimited(this.memTracks, id, result, MEM_TRACK_LIMIT);
       return result;
     }
     return this.memTracks.get(id) || null;
@@ -230,7 +250,7 @@ class LinerDb {
       durationMs: track.durationMs,
       savedAt: Date.now(),
     };
-    this.memTracks.set(track.id, record);
+    rememberLimited(this.memTracks, track.id, record, MEM_TRACK_LIMIT);
 
     await this.runTransaction("tracks", "readwrite", (store) => {
       return new Promise<void>((resolve, reject) => {
@@ -272,13 +292,7 @@ class LinerDb {
   }
 
   private rememberAudio(trackId: string, record: CachedAudioRecord): void {
-    this.memAudio.delete(trackId);
-    this.memAudio.set(trackId, record);
-    while (this.memAudio.size > MEM_AUDIO_LIMIT) {
-      const oldest = this.memAudio.keys().next().value;
-      if (oldest === undefined) break;
-      this.memAudio.delete(oldest);
-    }
+    rememberLimited(this.memAudio, trackId, record, MEM_AUDIO_LIMIT);
   }
 
   async getAudio(trackId: string): Promise<CachedAudioRecord | null> {
@@ -462,7 +476,7 @@ class LinerDb {
           }
         }
       }
-      this.memLyrics.set(trackId, result);
+      rememberLimited(this.memLyrics, trackId, result, MEM_LYRICS_LIMIT);
       return result;
     }
     return this.memLyrics.get(trackId) || null;
@@ -520,7 +534,12 @@ class LinerDb {
       availableProviders: validOptions,
     };
 
-    this.memLyrics.set(record.trackId, sanitizedRecord);
+    rememberLimited(
+      this.memLyrics,
+      record.trackId,
+      sanitizedRecord,
+      MEM_LYRICS_LIMIT,
+    );
 
     await this.runTransaction("lyrics", "readwrite", (store) => {
       return new Promise<void>((resolve, reject) => {
@@ -597,14 +616,14 @@ class LinerDb {
     });
 
     if (result) {
-      this.memArtists.set(id, result);
+      rememberLimited(this.memArtists, id, result, MEM_ARTIST_LIMIT);
       return result;
     }
     return this.memArtists.get(id) || null;
   }
 
   async putArtist(record: CachedArtistRecord): Promise<void> {
-    this.memArtists.set(record.id, record);
+    rememberLimited(this.memArtists, record.id, record, MEM_ARTIST_LIMIT);
 
     await this.runTransaction("artists", "readwrite", (store) => {
       return new Promise<void>((resolve, reject) => {

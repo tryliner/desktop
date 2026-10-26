@@ -8,6 +8,7 @@ import {
 import { playerRuntime } from "./playerRuntime";
 import { isRadioContext, shouldRefillRadio } from "./radioMode";
 import { pitchShifter } from "./pitchShifter";
+import { EQ_MAX_CUSTOM_PRESETS, EQ_PRESET_NAME_MAX } from "./equalizer";
 import {
   api,
   type ApiRadioTrack,
@@ -824,6 +825,38 @@ class PlayerEngine {
     usePlayerStore.getState().setReverbLevel(level);
   }
 
+  public setIsEqEnabled(enabled: boolean): void {
+    pitchShifter.resumeContext();
+    usePlayerStore.getState().setIsEqEnabled(enabled);
+  }
+
+  public setEqGains(gains: number[]): void {
+    pitchShifter.resumeContext();
+    usePlayerStore.getState().setEqGains(gains);
+  }
+
+  // saves the current curve under a name; same name overwrites, the list is capped
+  public saveEqPreset(name: string): void {
+    const store = usePlayerStore.getState();
+    const trimmed = name.trim().slice(0, EQ_PRESET_NAME_MAX);
+    if (!trimmed) return;
+    const others = store.eqCustomPresets.filter(
+      (preset) => preset.name.toLowerCase() !== trimmed.toLowerCase(),
+    );
+    if (others.length >= EQ_MAX_CUSTOM_PRESETS) return;
+    store.setEqCustomPresets([
+      ...others,
+      { id: crypto.randomUUID(), name: trimmed, gains: [...store.eqGains] },
+    ]);
+  }
+
+  public deleteEqPreset(id: string): void {
+    const store = usePlayerStore.getState();
+    store.setEqCustomPresets(
+      store.eqCustomPresets.filter((preset) => preset.id !== id),
+    );
+  }
+
   public resetSpeedAndPitch(): void {
     usePlayerStore.getState().resetSpeedAndPitch();
   }
@@ -1014,6 +1047,38 @@ class PlayerEngine {
       store.setCurrentTrack(store.currentTrack, newCurrentIndex);
     }
     this.preloadNextTrack(store);
+  }
+
+  // the playing track is not removable from here: skip it instead
+  // returns the undo, or null when nothing was removed
+  public removeFromQueue(index: number): (() => void) | null {
+    const store = usePlayerStore.getState();
+    if (index < 0 || index >= store.queue.length || index === store.currentIndex) return null;
+
+    const track = store.queue[index];
+    const queue = store.queue.filter((_, i) => i !== index);
+    store.setQueue(queue);
+    if (index < store.currentIndex) {
+      store.setCurrentTrack(store.currentTrack, store.currentIndex - 1);
+    }
+    this.preloadNextTrack(usePlayerStore.getState());
+    // undo only applies to the queue it was made on, not to a queue started or edited since
+    return () => {
+      if (usePlayerStore.getState().queue === queue) this.insertIntoQueue(index, track);
+    };
+  }
+
+  // undo for removeFromQueue: puts the track back at the position it had
+  public insertIntoQueue(index: number, track: Track): void {
+    const store = usePlayerStore.getState();
+    const at = Math.max(0, Math.min(index, store.queue.length));
+    const queue = [...store.queue];
+    queue.splice(at, 0, track);
+    store.setQueue(queue);
+    if (store.currentIndex >= 0 && at <= store.currentIndex) {
+      store.setCurrentTrack(store.currentTrack, store.currentIndex + 1);
+    }
+    this.preloadNextTrack(usePlayerStore.getState());
   }
 
   public snapshotQueue(): Track[] {

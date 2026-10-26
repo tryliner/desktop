@@ -389,6 +389,65 @@ describe("Player auto-skip on playback error", () => {
     });
   });
 
+  describe("removeFromQueue", () => {
+    it("removes upcoming and past tracks and keeps the playing one in place", async () => {
+      const tracks = ["1", "2", "3", "4"].map((id) => mockTrack(id, `Track ${id}`));
+      await playerEngine.playTrack(tracks[2], tracks, null, null, 2);
+
+      playerEngine.removeFromQueue(3);
+      expect(usePlayerStore.getState().queue.map((t) => t.id)).toEqual(["1", "2", "3"]);
+      expect(usePlayerStore.getState().currentIndex).toBe(2);
+
+      playerEngine.removeFromQueue(0);
+      expect(usePlayerStore.getState().queue.map((t) => t.id)).toEqual(["2", "3"]);
+      expect(usePlayerStore.getState().currentIndex).toBe(1);
+      expect(usePlayerStore.getState().currentTrack?.id).toBe("3");
+    });
+
+    it("ignores the playing track and invalid indices", async () => {
+      const tracks = [mockTrack("1", "Track 1"), mockTrack("2", "Track 2")];
+      await playerEngine.playTrack(tracks[0], tracks);
+
+      expect(playerEngine.removeFromQueue(0)).toBeNull();
+      expect(playerEngine.removeFromQueue(-1)).toBeNull();
+      expect(playerEngine.removeFromQueue(5)).toBeNull();
+
+      expect(usePlayerStore.getState().queue.map((t) => t.id)).toEqual(["1", "2"]);
+      expect(usePlayerStore.getState().currentIndex).toBe(0);
+    });
+
+    it("undo puts a removed track back in place, before or after the playing one", async () => {
+      const tracks = ["1", "2", "3", "4"].map((id) => mockTrack(id, `Track ${id}`));
+      await playerEngine.playTrack(tracks[2], tracks, null, null, 2);
+
+      playerEngine.removeFromQueue(0)?.();
+      expect(usePlayerStore.getState().queue.map((t) => t.id)).toEqual(["1", "2", "3", "4"]);
+      expect(usePlayerStore.getState().currentIndex).toBe(2);
+      expect(usePlayerStore.getState().currentTrack?.id).toBe("3");
+
+      playerEngine.removeFromQueue(3)?.();
+      expect(usePlayerStore.getState().queue.map((t) => t.id)).toEqual(["1", "2", "3", "4"]);
+      expect(usePlayerStore.getState().currentIndex).toBe(2);
+    });
+
+    it("undo does nothing once the queue has changed", async () => {
+      const tracks = ["1", "2", "3"].map((id) => mockTrack(id, `Track ${id}`));
+      await playerEngine.playTrack(tracks[0], tracks);
+
+      const undo = playerEngine.removeFromQueue(2);
+      const other = ["7", "8"].map((id) => mockTrack(id, `Track ${id}`));
+      await playerEngine.playTrack(other[0], other);
+      undo?.();
+      expect(usePlayerStore.getState().queue.map((t) => t.id)).toEqual(["7", "8"]);
+
+      // a second click on the same undo must not add the track twice
+      const again = playerEngine.removeFromQueue(1);
+      again?.();
+      again?.();
+      expect(usePlayerStore.getState().queue.map((t) => t.id)).toEqual(["7", "8"]);
+    });
+  });
+
   describe("Queue Preload Behavior", () => {
     it("preloads strictly only 1 next track in queue without spamming upcoming tracks", async () => {
       if (!playerRuntime) return;
