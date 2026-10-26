@@ -1,6 +1,7 @@
 const TEXT_ENTRY_TAGS = new Set(["INPUT", "TEXTAREA", "SELECT"]);
 
 const SPACE_CONSUMING_ROLES = new Set([
+  "button",
   "switch",
   "checkbox",
   "radio",
@@ -56,11 +57,12 @@ export function isKeyHandledByFocusedControl(
   const role = target.getAttribute("role");
 
   if (code === "Space") {
-    if (target.tagName === "SELECT") return true;
+    if (target.tagName === "SELECT" || target.tagName === "BUTTON") return true;
     return role !== null && SPACE_CONSUMING_ROLES.has(role);
   }
 
   if (ARROW_CODES.has(code)) {
+    if (target.getAttribute("aria-haspopup") === "menu") return true;
     if (target.tagName === "SELECT") return true;
     if (
       target.tagName === "INPUT" &&

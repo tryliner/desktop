@@ -1,0 +1,17 @@
+<tt xmlns="http://www.w3.org/ns/ttml" xml:lang="ja">
+  <head>
+    <metadata>
+      <translations>
+        <translation xml:lang="fr"><text for="L1">Le monde attend</text></translation>
+        <translation xml:lang="en"><text for="L1">The world is waiting</text></translation>
+      </translations>
+      <transliterations>
+        <transliteration><text for="L1">sekai ga matteru</text></transliteration>
+      </transliterations>
+    </metadata>
+  </head>
+  <body><div>
+    <p begin="00:01.000" end="00:03.000" key="L1">世界が待ってる</p>
+    <p begin="00:03.500" end="00:05.000" key="L2">この一瞬を</p>
+  </div></body>
+</tt>

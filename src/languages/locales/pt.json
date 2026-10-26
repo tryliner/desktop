@@ -387,6 +387,10 @@
     "no_lyrics_found": "Parece que ainda não temos a letra dessa faixa.",
     "close_fullscreen": "Sair da tela cheia",
     "failed_load_lyrics": "Falha ao carregar a letra.",
+    "lyric_languages": {
+      "pronunciation": "Pronúncia",
+      "unavailable": "Indisponível nesta fonte"
+    },
     "lyrics_offset": "Deslocamento da letra",
     "earlier": "Antes",
     "later": "Depois",

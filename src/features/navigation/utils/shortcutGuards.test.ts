@@ -75,10 +75,10 @@ describe("isBlockingOverlayOpen", () => {
 });
 
 describe("isKeyHandledByFocusedControl", () => {
-  it("Space never yields to a focused button, link or role=button — Space always drives global Play/Pause", () => {
+  it("Space yields to buttons but remains a playback shortcut on links", () => {
     expect(
       isKeyHandledByFocusedControl(document.createElement("button"), "Space"),
-    ).toBe(false);
+    ).toBe(true);
 
     const link = document.createElement("a");
     link.setAttribute("href", "#");
@@ -86,7 +86,7 @@ describe("isKeyHandledByFocusedControl", () => {
 
     const div = document.createElement("div");
     div.setAttribute("role", "button");
-    expect(isKeyHandledByFocusedControl(div, "Space")).toBe(false);
+    expect(isKeyHandledByFocusedControl(div, "Space")).toBe(true);
   });
 
   it("Space still yields to non-button widgets like a switch or a tab", () => {

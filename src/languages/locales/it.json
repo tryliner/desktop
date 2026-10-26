@@ -376,6 +376,10 @@
     "no_lyrics_found": "Sembra che non abbiamo ancora il testo di questo brano.",
     "close_fullscreen": "Chiudi schermo intero",
     "failed_load_lyrics": "Impossibile caricare il testo.",
+    "lyric_languages": {
+      "pronunciation": "Pronuncia",
+      "unavailable": "Non disponibile per questa fonte"
+    },
     "lyrics_offset": "Sincronizzazione testo",
     "earlier": "Prima",
     "later": "Dopo",

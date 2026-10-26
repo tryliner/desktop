@@ -404,6 +404,10 @@
     "no_lyrics_found": "Looks like we don't have lyrics for this one yet.",
     "close_fullscreen": "Close fullscreen",
     "failed_load_lyrics": "Failed to load lyrics.",
+    "lyric_languages": {
+      "pronunciation": "Pronunciation",
+      "unavailable": "Unavailable for this source"
+    },
     "lyrics_offset": "Lyrics offset",
     "earlier": "Earlier",
     "later": "Later",

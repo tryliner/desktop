@@ -380,6 +380,10 @@
     "no_lyrics_found": "Wygląda na to, że nie mamy jeszcze tekstu tego utworu.",
     "close_fullscreen": "Zamknij pełny ekran",
     "failed_load_lyrics": "Nie udało się wczytać tekstu.",
+    "lyric_languages": {
+      "pronunciation": "Wymowa",
+      "unavailable": "Niedostępne dla tego źródła"
+    },
     "lyrics_offset": "Przesunięcie tekstu",
     "earlier": "Wcześniej",
     "later": "Później",

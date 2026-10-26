@@ -407,6 +407,10 @@
     "no_lyrics_found": "Похоже, для этого трека пока нет текста.",
     "close_fullscreen": "Закрыть полноэкранный режим",
     "failed_load_lyrics": "Не удалось загрузить текст песни.",
+    "lyric_languages": {
+      "pronunciation": "Произношение",
+      "unavailable": "Недоступно для этого источника"
+    },
     "lyrics_offset": "Смещение текста",
     "earlier": "Раньше",
     "later": "Позже",

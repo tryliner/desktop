@@ -409,6 +409,10 @@
     "no_lyrics_found": "Il semble que nous n'ayons pas encore les paroles de ce titre.",
     "close_fullscreen": "Quitter le plein écran",
     "failed_load_lyrics": "Impossible de charger les paroles.",
+    "lyric_languages": {
+      "pronunciation": "Prononciation",
+      "unavailable": "Indisponible pour cette source"
+    },
     "lyrics_offset": "Décalage des paroles",
     "earlier": "Plus tôt",
     "later": "Plus tard",

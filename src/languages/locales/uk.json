@@ -407,6 +407,10 @@
     "no_lyrics_found": "Схоже, для цього треку поки немає тексту.",
     "close_fullscreen": "Закрити повноекранний режим",
     "failed_load_lyrics": "Не вдалося завантажити текст пісні.",
+    "lyric_languages": {
+      "pronunciation": "Вимова",
+      "unavailable": "Недоступно для цього джерела"
+    },
     "lyrics_offset": "Зсув тексту",
     "earlier": "Раніше",
     "later": "Пізніше",

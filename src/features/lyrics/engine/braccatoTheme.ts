@@ -28,6 +28,32 @@ export const braccatoThemeCss = `
   font-size: 0.9em;
 }
 
+.blyrics--line > .blyrics--romanized,
+.blyrics-background-line > .blyrics--romanized {
+  font-family: inherit;
+  font-weight: 600;
+  line-height: 1.35;
+  margin-top: 0.35em;
+  overflow-wrap: anywhere;
+  text-align: inherit;
+  animation: none;
+  background: none;
+  border: none;
+  border-radius: 0;
+  color: rgb(255 255 255 / 0.4);
+  font-size: 0.6em;
+  padding: 0;
+  width: auto;
+}
+
+.blyrics--active .blyrics--romanized {
+  color: white;
+}
+
+.blyrics--romanized[hidden] {
+  display: none;
+}
+
 .blyrics--word,
 .blyrics--word::after,
 .blyrics-word-highlight {

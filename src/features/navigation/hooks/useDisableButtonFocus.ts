@@ -9,7 +9,10 @@ function isButtonElement(target: EventTarget | null): target is HTMLElement {
 export function useDisableButtonFocus(): void {
   useEffect(() => {
     const onFocusIn = (event: FocusEvent) => {
-      if (isButtonElement(event.target)) {
+      if (
+        isButtonElement(event.target) &&
+        !event.target.closest("[data-keyboard-focus], [data-dropdown-menu]")
+      ) {
         (event.target as HTMLElement).blur();
       }
     };

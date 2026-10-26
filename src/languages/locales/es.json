@@ -378,6 +378,10 @@
     "no_lyrics_found": "Parece que aún no tenemos la letra de esta canción.",
     "close_fullscreen": "Cerrar pantalla completa",
     "failed_load_lyrics": "Error al cargar la letra.",
+    "lyric_languages": {
+      "pronunciation": "Pronunciación",
+      "unavailable": "No disponible en esta fuente"
+    },
     "lyrics_offset": "Ajuste de letra",
     "earlier": "Antes",
     "later": "Después",

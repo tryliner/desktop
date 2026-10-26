@@ -381,6 +381,10 @@
     "no_lyrics_found": "Für diesen Titel haben wir noch keinen Songtext.",
     "close_fullscreen": "Vollbild schließen",
     "failed_load_lyrics": "Songtext konnte nicht geladen werden.",
+    "lyric_languages": {
+      "pronunciation": "Aussprache",
+      "unavailable": "Für diese Quelle nicht verfügbar"
+    },
     "lyrics_offset": "Songtext-Versatz",
     "earlier": "Früher",
     "later": "Später",
