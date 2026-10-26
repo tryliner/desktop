@@ -1,5 +1,4 @@
 import { useState, useRef, useCallback, memo } from "react";
-import { motion } from "framer-motion";
 
 export interface SliderProps {
   label?: React.ReactNode;
@@ -156,12 +155,9 @@ export const Slider = memo(function Slider({
         onPointerDown={handlePointerDown}
         className="relative flex h-full flex-1 items-center outline-none"
       >
-        <motion.div
+        <div
           ref={trackRef}
-          initial={false}
-          animate={{ scaleY: isActive ? 1.3 : 1 }}
-          transition={{ type: "spring", stiffness: 400, damping: 30, mass: 0.8 }}
-          className={`relative h-[6px] w-full rounded-full overflow-hidden origin-center transition-colors duration-150 ${
+          className={`relative h-[6px] w-full rounded-full overflow-hidden transition-colors duration-150 ${
             isActive
               ? "bg-black/[0.20] dark:bg-white/[0.24]"
               : "bg-black/[0.10] dark:bg-white/[0.14]"
@@ -173,12 +169,12 @@ export const Slider = memo(function Slider({
             }`}
             style={{ width: `${percentage}%` }}
           />
-        </motion.div>
+        </div>
       </div>
 
       {showValue && (
         <span
-          className="w-[42px] shrink-0 text-right text-[12px] font-[500] tabular-nums text-text-tertiary group-hover:text-text-primary transition-colors"
+          className="w-[42px] shrink-0 text-right text-[12px] font-[500] tabular-nums text-text-tertiary"
           style={{ fontFamily: "var(--font-inter), sans-serif" }}
         >
           {displayLabel}

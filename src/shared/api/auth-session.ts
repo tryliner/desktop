@@ -6,11 +6,22 @@ export type { AuthTokens, AuthUser };
 import { getApiBaseUrl } from "./baseUrl";
  
 const STORAGE_KEY = "liner_auth_session";
+const DEAD_REFRESH_CODES = new Set(["INVALID_REFRESH_TOKEN", "REFRESH_SESSION_EXPIRED"]);
+const REFRESH_ATTEMPTS = 2;
+
+type MainAuthBridge = NonNullable<NonNullable<Window["linerElectron"]>["authSession"]>;
 
 let session: AuthTokens | null = null;
+let loadedFromMain = false;
+let unsubscribeMain: (() => void) | null = null;
 let refreshPromise: Promise<AuthTokens | null> | null = null;
 
-function load(): AuthTokens | null {
+function mainBridge(): MainAuthBridge | null {
+  if (typeof window === "undefined") return null;
+  return window.linerElectron?.authSession ?? null;
+}
+
+function readLocal(): AuthTokens | null {
   if (typeof window === "undefined") return null;
   try {
     const value = localStorage.getItem(STORAGE_KEY);
@@ -20,33 +31,81 @@ function load(): AuthTokens | null {
   }
 }
 
+function dropLocal(): void {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch {}
+}
+
 function emit() {
   if (typeof window !== "undefined") {
     window.dispatchEvent(new Event("auth:changed"));
   }
 }
 
+function adopt(next: AuthTokens | null): void {
+  const changed =
+    session?.refreshToken !== next?.refreshToken || session?.accessToken !== next?.accessToken;
+  session = next;
+  if (changed) emit();
+}
+
+function followMain(bridge: MainAuthBridge): void {
+  if (!unsubscribeMain) {
+    unsubscribeMain = bridge.onChange((next) => adopt(next as AuthTokens | null));
+  }
+}
+
+function loadFromMain(bridge: MainAuthBridge): AuthTokens | null {
+  followMain(bridge);
+  let stored: AuthTokens | null = null;
+  try {
+    stored = bridge.get() as AuthTokens | null;
+  } catch (err) {
+    console.error("[Auth] reading the stored session failed:", err);
+  }
+  const legacy = readLocal();
+  if (legacy) {
+    dropLocal();
+    if (!stored && legacy.refreshToken) {
+      void bridge.set(legacy);
+      stored = legacy;
+    }
+  }
+  loadedFromMain = true;
+  return stored;
+}
+
 export function getAuthSession(): AuthTokens | null {
-  if (!session) session = load();
+  if (session) return session;
+  const bridge = mainBridge();
+  if (bridge) {
+    if (!loadedFromMain) session = loadFromMain(bridge);
+    return session;
+  }
+  session = readLocal();
   return session;
 }
 
-// another window of this app (or a previous launch that finished a refresh)
-// may rotate the tokens in storage; keep the in-memory copy in step so we never
-// refresh with a token that has already been used
 if (typeof window !== "undefined") {
   window.addEventListener("storage", (event) => {
-    if (event.key !== STORAGE_KEY) return;
-    session = load();
+    if (event.key !== STORAGE_KEY || mainBridge()) return;
+    session = readLocal();
     emit();
   });
 }
 
 export function setAuthSession(next: AuthTokens | null): void {
   session = next;
-  if (typeof window !== "undefined") {
+  const bridge = mainBridge();
+  if (bridge) {
+    followMain(bridge);
+    loadedFromMain = true;
+    dropLocal();
+    void bridge.set(next).catch((err) => console.error("[Auth] saving the session failed:", err));
+  } else if (typeof window !== "undefined") {
     if (next) localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-    else localStorage.removeItem(STORAGE_KEY);
+    else dropLocal();
   }
   emit();
 }
@@ -112,10 +171,6 @@ export async function getValidAccessToken(): Promise<string | null> {
   return current.accessToken;
 }
 
-/**
- * Performs a mutex-locked atomic refresh of the auth session.
- * Guaranteed to only initiate one in-flight refresh request across all parallel callers.
- */
 export function refreshAuthSession(): Promise<AuthTokens | null> {
   if (refreshPromise) {
     return refreshPromise;
@@ -126,53 +181,10 @@ export function refreshAuthSession(): Promise<AuthTokens | null> {
     return Promise.resolve(null);
   }
 
-  // Synchronously assign the promise to immediately lock out any concurrent callers
   refreshPromise = (async () => {
     try {
-      let response = await postRefresh(current.refreshToken);
-
-      if (response.status === 401 || response.status === 403) {
-        // 1) the token may already have been rotated elsewhere (another window,
-        //    or a refresh that finished just before a reload): adopt it
-        const rotated = rotatedElsewhere(current.refreshToken);
-        if (rotated) return rotated;
-        // 2) a rejected signature / timestamp is also a 401. postRefresh has just
-        //    re-synced the clock from this response's Date header, so one fresh,
-        //    re-signed attempt tells a bad signature apart from a dead token
-        const firstReason = await describeRejection(response);
-        response = await postRefresh(current.refreshToken);
-        if (response.status === 401 || response.status === 403) {
-          const again = rotatedElsewhere(current.refreshToken);
-          if (again) return again;
-          const reason = await describeRejection(response);
-          // only now is the refresh token really dead: sign out, and say why in the log
-          console.warn(
-            `[Auth] signed out: refresh rejected twice (${firstReason}; ${reason})`,
-          );
-          const latest = getAuthSession();
-          if (latest?.refreshToken === current.refreshToken) {
-            setAuthSession(null);
-          }
-          return null;
-        }
-      }
-
-      if (!response.ok) {
-        // 5xx / 429 / anything transient: keep the session, try again later
-        console.warn(`[Auth] refresh failed with ${response.status}, keeping the session`);
-        return null;
-      }
-
-      const next = (await response.json()) as AuthTokens;
-      // Preserve existing user info and metadata
-      const merged: AuthTokens = {
-        ...current,
-        ...next,
-        user: next.user || current.user,
-      };
-
-      setAuthSession(merged);
-      return merged;
+      const bridge = mainBridge();
+      return bridge ? await refreshInMain(bridge, current) : await refreshHere(current);
     } catch (err) {
       console.error("[Auth] refreshAuthSession request failed:", err);
       return null;
@@ -182,6 +194,60 @@ export function refreshAuthSession(): Promise<AuthTokens | null> {
   })();
 
   return refreshPromise;
+}
+
+async function refreshInMain(bridge: MainAuthBridge, current: AuthTokens): Promise<AuthTokens | null> {
+  const result = await bridge.refresh({
+    apiBaseUrl: getApiBaseUrl(),
+    refreshToken: current.refreshToken,
+  });
+  adopt(result.session as AuthTokens | null);
+  if (result.outcome === "signed_out") {
+    console.warn(`[Auth] signed out: refresh token rejected (${result.reason ?? "unknown"})`);
+  } else if (result.outcome === "transient") {
+    console.warn(`[Auth] refresh failed (${result.reason ?? "unknown"}), keeping the session`);
+  }
+  return result.outcome === "refreshed" || result.outcome === "rotated"
+    ? (result.session as AuthTokens | null)
+    : null;
+}
+
+async function refreshHere(current: AuthTokens): Promise<AuthTokens | null> {
+  let reason = "";
+  for (let attempt = 0; attempt < REFRESH_ATTEMPTS; attempt++) {
+    const response = await postRefresh(current.refreshToken);
+
+    if (response.ok) {
+      const next = (await response.json()) as AuthTokens;
+      const merged: AuthTokens = {
+        ...current,
+        ...next,
+        user: next.user || current.user,
+      };
+      setAuthSession(merged);
+      return merged;
+    }
+
+    if (response.status !== 401 && response.status !== 403) {
+      console.warn(`[Auth] refresh failed with ${response.status}, keeping the session`);
+      return null;
+    }
+
+    const rotated = rotatedElsewhere(current.refreshToken);
+    if (rotated) return rotated;
+
+    const code = await rejectionCode(response);
+    reason = [String(response.status), code].filter(Boolean).join(" ");
+    if (DEAD_REFRESH_CODES.has(code)) {
+      console.warn(`[Auth] signed out: refresh token rejected (${reason})`);
+      if (getAuthSession()?.refreshToken === current.refreshToken) {
+        setAuthSession(null);
+      }
+      return null;
+    }
+  }
+  console.warn(`[Auth] refresh rejected (${reason}), keeping the session`);
+  return null;
 }
 
 async function postRefresh(refreshToken: string): Promise<Response> {
@@ -202,9 +268,8 @@ async function postRefresh(refreshToken: string): Promise<Response> {
   return response;
 }
 
-/** a newer session (different refresh token) saved by someone else, if any */
 function rotatedElsewhere(usedRefreshToken: string): AuthTokens | null {
-  const stored = load();
+  const stored = readLocal();
   if (stored?.refreshToken && stored.refreshToken !== usedRefreshToken) {
     session = stored;
     emit();
@@ -213,15 +278,12 @@ function rotatedElsewhere(usedRefreshToken: string): AuthTokens | null {
   return null;
 }
 
-async function describeRejection(response: Response): Promise<string> {
+async function rejectionCode(response: Response): Promise<string> {
   try {
     const data = (await response.clone?.().json?.()) as Record<string, unknown> | undefined;
-    const code = typeof data?.code === "string" ? data.code : "";
-    const message =
-      typeof data?.message === "string" ? data.message : typeof data?.error === "string" ? data.error : "";
-    return [String(response.status), code, message].filter(Boolean).join(" ");
+    return typeof data?.code === "string" ? data.code : "";
   } catch {
-    return String(response.status);
+    return "";
   }
 }
 

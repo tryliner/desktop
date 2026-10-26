@@ -1,6 +1,11 @@
 export { playerRuntime } from "./engine/playerRuntime";
-export { playerEngine, type PlayerStatus, type PlayerStatus as PlaybackStatus } from "./engine/playerEngine";
+export {
+  playerEngine,
+  type PlayerStatus,
+  type PlayerStatus as PlaybackStatus,
+} from "./engine/playerEngine";
 export { toVolumeGain, toVolumeLevel } from "./engine/volume";
+export { isRadioContext, nextRepeatMode } from "./engine/radioMode";
 export {
   usePlayerStore,
   type AccentVariant,
@@ -8,6 +13,7 @@ export {
   type MiniPlayerStyle,
   type TrackDoubleClickBehavior,
   type DefaultPlaybackContext,
+  type RepeatMode,
 } from "./store/playerStore";
 export { usePlayerState } from "./hooks/usePlayerState";
 export { useAppIconSync } from "./hooks/useAppIconSync";
@@ -30,4 +36,7 @@ export {
   type SongCardWithMenuProps,
 } from "./ui/SongCardWithMenu";
 export { VolumePicker, type VolumePickerProps } from "./ui/VolumePicker";
-export { SpeedPitchPicker, type SpeedPitchPickerProps } from "./ui/SpeedPitchPicker";
+export {
+  SpeedPitchPicker,
+  type SpeedPitchPickerProps,
+} from "./ui/SpeedPitchPicker";

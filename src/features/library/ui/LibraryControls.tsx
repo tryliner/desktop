@@ -1,14 +1,20 @@
 import {
   Search2Line,
+  CloseLine,
+  AddLine,
   GridLine,
   GridFill,
   ListCheckLine,
   ListCheckFill,
 } from "@mingcute/react";
-import TextInput from "@/shared/ui/TextInput";
+import Button from "@/shared/ui/Button";
+import {
+  HERO_BUTTON_CLASS,
+  HERO_GLASS_BUTTON_CLASS,
+  HERO_GLASS_CLASS,
+} from "@/shared/ui";
 import type { LibraryTab, LibraryViewMode } from "../types";
 import { useTranslation } from "@/languages";
-import { useIsContentTransparent } from "@/features/settings/store/customizationStore";
 
 interface LibraryControlsProps {
   activeTab: LibraryTab;
@@ -16,6 +22,8 @@ interface LibraryControlsProps {
   onQueryChange: (query: string) => void;
   viewMode: LibraryViewMode;
   onViewModeChange: (mode: LibraryViewMode) => void;
+  /** shown only when provided (playlist tabs) */
+  onCreatePlaylist?: () => void;
 }
 
 export default function LibraryControls({
@@ -24,80 +32,96 @@ export default function LibraryControls({
   onQueryChange,
   viewMode,
   onViewModeChange,
+  onCreatePlaylist,
 }: LibraryControlsProps) {
   const { t } = useTranslation();
-  const hasCustomBg = useIsContentTransparent();
 
   const placeholderByTab: Record<LibraryTab, string> = {
+    all: t("library.search_all"),
     playlists: t("library.search_playlists"),
     albums: t("library.search_albums"),
     artists: t("library.search_artists"),
   };
 
-  return (
-    <div className="flex flex-wrap items-center gap-[10px]">
-      <TextInput
-        value={query}
-        onChange={(event) => onQueryChange(event.target.value)}
-        placeholder={placeholderByTab[activeTab]}
-        icon={<Search2Line size={16} className={hasCustomBg ? "!text-white/60 dark:!text-white/60" : undefined} />}
-        className={`!h-[34px] w-[220px] md:w-[260px] rounded-lg ${
-          hasCustomBg
-            ? "apple-glass-pill !border-none [&_input]:placeholder:!text-white/50 dark:[&_input]:placeholder:!text-white/50"
-            : "border-border-primary bg-bg-elevated"
-        }`}
-      />
+  const iconButtonClass = `${HERO_BUTTON_CLASS} ${HERO_GLASS_BUTTON_CLASS} !w-[52px] !p-0 text-text-primary`;
 
+  return (
+    <div className="flex flex-wrap items-center gap-[8px]">
       <div
-        className={`inline-flex items-center rounded-lg p-[2px] ${
-          hasCustomBg
-            ? "apple-glass-pill"
-            : "bg-bg-elevated"
+        role="search"
+        data-no-window-drag
+        className={`flex h-[32px] w-[220px] items-center gap-[8px] rounded-[9px] px-[10px] text-text-primary ${HERO_GLASS_CLASS}`}
+        style={{ fontFamily: "var(--font-inter), sans-serif" }}
+      >
+        <Search2Line size={16} className="shrink-0 text-text-secondary" />
+        <input
+          type="text"
+          value={query}
+          onChange={(event) => onQueryChange(event.target.value)}
+          placeholder={placeholderByTab[activeTab]}
+          aria-label={placeholderByTab[activeTab]}
+          spellCheck={false}
+          autoComplete="off"
+          onKeyDown={(event) => {
+            if (event.key === "Escape" && query) {
+              event.preventDefault();
+              onQueryChange("");
+            }
+          }}
+          className="h-[32px] min-w-0 flex-1 border-none bg-transparent p-0 text-[14px] leading-[32px] font-[400] text-text-primary outline-none placeholder:text-text-secondary"
+        />
+        {query.length > 0 && (
+          <button
+            type="button"
+            aria-label={t("track_search.clear")}
+            data-no-tooltip="true"
+            onClick={() => onQueryChange("")}
+            className="-mr-[2px] flex shrink-0 items-center justify-center border-none bg-transparent p-0 cursor-pointer text-text-tertiary transition-colors hover:text-text-primary"
+          >
+            <CloseLine size={16} />
+          </button>
+        )}
+      </div>
+
+      <Button
+        variant="secondary"
+        data-no-tooltip="true"
+        aria-label={t("library.view_grid")}
+        aria-pressed={viewMode === "grid"}
+        onClick={() => onViewModeChange("grid")}
+        className={`${iconButtonClass} ${
+          viewMode === "grid" ? "" : "!text-text-tertiary hover:!text-text-primary"
         }`}
       >
-        <button
-          type="button"
-          data-no-tooltip="true"
-          aria-label={t("library.view_grid")}
-          onClick={() => onViewModeChange("grid")}
-          className={`inline-flex items-center justify-center h-[28px] w-[30px] rounded-[6px] border-0 transition-colors cursor-pointer select-none active:scale-[0.95] ${
-            viewMode === "grid"
-              ? hasCustomBg
-                ? "apple-glass-prominent"
-                : "bg-border-alpha-14 text-text-primary"
-              : hasCustomBg
-                ? "bg-transparent text-black/60 dark:text-white/60 hover:text-black dark:hover:text-white"
-                : "bg-transparent text-text-tertiary hover:text-text-secondary"
-          }`}
+        {viewMode === "grid" ? <GridFill size={16} /> : <GridLine size={16} />}
+      </Button>
+      <Button
+        variant="secondary"
+        data-no-tooltip="true"
+        aria-label={t("library.view_list")}
+        aria-pressed={viewMode === "list"}
+        onClick={() => onViewModeChange("list")}
+        className={`${iconButtonClass} ${
+          viewMode === "list" ? "" : "!text-text-tertiary hover:!text-text-primary"
+        }`}
+      >
+        {viewMode === "list" ? (
+          <ListCheckFill size={16} />
+        ) : (
+          <ListCheckLine size={16} />
+        )}
+      </Button>
+      {onCreatePlaylist && (
+        <Button
+          variant="primary"
+          onClick={onCreatePlaylist}
+          className={`${HERO_BUTTON_CLASS} px-[16px]`}
+          title={t("library.create_playlist")}
         >
-          {viewMode === "grid" ? (
-            <GridFill size={16} />
-          ) : (
-            <GridLine size={16} />
-          )}
-        </button>
-        <button
-          type="button"
-          data-no-tooltip="true"
-          aria-label={t("library.view_list")}
-          onClick={() => onViewModeChange("list")}
-          className={`inline-flex items-center justify-center h-[28px] w-[30px] rounded-[6px] border-0 transition-colors cursor-pointer select-none active:scale-[0.95] ${
-            viewMode === "list"
-              ? hasCustomBg
-                ? "apple-glass-prominent"
-                : "bg-border-alpha-14 text-text-primary"
-              : hasCustomBg
-                ? "bg-transparent text-black/60 dark:text-white/60 hover:text-black dark:hover:text-white"
-                : "bg-transparent text-text-tertiary hover:text-text-secondary"
-          }`}
-        >
-          {viewMode === "list" ? (
-            <ListCheckFill size={16} />
-          ) : (
-            <ListCheckLine size={16} />
-          )}
-        </button>
-      </div>
+          <AddLine size={16} />
+          <span>{t("library.create_playlist")}</span>
+        </Button>
+      )}
     </div>
   );
 }

@@ -2,7 +2,9 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 const mocks = vi.hoisted(() => ({ resolvePlaybackStream: vi.fn() }));
 
-vi.mock("./streamResolver", () => ({ resolvePlaybackStream: mocks.resolvePlaybackStream }));
+vi.mock("./streamResolver", () => ({
+  resolvePlaybackStream: mocks.resolvePlaybackStream,
+}));
 
 import { playerRuntime, PlayerRuntime } from "./playerRuntime";
 import { usePlayerStore } from "../store/playerStore";
@@ -65,8 +67,12 @@ describe("PlayerRuntime — status must always match the real audio state", () =
     const pendingPlay = new Promise<void>((resolve) => {
       resolvePlay = resolve;
     });
-    vi.spyOn(HTMLMediaElement.prototype, "play").mockReturnValue(pendingPlay as unknown as Promise<void>);
-    const pauseSpy = vi.spyOn(HTMLMediaElement.prototype, "pause").mockImplementation(() => {});
+    vi.spyOn(HTMLMediaElement.prototype, "play").mockReturnValue(
+      pendingPlay as unknown as Promise<void>,
+    );
+    const pauseSpy = vi
+      .spyOn(HTMLMediaElement.prototype, "pause")
+      .mockImplementation(() => {});
 
     playerRuntime!.resume();
     expect(usePlayerStore.getState().status).toBe("playing");
@@ -91,7 +97,9 @@ describe("PlayerRuntime — status must always match the real audio state", () =
     const pendingPlay = new Promise<void>((_resolve, reject) => {
       rejectPlay = reject;
     });
-    vi.spyOn(HTMLMediaElement.prototype, "play").mockReturnValue(pendingPlay as unknown as Promise<void>);
+    vi.spyOn(HTMLMediaElement.prototype, "play").mockReturnValue(
+      pendingPlay as unknown as Promise<void>,
+    );
     vi.spyOn(HTMLMediaElement.prototype, "pause").mockImplementation(() => {});
 
     playerRuntime!.resume();
@@ -107,12 +115,51 @@ describe("PlayerRuntime — status must always match the real audio state", () =
   });
 });
 
+describe("PlayerRuntime — buffering hiccups don't flash the loading state", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    usePlayerStore.setState({ status: "playing", currentTrack: track, error: null });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    const audio = (playerRuntime as unknown as { audio: HTMLAudioElement }).audio;
+    Reflect.deleteProperty(audio, "readyState");
+    Reflect.deleteProperty(audio, "paused");
+  });
+
+  it("a seek inside a loaded track (waiting -> seeked right away) keeps the play state", () => {
+    const audio = (playerRuntime as unknown as { audio: HTMLAudioElement }).audio;
+    Object.defineProperty(audio, "paused", { value: false, configurable: true });
+    Object.defineProperty(audio, "readyState", { value: 4, configurable: true });
+    audio.dispatchEvent(new Event("waiting"));
+    audio.dispatchEvent(new Event("seeked"));
+    vi.advanceTimersByTime(1000);
+    expect(usePlayerStore.getState().status).toBe("playing");
+  });
+
+  it("a real stall still shows loading once it lasts", () => {
+    const audio = (playerRuntime as unknown as { audio: HTMLAudioElement }).audio;
+    Object.defineProperty(audio, "paused", { value: false, configurable: true });
+    Object.defineProperty(audio, "readyState", { value: 2, configurable: true });
+    audio.dispatchEvent(new Event("waiting"));
+    vi.advanceTimersByTime(100);
+    expect(usePlayerStore.getState().status).toBe("playing");
+    vi.advanceTimersByTime(300);
+    expect(usePlayerStore.getState().status).toBe("loading");
+  });
+});
+
 describe("PlayerRuntime audio caching", () => {
   beforeEach(() => {
     if (!globalThis.URL.createObjectURL) {
-      globalThis.URL.createObjectURL = vi.fn((_blob: Blob) => "blob:mock-object-url");
+      globalThis.URL.createObjectURL = vi.fn(
+        (_blob: Blob) => "blob:mock-object-url",
+      );
     } else {
-      vi.spyOn(globalThis.URL, "createObjectURL").mockReturnValue("blob:mock-object-url");
+      vi.spyOn(globalThis.URL, "createObjectURL").mockReturnValue(
+        "blob:mock-object-url",
+      );
     }
     if (!globalThis.URL.revokeObjectURL) {
       globalThis.URL.revokeObjectURL = vi.fn();
@@ -127,7 +174,9 @@ describe("PlayerRuntime audio caching", () => {
   });
 
   it("plays directly from linerDb cache when audio blob exists without resolving a stream", async () => {
-    const playSpy = vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue();
+    const playSpy = vi
+      .spyOn(HTMLMediaElement.prototype, "play")
+      .mockResolvedValue();
     const sessionSpy = mocks.resolvePlaybackStream;
     const fetchSpy = vi.spyOn(globalThis, "fetch");
 
@@ -149,13 +198,20 @@ describe("PlayerRuntime audio caching", () => {
   });
 
   it("fetches, plays, and saves to linerDb on cache miss", async () => {
-    const playSpy = vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue();
+    const playSpy = vi
+      .spyOn(HTMLMediaElement.prototype, "play")
+      .mockResolvedValue();
     const sessionSpy = mocks.resolvePlaybackStream.mockResolvedValue(urlStream);
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
-      new Response(new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 1, 2, 3, 4, 0, 0, 0, 0, 0, 0, 0, 0]), {
-        status: 206,
-        headers: { "content-type": "audio/webm" },
-      }),
+      new Response(
+        new Uint8Array([
+          0x1a, 0x45, 0xdf, 0xa3, 1, 2, 3, 4, 0, 0, 0, 0, 0, 0, 0, 0,
+        ]),
+        {
+          status: 206,
+          headers: { "content-type": "audio/webm" },
+        },
+      ),
     );
 
     const freshTrack: Track = {
@@ -179,10 +235,15 @@ describe("PlayerRuntime audio caching", () => {
   it("preloads audio in the background and enables instant cache-hit play on skip", async () => {
     const sessionSpy = mocks.resolvePlaybackStream.mockResolvedValue(urlStream);
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
-      new Response(new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 5, 6, 7, 8, 0, 0, 0, 0, 0, 0, 0, 0]), {
-        status: 206,
-        headers: { "content-type": "audio/webm" },
-      }),
+      new Response(
+        new Uint8Array([
+          0x1a, 0x45, 0xdf, 0xa3, 5, 6, 7, 8, 0, 0, 0, 0, 0, 0, 0, 0,
+        ]),
+        {
+          status: 206,
+          headers: { "content-type": "audio/webm" },
+        },
+      ),
     );
 
     const nextTrack: Track = {
@@ -203,7 +264,9 @@ describe("PlayerRuntime audio caching", () => {
     sessionSpy.mockClear();
     fetchSpy.mockClear();
 
-    const playSpy = vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue();
+    const playSpy = vi
+      .spyOn(HTMLMediaElement.prototype, "play")
+      .mockResolvedValue();
     await playerRuntime!.loadAndPlay(nextTrack);
 
     expect(sessionSpy).not.toHaveBeenCalled();
@@ -213,13 +276,20 @@ describe("PlayerRuntime audio caching", () => {
   });
 
   it("evicts corrupt 0-byte audio blob from cache and fetches fresh stream", async () => {
-    const playSpy = vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue();
+    const playSpy = vi
+      .spyOn(HTMLMediaElement.prototype, "play")
+      .mockResolvedValue();
     const sessionSpy = mocks.resolvePlaybackStream.mockResolvedValue(urlStream);
     vi.spyOn(globalThis, "fetch").mockResolvedValue(
-      new Response(new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 1, 2, 3, 4, 0, 0, 0, 0, 0, 0, 0, 0]), {
-        status: 200,
-        headers: { "content-type": "audio/webm" },
-      }),
+      new Response(
+        new Uint8Array([
+          0x1a, 0x45, 0xdf, 0xa3, 1, 2, 3, 4, 0, 0, 0, 0, 0, 0, 0, 0,
+        ]),
+        {
+          status: 200,
+          headers: { "content-type": "audio/webm" },
+        },
+      ),
     );
 
     const emptyBlob = new Blob([], { type: "audio/webm" });
@@ -268,26 +338,49 @@ describe("PlayerRuntime audio caching", () => {
   it("drops an unreadable cached file, recovers from the network once and does not cache a dash segment", async () => {
     vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue();
     const resolveSpy = mocks.resolvePlaybackStream.mockResolvedValue(urlStream);
-    vi.spyOn(globalThis, "fetch").mockImplementation(async () =>
-      new Response(new Uint8Array([0, 0, 0, 0x18, 0x73, 0x74, 0x79, 0x70, 0, 0, 0, 0, 0, 0, 0, 0]), { status: 206 }),
+    vi.spyOn(globalThis, "fetch").mockImplementation(
+      async () =>
+        new Response(
+          new Uint8Array([
+            0, 0, 0, 0x18, 0x73, 0x74, 0x79, 0x70, 0, 0, 0, 0, 0, 0, 0, 0,
+          ]),
+          { status: 206 },
+        ),
     );
 
-    const corruptTrack: Track = { ...track, id: "corrupt-track", title: "Corrupt" };
-    await linerDb.putAudio(corruptTrack.id, new Blob([new Uint8Array([9, 9, 9])], { type: "audio/webm" }), "audio/webm");
+    const corruptTrack: Track = {
+      ...track,
+      id: "corrupt-track",
+      title: "Corrupt",
+    };
+    await linerDb.putAudio(
+      corruptTrack.id,
+      new Blob([new Uint8Array([9, 9, 9])], { type: "audio/webm" }),
+      "audio/webm",
+    );
     usePlayerStore.setState({ currentTrack: corruptTrack, positionMs: 0 });
     await playerRuntime!.loadAndPlay(corruptTrack);
     expect(resolveSpy).not.toHaveBeenCalled();
 
-    const audio = (playerRuntime as unknown as { audio: HTMLAudioElement }).audio;
-    Object.defineProperty(audio, "error", { value: { code: 4, message: "DEMUXER_ERROR_COULD_NOT_OPEN" }, configurable: true });
+    const audio = (playerRuntime as unknown as { audio: HTMLAudioElement })
+      .audio;
+    Object.defineProperty(audio, "error", {
+      value: { code: 4, message: "DEMUXER_ERROR_COULD_NOT_OPEN" },
+      configurable: true,
+    });
     try {
       audio.dispatchEvent(new Event("error"));
       await vi.waitFor(() => expect(resolveSpy).toHaveBeenCalledTimes(1));
-      await vi.waitFor(() => expect(usePlayerStore.getState().status).toBe("playing"), { timeout: 5000 });
+      await vi.waitFor(
+        () => expect(usePlayerStore.getState().status).toBe("playing"),
+        { timeout: 5000 },
+      );
       expect(await linerDb.getAudio(corruptTrack.id)).toBeNull();
 
       audio.dispatchEvent(new Event("error"));
-      await vi.waitFor(() => expect(usePlayerStore.getState().status).toBe("error"));
+      await vi.waitFor(() =>
+        expect(usePlayerStore.getState().status).toBe("error"),
+      );
       expect(resolveSpy).toHaveBeenCalledTimes(1);
     } finally {
       Reflect.deleteProperty(audio, "error");

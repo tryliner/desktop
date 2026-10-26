@@ -1,16 +1,30 @@
-import { asArray, asRecord, type JsonRecord, stringValue } from "@/shared/utils/json";
+import {
+  asArray,
+  asRecord,
+  type JsonRecord,
+  stringValue,
+} from "@/shared/utils/json";
 import { fetchSoundCloudApi } from "@/shared/media/soundcloud";
 import type { SoundCloudCollection } from "./soundcloudCollection";
 
 const MAX_LIKES_PAGES = 20;
 
-export function isSoundCloudUserEntity(body: JsonRecord, isLikesUrl: boolean): boolean {
-  return body.kind === "user" || isLikesUrl || (typeof body.id === "number" && !body.tracks);
+export function isSoundCloudUserEntity(
+  body: JsonRecord,
+  isLikesUrl: boolean,
+): boolean {
+  return (
+    body.kind === "user" ||
+    isLikesUrl ||
+    (typeof body.id === "number" && !body.tracks)
+  );
 }
 
 function likedTrack(item: unknown): JsonRecord | undefined {
   const record = asRecord(item);
-  return asRecord(record?.track) ?? (record?.kind === "track" ? record : undefined);
+  return (
+    asRecord(record?.track) ?? (record?.kind === "track" ? record : undefined)
+  );
 }
 
 function nextLikesUrl(nextHref: unknown): string | null {

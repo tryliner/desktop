@@ -9,7 +9,8 @@ import {
   type PublicUser,
   type UpdateProfileInput,
 } from "@/shared/api";
-import { usePlayerStore, playerRuntime } from "@/features/player";
+import { playerEngine } from "@/features/player";
+import { queryCache } from "@/shared/cache/queryCache";
 
 export type AuthStatus = "initializing" | "authenticated" | "anonymous";
 export type AuthState = {
@@ -117,13 +118,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     return updated;
   },
   logout: async () => {
-    try {
-      usePlayerStore.getState().dispatch({ type: "PAUSE_REQUESTED" });
-      playerRuntime?.pause();
-    } catch {}
-    try {
-      usePlayerStore.getState().setFullscreen(false);
-    } catch {}
+    await clearPlayback();
     try {
       window.linerElectron?.closeOverlay?.();
       window.linerElectron?.sendOverlayAction?.({ type: "closeOverlay" });
@@ -132,12 +127,33 @@ export const useAuthStore = create<AuthState>((set) => ({
       window.location.hash = "#/";
     }
     await clearAuthSession();
+    queryCache.clear();
     set({ status: "anonymous", user: null });
     if (typeof window !== "undefined") {
       window.dispatchEvent(new Event("library:changed"));
     }
   },
 }));
+
+const PLAYBACK_CLEAR_TIMEOUT_MS = 3_000;
+
+async function clearPlayback(): Promise<void> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<void>((resolve) => {
+    timer = setTimeout(resolve, PLAYBACK_CLEAR_TIMEOUT_MS);
+  });
+  try {
+    await Promise.race([playerEngine.stopAndClear().catch(() => {}), timeout]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+useAuthStore.subscribe((state, previous) => {
+  if (state.status === "anonymous" && previous.status !== "anonymous") {
+    void clearPlayback();
+  }
+});
 
 export function getAuthErrorCode(error: unknown): string {
   if (!(error instanceof ApiError)) return "server_unavailable";

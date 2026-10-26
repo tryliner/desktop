@@ -1,5 +1,13 @@
-import { LOCAL_IMPORT_PREFIX, registerLocalImportHandler } from "@/shared/api/localImports";
-import type { ImportJob, ImportReview, ImportSource, Track } from "@/shared/contracts";
+import {
+  LOCAL_IMPORT_PREFIX,
+  registerLocalImportHandler,
+} from "@/shared/api/localImports";
+import type {
+  ImportJob,
+  ImportReview,
+  ImportSource,
+  Track,
+} from "@/shared/contracts";
 import { finalizeImportedPlaylist } from "./finalizeImport";
 
 interface LocalImportRecord {
@@ -13,11 +21,17 @@ const records = new Map<string, LocalImportRecord>();
 const listeners = new Set<JobListener>();
 
 function newJobId(): string {
-  const random = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2);
+  const random =
+    typeof crypto !== "undefined" && crypto.randomUUID
+      ? crypto.randomUUID()
+      : Math.random().toString(36).slice(2);
   return `${LOCAL_IMPORT_PREFIX}${random}`;
 }
 
-export function createLocalImportJob(source: ImportSource, sourceUrl: string): ImportJob {
+export function createLocalImportJob(
+  source: ImportSource,
+  sourceUrl: string,
+): ImportJob {
   const job: ImportJob = {
     id: newJobId(),
     source,
@@ -32,7 +46,11 @@ export function createLocalImportJob(source: ImportSource, sourceUrl: string): I
   return job;
 }
 
-export function updateLocalImportJob(jobId: string, patch: Partial<ImportJob>, reviewItems?: ImportReview[]): ImportJob | undefined {
+export function updateLocalImportJob(
+  jobId: string,
+  patch: Partial<ImportJob>,
+  reviewItems?: ImportReview[],
+): ImportJob | undefined {
   const record = records.get(jobId);
   if (!record) return undefined;
   record.job = { ...record.job, ...patch };
@@ -63,16 +81,23 @@ export async function finalizeLocalImport(
       description ?? record.job.description,
       tracks,
     );
-    updateLocalImportJob(jobId, {
-      status: "completed",
-      requiresDecision: false,
-      playlistId,
-      result: { total, imported: saved, skipped: Math.max(0, total - saved) },
-      finishedAt: new Date().toISOString(),
-    }, []);
+    updateLocalImportJob(
+      jobId,
+      {
+        status: "completed",
+        requiresDecision: false,
+        playlistId,
+        result: { total, imported: saved, skipped: Math.max(0, total - saved) },
+        finishedAt: new Date().toISOString(),
+      },
+      [],
+    );
     return { finalized: true };
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to save imported playlist";
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Failed to save imported playlist";
     updateLocalImportJob(jobId, {
       status: "failed",
       error: { code: "FINALIZE_FAILED", message },

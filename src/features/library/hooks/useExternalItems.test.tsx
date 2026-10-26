@@ -68,7 +68,11 @@ describe("useExternalItems", () => {
   });
 
   afterEach(() => {
-    act(() => root.unmount());
+    // Account changes drop the hook's module-level caches so tests stay independent.
+    act(() => {
+      window.dispatchEvent(new Event("auth:changed"));
+      root.unmount();
+    });
     document.body.removeChild(container);
   });
 
@@ -528,5 +532,35 @@ describe("useExternalItems", () => {
     });
 
     expect(result?.data[0]?.title).toBe("Current Artist");
+  });
+
+  it("reports loading until saved artists arrive, then serves them instantly on the next open", async () => {
+    let pending = true;
+    vi.mocked(api.listSavedCollections).mockImplementation(() =>
+      pending
+        ? Promise.resolve({
+            items: [
+              {
+                savedAt,
+                artist: { id: "a1", name: "SZA", cover: { url: "/sza.jpg", width: 300, height: 300 } },
+              },
+            ],
+          })
+        : new Promise(() => undefined),
+    );
+
+    await renderType("artist");
+    expect(result?.isLoading).toBe(false);
+    expect(result?.data.map((item) => item.title)).toEqual(["SZA"]);
+
+    act(() => root.unmount());
+    root = createRoot(container);
+    pending = false;
+
+    act(() => {
+      root.render(<HookProbe type="artist" onChange={(value) => { result = value; }} />);
+    });
+    expect(result?.isLoading).toBe(false);
+    expect(result?.data.map((item) => item.title)).toEqual(["SZA"]);
   });
 });

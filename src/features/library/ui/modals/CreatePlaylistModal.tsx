@@ -1,16 +1,21 @@
 import { useEffect, useRef, useState } from "react";
-import Button from "@/shared/ui/Button";
 import TextInput from "@/shared/ui/TextInput";
 import Tooltip from "@/shared/ui/Tooltip";
 import { CheckLine, InformationLine, LinkLine } from "@mingcute/react";
 import { useAddPlaylistTracks, useCreatePlaylist } from "../../hooks";
 import { notifyLibraryChanged } from "../../hooks/usePlaylists";
 import Dialog from "@/shared/ui/Dialog";
-import { useToast } from "@/shared/ui";
+import {
+  useToast,
+  DialogActions,
+  DialogButton,
+  DialogHeader,
+} from "@/shared/ui";
 import { useTranslation } from "@/languages";
 import { useModalStore } from "../../store/modalStore";
 import { useImportStore } from "../../store/importStore";
 import { resolveApiErrorMessage } from "@/shared/api";
+import { isYoutubeHost } from "@/shared/youtube";
 
 type Tab = "create" | "import";
 
@@ -24,11 +29,18 @@ function detectSourceLabel(raw: string): string | null {
       text = `https://${text}`;
     }
     const host = new URL(text).hostname.toLowerCase().replace(/^www\./, "");
-    if (["youtube.com", "music.youtube.com", "m.youtube.com", "youtu.be"].includes(host)) return "YouTube";
-    if (host === "soundcloud.com" || host.endsWith(".soundcloud.com")) return "SoundCloud";
+    if (isYoutubeHost(host)) return "YouTube";
+    if (host === "soundcloud.com" || host.endsWith(".soundcloud.com"))
+      return "SoundCloud";
     if (host === "open.spotify.com") return "Spotify";
     if (host === "deezer.com" || host.endsWith(".deezer.com")) return "Deezer";
-    if (["music.apple.com", "geo.music.apple.com", "itunes.apple.com"].includes(host) || host.endsWith(".music.apple.com")) return "Apple Music";
+    if (
+      ["music.apple.com", "geo.music.apple.com", "itunes.apple.com"].includes(
+        host,
+      ) ||
+      host.endsWith(".music.apple.com")
+    )
+      return "Apple Music";
   } catch {
     // not a url yet
   }
@@ -43,7 +55,9 @@ export default function CreatePlaylistModal() {
 
   const open = useModalStore((state) => state.createPlaylistOpen);
   const initialUrl = useModalStore((state) => state.createPlaylistInitialUrl);
-  const pendingTrack = useModalStore((state) => state.createPlaylistPendingTrack);
+  const pendingTrack = useModalStore(
+    (state) => state.createPlaylistPendingTrack,
+  );
   const close = useModalStore((state) => state.closeCreatePlaylist);
 
   const [tab, setTab] = useState<Tab>("create");
@@ -96,7 +110,10 @@ export default function CreatePlaylistModal() {
 
       if (pendingTrack) {
         try {
-          await addTrack.mutateAsync({ playlistId: playlist.id, trackId: pendingTrack.id });
+          await addTrack.mutateAsync({
+            playlistId: playlist.id,
+            trackId: pendingTrack.id,
+          });
           toast(t("common.added_to_playlist"), "checkmark", {
             description: playlist.title || trimmed,
           });
@@ -136,25 +153,33 @@ export default function CreatePlaylistModal() {
       await useImportStore.getState().startImport(target, pendingTrack);
       close();
     } catch (err: unknown) {
-      setImportError(resolveApiErrorMessage(err, t, "common.failed_import_playlist"));
+      setImportError(
+        resolveApiErrorMessage(err, t, "common.failed_import_playlist"),
+      );
     } finally {
       setImporting(false);
     }
   }
 
   return (
-    <Dialog open={open} onOpenChange={(next) => (!next ? close() : undefined)} maxWidth={440}>
-      <div className="flex flex-col gap-[14px] px-[20px] pb-[16px]">
-        <div>
-          <h2 className="m-0 text-[18px] font-[500] text-text-primary" style={font}>
-            {isCreate ? t("common.from_scratch") : t("common.import_playlist")}
-          </h2>
-          <p className="m-0 mt-[2px] text-[13px] text-text-tertiary" style={font}>
-            {isCreate ? t("common.create_empty_playlist") : t("common.import_playlist_description")}
-          </p>
-        </div>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => (!next ? close() : undefined)}
+      maxWidth={440}
+    >
+      <div className="flex flex-col gap-[16px] px-[20px] pb-[20px]">
+        <DialogHeader
+          title={
+            isCreate ? t("common.from_scratch") : t("common.import_playlist")
+          }
+          description={
+            isCreate
+              ? t("common.create_empty_playlist")
+              : t("common.import_playlist_description")
+          }
+        />
 
-        <div className="flex p-[3px] rounded-lg bg-border-alpha-14">
+        <div className="flex p-[4px] rounded-[12px] bg-black/[0.05] dark:bg-white/[0.07]">
           {(
             [
               { id: "create", label: t("common.from_scratch") },
@@ -165,9 +190,9 @@ export default function CreatePlaylistModal() {
               key={item.id}
               type="button"
               onClick={() => setTab(item.id)}
-              className={`flex-1 h-[30px] rounded-md text-[13px] font-[500] transition-all cursor-pointer border-none ${
+              className={`flex-1 h-[34px] rounded-[9px] text-[13px] font-[500] transition-all cursor-pointer border-none ${
                 tab === item.id
-                  ? "bg-bg-primary text-text-primary"
+                  ? "bg-black/[0.07] dark:bg-white/[0.12] text-text-primary"
                   : "bg-transparent text-text-secondary hover:text-text-primary"
               }`}
               style={font}
@@ -186,6 +211,7 @@ export default function CreatePlaylistModal() {
             className="flex flex-col gap-[10px]"
           >
             <TextInput
+              className="!rounded-[12px] !border-transparent !bg-black/[0.05] dark:!bg-white/[0.07]"
               ref={titleRef}
               placeholder={t("common.playlist_name")}
               value={title}
@@ -197,7 +223,10 @@ export default function CreatePlaylistModal() {
               }}
               disabled={createPlaylist.isPending}
               rightSlot={
-                <span className="text-[11px] text-text-tertiary tabular-nums" style={font}>
+                <span
+                  className="text-[11px] text-text-tertiary tabular-nums"
+                  style={font}
+                >
                   {title.length}/{TITLE_MAX}
                 </span>
               }
@@ -211,7 +240,7 @@ export default function CreatePlaylistModal() {
                 rows={2}
                 disabled={createPlaylist.isPending}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full resize-none rounded-md border border-border-primary bg-bg-primary px-[14px] py-[10px] text-[14px] font-[400] text-text-primary placeholder:text-text-tertiary outline-none transition-[border-color,box-shadow] duration-150 focus:border-text-secondary focus:ring-1 focus:ring-text-secondary disabled:opacity-50"
+                className="w-full resize-none rounded-[12px] border-0 bg-black/[0.05] dark:bg-white/[0.07] px-[14px] py-[12px] text-[14px] font-[400] text-text-primary placeholder:text-text-tertiary outline-none transition-colors duration-150 focus:bg-black/[0.07] dark:focus:bg-white/[0.1] disabled:opacity-50"
                 style={font}
               />
             ) : (
@@ -229,14 +258,20 @@ export default function CreatePlaylistModal() {
                 {createError}
               </span>
             )}
-            <div className="flex items-center justify-end gap-[8px] mt-[2px]">
-              <Button type="button" variant="ghost" size="sm" onClick={close}>
+            <DialogActions className="mt-[6px]">
+              <DialogButton type="button" onClick={close}>
                 {t("common.cancel")}
-              </Button>
-              <Button type="submit" variant="primary" size="sm" disabled={createPlaylist.isPending}>
-                {createPlaylist.isPending ? t("common.adding") : t("common.create")}
-              </Button>
-            </div>
+              </DialogButton>
+              <DialogButton
+                type="submit"
+                variant="primary"
+                loading={createPlaylist.isPending}
+              >
+                {createPlaylist.isPending
+                  ? t("common.adding")
+                  : t("common.create")}
+              </DialogButton>
+            </DialogActions>
           </form>
         ) : (
           <form
@@ -247,6 +282,7 @@ export default function CreatePlaylistModal() {
             className="flex flex-col gap-[10px]"
           >
             <TextInput
+              className="!rounded-[12px] !border-transparent !bg-black/[0.05] dark:!bg-white/[0.07]"
               ref={linkRef}
               icon={<LinkLine size={16} />}
               placeholder={t("common.paste_link_placeholder")}
@@ -282,14 +318,14 @@ export default function CreatePlaylistModal() {
                 {importError}
               </span>
             )}
-            <div className="flex items-center justify-end gap-[8px] mt-[2px]">
-              <Button type="button" variant="ghost" size="sm" onClick={close}>
+            <DialogActions className="mt-[6px]">
+              <DialogButton type="button" onClick={close}>
                 {t("common.cancel")}
-              </Button>
-              <Button type="submit" variant="primary" size="sm" disabled={importing}>
+              </DialogButton>
+              <DialogButton type="submit" variant="primary" loading={importing}>
                 {importing ? t("common.importing") : t("common.import")}
-              </Button>
-            </div>
+              </DialogButton>
+            </DialogActions>
           </form>
         )}
       </div>

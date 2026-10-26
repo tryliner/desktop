@@ -48,7 +48,6 @@ vi.mock("@/languages", () => {
     "login.auth_subtitle_register": "Create an account and start building your personal library.",
     "login.profile_setup_title": "Set up your profile",
     "login.profile_setup_subtitle": "Choose your unique handle and display name.",
-    "login.step_indicator": "Step {step} of {total}",
     "login.btn_continue": "Continue",
     "login.btn_back": "Back",
     "login.label_email": "Email",
@@ -104,10 +103,6 @@ vi.mock("@/languages", () => {
   };
 });
 
-vi.mock("@/shared/ui/CircleDitherCanvas", () => ({
-  default: () => <div data-testid="dither-canvas" />,
-}));
-
 vi.mock("@/features/navigation/ui/WindowControls", () => ({
   default: () => <div data-testid="window-controls" />,
 }));
@@ -151,6 +146,30 @@ describe("LoginPage Multi-Step Registration Flow", () => {
     expect(createAccBtn).toBeDefined();
   });
 
+  it("skips native email validation and shows the styled error in Login mode", async () => {
+    await act(async () => {
+      root.render(<LoginPage />);
+    });
+
+    const form = container.querySelector("form") as HTMLFormElement;
+    expect(form.noValidate).toBe(true);
+
+    const emailInput = container.querySelector("#auth-email") as HTMLInputElement;
+    const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!;
+    await act(async () => {
+      setValue.call(emailInput, "dsf");
+      emailInput.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    await act(async () => {
+      form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    });
+
+    expect(container.querySelector("#auth-form-error")?.textContent).toContain(
+      "Enter a valid email address",
+    );
+    expect(mockLogin).not.toHaveBeenCalled();
+  });
+
   it("switches to Register Step 1 when clicking Create Account", async () => {
     await act(async () => {
       root.render(<LoginPage />);
@@ -163,7 +182,7 @@ describe("LoginPage Multi-Step Registration Flow", () => {
       createAccBtn?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     });
 
-    expect(container.textContent).toContain("Step 1 of 2");
+    expect(container.textContent).toContain("Join Liner");
     expect(container.querySelector("#auth-email")).not.toBeNull();
     expect(container.querySelector("#auth-password")).not.toBeNull();
     expect(container.querySelector("#auth-confirm")).not.toBeNull();
@@ -192,7 +211,7 @@ describe("LoginPage Multi-Step Registration Flow", () => {
     expect(container.querySelector("#auth-form-error")?.textContent).toContain(
       "Enter a valid email address",
     );
-    expect(container.textContent).toContain("Step 1 of 2");
+    expect(container.textContent).toContain("Join Liner");
 
     // Enter valid email and mismatched passwords
     const emailInput = container.querySelector("#auth-email") as HTMLInputElement;
@@ -219,7 +238,7 @@ describe("LoginPage Multi-Step Registration Flow", () => {
     expect(container.querySelector("#auth-form-error")?.textContent).toContain(
       "Passwords do not match",
     );
-    expect(container.textContent).toContain("Step 1 of 2");
+    expect(container.textContent).toContain("Join Liner");
 
     // Fix confirm password and submit Step 1
     await act(async () => {
@@ -236,7 +255,7 @@ describe("LoginPage Multi-Step Registration Flow", () => {
     });
 
     // Successfully transitioned to Step 2!
-    expect(container.textContent).toContain("Step 2 of 2");
+    expect(container.textContent).toContain("Set up your profile");
     expect(container.textContent).toContain("Set up your profile");
     expect(container.querySelector("#auth-username")).not.toBeNull();
     expect(container.querySelector("#auth-display-name")).not.toBeNull();
@@ -278,7 +297,7 @@ describe("LoginPage Multi-Step Registration Flow", () => {
       form?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
     });
 
-    expect(container.textContent).toContain("Step 2 of 2");
+    expect(container.textContent).toContain("Set up your profile");
 
     // Click Back
     const backBtn = Array.from(container.querySelectorAll("button")).find((b) =>
@@ -288,7 +307,7 @@ describe("LoginPage Multi-Step Registration Flow", () => {
       backBtn?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     });
 
-    expect(container.textContent).toContain("Step 1 of 2");
+    expect(container.textContent).toContain("Join Liner");
     expect((container.querySelector("#auth-email") as HTMLInputElement)?.value).toBe(
       "bob@example.com",
     );

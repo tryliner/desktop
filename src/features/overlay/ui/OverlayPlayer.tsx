@@ -1,10 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useTranslation } from "@/languages";
 import { motion } from "framer-motion";
-import {
-  SkipNext,
-  SkipPrevious,
-} from "@solar-icons/react";
+import { SkipNext, SkipPrevious } from "@solar-icons/react";
 import {
   PlayerMorphIcon,
   ICON_PLAY,
@@ -14,13 +11,7 @@ import { HeartFill, HeartLine } from "@mingcute/react";
 import CoverImage from "@/features/covers/ui/CoverImage";
 import { ScrollableText } from "@/shared/ui/ScrollableText";
 import { useDisableButtonFocus } from "@/features/navigation/hooks/useDisableButtonFocus";
-import { getAuthSession } from "@/shared/api";
 import type { OverlayAction, OverlayStatePayload } from "../contracts";
-import {
-  useCustomizationStore,
-  loadPersistedWallpaper,
-  DEFAULT_GLASS_CONFIG,
-} from "@/features/settings";
 import { useShortcutsStore, matchesShortcut } from "@/features/shortcuts";
 
 const OVERLAY_CARD_TRANSITION = {
@@ -49,13 +40,7 @@ export function OverlayPlayer() {
   const [interpolatedPosMs, setInterpolatedPosMs] = useState(state.positionMs);
   const lastTrackIdRef = useRef<string | null>(null);
 
-
-  useEffect(() => {
-    if (!getAuthSession()) {
-      window.linerElectron?.closeOverlay?.();
-      return;
-    }
-
+  const pullLatestState = useCallback(() => {
     window.linerElectron?.getOverlayInitialState?.().then((initial) => {
       if (initial) {
         anchorPosRef.current = initial.positionMs;
@@ -64,6 +49,10 @@ export function OverlayPlayer() {
         setState(initial);
       }
     });
+  }, []);
+
+  useEffect(() => {
+    pullLatestState();
 
     if (window.linerElectron?.onOverlayState) {
       const cleanupState = window.linerElectron.onOverlayState((newState) => {
@@ -71,22 +60,33 @@ export function OverlayPlayer() {
       });
       return cleanupState;
     }
+  }, [pullLatestState]);
+
+  useEffect(() => {
+    const signal = setTimeout(() => window.linerElectron?.overlayReady?.(), 0);
+    return () => clearTimeout(signal);
   }, []);
 
   useEffect(() => {
     if (!window.linerElectron?.onOverlayVisibility) return;
-    const cleanupVisibility = window.linerElectron.onOverlayVisibility((visible) => {
-      setIsVisible(visible);
-    });
+    const cleanupVisibility = window.linerElectron.onOverlayVisibility(
+      (visible) => {
+        setIsVisible(visible);
+        if (visible) pullLatestState();
+      },
+    );
     return cleanupVisibility;
-  }, []);
+  }, [pullLatestState]);
 
   const sendAction = useCallback((action: OverlayAction) => {
     window.linerElectron?.sendOverlayAction?.(action);
   }, []);
 
   const isPlaying = state.status === "playing";
-  const durationMs = Math.max(1, state.durationMs || state.track?.durationMs || 1);
+  const durationMs = Math.max(
+    1,
+    state.durationMs || state.track?.durationMs || 1,
+  );
 
   useEffect(() => {
     if (state.track?.id !== lastTrackIdRef.current) {
@@ -130,7 +130,10 @@ export function OverlayPlayer() {
     return () => {
       cancelAnimationFrame(animId);
       const elapsed = performance.now() - anchorTimeRef.current;
-      anchorPosRef.current = Math.min(durationMs, anchorPosRef.current + elapsed);
+      anchorPosRef.current = Math.min(
+        durationMs,
+        anchorPosRef.current + elapsed,
+      );
       anchorTimeRef.current = performance.now();
     };
   }, [isPlaying, durationMs]);
@@ -138,35 +141,6 @@ export function OverlayPlayer() {
   const currentPosMs = interpolatedPosMs;
   const progressRatio = Math.min(1, Math.max(0, currentPosMs / durationMs));
 
-  const backgroundImage = useCustomizationStore((s) => s.backgroundImage);
-  const backgroundBlur = useCustomizationStore((s) => s.backgroundBlur);
-  const backgroundDim = useCustomizationStore((s) => s.backgroundDim);
-  const contentViewConfig = useCustomizationStore((s) => s.contentView);
-  const miniplayerConfig = useCustomizationStore((s) => s.miniplayer);
-  const hasCustomBg = Boolean(backgroundImage);
-
-  const activeBlockConfig =
-    (miniplayerConfig && (miniplayerConfig.opacity < 100 || miniplayerConfig.blur > 0 || miniplayerConfig.dim > 0))
-      ? miniplayerConfig
-      : (contentViewConfig && (contentViewConfig.opacity < 100 || contentViewConfig.blur > 0 || contentViewConfig.dim > 0))
-        ? contentViewConfig
-        : DEFAULT_GLASS_CONFIG;
-
-  const alpha = Math.min(0.85, (activeBlockConfig?.opacity ?? 70) / 100);
-  const dimAlpha = (activeBlockConfig?.dim ?? 15) / 100;
-  const blurPx = activeBlockConfig?.blur ?? 24;
-
-  const tintBackground = dimAlpha > 0
-    ? `linear-gradient(rgba(0, 0, 0, ${dimAlpha}), rgba(0, 0, 0, ${dimAlpha})), rgba(12, 12, 14, ${alpha})`
-    : `rgba(12, 12, 14, ${alpha})`;
-
-  useEffect(() => {
-    void loadPersistedWallpaper().then((img) => {
-      if (img) {
-        useCustomizationStore.setState({ backgroundImage: img });
-      }
-    });
-  }, []);
 
   // Keyboard Shortcuts (Miniplayer mode)
   useEffect(() => {
@@ -205,13 +179,19 @@ export function OverlayPlayer() {
       // Seek left / right
       if (matchesShortcut(e, miniplayer.seekBackward)) {
         e.preventDefault();
-        sendAction({ type: "seek", payload: { positionMs: Math.max(0, currentPosMs - 5000) } });
+        sendAction({
+          type: "seek",
+          payload: { positionMs: Math.max(0, currentPosMs - 5000) },
+        });
         return;
       }
 
       if (matchesShortcut(e, miniplayer.seekForward)) {
         e.preventDefault();
-        sendAction({ type: "seek", payload: { positionMs: Math.min(durationMs, currentPosMs + 5000) } });
+        sendAction({
+          type: "seek",
+          payload: { positionMs: Math.min(durationMs, currentPosMs + 5000) },
+        });
         return;
       }
 
@@ -261,30 +241,6 @@ export function OverlayPlayer() {
           transformOrigin: "center center",
         }}
       >
-        {/* Wallpaper background */}
-        {hasCustomBg && backgroundImage && (
-          <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-            <div className="absolute inset-0 bg-[#0d0d10]" />
-            <img
-              src={backgroundImage}
-              alt=""
-              className="h-full w-full object-cover select-none"
-              style={{
-                filter: backgroundBlur > 0 ? `blur(${backgroundBlur}px)` : undefined,
-                transform: backgroundBlur > 0 ? "scale(1.12)" : undefined,
-              }}
-            />
-            {backgroundDim > 0 && <div className="absolute inset-0 bg-black" style={{ opacity: backgroundDim / 100 }} />}
-            <div
-              className="absolute inset-0"
-              style={{
-                background: tintBackground,
-                backdropFilter: blurPx > 0 ? `blur(${blurPx}px)` : undefined,
-                WebkitBackdropFilter: blurPx > 0 ? `blur(${blurPx}px)` : undefined,
-              }}
-            />
-          </div>
-        )}
 
         {/* Background Progress Fill - Straight rectangular without rounding */}
         <div
@@ -304,7 +260,7 @@ export function OverlayPlayer() {
             onMouseEnter={() => setIsInfoHovered(true)}
             onMouseLeave={() => setIsInfoHovered(false)}
           >
-            <div className="relative h-[32px] w-[32px] shrink-0 overflow-hidden rounded-[6px] bg-[#16161a]">
+            <div className="relative h-[32px] w-[32px] shrink-0 overflow-hidden rounded-[12px] bg-[#16161a]">
               {state.track?.coverUrl || state.track?.cover ? (
                 <CoverImage
                   key={state.track.coverUrl || state.track.cover}
@@ -315,7 +271,7 @@ export function OverlayPlayer() {
                   priority
                   unoptimized
                   draggable={false}
-                  className="rounded-[6px] object-cover pointer-events-none select-none"
+                  className="rounded-[12px] object-cover pointer-events-none select-none"
                 />
               ) : (
                 <div className="flex h-full w-full items-center justify-center text-[11px] text-white/30 select-none">
@@ -364,7 +320,11 @@ export function OverlayPlayer() {
               }`}
               aria-label={state.isLiked ? "Unlike" : "Like"}
             >
-              {state.isLiked ? <HeartFill size={16} /> : <HeartLine size={16} />}
+              {state.isLiked ? (
+                <HeartFill size={16} />
+              ) : (
+                <HeartLine size={16} />
+              )}
             </button>
 
             <button

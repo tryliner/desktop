@@ -1,7 +1,11 @@
 import { useCallback } from "react";
-import { useToast } from "@/shared/ui";
+import {
+  useToast,
+  DialogActions,
+  DialogButton,
+  DialogHeader,
+} from "@/shared/ui";
 import Dialog from "@/shared/ui/Dialog";
-import Button from "@/shared/ui/Button";
 import CoverImage from "@/features/covers/ui/CoverImage";
 import { useRemovePlaylistTracks } from "../../hooks";
 import { useTranslation } from "@/languages";
@@ -36,25 +40,15 @@ export default function RemoveFromPlaylistModal() {
   return (
     <Dialog open={open} onOpenChange={(next) => (!next ? close() : undefined)} maxWidth={380}>
       <div className="flex flex-col px-[20px] pb-[20px]">
-        {/* Header */}
-        <div className="flex flex-col gap-[2px] mb-[16px]">
-          <h3
-            className="text-[16px] font-[600] text-text-primary m-0"
-            style={{ fontFamily: "var(--font-inter), sans-serif", letterSpacing: "-0.01em" }}
-          >
-            {t("common.are_you_sure")}
-          </h3>
-          <p
-            className="text-[13px] text-text-tertiary m-0 leading-normal"
-            style={{ fontFamily: "var(--font-inter), sans-serif" }}
-          >
-            {t("common.remove_track_from_playlist_desc")}
-          </p>
-        </div>
+        <DialogHeader
+          className="mb-[16px]"
+          title={t("common.are_you_sure")}
+          description={t("common.remove_track_from_playlist_desc")}
+        />
 
         {/* Track preview */}
         {detail && (
-          <div className="flex items-center gap-[14px] p-[10px] rounded-lg bg-border-alpha-14 mb-[20px]">
+          <div className="flex items-center gap-[14px] p-[10px] rounded-[14px] bg-black/[0.05] dark:bg-white/[0.07] mb-[20px]">
             <div className="relative h-[52px] w-[52px] shrink-0 overflow-hidden rounded-md bg-border-alpha-14">
               {detail.trackCoverUrl && (
                 <CoverImage
@@ -78,33 +72,19 @@ export default function RemoveFromPlaylistModal() {
           </div>
         )}
 
-        {/* 1-row actions: cancel + confirm */}
-        <div className="flex items-center gap-[10px]">
-          <Button
-            variant="secondary"
-            onClick={close}
-            disabled={removeTracks.isPending}
-            className="flex-1"
-          >
+        <DialogActions>
+          <DialogButton onClick={close} disabled={removeTracks.isPending}>
             {t("common.cancel")}
-          </Button>
-
-          <Button
-            variant="primary"
+          </DialogButton>
+          <DialogButton
+            variant="danger"
             onClick={handleRemove}
-            disabled={removeTracks.isPending || !detail?.playlistId || !detail?.playlistItemId}
-            className="flex-1 !bg-accent-secondary !text-bg-primary hover:!opacity-90"
+            loading={removeTracks.isPending}
+            disabled={!detail?.playlistId || !detail?.playlistItemId}
           >
-            {removeTracks.isPending ? (
-              <span className="inline-flex items-center gap-[6px]">
-                <span className="inline-block h-[14px] w-[14px] rounded-full border-[2px] border-btn-primary-text/30 border-t-btn-primary-text animate-spin" />
-                {t("common.removing")}
-              </span>
-            ) : (
-              t("common.confirm")
-            )}
-          </Button>
-        </div>
+            {removeTracks.isPending ? t("common.removing") : t("common.confirm")}
+          </DialogButton>
+        </DialogActions>
       </div>
     </Dialog>
   );

@@ -2,6 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { KawarpEngine } from "../engine/kawarpEngine";
 import { getCoverElement, useCoverElement } from "@/features/covers";
 
+export const KAWARP_RESIZE_SETTLE_MS = 300;
+export const KAWARP_RENDER_SCALE = 0.5;
+
 interface KawarpWrapperProps {
   src?: string;
   onLoad?: () => void;
@@ -48,28 +51,50 @@ export function KawarpWrapper({ src, onLoad, onError }: KawarpWrapperProps) {
     const canvas = canvasRef.current;
     if (!container || !canvas) return;
 
-    const updateSize = () => {
-      const rect = container.getBoundingClientRect();
-      if (rect.width <= 0 || rect.height <= 0) return;
-      const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
-      const width = Math.round(rect.width * dpr);
-      const height = Math.round(rect.height * dpr);
+    let settleTimer: ReturnType<typeof setTimeout> | null = null;
+    let surfaceWidth = 0;
+    let surfaceHeight = 0;
 
-      if (canvas.width !== width || canvas.height !== height) {
-        canvas.width = width;
-        canvas.height = height;
-        engineRef.current?.resize();
-      }
+    const surfaceSize = () => {
+      const rect = container.getBoundingClientRect();
+      return {
+        width: Math.round(Math.max(rect.width, window.screen?.width ?? 0)),
+        height: Math.round(Math.max(rect.height, window.screen?.height ?? 0)),
+      };
     };
 
-    const resizeObserver = new ResizeObserver(updateSize);
+    const applySize = () => {
+      const { width, height } = surfaceSize();
+      if (width <= 0 || height <= 0) return;
+      if (width === surfaceWidth && height === surfaceHeight) return;
+      surfaceWidth = width;
+      surfaceHeight = height;
+      canvas.style.width = `${width}px`;
+      canvas.style.height = `${height}px`;
+      canvas.width = Math.max(1, Math.round(width * KAWARP_RENDER_SCALE));
+      canvas.height = Math.max(1, Math.round(height * KAWARP_RENDER_SCALE));
+      engineRef.current?.resize();
+    };
+
+    const scheduleSize = () => {
+      const { width, height } = surfaceSize();
+      if (width === surfaceWidth && height === surfaceHeight) return;
+      if (settleTimer) clearTimeout(settleTimer);
+      settleTimer = setTimeout(() => {
+        settleTimer = null;
+        applySize();
+      }, KAWARP_RESIZE_SETTLE_MS);
+    };
+
+    const resizeObserver = new ResizeObserver(scheduleSize);
     resizeObserver.observe(container);
-    window.addEventListener("resize", updateSize, { passive: true });
-    updateSize();
+    window.addEventListener("resize", scheduleSize, { passive: true });
+    applySize();
 
     return () => {
+      if (settleTimer) clearTimeout(settleTimer);
       resizeObserver.disconnect();
-      window.removeEventListener("resize", updateSize);
+      window.removeEventListener("resize", scheduleSize);
     };
   }, []);
 
@@ -104,7 +129,7 @@ export function KawarpWrapper({ src, onLoad, onError }: KawarpWrapperProps) {
     >
       <canvas
         ref={canvasRef}
-        className={`absolute inset-0 w-full h-full block transition-opacity duration-500 ${
+        className={`absolute left-1/2 top-1/2 block max-w-none -translate-x-1/2 -translate-y-1/2 transition-opacity duration-500 ${
           loaded ? "opacity-100" : "opacity-0"
         }`}
       />

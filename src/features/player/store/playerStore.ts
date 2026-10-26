@@ -119,6 +119,7 @@ export interface PlayerStore extends PlayerState {
   setReverbLevel: (level: number) => void;
   resetSpeedAndPitch: () => void;
   clearQueue: () => void;
+  resetPlayback: () => void;
 }
 
 const PLAYER_SESSION_STORAGE_KEY = "liner_player_session_v2";
@@ -194,10 +195,12 @@ export const usePlayerStore = create<PlayerStore>()(
         set({ pauseOnDeviceChange }),
       setAutoplaySimilar: (autoplaySimilar: boolean) =>
         set({ autoplaySimilar }),
-      setTrackDoubleClickBehavior: (trackDoubleClickBehavior: TrackDoubleClickBehavior) =>
-        set({ trackDoubleClickBehavior }),
-      setDefaultPlaybackContext: (defaultPlaybackContext: DefaultPlaybackContext) =>
-        set({ defaultPlaybackContext }),
+      setTrackDoubleClickBehavior: (
+        trackDoubleClickBehavior: TrackDoubleClickBehavior,
+      ) => set({ trackDoubleClickBehavior }),
+      setDefaultPlaybackContext: (
+        defaultPlaybackContext: DefaultPlaybackContext,
+      ) => set({ defaultPlaybackContext }),
       setFullscreen: (fullscreen: boolean) => {
         if (get().fullscreen === fullscreen) return;
         set({ fullscreen });
@@ -207,10 +210,25 @@ export const usePlayerStore = create<PlayerStore>()(
       setIsPitchLinked: (isPitchLinked: boolean) => set({ isPitchLinked }),
       setKeepSpeedAcrossTracks: (keepSpeedAcrossTracks: boolean) =>
         set({ keepSpeedAcrossTracks }),
-      setIsReverbEnabled: (isReverbEnabled: boolean) => set({ isReverbEnabled }),
+      setIsReverbEnabled: (isReverbEnabled: boolean) =>
+        set({ isReverbEnabled }),
       setReverbLevel: (reverbLevel: number) =>
         set({ reverbLevel: Math.max(0, Math.min(1, reverbLevel)) }),
       resetSpeedAndPitch: () => set({ playbackRate: 1, pitchSemitones: 0 }),
+      resetPlayback: () =>
+        set({
+          status: "idle",
+          playbackMode: null,
+          error: null,
+          positionMs: 0,
+          durationMs: 0,
+          queue: [],
+          currentIndex: -1,
+          currentTrack: null,
+          playbackContext: null,
+          playbackContextCover: null,
+          fullscreen: false,
+        }),
       clearQueue: () => {
         const state = get();
         if (state.currentTrack) {
@@ -261,10 +279,16 @@ export const usePlayerStore = create<PlayerStore>()(
           state.accentVariant = "default";
         }
         if (state) {
-          if (typeof state.playbackRate !== "number" || isNaN(state.playbackRate)) {
+          if (
+            typeof state.playbackRate !== "number" ||
+            isNaN(state.playbackRate)
+          ) {
             state.playbackRate = 1;
           }
-          if (typeof state.pitchSemitones !== "number" || isNaN(state.pitchSemitones)) {
+          if (
+            typeof state.pitchSemitones !== "number" ||
+            isNaN(state.pitchSemitones)
+          ) {
             state.pitchSemitones = 0;
           }
           if (typeof state.isPitchLinked !== "boolean") {
@@ -276,7 +300,10 @@ export const usePlayerStore = create<PlayerStore>()(
           if (typeof state.isReverbEnabled !== "boolean") {
             state.isReverbEnabled = false;
           }
-          if (typeof state.reverbLevel !== "number" || isNaN(state.reverbLevel)) {
+          if (
+            typeof state.reverbLevel !== "number" ||
+            isNaN(state.reverbLevel)
+          ) {
             state.reverbLevel = 0.35;
           }
         }

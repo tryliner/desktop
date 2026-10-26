@@ -7,11 +7,16 @@ import type { RepeatMode } from "../store/playerStore";
 export const RADIO_CONTEXT_PREFIX = "radio:";
 
 export function isRadioContext(context: string | null | undefined): boolean {
-  return typeof context === "string" && context.startsWith(RADIO_CONTEXT_PREFIX);
+  return (
+    typeof context === "string" && context.startsWith(RADIO_CONTEXT_PREFIX)
+  );
 }
 
 /** what the repeat button switches to: off -> all -> one -> off, radio skips "all" */
-export function nextRepeatMode(current: RepeatMode, radio: boolean): RepeatMode {
+export function nextRepeatMode(
+  current: RepeatMode,
+  radio: boolean,
+): RepeatMode {
   if (radio) return current === "off" ? "one" : "off";
   if (current === "off") return "all";
   if (current === "all") return "one";
@@ -21,7 +26,10 @@ export function nextRepeatMode(current: RepeatMode, radio: boolean): RepeatMode 
 /** refill the radio queue once this few tracks (or fewer) are left after the current one */
 export const RADIO_REFILL_THRESHOLD = 1;
 
-export function shouldRefillRadio(queueLength: number, currentIndex: number): boolean {
+export function shouldRefillRadio(
+  queueLength: number,
+  currentIndex: number,
+): boolean {
   if (currentIndex < 0) return false;
   return queueLength - 1 - currentIndex <= RADIO_REFILL_THRESHOLD;
 }

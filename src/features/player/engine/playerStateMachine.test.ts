@@ -148,7 +148,9 @@ describe("Player State Machine", () => {
   });
 
   it("shuffles only upcoming tracks when shuffle is enabled", async () => {
-    const tracks = Array.from({ length: 6 }, (_, i) => mockTrack(String(i + 1), `Track ${i + 1}`));
+    const tracks = Array.from({ length: 6 }, (_, i) =>
+      mockTrack(String(i + 1), `Track ${i + 1}`),
+    );
     await playerEngine.playTrack(tracks[1], tracks, undefined, undefined, 1);
 
     playerEngine.setShuffle(true);
@@ -164,7 +166,9 @@ describe("Player State Machine", () => {
   });
 
   it("restores original relative order of remaining upcoming tracks when shuffle is disabled", async () => {
-    const tracks = Array.from({ length: 6 }, (_, i) => mockTrack(String(i + 1), `Track ${i + 1}`));
+    const tracks = Array.from({ length: 6 }, (_, i) =>
+      mockTrack(String(i + 1), `Track ${i + 1}`),
+    );
     await playerEngine.playTrack(tracks[1], tracks, undefined, undefined, 1);
 
     playerEngine.setShuffle(true);
@@ -178,14 +182,20 @@ describe("Player State Machine", () => {
     expect(state.shuffle).toBe(false);
     expect(state.currentTrack?.id).toBe(currentPlayingTrack.id);
 
-    const remainingUpcoming = state.queue.slice(state.currentIndex + 1).map((t) => t.id);
+    const remainingUpcoming = state.queue
+      .slice(state.currentIndex + 1)
+      .map((t) => t.id);
     for (let i = 0; i < remainingUpcoming.length - 1; i++) {
-      expect(Number(remainingUpcoming[i])).toBeLessThan(Number(remainingUpcoming[i + 1]));
+      expect(Number(remainingUpcoming[i])).toBeLessThan(
+        Number(remainingUpcoming[i + 1]),
+      );
     }
   });
 
   it("plays shuffled from full playlist and cleanly restores original order upon unshuffle", async () => {
-    const tracks = Array.from({ length: 6 }, (_, i) => mockTrack(String(i + 1), `Track ${i + 1}`));
+    const tracks = Array.from({ length: 6 }, (_, i) =>
+      mockTrack(String(i + 1), `Track ${i + 1}`),
+    );
     await playerEngine.playShuffled(tracks, "playlist:test", null, 2);
 
     const state = usePlayerStore.getState();
@@ -203,14 +213,18 @@ describe("Player State Machine", () => {
     expect(unshuffleState.shuffle).toBe(false);
     expect(unshuffleState.currentTrack?.id).toBe(playingAfterSkip.id);
 
-    const upcomingIds = unshuffleState.queue.slice(unshuffleState.currentIndex + 1).map((t) => t.id);
+    const upcomingIds = unshuffleState.queue
+      .slice(unshuffleState.currentIndex + 1)
+      .map((t) => t.id);
     for (let i = 0; i < upcomingIds.length - 1; i++) {
       expect(Number(upcomingIds[i])).toBeLessThan(Number(upcomingIds[i + 1]));
     }
   });
 
   it("does not re-shuffle queue when hand-picking a track from the queue while shuffle is enabled", async () => {
-    const tracks = Array.from({ length: 6 }, (_, i) => mockTrack(String(i + 1), `Track ${i + 1}`));
+    const tracks = Array.from({ length: 6 }, (_, i) =>
+      mockTrack(String(i + 1), `Track ${i + 1}`),
+    );
     await playerEngine.playTrack(tracks[0], tracks, undefined, undefined, 0);
 
     playerEngine.setShuffle(true);
@@ -229,7 +243,9 @@ describe("Player State Machine", () => {
     const state = usePlayerStore.getState();
     expect(state.currentIndex).toBe(3);
     expect(state.currentTrack?.id).toBe(pickedTrack.id);
-    expect(state.queue.map((t) => t.id)).toEqual(queueBeforePick.map((t) => t.id));
+    expect(state.queue.map((t) => t.id)).toEqual(
+      queueBeforePick.map((t) => t.id),
+    );
   });
 });
 
@@ -249,7 +265,11 @@ describe("Player auto-skip on playback error", () => {
   });
 
   it("advances to the next track when the current one fails to load/play", async () => {
-    const tracks = [mockTrack("1", "Track 1"), mockTrack("2", "Track 2"), mockTrack("3", "Track 3")];
+    const tracks = [
+      mockTrack("1", "Track 1"),
+      mockTrack("2", "Track 2"),
+      mockTrack("3", "Track 3"),
+    ];
     await playerEngine.playTrack(tracks[0], tracks);
     expect(usePlayerStore.getState().currentIndex).toBe(0);
 
@@ -286,7 +306,9 @@ describe("Player auto-skip on playback error", () => {
   });
 
   it("stops instead of auto-skipping forever when many consecutive tracks fail", async () => {
-    const tracks = Array.from({ length: 10 }, (_, i) => mockTrack(String(i + 1), `Track ${i + 1}`));
+    const tracks = Array.from({ length: 10 }, (_, i) =>
+      mockTrack(String(i + 1), `Track ${i + 1}`),
+    );
     await playerEngine.playTrack(tracks[0], tracks);
 
     for (let i = 0; i < 8; i++) {
@@ -331,12 +353,22 @@ describe("Player auto-skip on playback error", () => {
       expect(usePlayerStore.getState().currentIndex).toBe(2);
 
       playerEngine.reorderQueue(0, 3);
-      expect(usePlayerStore.getState().queue.map((t) => t.id)).toEqual(["2", "3", "4", "1"]);
+      expect(usePlayerStore.getState().queue.map((t) => t.id)).toEqual([
+        "2",
+        "3",
+        "4",
+        "1",
+      ]);
       expect(usePlayerStore.getState().currentIndex).toBe(1);
       expect(usePlayerStore.getState().currentTrack?.id).toBe("3");
 
       playerEngine.reorderQueue(2, 0);
-      expect(usePlayerStore.getState().queue.map((t) => t.id)).toEqual(["4", "2", "3", "1"]);
+      expect(usePlayerStore.getState().queue.map((t) => t.id)).toEqual([
+        "4",
+        "2",
+        "3",
+        "1",
+      ]);
       expect(usePlayerStore.getState().currentIndex).toBe(2);
       expect(usePlayerStore.getState().currentTrack?.id).toBe("3");
     });
@@ -349,7 +381,10 @@ describe("Player auto-skip on playback error", () => {
       playerEngine.reorderQueue(-1, 1);
       playerEngine.reorderQueue(0, 10);
 
-      expect(usePlayerStore.getState().queue.map((t) => t.id)).toEqual(["1", "2"]);
+      expect(usePlayerStore.getState().queue.map((t) => t.id)).toEqual([
+        "1",
+        "2",
+      ]);
       expect(usePlayerStore.getState().currentIndex).toBe(0);
     });
   });

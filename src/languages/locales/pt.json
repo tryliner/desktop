@@ -206,6 +206,7 @@
     "mostListened": "Mais ouvidos de todos os tempos",
     "jumpBackIn": "Voltar a ouvir",
     "popularAlbums": "Principais álbuns",
+    "mostSaved": "Mais salvos",
     "popularArtists": "Artistas em alta",
     "popularPlaylists": "Playlists populares",
     "dailyMixes": "Mixes diários",
@@ -218,9 +219,11 @@
     "songs": "músicas",
     "track": "faixa",
     "tracks": "faixas",
+    "tab_all": "Tudo",
     "tab_playlists": "Playlists",
     "tab_albums": "Álbuns",
     "tab_artists": "Artistas",
+    "search_all": "Pesquisar na biblioteca",
     "search_playlists": "Pesquisar playlists",
     "search_albums": "Pesquisar álbuns",
     "search_artists": "Pesquisar artistas",
@@ -249,7 +252,6 @@
     "auth_subtitle_register": "Crie uma conta e comece a montar a sua biblioteca pessoal.",
     "profile_setup_title": "Configure seu perfil",
     "profile_setup_subtitle": "Escolha seu handle único e seu nome de exibição.",
-    "step_indicator": "Etapa {step} de {total}",
     "btn_continue": "Continuar",
     "btn_back": "Voltar",
     "username_hint": "3 a 30 caracteres, letras minúsculas, números ou sublinhados.",
@@ -348,6 +350,10 @@
     }
   },
   "player": {
+    "mute": "Silenciar",
+    "unmute": "Ativar som",
+    "decrease": "Diminuir",
+    "increase": "Aumentar",
     "repeat_off": "Repetir: desativado",
     "repeat_all": "Repetir: tudo",
     "repeat_one": "Repetir: faixa",
@@ -441,6 +447,9 @@
     "save_preferences": "Salvar preferências",
     "groups": {
       "preferences": "Preferências",
+      "player": "Player",
+      "interface": "Interface",
+      "integrations": "Integrações",
       "application": "Aplicativo",
       "help": "Ajuda"
     },
@@ -450,8 +459,6 @@
     "tabs": {
       "general": "Geral",
       "appearance": "Aparência",
-      "customization": "Personalização",
-      "audio": "Áudio",
       "storage": "Cache e armazenamento",
       "system": "Sistema",
       "account": "Conta",
@@ -466,62 +473,60 @@
       "description": "Comportamento da fila, ações de clique e saída de áudio."
     },
     "shortcuts": {
-    "description": "Personalize os atalhos globais do sistema e os do player.",
-    "global_section": "Atalhos globais (em todo o sistema)",
-    "global_desc": "Funcionam a partir de qualquer aplicativo do seu computador, mesmo com o Liner minimizado ou fora de foco.",
-    "main_app_section": "Aplicativo principal",
-    "main_app_desc": "Ativos quando a janela principal do Liner estiver aberta e em foco.",
-    "miniplayer_section": "Modo miniplayer",
-    "miniplayer_desc": "Ativos quando o miniplayer flutuante do desktop estiver em foco.",
-    "toggle_overlay": "Alternar miniplayer flutuante",
-    "toggle_overlay_desc": "Mostra ou esconde o overlay flutuante do desktop de qualquer lugar do sistema.",
-    "quick_like_song": "Curtir a música atual rapidamente",
-    "quick_like_song_desc": "Curtir ou remover a curtida da faixa atual em todo o sistema, sem focar o player.",
-    "play_pause": "Reproduzir / Pausar",
-    "play_pause_desc": "Alternar a reprodução do áudio.",
-    "next_track": "Próxima faixa",
-    "next_track_desc": "Pula para a próxima música da fila.",
-    "prev_track": "Faixa anterior",
-    "prev_track_desc": "Volta para a faixa anterior ou para o início da faixa.",
-    "seek_forward": "Avançar (+5s)",
-    "seek_forward_desc": "Avança a posição da reprodução em 5 segundos.",
-    "seek_backward": "Retroceder (-5s)",
-    "seek_backward_desc": "Volta a posição da reprodução em 5 segundos.",
-    "volume_up": "Aumentar o volume",
-    "volume_up_desc": "Aumenta o volume da reprodução em 5%.",
-    "volume_down": "Diminuir o volume",
-    "volume_down_desc": "Diminui o volume da reprodução em 5%.",
-    "toggle_mute": "Silenciar / Ativar som",
-    "toggle_mute_desc": "Alternar o estado de mudo do áudio.",
-    "search": "Pesquisar música",
-    "search_desc": "Abre rapidamente a caixa de pesquisa.",
-    "toggle_queue": "Fila",
-    "toggle_queue_desc": "Abre ou fecha o painel de fila da reprodução.",
-    "toggle_lyrics": "Letras",
-    "toggle_lyrics_desc": "Abre ou fecha o painel de letras sincronizadas.",
-    "toggle_fullscreen": "Tela cheia / Visualização do player",
-    "toggle_fullscreen_desc": "Alternar a visualização imersiva do player em tela cheia.",
-    "like_track": "Curtir / Remover curtida",
-    "like_track_desc": "Adiciona ou remove a faixa das faixas favoritas.",
-    "focus_main_window": "Mudar para a janela principal",
-    "focus_main_window_desc": "Foca e traz a janela principal do aplicativo para frente.",
-    "reset_all": "Redefinir todos os atalhos",
-    "reset_all_desc": "Restaura os atalhos de fábrica de todas as seções.",
-    "reset_all_button": "Redefinir padrões",
-    "reset_tooltip": "Redefinir para o padrão ({shortcut})",
-    "conflict_error": "Já usado por \"{action}\"",
-    "modifier_required": "Atalhos globais exigem Ctrl, Alt ou Shift",
-    "recording_hint": "Aperte as teclas para atribuir (Esc para cancelar)",
-    "press_keys": "Aperte as teclas...",
-    "search_placeholder": "Pesquisar atalhos...",
-    "tab_all": "Todas",
-    "tab_main_app": "App principal",
-    "tab_overlay": "Overlay",
-    "tab_global": "Global",
-    "scope_global": "Global",
-    "scope_main_app": "App principal",
-    "scope_overlay": "Overlay",
-    "reset_section": "Redefinir a seção"
+      "description": "Personalize os atalhos globais do sistema e os do player.",
+      "global_section": "Atalhos globais (em todo o sistema)",
+      "global_desc": "Funcionam a partir de qualquer aplicativo do seu computador, mesmo com o Liner minimizado ou fora de foco.",
+      "main_app_section": "Aplicativo principal",
+      "main_app_desc": "Ativos quando a janela principal do Liner estiver aberta e em foco.",
+      "miniplayer_section": "Modo miniplayer",
+      "miniplayer_desc": "Ativos quando o miniplayer flutuante do desktop estiver em foco.",
+      "toggle_overlay": "Alternar miniplayer flutuante",
+      "toggle_overlay_desc": "Mostra ou esconde o overlay flutuante do desktop de qualquer lugar do sistema.",
+      "quick_like_song": "Curtir a música atual rapidamente",
+      "quick_like_song_desc": "Curtir ou remover a curtida da faixa atual em todo o sistema, sem focar o player.",
+      "play_pause": "Reproduzir / Pausar",
+      "play_pause_desc": "Alternar a reprodução do áudio.",
+      "next_track": "Próxima faixa",
+      "next_track_desc": "Pula para a próxima música da fila.",
+      "prev_track": "Faixa anterior",
+      "prev_track_desc": "Volta para a faixa anterior ou para o início da faixa.",
+      "seek_forward": "Avançar (+5s)",
+      "seek_forward_desc": "Avança a posição da reprodução em 5 segundos.",
+      "seek_backward": "Retroceder (-5s)",
+      "seek_backward_desc": "Volta a posição da reprodução em 5 segundos.",
+      "volume_up": "Aumentar o volume",
+      "volume_up_desc": "Aumenta o volume da reprodução em 5%.",
+      "volume_down": "Diminuir o volume",
+      "volume_down_desc": "Diminui o volume da reprodução em 5%.",
+      "toggle_mute": "Silenciar / Ativar som",
+      "toggle_mute_desc": "Alternar o estado de mudo do áudio.",
+      "search": "Pesquisar música",
+      "search_desc": "Abre rapidamente a caixa de pesquisa.",
+      "toggle_queue": "Fila",
+      "toggle_queue_desc": "Abre ou fecha o painel de fila da reprodução.",
+      "toggle_fullscreen": "Tela cheia / Visualização do player",
+      "toggle_fullscreen_desc": "Alternar a visualização imersiva do player em tela cheia.",
+      "like_track": "Curtir / Remover curtida",
+      "like_track_desc": "Adiciona ou remove a faixa das faixas favoritas.",
+      "focus_main_window": "Mudar para a janela principal",
+      "focus_main_window_desc": "Foca e traz a janela principal do aplicativo para frente.",
+      "reset_all": "Redefinir todos os atalhos",
+      "reset_all_desc": "Restaura os atalhos de fábrica de todas as seções.",
+      "reset_all_button": "Redefinir padrões",
+      "reset_tooltip": "Redefinir para o padrão ({shortcut})",
+      "conflict_error": "Já usado por \"{action}\"",
+      "modifier_required": "Atalhos globais exigem Ctrl, Alt ou Shift",
+      "recording_hint": "Aperte as teclas para atribuir (Esc para cancelar)",
+      "press_keys": "Aperte as teclas...",
+      "search_placeholder": "Pesquisar atalhos...",
+      "tab_all": "Todas",
+      "tab_main_app": "App principal",
+      "tab_overlay": "Overlay",
+      "tab_global": "Global",
+      "scope_global": "Global",
+      "scope_main_app": "App principal",
+      "scope_overlay": "Overlay",
+      "reset_section": "Redefinir a seção"
     },
     "overlay": {
       "description": "Comportamento do overlay no desktop, atalho global e configurações de posição.",
@@ -554,93 +559,55 @@
       }
     },
     "discord": {
-    "description": "Mostra o que você está ouvindo no Discord com capa do álbum, badge do artista e barra de progresso.",
-    "section_display": "Opções de exibição",
-    "section_buttons": "Botões do perfil",
-    "enable": {
-      "title": "Discord Rich Presence",
-      "description": "Envia a reprodução ativa de músicas para o seu perfil do Discord."
+      "description": "Mostra o que você está ouvindo no Discord com capa do álbum, badge do artista e barra de progresso.",
+      "section_display": "Opções de exibição",
+      "section_buttons": "Botões do perfil",
+      "enable": {
+        "title": "Discord Rich Presence",
+        "description": "Envia a reprodução ativa de músicas para o seu perfil do Discord."
+      },
+      "status_display": {
+        "title": "Formato do status",
+        "description": "Escolhe o que aparece no cabeçalho do status \"Ouvindo\" do Discord.",
+        "artist": "Artista (padrão)",
+        "song": "Título da música",
+        "artist_song": "Artista - Música",
+        "song_artist": "Música - Artista",
+        "app": "Liner (nome do app)"
+      },
+      "show_timeline": {
+        "title": "Linha do tempo da reprodução",
+        "description": "Exibe a barra de progresso interativa com o tempo decorrido e o restante da faixa."
+      },
+      "show_artwork": {
+        "title": "Capa da faixa",
+        "description": "Mostra a capa da faixa ou do álbum no cartão de atividade do Discord."
+      },
+      "show_artist_image": {
+        "title": "Badge com a foto do artista",
+        "description": "Exibe a foto do artista em um pequeno badge circular no canto inferior."
+      },
+      "show_paused": {
+        "title": "Mostrar quando pausado",
+        "description": "Mantém o status visível no Discord, com um indicador de pausa quando a música estiver pausada."
+      },
+      "show_button": {
+        "title": "Botão \"Ouvir na Liner\"",
+        "description": "Adiciona um botão interativo com link para a música na Liner."
+      },
+      "show_download_button": {
+        "title": "Botão \"Baixar a Liner\"",
+        "description": "Adiciona um botão interativo com link para a tryliner.fun para baixar o app."
+      },
+      "status": {
+        "connected": "Conectado ao Discord ({user})",
+        "disconnected": "Discord não conectado",
+        "ready": "Pronto",
+        "waiting": "Aguardando o Discord",
+        "disabled": "Desativado",
+        "via_arrpc": "Conectado via arRPC"
+      }
     },
-    "status_display": {
-      "title": "Formato do status",
-      "description": "Escolhe o que aparece no cabeçalho do status \"Ouvindo\" do Discord.",
-      "artist": "Artista (padrão)",
-      "song": "Título da música",
-      "artist_song": "Artista - Música",
-      "song_artist": "Música - Artista",
-      "app": "Liner (nome do app)"
-    },
-    "show_timeline": {
-      "title": "Linha do tempo da reprodução",
-      "description": "Exibe a barra de progresso interativa com o tempo decorrido e o restante da faixa."
-    },
-    "show_artwork": {
-      "title": "Capa da faixa",
-      "description": "Mostra a capa da faixa ou do álbum no cartão de atividade do Discord."
-    },
-    "show_artist_image": {
-      "title": "Badge com a foto do artista",
-      "description": "Exibe a foto do artista em um pequeno badge circular no canto inferior."
-    },
-    "show_paused": {
-      "title": "Mostrar quando pausado",
-      "description": "Mantém o status visível no Discord, com um indicador de pausa quando a música estiver pausada."
-    },
-    "show_button": {
-      "title": "Botão \"Ouvir na Liner\"",
-      "description": "Adiciona um botão interativo com link para a música na Liner."
-    },
-    "show_download_button": {
-      "title": "Botão \"Baixar a Liner\"",
-      "description": "Adiciona um botão interativo com link para a tryliner.fun para baixar o app."
-    },
-    "status": {
-      "connected": "Conectado ao Discord ({user})",
-      "disconnected": "Discord não conectado",
-      "ready": "Pronto",
-      "waiting": "Aguardando o Discord",
-      "disabled": "Desativado"
-    }
-    },
-    "customization": {
-      "description": "Papel de parede da janela, transparência e efeitos de desfoque nos blocos.",
-      "apply_to_overlay": "Aplicar ao mini player flutuante",
-      "apply_to_overlay_desc": "Renderiza o plano de fundo personalizado e o estilo de vidro no mini player flutuante.",
-      "dark_theme_only": "A personalização está disponível apenas no tema escuro",
-      "wallpaper_title": "Papel de parede da janela",
-      "wallpaper_description": "Defina uma imagem ou GIF animado como plano de fundo completo da janela.",
-      "upload_title": "Selecione uma imagem ou GIF animado",
-      "upload_hint": "PNG, JPEG, GIF, WebP (até 30MB)",
-      "change_button": "Alterar",
-      "remove_button": "Remover",
-      "wallpaper_blur": "Desfoque do papel de parede",
-      "wallpaper_dim": "Escurecimento do papel de parede",
-      "blocks_title": "Vidro nos blocos da interface",
-      "blocks_description": "Ajuste transparência, desfoque de fundo e escurecimento de cada área da interface.",
-      "block_sidebar": "Barra lateral",
-      "block_content": "Área de conteúdo",
-      "block_miniplayer": "Mini player",
-      "opacity": "Opacidade (transparência)",
-      "opacity_desc": "Nível de opacidade do plano de fundo (mín. 25%)",
-      "blur": "Desfoque de fundo",
-      "blur_desc": "Intensidade do desfoque tipo vidro fosco",
-      "dim": "Escurecimento",
-      "dim_desc": "Camada escura para melhorar a leitura",
-      "apply_all": "Para todos",
-      "apply_all_title": "Aplicar configurações a todos os blocos",
-      "applied_to_all": "Configurações aplicadas a todos os blocos",
-      "reset_block": "Redefinir",
-      "block_reset": "Configurações do bloco redefinidas",
-      "reset_all": "Redefinir toda a personalização",
-      "reset_all_desc": "Restaura a aparência padrão e remove a imagem de fundo e os efeitos de vidro dos blocos.",
-      "all_reset": "Toda a personalização redefinida",
-      "applied": "Papel de parede aplicado",
-      "removed": "Papel de parede removido",
-      "invalid_file_type": "Selecione um arquivo de imagem ou GIF",
-      "file_too_large": "O tamanho do arquivo deve ser menor que 30 MB",
-      "read_error": "Falha ao ler o arquivo de imagem"
-    },
-
     "audio_data": {
       "description": "Qualidade de streaming, cache offline e diagnóstico de conexão."
     },
@@ -743,7 +710,6 @@
     "theme": {
       "title": "Tema",
       "description": "Escolha a aparência geral do app.",
-      "disabled_for_glass": "O tema claro fica indisponível quando o efeito de vidro com papel de parede personalizado está em uso.",
       "light": "Claro",
       "dark": "Escuro",
       "system": "Sistema"
@@ -766,8 +732,6 @@
       "vhs": "Cromo"
     },
     "audio": {
-      "title": "Qualidade de streaming",
-      "description": "Selecione a qualidade de áudio padrão para a reprodução.",
       "pause_on_device_change": {
         "title": "Pausar ao trocar de dispositivo",
         "description": "Pausa automaticamente a reprodução quando o dispositivo de saída de áudio muda."
@@ -775,11 +739,7 @@
       "download_current_song": {
         "title": "Baixar a música atual",
         "description": "Baixe a faixa da reprodução atual como um arquivo MP3."
-      },
-      "low": "Qualidade baixa (economia de dados)",
-      "standard": "Qualidade padrão (Opus 64kbps / MP3 128kbps)",
-      "high": "Qualidade alta (AAC 256kbps)",
-      "lossless": "Sem perdas (FLAC/ALAC) - Indisponível"
+      }
     },
     "profile": {
       "title": "Perfil",
@@ -874,16 +834,12 @@
       "license_notice": "Distribuído sob a Licença Liner Source-Available e Não Comercial."
     },
     "connection": {
-      "title": "Conexão",
-      "description": "Execute todas as verificações de conectividade e salve o relatório offline.",
-      "checks_title": "Relatório offline",
-      "button": "Executar verificações e salvar",
-      "checking": "Verificando…",
-      "saved": "Relatório salvo; anexe-o à sua mensagem para o suporte.",
-      "failed": "Não foi possível salvar o relatório.",
-      "never_run": "As verificações ainda não foram executadas.",
-      "last_run": "{ok}/{total} verificações OK · {time}",
       "open_folder": "Abrir local salvo"
+    },
+    "cover_glow": {
+      "title": "Brilho da capa",
+      "description": "Brilho desfocado da capa atrás das páginas. Desative para um fundo simples.",
+      "disabled_for_light": "Desativado no tema claro."
     }
   },
   "toast": {
@@ -1010,12 +966,7 @@
     "check_trace": "Rastreamento de rota",
     "check_platform": "Plataforma",
     "check_main": "Verificações do desktop",
-    "copy_dump": "Copiar relatório",
-    "dump_copied": "Relatório copiado; cole-o na sua mensagem para o suporte.",
-    "dump_copy_failed": "Não foi possível acessar a área de transferência.",
-    "download_dump": "Salvar relatório",
-    "support": "Contatar o suporte",
-    "support_hint": "Anexe o arquivo de relatório salvo para o suporte ver o quadro completo."
+    "support": "Contatar o suporte"
   },
   "updater": {
     "modal_title": "Nova atualização disponível",
@@ -1032,9 +983,15 @@
   "track_search": {
     "placeholder_playlist": "Pesquisar na playlist",
     "placeholder_album": "Pesquisar no álbum",
-    "button": "Pesquisar faixas",
     "count": "{count} de {total}",
     "no_results": "Nenhuma faixa corresponde a “{query}”",
     "clear": "Limpar pesquisa"
+  },
+  "track_sort": {
+    "label": "Ordenar",
+    "default": "Padrão",
+    "title": "Por título (A–Z)",
+    "duration": "Por duração",
+    "popularity": "Por popularidade"
   }
 }

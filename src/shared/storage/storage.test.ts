@@ -24,6 +24,16 @@ describe("linerDb storage layer", () => {
     expect(record?.durationMs).toBe(180000);
   });
 
+  it("drops audio downloaded before a cache clear", async () => {
+    const generation = audioCache.currentGeneration();
+    audioCache.invalidate();
+    const blob = new Blob(["late download"], { type: "audio/webm" });
+    expect(await audioCache.saveAudioBlob("track_after_clear", blob, "audio/webm", generation)).toBe(false);
+    expect(await audioCache.hasAudio("track_after_clear")).toBe(false);
+    expect(await audioCache.saveAudioBlob("track_after_clear", blob, "audio/webm", audioCache.currentGeneration())).toBe(true);
+    expect(await audioCache.hasAudio("track_after_clear")).toBe(true);
+  });
+
   it("stores, checks, and calculates total bytes for audio blobs", async () => {
     const dummyBlob = new Blob(["dummy audio data content"], { type: "audio/ogg" });
     await audioCache.saveAudioBlob("track_audio_1", dummyBlob, "audio/ogg");

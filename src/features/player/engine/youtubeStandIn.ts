@@ -1,4 +1,4 @@
-import { toVideoId } from "@/shared/media/innertube";
+import { toVideoId } from "@/shared/youtube";
 import { findCatalogMatch } from "@/shared/media/matching";
 import type { PlayableTrack } from "./playbackStream";
 
@@ -8,7 +8,10 @@ export function clearYoutubeStandInCache(): void {
   matchedVideoIds.clear();
 }
 
-export async function findYoutubeStandIn(track: PlayableTrack, signal?: AbortSignal): Promise<string | null> {
+export async function findYoutubeStandIn(
+  track: PlayableTrack,
+  signal?: AbortSignal,
+): Promise<string | null> {
   const remembered = matchedVideoIds.get(track.id);
   if (remembered) return remembered;
   const artist = track.artists.trim();

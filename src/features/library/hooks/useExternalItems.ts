@@ -63,13 +63,18 @@ function toViewModel(
   };
 }
 
+const cache = new Map<EntityType, LibraryItemViewModel[]>();
+const hydratedByType = new Map<EntityType, Map<string, SavedCollectionSummary>>();
+
 /** Loads saved collections and retains resolved details while their items stay saved. */
 export function useExternalItems(type: EntityType) {
-  const [data, setData] = useState<LibraryItemViewModel[]>([]);
+  const [data, setData] = useState<LibraryItemViewModel[]>(() => cache.get(type) ?? []);
+  const [isLoading, setIsLoading] = useState(() => !cache.has(type));
   useEffect(() => {
     let active = true;
     let loadSequence = 0;
-    const hydratedDetails = new Map<string, SavedCollectionSummary>();
+    const hydratedDetails = hydratedByType.get(type) ?? new Map<string, SavedCollectionSummary>();
+    hydratedByType.set(type, hydratedDetails);
     const load = async () => {
       const sequence = ++loadSequence;
       try {
@@ -87,12 +92,14 @@ export function useExternalItems(type: EntityType) {
           if (!currentIds.has(id)) hydratedDetails.delete(id);
         }
 
-        setData(entries.map(({ entry, value }) => {
+        const items = entries.map(({ entry, value }) => {
           const summaryHasTitleAndCover =
             (type === "artist" ? value.name : value.title) && value.cover?.url;
           const details = summaryHasTitleAndCover ? undefined : hydratedDetails.get(value.id);
           return toViewModel(type, entry, value, details);
-        }));
+        });
+        cache.set(type, items);
+        setData(items);
         void runWorkerPool(entries, 4, async ({ entry, value }, index) => {
           const title = type === "artist" ? value.name : value.title;
           const cachedDetails = hydratedDetails.get(value.id);
@@ -115,34 +122,34 @@ export function useExternalItems(type: EntityType) {
             if (!details || !active || sequence !== loadSequence) return;
 
             hydratedDetails.set(value.id, details);
-            const hydratedItem = toViewModel(type, entry, value, details);
-            setData((current) => {
-              if (!active || sequence !== loadSequence || !current[index]) return current;
-              return current.map((item, itemIndex) =>
-                itemIndex === index ? hydratedItem : item,
-              );
-            });
+            items[index] = toViewModel(type, entry, value, details);
+            cache.set(type, items);
+            setData([...items]);
           } catch {
             // Keep the saved summary when catalog details are unavailable.
           }
         });
       } catch {
-        if (active && sequence === loadSequence) setData([]);
+        if (active && sequence === loadSequence && !cache.has(type)) setData([]);
+      } finally {
+        if (active) setIsLoading(false);
       }
     };
     void load();
     const refresh = () => void load();
-    const refreshAfterAuthChange = () => {
+    const resetForAccount = () => {
       hydratedDetails.clear();
+      cache.delete(type);
+      setData([]);
       void load();
     };
     window.addEventListener("library:changed", refresh);
-    window.addEventListener("auth:changed", refreshAfterAuthChange);
+    window.addEventListener("auth:changed", resetForAccount);
     return () => {
       active = false;
       window.removeEventListener("library:changed", refresh);
-      window.removeEventListener("auth:changed", refreshAfterAuthChange);
+      window.removeEventListener("auth:changed", resetForAccount);
     };
   }, [type]);
-  return { data };
+  return { data, isLoading };
 }

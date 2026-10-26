@@ -505,6 +505,9 @@ export type {
   PopularTimeWindow,
   PopularTrackItem,
   PopularTracksResponse,
+  PopularAlbumsResponse,
+  MostSavedResponse,
+  MostSavedType,
 } from "../contracts";
 
 import type {
@@ -527,6 +530,9 @@ import type {
   PlaybackHistoryResponse,
   PopularTimeWindow,
   PopularTracksResponse,
+  PopularAlbumsResponse,
+  MostSavedResponse,
+  MostSavedType,
 } from "../contracts";
 
 // ---- Endpoints --------------------------------------------------------------
@@ -627,12 +633,12 @@ export const api = {
   },
   search(q: string, type: SearchType = "all"): Promise<SearchResponse> {
     const params = new URLSearchParams({ q, type });
-    return clientCatalog.search(q, type, () => request<SearchResponse>(`/v1/search?${params}`));
+    return clientCatalog.search(q, type, () => request<SearchResponse>(`/v1/catalog/search?${params}`));
   },
 
   getTrack(id: string): Promise<ApiTrackDetails> {
     return clientCatalog.getTrack(id, () =>
-      request<ApiTrackDetails>(`/v1/tracks/${encodeURIComponent(id)}`),
+      request<ApiTrackDetails>(`/v1/catalog/tracks/${encodeURIComponent(id)}`),
     );
   },
 
@@ -685,7 +691,7 @@ export const api = {
 
   getAlbum(id: string): Promise<ApiAlbumDetails> {
     return clientCatalog.getAlbum(id, () =>
-      request<ApiAlbumDetails>(`/v1/albums/${encodeURIComponent(id)}`),
+      request<ApiAlbumDetails>(`/v1/catalog/albums/${encodeURIComponent(id)}`),
     );
   },
 
@@ -695,13 +701,13 @@ export const api = {
 
   getArtist(id: string): Promise<ApiArtistDetails> {
     return clientCatalog.getArtist(id, () =>
-      request<ApiArtistDetails>(`/v1/artists/${encodeURIComponent(id)}`),
+      request<ApiArtistDetails>(`/v1/catalog/artists/${encodeURIComponent(id)}`),
     );
   },
 
   getPlaylist(id: string): Promise<ApiCatalogPlaylistDetails> {
     return clientCatalog.getPlaylist(id, () =>
-      request<ApiCatalogPlaylistDetails>(`/v1/playlists/${encodeURIComponent(id)}`),
+      request<ApiCatalogPlaylistDetails>(`/v1/catalog/playlists/${encodeURIComponent(id)}`),
     );
   },
 
@@ -732,10 +738,16 @@ export const api = {
     return request<{ items: unknown[] }>(`/v1/me/library/${type}`);
   },
 
-  saveCollection(type: "albums" | "artists" | "playlists", id: string): Promise<void> {
+  // the catalog lives on the client now, so the server can't look a collection up by
+  // id any more: send what we know (name / title, cover) or the library shows a blank tile
+  saveCollection(
+    type: "albums" | "artists" | "playlists",
+    id: string,
+    snapshot?: Record<string, unknown>,
+  ): Promise<void> {
     return request<void>(
       `/v1/me/library/${type}/${encodeURIComponent(id)}`,
-      { method: "PUT" },
+      { method: "PUT", ...(snapshot ? { body: JSON.stringify({ snapshot }) } : {}) },
     );
   },
 
@@ -1002,6 +1014,21 @@ export const api = {
   ): Promise<PopularTracksResponse> {
     const params = new URLSearchParams({ window, limit: String(limit) });
     return request<PopularTracksResponse>(`/v1/explore/popular?${params}`);
+  },
+
+  getPopularAlbums(
+    window: PopularTimeWindow = "7d",
+    limit = 20,
+  ): Promise<PopularAlbumsResponse> {
+    const params = new URLSearchParams({ window, limit: String(limit) });
+    return request<PopularAlbumsResponse>(
+      `/v1/explore/popular/albums?${params}`,
+    );
+  },
+
+  getMostSaved(type: MostSavedType = "all", limit = 20): Promise<MostSavedResponse> {
+    const params = new URLSearchParams({ type, limit: String(limit) });
+    return request<MostSavedResponse>(`/v1/explore/most-saved?${params}`);
   },
 
   getDailyMixes(): Promise<DailyMixesResponse> {

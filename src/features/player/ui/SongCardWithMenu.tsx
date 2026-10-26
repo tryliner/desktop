@@ -21,6 +21,7 @@ export interface SongCardWithMenuProps {
   durationMs?: number;
   releaseDate?: string;
   explicit?: boolean;
+  hideArtists?: boolean;
   imageShape?: "square" | "circle";
   trackNumber?: number;
   repostedBy?: string;
@@ -35,6 +36,7 @@ export interface SongCardWithMenuProps {
   showReorderHandle?: boolean;
   onGrabStart?: (e: React.PointerEvent<HTMLDivElement>) => void;
   highlight?: string;
+  trailingAction?: React.ReactNode;
 }
 
 function SongCardWithMenu({
@@ -50,6 +52,7 @@ function SongCardWithMenu({
   durationMs,
   releaseDate,
   explicit,
+  hideArtists,
   imageShape,
   trackNumber,
   repostedBy,
@@ -64,6 +67,7 @@ function SongCardWithMenu({
   showReorderHandle,
   onGrabStart,
   highlight,
+  trailingAction,
 }: SongCardWithMenuProps) {
   const resolvedDurationMs = useMemo(() => {
     if (durationMs !== undefined) return durationMs;
@@ -164,6 +168,7 @@ function SongCardWithMenu({
       duration={duration}
       releaseDate={releaseDate}
       explicit={explicit}
+      hideArtists={hideArtists}
       imageShape={imageShape}
       trackNumber={trackNumber}
       repostedBy={repostedBy}
@@ -177,6 +182,7 @@ function SongCardWithMenu({
       icon={icon}
       showReorderHandle={showReorderHandle}
       onGrabStart={onGrabStart}
+      trailingAction={trailingAction}
     />
   );
 }

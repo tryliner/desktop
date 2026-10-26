@@ -1,4 +1,5 @@
 import { memo } from "react";
+import { EntityHeroSkeleton } from "@/shared/ui";
 
 const TRACK_TITLE_WIDTHS = [
   "w-[42%]",
@@ -31,27 +32,14 @@ function PlaylistPageSkeletonComponent({
 }: PlaylistPageSkeletonProps) {
   return (
     <div
-      className={`relative h-full w-full overflow-hidden bg-transparent select-none ${className}`}
+      className={`relative h-full w-full overflow-hidden bg-transparent select-none pt-(--page-inset-top) ${className}`}
     >
-      <div className="relative z-10 flex flex-row items-stretch gap-[16px] pl-[32px] pr-[16px] h-full w-full min-h-0 box-border">
-        <aside className="shrink-0 w-[280px] self-start pt-[56px] pb-[24px]">
-          <div className="relative aspect-square w-full overflow-hidden rounded-md bg-border-alpha-14">
-            <div className="skeleton-shimmer h-full w-full" />
-          </div>
+      <div className="relative z-10 flex flex-col gap-[20px] h-full w-full min-h-0 box-border">
+        <div className="shrink-0 pl-[16px] pr-[12px] pt-[8px]">
+          <EntityHeroSkeleton />
+        </div>
 
-          <div className="skeleton-shimmer h-[26px] w-[80%] rounded-[6px] mt-[16px]" />
-          <div className="skeleton-shimmer h-[16px] w-[60%] rounded-[4px] mt-[6px]" />
-          <div className="skeleton-shimmer h-[26px] w-[130px] rounded-md mt-[8px]" />
-
-          <div className="skeleton-shimmer h-[36px] w-full rounded-md mt-[16px]" />
-          <div className="mt-[8px] flex items-center gap-[8px]">
-            <div className="skeleton-shimmer h-[36px] flex-1 rounded-md" />
-            <div className="skeleton-shimmer h-[36px] w-[36px] rounded-md" />
-            <div className="skeleton-shimmer h-[36px] w-[36px] rounded-md" />
-          </div>
-        </aside>
-
-        <div className="min-w-0 flex-1 h-full min-h-0 overflow-hidden px-[8px] pt-[56px] pb-[24px]">
+        <div className="min-w-0 flex-1 min-h-0 overflow-hidden mx-[4px] mb-[8px] rounded-[14px] bg-border-alpha-14 overflow-hidden">
           <div className="flex flex-col">
             {Array.from({ length: 10 }).map((_, i) => (
               <div

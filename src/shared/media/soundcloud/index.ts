@@ -29,3 +29,4 @@ export {
   soundCloudUserId,
 } from "./soundcloudIds";
 export { isSoundCloudUrl, resolveSoundCloudUrl } from "./soundcloudResolveUrl";
+export { soundCloudCover } from "./soundcloudMappers";

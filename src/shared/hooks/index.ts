@@ -20,3 +20,9 @@ export {
   type UseListReorderReturn,
 } from "./useListReorder";
 
+export {
+  useDominantDarkColor,
+  default as useDominantDarkColorDefault,
+  type DominantDarkColor,
+} from "./useDominantDarkColor";
+export { useScrollFade, type ScrollFade } from "./useScrollFade";

@@ -78,8 +78,16 @@ export function useDeletePlaylist() {
 }
 
 export function useSaveExternalItem() {
-  return useMutation(({ type, id }: { type: "album" | "artist" | "playlist"; id: string }) =>
-    api.saveCollection(`${type}s` as "albums" | "artists" | "playlists", id)
+  return useMutation(
+    ({
+      type,
+      id,
+      snapshot,
+    }: {
+      type: "album" | "artist" | "playlist";
+      id: string;
+      snapshot?: Record<string, unknown>;
+    }) => api.saveCollection(`${type}s` as "albums" | "artists" | "playlists", id, snapshot),
   );
 }
 

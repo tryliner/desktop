@@ -1,12 +1,9 @@
-import { useMemo, useState } from "react";
-import { WifiOffLine, CopyLine, DownloadLine, MailLine, CloseLine } from "@mingcute/react";
+import { useState } from "react";
+import { WifiOffLine, MailLine, CloseLine } from "@mingcute/react";
 import Button from "@/shared/ui/Button";
 import { useTranslation } from "@/languages";
-import { useToast } from "@/shared/ui";
 import { useConnectivityStore } from "../store/connectivityStore";
 import type { DiagCheck } from "../lib/diagnostics";
-import { DIAG_ENDPOINTS } from "../lib/diagnostics";
-import { buildOfflineDump, copyDump, downloadDump } from "../lib/dump";
 import { isServerOutage } from "../lib/failureKind";
 
 const SUPPORT_MAIL = "dev@tryliner.fun";
@@ -23,28 +20,14 @@ function StatusDot({ status }: { status: DiagCheck["status"] }) {
 
 export default function ConnectivityWall() {
   const { t } = useTranslation();
-  const { toast } = useToast();
   const [showChecks, setShowChecks] = useState(false);
   const visible = useConnectivityStore((s) => s.visible);
   const running = useConnectivityStore((s) => s.running);
   const checks = useConnectivityStore((s) => s.checks);
-  const failures = useConnectivityStore((s) => s.failures);
-  const main = useConnectivityStore((s) => s.main);
   const lastRunAt = useConnectivityStore((s) => s.lastRunAt);
   const retry = useConnectivityStore((s) => s.retry);
   const reset = useConnectivityStore((s) => s.reset);
   const runDiagnostics = useConnectivityStore((s) => s.runDiagnostics);
-
-  const dump = useMemo(
-    () =>
-      buildOfflineDump({
-        checks,
-        failures,
-        main,
-        endpoints: DIAG_ENDPOINTS,
-      }),
-    [checks, failures, main],
-  );
 
   if (!visible) return null;
 
@@ -60,14 +43,6 @@ export default function ConnectivityWall() {
   const checkLabel = (check: DiagCheck): string => {
     const base = t(`connectivity.check_${check.id}`);
     return check.host ? `${base} · ${check.host}` : base;
-  };
-
-  const handleCopy = async () => {
-    const done = await copyDump(dump);
-    toast(
-      done ? t("connectivity.dump_copied") : t("connectivity.dump_copy_failed"),
-      done ? "info" : "error",
-    );
   };
 
   return (
@@ -190,22 +165,6 @@ export default function ConnectivityWall() {
           >
             {running ? t("connectivity.retrying") : t("connectivity.retry")}
           </Button>
-          <Button
-            variant="outline"
-            onClick={() => void handleCopy()}
-            className="!h-[38px] px-[14px] !text-[13px] flex items-center gap-[6px]"
-          >
-            <CopyLine size={15} />
-            {t("connectivity.copy_dump")}
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => downloadDump(dump)}
-            className="!h-[38px] px-[14px] !text-[13px] flex items-center gap-[6px]"
-          >
-            <DownloadLine size={15} />
-            {t("connectivity.download_dump")}
-          </Button>
           <a
             href={`mailto:${SUPPORT_MAIL}?subject=${encodeURIComponent("Liner connection problem")}`}
             className="inline-flex h-[38px] items-center gap-[6px] px-[8px] text-[13px] font-[500] text-text-secondary hover:text-text-primary transition-colors"
@@ -215,12 +174,6 @@ export default function ConnectivityWall() {
             {t("connectivity.support")}
           </a>
         </div>
-        <p
-          className="m-0 mt-[10px] text-[12px] text-text-tertiary"
-          style={{ fontFamily: "var(--font-inter), sans-serif" }}
-        >
-          {t("connectivity.support_hint")}
-        </p>
       </div>
     </div>
   );

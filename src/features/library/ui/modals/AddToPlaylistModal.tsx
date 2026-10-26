@@ -4,6 +4,7 @@ import { useToast } from "@/shared/ui";
 import { ApiError } from "@/shared/api";
 import TextInput from "@/shared/ui/TextInput";
 import Dialog from "@/shared/ui/Dialog";
+import { DialogActions, DialogButton } from "@/shared/ui";
 import CoverImage from "@/features/covers/ui/CoverImage";
 import { useTranslation } from "@/languages";
 import { useAddPlaylistTracks, usePlaylistsList } from "../../hooks";
@@ -239,16 +240,15 @@ export default function AddToPlaylistModal() {
           )}
         </div>
 
-        <div className="px-[8px]">
-          <button
-            type="button"
-            onClick={handleNewPlaylist}
-            className="flex h-[36px] w-full items-center justify-center gap-[6px] rounded-md border border-border-primary bg-transparent text-[13px] font-[500] text-text-primary transition-colors hover:bg-bg-elevated cursor-pointer"
-            style={font}
-          >
-            <AddLine size={16} />
-            {t("library.create_playlist")}
-          </button>
+        <div className="px-[8px] pb-[8px]">
+          <DialogActions>
+            <DialogButton type="button" onClick={handleNewPlaylist}>
+              <span className="inline-flex items-center gap-[6px]">
+                <AddLine size={16} />
+                {t("library.create_playlist")}
+              </span>
+            </DialogButton>
+          </DialogActions>
         </div>
       </div>
     </Dialog>

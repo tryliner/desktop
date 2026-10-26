@@ -29,6 +29,7 @@ import {
 } from "@/features/lyrics";
 import { preloadCoverArt } from "@/features/covers";
 import { linerDb, type CachedLyricsRecord } from "@/shared/storage";
+import { debouncedStorage } from "@/shared/utils/storage";
 import { showToast } from "@/shared/ui";
 import { createTranslatorSync, getStoredLocale } from "@/languages";
 import type { Track } from "@/shared/types";
@@ -47,7 +48,10 @@ function shuffleArray<T>(array: T[]): T[] {
   return result;
 }
 
-function restoreOriginalRelativeOrder<T>(currentUpcoming: T[], referenceList: T[]): T[] {
+function restoreOriginalRelativeOrder<T>(
+  currentUpcoming: T[],
+  referenceList: T[],
+): T[] {
   if (referenceList.length === 0) return currentUpcoming;
   const originalPosMap = new Map<unknown, number>();
   referenceList.forEach((item: unknown, idx) => {
@@ -60,13 +64,19 @@ function restoreOriginalRelativeOrder<T>(currentUpcoming: T[], referenceList: T[
   return [...currentUpcoming].sort((a: unknown, b: unknown) => {
     const keyA = (a as { id?: string })?.id ?? a;
     const keyB = (b as { id?: string })?.id ?? b;
-    const posA = originalPosMap.has(keyA) ? originalPosMap.get(keyA)! : Number.MAX_SAFE_INTEGER;
-    const posB = originalPosMap.has(keyB) ? originalPosMap.get(keyB)! : Number.MAX_SAFE_INTEGER;
+    const posA = originalPosMap.has(keyA)
+      ? originalPosMap.get(keyA)!
+      : Number.MAX_SAFE_INTEGER;
+    const posB = originalPosMap.has(keyB)
+      ? originalPosMap.get(keyB)!
+      : Number.MAX_SAFE_INTEGER;
     return posA - posB;
   });
 }
 
-function parsePlaybackContext(context: string | null): PlaybackContext | undefined {
+function parsePlaybackContext(
+  context: string | null,
+): PlaybackContext | undefined {
   if (!context) return undefined;
   if (context.includes(":")) {
     const [type, ...rest] = context.split(":");
@@ -87,8 +97,13 @@ function newRadioWaveId(): string {
 type LyricsHint = { title: string; artist: string; durationMs?: number };
 
 function lyricsHint(track: Track): LyricsHint {
-  const artist = track.artistList?.[0]?.name || track.artists.split(",")[0] || "";
-  return { title: track.title, artist: artist.trim(), durationMs: track.durationMs };
+  const artist =
+    track.artistList?.[0]?.name || track.artists.split(",")[0] || "";
+  return {
+    title: track.title,
+    artist: artist.trim(),
+    durationMs: track.durationMs,
+  };
 }
 
 class PlaybackTelemetryTracker {
@@ -108,7 +123,10 @@ class PlaybackTelemetryTracker {
 
   private getOrCreateListeningSession(): string {
     const now = Date.now();
-    if (!this.listeningSessionId || now - this.lastActivityTime > this.SESSION_TIMEOUT_MS) {
+    if (
+      !this.listeningSessionId ||
+      now - this.lastActivityTime > this.SESSION_TIMEOUT_MS
+    ) {
       this.listeningSessionId =
         typeof crypto !== "undefined" && "randomUUID" in crypto
           ? crypto.randomUUID()
@@ -191,12 +209,19 @@ class PlaybackTelemetryTracker {
     }
   }
 
-  public flushCurrentTrack() {
-    if (!this.activeTrackId) return;
+  public flushCurrentTrack(): Promise<void> {
+    if (!this.activeTrackId) return Promise.resolve();
     this.onPausedOrStopped();
+    let reported: Promise<void> = Promise.resolve();
 
-    const durationMs = this.trackDurationMs > 0 ? this.trackDurationMs : this.playedDurationMs;
-    const rawRate = durationMs > 0 ? this.playedDurationMs / durationMs : this.completed ? 1.0 : 0.0;
+    const durationMs =
+      this.trackDurationMs > 0 ? this.trackDurationMs : this.playedDurationMs;
+    const rawRate =
+      durationMs > 0
+        ? this.playedDurationMs / durationMs
+        : this.completed
+          ? 1.0
+          : 0.0;
     const completionRate = Math.min(1.0, Math.max(0.0, rawRate));
     const isSkipped = !this.completed && this.playedDurationMs < 30000;
 
@@ -204,24 +229,36 @@ class PlaybackTelemetryTracker {
       const snap = this.activeTrack;
       const artistsList = snap?.artistList?.length
         ? snap.artistList.map((a) => ({ id: a.id || "unknown", name: a.name }))
-        : (snap?.artists
-            ? snap.artists.split(",").map((name) => ({ id: snap?.artistId || "unknown", name: name.trim() }))
-            : [{ id: "unknown", name: "Unknown Artist" }]);
+        : snap?.artists
+          ? snap.artists
+              .split(",")
+              .map((name) => ({
+                id: snap?.artistId || "unknown",
+                name: name.trim(),
+              }))
+          : [{ id: "unknown", name: "Unknown Artist" }];
 
-      this.sendEvent({
+      reported = this.sendEvent({
         playbackSessionId: this.playbackSessionId,
         listeningSessionId: this.getOrCreateListeningSession(),
         trackId: this.activeTrackId,
-        trackSnapshot: snap ? {
-          id: snap.id,
-          title: snap.title || "Unknown Track",
-          artists: artistsList,
-          album: snap.album ? { id: snap.album.id || "", title: snap.album.title || "" } : undefined,
-          cover: snap.coverUrl ? { url: snap.coverUrl, width: 512, height: 512 } : undefined,
-          durationMs: snap.durationMs || this.trackDurationMs,
-        } : undefined,
+        trackSnapshot: snap
+          ? {
+              id: snap.id,
+              title: snap.title || "Unknown Track",
+              artists: artistsList,
+              album: snap.album
+                ? { id: snap.album.id || "", title: snap.album.title || "" }
+                : undefined,
+              cover: snap.coverUrl
+                ? { url: snap.coverUrl, width: 512, height: 512 }
+                : undefined,
+              durationMs: snap.durationMs || this.trackDurationMs,
+            }
+          : undefined,
         playedDurationMs: Math.round(this.playedDurationMs),
-        trackDurationMs: this.trackDurationMs > 0 ? this.trackDurationMs : undefined,
+        trackDurationMs:
+          this.trackDurationMs > 0 ? this.trackDurationMs : undefined,
         completionRate: Number(completionRate.toFixed(4)),
         completed: this.completed,
         skipped: isSkipped,
@@ -239,10 +276,11 @@ class PlaybackTelemetryTracker {
     this.completed = false;
     this.loopCount = 0;
     this.hasSeekBackward = false;
+    return reported;
   }
 
-  private sendEvent(payload: RecordPlaybackEventRequest) {
-    void api.recordPlaybackEvent(payload).catch((err) => {
+  private sendEvent(payload: RecordPlaybackEventRequest): Promise<void> {
+    return api.recordPlaybackEvent(payload).then(() => undefined, (err) => {
       log(
         "yellow",
         "telemetry",
@@ -302,7 +340,10 @@ class PlayerEngine {
           newTrack = true;
           this.lastPreloadKey = null;
           if (state.currentTrack) {
-            this.telemetry.startTrack(state.currentTrack, state.playbackContext);
+            this.telemetry.startTrack(
+              state.currentTrack,
+              state.playbackContext,
+            );
           } else {
             this.telemetry.flushCurrentTrack();
           }
@@ -469,7 +510,12 @@ class PlayerEngine {
       void playerRuntime.loadAndPlay(selectedTrack);
     }
 
-    this.maybeExtendQueue(mySession, selectedTrack.id, finalIndex, finalQueue.length);
+    this.maybeExtendQueue(
+      mySession,
+      selectedTrack.id,
+      finalIndex,
+      finalQueue.length,
+    );
   }
 
   public async playShuffled(
@@ -561,7 +607,10 @@ class PlayerEngine {
           const shuffledUpcoming = shuffleArray(upcoming);
           latestStore.setQueue([track, ...shuffledUpcoming]);
         }
-        const sample = additions.slice(0, 3).map((t) => `"${t.title}" by ${t.artists || 'Unknown'}`).join(', ');
+        const sample = additions
+          .slice(0, 3)
+          .map((t) => `"${t.title}" by ${t.artists || "Unknown"}`)
+          .join(", ");
         log(
           "green",
           "radio",
@@ -583,7 +632,9 @@ class PlayerEngine {
     if (wasLoading) {
       playerRuntime?.cancelPendingLoad();
     }
-    const audioEl = document.getElementById("liner-audio") as HTMLAudioElement | null;
+    const audioEl = document.getElementById(
+      "liner-audio",
+    ) as HTMLAudioElement | null;
     if (audioEl && !Number.isNaN(audioEl.currentTime)) {
       store.setPosition(Math.round(audioEl.currentTime * 1000));
     }
@@ -621,7 +672,11 @@ class PlayerEngine {
     const store = usePlayerStore.getState();
     const nextIndex = this.computeNextIndex(isAutoEnd);
 
-    if (nextIndex === null && isRadioContext(store.playbackContext) && store.currentTrack) {
+    if (
+      nextIndex === null &&
+      isRadioContext(store.playbackContext) &&
+      store.currentTrack
+    ) {
       // radio ran dry (refill not back yet / failed earlier): fetch now and carry on
       const lengthBefore = store.queue.length;
       const waitSession = this.sessionId;
@@ -661,7 +716,12 @@ class PlayerEngine {
       if (playerRuntime) {
         void playerRuntime.loadAndPlay(nextTrack);
       }
-      this.maybeExtendQueue(mySession, nextTrack.id, nextIndex, store.queue.length);
+      this.maybeExtendQueue(
+        mySession,
+        nextTrack.id,
+        nextIndex,
+        store.queue.length,
+      );
     }
   }
 
@@ -695,7 +755,12 @@ class PlayerEngine {
       if (playerRuntime) {
         void playerRuntime.loadAndPlay(prevTrack);
       }
-      this.maybeExtendQueue(mySession, prevTrack.id, prevIndex, store.queue.length);
+      this.maybeExtendQueue(
+        mySession,
+        prevTrack.id,
+        prevIndex,
+        store.queue.length,
+      );
     }
   }
 
@@ -720,7 +785,10 @@ class PlayerEngine {
 
   public setPitchSemitones(semitones: number): void {
     pitchShifter.resumeContext();
-    const clampedSemitones = Math.min(12, Math.max(-12, Number(semitones.toFixed(1))));
+    const clampedSemitones = Math.min(
+      12,
+      Math.max(-12, Number(semitones.toFixed(1))),
+    );
     const store = usePlayerStore.getState();
     if (store.isPitchLinked) {
       const rate = Number(Math.pow(2, clampedSemitones / 12).toFixed(2));
@@ -880,6 +948,29 @@ class PlayerEngine {
     this.preloadNextTrack(store);
   }
 
+  public async stopAndClear(): Promise<void> {
+    const reported = this.telemetry.flushCurrentTrack();
+    if (this.radioAppendTimeout) {
+      clearTimeout(this.radioAppendTimeout);
+      this.radioAppendTimeout = null;
+    }
+    this.radioFetchInFlight = null;
+    this.radioWaveId = null;
+    this.lyricsAbort?.abort();
+    this.lyricsAbort = null;
+    this.lyricsLoadToken += 1;
+    this.currentLyricsTrackId = null;
+    this.masterPlaylist = [];
+    this.originalUpcomingQueue = [];
+    this.lastPreloadKey = null;
+    this.consecutiveAutoSkips = 0;
+    playerRuntime?.stop();
+    usePlayerStore.getState().resetPlayback();
+    useLyricsStore.getState().reset();
+    debouncedStorage.flush();
+    await reported;
+  }
+
   public clearQueue(): void {
     usePlayerStore.getState().clearQueue();
     this.masterPlaylist = [];
@@ -905,9 +996,15 @@ class PlayerEngine {
     let newCurrentIndex = store.currentIndex;
     if (store.currentIndex === fromIndex) {
       newCurrentIndex = toIndex;
-    } else if (fromIndex < store.currentIndex && toIndex >= store.currentIndex) {
+    } else if (
+      fromIndex < store.currentIndex &&
+      toIndex >= store.currentIndex
+    ) {
       newCurrentIndex -= 1;
-    } else if (fromIndex > store.currentIndex && toIndex <= store.currentIndex) {
+    } else if (
+      fromIndex > store.currentIndex &&
+      toIndex <= store.currentIndex
+    ) {
       newCurrentIndex += 1;
     }
 
@@ -937,7 +1034,10 @@ class PlayerEngine {
     }));
   }
 
-  private handlePlaybackError(info: { trackId: string; message: string }): void {
+  private handlePlaybackError(info: {
+    trackId: string;
+    message: string;
+  }): void {
     const store = usePlayerStore.getState();
     if (!store.currentTrack || store.currentTrack.id !== info.trackId) return;
 
@@ -962,9 +1062,15 @@ class PlayerEngine {
     }
 
     console.error("[PlaybackError]", info.trackId, info.message);
-    log("yellow", "playback", `"${track.title}" failed (${info.message}) — skipping to next`);
+    log(
+      "yellow",
+      "playback",
+      `"${track.title}" failed (${info.message}) — skipping to next`,
+    );
     showToast(translate("player.track_unavailable_title"), "error", {
-      description: track.artists ? `${track.title} — ${track.artists}` : track.title,
+      description: track.artists
+        ? `${track.title} — ${track.artists}`
+        : track.title,
     });
     void this.skipNext(false);
   }
@@ -990,7 +1096,9 @@ class PlayerEngine {
     queueLength: number,
   ): void {
     const radio = isRadioContext(usePlayerStore.getState().playbackContext);
-    const due = radio ? shouldRefillRadio(queueLength, index) : index === queueLength - 1;
+    const due = radio
+      ? shouldRefillRadio(queueLength, index)
+      : index === queueLength - 1;
     if (due) this.scheduleAppendSimilarTracks(session, seedTrackId);
   }
 
@@ -1008,11 +1116,16 @@ class PlayerEngine {
     }, 400);
   }
 
-  private appendSimilarTracksForSeed(session: number, seedTrackId: string): Promise<void> {
+  private appendSimilarTracksForSeed(
+    session: number,
+    seedTrackId: string,
+  ): Promise<void> {
     if (this.radioFetchInFlight) return this.radioFetchInFlight;
-    const run = this.fetchAndAppendSimilarTracks(session, seedTrackId).finally(() => {
-      if (this.radioFetchInFlight === run) this.radioFetchInFlight = null;
-    });
+    const run = this.fetchAndAppendSimilarTracks(session, seedTrackId).finally(
+      () => {
+        if (this.radioFetchInFlight === run) this.radioFetchInFlight = null;
+      },
+    );
     this.radioFetchInFlight = run;
     return run;
   }
@@ -1052,7 +1165,12 @@ class PlayerEngine {
     const state = usePlayerStore.getState();
     // radio: still valid while the same station plays (skipping within it is fine);
     // anything else: only for the exact track session that asked
-    if (radio ? state.playbackContext !== startContext : session !== this.sessionId) return;
+    if (
+      radio
+        ? state.playbackContext !== startContext
+        : session !== this.sessionId
+    )
+      return;
     if (!radio && !state.autoplaySimilar) return;
 
     const queuedIds = new Set(state.queue.map((track) => track.id));
@@ -1061,7 +1179,10 @@ class PlayerEngine {
       .filter((track) => !queuedIds.has(track.id));
     if (additions.length === 0) return;
 
-    const sample = additions.slice(0, 3).map((t) => `"${t.title}" by ${t.artists || 'Unknown'}`).join(', ');
+    const sample = additions
+      .slice(0, 3)
+      .map((t) => `"${t.title}" by ${t.artists || "Unknown"}`)
+      .join(", ");
     log(
       "green",
       "radio",
@@ -1074,8 +1195,7 @@ class PlayerEngine {
   private async syncDiscordPresence(
     _state: PlayerState,
     _trackChanged: boolean = false,
-  ): Promise<void> {
-  }
+  ): Promise<void> {}
 
   private preloadNextTrack(state: PlayerState): void {
     const queue = state.queue;
@@ -1083,7 +1203,11 @@ class PlayerEngine {
     let nextTrack: Track | null = null;
     if (currentIndex >= 0 && currentIndex < queue.length - 1) {
       nextTrack = queue[currentIndex + 1];
-    } else if (state.repeat === "all" && queue.length > 0 && !isRadioContext(state.playbackContext)) {
+    } else if (
+      state.repeat === "all" &&
+      queue.length > 0 &&
+      !isRadioContext(state.playbackContext)
+    ) {
       nextTrack = queue[0];
     }
 
@@ -1114,7 +1238,10 @@ class PlayerEngine {
     }
   }
 
-  private async prefetchLyrics(trackId: string, hint?: LyricsHint): Promise<void> {
+  private async prefetchLyrics(
+    trackId: string,
+    hint?: LyricsHint,
+  ): Promise<void> {
     if (!trackId) return;
 
     if (lyricsCache.has(trackId)) return;
@@ -1141,7 +1268,11 @@ class PlayerEngine {
         }[] = [];
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 8000);
-        for await (const event of api.streamLyrics(trackId, controller.signal, hint)) {
+        for await (const event of api.streamLyrics(
+          trackId,
+          controller.signal,
+          hint,
+        )) {
           if (event.type === "provider" && event.status === "found") {
             const candidate = event.candidate;
             if (shouldCacheLyricsCandidate(candidate)) {
@@ -1153,7 +1284,10 @@ class PlayerEngine {
               quality: candidate.quality.total,
               candidate,
             });
-            if (!bestCandidate || isBetterLyricsCandidate(candidate, bestCandidate)) {
+            if (
+              !bestCandidate ||
+              isBetterLyricsCandidate(candidate, bestCandidate)
+            ) {
               bestCandidate = candidate;
             }
           } else if (event.type === "done") {
@@ -1212,7 +1346,8 @@ class PlayerEngine {
     let bestCandidate: LyricsCandidate | null = null;
 
     const memoryCached = lyricsCache.get(trackId);
-    let cached: CachedLyricsItem | CachedLyricsRecord | null = memoryCached || null;
+    let cached: CachedLyricsItem | CachedLyricsRecord | null =
+      memoryCached || null;
     if (!cached) {
       try {
         cached = await linerDb.getLyrics(trackId);
@@ -1248,8 +1383,13 @@ class PlayerEngine {
         ],
       });
 
-      const lastChecked = (cached as any).lastCheckedAt || (cached as any).timestamp || 0;
-      log("cyan", "lyrics", `cache hit for "${track.title}" (age: ${Math.round((Date.now() - lastChecked) / 1000)}s)`);
+      const lastChecked =
+        (cached as any).lastCheckedAt || (cached as any).timestamp || 0;
+      log(
+        "cyan",
+        "lyrics",
+        `cache hit for "${track.title}" (age: ${Math.round((Date.now() - lastChecked) / 1000)}s)`,
+      );
       const isStale = Date.now() - lastChecked >= SEVEN_DAYS_MS;
       if (!isStale || (cached as any).userLocked) {
         return;
@@ -1276,7 +1416,8 @@ class PlayerEngine {
       try {
         await this.inFlightLyricsPrefetches.get(trackId);
         if (token !== this.lyricsLoadToken || controller.signal.aborted) return;
-        const freshCached = lyricsCache.get(trackId) || (await linerDb.getLyrics(trackId));
+        const freshCached =
+          lyricsCache.get(trackId) || (await linerDb.getLyrics(trackId));
         if (freshCached && freshCached.candidate) {
           const parsed = parseRawLyrics(
             freshCached.candidate.lyrics.content,
@@ -1303,7 +1444,11 @@ class PlayerEngine {
     log("cyan", "lyrics", `fetching for "${track.title}"`);
 
     try {
-      for await (const event of api.streamLyrics(trackId, controller.signal, lyricsHint(track))) {
+      for await (const event of api.streamLyrics(
+        trackId,
+        controller.signal,
+        lyricsHint(track),
+      )) {
         if (token !== this.lyricsLoadToken || controller.signal.aborted) break;
 
         if (event.type === "provider" && event.status === "found") {
@@ -1337,7 +1482,8 @@ class PlayerEngine {
               candidate.lyrics.content,
               candidate.lyrics.format,
             );
-            if (token !== this.lyricsLoadToken || controller.signal.aborted) break;
+            if (token !== this.lyricsLoadToken || controller.signal.aborted)
+              break;
 
             useLyricsStore.getState().setLyricsState({
               activeProvider: candidate.provider,
@@ -1387,7 +1533,8 @@ class PlayerEngine {
           );
         } else if (event.type === "done") {
           if (bestCandidate && shouldCacheLyricsCandidate(bestCandidate)) {
-            const currentProviders = useLyricsStore.getState().availableProviders;
+            const currentProviders =
+              useLyricsStore.getState().availableProviders;
             lyricsCache.set(trackId, bestCandidate, currentProviders);
             void linerDb.putLyrics({
               trackId,

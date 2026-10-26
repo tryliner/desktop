@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { memo, useCallback, useState } from "react";
+import { memo, useCallback, useState, type ReactNode } from "react";
 import DropdownMenu from "@/shared/ui/DropdownMenu";
 import type { DropdownMenuItem } from "@/shared/ui/DropdownMenu";
 import ExplicitBadge from "@/shared/ui/ExplicitBadge";
@@ -12,6 +12,8 @@ export interface AlbumCardProps {
   year?: string;
   explicit?: boolean;
   trackCount?: number;
+  subtitle?: string;
+  badge?: ReactNode;
   className?: string;
   menuItems?: DropdownMenuItem[];
 }
@@ -23,6 +25,8 @@ function AlbumCard({
   year,
   explicit = false,
   trackCount,
+  subtitle,
+  badge,
   className = "",
   menuItems,
 }: AlbumCardProps) {
@@ -81,12 +85,19 @@ function AlbumCard({
             {title}
           </span>
           <span className="flex items-center gap-[5px] truncate text-[13px] text-text-tertiary">
+            {badge}
             {explicit && <ExplicitBadge />}
-            {year && <span>{year}</span>}
-            {year && trackCount && (
-              <span className="w-[3px] h-[3px] rounded-full bg-text-tertiary/40 shrink-0" aria-hidden />
+            {subtitle ? (
+              <span className="truncate">{subtitle}</span>
+            ) : (
+              <>
+                {year && <span>{year}</span>}
+                {year && trackCount && (
+                  <span className="w-[3px] h-[3px] rounded-full bg-text-tertiary/40 shrink-0" aria-hidden />
+                )}
+                {trackCount && <span>{trackCount} tracks</span>}
+              </>
             )}
-            {trackCount && <span>{trackCount} tracks</span>}
           </span>
         </div>
       </Link>

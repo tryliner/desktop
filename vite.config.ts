@@ -4,6 +4,7 @@ import tailwindcss from "@tailwindcss/vite";
 import electron from "vite-plugin-electron/simple";
 import path from "path";
 import pkg from "./package.json" with { type: "json" };
+import { contentSecurityPolicyPlugin } from "./vite.csp";
 
 export default defineConfig(({ command, mode }) => {
   if (command === "serve") {
@@ -18,6 +19,7 @@ export default defineConfig(({ command, mode }) => {
   plugins: [
     react(),
     tailwindcss(),
+    contentSecurityPolicyPlugin(),
     electron({
       main: {
         entry: "electron/main.ts",

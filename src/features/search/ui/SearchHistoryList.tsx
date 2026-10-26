@@ -71,7 +71,10 @@ export const SearchHistoryList = memo(function SearchHistoryList({
                     {item.title}
                   </span>
                 </div>
-                <RemoveHistoryButton label={t("common.remove")} onRemove={() => removeItem(item.id)} />
+                <RemoveHistoryButton
+                  label={t("common.remove")}
+                  onRemove={() => removeItem(item.id)}
+                />
               </div>
             );
           }
@@ -80,31 +83,33 @@ export const SearchHistoryList = memo(function SearchHistoryList({
           const data = item.itemData ?? item;
 
           return (
-            <div key={item.id} className="group flex items-center w-full min-w-0">
-              <div className="min-w-0 flex-1">
-                <SongCardWithMenu
-                id={item.id}
-                title={item.title}
-                artistId={data?.artistId ?? data?.artist_id}
-                artistList={data?.artistList}
-                artists={item.subtitle || ""}
-                coverUrl={item.coverUrl || ""}
-                explicit={item.explicit}
-                imageShape={isArtist ? "circle" : "square"}
-                duration={item.duration}
-                durationMs={item.durationMs}
-                searchType={item.type}
-                totalTracks={data?.totalTracks ?? data?.total_tracks}
-                onPlay={
-                  item.type === "track"
-                    ? () => onPlayTrack(data)
-                    : () => onNavigateItem(data)
-                }
-                onNavigate={() => onNavigateItem(data)}
-              />
-              </div>
-              <RemoveHistoryButton label={t("common.remove")} onRemove={() => removeItem(item.id)} />
-            </div>
+            <SongCardWithMenu
+              key={item.id}
+              id={item.id}
+              title={item.title}
+              artistId={data?.artistId ?? data?.artist_id}
+              artistList={data?.artistList}
+              artists={item.subtitle || ""}
+              coverUrl={item.coverUrl || ""}
+              explicit={item.explicit}
+              imageShape={isArtist ? "circle" : "square"}
+              duration={item.duration}
+              durationMs={item.durationMs}
+              searchType={item.type}
+              totalTracks={data?.totalTracks ?? data?.total_tracks}
+              onPlay={
+                item.type === "track"
+                  ? () => onPlayTrack(data)
+                  : () => onNavigateItem(data)
+              }
+              onNavigate={() => onNavigateItem(data)}
+              trailingAction={
+                <RemoveHistoryButton
+                  label={t("common.remove")}
+                  onRemove={() => removeItem(item.id)}
+                />
+              }
+            />
           );
         })}
       </div>
@@ -112,7 +117,13 @@ export const SearchHistoryList = memo(function SearchHistoryList({
   );
 });
 
-function RemoveHistoryButton({ label, onRemove }: { label: string; onRemove: () => void }) {
+function RemoveHistoryButton({
+  label,
+  onRemove,
+}: {
+  label: string;
+  onRemove: () => void;
+}) {
   return (
     <button
       type="button"

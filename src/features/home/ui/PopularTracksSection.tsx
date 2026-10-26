@@ -12,6 +12,7 @@ import ArtistLink from "@/features/artist/ui/ArtistLink";
 import CoverImage from "@/features/covers/ui/CoverImage";
 import ExplicitBadge from "@/shared/ui/ExplicitBadge";
 import { useTranslation } from "@/languages";
+import SectionHeading from "./SectionHeading";
 
 export interface PopularTracksSectionProps {
   title: string;
@@ -160,7 +161,9 @@ function TrackCard({
           {item.item.title}
         </span>
         <div className="flex min-w-0 items-center overflow-hidden text-[13px] text-text-tertiary">
-          {item.item.explicit && <ExplicitBadge size="md" className="mr-[6px] shrink-0" />}
+          {item.item.explicit && (
+            <ExplicitBadge size="md" className="mr-[6px] shrink-0" />
+          )}
           <ArtistLink
             name={item.item.artists}
             artistId={item.item.artistId}
@@ -226,9 +229,7 @@ function AlbumCard({
   }, []);
 
   const handleClick = () => {
-    navigate(
-      `/collection?type=album&id=${encodeURIComponent(item.item.id)}`,
-    );
+    navigate(`/collection?type=album&id=${encodeURIComponent(item.item.id)}`);
   };
 
   return (
@@ -261,10 +262,13 @@ function AlbumCard({
           {item.item.title}
         </span>
         <div className="flex min-w-0 items-center overflow-hidden text-[13px] text-text-tertiary">
-          {item.item.explicit && <ExplicitBadge size="md" className="mr-[6px] shrink-0" />}
-          <span className="truncate text-[13px] text-text-tertiary">
-            {item.item.artist}
-          </span>
+          {item.item.explicit && (
+            <ExplicitBadge size="md" className="mr-[6px] shrink-0" />
+          )}
+          <ArtistLink
+            name={item.item.artist}
+            className="text-[13px] text-text-tertiary"
+          />
         </div>
       </div>
 
@@ -376,87 +380,6 @@ function PlaylistCard({
   );
 }
 
-function ArtistCard({ item }: { item: PopularItem & { type: "artist" } }) {
-  const [imageLoaded, setImageLoaded] = useState(false);
-  const { t } = useTranslation();
-  const navigate = useNavigate();
-
-  const menuItems = useSongMenuItems({
-    id: item.item.id,
-    title: item.item.name,
-    artists: "",
-    coverUrl: item.item.imageUrl || "",
-    searchType: "artist",
-  });
-
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [menuPosition, setMenuPosition] = useState<{
-    x: number;
-    y: number;
-  } | null>(null);
-
-  const handleContextMenu = useCallback(
-    (e: React.MouseEvent) => {
-      if (menuItems.length === 0) return;
-      e.preventDefault();
-      e.stopPropagation();
-      setMenuPosition({ x: e.clientX, y: e.clientY });
-      setMenuOpen(true);
-    },
-    [menuItems],
-  );
-
-  const handleMenuOpenChange = useCallback((isOpen: boolean) => {
-    setMenuOpen(isOpen);
-    if (!isOpen) setMenuPosition(null);
-  }, []);
-
-  const handleClick = () => {
-    navigate(`/artist?id=${encodeURIComponent(item.item.id)}`);
-  };
-
-  return (
-    <div
-      className="group flex-shrink-0 w-[175px] cursor-pointer select-none"
-      onClick={handleClick}
-      onContextMenu={handleContextMenu}
-    >
-      <div className="relative aspect-square w-full overflow-hidden rounded-full bg-border-alpha-14">
-        {item.item.imageUrl && (
-          <CoverImage
-            src={item.item.imageUrl}
-            alt={item.item.name}
-            fill
-            sizes="175px"
-            className={`object-cover transition-all duration-300 group-hover:brightness-[1.15] ${
-              imageLoaded ? "opacity-100" : "opacity-0"
-            }`}
-            onLoad={() => setImageLoaded(true)}
-          />
-        )}
-      </div>
-      <div className="flex flex-col mt-[8px] items-center text-center">
-        <span className="truncate w-full text-[14px] font-[500] text-text-primary">
-          {item.item.name}
-        </span>
-        <span className="truncate w-full text-[13px] text-text-tertiary">
-          {t("artist.listeners", { count: item.item.followers })}
-        </span>
-      </div>
-
-      {menuItems.length > 0 && (
-        <DropdownMenu
-          trigger={<span />}
-          items={menuItems}
-          open={menuOpen}
-          onOpenChange={handleMenuOpenChange}
-          position={menuPosition}
-        />
-      )}
-    </div>
-  );
-}
-
 function PopularItemCard({
   item,
   index,
@@ -468,19 +391,11 @@ function PopularItemCard({
 }) {
   switch (item.type) {
     case "track":
-      return (
-        <TrackCard
-          item={item}
-          index={index}
-          showRanks={showRanks}
-        />
-      );
+      return <TrackCard item={item} index={index} showRanks={showRanks} />;
     case "album":
       return <AlbumCard item={item} index={index} showRanks={showRanks} />;
     case "playlist":
       return <PlaylistCard item={item} index={index} showRanks={showRanks} />;
-    case "artist":
-      return <ArtistCard item={item} />;
   }
 }
 
@@ -496,28 +411,16 @@ function PopularTracksSection({
 }: PopularTracksSectionProps) {
   return (
     <div className="flex flex-col">
-      <div className={`${headingMarginTop} px-8 flex items-center justify-between`}>
-        <div className="flex flex-col gap-0.5">
-          <div className="flex items-center gap-2.5">
-            {icon && <div className="flex items-center shrink-0">{icon}</div>}
-            <h2
-              className="text-text-primary text-[21px] font-semibold m-0 leading-tight tracking-tight"
-              style={{ fontFamily: "var(--font-inter), sans-serif" }}
-            >
-              {title}
-            </h2>
-            {badge}
-          </div>
-          {subtitle && (
-            <p className="text-[13px] text-text-tertiary m-0 mt-0.5 font-normal">
-              {subtitle}
-            </p>
-          )}
-        </div>
-      </div>
+      <SectionHeading
+        title={title}
+        subtitle={subtitle}
+        icon={icon}
+        badge={badge}
+        marginTop={headingMarginTop}
+      />
 
       <ScrollableRow
-        className={`flex gap-[28px] pl-8 pr-8 mt-[12px] overflow-x-auto pb-[2px] ${rowClassName}`}
+        className={`flex gap-[28px] pl-3 pr-3 mt-[12px] overflow-x-auto pb-[2px] ${rowClassName}`}
       >
         {items.map((item, index) => (
           <PopularItemCard

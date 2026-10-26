@@ -25,10 +25,10 @@ export function ToggleSwitch({
       aria-label={ariaLabel}
     >
       <span
-        className={`inline-block h-[16px] w-[16px] rounded-full transition-all duration-200 ease-out ${
+        className={`inline-block h-[16px] w-[16px] shrink-0 rounded-full transition-all duration-200 ease-out ${
           checked
-            ? "translate-x-[21px] " + (disabled ? "bg-bg-tertiary" : "bg-bg-primary")
-            : "translate-x-[3px] " + (disabled ? "bg-white/60" : "bg-white")
+            ? "ml-[21px] " + (disabled ? "bg-bg-tertiary" : "bg-bg-primary")
+            : "ml-[3px] " + (disabled ? "bg-white/60" : "bg-white")
         }`}
       />
     </button>

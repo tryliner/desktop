@@ -18,7 +18,7 @@ import { useOverlaySettingsStore } from "../store/overlaySettingsStore";
 
 export function useOverlaySync() {
   const authStatus = useAuthStore((s) => s.status);
-  const isAuthenticated = authStatus === "authenticated" && Boolean(getAuthSession());
+  const isAuthenticated = authStatus === "authenticated" || Boolean(getAuthSession());
   const player = usePlayerState();
   const currentTrack = player.currentTrack;
   const effectiveCover = useCoverSrc(currentTrack?.coverUrl);

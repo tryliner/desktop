@@ -1,7 +1,8 @@
 import { create } from "zustand";
 import type { UpdateInfo, UpdateDownloadProgress } from "@/../electron/preload";
 
-export type UpdaterStatus = "idle" | "checking" | "available" | "downloading" | "downloaded" | "error";
+export type UpdaterStatus =
+  "idle" | "checking" | "available" | "downloading" | "downloaded" | "error";
 
 export interface UpdaterState {
   status: UpdaterStatus;
@@ -58,7 +59,10 @@ export const useUpdaterStore = create<UpdaterState>((set, get) => ({
         set({ status: "idle", error: res.error || null });
       }
     } catch (err: any) {
-      set({ status: "error", error: err?.message || "Failed to check for updates" });
+      set({
+        status: "error",
+        error: err?.message || "Failed to check for updates",
+      });
     }
   },
 
@@ -189,7 +193,7 @@ export const useUpdaterStore = create<UpdaterState>((set, get) => ({
         status: "downloaded",
         updateInfo: {
           version: info.version,
-          ...(get().updateInfo || {}),
+          ...get().updateInfo,
         },
       });
     });

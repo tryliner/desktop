@@ -200,6 +200,7 @@
     "mostListened": "I più ascoltati di sempre",
     "jumpBackIn": "Riprendi da dove eri rimasto",
     "popularAlbums": "Album più popolari",
+    "mostSaved": "I più salvati",
     "popularArtists": "Artisti di tendenza",
     "popularPlaylists": "Playlist popolari",
     "dailyMixes": "Mix giornalieri",
@@ -212,9 +213,11 @@
     "songs": "brani",
     "track": "brano",
     "tracks": "brani",
+    "tab_all": "Tutto",
     "tab_playlists": "Playlist",
     "tab_albums": "Album",
     "tab_artists": "Artisti",
+    "search_all": "Cerca nella libreria",
     "search_playlists": "Cerca playlist",
     "search_albums": "Cerca album",
     "search_artists": "Cerca artisti",
@@ -243,7 +246,6 @@
     "auth_subtitle_register": "Crea un account e inizia a costruire la tua libreria personale.",
     "profile_setup_title": "Configura il tuo profilo",
     "profile_setup_subtitle": "Scegli il tuo handle univoco e il nome visualizzato.",
-    "step_indicator": "Passaggio {step} di {total}",
     "btn_continue": "Continua",
     "btn_back": "Indietro",
     "username_hint": "3-30 caratteri tra lettere minuscole, numeri o trattini bassi.",
@@ -342,6 +344,10 @@
     }
   },
   "player": {
+    "mute": "Disattiva audio",
+    "unmute": "Riattiva audio",
+    "decrease": "Diminuisci",
+    "increase": "Aumenta",
     "repeat_off": "Ripeti: disattivato",
     "repeat_all": "Ripeti: tutto",
     "repeat_one": "Ripeti: brano",
@@ -429,6 +435,9 @@
     "save_preferences": "Salva preferenze",
     "groups": {
       "preferences": "Preferenze",
+      "player": "Lettore",
+      "interface": "Interfaccia",
+      "integrations": "Integrazioni",
       "application": "Applicazione",
       "help": "Aiuto"
     },
@@ -438,8 +447,6 @@
     "tabs": {
       "general": "Generale",
       "appearance": "Aspetto",
-      "customization": "Personalizzazione",
-      "audio": "Audio",
       "storage": "Cache e archiviazione",
       "system": "Sistema",
       "account": "Account",
@@ -484,8 +491,6 @@
       "search_desc": "Apri velocemente la finestra di ricerca.",
       "toggle_queue": "Coda",
       "toggle_queue_desc": "Apri o chiudi il pannello della coda di riproduzione.",
-      "toggle_lyrics": "Testo",
-      "toggle_lyrics_desc": "Apri o chiudi il pannello del testo sincronizzato.",
       "toggle_fullscreen": "Schermo intero / Vista player",
       "toggle_fullscreen_desc": "Attiva o disattiva la vista immersiva del player a schermo intero.",
       "like_track": "Mi piace / Non mi piace più",
@@ -540,45 +545,6 @@
         "description": "Mantieni l'overlay sopra le altre finestre."
       }
     },
-    "customization": {
-      "description": "Sfondo della finestra, trasparenza ed effetti di sfocatura dei blocchi.",
-      "apply_to_overlay": "Applica al mini player in overlay",
-      "apply_to_overlay_desc": "Usa lo sfondo personalizzato e l'effetto vetro anche sul mini player mobile.",
-      "dark_theme_only": "La personalizzazione è disponibile solo con il tema scuro",
-      "wallpaper_title": "Sfondo della finestra",
-      "wallpaper_description": "Imposta un'immagine o una GIF animata personalizzata come sfondo dell'intera finestra.",
-      "upload_title": "Seleziona un'immagine o una GIF animata",
-      "upload_hint": "PNG, JPEG, GIF, WebP (fino a 30 MB)",
-      "change_button": "Cambia",
-      "remove_button": "Rimuovi",
-      "wallpaper_blur": "Sfocatura dello sfondo",
-      "wallpaper_dim": "Oscuramento dello sfondo",
-      "blocks_title": "Effetto vetro dei blocchi dell'interfaccia",
-      "blocks_description": "Regola trasparenza, sfocatura dello sfondo e oscuramento per ogni area dell'interfaccia.",
-      "block_sidebar": "Barra laterale",
-      "block_content": "Area dei contenuti",
-      "block_miniplayer": "Miniplayer",
-      "opacity": "Opacità (trasparenza)",
-      "opacity_desc": "Livello di opacità dello sfondo (min. 25%)",
-      "blur": "Sfocatura dello sfondo",
-      "blur_desc": "Intensità della sfocatura effetto vetro smerigliato",
-      "dim": "Oscuramento",
-      "dim_desc": "Velo scuro per una migliore leggibilità",
-      "apply_all": "A tutti",
-      "apply_all_title": "Applica le impostazioni a tutti i blocchi",
-      "applied_to_all": "Impostazioni applicate a tutti i blocchi",
-      "reset_block": "Ripristina",
-      "block_reset": "Impostazioni del blocco ripristinate",
-      "reset_all": "Ripristina tutta la personalizzazione",
-      "reset_all_desc": "Ripristina l'aspetto predefinito, rimuovi l'immagine di sfondo e gli effetti vetro dei blocchi.",
-      "all_reset": "Personalizzazione ripristinata",
-      "applied": "Sfondo applicato",
-      "removed": "Sfondo rimosso",
-      "invalid_file_type": "Seleziona un file immagine o GIF",
-      "file_too_large": "Il file deve essere inferiore a 30 MB",
-      "read_error": "Impossibile leggere il file immagine"
-    },
-
     "audio_data": {
       "description": "Qualità dello streaming, cache offline e diagnostica della connessione."
     },
@@ -681,7 +647,6 @@
     "theme": {
       "title": "Tema",
       "description": "Scegli l'aspetto generale dell'app.",
-      "disabled_for_glass": "Il tema chiaro è disattivato quando usi l'effetto vetro con uno sfondo personalizzato.",
       "light": "Chiaro",
       "dark": "Scuro",
       "system": "Sistema"
@@ -704,8 +669,6 @@
       "vhs": "Cromo"
     },
     "audio": {
-      "title": "Qualità dello streaming",
-      "description": "Seleziona la qualità audio predefinita per la riproduzione.",
       "pause_on_device_change": {
         "title": "Pausa al cambio di dispositivo",
         "description": "Metti automaticamente in pausa la riproduzione quando cambia il dispositivo di uscita audio."
@@ -713,11 +676,7 @@
       "download_current_song": {
         "title": "Scarica il brano corrente",
         "description": "Scarica il brano in riproduzione come file MP3."
-      },
-      "low": "Qualità bassa (risparmio dati)",
-      "standard": "Qualità standard (Opus 64kbps / MP3 128kbps)",
-      "high": "Qualità alta (AAC 256kbps)",
-      "lossless": "Lossless (FLAC/ALAC) - Non disponibile"
+      }
     },
     "profile": {
       "title": "Profilo",
@@ -812,16 +771,12 @@
       "license_notice": "Distribuito con licenza Liner Source-Available & Non-Commercial."
     },
     "connection": {
-      "title": "Connessione",
-      "description": "Esegui tutti i test di connettività e salva il report offline.",
-      "checks_title": "Report offline",
-      "button": "Esegui i controlli e salva",
-      "checking": "Controllo…",
-      "saved": "Report salvato, allegalo al tuo messaggio per il supporto.",
-      "failed": "Impossibile salvare il report.",
-      "never_run": "I controlli non sono ancora stati eseguiti.",
-      "last_run": "{ok}/{total} controlli ok · {time}",
       "open_folder": "Apri la posizione di salvataggio"
+    },
+    "cover_glow": {
+      "title": "Bagliore copertina",
+      "description": "Bagliore sfocato della copertina dietro le pagine. Disattiva per uno sfondo semplice.",
+      "disabled_for_light": "Disattivato nel tema chiaro."
     }
   },
   "toast": {
@@ -946,12 +901,7 @@
     "check_trace": "Traccia del percorso",
     "check_platform": "Piattaforma",
     "check_main": "Controlli desktop",
-    "copy_dump": "Copia report",
-    "dump_copied": "Report copiato, incollalo nel tuo messaggio per il supporto.",
-    "dump_copy_failed": "Impossibile accedere agli appunti.",
-    "download_dump": "Salva report",
-    "support": "Contatta il supporto",
-    "support_hint": "Allega il file del report salvato, così il supporto avrà il quadro completo."
+    "support": "Contatta il supporto"
   },
   "updater": {
     "modal_title": "Nuovo aggiornamento disponibile",
@@ -968,9 +918,15 @@
   "track_search": {
     "placeholder_playlist": "Cerca nella playlist",
     "placeholder_album": "Cerca nell’album",
-    "button": "Cerca brani",
     "count": "{count} di {total}",
     "no_results": "Nessun brano corrisponde a “{query}”",
     "clear": "Cancella ricerca"
+  },
+  "track_sort": {
+    "label": "Ordina",
+    "default": "Predefinito",
+    "title": "Per titolo (A–Z)",
+    "duration": "Per durata",
+    "popularity": "Per popolarità"
   }
 }

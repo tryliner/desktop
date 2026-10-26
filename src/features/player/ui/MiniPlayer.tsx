@@ -19,11 +19,7 @@ import {
 } from "@solar-icons/react";
 import { HeartFill, HeartLine } from "@mingcute/react";
 
-import {
-  PlayerMorphIcon,
-  ICON_PLAY,
-  ICON_PAUSE,
-} from "./morphPlayerIcons";
+import { PlayerMorphIcon, ICON_PLAY, ICON_PAUSE } from "./morphPlayerIcons";
 
 import { usePlayerState } from "../hooks/usePlayerState";
 import { playerEngine } from "../engine/playerEngine";
@@ -31,18 +27,20 @@ import { isRadioContext, nextRepeatMode } from "../engine/radioMode";
 import Button from "@/shared/ui/Button";
 import SongCard from "./SongCard";
 import { useTranslation } from "@/languages";
-import { useIsTrackLiked, useLikeTrack, useUnlikeTrack } from "@/features/library/hooks";
+import {
+  useIsTrackLiked,
+  useLikeTrack,
+  useUnlikeTrack,
+} from "@/features/library/hooks";
 import { usePlayerStore } from "../store/playerStore";
 import { toVolumeGain, toVolumeLevel } from "../engine/volume";
-import { VolumePicker } from "./VolumePicker";
+import { VolumeColumn } from "./VolumeColumn";
 import { SpeedPitchPicker } from "./SpeedPitchPicker";
 import { TimelineSlider } from "./TimelineSlider";
 import { useTheme } from "next-themes";
 import { useCoverReady, CoverImage } from "@/features/covers";
-import { useCustomizationStore, getBlockStyle } from "@/features/settings";
-import ExplicitBadge from "@/shared/ui/ExplicitBadge";
+import { useHasPageBackdrop } from "@/features/settings/store/customizationStore";
 import { ArtistLink } from "@/features/artist";
-
 
 function rgbToHsl(r: number, g: number, b: number): [number, number, number] {
   r /= 255;
@@ -139,9 +137,15 @@ function extractColorsFromCanvas(
     }
   }
 
-  let finalR = Math.round(totalWeight > 0.5 ? weightedR / totalWeight : totalR / count);
-  let finalG = Math.round(totalWeight > 0.5 ? weightedG / totalWeight : totalG / count);
-  let finalB = Math.round(totalWeight > 0.5 ? weightedB / totalWeight : totalB / count);
+  let finalR = Math.round(
+    totalWeight > 0.5 ? weightedR / totalWeight : totalR / count,
+  );
+  let finalG = Math.round(
+    totalWeight > 0.5 ? weightedG / totalWeight : totalG / count,
+  );
+  let finalB = Math.round(
+    totalWeight > 0.5 ? weightedB / totalWeight : totalB / count,
+  );
 
   const [h, s, l] = rgbToHsl(finalR, finalG, finalB);
 
@@ -153,12 +157,12 @@ function extractColorsFromCanvas(
       };
     }
     // Luminous vibrant tint for light theme card progress fill
-    const tintL = 0.50;
-    const tintS = Math.max(0.80, s);
+    const tintL = 0.5;
+    const tintS = Math.max(0.8, s);
     const [tintR, tintG, tintB] = hslToRgb(h, tintS, tintL);
 
     // Deep high-contrast tone for bottom timeline line
-    const solidL = Math.max(0.36, Math.min(0.46, l > 0.55 ? 0.40 : l));
+    const solidL = Math.max(0.36, Math.min(0.46, l > 0.55 ? 0.4 : l));
     const solidS = Math.max(0.75, s);
     const [solidR, solidG, solidB] = hslToRgb(h, solidS, solidL);
 
@@ -171,14 +175,15 @@ function extractColorsFromCanvas(
   // If mostly achromatic / monochrome (black, white, or gray cover)
   if (s < 0.12) {
     return {
-      accentColor: l < 0.5 ? "rgba(255, 255, 255, 0.14)" : "rgba(255, 255, 255, 0.09)",
+      accentColor:
+        l < 0.5 ? "rgba(255, 255, 255, 0.14)" : "rgba(255, 255, 255, 0.09)",
       accentColorSolid: "rgb(255, 255, 255)",
     };
   }
 
   // Ensure high contrast and vibrant visibility on dark backgrounds
-  const solidL = Math.max(0.65, Math.min(0.82, l < 0.45 ? 0.70 : l));
-  const solidS = Math.max(0.70, s);
+  const solidL = Math.max(0.65, Math.min(0.82, l < 0.45 ? 0.7 : l));
+  const solidS = Math.max(0.7, s);
   const [solidR, solidG, solidB] = hslToRgb(h, solidS, solidL);
 
   const bgOpacity = l < 0.25 ? 0.22 : l < 0.5 ? 0.18 : 0.12;
@@ -205,17 +210,14 @@ function MiniPlayer({
   const player = usePlayerState();
   const { t } = useTranslation();
   const { resolvedTheme } = useTheme();
-  const isLight =
-    resolvedTheme
-      ? resolvedTheme === "light"
-      : typeof document !== "undefined" && document.documentElement.getAttribute("data-theme") === "light";
+  const isLight = resolvedTheme
+    ? resolvedTheme === "light"
+    : typeof document !== "undefined" &&
+      document.documentElement.getAttribute("data-theme") === "light";
   const miniPlayerStyle = usePlayerStore((state) => state.miniPlayerStyle);
   const usesRoundedStyle = !embedded && miniPlayerStyle === "rounded";
   const usesBackgroundProgress = true;
-  const backgroundImage = useCustomizationStore((state) => state.backgroundImage);
-  const miniplayerConfig = useCustomizationStore((state) => state.miniplayer);
-  const hasCustomBg = Boolean(backgroundImage && !isLight);
-  const miniplayerCustomStyle = getBlockStyle(miniplayerConfig, !isLight, hasCustomBg);
+  const hasPageBackdrop = useHasPageBackdrop();
   const [accentColor, setAccentColor] = useState(
     isLight ? "rgba(0, 0, 0, 0.06)" : "rgba(255, 255, 255, 0.12)",
   );
@@ -243,10 +245,15 @@ function MiniPlayer({
         canvas.width = 64;
         canvas.height = 64;
         ctx.drawImage(img, 0, 0, 64, 64);
-        const { accentColorSolid: acs } = extractColorsFromCanvas(canvas, isLight);
+        const { accentColorSolid: acs } = extractColorsFromCanvas(
+          canvas,
+          isLight,
+        );
         setContextAccentColorSolid(acs);
       } catch {
-        setContextAccentColorSolid(isLight ? "rgb(23, 23, 23)" : "rgb(255, 255, 255)");
+        setContextAccentColorSolid(
+          isLight ? "rgb(23, 23, 23)" : "rgb(255, 255, 255)",
+        );
       }
     };
     img.src = player.playbackContextCover;
@@ -254,7 +261,9 @@ function MiniPlayer({
 
   useEffect(() => {
     if (!coverUrl) {
-      setAccentColor(isLight ? "rgba(0, 0, 0, 0.06)" : "rgba(255, 255, 255, 0.12)");
+      setAccentColor(
+        isLight ? "rgba(0, 0, 0, 0.06)" : "rgba(255, 255, 255, 0.12)",
+      );
       setAccentColorSolid(isLight ? "rgb(23, 23, 23)" : "rgb(255, 255, 255)");
       return;
     }
@@ -268,36 +277,46 @@ function MiniPlayer({
         const ctx = canvas.getContext("2d", { willReadFrequently: true });
         if (!ctx) return;
         ctx.drawImage(img, 0, 0, 64, 64);
-        const { accentColor: ac, accentColorSolid: acs } = extractColorsFromCanvas(canvas, isLight);
+        const { accentColor: ac, accentColorSolid: acs } =
+          extractColorsFromCanvas(canvas, isLight);
         setAccentColor(ac);
         setAccentColorSolid(acs);
       } catch {
-        setAccentColor(isLight ? "rgba(0, 0, 0, 0.06)" : "rgba(255, 255, 255, 0.12)");
+        setAccentColor(
+          isLight ? "rgba(0, 0, 0, 0.06)" : "rgba(255, 255, 255, 0.12)",
+        );
         setAccentColorSolid(isLight ? "rgb(23, 23, 23)" : "rgb(255, 255, 255)");
       }
     };
     img.src = coverUrl;
   }, [coverUrl, isLight]);
 
-  const extractAccentColor = useCallback((img: HTMLImageElement) => {
-    try {
-      const canvas = document.createElement("canvas");
-      canvas.width = 64;
-      canvas.height = 64;
-      const ctx = canvas.getContext("2d", { willReadFrequently: true });
-      if (!ctx) return;
-      ctx.drawImage(img, 0, 0, 64, 64);
-      const { accentColor: ac, accentColorSolid: acs } = extractColorsFromCanvas(canvas, isLight);
-      setAccentColor(ac);
-      setAccentColorSolid(acs);
-    } catch {
-      setAccentColor(isLight ? "rgba(0, 0, 0, 0.06)" : "rgba(255, 255, 255, 0.12)");
-      setAccentColorSolid(isLight ? "rgb(23, 23, 23)" : "rgb(255, 255, 255)");
-    }
-  }, [isLight]);
+  const extractAccentColor = useCallback(
+    (img: HTMLImageElement) => {
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = 64;
+        canvas.height = 64;
+        const ctx = canvas.getContext("2d", { willReadFrequently: true });
+        if (!ctx) return;
+        ctx.drawImage(img, 0, 0, 64, 64);
+        const { accentColor: ac, accentColorSolid: acs } =
+          extractColorsFromCanvas(canvas, isLight);
+        setAccentColor(ac);
+        setAccentColorSolid(acs);
+      } catch {
+        setAccentColor(
+          isLight ? "rgba(0, 0, 0, 0.06)" : "rgba(255, 255, 255, 0.12)",
+        );
+        setAccentColorSolid(isLight ? "rgb(23, 23, 23)" : "rgb(255, 255, 255)");
+      }
+    },
+    [isLight],
+  );
 
   const [queueLimit, setQueueLimit] = useState(50);
   const [volumeOpen, setVolumeOpen] = useState(false);
+  const volumePinnedRef = useRef(false);
   const [volumePopupStyle, setVolumePopupStyle] = useState<React.CSSProperties>(
     { bottom: 52 },
   );
@@ -315,7 +334,6 @@ function MiniPlayer({
     null,
   );
   const [isVolumeDragging, setIsVolumeDragging] = useState(false);
-  const lastNonZeroVolumeRef = useRef<number>(0.7);
 
   const currentTrack = player.currentTrack;
   const volumeLevel = toVolumeLevel(player.volume);
@@ -349,8 +367,7 @@ function MiniPlayer({
   const isPlaying = player.status === "playing";
   const isLoading = player.status === "loading";
   const trackTitle = player.currentTrack?.title ?? t("player.nothing_playing");
-  const trackArtists =
-    player.currentTrack?.artists ?? t("player.choose_track");
+  const trackArtists = player.currentTrack?.artists ?? t("player.choose_track");
 
   const isCoverLoaded = useCoverReady(coverUrl);
 
@@ -403,7 +420,8 @@ function MiniPlayer({
 
   // off -> all (loop the whole queue/playlist) -> one (loop the track) -> off
   const repeatIcon = useMemo(() => {
-    if (player.repeat === "one") return <RepeatOne size={18} weight="Outline" />;
+    if (player.repeat === "one")
+      return <RepeatOne size={18} weight="Outline" />;
     return <Repeat size={18} weight="Outline" />;
   }, [player.repeat]);
   const repeatLabel = t(`player.repeat_${player.repeat}`);
@@ -412,7 +430,9 @@ function MiniPlayer({
   // progress fill sliding underneath never changes it. Values are the hover tint
   // pre-composited over the toolbox on bg-primary (dark #0a0a0a, light #f5f5f7).
   // The toolbox pill itself is the opaque bg-toolbox equivalent for the same reason.
-  const activeToggleClass = "!bg-[#dfdfe1] dark:!bg-[#292929] !text-text-primary";
+  const activeToggleClass = hasPageBackdrop
+    ? "!bg-black/[0.08] dark:!bg-white/[0.14] !text-text-primary"
+    : "!bg-[#dfdfe1] dark:!bg-[#292929] !text-text-primary";
 
   const iconButtonClass =
     "inline-flex h-[30px] w-[30px] items-center justify-center rounded-md text-text-secondary transition-colors duration-150 hover:bg-black/[0.05] dark:hover:bg-white/[0.09] hover:text-text-primary active:scale-[0.96] border-none bg-transparent cursor-pointer";
@@ -434,7 +454,7 @@ function MiniPlayer({
       toggle.closest<HTMLElement>(".bg-bg-toolbox") || toggle.parentElement;
     const barRect = bar?.getBoundingClientRect();
 
-    const popupW = 38;
+    const popupW = 46;
     const btnW = toggleRect.width;
     const right = rootRect.right - toggleRect.right + (btnW - popupW) / 2;
     const targetTop = barRect ? barRect.top : toggleRect.top;
@@ -447,30 +467,20 @@ function MiniPlayer({
   }, []);
 
   const handleVolumeMouseEnter = useCallback(() => {
+    if (speedOpen) return;
     clearVolumeHoverTimer();
     updateVolumePopupPosition();
-    setSpeedOpen(false);
     setVolumeOpen(true);
-  }, [clearVolumeHoverTimer, updateVolumePopupPosition]);
+  }, [clearVolumeHoverTimer, updateVolumePopupPosition, speedOpen]);
 
   const handleVolumeMouseLeave = useCallback(() => {
     clearVolumeHoverTimer();
     // Keep open while user is actively dragging the slider
-    if (isVolumeDragging) return;
+    if (isVolumeDragging || volumePinnedRef.current) return;
     volumeHoverCloseTimerRef.current = setTimeout(() => {
       setVolumeOpen(false);
     }, 140);
   }, [clearVolumeHoverTimer, isVolumeDragging]);
-
-  const handleToggleMute = useCallback(() => {
-    if (volumeLevel > 0) {
-      lastNonZeroVolumeRef.current = volumeLevel;
-      playerEngine.setVolume(0);
-    } else {
-      const restore = lastNonZeroVolumeRef.current || 0.7;
-      playerEngine.setVolume(toVolumeGain(restore));
-    }
-  }, [volumeLevel]);
 
   const handleVolumeWheel = useCallback(
     (e: React.WheelEvent) => {
@@ -481,6 +491,7 @@ function MiniPlayer({
       playerEngine.setVolume(toVolumeGain(nextLevel));
       setVolumeOpen(true);
       clearVolumeHoverTimer();
+      if (volumePinnedRef.current) return;
       volumeHoverCloseTimerRef.current = setTimeout(() => {
         setVolumeOpen(false);
       }, 1200);
@@ -499,7 +510,10 @@ function MiniPlayer({
   }, [clearVolumeHoverTimer]);
 
   useEffect(() => {
-    if (!volumeOpen) return;
+    if (!volumeOpen) {
+      volumePinnedRef.current = false;
+      return;
+    }
     updateVolumePopupPosition();
   }, [volumeOpen, updateVolumePopupPosition]);
 
@@ -510,7 +524,7 @@ function MiniPlayer({
     if (!toggle || !root) return;
     const toggleRect = toggle.getBoundingClientRect();
     const rootRect = root.getBoundingClientRect();
-    const popupW = 270;
+    const popupW = 300;
     const btnW = toggleRect.width;
     const right = rootRect.right - toggleRect.right + (btnW - popupW) / 2;
     setSpeedPopupStyle({ right: Math.max(8, right) });
@@ -525,8 +539,7 @@ function MiniPlayer({
 
       if (volumeOpen) {
         const clickedVolumePopup = volumePopupRef.current?.contains(target);
-        const clickedVolumeToggle =
-          volumeToggleRef.current?.contains(target);
+        const clickedVolumeToggle = volumeToggleRef.current?.contains(target);
         if (!clickedVolumePopup && !clickedVolumeToggle) {
           clearVolumeHoverTimer();
           setVolumeOpen(false);
@@ -535,8 +548,7 @@ function MiniPlayer({
 
       if (speedOpen) {
         const clickedSpeedPopup = speedPopupRef.current?.contains(target);
-        const clickedSpeedToggle =
-          speedToggleRef.current?.contains(target);
+        const clickedSpeedToggle = speedToggleRef.current?.contains(target);
         if (!clickedSpeedPopup && !clickedSpeedToggle) {
           setSpeedOpen(false);
         }
@@ -582,25 +594,17 @@ function MiniPlayer({
             ref={volumePopupRef}
             initial={{ opacity: 0, y: 8, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 6, scale: 0.96 }}
+            exit={{ opacity: 0, y: 6, scale: 0.96, pointerEvents: "none" }}
             transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
-            className="absolute bottom-[52px] z-[99] w-[38px] rounded-xl bg-bg-surface/90 dark:bg-[#161618]/95 backdrop-blur-2xl pt-[6px] pb-[8px] px-[4px] shadow-[0_8px_24px_rgba(0,0,0,0.14)] dark:shadow-[0_12px_32px_rgba(0,0,0,0.5)] prevent-seek"
+            className="absolute bottom-[52px] z-[99] w-[46px] rounded-[11px] p-[4px] bg-black/[0.05] backdrop-blur-2xl backdrop-saturate-150 dark:bg-white/[0.07] prevent-seek"
             style={volumePopupStyle}
             onPointerDown={(e) => e.stopPropagation()}
             onMouseEnter={clearVolumeHoverTimer}
             onMouseLeave={handleVolumeMouseLeave}
           >
-            {/* Seamless invisible hit zone bridging popup and toggle button */}
-            <div className="absolute -inset-x-3 -bottom-[22px] top-0 pointer-events-auto" />
+            <div className="absolute inset-x-0 -bottom-[8px] top-0 pointer-events-auto" />
 
-            <VolumePicker
-              orientation="vertical"
-              showValue
-              showIcon={false}
-              onDraggingChange={handleVolumeDraggingChange}
-              trackClassName="bg-black/[0.08] dark:bg-white/[0.12]"
-              fillClassName="bg-text-primary dark:bg-white"
-            />
+            <VolumeColumn onDraggingChange={handleVolumeDraggingChange} />
           </motion.div>
         )}
       </AnimatePresence>
@@ -614,7 +618,7 @@ function MiniPlayer({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.985 }}
             transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
-            className="absolute bottom-[74px] z-[92] w-[270px] rounded-xl bg-bg-primary border border-border-primary/50 p-[12px] shadow-2xl prevent-seek"
+            className="absolute bottom-[74px] z-[92] w-[300px] rounded-[14px] p-[16px] bg-black/[0.05] backdrop-blur-2xl backdrop-saturate-150 dark:bg-white/[0.07] prevent-seek"
             style={speedPopupStyle}
             onPointerDown={(e) => e.stopPropagation()}
           >
@@ -626,20 +630,16 @@ function MiniPlayer({
       <div
         className={`relative h-[64px] w-full overflow-hidden cursor-pointer ${
           usesRoundedStyle
-            ? `rounded-full border-[0.5px] border-border-tertiary ${
-                hasCustomBg ? "" : "bg-bg-primary"
-              }`
+            ? "rounded-full border-[0.5px] border-border-tertiary bg-bg-primary"
             : embedded
-              ? `rounded-sm rounded-br-xl ${
-                  hasCustomBg ? "" : "bg-bg-primary"
+              ? `rounded-[12px] ${
+                  hasPageBackdrop
+                    ? "bg-bg-glass dark:bg-black/20 backdrop-blur-[48px] backdrop-saturate-150"
+                    : "bg-bg-primary"
                 }`
-              : `rounded-3xl border-[0.5px] border-border-tertiary ${
-                  hasCustomBg ? "" : "bg-bg-primary"
-                }`
+              : "rounded-3xl border-[0.5px] border-border-tertiary bg-bg-primary"
         }`}
-        style={miniplayerCustomStyle}
         onPointerDown={(e) => {
-
           if (e.button !== 0) return;
           const target = e.target as Element | null;
           if (
@@ -709,9 +709,19 @@ function MiniPlayer({
               onSeek={(pos) => playerEngine.seek(pos)}
               size="xs"
               fillColor={accentColorSolid || undefined}
-              fillClassName={!accentColorSolid ? (isLight ? "bg-text-primary" : "bg-white") : undefined}
-              trackBg={isLight ? "rgba(0, 0, 0, 0.08)" : "rgba(255, 255, 255, 0.15)"}
-              trackActiveBg={isLight ? "rgba(0, 0, 0, 0.16)" : "rgba(255, 255, 255, 0.32)"}
+              fillClassName={
+                !accentColorSolid
+                  ? isLight
+                    ? "bg-text-primary"
+                    : "bg-white"
+                  : undefined
+              }
+              trackBg={
+                isLight ? "rgba(0, 0, 0, 0.08)" : "rgba(255, 255, 255, 0.15)"
+              }
+              trackActiveBg={
+                isLight ? "rgba(0, 0, 0, 0.16)" : "rgba(255, 255, 255, 0.32)"
+              }
               className="!h-[14px]"
             />
           </div>
@@ -781,7 +791,13 @@ function MiniPlayer({
                   lineHeight: "15px",
                 }}
               >
-                {player.currentTrack?.explicit && <ExplicitBadge />}
+                {player.currentTrack?.explicit && (
+                  <span className="inline-flex h-[14px] w-[14px] shrink-0 items-center justify-center rounded-[3.5px] bg-black/[0.1] dark:bg-white/[0.14] text-[8px] font-[600] leading-none text-text-secondary">
+                    <span className="translate-y-[0.5px] [text-box:trim-both_cap_alphabetic]">
+                      E
+                    </span>
+                  </span>
+                )}
                 <ArtistLink
                   name={trackArtists}
                   artistId={player.currentTrack?.artistId}
@@ -794,7 +810,9 @@ function MiniPlayer({
               type="button"
               aria-label={isLiked ? "Unlike" : "Like"}
               className={`${iconButtonClass} shrink-0 transition-colors duration-150 pointer-events-auto prevent-seek ${
-                isLiked ? "text-accent-primary" : "text-text-secondary hover:text-text-primary"
+                isLiked
+                  ? "text-accent-primary"
+                  : "text-text-secondary hover:text-text-primary"
               }`}
               onPointerDown={(e) => e.stopPropagation()}
               onClick={handleLikeToggle}
@@ -810,13 +828,21 @@ function MiniPlayer({
             }`}
           >
             <div
-              className="ml-auto flex items-center gap-[2px] rounded-lg bg-[#ebebed] dark:bg-[#141414] p-[3px] pointer-events-auto prevent-seek cursor-default"
+              className={`ml-auto flex items-center gap-[2px] rounded-lg p-[3px] pointer-events-auto prevent-seek cursor-default ${
+                hasPageBackdrop
+                  ? "bg-black/[0.04] dark:bg-white/[0.06]"
+                  : "bg-[#ebebed] dark:bg-[#141414]"
+              }`}
               onPointerDown={(e) => e.stopPropagation()}
             >
               <button
                 type="button"
                 aria-label="Shuffle"
-                title={player.shuffle ? t("player.shuffle_on") : t("player.shuffle_off")}
+                title={
+                  player.shuffle
+                    ? t("player.shuffle_on")
+                    : t("player.shuffle_off")
+                }
                 className={`${iconButtonClass} ${
                   player.shuffle ? activeToggleClass : ""
                 }`}
@@ -836,7 +862,10 @@ function MiniPlayer({
                 onClick={() =>
                   playerEngine.setRepeat(
                     // radio has no repeat-all: it refills instead of looping
-                    nextRepeatMode(player.repeat, isRadioContext(player.playbackContext)),
+                    nextRepeatMode(
+                      player.repeat,
+                      isRadioContext(player.playbackContext),
+                    ),
                   )
                 }
               >
@@ -851,11 +880,12 @@ function MiniPlayer({
                   speedOpen ||
                   Math.abs((player.playbackRate ?? 1) - 1) > 0.001 ||
                   Math.abs(player.pitchSemitones ?? 0) > 0.001
-                    ? "bg-white/[0.09] text-white"
+                    ? activeToggleClass
                     : ""
                 }`}
                 onPointerDown={(e) => e.stopPropagation()}
                 onClick={() => {
+                  clearVolumeHoverTimer();
                   setVolumeOpen(false);
                   onQueueOpenChange?.(false);
                   setSpeedOpen((prev) => !prev);
@@ -893,9 +923,15 @@ function MiniPlayer({
                 onWheel={handleVolumeWheel}
                 onClick={(e) => {
                   e.stopPropagation();
+                  clearVolumeHoverTimer();
+                  if (volumeOpen && volumePinnedRef.current) {
+                    setVolumeOpen(false);
+                    return;
+                  }
+                  volumePinnedRef.current = true;
+                  updateVolumePopupPosition();
                   setSpeedOpen(false);
                   onQueueOpenChange?.(false);
-                  handleToggleMute();
                   setVolumeOpen(true);
                 }}
                 style={{ cursor: "pointer" }}
@@ -940,7 +976,7 @@ function MiniPlayer({
                 }}
                 style={{ cursor: "pointer" }}
               >
-                <Sidebar size={20} weight="Bold" />
+                <Sidebar size={18} weight="Outline" />
               </button>
             </div>
           </div>

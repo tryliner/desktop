@@ -7,7 +7,18 @@ import { isStandaloneAudioFile } from "@/shared/storage/audioFormat";
 import type { Track } from "@/shared/types";
 import { pitchShifter } from "./pitchShifter";
 import { resolvePlaybackStream, type PlaybackStream } from "./streamResolver";
-import { downloadAudioBytes } from "@/shared/media/innertube";
+import {
+  downloadAudioBytes,
+  isBotCheckError,
+  isYoutubeSignInDeclined,
+  isYoutubeSignedIn,
+  prefersSignInPrompt,
+  requestYoutubeSignIn,
+} from "@/shared/youtube";
+
+// error recovery tuning (see the audio "error" handler)
+const RECOVERY_HOLD_MS = 3000;
+const WAITING_GRACE_MS = 300; // a buffering hiccup shorter than this never shows // must play this far past a recovery before it may retry again
 
 export class PlayerRuntime {
   private audio: HTMLAudioElement;
@@ -21,18 +32,33 @@ export class PlayerRuntime {
   private ttfbMs = 0;
   private activePlayPromise: Promise<void> | null = null;
   private activeBlobUrl: string | null = null;
+  private releaseActiveStream: (() => void) | null = null;
+  // track whose audio is attached to the element right now. During a skip the old
+  // source stays attached (paused) until the next one is ready, so this can lag
+  // currentTrackId for a moment.
+  private attachedTrackId: string | null = null;
   private preloadingTrackId: string | null = null;
   private preloadingPromise: Promise<void> | null = null;
   private preloadAbortController: AbortController | null = null;
   private backgroundCacheAbortController: AbortController | null = null;
   private currentSessionExpiresAt: number | null = null;
   private recoveryAttempts = 0;
+  // after a recovery, the retry budget only refills once playback gets past this
+  // position: a "playing" event alone is not proof (a bad frame further on would
+  // otherwise error -> recover -> play -> error forever, reloading every time)
+  private recoveryHoldUntilMs: number | null = null;
+  // a "waiting" only becomes the loading state if it lasts: a seek inside an already
+  // loaded / cached track fires waiting -> playing within milliseconds, and flipping
+  // the status for that re-animated the play / pause button on every seek
+  private waitingTimer: ReturnType<typeof setTimeout> | null = null;
   public onEnded?: () => void;
   public onError?: (info: { trackId: string; message: string }) => void;
 
   constructor() {
     const win = typeof window !== "undefined" ? (window as any) : null;
-    let audio = (win?.__liner_audio || (typeof document !== "undefined" && document.getElementById("liner-audio"))) as HTMLAudioElement | null;
+    let audio = (win?.__liner_audio ||
+      (typeof document !== "undefined" &&
+        document.getElementById("liner-audio"))) as HTMLAudioElement | null;
     if (!audio) {
       audio = new Audio();
       audio.id = "liner-audio";
@@ -54,6 +80,9 @@ export class PlayerRuntime {
     log("cyan", "boot", `volume ${initialVolume}`);
 
     usePlayerStore.subscribe((state, prevState) => {
+      if (state.status !== prevState.status) {
+        this.syncMediaSessionState(state.status);
+      }
       if (state.volume !== prevState.volume) {
         this.cancelFade();
         if (!this.audio.paused) {
@@ -88,7 +117,10 @@ export class PlayerRuntime {
         return;
       }
       if (!usePlayerStore.getState().pauseOnDeviceChange) return;
-      if (!this.audio.paused && usePlayerStore.getState().status === "playing") {
+      if (
+        !this.audio.paused &&
+        usePlayerStore.getState().status === "playing"
+      ) {
         this.pause();
       }
     };
@@ -104,7 +136,8 @@ export class PlayerRuntime {
   }
 
   private setupMediaSession() {
-    if (typeof navigator === "undefined" || !("mediaSession" in navigator)) return;
+    if (typeof navigator === "undefined" || !("mediaSession" in navigator))
+      return;
 
     try {
       navigator.mediaSession.setActionHandler("play", () => {
@@ -119,6 +152,25 @@ export class PlayerRuntime {
       navigator.mediaSession.setActionHandler("nexttrack", () => {
         usePlayerStore.getState().dispatch({ type: "SKIP_NEXT" });
       });
+      navigator.mediaSession.setActionHandler("stop", () => {
+        usePlayerStore.getState().dispatch({ type: "PAUSE_REQUESTED" });
+      });
+      const seekBy = (deltaSeconds: number) => {
+        const st = usePlayerStore.getState();
+        const max =
+          st.durationMs > 0 ? st.durationMs : Number.POSITIVE_INFINITY;
+        const next = Math.min(
+          max,
+          Math.max(0, st.positionMs + deltaSeconds * 1000),
+        );
+        st.dispatch({ type: "SEEK_COMMITTED", positionMs: Math.round(next) });
+      };
+      navigator.mediaSession.setActionHandler("seekbackward", (details) => {
+        seekBy(-(details.seekOffset ?? 10));
+      });
+      navigator.mediaSession.setActionHandler("seekforward", (details) => {
+        seekBy(details.seekOffset ?? 10);
+      });
       navigator.mediaSession.setActionHandler("seekto", (details) => {
         if (details.seekTime !== undefined && !Number.isNaN(details.seekTime)) {
           usePlayerStore.getState().dispatch({
@@ -132,8 +184,49 @@ export class PlayerRuntime {
     }
   }
 
+  // windows' media controls (and apps built on them, like FluentFlyout) read this.
+  // "loading" between tracks still reports playing so the session never looks finished.
+  private syncMediaSessionState(status: string) {
+    if (typeof navigator === "undefined" || !("mediaSession" in navigator))
+      return;
+    try {
+      navigator.mediaSession.playbackState =
+        status === "playing" || status === "loading"
+          ? "playing"
+          : status === "paused"
+            ? "paused"
+            : "none";
+      if (status === "idle") navigator.mediaSession.metadata = null;
+    } catch {
+      // ignore unsupported environments
+    }
+  }
+
+  // progress / seek bar in the system controls
+  private syncMediaSessionPosition() {
+    if (typeof navigator === "undefined" || !("mediaSession" in navigator))
+      return;
+    const ms = navigator.mediaSession as MediaSession & {
+      setPositionState?: (state?: MediaPositionState) => void;
+    };
+    if (typeof ms.setPositionState !== "function") return;
+    if (this.attachedTrackId !== this.currentTrackId) return;
+    const duration = this.audio.duration;
+    if (!Number.isFinite(duration) || duration <= 0) return;
+    try {
+      ms.setPositionState({
+        duration,
+        playbackRate: this.audio.playbackRate > 0 ? this.audio.playbackRate : 1,
+        position: Math.min(duration, Math.max(0, this.audio.currentTime || 0)),
+      });
+    } catch {
+      // ignore invalid transient states
+    }
+  }
+
   public updateMediaSessionMetadata(track: Track | null) {
-    if (typeof navigator === "undefined" || !("mediaSession" in navigator)) return;
+    if (typeof navigator === "undefined" || !("mediaSession" in navigator))
+      return;
     if (!track) {
       navigator.mediaSession.metadata = null;
       return;
@@ -166,6 +259,13 @@ export class PlayerRuntime {
 
       const posMs = Math.round(audioEl.currentTime * 1000);
       usePlayerStore.getState().setPosition(posMs);
+      if (
+        this.recoveryHoldUntilMs !== null &&
+        posMs >= this.recoveryHoldUntilMs
+      ) {
+        this.recoveryHoldUntilMs = null;
+        this.recoveryAttempts = 0;
+      }
     });
 
     audioEl.addEventListener("durationchange", () => {
@@ -173,21 +273,55 @@ export class PlayerRuntime {
       if (!this.currentTrackId) return;
       if (Number.isNaN(audioEl.duration) || audioEl.duration <= 0) return;
 
-      usePlayerStore.getState().setDuration(Math.round(audioEl.duration * 1000));
+      usePlayerStore
+        .getState()
+        .setDuration(Math.round(audioEl.duration * 1000));
+      this.syncMediaSessionPosition();
     });
+
+    for (const type of [
+      "seeked",
+      "ratechange",
+      "play",
+      "pause",
+      "loadedmetadata",
+    ]) {
+      audioEl.addEventListener(type, () => {
+        if (this.isResetting || audioEl !== this.audio) return;
+        this.syncMediaSessionPosition();
+      });
+    }
 
     audioEl.addEventListener("waiting", () => {
       if (this.isResetting || audioEl !== this.audio) return;
       log("yellow", "audio", "buffering (waiting)");
       this.stallStartTime = performance.now();
-      if (usePlayerStore.getState().status === "playing") {
-        usePlayerStore.getState().setStatus("loading");
-      }
+      if (this.waitingTimer) clearTimeout(this.waitingTimer);
+      this.waitingTimer = setTimeout(() => {
+        this.waitingTimer = null;
+        // still stuck: a real stall, show it
+        if (audioEl !== this.audio || audioEl.paused || audioEl.readyState >= 3)
+          return;
+        if (usePlayerStore.getState().status === "playing") {
+          usePlayerStore.getState().setStatus("loading");
+        }
+      }, WAITING_GRACE_MS);
     });
+
+    // resumed (or never really stalled): drop a pending "loading"
+    for (const type of ["playing", "seeked", "canplay", "pause", "emptied"]) {
+      audioEl.addEventListener(type, () => {
+        if (audioEl !== this.audio || !this.waitingTimer) return;
+        if (type === "seeked" && audioEl.readyState < 3) return; // seeked but still no data
+        clearTimeout(this.waitingTimer);
+        this.waitingTimer = null;
+      });
+    }
 
     audioEl.addEventListener("ended", () => {
       if (this.isResetting || audioEl !== this.audio) return;
       if (!this.currentTrackId) return;
+      if (this.attachedTrackId !== this.currentTrackId) return;
 
       // Ensure the track truly finished playing (not an empty media load or teardown artefact)
       const duration = audioEl.duration;
@@ -203,11 +337,13 @@ export class PlayerRuntime {
     audioEl.addEventListener("playing", () => {
       if (this.isResetting || audioEl !== this.audio) return;
       log("green", "audio", "playing");
-      this.recoveryAttempts = 0;
+      if (this.recoveryHoldUntilMs === null) this.recoveryAttempts = 0;
       this.applyPlaybackRateAndPitch();
 
       if (this.stallStartTime !== null) {
-        const stallDurationMs = Math.round(performance.now() - this.stallStartTime);
+        const stallDurationMs = Math.round(
+          performance.now() - this.stallStartTime,
+        );
         if (stallDurationMs > 400) {
           telemetry.trackPlaybackHealth("STALL_BUFFERING", {
             trackId: this.currentTrackId || undefined,
@@ -235,16 +371,35 @@ export class PlayerRuntime {
 
     audioEl.addEventListener("error", () => {
       if (this.isResetting || audioEl !== this.audio) return;
-      if (!this.currentTrackId || !audioEl.src || audioEl.src === window.location.href) return;
+      if (
+        !this.currentTrackId ||
+        !audioEl.src ||
+        audioEl.src === window.location.href
+      )
+        return;
+      // the previous track's source is still attached while the next one loads
+      if (this.attachedTrackId !== this.currentTrackId) return;
 
       const message = audioEl.error?.message || "Audio playback error";
       const code = audioEl.error?.code;
-      console.error("[AudioElementError]", this.currentTrackId, code, message, audioEl.src);
+      console.error(
+        "[AudioElementError]",
+        this.currentTrackId,
+        code,
+        message,
+        audioEl.src,
+      );
       log("red", "audio", `error (code ${code}): ${message}`);
 
       const isDecode =
-        code === (typeof MediaError !== "undefined" ? MediaError.MEDIA_ERR_DECODE : 3) ||
-        code === (typeof MediaError !== "undefined" ? MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED : 4);
+        code ===
+          (typeof MediaError !== "undefined"
+            ? MediaError.MEDIA_ERR_DECODE
+            : 3) ||
+        code ===
+          (typeof MediaError !== "undefined"
+            ? MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED
+            : 4);
 
       if (isDecode) {
         telemetry.trackPlaybackHealth("MEDIA_DECODE_ERROR", {
@@ -263,14 +418,23 @@ export class PlayerRuntime {
 
       const store = usePlayerStore.getState();
       const currentTrack = store.currentTrack;
+      const posMs =
+        Number.isFinite(audioEl.currentTime) && audioEl.currentTime > 0
+          ? Math.round(audioEl.currentTime * 1000)
+          : store.positionMs;
+
       if (
         currentTrack &&
         currentTrack.id === this.currentTrackId &&
         this.recoveryAttempts < 1
       ) {
         this.recoveryAttempts++;
-        const posMs = store.positionMs;
-        log("yellow", "playback", `audio error encountered — recovering via cache/stream at ${posMs}ms`);
+        this.recoveryHoldUntilMs = posMs + RECOVERY_HOLD_MS;
+        log(
+          "yellow",
+          "playback",
+          `audio error encountered — recovering via cache/stream at ${posMs}ms`,
+        );
         void this.loadAndPlay(currentTrack, posMs, true);
         return;
       }
@@ -290,6 +454,7 @@ export class PlayerRuntime {
       Date.now() >= this.currentSessionExpiresAt - 15_000;
     return (
       this.currentTrackId === trackId &&
+      this.attachedTrackId === trackId &&
       Boolean(this.audio.currentSrc || this.audio.src) &&
       this.audio.src !== window.location.href &&
       !this.audio.error &&
@@ -297,12 +462,16 @@ export class PlayerRuntime {
     );
   }
 
-  public applyPlaybackRateAndPitch(rate?: number, preservesPitch?: boolean): void {
+  public applyPlaybackRateAndPitch(
+    rate?: number,
+    preservesPitch?: boolean,
+  ): void {
     if (!this.audio) return;
     const store = usePlayerStore.getState();
     const targetRate = rate ?? store.playbackRate ?? 1;
     const targetPreserves =
-      preservesPitch ?? (store.isPitchLinked !== undefined ? !store.isPitchLinked : true);
+      preservesPitch ??
+      (store.isPitchLinked !== undefined ? !store.isPitchLinked : true);
 
     try {
       this.audio.playbackRate = targetRate;
@@ -319,7 +488,8 @@ export class PlayerRuntime {
       const pitchSemitones = store.pitchSemitones ?? 0;
       const isReverbEnabled = store.isReverbEnabled ?? false;
       const reverbLevel = store.reverbLevel ?? 0.35;
-      const needsEffects = isReverbEnabled || (!isPitchLinked && Math.abs(pitchSemitones) >= 0.05);
+      const needsEffects =
+        isReverbEnabled || (!isPitchLinked && Math.abs(pitchSemitones) >= 0.05);
       if (!needsEffects && !pitchShifter.isAttached()) return;
       pitchShifter.attach(this.audio);
       pitchShifter.update({
@@ -377,22 +547,89 @@ export class PlayerRuntime {
     this.fadeTimer = setTimeout(tick, 16);
   }
 
+  private releaseStream() {
+    this.releaseActiveStream?.();
+    this.releaseActiveStream = null;
+  }
+
+  private watchFullSource(trackId: string, stream: PlaybackStream) {
+    const { completed, needsFullSource } = stream;
+    if (!completed || !needsFullSource) return;
+    void completed
+      .then((blob) => {
+        if (this.currentTrackId !== trackId || this.audio.src !== stream.url)
+          return;
+        if (needsFullSource()) this.swapToFullSource(blob);
+      })
+      .catch(() => undefined);
+  }
+
+  private swapToFullSource(blob: Blob) {
+    const position = this.audio.currentTime;
+    const wasPlaying = !this.audio.paused;
+    const url = URL.createObjectURL(blob);
+    this.isResetting = true;
+    this.releaseStream();
+    if (this.activeBlobUrl) URL.revokeObjectURL(this.activeBlobUrl);
+    this.activeBlobUrl = url;
+    this.audio.src = url;
+    this.applyPlaybackRateAndPitch();
+    const settle = () => {
+      this.isResetting = false;
+    };
+    this.audio.addEventListener(
+      "loadedmetadata",
+      () => {
+        this.audio.currentTime = position;
+        if (wasPlaying) void this.audio.play().then(settle, settle);
+        else settle();
+      },
+      { once: true },
+    );
+    log("cyan", "playback", "switched to the fully downloaded source");
+  }
+
   private safeResetAudioElement() {
     this.isResetting = true;
     this.currentSessionExpiresAt = null;
     try {
       this.cancelFade();
       this.audio.pause();
+      this.releaseStream();
       if (this.activeBlobUrl) {
         URL.revokeObjectURL(this.activeBlobUrl);
         this.activeBlobUrl = null;
       }
       this.audio.removeAttribute("src");
       this.audio.load();
+      this.attachedTrackId = null;
     } catch {
     } finally {
       this.isResetting = false;
     }
+  }
+
+  // between tracks: silence the old source but keep it attached until the next one
+  // is ready. Emptying the element here made Chromium drop the system media session
+  // during every skip, so Windows controls / FluentFlyout lost Liner after a track change.
+  private pauseForTransition() {
+    this.isResetting = true;
+    this.currentSessionExpiresAt = null;
+    try {
+      this.cancelFade();
+      this.audio.pause();
+    } catch {
+    } finally {
+      this.isResetting = false;
+    }
+  }
+
+  private attachSource(url: string, isBlob: boolean, trackId: string) {
+    const previousBlob = this.activeBlobUrl;
+    this.audio.src = url;
+    this.activeBlobUrl = isBlob ? url : null;
+    this.attachedTrackId = trackId;
+    if (previousBlob && previousBlob !== url) URL.revokeObjectURL(previousBlob);
   }
 
   public cancelPendingLoad(): void {
@@ -404,6 +641,7 @@ export class PlayerRuntime {
     this.currentTrackId = null;
     this.currentSessionExpiresAt = null;
     this.recoveryAttempts = 0;
+    this.recoveryHoldUntilMs = null;
     this.safeResetAudioElement();
     usePlayerStore.getState().setStatus("paused");
     log("cyan", "playback", "pending load cancelled");
@@ -421,6 +659,7 @@ export class PlayerRuntime {
     this.preloadAbortController = controller;
     this.preloadingTrackId = track.id;
 
+    const generation = audioCache.currentGeneration();
     const promise = (async () => {
       try {
         const stream = await resolvePlaybackStream(track, controller.signal);
@@ -428,7 +667,15 @@ export class PlayerRuntime {
 
         const blob = await this.downloadAudioBlob(stream, controller.signal);
         if (!blob || controller.signal.aborted) return;
-        await linerDb.putAudio(track.id, blob, blob.type);
+        if (
+          !(await audioCache.saveAudioBlob(
+            track.id,
+            blob,
+            blob.type,
+            generation,
+          ))
+        )
+          return;
         await linerDb.putTrack(track);
         log(
           "green",
@@ -450,6 +697,16 @@ export class PlayerRuntime {
   }
 
   private pendingStartPositionMs = 0;
+
+  public stop(): void {
+    this.cancelPendingLoad();
+    this.updateMediaSessionMetadata(null);
+    if (typeof navigator !== "undefined" && "mediaSession" in navigator) {
+      try {
+        navigator.mediaSession.playbackState = "none";
+      } catch {}
+    }
+  }
 
   public setPendingSeek(positionMs: number): void {
     this.pendingStartPositionMs = positionMs;
@@ -484,6 +741,7 @@ export class PlayerRuntime {
 
     if (this.currentTrackId !== track.id) {
       this.recoveryAttempts = 0;
+      this.recoveryHoldUntilMs = null;
     }
 
     if (this.preloadingTrackId === track.id && this.preloadingPromise) {
@@ -514,7 +772,7 @@ export class PlayerRuntime {
     store.setStatus("loading", null);
     store.setPosition(startPositionMs > 0 ? startPositionMs : 0);
 
-    this.safeResetAudioElement();
+    this.pauseForTransition();
 
     try {
       const cachedAudio = bypassCache ? null : await linerDb.getAudio(track.id);
@@ -525,7 +783,8 @@ export class PlayerRuntime {
       const isValidCachedBlob =
         Boolean(cachedAudio?.blob) &&
         cachedAudio!.blob.size > 0 &&
-        (!cachedAudio!.blob.type || cachedAudio!.blob.type.startsWith("audio/"));
+        (!cachedAudio!.blob.type ||
+          cachedAudio!.blob.type.startsWith("audio/"));
 
       if (cachedAudio && !isValidCachedBlob) {
         void linerDb.deleteAudio(track.id);
@@ -536,8 +795,7 @@ export class PlayerRuntime {
         this.currentSessionExpiresAt = null;
         void linerDb.putTrack(track);
         const blobUrl = URL.createObjectURL(cachedAudio.blob);
-        this.activeBlobUrl = blobUrl;
-        this.audio.src = blobUrl;
+        this.attachSource(blobUrl, true, track.id);
         this.audio.volume = 0;
         this.audio.load();
         this.applyPlaybackRateAndPitch();
@@ -589,11 +847,18 @@ export class PlayerRuntime {
         return;
       }
 
-      const stream = await resolvePlaybackStream(track, controller.signal);
+      const stream = await resolvePlaybackStream(track, controller.signal, {
+        progressive: true,
+      });
       this.ttfbMs = Math.round(performance.now() - this.loadStartTime);
 
       if (epoch !== this.loadEpoch || controller.signal.aborted) {
-        log("yellow", "playback", `superseded before stream ready (${track.title})`);
+        stream.release?.();
+        log(
+          "yellow",
+          "playback",
+          `superseded before stream ready (${track.title})`,
+        );
         return;
       }
 
@@ -601,13 +866,11 @@ export class PlayerRuntime {
       const streamBitrate = stream.bitrate;
       this.currentSessionExpiresAt = stream.expiresAtMs;
       log("cyan", "playback", `resolved stream for ${track.title}`);
-      if (this.activeBlobUrl) {
-        URL.revokeObjectURL(this.activeBlobUrl);
-        this.activeBlobUrl = null;
-      }
+      this.releaseStream();
       const url = stream.blob ? URL.createObjectURL(stream.blob) : stream.url;
-      if (stream.blob) this.activeBlobUrl = url;
-      this.audio.src = url;
+      this.attachSource(url, Boolean(stream.blob), track.id);
+      this.releaseActiveStream = stream.release ?? null;
+      this.watchFullSource(track.id, stream);
       this.audio.volume = 0;
       this.audio.load();
       this.applyPlaybackRateAndPitch();
@@ -675,8 +938,24 @@ export class PlayerRuntime {
       }
 
       if (error instanceof DOMException && error.name === "NotAllowedError") {
-        log("yellow", "playback", "autoplay blocked — waiting for user gesture");
+        log(
+          "yellow",
+          "playback",
+          "autoplay blocked — waiting for user gesture",
+        );
         usePlayerStore.getState().setStatus("paused");
+        return;
+      }
+
+      if (
+        isBotCheckError(error) &&
+        !isYoutubeSignedIn() &&
+        !isYoutubeSignInDeclined() &&
+        prefersSignInPrompt()
+      ) {
+        log("yellow", "playback", "youtube sign-in required, pausing");
+        usePlayerStore.getState().setStatus("paused");
+        requestYoutubeSignIn();
         return;
       }
 
@@ -759,10 +1038,7 @@ export class PlayerRuntime {
       !hasMediaError;
 
     if (!hasValidSource && currentTrack) {
-      void this.loadAndPlay(
-        currentTrack,
-        usePlayerStore.getState().positionMs,
-      );
+      void this.loadAndPlay(currentTrack, usePlayerStore.getState().positionMs);
       return;
     }
 
@@ -784,8 +1060,16 @@ export class PlayerRuntime {
             log("red", "audio", `play failed: ${String(error)}`);
             if (currentTrack && this.recoveryAttempts < 1) {
               this.recoveryAttempts++;
-              log("yellow", "playback", "resume failed — attempting cache/stream recovery");
-              void this.loadAndPlay(currentTrack, usePlayerStore.getState().positionMs, true);
+              log(
+                "yellow",
+                "playback",
+                "resume failed — attempting cache/stream recovery",
+              );
+              void this.loadAndPlay(
+                currentTrack,
+                usePlayerStore.getState().positionMs,
+                true,
+              );
               return;
             }
             usePlayerStore.getState().setStatus("paused");
@@ -820,8 +1104,12 @@ export class PlayerRuntime {
     }
   }
 
-  private async downloadAudioBlob(stream: PlaybackStream, signal: AbortSignal): Promise<Blob | null> {
+  private async downloadAudioBlob(
+    stream: PlaybackStream,
+    signal: AbortSignal,
+  ): Promise<Blob | null> {
     if (stream.blob) return stream.blob;
+    if (stream.completed) return stream.completed;
     const startedAt = performance.now();
     const bytes = await downloadAudioBytes(stream.url, {
       contentLength: stream.contentLength,
@@ -829,9 +1117,14 @@ export class PlayerRuntime {
     });
     if (!bytes || signal.aborted) return null;
     const mimeType = stream.mimeType || "audio/webm";
-    if (!mimeType.startsWith("audio/") && !mimeType.startsWith("video/")) return null;
+    if (!mimeType.startsWith("audio/") && !mimeType.startsWith("video/"))
+      return null;
     if (!isStandaloneAudioFile(bytes.subarray(0, 16))) {
-      log("yellow", "download", `not caching: stream is not a standalone audio file`);
+      log(
+        "yellow",
+        "download",
+        `not caching: stream is not a standalone audio file`,
+      );
       return null;
     }
     log(
@@ -842,15 +1135,32 @@ export class PlayerRuntime {
     return new Blob([bytes], { type: mimeType });
   }
 
-  private cacheAudioInBackground(track: Track, stream: PlaybackStream, signal: AbortSignal) {
+  private cacheAudioInBackground(
+    track: Track,
+    stream: PlaybackStream,
+    signal: AbortSignal,
+  ) {
     if (track.durationMs && track.durationMs > 20 * 60 * 1000) return;
+    const generation = audioCache.currentGeneration();
     void (async () => {
       try {
         const blob = await this.downloadAudioBlob(stream, signal);
         if (!blob || signal.aborted) return;
-        await linerDb.putAudio(track.id, blob, blob.type);
+        if (
+          !(await audioCache.saveAudioBlob(
+            track.id,
+            blob,
+            blob.type,
+            generation,
+          ))
+        )
+          return;
         await linerDb.putTrack(track);
-        log("green", "playback", `background cached: ${track.title} (${Math.round(blob.size / 1024)} KB)`);
+        log(
+          "green",
+          "playback",
+          `background cached: ${track.title} (${Math.round(blob.size / 1024)} KB)`,
+        );
       } catch {}
     })();
   }

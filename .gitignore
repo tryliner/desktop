@@ -50,3 +50,7 @@ GEMINI.md
 
 brag-output/
 scratch/
+
+# native add-on build output
+/native/*/build/
+/native-build.log

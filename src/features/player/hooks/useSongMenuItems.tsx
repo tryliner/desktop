@@ -129,7 +129,9 @@ export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
             icon: (
               <LuHeart
                 size={15}
-                className={liked ? "fill-red-500 text-red-500" : "text-text-secondary"}
+                className={
+                  liked ? "fill-red-500 text-red-500" : "text-text-secondary"
+                }
               />
             ),
             onClick: handleLike,
@@ -213,7 +215,9 @@ export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
           icon: (
             <LuHeart
               size={15}
-              className={liked ? "fill-red-500 text-red-500" : "text-text-secondary"}
+              className={
+                liked ? "fill-red-500 text-red-500" : "text-text-secondary"
+              }
             />
           ),
           onClick: handleLike,

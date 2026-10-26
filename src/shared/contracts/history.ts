@@ -49,7 +49,7 @@ export interface PlaybackHistoryResponse {
   nextCursor: string | null;
 }
 
-export type PopularTimeWindow = '24h' | '7d' | '30d' | 'all';
+export type PopularTimeWindow = '12h' | '24h' | '7d' | '30d' | 'all';
 
 export interface PopularTrackItem {
   rank: number;
@@ -66,4 +66,38 @@ export interface PopularTracksResponse {
   window: PopularTimeWindow;
   generatedAt: string;
   items: PopularTrackItem[];
+}
+
+
+export interface PopularAlbumEntry {
+  id: string;
+  title: string;
+  artist: string;
+  coverUrl: string | null;
+  year?: number;
+  playCount: number;
+  uniqueListeners: number;
+  trackCount: number;
+  score: number;
+}
+
+export interface PopularAlbumsResponse {
+  window: PopularTimeWindow;
+  items: PopularAlbumEntry[];
+}
+
+export type MostSavedType = "all" | "album" | "playlist";
+
+export interface MostSavedEntry {
+  type: "album" | "playlist";
+  id: string;
+  title: string;
+  subtitle: string;
+  coverUrl: string | null;
+  saves: number;
+}
+
+export interface MostSavedResponse {
+  type: MostSavedType;
+  items: MostSavedEntry[];
 }

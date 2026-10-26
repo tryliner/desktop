@@ -15,6 +15,8 @@ export interface DropdownMenuItem {
   onClick: () => void | Promise<void>;
   danger?: boolean;
   disabled?: boolean;
+  /** persistent highlight for the currently selected option */
+  active?: boolean;
 }
 
 export interface DropdownMenuProps {
@@ -92,7 +94,14 @@ export default function DropdownMenu({
 
   const targetPos = position || computedPos;
   const isFixed = Boolean(targetPos);
-  const fixedStyle = useFixedStyle(menuRef, isFixed, targetPos, open, side, align);
+  const fixedStyle = useFixedStyle(
+    menuRef,
+    isFixed,
+    targetPos,
+    open,
+    side,
+    align,
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -130,13 +139,17 @@ export default function DropdownMenu({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.96, y: side === "top" ? 2 : -2 }}
           transition={{ duration: 0.1, ease: "easeOut" }}
-          className={`overflow-hidden rounded-md border border-border-primary/80 bg-bg-primary/95 backdrop-blur-md p-1 min-w-[160px] ${
-            isFixed ? "fixed z-[99999]" : side === "top" ? "absolute right-0 bottom-full mb-1 z-50" : "absolute right-0 top-full mt-1 z-50"
+          className={`overflow-hidden rounded-[11px] p-[4px] min-w-[160px] border-0 bg-black/[0.05] dark:bg-white/[0.07] backdrop-blur-2xl backdrop-saturate-150 ${
+            isFixed
+              ? "fixed z-[99999]"
+              : side === "top"
+                ? "absolute right-0 bottom-full mb-1 z-50"
+                : "absolute right-0 top-full mt-1 z-50"
           }`}
           style={isFixed ? fixedStyle : {}}
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="flex flex-col gap-0.5">
+          <div className="flex flex-col gap-[1px]">
             {items.map((item) => (
               <button
                 key={item.id}
@@ -147,11 +160,16 @@ export default function DropdownMenu({
                   setOpen(false);
                   await item.onClick();
                 }}
-                className={`group flex w-full items-center gap-2.5 rounded-sm px-2.5 py-1.5 text-[13px] font-normal tracking-tight transition-colors border-none bg-transparent text-left cursor-pointer select-none outline-none ${
+                className={`group flex w-full h-[30px] items-center gap-[8px] rounded-[8px] px-[9px] text-[13px] font-normal transition-colors border-none bg-transparent text-left cursor-pointer select-none outline-none ${
                   item.danger
                     ? "text-red-400 hover:bg-red-500/10 hover:text-red-400"
-                    : "text-text-primary hover:bg-border-alpha-14"
+                    : "text-text-primary hover:bg-black/[0.05] dark:hover:bg-white/[0.08]"
+                } ${
+                  item.active
+                    ? "bg-black/[0.05] dark:bg-white/[0.08]"
+                    : ""
                 } disabled:pointer-events-none disabled:opacity-40`}
+                aria-current={item.active ? "true" : undefined}
                 style={{
                   fontFamily: "var(--font-inter), sans-serif",
                 }}

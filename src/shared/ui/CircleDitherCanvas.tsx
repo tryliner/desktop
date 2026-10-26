@@ -14,6 +14,8 @@ export interface CircleDitherCanvasProps {
   style?: React.CSSProperties;
 }
 
+export const DITHER_RESIZE_SETTLE_MS = 300;
+
 export default function CircleDitherCanvas({
   src,
   alt = "Circle Dither",
@@ -56,7 +58,9 @@ export default function CircleDitherCanvas({
     if (!container || !canvas) return;
 
     const offscreenCanvas = document.createElement("canvas");
-    const offscreenCtx = offscreenCanvas.getContext("2d", { willReadFrequently: true });
+    const offscreenCtx = offscreenCanvas.getContext("2d", {
+      willReadFrequently: true,
+    });
     const ctx = canvas.getContext("2d");
     if (!ctx || !offscreenCtx) return;
 
@@ -132,7 +136,13 @@ export default function CircleDitherCanvas({
           ctx.lineTo(currentWidth - r, 0);
           ctx.arcTo(currentWidth, 0, currentWidth, r, r);
           ctx.lineTo(currentWidth, currentHeight - r);
-          ctx.arcTo(currentWidth, currentHeight, currentWidth - r, currentHeight, r);
+          ctx.arcTo(
+            currentWidth,
+            currentHeight,
+            currentWidth - r,
+            currentHeight,
+            r,
+          );
           ctx.lineTo(r, currentHeight);
           ctx.arcTo(0, currentHeight, 0, currentHeight - r, r);
           ctx.lineTo(0, r);
@@ -157,8 +167,10 @@ export default function CircleDitherCanvas({
       const isHex = gridType === "hex";
       const rowHeight = isHex ? size * 0.8660254 : size;
 
-      const cols = 1 + Math.floor((currentWidth - 2 * minPad - diameter) / size);
-      const rows = 1 + Math.floor((currentHeight - 2 * minPad - diameter) / rowHeight);
+      const cols =
+        1 + Math.floor((currentWidth - 2 * minPad - diameter) / size);
+      const rows =
+        1 + Math.floor((currentHeight - 2 * minPad - diameter) / rowHeight);
       if (cols <= 0 || rows <= 0) {
         ctx.restore();
         return;
@@ -192,7 +204,8 @@ export default function CircleDitherCanvas({
             } else if (x < R && y > currentHeight - R) {
               if (!isInsideCorner(x, y, R, currentHeight - R)) continue;
             } else if (x > currentWidth - R && y > currentHeight - R) {
-              if (!isInsideCorner(x, y, currentWidth - R, currentHeight - R)) continue;
+              if (!isInsideCorner(x, y, currentWidth - R, currentHeight - R))
+                continue;
             }
           }
 
@@ -227,12 +240,18 @@ export default function CircleDitherCanvas({
       ctx.restore();
     };
 
-    const handleResize = () => {
+    const surfaceSize = () => {
       const rect = container.getBoundingClientRect();
-      const w = Math.floor(rect.width);
-      const h = Math.floor(rect.height);
+      return {
+        w: Math.floor(Math.max(rect.width, window.screen?.width ?? 0)),
+        h: Math.floor(Math.max(rect.height, window.screen?.height ?? 0)),
+      };
+    };
 
+    const handleResize = () => {
+      const { w, h } = surfaceSize();
       if (w <= 0 || h <= 0) return;
+      if (w === currentWidth && h === currentHeight && cachedPixelData) return;
 
       currentWidth = w;
       currentHeight = h;
@@ -247,27 +266,46 @@ export default function CircleDitherCanvas({
       draw();
     };
 
-    const resizeObserver = new ResizeObserver(() => {
-      handleResize();
-    });
+    let settleTimer: ReturnType<typeof setTimeout> | null = null;
+    const scheduleResize = () => {
+      const { w, h } = surfaceSize();
+      if (w === currentWidth && h === currentHeight) return;
+      if (settleTimer) clearTimeout(settleTimer);
+      settleTimer = setTimeout(() => {
+        settleTimer = null;
+        handleResize();
+      }, DITHER_RESIZE_SETTLE_MS);
+    };
+
+    const resizeObserver = new ResizeObserver(scheduleResize);
     resizeObserver.observe(container);
     handleResize();
 
     return () => {
+      if (settleTimer) clearTimeout(settleTimer);
       resizeObserver.disconnect();
     };
-  }, [loaded, dotSize, gap, edgePadding, cornerRadius, gridType, objectFit, backgroundColor]);
+  }, [
+    loaded,
+    dotSize,
+    gap,
+    edgePadding,
+    cornerRadius,
+    gridType,
+    objectFit,
+    backgroundColor,
+  ]);
 
   return (
     <div
       ref={containerRef}
-      className={`relative h-full w-full overflow-hidden rounded-5xl select-none ${className}`}
+      className={`relative h-full w-full overflow-hidden rounded-[12px] select-none ${className}`}
       style={style}
       aria-label={alt}
     >
       <canvas
         ref={canvasRef}
-        className="block h-full w-full rounded-5xl pointer-events-none"
+        className="pointer-events-none absolute left-1/2 top-1/2 block max-w-none -translate-x-1/2 -translate-y-1/2"
       />
     </div>
   );

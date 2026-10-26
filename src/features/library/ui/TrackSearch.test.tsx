@@ -14,11 +14,20 @@ vi.mock("framer-motion", () => {
       {
         get: (_target, prop: string) => {
           if (!cache[prop]) {
-            cache[prop] = React.forwardRef(({ children, ...props }: any, ref: any) => {
-              const clean = { ...props };
-              for (const k of ["initial", "animate", "exit", "transition", "layoutId"]) delete clean[k];
-              return React.createElement(prop, { ref, ...clean }, children);
-            });
+            cache[prop] = React.forwardRef(
+              ({ children, ...props }: any, ref: any) => {
+                const clean = { ...props };
+                for (const k of [
+                  "initial",
+                  "animate",
+                  "exit",
+                  "transition",
+                  "layoutId",
+                ])
+                  delete clean[k];
+                return React.createElement(prop, { ref, ...clean }, children);
+              },
+            );
           }
           return cache[prop];
         },
@@ -42,7 +51,8 @@ const TRACKS = [
   { title: "8 миля", artists: "madk1d, VILLIAN" },
 ];
 
-let latest: ReturnType<typeof useTrackSearch<(typeof TRACKS)[number]>> | null = null;
+let latest: ReturnType<typeof useTrackSearch<(typeof TRACKS)[number]>> | null =
+  null;
 const onSubmit = vi.fn();
 
 function Harness({ resetKey = "a" }: { resetKey?: string }) {
@@ -64,7 +74,10 @@ function input(): HTMLInputElement | null {
 
 function type(value: string) {
   const el = input()!;
-  const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!;
+  const setter = Object.getOwnPropertyDescriptor(
+    HTMLInputElement.prototype,
+    "value",
+  )!.set!;
   act(() => {
     setter.call(el, value);
     el.dispatchEvent(new Event("input", { bubbles: true }));
@@ -72,7 +85,11 @@ function type(value: string) {
 }
 
 function key(target: EventTarget, init: KeyboardEventInit) {
-  const ev = new KeyboardEvent("keydown", { bubbles: true, cancelable: true, ...init });
+  const ev = new KeyboardEvent("keydown", {
+    bubbles: true,
+    cancelable: true,
+    ...init,
+  });
   act(() => {
     target.dispatchEvent(ev);
   });
@@ -97,58 +114,45 @@ describe("track search", () => {
     latest = null;
   });
 
-  it("is hidden until ctrl+f, which opens and focuses it", () => {
-    expect(input()).toBeNull();
+  it("is always visible and ctrl+f focuses it", () => {
+    expect(input()).not.toBeNull();
     const ev = key(window, { code: "KeyF", key: "f", ctrlKey: true });
     expect(ev.defaultPrevented).toBe(true);
-    expect(input()).not.toBeNull();
     expect(document.activeElement).toBe(input());
   });
 
   it("works with a Cyrillic layout because it uses the physical key", () => {
     key(window, { code: "KeyF", key: "а", ctrlKey: true });
-    expect(input()).not.toBeNull();
+    expect(document.activeElement).toBe(input());
   });
 
   it("filters, keeps original indices and shows the count", () => {
-    act(() => latest!.open());
     type("madk1d");
     expect(latest!.matches?.map((m) => m.index)).toEqual([0, 2]);
     expect(container.textContent).toContain("track_search.count:2/3");
   });
 
-  it("escape clears first, then closes, and stops the app-wide escape", () => {
-    act(() => latest!.open());
+  it("escape clears first, then blurs, and stops the app-wide escape", () => {
+    act(() => latest!.focus());
     type("vill");
     const first = key(input()!, { key: "Escape" });
     expect(first.defaultPrevented).toBe(true);
     expect(latest!.query).toBe("");
-    expect(input()).not.toBeNull();
+    expect(document.activeElement).toBe(input());
     key(input()!, { key: "Escape" });
-    expect(input()).toBeNull();
+    expect(input()).not.toBeNull();
+    expect(document.activeElement).not.toBe(input());
   });
 
   it("enter submits (plays the first match)", () => {
-    act(() => latest!.open());
     type("весни");
     key(input()!, { key: "Enter" });
     expect(onSubmit).toHaveBeenCalledTimes(1);
   });
 
-  it("the search button toggles: hides an open field, opens a closed one", () => {
-    act(() => latest!.toggle());
-    expect(input()).not.toBeNull();
-    type("vill");
-    act(() => latest!.toggle());
-    expect(input()).toBeNull();
-    expect(latest!.query).toBe("");
-  });
-
   it("resets when the page changes", () => {
-    act(() => latest!.open());
     type("vill");
     act(() => root.render(<Harness resetKey="b" />));
-    expect(latest!.isOpen).toBe(false);
     expect(latest!.query).toBe("");
   });
 });

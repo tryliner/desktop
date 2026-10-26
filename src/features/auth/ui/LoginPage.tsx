@@ -3,28 +3,28 @@ import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import Button from "@/shared/ui/Button";
 import TextInput from "@/shared/ui/TextInput";
-import Select from "@/shared/ui/Select";
 import { EyeLine, EyeCloseLine, ArrowLeftLine } from "@mingcute/react";
 import WindowControls from "@/features/navigation/ui/WindowControls";
-import logo from "@/assets/logo.svg";
-import cloudsBanner from "@/assets/wallhaven-5g1yz8.jpg";
-import CircleDitherCanvas from "@/shared/ui/CircleDitherCanvas";
-import AppImage from "@/features/covers/ui/AppImage";
+import LoginBrandPanel from "./LoginBrandPanel";
+import LoginBackdrop from "./LoginBackdrop";
+import { useWindowState } from "@/features/navigation/hooks/useWindowState";
 import {
   authErrorMessage,
   getAuthErrorCode,
   useAuthStore,
 } from "../store/authStore";
-import { useTranslation, LOCALE_OPTIONS } from "@/languages";
+import { useTranslation } from "@/languages";
+import { cn } from "@/shared/lib";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const USERNAME_RE = /^[a-z0-9_]{3,30}$/;
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const { isEdgeToEdge } = useWindowState();
   const login = useAuthStore((state) => state.login);
   const register = useAuthStore((state) => state.register);
-  const { locale, setLocale, t } = useTranslation();
+  const { t } = useTranslation();
   const [mode, setMode] = useState<"login" | "register">("login");
   const [registerStep, setRegisterStep] = useState<1 | 2>(1);
   const [email, setEmail] = useState("");
@@ -49,16 +49,13 @@ export default function LoginPage() {
     const code = getAuthErrorCode(nextError);
     if (code === "server_unavailable")
       return t("login.errors.server_unavailable");
-    if (code === "server_error")
-      return t("login.errors.server_error");
+    if (code === "server_error") return t("login.errors.server_error");
     if (code === "invalid_credentials")
       return t("login.errors.invalid_credentials");
     if (code === "email_already_used")
       return t("login.errors.email_already_used");
-    if (code === "username_taken")
-      return t("login.errors.username_taken");
-    if (code === "invalid_username")
-      return t("login.errors.username_invalid");
+    if (code === "username_taken") return t("login.errors.username_taken");
+    if (code === "invalid_username") return t("login.errors.username_invalid");
     if (code === "invalid_input")
       return t("login.errors.display_name_required");
     return authErrorMessage(nextError);
@@ -170,56 +167,39 @@ export default function LoginPage() {
     }
   };
 
+  const heading =
+    mode === "login"
+      ? t("login.auth_title_login")
+      : registerStep === 1
+        ? t("login.auth_title_register")
+        : t("login.profile_setup_title");
+  const subheading =
+    mode === "login"
+      ? t("login.auth_subtitle_login")
+      : registerStep === 1
+        ? t("login.auth_subtitle_register")
+        : t("login.profile_setup_subtitle");
+
   return (
-    <main className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-5xl border border-border-primary bg-bg-primary">
-      <div className="absolute inset-0 z-0 select-none overflow-hidden rounded-5xl">
-        <CircleDitherCanvas
-          src={cloudsBanner}
-          alt="Clouds Dither Background"
-          dotSize={7}
-          gap={0.5}
-          edgePadding={1.5}
-          cornerRadius={12}
-          gridType="square"
-          objectFit="cover"
-          className="h-full w-full rounded-5xl overflow-hidden"
-        />
-      </div>
+    <main
+      className={cn(
+        "relative flex h-full w-full items-center justify-center overflow-hidden bg-bg-primary",
+        isEdgeToEdge
+          ? "rounded-none border-0"
+          : "rounded-5xl border border-border-primary",
+      )}
+    >
+      <LoginBackdrop edgeToEdge={isEdgeToEdge} />
 
-      <WindowControls variant="glass" />
+      <WindowControls variant="glass" isFullscreen />
 
-      {/* Centered solid panel in new app style — bg stays visible around it */}
-      <section className="relative z-10 mx-4 my-auto flex max-h-[calc(100%-48px)] w-full max-w-[400px] flex-col overflow-y-auto rounded-xl border border-border-primary bg-bg-panel p-[28px]">
-        <div className="flex min-h-full w-full flex-col justify-between">
-          {/* Top: logo + lang picker */}
-          <div className="flex shrink-0 items-center gap-[10px]">
-            <AppImage
-              src={logo}
-              alt="Liner"
-              width={25}
-              height={30}
-              className="theme-logo h-[22px] w-auto"
-              priority
-            />
-            <span className="text-[16px] font-[600] tracking-[-0.025em] text-text-primary">
-              Liner
-            </span>
-            <Select
-              options={LOCALE_OPTIONS}
-              value={locale}
-              onChange={setLocale}
-              align="bottom-right"
-              variant="transparent"
-              className="ml-auto min-w-[120px]"
-              aria-label={t("login.select_language")}
-            />
-          </div>
+      <section className="relative z-10 mx-4 my-auto grid max-h-[calc(100%-48px)] w-full max-w-[780px] grid-cols-[300px_1fr] gap-[8px] overflow-y-auto rounded-[20px] border border-border-primary bg-bg-panel p-[8px]">
+        <LoginBrandPanel title={heading} subtitle={subheading} />
 
-          {/* Middle: grows + centers form content */}
-          <div className="my-auto flex flex-col justify-center py-6">
+        <div className="flex w-full flex-col px-[28px] pb-[22px] pt-[26px]">
+          <div className="flex flex-col pb-6">
             <div className="w-full">
-              {/* mode switch, same segmented pattern as create-playlist tabs */}
-              <div className="mb-[16px] flex rounded-lg bg-bg-elevated p-[3px]">
+              <div className="flex gap-[8px]">
                 {(
                   [
                     { id: "login", label: t("login.btn_sign_in") },
@@ -230,59 +210,21 @@ export default function LoginPage() {
                     key={item.id}
                     type="button"
                     onClick={() => selectMode(item.id)}
-                    className={`h-[30px] flex-1 cursor-pointer rounded-md border-none text-[13px] font-[500] transition-all ${
+                    className={`h-[38px] flex-1 cursor-pointer rounded-[10px] border-none text-[13.5px] font-[500] transition-colors duration-150 ${
                       mode === item.id
-                        ? "bg-bg-primary text-text-primary"
-                        : "bg-transparent text-text-secondary hover:text-text-primary"
+                        ? "bg-btn-primary-bg text-btn-primary-text"
+                        : "bg-bg-elevated text-text-secondary hover:text-text-primary"
                     }`}
                   >
                     {item.label}
                   </button>
                 ))}
               </div>
-              <AnimatePresence initial={false}>
-                {mode === "register" && (
-                  <motion.div
-                    key="step-indicator"
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{
-                      duration: 0.18,
-                      ease: [0.22, 1, 0.36, 1],
-                    }}
-                    className="overflow-hidden"
-                  >
-                    <div className="mb-2">
-                      <span className="inline-flex items-center rounded-full border border-border-primary bg-bg-elevated px-2.5 py-0.5 text-[11px] font-[500] text-text-secondary">
-                        {t("login.step_indicator", { step: registerStep, total: 2 })}
-                      </span>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-              <h1
-                className="m-0 text-[22px] font-[600] leading-tight tracking-[-0.02em] text-text-primary"
-                style={{ textWrap: "balance" }}
+              <form
+                noValidate
+                onSubmit={submit}
+                className="mt-[22px] flex flex-col"
               >
-                {mode === "login"
-                  ? t("login.auth_title_login")
-                  : registerStep === 1
-                    ? t("login.auth_title_register")
-                    : t("login.profile_setup_title")}
-              </h1>
-              <p
-                className="m-0 mt-[6px] text-[13px] font-[400] leading-[1.5] text-text-secondary"
-                style={{ textWrap: "pretty" }}
-              >
-                {mode === "login"
-                  ? t("login.auth_subtitle_login")
-                  : registerStep === 1
-                    ? t("login.auth_subtitle_register")
-                    : t("login.profile_setup_subtitle")}
-              </p>
-
-              <form onSubmit={submit} className="mt-[20px] flex flex-col">
                 <AnimatePresence initial={false}>
                   {mode === "login" || registerStep === 1 ? (
                     <motion.div
@@ -357,7 +299,7 @@ export default function LoginPage() {
                                 : t("login.show_password")
                             }
                             onClick={() => setShowPassword((v) => !v)}
-                            className="flex h-7 w-7 items-center justify-center rounded-sm text-text-tertiary transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-text-secondary cursor-pointer"
+                            className="flex h-7 w-7 items-center justify-center rounded-xl text-text-tertiary transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-text-secondary cursor-pointer"
                           >
                             {showPassword ? (
                               <EyeCloseLine className="h-4 w-4" />
@@ -392,9 +334,11 @@ export default function LoginPage() {
                               autoComplete="new-password"
                               placeholder={t("login.placeholder_confirm")}
                               value={confirmPassword}
-                                    hasError={Boolean(error)}
+                              hasError={Boolean(error)}
                               aria-invalid={Boolean(error)}
-                              aria-describedby={error ? "auth-form-error" : undefined}
+                              aria-describedby={
+                                error ? "auth-form-error" : undefined
+                              }
                               onChange={(event) => {
                                 setConfirmPassword(event.target.value);
                                 if (error) setError("");
@@ -408,8 +352,10 @@ export default function LoginPage() {
                                       ? t("login.hide_password")
                                       : t("login.show_password")
                                   }
-                                  onClick={() => setShowConfirmPassword((v) => !v)}
-                                  className="flex h-7 w-7 items-center justify-center rounded-sm text-text-tertiary transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-text-secondary cursor-pointer"
+                                  onClick={() =>
+                                    setShowConfirmPassword((v) => !v)
+                                  }
+                                  className="flex h-7 w-7 items-center justify-center rounded-xl text-text-tertiary transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-text-secondary cursor-pointer"
                                 >
                                   {showConfirmPassword ? (
                                     <EyeCloseLine className="h-4 w-4" />
@@ -457,10 +403,14 @@ export default function LoginPage() {
                         }
                         hasError={Boolean(error)}
                         aria-invalid={Boolean(error)}
-                        aria-describedby={error ? "auth-form-error" : "auth-username-hint"}
+                        aria-describedby={
+                          error ? "auth-form-error" : "auth-username-hint"
+                        }
                         onChange={(event) => {
                           setUsername(
-                            event.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""),
+                            event.target.value
+                              .toLowerCase()
+                              .replace(/[^a-z0-9_]/g, ""),
                           );
                           if (error) setError("");
                         }}
@@ -589,7 +539,9 @@ export default function LoginPage() {
                           className="w-[110px] shrink-0"
                         >
                           <ArrowLeftLine className="h-4 w-4" />
-                          <span className="relative -left-[1.5px] top-[1px]">{t("login.btn_back")}</span>
+                          <span className="relative -left-[1.5px] top-[1px]">
+                            {t("login.btn_back")}
+                          </span>
                         </Button>
                         <Button
                           type="submit"

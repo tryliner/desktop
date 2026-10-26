@@ -76,6 +76,17 @@ jobs:
           VITE_API_URL: https://api.tryliner.fun
           VITE_COVERS_PROXY_URL: https://covers.tryliner.fun
 
+      # the drag-to-top snap preview (windows 11) is a native add-on built by
+      # electron:build:win (native:build); never ship an installer without it
+      - name: Verify native snap preview add-on is packaged
+        shell: pwsh
+        run: |
+          $addon = "release/win-unpacked/resources/app.asar.unpacked/native/snap-preview/build/Release/snap_preview.node"
+          if (-not (Test-Path $addon)) { throw "snap_preview.node missing from the package: $addon" }
+          Write-Host "ok: $addon ($((Get-Item $addon).Length) bytes)"
+          # it must also load and export everything the app calls (not just exist)
+          node scripts/verify-native-addon.cjs $addon
+
       - name: Upload Windows Artifacts
         uses: actions/upload-artifact@v4
         with:

@@ -368,7 +368,7 @@ export async function clearStorageCategories(categoryIds: StorageCategoryId[]): 
     set.has("audio") && set.has("covers") && set.has("lyrics") && set.has("metadata");
 
   if (set.has("audio")) {
-    audioCache.revokeAll();
+    audioCache.invalidate();
     await linerDb.clearStore("audio");
     await linerDb.clearStore("tracks");
     if (isAllCategories) {

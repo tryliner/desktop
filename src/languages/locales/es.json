@@ -202,6 +202,7 @@
     "mostListened": "Más escuchado de todos los tiempos",
     "jumpBackIn": "Vuelve a escuchar",
     "popularAlbums": "Álbumes destacados",
+    "mostSaved": "Lo más guardado",
     "popularArtists": "Artistas en tendencia",
     "popularPlaylists": "Listas populares",
     "dailyMixes": "Mixes diarios",
@@ -214,9 +215,11 @@
     "songs": "canciones",
     "track": "canción",
     "tracks": "canciones",
+    "tab_all": "Todo",
     "tab_playlists": "Listas",
     "tab_albums": "Álbumes",
     "tab_artists": "Artistas",
+    "search_all": "Buscar en la biblioteca",
     "search_playlists": "Buscar listas",
     "search_albums": "Buscar álbumes",
     "search_artists": "Buscar artistas",
@@ -245,7 +248,6 @@
     "auth_subtitle_register": "Crea una cuenta y empieza a construir tu biblioteca personal.",
     "profile_setup_title": "Configura tu perfil",
     "profile_setup_subtitle": "Elige tu nombre de usuario único y nombre visible.",
-    "step_indicator": "Paso {step} de {total}",
     "btn_continue": "Continuar",
     "btn_back": "Atrás",
     "username_hint": "3-30 caracteres en minúsculas, números o guiones bajos.",
@@ -344,6 +346,10 @@
     }
   },
   "player": {
+    "mute": "Silenciar",
+    "unmute": "Activar sonido",
+    "decrease": "Disminuir",
+    "increase": "Aumentar",
     "repeat_off": "Repetir: desactivado",
     "repeat_all": "Repetir: todo",
     "repeat_one": "Repetir: canción",
@@ -432,6 +438,9 @@
     "save_preferences": "Guardar preferencias",
     "groups": {
       "preferences": "Preferencias",
+      "player": "Reproductor",
+      "interface": "Interfaz",
+      "integrations": "Integraciones",
       "application": "Aplicación",
       "help": "Ayuda"
     },
@@ -441,8 +450,6 @@
     "tabs": {
       "general": "General",
       "appearance": "Apariencia",
-      "customization": "Personalización",
-      "audio": "Audio",
       "storage": "Caché y Almacenamiento",
       "system": "Sistema",
       "account": "Cuenta",
@@ -532,46 +539,9 @@
         "disconnected": "Discord no conectado",
         "ready": "Listo",
         "waiting": "Esperando a Discord",
-        "disabled": "Desactivado"
+        "disabled": "Desactivado",
+        "via_arrpc": "Conectado mediante arRPC"
       }
-    },
-    "customization": {
-      "description": "Fondo de pantalla de la ventana, transparencia y efectos de desenfoque.",
-      "apply_to_overlay": "Aplicar al mini reproductor flotante",
-      "apply_to_overlay_desc": "Muestra el fondo personalizado y estilo cristal en el reproductor flotante.",
-      "dark_theme_only": "La personalización solo está disponible en el tema oscuro",
-      "wallpaper_title": "Fondo de la ventana",
-      "wallpaper_description": "Establece una imagen o GIF animado personalizado como fondo completo de la ventana.",
-      "upload_title": "Selecciona una imagen o GIF animado",
-      "upload_hint": "PNG, JPEG, GIF, WebP (hasta 30MB)",
-      "change_button": "Cambiar",
-      "remove_button": "Quitar",
-      "wallpaper_blur": "Desenfoque del fondo",
-      "wallpaper_dim": "Oscurecimiento del fondo",
-      "blocks_title": "Efecto cristal en bloques de interfaz",
-      "blocks_description": "Ajusta la transparencia, desenfoque de fondo y oscurecimiento para cada área.",
-      "block_sidebar": "Barra lateral",
-      "block_content": "Vista de contenido",
-      "block_miniplayer": "Mini reproductor",
-      "opacity": "Opacidad (transparencia)",
-      "opacity_desc": "Nivel de opacidad del fondo (mín. 25%)",
-      "blur": "Desenfoque de fondo",
-      "blur_desc": "Intensidad del efecto de cristal esmerilado",
-      "dim": "Oscurecimiento",
-      "dim_desc": "Capa oscura para mejorar la legibilidad",
-      "apply_all": "A todos",
-      "apply_all_title": "Aplicar ajustes a todos los bloques",
-      "applied_to_all": "Ajustes aplicados a todos los bloques",
-      "reset_block": "Restablecer",
-      "block_reset": "Ajustes de bloque restablecidos",
-      "reset_all": "Restablecer toda la personalización",
-      "reset_all_desc": "Restaura la apariencia predeterminada, borra la imagen de fondo y los efectos de cristal.",
-      "all_reset": "Toda la personalización ha sido restablecida",
-      "applied": "Fondo de pantalla aplicado",
-      "removed": "Fondo de pantalla quitado",
-      "invalid_file_type": "Por favor, selecciona un archivo de imagen o GIF válido",
-      "file_too_large": "El tamaño del archivo debe ser inferior a 30 MB",
-      "read_error": "Error al leer el archivo de imagen"
     },
     "audio_data": {
       "description": "Calidad de streaming, caché local y diagnóstico de conexión."
@@ -675,7 +645,6 @@
     "theme": {
       "title": "Tema",
       "description": "Elige la apariencia general de la aplicación.",
-      "disabled_for_glass": "El tema claro se desactiva cuando se usa el fondo personalizado con efecto cristal.",
       "light": "Claro",
       "dark": "Oscuro",
       "system": "Sistema"
@@ -698,8 +667,6 @@
       "vhs": "Chrome"
     },
     "audio": {
-      "title": "Calidad de streaming",
-      "description": "Selecciona la calidad de audio predeterminada para la reproducción.",
       "pause_on_device_change": {
         "title": "Pausar al cambiar de dispositivo",
         "description": "Pausa automáticamente la reproducción cuando cambia el dispositivo de salida de audio."
@@ -707,11 +674,7 @@
       "download_current_song": {
         "title": "Descargar canción actual",
         "description": "Descarga la canción en reproducción como un archivo MP3."
-      },
-      "low": "Calidad baja (Ahorro de datos)",
-      "standard": "Calidad estándar (Opus 64kbps / MP3 128kbps)",
-      "high": "Calidad alta (AAC 256kbps)",
-      "lossless": "Sin pérdida (FLAC/ALAC) - No disponible"
+      }
     },
     "profile": {
       "title": "Perfil",
@@ -806,15 +769,6 @@
       "license_notice": "Distribuido bajo la licencia Liner Source-Available & Non-Commercial."
     },
     "connection": {
-      "title": "Conexión",
-      "description": "Ejecuta todas las pruebas de conectividad y guarda el informe de diagnóstico.",
-      "checks_title": "Informe de conectividad",
-      "button": "Ejecutar pruebas y guardar",
-      "checking": "Comprobando…",
-      "saved": "Informe guardado. Adjúntalo en tu mensaje de soporte.",
-      "failed": "No se pudo guardar el informe.",
-      "never_run": "Las pruebas aún no se han ejecutado.",
-      "last_run": "{ok}/{total} pruebas superadas · {time}",
       "open_folder": "Abrir carpeta de guardado"
     },
     "shortcuts": {
@@ -849,8 +803,6 @@
       "search_desc": "Abre rápidamente el cuadro de búsqueda.",
       "toggle_queue": "Cola",
       "toggle_queue_desc": "Abre o cierra el panel de la cola de reproducción.",
-      "toggle_lyrics": "Letras",
-      "toggle_lyrics_desc": "Abre o cierra el panel de letras sincronizadas.",
       "toggle_fullscreen": "Pantalla completa / Vista del reproductor",
       "toggle_fullscreen_desc": "Alterna la vista inmersiva del reproductor a pantalla completa.",
       "like_track": "Me gusta / Quitar me gusta",
@@ -874,6 +826,11 @@
       "scope_main_app": "App principal",
       "scope_overlay": "Superposición",
       "reset_section": "Restablecer sección"
+    },
+    "cover_glow": {
+      "title": "Brillo de portada",
+      "description": "Brillo difuminado de la portada tras las páginas. Desactívalo para un fondo liso.",
+      "disabled_for_light": "Desactivado en el tema claro."
     }
   },
   "toast": {
@@ -997,12 +954,7 @@
     "check_trace": "Traza de ruta",
     "check_platform": "Plataforma",
     "check_main": "Comprobaciones de escritorio",
-    "copy_dump": "Copiar informe",
-    "dump_copied": "Informe copiado. Pégalo en tu mensaje de soporte.",
-    "dump_copy_failed": "No se pudo acceder al portapapeles.",
-    "download_dump": "Guardar informe",
     "support": "Contactar soporte",
-    "support_hint": "Adjunta el archivo del informe para que el equipo de soporte tenga toda la información.",
     "wall_title_server": "Los servidores de Liner tienen problemas",
     "wall_subtitle_server": "Tu conexión está bien, el servidor respondió con un error. Tu música y tu biblioteca están a salvo, inténtalo de nuevo en unos minutos."
   },
@@ -1021,9 +973,15 @@
   "track_search": {
     "placeholder_playlist": "Buscar en la playlist",
     "placeholder_album": "Buscar en el álbum",
-    "button": "Buscar canciones",
     "count": "{count} de {total}",
     "no_results": "Ninguna canción coincide con «{query}»",
     "clear": "Borrar búsqueda"
+  },
+  "track_sort": {
+    "label": "Ordenar",
+    "default": "Predeterminado",
+    "title": "Por título (A–Z)",
+    "duration": "Por duración",
+    "popularity": "Por popularidad"
   }
 }

@@ -2,9 +2,11 @@ import { getAuthSession, getValidAccessToken } from "../api/auth-session";
 import { getApiBaseUrl } from "../api/baseUrl";
 import { APP_VERSION } from "../config/version";
 
-const DEFAULT_PING_INTERVAL_MS = 25_000;
-const INITIAL_RECONNECT_DELAY_MS = 2_000;
-const MAX_RECONNECT_DELAY_MS = 30_000;
+const DEFAULT_INTERVAL_MS = 60_000;
+const MIN_INTERVAL_MS = 15_000;
+const MAX_INTERVAL_MS = 300_000;
+const MIN_GAP_MS = 10_000;
+const REQUEST_TIMEOUT_MS = 10_000;
 
 function getPlatform(): string {
   if (typeof navigator === "undefined") return "desktop";
@@ -15,207 +17,94 @@ function getPlatform(): string {
   return "desktop";
 }
 
-function getWsEndpointUrl(): string {
-  const apiBase = getApiBaseUrl();
-  const wsProtocol = apiBase.startsWith("https") ? "wss:" : "ws:";
-  const host = apiBase.replace(/^https?:\/\//, "");
-  return `${wsProtocol}//${host}/v1/ping/ws`;
-}
-
 export class PresenceClient {
-  private ws: WebSocket | null = null;
-  private pingTimer: ReturnType<typeof setInterval> | null = null;
-  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
-  private reconnectDelay = INITIAL_RECONNECT_DELAY_MS;
+  private timer: ReturnType<typeof setInterval> | null = null;
   private isRunning = false;
-  private isDestroyed = false;
+  private inFlight = false;
+  private lastBeatAt = 0;
 
-  private isConnecting = false;
+  constructor(private intervalMs = DEFAULT_INTERVAL_MS) {}
 
-  constructor(private readonly pingIntervalMs = DEFAULT_PING_INTERVAL_MS) {}
-
-  // starts presence background lifecycle and registers system listeners
   start(): void {
     if (this.isRunning) return;
     this.isRunning = true;
-    this.isDestroyed = false;
 
     if (typeof window !== "undefined") {
-      window.addEventListener("auth:changed", this.handleAuthChanged);
-      window.addEventListener("online", this.handleOnline);
+      window.addEventListener("auth:changed", this.handleWake);
+      window.addEventListener("online", this.handleWake);
       document.addEventListener("visibilitychange", this.handleVisibilityChange);
     }
 
-    void this.connect();
+    this.schedule();
+    void this.beat();
   }
 
-  // stops presence client and tears down active socket and timers
   stop(): void {
     this.isRunning = false;
-    this.isConnecting = false;
-    this.clearTimers();
-    this.disconnectSocket();
+    if (this.timer) {
+      clearInterval(this.timer);
+      this.timer = null;
+    }
 
     if (typeof window !== "undefined") {
-      window.removeEventListener("auth:changed", this.handleAuthChanged);
-      window.removeEventListener("online", this.handleOnline);
+      window.removeEventListener("auth:changed", this.handleWake);
+      window.removeEventListener("online", this.handleWake);
       document.removeEventListener("visibilitychange", this.handleVisibilityChange);
     }
   }
 
-  private handleAuthChanged = (): void => {
-    const session = getAuthSession();
-    if (!session?.accessToken) {
-      this.disconnectSocket();
-      this.clearTimers();
-    } else if (this.isRunning && (!this.ws || this.ws.readyState === WebSocket.CLOSED)) {
-      void this.connect();
-    }
-  };
-
-  private handleOnline = (): void => {
-    if (this.isRunning && (!this.ws || this.ws.readyState === WebSocket.CLOSED)) {
-      this.reconnectDelay = INITIAL_RECONNECT_DELAY_MS;
-      void this.connect();
-    }
+  private handleWake = (): void => {
+    if (Date.now() - this.lastBeatAt >= MIN_GAP_MS) void this.beat();
   };
 
   private handleVisibilityChange = (): void => {
-    if (document.visibilityState === "visible" && this.isRunning) {
-      if (!this.ws || this.ws.readyState === WebSocket.CLOSED) {
-        void this.connect();
-      }
-    }
+    if (document.visibilityState === "visible") this.handleWake();
   };
 
-  private clearTimers(): void {
-    if (this.pingTimer) {
-      clearInterval(this.pingTimer);
-      this.pingTimer = null;
-    }
-    if (this.reconnectTimer) {
-      clearTimeout(this.reconnectTimer);
-      this.reconnectTimer = null;
-    }
+  private schedule(): void {
+    if (this.timer) clearInterval(this.timer);
+    this.timer = setInterval(() => void this.beat(), this.intervalMs);
   }
 
-  private disconnectSocket(): void {
-    if (this.ws) {
-      const socket = this.ws;
-      this.ws = null;
-      socket.onopen = null;
-      socket.onclose = null;
-      socket.onerror = null;
-      socket.onmessage = null;
-      try {
-        socket.close();
-      } catch {}
-    }
-  }
-
-  // establishes websocket connection and sends initial auth payload
-  async connect(): Promise<void> {
-    if (
-      !this.isRunning ||
-      this.isConnecting ||
-      typeof window === "undefined" ||
-      typeof WebSocket === "undefined"
-    ) {
-      return;
-    }
-
-    // avoid closing in-flight handshake or active socket
-    if (this.ws && (this.ws.readyState === WebSocket.CONNECTING || this.ws.readyState === WebSocket.OPEN)) {
-      return;
-    }
-
-    this.isConnecting = true;
-
-    try {
-      // verify we have an active session
-      const accessToken = await getValidAccessToken();
-      if (!accessToken || !this.isRunning) {
-        this.isConnecting = false;
-        return;
-      }
-
-      this.disconnectSocket();
-      this.clearTimers();
-
-      const wsUrl = getWsEndpointUrl();
-      const ws = new WebSocket(wsUrl);
-      this.ws = ws;
-
-      ws.onopen = () => {
-        this.isConnecting = false;
-        if (this.ws !== ws) return;
-        this.reconnectDelay = INITIAL_RECONNECT_DELAY_MS;
-
-        const session = getAuthSession();
-        const initPayload = {
-          token: accessToken,
-          userId: session?.user?.id,
-          username: session?.user?.username,
-          email: session?.user?.email,
-          clientVersion: APP_VERSION,
-          platform: getPlatform(),
-        };
-
-        try {
-          ws.send(JSON.stringify(initPayload));
-        } catch {
-          this.scheduleReconnect();
-          return;
-        }
-
-        // start periodic 1-byte ping heartbeat
-        this.pingTimer = setInterval(() => {
-          if (ws.readyState === WebSocket.OPEN) {
-            try {
-              ws.send("p");
-            } catch {
-              this.scheduleReconnect();
-            }
-          }
-        }, this.pingIntervalMs);
-      };
-
-      ws.onclose = () => {
-        this.isConnecting = false;
-        if (this.ws !== ws) return;
-        this.clearTimers();
-        this.ws = null;
-        this.scheduleReconnect();
-      };
-
-      ws.onerror = () => {
-        this.isConnecting = false;
-        if (this.ws !== ws) return;
-        this.clearTimers();
-        this.disconnectSocket();
-        this.scheduleReconnect();
-      };
-    } catch {
-      this.isConnecting = false;
-      this.scheduleReconnect();
-    }
-  }
-
-  private scheduleReconnect(): void {
-    if (!this.isRunning || this.reconnectTimer) return;
+  async beat(): Promise<void> {
+    if (!this.isRunning || this.inFlight) return;
     const session = getAuthSession();
     if (!session?.accessToken) return;
 
-    this.reconnectTimer = setTimeout(() => {
-      this.reconnectTimer = null;
-      this.reconnectDelay = Math.min(this.reconnectDelay * 1.5, MAX_RECONNECT_DELAY_MS);
-      void this.connect();
-    }, this.reconnectDelay);
+    this.inFlight = true;
+    this.lastBeatAt = Date.now();
+    try {
+      const accessToken = await getValidAccessToken();
+      if (!accessToken || !this.isRunning) return;
+
+      const res = await fetch(`${getApiBaseUrl()}/v1/presence/heartbeat`, {
+        method: "POST",
+        headers: { "content-type": "application/json", authorization: `Bearer ${accessToken}` },
+        body: JSON.stringify({
+          username: session.user?.username,
+          email: session.user?.email,
+          displayName: session.user?.displayName,
+          clientVersion: APP_VERSION,
+          platform: getPlatform(),
+        }),
+        keepalive: true,
+        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+      });
+
+      const suggested = Number(res.headers.get("x-liner-heartbeat-interval")) * 1000;
+      if (Number.isFinite(suggested) && suggested >= MIN_INTERVAL_MS && suggested <= MAX_INTERVAL_MS && suggested !== this.intervalMs) {
+        this.intervalMs = suggested;
+        if (this.isRunning) this.schedule();
+      }
+    } catch {
+      // offline or server unreachable
+    } finally {
+      this.inFlight = false;
+    }
   }
 
-  // exposed for testing
-  getSocketState(): number | null {
-    return this.ws ? this.ws.readyState : null;
+  getIntervalMs(): number {
+    return this.intervalMs;
   }
 }
 

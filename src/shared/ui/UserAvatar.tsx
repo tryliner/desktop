@@ -10,14 +10,24 @@ export interface UserAvatarProps {
   } | null;
   size?: number;
   className?: string;
+  style?: React.CSSProperties;
 }
 
-export function UserAvatar({ user, size = 36, className = "" }: UserAvatarProps) {
+export function UserAvatar({
+  user,
+  size = 36,
+  className = "",
+  style,
+}: UserAvatarProps) {
   const [imgError, setImgError] = useState(false);
 
   const initial = useMemo(() => {
     if (!user) return "";
-    const name = user.displayName?.trim() || user.username?.trim() || user.email?.trim() || "";
+    const name =
+      user.displayName?.trim() ||
+      user.username?.trim() ||
+      user.email?.trim() ||
+      "";
     return name ? name[0].toUpperCase() : "";
   }, [user]);
 
@@ -25,8 +35,8 @@ export function UserAvatar({ user, size = 36, className = "" }: UserAvatarProps)
 
   return (
     <div
-      className={`rounded-[6px] bg-border-alpha-14 flex items-center justify-center text-text-secondary border border-border-primary/50 flex-shrink-0 overflow-hidden select-none ${className}`}
-      style={{ width: size, height: size }}
+      className={`rounded-[12px] bg-border-alpha-14 flex items-center justify-center text-text-secondary border border-border-primary/50 flex-shrink-0 overflow-hidden select-none ${className}`}
+      style={{ width: size, height: size, ...style }}
     >
       {hasImage ? (
         <img

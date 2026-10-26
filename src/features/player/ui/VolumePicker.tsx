@@ -20,6 +20,7 @@ export interface VolumePickerProps {
   trackClassName?: string;
   fillClassName?: string;
   iconClassName?: string;
+  iconSize?: number;
   valueClassName?: string;
   trackBg?: string;
   trackActiveBg?: string;
@@ -37,6 +38,7 @@ export const VolumePicker = memo(function VolumePicker({
   trackClassName = "",
   fillClassName = "",
   iconClassName = "",
+  iconSize,
   valueClassName = "",
   trackBg,
   trackActiveBg,
@@ -59,7 +61,8 @@ export const VolumePicker = memo(function VolumePicker({
 
   const trackRef = useRef<HTMLDivElement>(null);
 
-  const currentLevel = isDragging && dragLevel !== null ? dragLevel : volumeLevel;
+  const currentLevel =
+    isDragging && dragLevel !== null ? dragLevel : volumeLevel;
   const percentage = Math.round(currentLevel * 100);
 
   const updateVolume = useCallback(
@@ -177,11 +180,13 @@ export const VolumePicker = memo(function VolumePicker({
     lg: "h-[8px]",
   }[size];
 
-  const iconSizes = {
-    sm: 16,
-    md: 18,
-    lg: 20,
-  }[size];
+  const iconSizes =
+    iconSize ??
+    {
+      sm: 16,
+      md: 18,
+      lg: 20,
+    }[size];
 
   const isActive = isHovered || isDragging;
 
@@ -220,7 +225,13 @@ export const VolumePicker = memo(function VolumePicker({
             initial={false}
             animate={{
               scaleX: isActive ? 1.25 : 1,
-              ...(trackBg ? { backgroundColor: isActive ? (trackActiveBg || trackBg) : trackBg } : {}),
+              ...(trackBg
+                ? {
+                    backgroundColor: isActive
+                      ? trackActiveBg || trackBg
+                      : trackBg,
+                  }
+                : {}),
             }}
             transition={{
               type: "spring",
@@ -238,11 +249,16 @@ export const VolumePicker = memo(function VolumePicker({
           >
             <div
               className={`absolute inset-x-0 bottom-0 rounded-full ${
-                !fillColor && !fillClassName ? "bg-text-primary dark:bg-white" : ""
+                !fillColor && !fillClassName
+                  ? "bg-text-primary dark:bg-white"
+                  : ""
               } transition-[height] ease-out ${
                 isDragging ? "duration-0" : "duration-100"
               } ${fillClassName}`}
-              style={{ height: `${percentage}%`, ...(fillColor ? { backgroundColor: fillColor } : {}) }}
+              style={{
+                height: `${percentage}%`,
+                ...(fillColor ? { backgroundColor: fillColor } : {}),
+              }}
             />
           </motion.div>
         </div>
@@ -283,7 +299,7 @@ export const VolumePicker = memo(function VolumePicker({
           type="button"
           onClick={handleToggleMute}
           aria-label={volumeLevel === 0 ? "Unmute" : "Mute"}
-          className={`flex h-full w-[24px] shrink-0 items-center justify-center border-none bg-transparent p-0 ${
+          className={`flex h-full min-w-[24px] shrink-0 items-center justify-center border-none bg-transparent p-0 ${
             !iconClassName ? "text-text-secondary hover:text-text-primary" : ""
           } transition-colors duration-150 ease-out cursor-pointer ${iconClassName}`}
         >
@@ -318,7 +334,13 @@ export const VolumePicker = memo(function VolumePicker({
           initial={false}
           animate={{
             scaleY: isActive ? (size === "sm" ? 1.35 : 1.3) : 1,
-            ...(trackBg ? { backgroundColor: isActive ? (trackActiveBg || trackBg) : trackBg } : {}),
+            ...(trackBg
+              ? {
+                  backgroundColor: isActive
+                    ? trackActiveBg || trackBg
+                    : trackBg,
+                }
+              : {}),
           }}
           transition={{
             type: "spring",
@@ -340,7 +362,10 @@ export const VolumePicker = memo(function VolumePicker({
             } transition-[width] ease-out ${
               isDragging ? "duration-0" : "duration-100"
             } ${fillClassName}`}
-            style={{ width: `${percentage}%`, ...(fillColor ? { backgroundColor: fillColor } : {}) }}
+            style={{
+              width: `${percentage}%`,
+              ...(fillColor ? { backgroundColor: fillColor } : {}),
+            }}
           />
         </motion.div>
       </div>
@@ -348,7 +373,9 @@ export const VolumePicker = memo(function VolumePicker({
       {showValue && (
         <span
           className={`w-[32px] shrink-0 text-right text-[12px] font-[500] tabular-nums ${
-            !valueClassName ? "text-text-tertiary group-hover:text-text-secondary" : ""
+            !valueClassName
+              ? "text-text-tertiary group-hover:text-text-secondary"
+              : ""
           } transition-colors ${valueClassName}`}
         >
           {percentage}%

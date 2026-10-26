@@ -24,7 +24,6 @@ import {
 // the whole playlist from there.
 
 export interface TrackSearchState<T> {
-  isOpen: boolean;
   query: string;
   /** trimmed, deferred query the results were computed for ("" = not filtering) */
   activeQuery: string;
@@ -32,10 +31,7 @@ export interface TrackSearchState<T> {
   matches: TrackMatch<T>[] | null;
   focusToken: number;
   setQuery: (q: string) => void;
-  open: () => void;
-  close: () => void;
-  /** search button: hides an open field, opens a closed one */
-  toggle: () => void;
+  focus: () => void;
 }
 
 export function useTrackSearch<T extends SearchableTrack>(
@@ -43,14 +39,12 @@ export function useTrackSearch<T extends SearchableTrack>(
   /** search resets when this changes (e.g. the playlist id) */
   resetKey: unknown,
 ): TrackSearchState<T> {
-  const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [focusToken, setFocusToken] = useState(0);
   const deferredQuery = useDeferredValue(query);
   const activeQuery = deferredQuery.trim();
 
   useEffect(() => {
-    setIsOpen(false);
     setQuery("");
   }, [resetKey]);
 
@@ -59,41 +53,35 @@ export function useTrackSearch<T extends SearchableTrack>(
     [tracks, activeQuery],
   );
 
-  const open = useCallback(() => {
-    setIsOpen(true);
+  const focus = useCallback(() => {
     setFocusToken((n) => n + 1);
   }, []);
 
-  const close = useCallback(() => {
-    setIsOpen(false);
-    setQuery("");
-  }, []);
-
-  // ctrl/cmd+f opens (or re-focuses) the search, like find-in-page everywhere else
+  // ctrl/cmd+f focuses the search, like find-in-page everywhere else
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.code !== "KeyF" || !(e.ctrlKey || e.metaKey) || e.altKey || e.shiftKey) return;
+      if (
+        e.code !== "KeyF" ||
+        !(e.ctrlKey || e.metaKey) ||
+        e.altKey ||
+        e.shiftKey
+      )
+        return;
       if (isBlockingOverlayOpen()) return;
       e.preventDefault();
-      open();
+      focus();
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [open]);
+  }, [focus]);
 
-  const toggle = useCallback(() => {
-    if (isOpen) close();
-    else open();
-  }, [isOpen, open, close]);
-
-  return { isOpen, query, activeQuery, matches, focusToken, setQuery, open, close, toggle };
+  return { query, activeQuery, matches, focusToken, setQuery, focus };
 }
 
 interface TrackSearchFieldProps {
   search: TrackSearchState<unknown>;
   totalCount: number;
   placeholder: string;
-  glass?: boolean;
   /** Enter: play the first result */
   onSubmit?: () => void;
   className?: string;
@@ -103,122 +91,91 @@ export const TrackSearchField = memo(function TrackSearchField({
   search,
   totalCount,
   placeholder,
-  glass = false,
   onSubmit,
   className = "",
 }: TrackSearchFieldProps) {
   const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement>(null);
-  const { isOpen, query, setQuery, close, focusToken, matches } = search;
+  const { query, setQuery, focusToken, matches } = search;
 
   useEffect(() => {
-    if (!isOpen || focusToken === 0) return;
+    if (focusToken === 0) return;
     const input = inputRef.current;
     if (!input) return;
     input.focus();
     input.select();
-  }, [isOpen, focusToken]);
+  }, [focusToken]);
 
   const hasQuery = query.trim().length > 0;
 
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <motion.div
-          key="track-search"
-          role="search"
-          initial={{ opacity: 0, y: -4 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -4 }}
-          transition={{ duration: 0.14, ease: [0.22, 1, 0.36, 1] }}
-          data-no-window-drag
-          className={`flex h-[32px] w-[300px] items-center gap-[8px] rounded-md px-[10px] pointer-events-auto ${
-            glass
-              ? "apple-glass-pill !border-none"
-              : "bg-bg-panel/85 backdrop-blur-xl text-text-primary"
-          } ${className}`}
-          style={{ fontFamily: "var(--font-inter), sans-serif" }}
+    <div
+      role="search"
+      data-no-window-drag
+      className={`flex h-[32px] w-[220px] items-center gap-[8px] rounded-[9px] px-[10px] text-text-primary ${className}`}
+      style={{ fontFamily: "var(--font-inter), sans-serif" }}
+    >
+      <Search2Line size={16} className="shrink-0 text-text-secondary" />
+      <input
+        ref={inputRef}
+        type="text"
+        value={query}
+        placeholder={placeholder}
+        aria-label={`${placeholder} (${isMacPlatform() ? "⌘F" : "Ctrl+F"})`}
+        spellCheck={false}
+        autoComplete="off"
+        onChange={(e) => setQuery(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") {
+            // handled here so the app-wide Escape (back / close panels) stands down
+            e.preventDefault();
+            e.stopPropagation();
+            if (query) setQuery("");
+            else inputRef.current?.blur();
+          } else if (e.key === "Enter") {
+            e.preventDefault();
+            onSubmit?.();
+          }
+        }}
+        className="h-[32px] min-w-0 flex-1 border-none bg-transparent p-0 text-[14px] leading-[32px] font-[400] text-text-primary outline-none placeholder:text-text-secondary"
+      />
+      {hasQuery && matches && (
+        <span
+          className="shrink-0 text-[12px] tabular-nums text-text-tertiary select-none"
+          aria-live="polite"
         >
-          <Search2Line
-            size={15}
-            className={`shrink-0 ${glass ? "text-white/70" : "text-text-tertiary"}`}
-          />
-          <input
-            ref={inputRef}
-            type="text"
-            value={query}
-            placeholder={placeholder}
-            aria-label={placeholder}
-            spellCheck={false}
-            autoComplete="off"
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Escape") {
-                // handled here so the app-wide Escape (back / close panels) stands down
-                e.preventDefault();
-                e.stopPropagation();
-                if (query) setQuery("");
-                else close();
-              } else if (e.key === "Enter") {
-                e.preventDefault();
-                onSubmit?.();
-              }
-            }}
-            onBlur={() => {
-              if (!query.trim()) close();
-            }}
-            className={`min-w-0 flex-1 border-none bg-transparent p-0 text-[13px] font-[400] outline-none ${
-              glass
-                ? "text-white placeholder:text-white/55"
-                : "text-text-primary placeholder:text-text-tertiary"
-            }`}
-          />
-          {hasQuery && matches && (
-            <span
-              className={`shrink-0 text-[12px] tabular-nums select-none ${
-                glass ? "text-white/60" : "text-text-tertiary"
-              }`}
-              aria-live="polite"
-            >
-              {t("track_search.count", { count: matches.length, total: totalCount })}
-            </span>
-          )}
-          <AnimatePresence>
-            {hasQuery && (
-              <motion.button
-                key="clear"
-                type="button"
-                initial={{ opacity: 0, scale: 0.85 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.85 }}
-                transition={{ duration: 0.1 }}
-                aria-label={t("track_search.clear")}
-                data-no-tooltip="true"
-                // keep focus in the field while clearing
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => {
-                  setQuery("");
-                  inputRef.current?.focus();
-                }}
-                className={`-mr-[2px] flex shrink-0 items-center justify-center border-none bg-transparent p-0 cursor-pointer transition-colors ${
-                  glass ? "text-white/60 hover:text-white" : "text-text-tertiary hover:text-text-primary"
-                }`}
-              >
-                <CloseCircleFill size={15} />
-              </motion.button>
-            )}
-          </AnimatePresence>
-        </motion.div>
+          {t("track_search.count", {
+            count: matches.length,
+            total: totalCount,
+          })}
+        </span>
       )}
-    </AnimatePresence>
+      <AnimatePresence>
+        {hasQuery && (
+          <motion.button
+            key="clear"
+            type="button"
+            initial={{ opacity: 0, scale: 0.85 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.85 }}
+            transition={{ duration: 0.1 }}
+            aria-label={t("track_search.clear")}
+            data-no-tooltip="true"
+            // keep focus in the field while clearing
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => {
+              setQuery("");
+              inputRef.current?.focus();
+            }}
+            className="-mr-[2px] flex shrink-0 items-center justify-center border-none bg-transparent p-0 cursor-pointer text-text-tertiary transition-colors hover:text-text-primary"
+          >
+            <CloseCircleFill size={15} />
+          </motion.button>
+        )}
+      </AnimatePresence>
+    </div>
   );
 });
-
-/** Tooltip text for the search button, with the platform shortcut. */
-export function useTrackSearchButtonLabel(): string {
-  const { t } = useTranslation();
-  return `${t("track_search.button")} (${isMacPlatform() ? "⌘F" : "Ctrl+F"})`;
-}
 
 export const TrackSearchEmpty = memo(function TrackSearchEmpty({
   query,

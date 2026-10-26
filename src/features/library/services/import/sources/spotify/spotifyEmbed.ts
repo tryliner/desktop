@@ -27,16 +27,22 @@ function splitArtists(subtitle: unknown): string[] {
 }
 
 function embedJson(html: string): unknown {
-  const nextData = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
+  const nextData = html.match(
+    /<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/,
+  );
   const parsed = nextData?.[1] ? parseJsonSafe(nextData[1]) : undefined;
   if (parsed !== undefined && parsed !== null) return parsed;
-  const initialState = html.match(/<script id="(?:initial-state|session)"[^>]*>([\s\S]*?)<\/script>/);
+  const initialState = html.match(
+    /<script id="(?:initial-state|session)"[^>]*>([\s\S]*?)<\/script>/,
+  );
   return initialState?.[1] ? parseJsonSafe(initialState[1]) : undefined;
 }
 
 function findEntity(data: unknown): JsonRecord | undefined {
   const pageProps = recordAt(data, "props", "pageProps");
-  return pageProps?.state ? recordAt(pageProps, "state", "data", "entity") : findFirst(data, "entity");
+  return pageProps?.state
+    ? recordAt(pageProps, "state", "data", "entity")
+    : findFirst(data, "entity");
 }
 
 function mapTrackListItem(
@@ -92,5 +98,7 @@ export async function fetchSpotifyEmbed(
 ): Promise<SpotifyEmbedData> {
   const url = `https://open.spotify.com/embed/${entityType}/${encodeURIComponent(entityId)}`;
   const html = await tryFetchText(url, { signal });
-  return html ? parseSpotifyEmbedHtml(html, entityType, entityId, fallbackTitle) : { tracks: [] };
+  return html
+    ? parseSpotifyEmbedHtml(html, entityType, entityId, fallbackTitle)
+    : { tracks: [] };
 }

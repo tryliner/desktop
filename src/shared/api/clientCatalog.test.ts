@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const getTrack = vi.fn();
 
-vi.mock("@/shared/media/innertube", () => ({
+vi.mock("@/shared/youtube", () => ({
   innertubeCatalog: { getTrack: (...args: unknown[]) => getTrack(...args) },
 }));
 

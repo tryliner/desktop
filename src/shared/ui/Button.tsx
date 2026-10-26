@@ -8,7 +8,7 @@ export interface ButtonProps
 
 const variantClasses: Record<NonNullable<ButtonProps["variant"]>, string> = {
   primary:
-    "bg-btn-primary-bg text-btn-primary-text border border-border-primary hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-text-primary/70 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary",
+    "bg-btn-primary-bg text-btn-primary-text border border-transparent hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-text-primary/70 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary",
   secondary:
     "bg-border-alpha-14 text-text-primary hover:bg-border-alpha-33 border border-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-text-primary/70 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary",
   outline:
@@ -43,7 +43,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ) => (
     <button
       ref={ref}
-      className={`inline-flex items-center justify-center gap-[8px] rounded-md text-[14px] font-[500] transition-colors duration-150 active:scale-[0.96] disabled:pointer-events-none disabled:opacity-50 cursor-pointer ${
+      className={`inline-flex items-center justify-center gap-[8px] rounded-md text-[13.5px] font-[400] transition-colors duration-150 active:scale-[0.96] disabled:pointer-events-none disabled:opacity-50 cursor-pointer ${
         variantClasses[variant]
       } ${sizeClasses[size]} ${className}`.trim()}
       style={{
