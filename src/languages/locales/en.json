@@ -464,7 +464,8 @@
       "overlay": "Overlay",
       "discord": "Discord RPC",
       "youtube": "YouTube",
-      "privacy": "Privacy"
+      "privacy": "Privacy",
+      "lastfm": "Last.fm"
     },
     "playback": {
       "description": "Queue behavior, click actions and audio output."
@@ -857,6 +858,49 @@
       "title": "Cover glow",
       "description": "Blurred artwork glow behind pages. Turn off to keep a plain background.",
       "disabled_for_light": "Off in light theme."
+    },
+    "lastfm": {
+      "description": "Save your listening history to Last.fm.",
+      "account": "Last.fm account",
+      "privacy": "When enabled, Liner sends the artist, title, album, duration, and listening start time to Last.fm.",
+      "connected": "Connected as {username}",
+      "disconnected": "Not connected",
+      "connect": "Connect Last.fm",
+      "reconnect": "Reconnect Last.fm",
+      "disconnect": "Disconnect",
+      "authorize_help": "Approve Liner in your browser, then return here to finish connecting.",
+      "finish": "I have authorized Liner",
+      "credentials_help": "Enter your Last.fm application key and shared secret. These are not your Last.fm password.",
+      "create_key": "Create an API account",
+      "api_key": "API key",
+      "api_secret": "Shared secret",
+      "custom_credentials": "Use my own API credentials",
+      "session_only": "Secure system storage is unavailable. Credentials and pending scrobbles will be kept in memory for this session only.",
+      "disconnect_help": "Disconnecting clears pending scrobbles on this device. Revoke application access in Last.fm settings to remove server authorization.",
+      "unavailable": "Last.fm is available in the desktop app.",
+      "enable": {
+        "title": "Scrobble to Last.fm",
+        "description": "Record tracks after half their duration or four minutes of actual listening. Tracks must be longer than 30 seconds. Turning this off pauses pending delivery."
+      },
+      "now_playing": {
+        "title": "Share Now Playing",
+        "description": "Show the current track on your Last.fm profile while scrobbling is enabled."
+      },
+      "queue": "Pending scrobbles: {count}",
+      "retry": "Retry pending scrobbles",
+      "errors": {
+        "authorization_failed": "Could not connect to Last.fm. Check your application credentials and try again.",
+        "authorization_pending": "Last.fm has not approved access yet. Authorize in your browser and try again.",
+        "authorization_expired": "The authorization request expired. Start connecting again.",
+        "reauthorize": "Last.fm access was revoked or expired. Reconnect to resume pending scrobbles.",
+        "storage_unreadable": "Saved Last.fm data could not be read. Restore system keychain access or disconnect to reset it.",
+        "storage_failed": "Last.fm data could not be saved. Check available disk space and permissions, then retry.",
+        "queue_full": "The pending queue is full. Reconnect and retry before recording more listens.",
+        "retrying": "Last.fm is unavailable or rate limited. Pending scrobbles will retry automatically.",
+        "submission_failed": "Last.fm rejected the submission. Check your application credentials before retrying.",
+        "scrobble_ignored": "Last.fm ignored one or more submissions because of metadata, timestamp, or daily limits.",
+        "request_failed": "The Last.fm action failed. Please try again."
+      }
     }
   },
   "toast": {

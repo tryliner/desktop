@@ -119,6 +119,8 @@ bun run test
 pnpm test
 ```
 
+Last.fm scrobbling is available under **Settings → Last.fm**. Connect your account there, or configure `LASTFM_API_KEY` and `LASTFM_API_SECRET` in `.env` before starting development. See the [Last.fm audit, implementation plan, and manual test steps](docs/lastfm.md).
+
 ---
 
 ## Building

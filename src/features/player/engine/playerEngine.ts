@@ -33,6 +33,7 @@ import { debouncedStorage } from "@/shared/utils/storage";
 import { showToast } from "@/shared/ui";
 import { createTranslatorSync, getStoredLocale } from "@/languages";
 import type { Track } from "@/shared/types";
+import { lastfmTracker } from "@/features/lastfm/playbackTracker";
 
 const MAX_CONSECUTIVE_AUTO_SKIPS = 3;
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
@@ -501,6 +502,7 @@ class PlayerEngine {
     store.setQueue(finalQueue);
 
     const selectedTrack = finalQueue[finalIndex] ?? track;
+    lastfmTracker.begin(selectedTrack, usePlayerStore.getState().playbackContext);
     store.setCurrentTrack(selectedTrack, finalIndex);
     store.setPosition(0);
     store.setDuration(selectedTrack.durationMs ?? 0);
@@ -554,6 +556,7 @@ class PlayerEngine {
     this.radioWaveId = newRadioWaveId();
 
     store.setQueue(finalQueue);
+    lastfmTracker.begin(seedTrack, usePlayerStore.getState().playbackContext);
     store.setCurrentTrack(seedTrack, 0);
     store.setPosition(0);
     store.setDuration(seedTrack.durationMs ?? 0);
@@ -581,6 +584,7 @@ class PlayerEngine {
     store.setQueue([track]);
     this.originalUpcomingQueue = [];
 
+    lastfmTracker.begin(track, usePlayerStore.getState().playbackContext);
     store.setCurrentTrack(track, 0);
     store.setPosition(0);
     store.setDuration(track.durationMs ?? 0);
@@ -646,6 +650,7 @@ class PlayerEngine {
 
   public resume(): void {
     const store = usePlayerStore.getState();
+    if (store.currentTrack) lastfmTracker.ensure(store.currentTrack, store.playbackContext);
     if (playerRuntime) {
       if (
         store.currentTrack &&
@@ -707,6 +712,7 @@ class PlayerEngine {
     const mySession = this.sessionId;
     const nextTrack = store.queue[nextIndex];
     if (nextTrack) {
+      lastfmTracker.begin(nextTrack, store.playbackContext);
       // Optimistic synchronous UI update
       store.setCurrentTrack(nextTrack, nextIndex);
       store.setPosition(0);
@@ -746,6 +752,7 @@ class PlayerEngine {
     const mySession = this.sessionId;
     const prevTrack = store.queue[prevIndex];
     if (prevTrack) {
+      lastfmTracker.begin(prevTrack, store.playbackContext);
       // Optimistic synchronous UI update
       store.setCurrentTrack(prevTrack, prevIndex);
       store.setPosition(0);
@@ -862,6 +869,7 @@ class PlayerEngine {
   }
 
   public seek(positionMs: number, autoPlay: boolean = false): void {
+    lastfmTracker.discontinuity();
     const store = usePlayerStore.getState();
     const currentMs = store.positionMs;
     const durationMs = store.durationMs || store.currentTrack?.durationMs || 0;
@@ -949,6 +957,7 @@ class PlayerEngine {
   }
 
   public async stopAndClear(): Promise<void> {
+    lastfmTracker.stop();
     const reported = this.telemetry.flushCurrentTrack();
     if (this.radioAppendTimeout) {
       clearTimeout(this.radioAppendTimeout);
@@ -1020,6 +1029,7 @@ class PlayerEngine {
   }
 
   private stopPlayback(): void {
+    lastfmTracker.stop();
     if (playerRuntime) {
       playerRuntime.pause();
     }

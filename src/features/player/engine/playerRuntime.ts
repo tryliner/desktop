@@ -5,6 +5,7 @@ import { telemetry } from "@/shared/telemetry";
 import { linerDb, audioCache } from "@/shared/storage";
 import { isStandaloneAudioFile } from "@/shared/storage/audioFormat";
 import type { Track } from "@/shared/types";
+import { lastfmTracker } from "@/features/lastfm/playbackTracker";
 import { pitchShifter } from "./pitchShifter";
 import { resolvePlaybackStream, type PlaybackStream } from "./streamResolver";
 import {
@@ -37,6 +38,8 @@ export class PlayerRuntime {
   // source stays attached (paused) until the next one is ready, so this can lag
   // currentTrackId for a moment.
   private attachedTrackId: string | null = null;
+  // The previous source can stay attached while another play of the same track loads.
+  private lastfmSourceReady = false;
   private preloadingTrackId: string | null = null;
   private preloadingPromise: Promise<void> | null = null;
   private preloadAbortController: AbortController | null = null;
@@ -258,6 +261,17 @@ export class PlayerRuntime {
       if (Number.isNaN(audioEl.currentTime)) return;
 
       const posMs = Math.round(audioEl.currentTime * 1000);
+      if (
+        this.lastfmSourceReady &&
+        this.attachedTrackId === this.currentTrackId &&
+        usePlayerStore.getState().currentTrack?.id === this.currentTrackId
+      ) {
+        lastfmTracker.progress(
+          posMs,
+          !audioEl.paused && !audioEl.seeking && audioEl.readyState >= 3,
+          audioEl.playbackRate,
+        );
+      }
       usePlayerStore.getState().setPosition(posMs);
       if (
         this.recoveryHoldUntilMs !== null &&
@@ -276,6 +290,9 @@ export class PlayerRuntime {
       usePlayerStore
         .getState()
         .setDuration(Math.round(audioEl.duration * 1000));
+      if (this.lastfmSourceReady && this.attachedTrackId === this.currentTrackId) {
+        lastfmTracker.duration(audioEl.duration * 1000);
+      }
       this.syncMediaSessionPosition();
     });
 
@@ -292,8 +309,22 @@ export class PlayerRuntime {
       });
     }
 
+    for (const event of [
+      "seeking",
+      "seeked",
+      "ratechange",
+      "pause",
+      "emptied",
+      "stalled",
+    ]) {
+      audioEl.addEventListener(event, () => {
+        if (audioEl === this.audio) lastfmTracker.discontinuity();
+      });
+    }
+
     audioEl.addEventListener("waiting", () => {
       if (this.isResetting || audioEl !== this.audio) return;
+      lastfmTracker.discontinuity();
       log("yellow", "audio", "buffering (waiting)");
       this.stallStartTime = performance.now();
       if (this.waitingTimer) clearTimeout(this.waitingTimer);
@@ -327,6 +358,13 @@ export class PlayerRuntime {
       const duration = audioEl.duration;
       const currentTime = audioEl.currentTime;
       if (duration > 0 && currentTime >= Math.max(0, duration - 1.5)) {
+        if (
+          this.lastfmSourceReady &&
+          usePlayerStore.getState().currentTrack?.id === this.currentTrackId
+        ) {
+          lastfmTracker.progress(currentTime * 1000, true, audioEl.playbackRate);
+        }
+        lastfmTracker.discontinuity();
         log("cyan", "audio", "ended — skipping to next");
         this.onEnded?.();
         const state = usePlayerStore.getState();
@@ -354,6 +392,13 @@ export class PlayerRuntime {
       }
 
       if (!this.currentTrackId || audioEl.paused) return;
+      if (
+        this.lastfmSourceReady &&
+        this.attachedTrackId === this.currentTrackId &&
+        usePlayerStore.getState().currentTrack?.id === this.currentTrackId
+      ) {
+        lastfmTracker.progress(audioEl.currentTime * 1000, true, audioEl.playbackRate);
+      }
       const currentStatus = usePlayerStore.getState().status;
       if (currentStatus !== "paused") {
         usePlayerStore.getState().setStatus("playing");
@@ -590,6 +635,7 @@ export class PlayerRuntime {
   }
 
   private safeResetAudioElement() {
+    this.lastfmSourceReady = false;
     this.isResetting = true;
     this.currentSessionExpiresAt = null;
     try {
@@ -629,6 +675,7 @@ export class PlayerRuntime {
     this.audio.src = url;
     this.activeBlobUrl = isBlob ? url : null;
     this.attachedTrackId = trackId;
+    this.lastfmSourceReady = true;
     if (previousBlob && previousBlob !== url) URL.revokeObjectURL(previousBlob);
   }
 
@@ -735,6 +782,9 @@ export class PlayerRuntime {
     startPositionMs: number = 0,
     bypassCache: boolean = false,
   ) {
+    lastfmTracker.discontinuity();
+    lastfmTracker.ensure(track, usePlayerStore.getState().playbackContext);
+    this.lastfmSourceReady = false;
     this.cancelFade();
     this.pendingStartPositionMs = startPositionMs;
     const epoch = ++this.loadEpoch;
@@ -1041,6 +1091,9 @@ export class PlayerRuntime {
       void this.loadAndPlay(currentTrack, usePlayerStore.getState().positionMs);
       return;
     }
+
+    this.lastfmSourceReady =
+      hasValidSource && this.attachedTrackId === this.currentTrackId;
 
     if (this.audio.paused) {
       this.audio.volume = 0;

@@ -7,6 +7,7 @@ import { startPoTokenWorker } from "./youtube/potoken-preload";
 import type { TvSession as YoutubeTvSession } from "./youtube/tv-session";
 import type { SolveResult as YoutubeSolveResult } from "./youtube/n-solver";
 import type { MainNetResult } from "./netdiag";
+import type { LastfmBridge, LastfmStatus } from "../src/features/lastfm/contracts";
 
 export interface DiscordStatus {
   connected: boolean;
@@ -51,6 +52,7 @@ export interface WindowState {
 }
 
 export interface LinerElectronApi {
+  lastfm?: LastfmBridge;
   platform: string;
   isHyprland: boolean;
   minimize: () => Promise<void>;
@@ -243,6 +245,22 @@ const api: LinerElectronApi = {
     ipcRenderer.invoke("signer:sign-cover-url", payload),
   signRawPayload: (payload) =>
     ipcRenderer.invoke("signer:sign-raw-payload", payload),
+  lastfm: {
+    status: () => ipcRenderer.invoke("lastfm:status"),
+    connect: (credentials) => ipcRenderer.invoke("lastfm:connect", credentials),
+    finish: () => ipcRenderer.invoke("lastfm:finish"),
+    cancel: () => ipcRenderer.invoke("lastfm:cancel"),
+    disconnect: () => ipcRenderer.invoke("lastfm:disconnect"),
+    settings: (patch) => ipcRenderer.invoke("lastfm:settings", patch),
+    retry: () => ipcRenderer.invoke("lastfm:retry"),
+    updateNowPlaying: (track) => ipcRenderer.send("lastfm:now-playing", track),
+    scrobble: (listen) => ipcRenderer.invoke("lastfm:scrobble", listen),
+    onChange: (cb) => {
+      const listener = (_event: unknown, status: LastfmStatus) => cb(status);
+      ipcRenderer.on("lastfm:changed", listener);
+      return () => ipcRenderer.removeListener("lastfm:changed", listener);
+    },
+  },
   authSession: {
     get: () => ipcRenderer.sendSync("auth:get-session") ?? null,
     set: (next) => ipcRenderer.invoke("auth:set-session", next),

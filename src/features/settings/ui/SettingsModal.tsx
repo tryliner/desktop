@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { motion } from "framer-motion";
+import { FaLastfm } from "react-icons/fa";
 import {
   CloseLine,
   Search2Line,
@@ -34,6 +35,7 @@ import {
   OverlayTab,
   DiscordTab,
   YoutubeTab,
+  LastfmTab,
 } from "./tabs";
 
 type TabId =
@@ -42,6 +44,7 @@ type TabId =
   | "Overlay"
   | "Discord"
   | "Youtube"
+  | "Lastfm"
   | "Appearance"
   | "Storage"
   | "About";
@@ -55,6 +58,7 @@ const TAB_ICONS: Record<TabId, React.ComponentType<any>> = {
   Overlay: Widget5,
   Discord: DiscordFill,
   Youtube: YoutubeFill,
+  Lastfm: FaLastfm,
   Appearance: Palette,
   Storage: Database,
   About: InfoCircle,
@@ -65,11 +69,27 @@ type TabGroupKey = "player" | "interface" | "integrations" | "application";
 const TAB_GROUPS: { labelKey: TabGroupKey; ids: TabId[] }[] = [
   { labelKey: "player", ids: ["Playback", "Shortcuts"] },
   { labelKey: "interface", ids: ["Appearance", "Overlay"] },
-  { labelKey: "integrations", ids: ["Youtube", "Discord"] },
+  { labelKey: "integrations", ids: ["Youtube", "Discord", "Lastfm"] },
   { labelKey: "application", ids: ["Storage", "About"] },
 ];
 
 const SETTING_ITEMS: { tabId: TabId; titleKey: string; descKey?: string }[] = [
+  {
+    tabId: "Lastfm",
+    titleKey: "settings.lastfm.enable.title",
+    descKey: "settings.lastfm.enable.description",
+  },
+  {
+    tabId: "Lastfm",
+    titleKey: "settings.lastfm.now_playing.title",
+    descKey: "settings.lastfm.now_playing.description",
+  },
+  {
+    tabId: "Lastfm",
+    titleKey: "settings.lastfm.account",
+    descKey: "settings.lastfm.privacy",
+  },
+  { tabId: "Lastfm", titleKey: "settings.lastfm.queue" },
   // Playback
   {
     tabId: "Playback",
@@ -280,6 +300,7 @@ export default function SettingsModal() {
     Overlay: t("settings.tabs.overlay") || "Overlay",
     Discord: t("settings.tabs.discord") || "Discord RPC",
     Youtube: t("settings.tabs.youtube") || "YouTube",
+    Lastfm: t("settings.tabs.lastfm"),
     Appearance: t("settings.tabs.appearance"),
     Storage: t("settings.tabs.storage"),
     About: t("settings.tabs.about"),
@@ -299,6 +320,7 @@ export default function SettingsModal() {
     Youtube:
       t("settings.youtube.description") ||
       "Sign in to your YouTube account to prevent playback errors.",
+    Lastfm: t("settings.lastfm.description"),
     Appearance: t("settings.theme.description"),
     Storage: t("settings.storage.description"),
     About: t("settings.about.tagline"),
@@ -315,6 +337,7 @@ export default function SettingsModal() {
       Overlay: "settings.tabs.overlay",
       Discord: "settings.tabs.discord",
       Youtube: "settings.tabs.youtube",
+      Lastfm: "settings.tabs.lastfm",
       Appearance: "settings.theme.title",
       Storage: "settings.tabs.storage",
       About: "settings.tabs.about",
@@ -326,6 +349,7 @@ export default function SettingsModal() {
       Overlay: "settings.overlay.description",
       Discord: "settings.discord.description",
       Youtube: "settings.youtube.description",
+      Lastfm: "settings.lastfm.description",
       Appearance: "settings.theme.description",
       Storage: "settings.storage.description",
       About: "settings.about.tagline",
@@ -631,6 +655,7 @@ export default function SettingsModal() {
               {activeTab === "Youtube" && (
                 <YoutubeTab searchQuery={searchQuery} />
               )}
+              {activeTab === "Lastfm" && <LastfmTab searchQuery={searchQuery} />}
               {activeTab === "Appearance" && (
                 <AppearanceTab searchQuery={searchQuery} />
               )}

@@ -7,6 +7,7 @@ import pkg from "./package.json" with { type: "json" };
 import { contentSecurityPolicyPlugin } from "./vite.csp";
 
 export default defineConfig(({ command, mode }) => {
+  const lastfmEnv = loadEnv(mode, process.cwd(), "LASTFM_");
   if (command === "serve") {
     const devSigningSecret = loadEnv(mode, process.cwd(), "LINER_").LINER_DEV_SIGNING_SECRET;
     if (devSigningSecret) process.env.LINER_DEV_SIGNING_SECRET = devSigningSecret;
@@ -23,6 +24,14 @@ export default defineConfig(({ command, mode }) => {
     electron({
       main: {
         entry: "electron/main.ts",
+        vite: {
+          define: {
+            __LASTFM_CREDENTIALS__: JSON.stringify({
+              apiKey: lastfmEnv.LASTFM_API_KEY || "",
+              secret: lastfmEnv.LASTFM_API_SECRET || "",
+            }),
+          },
+        },
       },
       preload: {
         input: "electron/preload.ts",
