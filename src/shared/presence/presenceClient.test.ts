@@ -39,6 +39,7 @@ describe("PresenceClient", () => {
     expect(init.method).toBe("POST");
     expect(init.headers.authorization).toBe("Bearer test-valid-jwt-token");
     expect(JSON.parse(init.body).username).toBe("alice");
+    expect(JSON.parse(init.body)).not.toHaveProperty("email");
 
     expect(client.getIntervalMs()).toBe(60_000);
     client.stop();

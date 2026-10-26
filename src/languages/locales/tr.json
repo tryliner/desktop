@@ -381,6 +381,8 @@
     "track_unavailable": "\"{title}\" kullanılamıyor, atlanıyor...",
     "track_unavailable_title": "Parça kullanılamıyor",
     "playback_stopped_too_many_errors": "Çalma durduruldu: çok fazla parça yüklenemedi.",
+    "youtube_refused_title": "YouTube bu bağlantıyı reddediyor",
+    "youtube_refused_description": "YouTube sesi bu ağda engelleniyor. VPN'i veya proxy'yi kapatın ya da başka bir bağlantı deneyin.",
     "speed_pitch": "Hız ve Perde",
     "speed": "Hız",
     "pitch": "Perde",

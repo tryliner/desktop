@@ -1,6 +1,6 @@
 import { app, BrowserWindow, ipcMain, net, safeStorage, type IpcMainEvent, type IpcMainInvokeEvent } from "electron";
 import path from "node:path";
-import { AuthSessionStore } from "./auth-session-store.js";
+import { AuthSessionStore, type AuthSessionStoreDeps, type SessionCipher } from "./auth-session-store.js";
 import { signRequest, syncServerTime } from "./crypto.js";
 
 function signedRequestHeaders(method: string, path: string, body: string): Record<string, string> {
@@ -34,20 +34,28 @@ function fromApp(event: IpcMainEvent | IpcMainInvokeEvent): boolean {
 }
 
 export function registerAuthSessionIpc(): AuthSessionStore {
+  const cipher: SessionCipher = {
+    available: () => safeStorage.isEncryptionAvailable(),
+    encrypt: (plain) => safeStorage.encryptString(plain),
+    decrypt: (data) => safeStorage.decryptString(data),
+  };
+  const deps: AuthSessionStoreDeps = {
+    fetch: (url, init) => net.fetch(url, init),
+    syncClock: (dateHeader) => {
+      syncServerTime(dateHeader);
+    },
+    signHeaders: signedRequestHeaders,
+  };
   const store = new AuthSessionStore(
     path.join(app.getPath("userData"), "auth", "session.json"),
-    {
-      available: () => safeStorage.isEncryptionAvailable(),
-      encrypt: (plain) => safeStorage.encryptString(plain),
-      decrypt: (data) => safeStorage.decryptString(data),
-    },
-    {
-      fetch: (url, init) => net.fetch(url, init),
-      syncClock: (dateHeader) => {
-        syncServerTime(dateHeader);
-      },
-      signHeaders: signedRequestHeaders,
-    },
+    cipher,
+    deps,
+  );
+  // youtube account tokens reuse the encrypted file only; their refresh stays in the renderer
+  const youtubeStore = new AuthSessionStore(
+    path.join(app.getPath("userData"), "auth", "youtube-session.json"),
+    cipher,
+    deps,
   );
 
   store.onChange((session, origin) => {
@@ -77,6 +85,15 @@ export function registerAuthSessionIpc(): AuthSessionStore {
       return store.refresh(apiBaseUrl, refreshToken, event.sender.id);
     },
   );
+
+  ipcMain.on("youtube-auth:get-session", (event) => {
+    event.returnValue = fromApp(event) ? youtubeStore.get() : null;
+  });
+
+  ipcMain.handle("youtube-auth:set-session", (event, next: unknown) => {
+    if (!fromApp(event)) return null;
+    return youtubeStore.set(next);
+  });
 
   return store;
 }

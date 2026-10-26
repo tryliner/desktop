@@ -81,8 +81,8 @@ export class PresenceClient {
         method: "POST",
         headers: { "content-type": "application/json", authorization: `Bearer ${accessToken}` },
         body: JSON.stringify({
+          // no email: the bearer token already says who this is, the address has no reason to travel every minute
           username: session.user?.username,
-          email: session.user?.email,
           displayName: session.user?.displayName,
           clientVersion: APP_VERSION,
           platform: getPlatform(),

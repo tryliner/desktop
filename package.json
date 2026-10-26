@@ -27,7 +27,7 @@
     "electron:build:linux": "tsc -b && vite build && electron-builder --linux",
     "electron:build:win": "pnpm native:build && tsc -b && vite build && electron-builder --win",
     "electron:build:mac": "tsc -b && vite build && electron-builder --mac",
-    "native:build": "pnpm dlx node-gyp@12 rebuild --directory native/snap-preview && node scripts/verify-native-addon.cjs"
+    "native:build": "node scripts/build-native-addon.cjs"
   },
   "build": {
     "appId": "com.hkamori.liner",

@@ -381,6 +381,8 @@
     "track_unavailable": "\"{title}\" non è disponibile, lo salto...",
     "track_unavailable_title": "Brano non disponibile",
     "playback_stopped_too_many_errors": "Riproduzione interrotta: non è stato possibile caricare troppi brani.",
+    "youtube_refused_title": "YouTube rifiuta questa connessione",
+    "youtube_refused_description": "L'audio di YouTube è bloccato su questa rete. Disattiva VPN o proxy, oppure prova un'altra connessione.",
     "speed_pitch": "Velocità e tonalità",
     "speed": "Velocità",
     "pitch": "Tonalità",

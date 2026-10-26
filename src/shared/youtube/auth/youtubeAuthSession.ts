@@ -20,11 +20,20 @@ const TERMINAL_REFRESH_ERRORS = new Set([
   "unauthorized_client",
 ]);
 
+type MainYoutubeAuthBridge = NonNullable<
+  NonNullable<Window["linerElectron"]>["youtubeAuthSession"]
+>;
+
 let session: YoutubeAuthTokens | null | undefined;
 let pageId: string | null | undefined;
 let pendingRefresh: Promise<YoutubeAuthTokens | null> | null = null;
 
-function load(): YoutubeAuthTokens | null {
+function mainBridge(): MainYoutubeAuthBridge | null {
+  if (typeof window === "undefined") return null;
+  return window.linerElectron?.youtubeAuthSession ?? null;
+}
+
+function readLocal(): YoutubeAuthTokens | null {
   try {
     const raw = globalThis.localStorage?.getItem(STORAGE_KEY);
     return raw ? (JSON.parse(raw) as YoutubeAuthTokens) : null;
@@ -37,14 +46,55 @@ function notifyChanged(): void {
   globalThis.dispatchEvent?.(new Event("youtube-auth:changed"));
 }
 
+function dropLocal(): void {
+  try {
+    globalThis.localStorage?.removeItem(STORAGE_KEY);
+  } catch {}
+}
+
+function load(): YoutubeAuthTokens | null {
+  const bridge = mainBridge();
+  if (!bridge) return readLocal();
+  let stored: YoutubeAuthTokens | null = null;
+  try {
+    stored = bridge.get() as YoutubeAuthTokens | null;
+  } catch (err) {
+    console.error("[YouTube] reading the stored session failed:", err);
+  }
+  // older builds kept the tokens in plain localStorage: move them to main once
+  const legacy = readLocal();
+  if (legacy) {
+    dropLocal();
+    if (!stored && legacy.refreshToken) {
+      void bridge
+        .set(legacy)
+        .catch((err) =>
+          console.error("[YouTube] saving the session failed:", err),
+        );
+      stored = legacy;
+    }
+  }
+  return stored;
+}
+
 function save(next: YoutubeAuthTokens | null): void {
   session = next;
-  try {
-    if (next)
-      globalThis.localStorage?.setItem(STORAGE_KEY, JSON.stringify(next));
-    else globalThis.localStorage?.removeItem(STORAGE_KEY);
-  } catch {
-    return;
+  const bridge = mainBridge();
+  if (bridge) {
+    dropLocal();
+    void bridge
+      .set(next)
+      .catch((err) =>
+        console.error("[YouTube] saving the session failed:", err),
+      );
+  } else {
+    try {
+      if (next)
+        globalThis.localStorage?.setItem(STORAGE_KEY, JSON.stringify(next));
+      else globalThis.localStorage?.removeItem(STORAGE_KEY);
+    } catch {
+      return;
+    }
   }
   notifyChanged();
 }

@@ -383,6 +383,8 @@
     "track_unavailable": "\"{title}\" no está disponible, pasando a la siguiente...",
     "track_unavailable_title": "Canción no disponible",
     "playback_stopped_too_many_errors": "Reproducción detenida: demasiadas canciones fallaron al cargar.",
+    "youtube_refused_title": "YouTube rechaza esta conexión",
+    "youtube_refused_description": "El audio de YouTube está bloqueado en esta red. Desactiva tu VPN o proxy, o prueba otra conexión.",
     "speed_pitch": "Velocidad y tono",
     "speed": "Velocidad",
     "pitch": "Tono",

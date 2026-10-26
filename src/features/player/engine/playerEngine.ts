@@ -33,6 +33,7 @@ import { debouncedStorage } from "@/shared/utils/storage";
 import { showToast } from "@/shared/ui";
 import { createTranslatorSync, getStoredLocale } from "@/languages";
 import type { Track } from "@/shared/types";
+import { STREAMS_REFUSED_MESSAGE } from "@/shared/youtube";
 
 const MAX_CONSECUTIVE_AUTO_SKIPS = 3;
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
@@ -1043,6 +1044,11 @@ class PlayerEngine {
 
     const track = store.currentTrack;
     const translate = createTranslatorSync(getStoredLocale());
+    // youtube refusing every stream is about the connection (vpn, proxy, flagged ip), not this track
+    const refused = info.message.startsWith(STREAMS_REFUSED_MESSAGE);
+    const refusedToast = {
+      description: translate("player.youtube_refused_description"),
+    };
     this.consecutiveAutoSkips += 1;
 
     if (this.consecutiveAutoSkips > MAX_CONSECUTIVE_AUTO_SKIPS) {
@@ -1051,7 +1057,14 @@ class PlayerEngine {
         "playback",
         `${this.consecutiveAutoSkips} consecutive tracks failed to play — stopping instead of skipping further`,
       );
-      showToast(translate("player.playback_stopped_too_many_errors"), "error");
+      if (refused)
+        showToast(
+          translate("player.youtube_refused_title"),
+          "error",
+          refusedToast,
+        );
+      else
+        showToast(translate("player.playback_stopped_too_many_errors"), "error");
       this.consecutiveAutoSkips = 0;
       this.stopPlayback();
       store.setStatus("idle");
@@ -1067,11 +1080,14 @@ class PlayerEngine {
       "playback",
       `"${track.title}" failed (${info.message}) — skipping to next`,
     );
-    showToast(translate("player.track_unavailable_title"), "error", {
-      description: track.artists
-        ? `${track.title} — ${track.artists}`
-        : track.title,
-    });
+    if (refused)
+      showToast(translate("player.youtube_refused_title"), "error", refusedToast);
+    else
+      showToast(translate("player.track_unavailable_title"), "error", {
+        description: track.artists
+          ? `${track.title} — ${track.artists}`
+          : track.title,
+      });
     void this.skipNext(false);
   }
 

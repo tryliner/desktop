@@ -386,6 +386,8 @@
     "track_unavailable": "„{title}“ ist nicht verfügbar und wird übersprungen…",
     "track_unavailable_title": "Titel nicht verfügbar",
     "playback_stopped_too_many_errors": "Wiedergabe gestoppt – zu viele Titel konnten nicht geladen werden.",
+    "youtube_refused_title": "YouTube lehnt diese Verbindung ab",
+    "youtube_refused_description": "Audio von YouTube ist in diesem Netzwerk blockiert. Schalte VPN oder Proxy aus oder nutze eine andere Verbindung.",
     "speed_pitch": "Tempo & Tonhöhe",
     "speed": "Tempo",
     "pitch": "Tonhöhe",

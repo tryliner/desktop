@@ -385,6 +385,8 @@
     "track_unavailable": "„{title}” jest niedostępny, pomijam...",
     "track_unavailable_title": "Utwór niedostępny",
     "playback_stopped_too_many_errors": "Odtwarzanie zatrzymane: zbyt wielu utworów nie udało się wczytać.",
+    "youtube_refused_title": "YouTube odrzuca to połączenie",
+    "youtube_refused_description": "Dźwięk z YouTube jest zablokowany w tej sieci. Wyłącz VPN lub proxy albo spróbuj innego połączenia.",
     "speed_pitch": "Tempo i wysokość",
     "speed": "Tempo",
     "pitch": "Wysokość",

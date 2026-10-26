@@ -11,8 +11,14 @@ let activeF11Count = 0;
 let activeWindowStateInstances = 0;
 
 const handlePreventF11 = (e: KeyboardEvent) => {
-  if (e.key === "F11") {
-    e.preventDefault();
+  if (e.key !== "F11") return;
+  // Chromium's own F11 binding fullscreens the window outside our state sync,
+  // so it stays swallowed on every platform. Linux gets the standard desktop
+  // behavior wired back through the same IPC the window controls use.
+  e.preventDefault();
+  if (e.repeat) return;
+  if (window.linerElectron?.platform === "linux") {
+    void window.linerElectron.toggleFullScreen?.();
   }
 };
 

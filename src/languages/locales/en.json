@@ -388,6 +388,8 @@
     "track_unavailable": "\"{title}\" is unavailable, skipping...",
     "track_unavailable_title": "Track unavailable",
     "playback_stopped_too_many_errors": "Playback stopped — too many tracks failed to load.",
+    "youtube_refused_title": "YouTube is refusing this connection",
+    "youtube_refused_description": "Audio from YouTube is blocked on this network. Turn off your VPN or proxy, or try another connection.",
     "speed_pitch": "Speed & Pitch",
     "speed": "Speed",
     "pitch": "Pitch",

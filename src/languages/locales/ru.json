@@ -383,6 +383,8 @@
     "track_unavailable": "«{title}» недоступен, пропускаем...",
     "track_unavailable_title": "Трек недоступен",
     "playback_stopped_too_many_errors": "Воспроизведение остановлено — слишком много треков не удалось загрузить.",
+    "youtube_refused_title": "YouTube отклоняет это подключение",
+    "youtube_refused_description": "Аудио YouTube заблокировано в этой сети. Отключите VPN или прокси либо попробуйте другое подключение.",
     "speed_pitch": "Скорость и тональность",
     "speed": "Скорость",
     "pitch": "Питч",

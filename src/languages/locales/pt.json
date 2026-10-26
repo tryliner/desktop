@@ -392,6 +392,8 @@
     "track_unavailable": "«{title}» está indisponível, pulando...",
     "track_unavailable_title": "Faixa indisponível",
     "playback_stopped_too_many_errors": "Reprodução interrompida — muitas faixas falharam ao carregar.",
+    "youtube_refused_title": "O YouTube está recusando esta conexão",
+    "youtube_refused_description": "O áudio do YouTube está bloqueado nesta rede. Desative sua VPN ou proxy, ou tente outra conexão.",
     "speed_pitch": "Velocidade e Tom",
     "speed": "Velocidade",
     "pitch": "Tom",

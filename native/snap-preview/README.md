@@ -18,3 +18,7 @@ and a Windows 10/11 SDK.
 
 Output: `native/snap-preview/build/Release/snap_preview.node`. If it is missing or
 fails to load, the app falls back to a simpler preview (see `electron/snap-native.ts`).
+
+Without the C++ tools, `pnpm native:build` (and so `pnpm electron:build:win`) only
+warns and goes on without the add-on. In CI (`CI` set, as on GitHub Actions) a failed
+build stops the release.

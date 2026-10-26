@@ -383,6 +383,8 @@
     "track_unavailable": "« {title} » est indisponible, passage au suivant...",
     "track_unavailable_title": "Titre indisponible",
     "playback_stopped_too_many_errors": "Lecture arrêtée : trop de titres n'ont pas pu être chargés.",
+    "youtube_refused_title": "YouTube refuse cette connexion",
+    "youtube_refused_description": "L'audio de YouTube est bloqué sur ce réseau. Désactivez votre VPN ou proxy, ou essayez une autre connexion.",
     "speed_pitch": "Vitesse et tonalité",
     "speed": "Vitesse",
     "pitch": "Tonalité",

@@ -113,3 +113,22 @@ export function cubicBezier(x1: number, y1: number, x2: number, y2: number): (t:
     return sampleY(u);
   };
 }
+
+export function minimumSizeFor(
+  preferred: { width: number; height: number },
+  area: Rect,
+): { width: number; height: number } {
+  return {
+    width: Math.max(1, Math.min(preferred.width, area.width)),
+    height: Math.max(1, Math.min(preferred.height, area.height)),
+  };
+}
+
+export function clampResizeToArea(rect: Rect, area: Rect): Rect {
+  const left = Math.max(rect.x, area.x);
+  const top = Math.max(rect.y, area.y);
+  const right = Math.min(rect.x + rect.width, area.x + area.width);
+  const bottom = Math.min(rect.y + rect.height, area.y + area.height);
+  if (right <= left || bottom <= top) return rect;
+  return { x: left, y: top, width: right - left, height: bottom - top };
+}

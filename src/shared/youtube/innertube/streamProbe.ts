@@ -1,6 +1,16 @@
 import { InnertubeError } from "./innertubeClient";
 
 const PROBE_OFFSET = 1_048_576 + 4096;
+const REJECTED_PREFIX = "stream url rejected with";
+
+/** googlevideo answered 403 to a stream url it handed out: the network is refused, not the track */
+export function isStreamRefused(error: unknown): boolean {
+  return (
+    error instanceof InnertubeError &&
+    error.status === 403 &&
+    error.message.startsWith(REJECTED_PREFIX)
+  );
+}
 
 export async function assertStreamReachable(
   url: string,
@@ -15,7 +25,7 @@ export async function assertStreamReachable(
   await response.body?.cancel().catch(() => undefined);
   if (!response.ok)
     throw new InnertubeError(
-      `stream url rejected with ${response.status}`,
+      `${REJECTED_PREFIX} ${response.status}`,
       response.status,
     );
 }

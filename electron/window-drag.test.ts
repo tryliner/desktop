@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { computeDragBounds, cubicBezier, isInTopSnapZone, lerpEdges, restoreUnderCursor, toEdges } from "./window-drag";
+import { clampResizeToArea, computeDragBounds, cubicBezier, isInTopSnapZone, lerpEdges, minimumSizeFor, restoreUnderCursor, toEdges } from "./window-drag";
 
 describe("computeDragBounds", () => {
   const start = { x: 100, y: 50, width: 1200, height: 780 };
@@ -93,5 +93,32 @@ describe("snap preview geometry", () => {
       if (t < 1) expect(v).toBeGreaterThan(t);
       prev = v;
     }
+  });
+});
+
+describe("minimumSizeFor", () => {
+  it("keeps the normal minimum on a big screen", () => {
+    expect(minimumSizeFor({ width: 1100, height: 705 }, { x: 0, y: 0, width: 1920, height: 1032 })).toEqual({ width: 1100, height: 705 });
+  });
+
+  it("shrinks to the visible area of a small scaled laptop screen", () => {
+    expect(minimumSizeFor({ width: 1100, height: 705 }, { x: 0, y: 0, width: 1093, height: 574 })).toEqual({ width: 1093, height: 574 });
+  });
+});
+
+describe("clampResizeToArea", () => {
+  const area = { x: 0, y: 0, width: 1366, height: 720 };
+
+  it("pulls a bottom edge dragged under the taskbar back up", () => {
+    expect(clampResizeToArea({ x: 100, y: 50, width: 1100, height: 760 }, area)).toEqual({ x: 100, y: 50, width: 1100, height: 670 });
+  });
+
+  it("trims edges dragged past the left and top", () => {
+    expect(clampResizeToArea({ x: -40, y: -20, width: 1200, height: 700 }, area)).toEqual({ x: 0, y: 0, width: 1160, height: 680 });
+  });
+
+  it("leaves a window that already fits alone", () => {
+    const rect = { x: 120, y: 10, width: 1100, height: 705 };
+    expect(clampResizeToArea(rect, area)).toEqual(rect);
   });
 });

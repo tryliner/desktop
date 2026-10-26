@@ -57,11 +57,13 @@ import { detectCompositor } from "./compositor/index.js";
 import { BundleManager } from "./bundle-manager.js";
 import { createBundleErrorStamp } from "./bundle-stamp.js";
 import { createSleepBlocker } from "./sleep-blocker.js";
-import { withOpenCors } from "./cors.js";
+import { needsOpenCors, withOpenCors } from "./cors.js";
 import { createShutdown } from "./shutdown.js";
 import {
+  clampResizeToArea,
   computeDragBounds,
   isInTopSnapZone,
+  minimumSizeFor,
   restoreUnderCursor,
 } from "./window-drag.js";
 import {
@@ -277,6 +279,54 @@ function createWindow() {
   mainWindow.on("leave-full-screen", onMaximizeStateChanged);
   // transparent windows "maximize" by filling the work area, so catch it on resize too
   mainWindow.on("resize", syncResizable);
+
+  const fitMinimumToDisplay = () => {
+    if (!mainWindow || mainWindow.isDestroyed()) return;
+    const area = screen.getDisplayMatching(mainWindow.getBounds()).workArea;
+    const min = minimumSizeFor(
+      { width: MIN_WINDOW_WIDTH, height: MIN_WINDOW_HEIGHT },
+      area,
+    );
+    const [width, height] = mainWindow.getMinimumSize();
+    if (width !== min.width || height !== min.height) {
+      mainWindow.setMinimumSize(min.width, min.height);
+    }
+  };
+
+  const keepInsideWorkArea = () => {
+    if (
+      !mainWindow ||
+      mainWindow.isDestroyed() ||
+      mainWindow.isMaximized() ||
+      mainWindow.isFullScreen()
+    ) {
+      return;
+    }
+    fitMinimumToDisplay();
+    const bounds = mainWindow.getBounds();
+    const area = screen.getDisplayMatching(bounds).workArea;
+    const next = clampResizeToArea(bounds, area);
+    if (
+      next.x !== bounds.x ||
+      next.y !== bounds.y ||
+      next.width !== bounds.width ||
+      next.height !== bounds.height
+    ) {
+      mainWindow.setBounds(next);
+    }
+  };
+
+  mainWindow.on("resized", keepInsideWorkArea);
+  mainWindow.on("moved", fitMinimumToDisplay);
+  screen.on("display-metrics-changed", fitMinimumToDisplay);
+  screen.on("display-added", fitMinimumToDisplay);
+  screen.on("display-removed", fitMinimumToDisplay);
+  mainWindow.once("closed", () => {
+    screen.off("display-metrics-changed", fitMinimumToDisplay);
+    screen.off("display-added", fitMinimumToDisplay);
+    screen.off("display-removed", fitMinimumToDisplay);
+  });
+  keepInsideWorkArea();
   mainWindow.on("minimize", () => {
     broadcastWindowState();
     if (!mainWindow || mainWindow.isDestroyed()) return;
@@ -779,8 +829,14 @@ if (!gotTheLock) {
       },
     );
 
+    // other hosts keep their own cors headers. dev builds also talk to a
+    // local api (see .env.example)
     session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
-      callback(withOpenCors(details.responseHeaders, details.method));
+      callback(
+        needsOpenCors(details.url, !app.isPackaged)
+          ? withOpenCors(details.responseHeaders, details.method)
+          : {},
+      );
     });
 
     let lastSavedExportPath: string | null = null;

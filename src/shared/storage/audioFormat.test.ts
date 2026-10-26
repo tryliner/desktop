@@ -17,4 +17,17 @@ describe("isStandaloneAudioFile", () => {
     expect(isStandaloneAudioFile(bytes("<!DOCTYPE html>"))).toBe(false);
     expect(isStandaloneAudioFile(new Uint8Array([0x1a, 0x45]))).toBe(false);
   });
+
+  it("accepts real mpeg audio frame headers", () => {
+    expect(isStandaloneAudioFile(bytes([0xff, 0xfb, 0x90, 0x64]))).toBe(true); // mpeg-1 layer iii, 128 kbps, 44.1 khz
+    expect(isStandaloneAudioFile(bytes([0xff, 0xf3, 0x64, 0xc4]))).toBe(true); // mpeg-2 layer iii
+  });
+
+  it("rejects buffers that only look like an mpeg frame sync", () => {
+    expect(isStandaloneAudioFile(bytes([0xff, 0xff, 0xff, 0xff]))).toBe(false); // bad bitrate index
+    expect(isStandaloneAudioFile(bytes([0xff, 0xeb, 0x90, 0x64]))).toBe(false); // reserved version
+    expect(isStandaloneAudioFile(bytes([0xff, 0xf9, 0x90, 0x64]))).toBe(false); // reserved layer
+    expect(isStandaloneAudioFile(bytes([0xff, 0xfb, 0x9c, 0x64]))).toBe(false); // reserved sample rate
+    expect(isStandaloneAudioFile(bytes([0xff, 0x00, 0x90, 0x64]))).toBe(false); // no frame sync
+  });
 });
