@@ -458,7 +458,8 @@
       "overlay": "Superposición",
       "discord": "Discord RPC",
       "privacy": "Privacidad",
-      "shortcuts": "Atajos"
+      "shortcuts": "Atajos",
+      "customization": "Personalización"
     },
     "playback": {
       "description": "Comportamiento de la cola, acciones de clic y salida de audio."
@@ -647,7 +648,8 @@
       "description": "Elige la apariencia general de la aplicación.",
       "light": "Claro",
       "dark": "Oscuro",
-      "system": "Sistema"
+      "system": "Sistema",
+      "disabled_for_glass": "El tema claro se desactiva cuando se usa el fondo personalizado con efecto cristal."
     },
     "branding": {
       "title": "Color de énfasis",
@@ -827,9 +829,48 @@
       "scope_overlay": "Superposición",
       "reset_section": "Restablecer sección"
     },
+    "customization": {
+      "description": "Fondo de pantalla de la ventana, transparencia y efectos de desenfoque.",
+      "apply_to_overlay": "Aplicar al mini reproductor flotante",
+      "apply_to_overlay_desc": "Muestra el fondo personalizado y estilo cristal en el reproductor flotante.",
+      "dark_theme_only": "La personalización solo está disponible en el tema oscuro",
+      "wallpaper_title": "Fondo de la ventana",
+      "wallpaper_description": "Establece una imagen o GIF animado personalizado como fondo completo de la ventana.",
+      "upload_title": "Selecciona una imagen o GIF animado",
+      "upload_hint": "PNG, JPEG, GIF, WebP (hasta 30MB)",
+      "change_button": "Cambiar",
+      "remove_button": "Quitar",
+      "wallpaper_blur": "Desenfoque del fondo",
+      "wallpaper_dim": "Oscurecimiento del fondo",
+      "blocks_title": "Efecto cristal en bloques de interfaz",
+      "blocks_description": "Ajusta la transparencia, desenfoque de fondo y oscurecimiento para cada área.",
+      "block_sidebar": "Barra lateral",
+      "block_content": "Vista de contenido",
+      "block_miniplayer": "Mini reproductor",
+      "opacity": "Opacidad (transparencia)",
+      "opacity_desc": "Nivel de opacidad del fondo (mín. 25%)",
+      "blur": "Desenfoque de fondo",
+      "blur_desc": "Intensidad del efecto de cristal esmerilado",
+      "dim": "Oscurecimiento",
+      "dim_desc": "Capa oscura para mejorar la legibilidad",
+      "apply_all": "A todos",
+      "apply_all_title": "Aplicar ajustes a todos los bloques",
+      "applied_to_all": "Ajustes aplicados a todos los bloques",
+      "reset_block": "Restablecer",
+      "block_reset": "Ajustes de bloque restablecidos",
+      "reset_all": "Restablecer toda la personalización",
+      "reset_all_desc": "Restaura la apariencia predeterminada, borra la imagen de fondo y los efectos de cristal.",
+      "all_reset": "Toda la personalización ha sido restablecida",
+      "applied": "Fondo de pantalla aplicado",
+      "removed": "Fondo de pantalla quitado",
+      "invalid_file_type": "Por favor, selecciona un archivo de imagen o GIF válido",
+      "file_too_large": "El tamaño del archivo debe ser inferior a 30 MB",
+      "read_error": "Error al leer el archivo de imagen"
+    },
     "cover_glow": {
       "title": "Brillo de portada",
       "description": "Brillo difuminado de la portada tras las páginas. Desactívalo para un fondo liso.",
+      "disabled_for_wallpaper": "Desactivado mientras haya un fondo de pantalla personalizado.",
       "disabled_for_light": "Desactivado en el tema claro."
     }
   },

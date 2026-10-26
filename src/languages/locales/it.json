@@ -454,7 +454,8 @@
       "playback": "Riproduzione",
       "shortcuts": "Scorciatoie",
       "overlay": "Overlay",
-      "privacy": "Privacy"
+      "privacy": "Privacy",
+      "customization": "Personalizzazione"
     },
     "playback": {
       "description": "Comportamento della coda, azioni al clic e uscita audio."
@@ -649,7 +650,8 @@
       "description": "Scegli l'aspetto generale dell'app.",
       "light": "Chiaro",
       "dark": "Scuro",
-      "system": "Sistema"
+      "system": "Sistema",
+      "disabled_for_glass": "Il tema chiaro è disattivato quando usi l'effetto vetro con uno sfondo personalizzato."
     },
     "branding": {
       "title": "Branding",
@@ -773,9 +775,48 @@
     "connection": {
       "open_folder": "Apri la posizione di salvataggio"
     },
+    "customization": {
+      "description": "Sfondo della finestra, trasparenza ed effetti di sfocatura dei blocchi.",
+      "apply_to_overlay": "Applica al mini player in overlay",
+      "apply_to_overlay_desc": "Usa lo sfondo personalizzato e l'effetto vetro anche sul mini player mobile.",
+      "dark_theme_only": "La personalizzazione è disponibile solo con il tema scuro",
+      "wallpaper_title": "Sfondo della finestra",
+      "wallpaper_description": "Imposta un'immagine o una GIF animata personalizzata come sfondo dell'intera finestra.",
+      "upload_title": "Seleziona un'immagine o una GIF animata",
+      "upload_hint": "PNG, JPEG, GIF, WebP (fino a 30 MB)",
+      "change_button": "Cambia",
+      "remove_button": "Rimuovi",
+      "wallpaper_blur": "Sfocatura dello sfondo",
+      "wallpaper_dim": "Oscuramento dello sfondo",
+      "blocks_title": "Effetto vetro dei blocchi dell'interfaccia",
+      "blocks_description": "Regola trasparenza, sfocatura dello sfondo e oscuramento per ogni area dell'interfaccia.",
+      "block_sidebar": "Barra laterale",
+      "block_content": "Area dei contenuti",
+      "block_miniplayer": "Miniplayer",
+      "opacity": "Opacità (trasparenza)",
+      "opacity_desc": "Livello di opacità dello sfondo (min. 25%)",
+      "blur": "Sfocatura dello sfondo",
+      "blur_desc": "Intensità della sfocatura effetto vetro smerigliato",
+      "dim": "Oscuramento",
+      "dim_desc": "Velo scuro per una migliore leggibilità",
+      "apply_all": "A tutti",
+      "apply_all_title": "Applica le impostazioni a tutti i blocchi",
+      "applied_to_all": "Impostazioni applicate a tutti i blocchi",
+      "reset_block": "Ripristina",
+      "block_reset": "Impostazioni del blocco ripristinate",
+      "reset_all": "Ripristina tutta la personalizzazione",
+      "reset_all_desc": "Ripristina l'aspetto predefinito, rimuovi l'immagine di sfondo e gli effetti vetro dei blocchi.",
+      "all_reset": "Personalizzazione ripristinata",
+      "applied": "Sfondo applicato",
+      "removed": "Sfondo rimosso",
+      "invalid_file_type": "Seleziona un file immagine o GIF",
+      "file_too_large": "Il file deve essere inferiore a 30 MB",
+      "read_error": "Impossibile leggere il file immagine"
+    },
     "cover_glow": {
       "title": "Bagliore copertina",
       "description": "Bagliore sfocato della copertina dietro le pagine. Disattiva per uno sfondo semplice.",
+      "disabled_for_wallpaper": "Disattivato finché è impostato uno sfondo personalizzato.",
       "disabled_for_light": "Disattivato nel tema chiaro."
     }
   },

@@ -458,7 +458,8 @@
       "playback": "Odtwarzanie",
       "shortcuts": "Skróty",
       "overlay": "Nakładka",
-      "privacy": "Prywatność"
+      "privacy": "Prywatność",
+      "customization": "Personalizacja"
     },
     "playback": {
       "description": "Działanie kolejki, akcje po kliknięciu i wyjście audio."
@@ -653,7 +654,8 @@
       "description": "Wybierz ogólny wygląd aplikacji.",
       "light": "Jasny",
       "dark": "Ciemny",
-      "system": "Systemowy"
+      "system": "Systemowy",
+      "disabled_for_glass": "Jasny motyw jest wyłączony przy efekcie szkła z własną tapetą."
     },
     "branding": {
       "title": "Logo",
@@ -777,9 +779,48 @@
     "connection": {
       "open_folder": "Otwórz lokalizację zapisu"
     },
+    "customization": {
+      "description": "Tapeta okna, przezroczystość i rozmycie bloków.",
+      "apply_to_overlay": "Zastosuj do miniodtwarzacza w nakładce",
+      "apply_to_overlay_desc": "Używa własnego tła i efektu szkła także w pływającym miniodtwarzaczu.",
+      "dark_theme_only": "Personalizacja jest dostępna tylko w ciemnym motywie",
+      "wallpaper_title": "Tapeta okna",
+      "wallpaper_description": "Ustaw własny obraz lub animowany GIF jako tło całego okna.",
+      "upload_title": "Wybierz obraz lub animowany GIF",
+      "upload_hint": "PNG, JPEG, GIF, WebP (do 30 MB)",
+      "change_button": "Zmień",
+      "remove_button": "Usuń",
+      "wallpaper_blur": "Rozmycie tapety",
+      "wallpaper_dim": "Przyciemnienie tapety",
+      "blocks_title": "Efekt szkła bloków interfejsu",
+      "blocks_description": "Dostosuj przezroczystość, rozmycie tła i przyciemnienie każdego obszaru interfejsu.",
+      "block_sidebar": "Pasek boczny",
+      "block_content": "Obszar treści",
+      "block_miniplayer": "Miniodtwarzacz",
+      "opacity": "Krycie (przezroczystość)",
+      "opacity_desc": "Poziom krycia tła (min. 25%)",
+      "blur": "Rozmycie tła",
+      "blur_desc": "Siła efektu matowego szkła",
+      "dim": "Przyciemnienie",
+      "dim_desc": "Ciemna warstwa dla lepszej czytelności",
+      "apply_all": "Do wszystkich",
+      "apply_all_title": "Zastosuj ustawienia do wszystkich bloków",
+      "applied_to_all": "Zastosowano ustawienia do wszystkich bloków",
+      "reset_block": "Resetuj",
+      "block_reset": "Zresetowano ustawienia bloku",
+      "reset_all": "Resetuj całą personalizację",
+      "reset_all_desc": "Przywraca domyślny wygląd, usuwa obraz tła i efekty szkła bloków.",
+      "all_reset": "Zresetowano całą personalizację",
+      "applied": "Zastosowano tapetę",
+      "removed": "Usunięto tapetę",
+      "invalid_file_type": "Wybierz plik obrazu lub GIF",
+      "file_too_large": "Plik musi mieć mniej niż 30 MB",
+      "read_error": "Nie udało się odczytać pliku obrazu"
+    },
     "cover_glow": {
       "title": "Poświata okładki",
       "description": "Rozmyta poświata okładki za stronami. Wyłącz, aby zostawić jednolite tło.",
+      "disabled_for_wallpaper": "Wyłączone, gdy ustawiona jest własna tapeta.",
       "disabled_for_light": "Wyłączone w jasnym motywie."
     }
   },

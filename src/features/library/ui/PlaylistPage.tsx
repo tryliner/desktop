@@ -24,7 +24,10 @@ import {
   HERO_GLASS_CLASS,
 } from "@/shared/ui";
 import { usePageBackdrop } from "@/shared/lib";
-import { useClassicSurfaces } from "@/features/settings/store/customizationStore";
+import {
+  useClassicSurfaces,
+  useHasCustomBackground,
+} from "@/features/settings/store/customizationStore";
 import { useLikesCover } from "../hooks/useLikesCover";
 import { useAuthStore } from "@/features/auth";
 import { userDisplayName } from "@/entities/user";
@@ -183,6 +186,7 @@ function LibraryPlaylistContent() {
   })();
   const likesCover = useLikesCover();
   const classicSurfaces = useClassicSurfaces();
+  const hasCustomBg = useHasCustomBackground();
   usePageBackdrop(
     isLikesMode ? likesCover : (viewData?.coverUrls?.[0] ?? viewData?.coverUrl),
     { dim: 0.05 },
@@ -778,7 +782,7 @@ function LibraryPlaylistContent() {
 
               <div
                 className={`grow shrink-0 mt-[20px] mx-[4px] rounded-t-[14px] bg-black/[0.03] dark:bg-white/[0.04] overflow-hidden px-[8px] pt-[8px] ${
-                  classicSurfaces ? "" : "backdrop-blur-xl"
+                  classicSurfaces || hasCustomBg ? "" : "backdrop-blur-xl"
                 }`}
                 style={{
                   marginBottom: "calc(var(--page-inset-bottom) * -1)",

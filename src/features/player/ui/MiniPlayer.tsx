@@ -39,7 +39,11 @@ import { SpeedPitchPicker } from "./SpeedPitchPicker";
 import { TimelineSlider } from "./TimelineSlider";
 import { useTheme } from "next-themes";
 import { useCoverReady, CoverImage } from "@/features/covers";
-import { useHasPageBackdrop } from "@/features/settings/store/customizationStore";
+import {
+  useBlockCustomizationStyle,
+  useHasCustomBackground,
+  useHasPageBackdrop,
+} from "@/features/settings/store/customizationStore";
 import { ArtistLink } from "@/features/artist";
 
 function rgbToHsl(r: number, g: number, b: number): [number, number, number] {
@@ -210,6 +214,8 @@ function MiniPlayer({
   const player = usePlayerState();
   const { t } = useTranslation();
   const { resolvedTheme } = useTheme();
+  const miniplayerCustomStyle = useBlockCustomizationStyle("miniplayer");
+  const hasWallpaper = useHasCustomBackground();
   const isLight = resolvedTheme
     ? resolvedTheme === "light"
     : typeof document !== "undefined" &&
@@ -430,9 +436,11 @@ function MiniPlayer({
   // progress fill sliding underneath never changes it. Values are the hover tint
   // pre-composited over the toolbox on bg-primary (dark #0a0a0a, light #f5f5f7).
   // The toolbox pill itself is the opaque bg-toolbox equivalent for the same reason.
-  const activeToggleClass = hasPageBackdrop
-    ? "!bg-black/[0.08] dark:!bg-white/[0.14] !text-text-primary"
-    : "!bg-[#dfdfe1] dark:!bg-[#292929] !text-text-primary";
+  const activeToggleClass = hasWallpaper
+    ? "!bg-white/[0.16] backdrop-blur-md backdrop-saturate-150 !text-white"
+    : hasPageBackdrop
+      ? "!bg-black/[0.08] dark:!bg-white/[0.14] !text-text-primary"
+      : "!bg-[#dfdfe1] dark:!bg-[#292929] !text-text-primary";
 
   const iconButtonClass =
     "inline-flex h-[30px] w-[30px] items-center justify-center rounded-md text-text-secondary transition-colors duration-150 hover:bg-black/[0.05] dark:hover:bg-white/[0.09] hover:text-text-primary active:scale-[0.96] border-none bg-transparent cursor-pointer";
@@ -639,6 +647,7 @@ function MiniPlayer({
                 }`
               : "rounded-3xl border-[0.5px] border-border-tertiary bg-bg-primary"
         }`}
+        style={miniplayerCustomStyle}
         onPointerDown={(e) => {
           if (e.button !== 0) return;
           const target = e.target as Element | null;
@@ -829,9 +838,11 @@ function MiniPlayer({
           >
             <div
               className={`ml-auto flex items-center gap-[2px] rounded-lg p-[3px] pointer-events-auto prevent-seek cursor-default ${
-                hasPageBackdrop
-                  ? "bg-black/[0.04] dark:bg-white/[0.06]"
-                  : "bg-[#ebebed] dark:bg-[#141414]"
+                hasWallpaper
+                  ? "bg-white/[0.1] backdrop-blur-xl backdrop-saturate-150"
+                  : hasPageBackdrop
+                    ? "bg-black/[0.04] dark:bg-white/[0.06]"
+                    : "bg-[#ebebed] dark:bg-[#141414]"
               }`}
               onPointerDown={(e) => e.stopPropagation()}
             >

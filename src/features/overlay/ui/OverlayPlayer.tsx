@@ -12,6 +12,11 @@ import CoverImage from "@/features/covers/ui/CoverImage";
 import { ScrollableText } from "@/shared/ui/ScrollableText";
 import { useDisableButtonFocus } from "@/features/navigation/hooks/useDisableButtonFocus";
 import type { OverlayAction, OverlayStatePayload } from "../contracts";
+import {
+  useCustomizationStore,
+  loadPersistedWallpaper,
+  DEFAULT_GLASS_CONFIG,
+} from "@/features/settings/store/customizationStore";
 import { useShortcutsStore, matchesShortcut } from "@/features/shortcuts";
 
 const OVERLAY_CARD_TRANSITION = {
@@ -141,6 +146,35 @@ export function OverlayPlayer() {
   const currentPosMs = interpolatedPosMs;
   const progressRatio = Math.min(1, Math.max(0, currentPosMs / durationMs));
 
+  const backgroundImage = useCustomizationStore((s) => s.backgroundImage);
+  const backgroundBlur = useCustomizationStore((s) => s.backgroundBlur);
+  const backgroundDim = useCustomizationStore((s) => s.backgroundDim);
+  const contentViewConfig = useCustomizationStore((s) => s.contentView);
+  const miniplayerConfig = useCustomizationStore((s) => s.miniplayer);
+  const hasCustomBg = Boolean(backgroundImage);
+
+  const activeBlockConfig =
+    (miniplayerConfig && (miniplayerConfig.opacity < 100 || miniplayerConfig.blur > 0 || miniplayerConfig.dim > 0))
+      ? miniplayerConfig
+      : (contentViewConfig && (contentViewConfig.opacity < 100 || contentViewConfig.blur > 0 || contentViewConfig.dim > 0))
+        ? contentViewConfig
+        : DEFAULT_GLASS_CONFIG;
+
+  const alpha = Math.min(0.85, (activeBlockConfig?.opacity ?? 70) / 100);
+  const dimAlpha = (activeBlockConfig?.dim ?? 15) / 100;
+  const blurPx = activeBlockConfig?.blur ?? 24;
+
+  const tintBackground = dimAlpha > 0
+    ? `linear-gradient(rgba(0, 0, 0, ${dimAlpha}), rgba(0, 0, 0, ${dimAlpha})), rgba(12, 12, 14, ${alpha})`
+    : `rgba(12, 12, 14, ${alpha})`;
+
+  useEffect(() => {
+    void loadPersistedWallpaper().then((img) => {
+      if (img) {
+        useCustomizationStore.setState({ backgroundImage: img });
+      }
+    });
+  }, []);
 
   // Keyboard Shortcuts (Miniplayer mode)
   useEffect(() => {
@@ -241,6 +275,29 @@ export function OverlayPlayer() {
           transformOrigin: "center center",
         }}
       >
+        {hasCustomBg && backgroundImage && (
+          <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+            <div className="absolute inset-0 bg-[#0d0d10]" />
+            <img
+              src={backgroundImage}
+              alt=""
+              className="h-full w-full object-cover select-none"
+              style={{
+                filter: backgroundBlur > 0 ? `blur(${backgroundBlur}px)` : undefined,
+                transform: backgroundBlur > 0 ? "scale(1.12)" : undefined,
+              }}
+            />
+            {backgroundDim > 0 && <div className="absolute inset-0 bg-black" style={{ opacity: backgroundDim / 100 }} />}
+            <div
+              className="absolute inset-0"
+              style={{
+                background: tintBackground,
+                backdropFilter: blurPx > 0 ? `blur(${blurPx}px)` : undefined,
+                WebkitBackdropFilter: blurPx > 0 ? `blur(${blurPx}px)` : undefined,
+              }}
+            />
+          </div>
+        )}
 
         {/* Background Progress Fill - Straight rectangular without rounding */}
         <div

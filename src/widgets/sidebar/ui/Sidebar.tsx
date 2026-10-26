@@ -2,6 +2,7 @@ import { memo } from "react";
 import { SidebarNavItems } from "./SidebarNavItems";
 import { SidebarSettingsButton } from "./SidebarSettingsButton";
 import { cn } from "@/shared/lib";
+import { useBlockCustomizationStyle } from "@/features/settings/store/customizationStore";
 
 export interface SidebarProps {
   searchOpen: boolean;
@@ -9,11 +10,14 @@ export interface SidebarProps {
 }
 
 function Sidebar({ searchOpen, onSearchToggle }: SidebarProps) {
+  const sidebarStyle = useBlockCustomizationStyle("sidebar");
+
   return (
     <div
       className={cn(
         "h-full w-[58px] rounded-xl flex flex-col overflow-hidden border-none bg-bg-glass backdrop-blur-[20px]",
       )}
+      style={sidebarStyle}
     >
       <nav className="relative flex-1 flex flex-col items-center gap-[20px] pt-[16px]">
         <SidebarNavItems

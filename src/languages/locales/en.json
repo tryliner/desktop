@@ -464,7 +464,8 @@
       "overlay": "Overlay",
       "discord": "Discord RPC",
       "youtube": "YouTube",
-      "privacy": "Privacy"
+      "privacy": "Privacy",
+      "customization": "Customization"
     },
     "playback": {
       "description": "Queue behavior, click actions and audio output."
@@ -729,7 +730,8 @@
       "description": "Choose the overall appearance of the app.",
       "light": "Light",
       "dark": "Dark",
-      "system": "System"
+      "system": "System",
+      "disabled_for_glass": "Light theme is disabled when using custom wallpaper glassmorphism."
     },
     "branding": {
       "title": "Branding",
@@ -853,9 +855,48 @@
     "connection": {
       "open_folder": "Open saved location"
     },
+    "customization": {
+      "description": "Window background wallpaper, transparency and block blur effects.",
+      "apply_to_overlay": "Apply to overlay mini player",
+      "apply_to_overlay_desc": "Render the custom background and glass styling on the floating mini player.",
+      "dark_theme_only": "Customization is only available for dark theme",
+      "wallpaper_title": "Window Wallpaper",
+      "wallpaper_description": "Set a custom image or animated GIF as the full window background.",
+      "upload_title": "Select image or animated GIF",
+      "upload_hint": "PNG, JPEG, GIF, WebP (up to 30MB)",
+      "change_button": "Change",
+      "remove_button": "Remove",
+      "wallpaper_blur": "Wallpaper blur",
+      "wallpaper_dim": "Wallpaper dimming",
+      "blocks_title": "Interface Blocks Glassmorphism",
+      "blocks_description": "Adjust transparency, backdrop blur and dimming for each interface area.",
+      "block_sidebar": "Sidebar",
+      "block_content": "Content View",
+      "block_miniplayer": "Miniplayer",
+      "opacity": "Opacity (transparency)",
+      "opacity_desc": "Background opacity level (min. 25%)",
+      "blur": "Backdrop blur",
+      "blur_desc": "Frosted glass blur intensity",
+      "dim": "Dimming",
+      "dim_desc": "Dark overlay for enhanced readability",
+      "apply_all": "To all",
+      "apply_all_title": "Apply settings to all blocks",
+      "applied_to_all": "Settings applied to all blocks",
+      "reset_block": "Reset",
+      "block_reset": "Block settings reset",
+      "reset_all": "Reset all customization",
+      "reset_all_desc": "Restore default appearance, clear background image and block glass effects.",
+      "all_reset": "All customization reset",
+      "applied": "Wallpaper applied",
+      "removed": "Wallpaper removed",
+      "invalid_file_type": "Please select an image or GIF file",
+      "file_too_large": "File size must be under 30 MB",
+      "read_error": "Failed to read image file"
+    },
     "cover_glow": {
       "title": "Cover glow",
       "description": "Blurred artwork glow behind pages. Turn off to keep a plain background.",
+      "disabled_for_wallpaper": "Off while a custom wallpaper is set.",
       "disabled_for_light": "Off in light theme."
     }
   },

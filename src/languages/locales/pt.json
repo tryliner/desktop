@@ -467,7 +467,8 @@
       "shortcuts": "Atalhos",
       "overlay": "Overlay",
       "discord": "Discord RPC",
-      "privacy": "Privacidade"
+      "privacy": "Privacidade",
+      "customization": "Personalização"
     },
     "playback": {
       "description": "Comportamento da fila, ações de clique e saída de áudio."
@@ -712,7 +713,8 @@
       "description": "Escolha a aparência geral do app.",
       "light": "Claro",
       "dark": "Escuro",
-      "system": "Sistema"
+      "system": "Sistema",
+      "disabled_for_glass": "O tema claro fica indisponível quando o efeito de vidro com papel de parede personalizado está em uso."
     },
     "branding": {
       "title": "Marca",
@@ -836,9 +838,48 @@
     "connection": {
       "open_folder": "Abrir local salvo"
     },
+    "customization": {
+      "description": "Papel de parede da janela, transparência e efeitos de desfoque nos blocos.",
+      "apply_to_overlay": "Aplicar ao mini player flutuante",
+      "apply_to_overlay_desc": "Renderiza o plano de fundo personalizado e o estilo de vidro no mini player flutuante.",
+      "dark_theme_only": "A personalização está disponível apenas no tema escuro",
+      "wallpaper_title": "Papel de parede da janela",
+      "wallpaper_description": "Defina uma imagem ou GIF animado como plano de fundo completo da janela.",
+      "upload_title": "Selecione uma imagem ou GIF animado",
+      "upload_hint": "PNG, JPEG, GIF, WebP (até 30MB)",
+      "change_button": "Alterar",
+      "remove_button": "Remover",
+      "wallpaper_blur": "Desfoque do papel de parede",
+      "wallpaper_dim": "Escurecimento do papel de parede",
+      "blocks_title": "Vidro nos blocos da interface",
+      "blocks_description": "Ajuste transparência, desfoque de fundo e escurecimento de cada área da interface.",
+      "block_sidebar": "Barra lateral",
+      "block_content": "Área de conteúdo",
+      "block_miniplayer": "Mini player",
+      "opacity": "Opacidade (transparência)",
+      "opacity_desc": "Nível de opacidade do plano de fundo (mín. 25%)",
+      "blur": "Desfoque de fundo",
+      "blur_desc": "Intensidade do desfoque tipo vidro fosco",
+      "dim": "Escurecimento",
+      "dim_desc": "Camada escura para melhorar a leitura",
+      "apply_all": "Para todos",
+      "apply_all_title": "Aplicar configurações a todos os blocos",
+      "applied_to_all": "Configurações aplicadas a todos os blocos",
+      "reset_block": "Redefinir",
+      "block_reset": "Configurações do bloco redefinidas",
+      "reset_all": "Redefinir toda a personalização",
+      "reset_all_desc": "Restaura a aparência padrão e remove a imagem de fundo e os efeitos de vidro dos blocos.",
+      "all_reset": "Toda a personalização redefinida",
+      "applied": "Papel de parede aplicado",
+      "removed": "Papel de parede removido",
+      "invalid_file_type": "Selecione um arquivo de imagem ou GIF",
+      "file_too_large": "O tamanho do arquivo deve ser menor que 30 MB",
+      "read_error": "Falha ao ler o arquivo de imagem"
+    },
     "cover_glow": {
       "title": "Brilho da capa",
       "description": "Brilho desfocado da capa atrás das páginas. Desative para um fundo simples.",
+      "disabled_for_wallpaper": "Desativado enquanto houver um papel de parede personalizado.",
       "disabled_for_light": "Desativado no tema claro."
     }
   },

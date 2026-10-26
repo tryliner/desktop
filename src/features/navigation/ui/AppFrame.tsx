@@ -59,6 +59,9 @@ import {
 } from "@/features/library";
 import {
   SettingsModal,
+  useCustomizationStore,
+  useHasCustomBackground,
+  useWallpaperFade,
   useHasPageBackdrop,
   useClassicSurfaces,
 } from "@/features/settings";
@@ -670,6 +673,11 @@ export default function AppFrame({ children }: AppFrameProps) {
       (document.documentElement.getAttribute("data-theme") === "dark" ||
         (!document.documentElement.getAttribute("data-theme") &&
           window.matchMedia?.("(prefers-color-scheme: dark)")?.matches));
+  const backgroundImage = useCustomizationStore((s) => s.backgroundImage);
+  const backgroundBlur = useCustomizationStore((s) => s.backgroundBlur);
+  const hasCustomBg = useHasCustomBackground();
+  const backgroundDim = useCustomizationStore((s) => s.backgroundDim);
+  const wallpaperFade = useWallpaperFade();
   const hasPageBackdrop = useHasPageBackdrop();
   const classicSurfaces = useClassicSurfaces();
 
@@ -677,7 +685,7 @@ export default function AppFrame({ children }: AppFrameProps) {
     <div
       ref={appFrameRef}
       className={`relative flex flex-col h-full w-full overflow-hidden p-1.5 gap-1.5 ${
-        isFullscreenPlayer ? "bg-black" : "bg-bg-canvas"
+        hasCustomBg || isFullscreenPlayer ? "bg-black" : "bg-bg-canvas"
       } ${
         isEdgeToEdge ? "rounded-none" : "rounded-[12px]"
       }`}
@@ -686,7 +694,36 @@ export default function AppFrame({ children }: AppFrameProps) {
         if (e.currentTarget.scrollTop !== 0) e.currentTarget.scrollTop = 0;
       }}
     >
-      {classicSurfaces ? (
+      {hasCustomBg && backgroundImage ? (
+        <div
+          className="absolute inset-0 z-0 pointer-events-none overflow-hidden"
+          aria-hidden="true"
+        >
+          <img
+            src={backgroundImage}
+            alt=""
+            className="absolute max-w-none object-cover select-none"
+            style={{
+              inset: -backgroundBlur * 2,
+              width: `calc(100% + ${backgroundBlur * 4}px)`,
+              height: `calc(100% + ${backgroundBlur * 4}px)`,
+              filter: backgroundBlur > 0 ? `blur(${backgroundBlur}px)` : undefined,
+            }}
+          />
+          {backgroundDim > 0 && (
+            <div
+              className="absolute inset-0 bg-black"
+              style={{ opacity: backgroundDim / 100 }}
+            />
+          )}
+          {wallpaperFade && (
+            <div
+              className="absolute inset-0"
+              style={{ backgroundImage: wallpaperFade }}
+            />
+          )}
+        </div>
+      ) : classicSurfaces ? (
         isDark ? <AmbientTopGlow /> : null
       ) : (
         <DynamicBlurBackground isDark={isDark} />

@@ -454,7 +454,8 @@
       "playback": "Çalma",
       "shortcuts": "Kısayollar",
       "overlay": "Katman",
-      "privacy": "Gizlilik"
+      "privacy": "Gizlilik",
+      "customization": "Özelleştirme"
     },
     "playback": {
       "description": "Sıra davranışı, tıklama eylemleri ve ses çıkışı."
@@ -649,7 +650,8 @@
       "description": "Uygulamanın genel görünümünü seç.",
       "light": "Açık",
       "dark": "Koyu",
-      "system": "Sistem"
+      "system": "Sistem",
+      "disabled_for_glass": "Özel duvar kâğıdıyla cam efekti kullanılırken açık tema devre dışıdır."
     },
     "branding": {
       "title": "Marka",
@@ -773,9 +775,48 @@
     "connection": {
       "open_folder": "Kaydedilen konumu aç"
     },
+    "customization": {
+      "description": "Pencere duvar kâğıdı, saydamlık ve blok bulanıklaştırma efektleri.",
+      "apply_to_overlay": "Katmandaki mini oynatıcıya uygula",
+      "apply_to_overlay_desc": "Özel arka planı ve cam efektini yüzen mini oynatıcıda da kullanır.",
+      "dark_theme_only": "Özelleştirme yalnızca koyu temada kullanılabilir",
+      "wallpaper_title": "Pencere Duvar Kâğıdı",
+      "wallpaper_description": "Tüm pencerenin arka planı olarak özel bir görsel veya hareketli GIF ayarla.",
+      "upload_title": "Görsel veya hareketli GIF seç",
+      "upload_hint": "PNG, JPEG, GIF, WebP (30 MB'a kadar)",
+      "change_button": "Değiştir",
+      "remove_button": "Kaldır",
+      "wallpaper_blur": "Duvar kâğıdı bulanıklığı",
+      "wallpaper_dim": "Duvar kâğıdı karartma",
+      "blocks_title": "Arayüz Bloklarında Cam Efekti",
+      "blocks_description": "Her arayüz alanı için saydamlığı, arka plan bulanıklığını ve karartmayı ayarla.",
+      "block_sidebar": "Kenar çubuğu",
+      "block_content": "İçerik alanı",
+      "block_miniplayer": "Mini oynatıcı",
+      "opacity": "Opaklık (saydamlık)",
+      "opacity_desc": "Arka plan opaklık düzeyi (en az %25)",
+      "blur": "Arka plan bulanıklığı",
+      "blur_desc": "Buzlu cam bulanıklığının yoğunluğu",
+      "dim": "Karartma",
+      "dim_desc": "Daha iyi okunabilirlik için koyu katman",
+      "apply_all": "Tümüne",
+      "apply_all_title": "Ayarları tüm bloklara uygula",
+      "applied_to_all": "Ayarlar tüm bloklara uygulandı",
+      "reset_block": "Sıfırla",
+      "block_reset": "Blok ayarları sıfırlandı",
+      "reset_all": "Tüm özelleştirmeyi sıfırla",
+      "reset_all_desc": "Varsayılan görünümü geri yükler, arka plan görselini ve blok cam efektlerini kaldırır.",
+      "all_reset": "Tüm özelleştirme sıfırlandı",
+      "applied": "Duvar kâğıdı uygulandı",
+      "removed": "Duvar kâğıdı kaldırıldı",
+      "invalid_file_type": "Lütfen bir görsel veya GIF dosyası seç",
+      "file_too_large": "Dosya boyutu 30 MB'tan küçük olmalı",
+      "read_error": "Görsel dosyası okunamadı"
+    },
     "cover_glow": {
       "title": "Kapak parıltısı",
       "description": "Sayfaların arkasında bulanık kapak parıltısı. Düz arka plan için kapatın.",
+      "disabled_for_wallpaper": "Özel duvar kâğıdı ayarlıyken kapalı.",
       "disabled_for_light": "Açık temada kapalı."
     }
   },

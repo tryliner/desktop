@@ -9,10 +9,12 @@ import WindowControls, {
 } from "@/features/navigation/ui/WindowControls";
 import logo from "@/assets/logo.svg";
 import { cn } from "@/shared/lib";
+import { useBlockCustomizationStyle } from "@/features/settings/store/customizationStore";
 
 const BACK_BUTTON_ROUTES = ["/library/playlist", "/artist", "/collection"];
 
 function BackButton() {
+  const glassStyle = useBlockCustomizationStyle("sidebar");
   const navigate = useNavigate();
   const { t } = useTranslation();
 
@@ -32,7 +34,7 @@ function BackButton() {
       data-no-tooltip="true"
       data-no-window-drag
       className="group relative inline-flex h-[38px] shrink-0 items-center gap-[6px] rounded-[10px] px-[12px] active:scale-[0.96] transition-transform cursor-pointer select-none text-[13px] font-[500] border-0 !border-none bg-bg-glass backdrop-blur-[20px] text-text-primary after:pointer-events-none after:absolute after:inset-0 after:rounded-[10px] after:transition-colors after:duration-150 hover:after:bg-black/[0.05] dark:hover:after:bg-white/[0.08]"
-      style={{ fontFamily: "var(--font-inter), sans-serif" }}
+      style={{ fontFamily: "var(--font-inter), sans-serif", ...glassStyle }}
     >
       <ArrowLeftLine
         size={16}
@@ -55,6 +57,7 @@ export const Header = forwardRef<HTMLElement, HeaderProps>(function Header(
 ) {
   const { pathname } = useLocation();
   const showBack = BACK_BUTTON_ROUTES.includes(pathname);
+  const glassStyle = useBlockCustomizationStyle("sidebar");
 
   return (
     <header
@@ -96,6 +99,7 @@ export const Header = forwardRef<HTMLElement, HeaderProps>(function Header(
           data-no-window-drag
           data-no-tooltip="true"
           className="h-[38px] flex items-center gap-[2px] px-[4px] rounded-[10px] shrink-0 bg-bg-glass backdrop-blur-[20px]"
+          style={glassStyle}
         >
           <WindowControls bare />
         </motion.div>

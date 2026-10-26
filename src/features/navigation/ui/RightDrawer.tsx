@@ -10,6 +10,7 @@ import { useTranslation } from "@/languages";
 import { ReorderDropPlaceholder, FloatingDragCard } from "@/shared/ui";
 import { useListReorder } from "@/shared/hooks";
 import RightDrawerHeader from "./RightDrawerHeader";
+import { useBlockCustomizationStyle } from "@/features/settings/store/customizationStore";
 
 const QUEUE_ITEM_HEIGHT = 68;
 
@@ -205,6 +206,7 @@ function RightDrawer({ onClose }: RightDrawerProps) {
   const player = usePlayerState();
   const { t } = useTranslation();
   const queueScrollRef = useRef<HTMLDivElement>(null);
+  const drawerStyle = useBlockCustomizationStyle("sidebar");
   const [queueLimit, setQueueLimit] = useState(() =>
     Math.max(50, Math.ceil(((player.currentIndex >= 0 ? player.currentIndex : 0) + 30) / 50) * 50),
   );
@@ -252,6 +254,7 @@ function RightDrawer({ onClose }: RightDrawerProps) {
   return (
     <div
       className="relative flex flex-col h-full w-full overflow-hidden rounded-[14px] select-none bg-bg-glass backdrop-blur-[48px]"
+      style={drawerStyle}
     >
       <RightDrawerHeader
         trackCount={player.queue.length}

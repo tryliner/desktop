@@ -456,7 +456,8 @@
       "playback": "Lecture",
       "shortcuts": "Raccourcis",
       "overlay": "Overlay",
-      "privacy": "Confidentialité"
+      "privacy": "Confidentialité",
+      "customization": "Personnalisation"
     },
     "playback": {
       "description": "Comportement de la file d'attente, actions au clic et sortie audio."
@@ -651,7 +652,8 @@
       "description": "Choisissez l'apparence générale de l'application.",
       "light": "Clair",
       "dark": "Sombre",
-      "system": "Système"
+      "system": "Système",
+      "disabled_for_glass": "Le thème clair est désactivé avec l'effet verre et un fond d'écran personnalisé."
     },
     "branding": {
       "title": "Logo",
@@ -775,9 +777,48 @@
     "connection": {
       "open_folder": "Ouvrir l'emplacement"
     },
+    "customization": {
+      "description": "Fond d'écran de la fenêtre, transparence et flou des blocs.",
+      "apply_to_overlay": "Appliquer au mini-lecteur en overlay",
+      "apply_to_overlay_desc": "Utilise le fond personnalisé et l'effet verre sur le mini-lecteur flottant.",
+      "dark_theme_only": "La personnalisation n'est disponible qu'avec le thème sombre",
+      "wallpaper_title": "Fond d'écran de la fenêtre",
+      "wallpaper_description": "Définissez une image ou un GIF animé comme fond de toute la fenêtre.",
+      "upload_title": "Choisir une image ou un GIF animé",
+      "upload_hint": "PNG, JPEG, GIF, WebP (jusqu'à 30 Mo)",
+      "change_button": "Changer",
+      "remove_button": "Retirer",
+      "wallpaper_blur": "Flou du fond d'écran",
+      "wallpaper_dim": "Assombrissement du fond d'écran",
+      "blocks_title": "Effet verre des blocs de l'interface",
+      "blocks_description": "Réglez la transparence, le flou d'arrière-plan et l'assombrissement de chaque zone de l'interface.",
+      "block_sidebar": "Barre latérale",
+      "block_content": "Zone de contenu",
+      "block_miniplayer": "Mini-lecteur",
+      "opacity": "Opacité (transparence)",
+      "opacity_desc": "Niveau d'opacité du fond (25 % min.)",
+      "blur": "Flou d'arrière-plan",
+      "blur_desc": "Intensité de l'effet verre dépoli",
+      "dim": "Assombrissement",
+      "dim_desc": "Voile sombre pour une meilleure lisibilité",
+      "apply_all": "À tous",
+      "apply_all_title": "Appliquer les réglages à tous les blocs",
+      "applied_to_all": "Réglages appliqués à tous les blocs",
+      "reset_block": "Réinitialiser",
+      "block_reset": "Réglages du bloc réinitialisés",
+      "reset_all": "Réinitialiser toute la personnalisation",
+      "reset_all_desc": "Rétablit l'apparence par défaut, retire l'image de fond et les effets verre des blocs.",
+      "all_reset": "Personnalisation réinitialisée",
+      "applied": "Fond d'écran appliqué",
+      "removed": "Fond d'écran retiré",
+      "invalid_file_type": "Choisissez une image ou un fichier GIF",
+      "file_too_large": "Le fichier doit faire moins de 30 Mo",
+      "read_error": "Impossible de lire le fichier image"
+    },
     "cover_glow": {
       "title": "Halo de pochette",
       "description": "Halo flouté de la pochette derrière les pages. Désactivez pour un fond uni.",
+      "disabled_for_wallpaper": "Désactivé tant qu'un fond d'écran personnalisé est défini.",
       "disabled_for_light": "Désactivé en thème clair."
     }
   },

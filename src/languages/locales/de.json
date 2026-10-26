@@ -458,7 +458,8 @@
       "about": "Info",
       "playback": "Wiedergabe",
       "overlay": "Overlay",
-      "privacy": "Datenschutz"
+      "privacy": "Datenschutz",
+      "customization": "Anpassung"
     },
     "playback": {
       "description": "Verhalten der Warteschlange, Klickaktionen und Audioausgabe."
@@ -594,7 +595,8 @@
       "description": "Wähle das allgemeine Erscheinungsbild der App.",
       "light": "Hell",
       "dark": "Dunkel",
-      "system": "System"
+      "system": "System",
+      "disabled_for_glass": "Das helle Design ist deaktiviert, wenn ein eigener Hintergrund mit Glassmorphismus verwendet wird."
     },
     "branding": {
       "title": "Branding",
@@ -718,9 +720,48 @@
     "connection": {
       "open_folder": "Speicherort öffnen"
     },
+    "customization": {
+      "description": "Fensterhintergrund, Transparenz und Unschärfe-Effekte für Bereiche.",
+      "apply_to_overlay": "Auf Overlay-Mini-Player anwenden",
+      "apply_to_overlay_desc": "Wendet den eigenen Hintergrund und den Glas-Stil auf den schwebenden Mini-Player an.",
+      "dark_theme_only": "Die Anpassung ist nur im dunklen Design verfügbar",
+      "wallpaper_title": "Fensterhintergrund",
+      "wallpaper_description": "Lege ein eigenes Bild oder ein animiertes GIF als Hintergrund des gesamten Fensters fest.",
+      "upload_title": "Bild oder animiertes GIF auswählen",
+      "upload_hint": "PNG, JPEG, GIF, WebP (bis zu 30 MB)",
+      "change_button": "Ändern",
+      "remove_button": "Entfernen",
+      "wallpaper_blur": "Hintergrund-Unschärfe",
+      "wallpaper_dim": "Hintergrund abdunkeln",
+      "blocks_title": "Glas-Effekte für einzelne Bereiche",
+      "blocks_description": "Passe Transparenz, Hintergrundunschärfe und Abdunklung für jeden Bereich der Oberfläche an.",
+      "block_sidebar": "Seitenleiste",
+      "block_content": "Inhaltsbereich",
+      "block_miniplayer": "Mini-Player",
+      "opacity": "Deckkraft",
+      "opacity_desc": "Deckkraft des Hintergrunds (mind. 25 %)",
+      "blur": "Hintergrundunschärfe",
+      "blur_desc": "Intensität des Milchglas-Effekts",
+      "dim": "Abdunkeln",
+      "dim_desc": "Dunkle Überlagerung für bessere Lesbarkeit",
+      "apply_all": "Auf alle",
+      "apply_all_title": "Einstellungen auf alle Bereiche anwenden",
+      "applied_to_all": "Einstellungen auf alle Bereiche angewendet",
+      "reset_block": "Zurücksetzen",
+      "block_reset": "Bereichseinstellungen zurückgesetzt",
+      "reset_all": "Gesamte Anpassung zurücksetzen",
+      "reset_all_desc": "Stellt das Standarddesign wieder her und entfernt Hintergrundbild und Glas-Effekte.",
+      "all_reset": "Gesamte Anpassung zurückgesetzt",
+      "applied": "Hintergrund angewendet",
+      "removed": "Hintergrund entfernt",
+      "invalid_file_type": "Bitte wähle ein Bild oder eine GIF-Datei aus",
+      "file_too_large": "Die Dateigröße muss unter 30 MB liegen",
+      "read_error": "Bilddatei konnte nicht gelesen werden"
+    },
     "cover_glow": {
       "title": "Cover-Leuchten",
       "description": "Unscharfes Cover-Leuchten hinter Seiten. Ausschalten für einen schlichten Hintergrund.",
+      "disabled_for_wallpaper": "Aus, solange ein eigenes Hintergrundbild gesetzt ist.",
       "disabled_for_light": "Im hellen Design aus."
     }
   },
