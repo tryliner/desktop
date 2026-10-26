@@ -5,6 +5,7 @@ export interface AccountCardProps {
   media?: ReactNode;
   placeholderIcon: ReactNode;
   title: string;
+  titleAccessory?: ReactNode;
   subtitle?: string;
   loading?: boolean;
   action?: ReactNode;
@@ -17,6 +18,7 @@ export default function AccountCard({
   media,
   placeholderIcon,
   title,
+  titleAccessory,
   subtitle,
   loading = false,
   action,
@@ -43,9 +45,12 @@ export default function AccountCard({
           </>
         ) : (
           <>
-            <span className="truncate text-[16px] font-[600] text-text-primary">
-              {title}
-            </span>
+            <div className="flex min-w-0 items-center gap-[4px]">
+              <span className="truncate text-[16px] font-[600] text-text-primary">
+                {title}
+              </span>
+              {titleAccessory}
+            </div>
             {subtitle && (
               <span className="truncate text-[13.5px] text-text-secondary">
                 {subtitle}
