@@ -111,7 +111,7 @@ describe("importSoundCloud", () => {
     expect(playlist.tracks).toHaveLength(1605);
     expect(playlist.tracks[0].title).toBe("Song 1");
     expect(playlist.tracks[1604].title).toBe("Song 1605");
-    expect(fetchMock).toHaveBeenCalledTimes(34); // Resolve plus 33 likes pages.
+    expect(fetchMock).toHaveBeenCalledTimes(34);
   });
 
   it("resolves likes through the shared api client and refreshes a rejected client id", async () => {
