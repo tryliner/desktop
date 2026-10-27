@@ -1565,7 +1565,8 @@ class PlayerEngine {
       );
     } catch (error) {
       if (!isCurrent()) return;
-      if (!storedCandidate) this.showNoLyrics(trackId, "Failed to load lyrics.");
+      if (!storedCandidate)
+        this.showNoLyrics(trackId, "Failed to load lyrics.");
       log(
         "red",
         "lyrics",
