@@ -30,5 +30,9 @@ export function parseAppleMusicUrl(rawUrl: string): AppleMusicTarget {
         : undefined;
   const id = segments.at(-1);
   if (!type || !id) throw new Error("Apple Music playlist URL is invalid.");
-  return { storefront, type, id };
+  return {
+    storefront,
+    type,
+    id: type === "album" ? id.replace(/^id(?=\d+$)/, "") : id,
+  };
 }

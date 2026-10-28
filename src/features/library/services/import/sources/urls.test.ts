@@ -47,6 +47,12 @@ describe("detectImportSource", () => {
 });
 
 describe("parseAppleMusicUrl", () => {
+  it("normalizes legacy iTunes album IDs for catalog requests", () => {
+    expect(
+      parseAppleMusicUrl("https://itunes.apple.com/us/album/example/id123456"),
+    ).toEqual({ storefront: "us", type: "album", id: "123456" });
+  });
+
   it("parses apple music URLs correctly", () => {
     expect(
       parseAppleMusicUrl(
