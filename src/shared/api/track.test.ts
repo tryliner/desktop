@@ -16,20 +16,6 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("toClientTrack", () => {
-  beforeEach(() => {
-    vi.stubGlobal(
-      "ResizeObserver",
-      class {
-        observe() {}
-        disconnect() {}
-      },
-    );
-  });
-
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-
   it("maps backend track properly", () => {
     const backend = {
       id: "4IbRT6Vfl_U",
