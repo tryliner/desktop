@@ -7,7 +7,7 @@ import { browseTvTiles } from "./tvBrowse";
 import { parsePlaylistAuthor } from "./playlistAuthor";
 import { lineBrowseId, lineText, type TvTile } from "./tvTiles";
 
-const MAX_PAGES = 50;
+const MAX_PAGES = 500;
 const TOPIC_SUFFIX = / - Topic$/;
 
 function toTrack(tile: TvTile): ApiTrack {
