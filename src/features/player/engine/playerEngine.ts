@@ -1251,7 +1251,6 @@ class PlayerEngine {
     // radio always continues; plain lists only when "autoplay similar" is on
     const radio = isRadioContext(currentState.playbackContext);
     if (!radio && !currentState.autoplaySimilar) return;
-    // repeat on a plain list loops it; appending similar tracks would leave it
     if (!radio && currentState.repeat !== "off") return;
     if (isLocalTrackId(seedTrackId)) return;
     const startContext = currentState.playbackContext;

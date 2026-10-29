@@ -120,7 +120,7 @@ describe("radio playback", () => {
     const tracks = [mk("1"), mk("2")];
     await playerEngine.playTrack(tracks[0], tracks, "playlist:p");
     playerEngine.setRepeat("all");
-    await playerEngine.skipNext(); // on the last track
+    await playerEngine.skipNext();
     await vi.advanceTimersByTimeAsync(500);
     expect(getRadio).not.toHaveBeenCalled();
     expect(usePlayerStore.getState().queue.map((t) => t.id)).toEqual([
@@ -138,7 +138,7 @@ describe("radio playback", () => {
     getRadio.mockReturnValueOnce(new Promise((r) => (resolve = r)));
     const tracks = [mk("1"), mk("2")];
     await playerEngine.playTrack(tracks[1], tracks, "playlist:p");
-    await vi.advanceTimersByTimeAsync(500); // request in flight
+    await vi.advanceTimersByTimeAsync(500);
     expect(getRadio).toHaveBeenCalledTimes(1);
 
     playerEngine.setRepeat("all");
