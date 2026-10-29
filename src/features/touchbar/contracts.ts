@@ -29,6 +29,7 @@ export interface TouchBarStatePayload {
   volume: number;
   isLiked: boolean;
   shuffle: boolean;
+  shuffleMode?: "off" | "playlist" | "smart";
   repeat: "off" | "all" | "one";
   activeLine: TouchBarActiveLine | null;
   activeLyricText?: string;
@@ -54,6 +55,7 @@ export interface TouchBarAction {
     | "adjustOffset"
     | "navigate"
     | "toggleShuffle"
+    | "cycleShuffleMode"
     | "toggleFullscreen"
     | "restoreMainWindow"
     | "closeOverlay";

@@ -4,9 +4,17 @@ import {
   type PlayerStatus,
   type RepeatMode,
   type PlayerState,
+  type ShuffleMode,
 } from "../store/playerStore";
 import { playerRuntime } from "./playerRuntime";
 import { isRadioContext, shouldRefillRadio } from "./radioMode";
+import { nextShuffleMode } from "./shuffleMode";
+import {
+  SMART_MIX_MAX_SEEDS,
+  interleaveRecommendations,
+  pickRecommendations,
+  smartMixRecCount,
+} from "./smartMix";
 import { pitchShifter } from "./pitchShifter";
 import { EQ_MAX_CUSTOM_PRESETS, EQ_PRESET_NAME_MAX } from "./equalizer";
 import {
@@ -42,7 +50,13 @@ import { STREAMS_REFUSED_MESSAGE } from "@/shared/youtube";
 const MAX_CONSECUTIVE_AUTO_SKIPS = 3;
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
-export { usePlayerStore, type PlayerStatus, type RepeatMode, type PlayerState };
+export {
+  usePlayerStore,
+  type PlayerStatus,
+  type RepeatMode,
+  type PlayerState,
+  type ShuffleMode,
+};
 
 function shuffleArray<T>(array: T[]): T[] {
   const result = [...array];
@@ -303,6 +317,7 @@ class PlaybackTelemetryTracker {
 
 class PlayerEngine {
   private sessionId = 0;
+  private queueEpoch = 0;
   private lyricsLoadToken = 0;
   private lyricsAbort: AbortController | null = null;
   private currentLyricsTrackId: string | null = null;
@@ -310,6 +325,7 @@ class PlayerEngine {
   private originalUpcomingQueue: Track[] = [];
   private telemetry = new PlaybackTelemetryTracker();
   private radioAppendTimeout: ReturnType<typeof setTimeout> | null = null;
+  private smartMixTimeout: ReturnType<typeof setTimeout> | null = null;
   private radioWaveId: string | null = null;
   // single in-flight similar-tracks request, so a refill and an end-of-queue wait share it
   private radioFetchInFlight: Promise<void> | null = null;
@@ -493,6 +509,7 @@ class PlayerEngine {
 
     if (!isSelectingFromCurrentQueue) {
       this.masterPlaylist = [...nextQueue];
+      this.queueEpoch += 1;
     }
 
     if (!isSelectingFromCurrentQueue && store.shuffle && nextQueue.length > 1) {
@@ -521,6 +538,10 @@ class PlayerEngine {
       void playerRuntime.loadAndPlay(selectedTrack);
     }
 
+    if (store.shuffleMode === "smart" && !isSelectingFromCurrentQueue) {
+      this.scheduleSmartMix(this.queueEpoch);
+    }
+
     this.maybeExtendQueue(
       mySession,
       selectedTrack.id,
@@ -534,6 +555,7 @@ class PlayerEngine {
     context?: string | null,
     contextCover?: string | null,
     startIndex?: number,
+    mode: ShuffleMode = "playlist",
   ): Promise<void> {
     if (!tracks || tracks.length === 0) return;
     const store = usePlayerStore.getState();
@@ -551,8 +573,9 @@ class PlayerEngine {
 
     this.masterPlaylist = [...tracks];
     this.originalUpcomingQueue = [...remaining];
+    this.queueEpoch += 1;
 
-    store.setShuffle(true);
+    store.setShuffleMode(mode);
     if (context !== undefined) {
       store.setPlaybackContext(context);
     }
@@ -574,6 +597,10 @@ class PlayerEngine {
       void playerRuntime.loadAndPlay(seedTrack);
     }
 
+    if (mode === "smart") {
+      this.scheduleSmartMix(this.queueEpoch);
+    }
+
     this.maybeExtendQueue(mySession, seedTrack.id, 0, finalQueue.length);
   }
 
@@ -592,6 +619,8 @@ class PlayerEngine {
     store.setPlaybackContextCover(track.coverUrl ?? null);
     store.setQueue([track]);
     this.originalUpcomingQueue = [];
+    this.masterPlaylist = [];
+    this.queueEpoch += 1;
 
     store.setCurrentTrack(track, 0);
     store.setPosition(0);
@@ -876,21 +905,31 @@ class PlayerEngine {
   }
 
   public setShuffle(enabled: boolean): void {
+    void this.setShuffleMode(enabled ? "playlist" : "off");
+  }
+
+  public cycleShuffleMode(): void {
+    const current = usePlayerStore.getState().shuffleMode;
+    void this.setShuffleMode(nextShuffleMode(current));
+  }
+
+  public async setShuffleMode(mode: ShuffleMode): Promise<void> {
     const store = usePlayerStore.getState();
-    if (store.shuffle === enabled) return;
-    store.setShuffle(enabled);
+    if (store.shuffleMode === mode) return;
+
+    const prevMode = store.shuffleMode;
+    if (prevMode === "smart") this.clearSmartMix();
+    store.setShuffleMode(mode);
 
     const { queue, currentIndex } = store;
     if (queue.length > 0 && currentIndex >= 0) {
       const played = queue.slice(0, currentIndex);
       const current = queue[currentIndex];
-      const upcoming = queue.slice(currentIndex + 1);
+      let upcoming = queue.slice(currentIndex + 1);
 
-      if (enabled) {
-        this.originalUpcomingQueue = [...upcoming];
-        const shuffledUpcoming = shuffleArray(upcoming);
-        store.setQueue([...played, current, ...shuffledUpcoming]);
-      } else {
+      if (mode === "off") {
+        upcoming = upcoming.filter((t) => !t.isRecommended);
+
         const referenceList =
           this.masterPlaylist.length > 0
             ? this.masterPlaylist
@@ -901,6 +940,22 @@ class PlayerEngine {
         );
         store.setQueue([...played, current, ...unshuffledUpcoming]);
         this.originalUpcomingQueue = [];
+      } else if (mode === "playlist") {
+        const cleanUpcoming = upcoming.filter((t) => !t.isRecommended);
+        if (prevMode === "off") {
+          this.originalUpcomingQueue = [...cleanUpcoming];
+          const shuffledUpcoming = shuffleArray(cleanUpcoming);
+          store.setQueue([...played, current, ...shuffledUpcoming]);
+        } else {
+          store.setQueue([...played, current, ...cleanUpcoming]);
+        }
+      } else if (mode === "smart") {
+        if (prevMode === "off") {
+          this.originalUpcomingQueue = [...upcoming];
+          upcoming = shuffleArray(upcoming);
+          store.setQueue([...played, current, ...upcoming]);
+        }
+        await this.injectSmartMix(this.queueEpoch);
       }
     }
   }
@@ -998,6 +1053,7 @@ class PlayerEngine {
       clearTimeout(this.radioAppendTimeout);
       this.radioAppendTimeout = null;
     }
+    this.clearSmartMix();
     this.radioFetchInFlight = null;
     this.radioWaveId = null;
     this.lyricsAbort?.abort();
@@ -1017,6 +1073,7 @@ class PlayerEngine {
 
   public clearQueue(): void {
     usePlayerStore.getState().clearQueue();
+    this.clearSmartMix();
     this.masterPlaylist = [];
     this.originalUpcomingQueue = [];
   }
@@ -1208,11 +1265,99 @@ class PlayerEngine {
     index: number,
     queueLength: number,
   ): void {
-    const radio = isRadioContext(usePlayerStore.getState().playbackContext);
+    const state = usePlayerStore.getState();
+    const radio = isRadioContext(state.playbackContext);
+    if (state.shuffleMode === "playlist" && !radio) return;
     const due = radio
       ? shouldRefillRadio(queueLength, index)
       : index === queueLength - 1;
     if (due) this.scheduleAppendSimilarTracks(session, seedTrackId);
+  }
+
+  private scheduleSmartMix(epoch: number): void {
+    if (this.smartMixTimeout) clearTimeout(this.smartMixTimeout);
+    this.smartMixTimeout = setTimeout(() => {
+      this.smartMixTimeout = null;
+      void this.injectSmartMix(epoch);
+    }, 400);
+  }
+
+  private clearSmartMix(): void {
+    if (this.smartMixTimeout) clearTimeout(this.smartMixTimeout);
+    this.smartMixTimeout = null;
+    this.queueEpoch += 1;
+  }
+
+  private async injectSmartMix(epoch: number): Promise<void> {
+    const before = usePlayerStore.getState();
+    if (before.shuffleMode !== "smart") return;
+    if (isRadioContext(before.playbackContext)) return;
+
+    const upcomingBefore = before.queue.slice(before.currentIndex + 1);
+    if (upcomingBefore.some((t) => t.isRecommended)) return;
+    const needed = smartMixRecCount(upcomingBefore.length);
+    if (needed === 0) return;
+
+    const listTracks =
+      this.masterPlaylist.length > 0
+        ? this.masterPlaylist
+        : before.queue.filter((t) => !t.isRecommended);
+    const seedIds = shuffleArray(
+      listTracks.map((t) => t.id).filter((id) => !isLocalTrackId(id)),
+    ).slice(0, SMART_MIX_MAX_SEEDS);
+    if (seedIds.length === 0) return;
+
+    const historyIds = before.queue
+      .map((t) => t.id)
+      .filter((id) => !isLocalTrackId(id))
+      .slice(-20);
+    if (!this.radioWaveId) this.radioWaveId = newRadioWaveId();
+    const waveId = this.radioWaveId;
+    const perSeed = Math.ceil(needed / seedIds.length) + 2;
+
+    const results = await Promise.allSettled(
+      seedIds.map((id) =>
+        api.getRadio(id, { history: historyIds, k: perSeed, wave_id: waveId }),
+      ),
+    );
+    const fetched: ApiRadioTrack[] = [];
+    for (const result of results) {
+      if (result.status === "fulfilled") fetched.push(...result.value.items);
+    }
+    if (fetched.length === 0) {
+      log("yellow", "radio", "smart shuffle: no recommendations returned");
+      return;
+    }
+
+    const state = usePlayerStore.getState();
+    if (epoch !== this.queueEpoch || state.shuffleMode !== "smart") return;
+    const upcoming = state.queue.slice(state.currentIndex + 1);
+    if (upcoming.some((t) => t.isRecommended)) return;
+
+    const recs = pickRecommendations(
+      shuffleArray(fetched.map(toClientTrack)),
+      [
+        ...state.queue.map((t) => t.id),
+        ...this.masterPlaylist.map((t) => t.id),
+      ],
+      needed,
+    );
+    if (recs.length === 0) return;
+
+    log(
+      "green",
+      "radio",
+      `smart shuffle: mixed in recommendations [${recs
+        .slice(0, 3)
+        .map((t) => t.title)
+        .join(", ")}]`,
+    );
+
+    state.setQueue([
+      ...state.queue.slice(0, state.currentIndex + 1),
+      ...interleaveRecommendations(upcoming, recs),
+    ]);
+    this.preloadNextTrack(usePlayerStore.getState());
   }
 
   private scheduleAppendSimilarTracks(
@@ -1251,6 +1396,7 @@ class PlayerEngine {
     // radio always continues; plain lists only when "autoplay similar" is on
     const radio = isRadioContext(currentState.playbackContext);
     if (!radio && !currentState.autoplaySimilar) return;
+    if (currentState.shuffleMode === "playlist" && !radio) return;
     if (isLocalTrackId(seedTrackId)) return;
     const startContext = currentState.playbackContext;
 

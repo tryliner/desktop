@@ -1,11 +1,6 @@
-import {
-  SkipNext,
-  SkipPrevious,
-  Repeat,
-  RepeatOne,
-  Shuffle,
-} from "@solar-icons/react";
+import { SkipNext, SkipPrevious, Repeat, RepeatOne } from "@solar-icons/react";
 import { PlayerMorphIcon, ICON_PLAY, ICON_PAUSE } from "./morphPlayerIcons";
+import { ShuffleIcon } from "./ShuffleIcon";
 import { usePlayerState } from "../hooks/usePlayerState";
 import { playerEngine } from "../engine/playerEngine";
 import { isRadioContext, nextRepeatMode } from "../engine/radioMode";
@@ -51,16 +46,15 @@ export function FullscreenTransportControls() {
     <div className="flex w-full items-center justify-center gap-[18px]">
       <button
         type="button"
-        aria-label={
-          player.shuffle ? t("player.shuffle_on") : t("player.shuffle_off")
-        }
-        onClick={() => playerEngine.setShuffle(!player.shuffle)}
+        aria-label={t(`player.shuffle_${player.shuffleMode}`)}
+        title={t(`player.shuffle_${player.shuffleMode}`)}
+        onClick={() => playerEngine.cycleShuffleMode()}
         className={cn(
           iconButtonClass,
-          player.shuffle ? "!opacity-100" : "!opacity-60",
+          player.shuffleMode !== "off" ? "!opacity-100" : "!opacity-60",
         )}
       >
-        <Shuffle size={24} weight="Outline" />
+        <ShuffleIcon mode={player.shuffleMode} size={24} />
       </button>
 
       <button

@@ -141,6 +141,7 @@ export function useTouchBarSync() {
   const durationMs = usePlayerStore((s) => s.durationMs);
   const volume = usePlayerStore((s) => s.volume);
   const shuffle = usePlayerStore((s) => s.shuffle);
+  const shuffleMode = usePlayerStore((s) => s.shuffleMode);
   const repeat = usePlayerStore((s) => s.repeat);
   const fullscreen = usePlayerStore((s) => s.fullscreen);
   const syncedLines = useLyricsStore((s) => s.syncedLines);
@@ -205,7 +206,8 @@ export function useTouchBarSync() {
             }
             break;
           case "toggleShuffle":
-            playerEngine.setShuffle(!playerEngine.getSnapshot().shuffle);
+          case "cycleShuffleMode":
+            playerEngine.cycleShuffleMode();
             break;
           case "toggleFullscreen": {
             const currentFs =
@@ -356,6 +358,7 @@ export function useTouchBarSync() {
       volume,
       isLiked,
       shuffle,
+      shuffleMode,
       repeat,
       activeLine: hasSyncedLyrics ? activeLine : null,
       activeLyricText: hasSyncedLyrics ? activeLine?.text || "" : "",
@@ -374,6 +377,7 @@ export function useTouchBarSync() {
       v: Math.round(payload.volume * 100),
       l: payload.isLiked,
       sh: payload.shuffle,
+      sm: payload.shuffleMode,
       rp: payload.repeat,
       ly: payload.activeLyricText,
       li: lineIndex,
@@ -411,6 +415,7 @@ export function useTouchBarSync() {
     durationMs,
     volume,
     shuffle,
+    shuffleMode,
     repeat,
     fullscreen,
     currentTrack,

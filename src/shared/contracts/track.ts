@@ -21,6 +21,7 @@ export interface Track {
   cover?: Cover;
   explicit?: boolean;
   audioVariant?: TrackAudioVariant;
+  isRecommended?: boolean;
 }
 
 export interface ApiTrack extends Track {

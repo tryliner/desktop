@@ -24,7 +24,7 @@ import {
   HERO_GLASS_BUTTON_CLASS,
   HERO_GLASS_CLASS,
 } from "@/shared/ui";
-import { usePageBackdrop } from "@/shared/lib";
+import { cn, usePageBackdrop } from "@/shared/lib";
 import { useClassicSurfaces } from "@/features/settings/store/customizationStore";
 import { useLikesCover } from "../hooks/useLikesCover";
 import { useAuthStore } from "@/features/auth";
@@ -52,7 +52,7 @@ import {
   useReorderPlaylistTracks,
 } from "../hooks";
 import { useListReorder } from "@/shared/hooks";
-import { playerEngine } from "@/features/player";
+import { playerEngine, usePlayerState, ShuffleIcon } from "@/features/player";
 import type { Track } from "@/shared/types";
 import { useTranslation } from "@/languages";
 import { api } from "@/shared/api";
@@ -264,12 +264,34 @@ function LibraryPlaylistContent() {
     );
   }, [sortedTracks, viewData, decodedId]);
 
+  const player = usePlayerState();
+  const playlistContext = decodedId
+    ? `playlist:${decodedId}`
+    : (viewData?.title ?? "");
+  const isPlayingCurrentPlaylist =
+    Boolean(playlistContext) &&
+    player.playbackContext === playlistContext &&
+    player.status !== "idle";
+  const isShuffleEngaged =
+    isPlayingCurrentPlaylist && player.shuffleMode !== "off";
+
   const handleShufflePlay = useCallback(() => {
     if (!sortedTracks.length || !viewData) return;
     const context = decodedId ? `playlist:${decodedId}` : viewData.title;
-    playerEngine.clearQueue();
-    void playerEngine.playShuffled(sortedTracks, context, viewData.coverUrl);
-  }, [sortedTracks, viewData, decodedId]);
+
+    if (isPlayingCurrentPlaylist) {
+      playerEngine.cycleShuffleMode();
+    } else {
+      playerEngine.clearQueue();
+      void playerEngine.playShuffled(
+        sortedTracks,
+        context,
+        viewData.coverUrl,
+        undefined,
+        "playlist",
+      );
+    }
+  }, [sortedTracks, viewData, decodedId, isPlayingCurrentPlaylist]);
 
   const { toast } = useToast();
   const [addedToQueue, setAddedToQueue] = useState(false);
@@ -665,10 +687,29 @@ function LibraryPlaylistContent() {
                         variant="secondary"
                         onClick={handleShufflePlay}
                         disabled={currentTracks.length === 0}
-                        className={`${HERO_BUTTON_CLASS} ${HERO_GLASS_BUTTON_CLASS} !w-[52px] !p-0 text-text-primary`}
-                        title={t("common.shuffle")}
+                        className={cn(
+                          HERO_BUTTON_CLASS,
+                          HERO_GLASS_BUTTON_CLASS,
+                          "!w-[52px] !p-0 text-text-primary",
+                          isShuffleEngaged &&
+                            "!bg-black/[0.12] dark:!bg-white/[0.2] hover:!bg-black/[0.15] dark:hover:!bg-white/[0.24]",
+                        )}
+                        aria-pressed={isShuffleEngaged}
+                        title={
+                          isPlayingCurrentPlaylist
+                            ? t(`player.shuffle_${player.shuffleMode}`)
+                            : t("common.shuffle")
+                        }
                       >
-                        <LuShuffle size={18} />
+                        <ShuffleIcon
+                          mode={
+                            isPlayingCurrentPlaylist
+                              ? player.shuffleMode
+                              : "off"
+                          }
+                          size={18}
+                          icon={<LuShuffle size={18} />}
+                        />
                       </Button>
                     </>
                   }

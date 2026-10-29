@@ -6,6 +6,7 @@ export {
 } from "./engine/playerEngine";
 export { toVolumeGain, toVolumeLevel } from "./engine/volume";
 export { isRadioContext, nextRepeatMode } from "./engine/radioMode";
+export { nextShuffleMode, SHUFFLE_MODES } from "./engine/shuffleMode";
 export {
   usePlayerStore,
   type AccentVariant,
@@ -14,6 +15,7 @@ export {
   type TrackDoubleClickBehavior,
   type DefaultPlaybackContext,
   type RepeatMode,
+  type ShuffleMode,
 } from "./store/playerStore";
 export { usePlayerState } from "./hooks/usePlayerState";
 export { useAppIconSync } from "./hooks/useAppIconSync";
@@ -23,6 +25,11 @@ export {
 } from "./hooks/useSongMenuItems";
 
 export { default as MiniPlayer, type MiniPlayerProps } from "./ui/MiniPlayer";
+export {
+  ShuffleIcon,
+  SparkleStar,
+  type ShuffleIconProps,
+} from "./ui/ShuffleIcon";
 export {
   FullscreenPlayer,
   default as PlayerPage,

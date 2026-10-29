@@ -26,4 +26,5 @@ export interface Track {
     id: string;
     title: string;
   };
+  isRecommended?: boolean;
 }
