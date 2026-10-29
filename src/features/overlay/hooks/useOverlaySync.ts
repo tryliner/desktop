@@ -3,9 +3,9 @@ import { playerEngine } from "@/features/player/engine/playerEngine";
 import { usePlayerStore } from "@/features/player/store/playerStore";
 import {
   useIsTrackLiked,
-  useLikeTrack,
-  useUnlikeTrack,
 } from "@/features/library/hooks";
+import { useLikeTrack } from "@/features/library/hooks/likes/useLikeTrack";
+import { useUnlikeTrack } from "@/features/library/hooks/likes/useUnlikeTrack";
 import { useCoverSrc } from "@/features/covers";
 import { getAuthSession } from "@/shared/api";
 import { useAuthStore } from "@/features/auth/store/authStore";

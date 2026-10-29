@@ -105,6 +105,7 @@ export const SearchResultsList = memo(function SearchResultsList({
                 artists={subtitle}
                 coverUrl={it.coverUrl || it.imageUrl || ""}
                 explicit={it.explicit}
+                isArtist={isArtist}
                 imageShape={isArtist ? "circle" : "square"}
                 duration={durationStr}
                 durationMs={durationMs}

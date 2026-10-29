@@ -3,7 +3,10 @@ import React from "react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { createRoot, Root } from "react-dom/client";
 import { act } from "react";
-import { useLikedTracks, applyOptimisticLike } from "./useLikedTracks";
+import { useLikedTracks} from "./useLikedTracks";
+import {
+  applyOptimisticLike,
+} from "./likes/optimisticLikes";
 import { api } from "@/shared/api";
 
 (globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;

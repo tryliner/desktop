@@ -92,6 +92,7 @@ export const SearchHistoryList = memo(function SearchHistoryList({
               artists={item.subtitle || ""}
               coverUrl={item.coverUrl || ""}
               explicit={item.explicit}
+              isArtist={isArtist}
               imageShape={isArtist ? "circle" : "square"}
               duration={item.duration}
               durationMs={item.durationMs}

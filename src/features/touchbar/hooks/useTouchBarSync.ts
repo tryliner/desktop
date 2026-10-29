@@ -5,9 +5,9 @@ import { usePlayerStore } from "@/features/player/store/playerStore";
 import { useLyricsStore } from "@/features/lyrics";
 import {
   useIsTrackLiked,
-  useLikeTrack,
-  useUnlikeTrack,
 } from "@/features/library/hooks";
+import { useLikeTrack } from "@/features/library/hooks/likes/useLikeTrack";
+import { useUnlikeTrack } from "@/features/library/hooks/likes/useUnlikeTrack";
 import {
   isWindowVisible,
   onWindowVisibilityChange,

@@ -25,9 +25,9 @@ import { isRadioContext, nextRepeatMode } from "../engine/radioMode";
 import { useTranslation } from "@/languages";
 import {
   useIsTrackLiked,
-  useLikeTrack,
-  useUnlikeTrack,
 } from "@/features/library/hooks";
+import { useLikeTrack } from "@/features/library/hooks/likes/useLikeTrack";
+import { useUnlikeTrack } from "@/features/library/hooks/likes/useUnlikeTrack";
 import { usePlayerStore } from "../store/playerStore";
 import { toVolumeGain, toVolumeLevel } from "../engine/volume";
 import { VolumeColumn } from "./VolumeColumn";

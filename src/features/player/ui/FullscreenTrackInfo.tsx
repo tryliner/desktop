@@ -2,9 +2,9 @@ import { useCallback, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import {
   useIsTrackLiked,
-  useLikeTrack,
-  useUnlikeTrack,
 } from "@/features/library/hooks";
+import { useLikeTrack } from "@/features/library/hooks/likes/useLikeTrack";
+import { useUnlikeTrack } from "@/features/library/hooks/likes/useUnlikeTrack";
 import { ArtistLink } from "@/features/artist";
 import { isLocalTrackId } from "@/shared/media/local";
 import { useTranslation } from "@/languages";

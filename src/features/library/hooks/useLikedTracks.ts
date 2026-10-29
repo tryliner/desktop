@@ -1,47 +1,29 @@
 import { useEffect, useSyncExternalStore } from "react";
-import { api, getAuthSession, toClientTrack } from "@/shared/api";
-import type { Track } from "@/shared/types";
+import { getAuthSession } from "@/shared/api";
+import {
+  captureScope,
+  isScopeActive,
+  onAccountChange,
+  syncAccountScope,
+} from "./likes/accountScope";
+import { buildLikedView, type LikedData } from "./likes/buildLikedView";
+import { fetchLikedTracks } from "./likes/fetchLikedTracks";
+import {
+  currentSettleSeq,
+  onOverridesChange,
+  reconcileOverrides,
+} from "./likes/optimisticLikes";
 
-type LikedData = { tracks: Track[]; total: number };
 const EMPTY: LikedData = { tracks: [], total: 0 };
 let cache: LikedData = EMPTY;
 let loaded = false;
 let request: Promise<void> | null = null;
+let refetchQueued = false;
 const listeners = new Set<() => void>();
 let view = { data: cache, isLoading: true };
 
-const optimisticOverrides = new Map<string, boolean>();
-
-function buildView(isLoading: boolean): {
-  data: LikedData;
-  isLoading: boolean;
-} {
-  if (optimisticOverrides.size === 0) return { data: cache, isLoading };
-
-  let tracks = cache.tracks.filter(
-    (t) => optimisticOverrides.get(t.id) !== false,
-  );
-  for (const [id, liked] of optimisticOverrides) {
-    if (liked && !tracks.some((t) => t.id === id)) {
-      tracks = [
-        {
-          id,
-          title: "",
-          artists: "",
-          artistId: undefined,
-          coverUrl: "",
-          durationMs: 0,
-          playCount: 0,
-        } as Track,
-        ...tracks,
-      ];
-    }
-  }
-  return { data: { tracks, total: tracks.length }, isLoading };
-}
-
 function emit(isLoading = false) {
-  view = buildView(isLoading);
+  view = buildLikedView(cache, isLoading);
   listeners.forEach((l) => l());
 }
 
@@ -54,12 +36,23 @@ function snapshot() {
   return view;
 }
 
+onOverridesChange(() => emit(false));
+
+onAccountChange(() => {
+  cache = EMPTY;
+  loaded = false;
+  emit(false);
+});
+
 const SERVER_SNAPSHOT = { data: EMPTY, isLoading: true };
 
 function load(force = false): Promise<void> {
-  if (request) return request;
-  const session = getAuthSession();
-  if (!session?.accessToken) {
+  if (request) {
+    if (force) refetchQueued = true;
+    return request;
+  }
+  const scope = captureScope();
+  if (!getAuthSession()?.accessToken || !scope) {
     cache = EMPTY;
     loaded = false;
     emit(false);
@@ -69,63 +62,44 @@ function load(force = false): Promise<void> {
 
   if (!loaded) emit(true);
 
+  const startSeq = currentSettleSeq();
+
   request = (async () => {
-    const tracks: Track[] = [];
-    let cursor: string | undefined;
-    do {
-      const page = await api.listLikedTracks(100, cursor);
-      tracks.push(
-        ...page.items.map(({ track, likedAt }) => ({
-          ...toClientTrack(track),
-          addedAt: likedAt,
-        })),
-      );
-      cursor = page.nextCursor ?? undefined;
-    } while (cursor);
+    const tracks = await fetchLikedTracks(scope);
+    if (!tracks) {
+      refetchQueued = true;
+      return;
+    }
     cache = { tracks, total: tracks.length };
     loaded = true;
-    optimisticOverrides.clear();
+    reconcileOverrides(startSeq);
   })()
     .catch(() => {
+      if (!isScopeActive(scope)) {
+        refetchQueued = true;
+        return;
+      }
       if (!loaded) cache = EMPTY;
       loaded = true;
     })
     .finally(() => {
       request = null;
       emit(false);
+      if (refetchQueued) {
+        refetchQueued = false;
+        void load(true);
+      }
     });
   return request;
 }
 
-export function applyOptimisticLike(trackId: string): () => void {
-  const prev = optimisticOverrides.get(trackId);
-  optimisticOverrides.set(trackId, true);
-  emit(false);
-  return () => {
-    if (prev === undefined) optimisticOverrides.delete(trackId);
-    else optimisticOverrides.set(trackId, prev);
-    emit(false);
-  };
-}
-
-export function applyOptimisticUnlike(trackId: string): () => void {
-  const prev = optimisticOverrides.get(trackId);
-  optimisticOverrides.set(trackId, false);
-  emit(false);
-  return () => {
-    if (prev === undefined) optimisticOverrides.delete(trackId);
-    else optimisticOverrides.set(trackId, prev);
-    emit(false);
-  };
-}
-
 if (typeof window !== "undefined") {
   const handleRefresh = () => {
+    syncAccountScope();
     const session = getAuthSession();
     if (!session?.accessToken) {
       cache = EMPTY;
       loaded = false;
-      optimisticOverrides.clear();
       emit(false);
     } else {
       void load(true);

@@ -793,20 +793,24 @@ export const api = {
     return request<ApiLikedTracksPage>(`/v1/me/library/tracks?${params}`);
   },
 
-  async likeTrack(id: string): Promise<void> {
+  async likeTrack(id: string, options?: {signal?: AbortSignal}): Promise<void> {
     if (isLocalTrackId(id)) throw new Error("Local tracks stay on this device");
     const track = await clientCatalog.resolveSnapshot(id);
+    options?.signal?.throwIfAborted();
     return request<void>(`/v1/me/library/tracks/${encodeURIComponent(id)}`, {
       method: "PUT",
+      signal: options?.signal,
       ...(track
         ? { body: JSON.stringify({ track, trackSnapshot: track }) }
         : {}),
     });
   },
 
-  unlikeTrack(id: string): Promise<void> {
+  unlikeTrack(id: string, options?: {signal?: AbortSignal}): Promise<void> {
+    options?.signal?.throwIfAborted();
     return request<void>(`/v1/me/library/tracks/${encodeURIComponent(id)}`, {
       method: "DELETE",
+      signal: options?.signal,
     });
   },
 

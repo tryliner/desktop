@@ -8,9 +8,11 @@ export { useExternalItems, type EntityType } from "./useExternalItems";
 export {
   useLikedTracks,
   useLikedTrackCount,
+} from "./useLikedTracks";
+export {
   applyOptimisticLike,
   applyOptimisticUnlike,
-} from "./useLikedTracks";
+} from "./likes/optimisticLikes";
 export { useYoutubeLibraryItems } from "./useYoutubeLibraryItems";
 export { useIsTrackLiked } from "./useIsTrackLiked";
 export {
@@ -21,6 +23,6 @@ export {
   useDeletePlaylist,
   useSaveExternalItem,
   useRemoveExternalItem,
-  useLikeTrack,
-  useUnlikeTrack,
 } from "./useLibraryMutations";
+export { useLikeTrack } from "./likes/useLikeTrack";
+export { useUnlikeTrack } from "./likes/useUnlikeTrack";

@@ -13,11 +13,11 @@ import type { DropdownMenuItem } from "@/shared/ui/DropdownMenu";
 import { playerEngine } from "../engine/playerEngine";
 import {
   usePlaylistsList,
-  useLikeTrack,
-  useUnlikeTrack,
   useIsTrackLiked,
   useModalStore,
 } from "@/features/library";
+import { useLikeTrack } from "@/features/library/hooks/likes/useLikeTrack";
+import { useUnlikeTrack } from "@/features/library/hooks/likes/useUnlikeTrack";
 import { useTranslation } from "@/languages";
 import { showToast } from "@/shared/ui";
 import { buildShareUrl } from "@/shared/utils/share";

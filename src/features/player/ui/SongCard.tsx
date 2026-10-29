@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState, useCallback } from "react";
 import { More2Fill, RepeatFill } from "@mingcute/react";
 import DropdownMenu from "@/shared/ui/DropdownMenu";
 import type { DropdownMenuItem } from "@/shared/ui/DropdownMenu";
@@ -9,6 +9,11 @@ import ExplicitBadge from "@/shared/ui/ExplicitBadge";
 import CoverImage from "@/features/covers/ui/CoverImage";
 import { isCoverReady } from "@/features/covers/lib/coverArt";
 import type { TrackArtist } from "@/shared/types";
+import { LuHeart } from "react-icons/lu";
+import Button from "@/shared/ui/Button";
+import { useIsTrackLiked } from "@/features/library";
+import { useLikeTrack } from "@/features/library/hooks/likes/useLikeTrack";
+import { useUnlikeTrack } from "@/features/library/hooks/likes/useUnlikeTrack";
 
 export interface SongCardProps {
   id?: string;
@@ -24,6 +29,7 @@ export interface SongCardProps {
   duration?: string;
   releaseDate?: string;
   explicit?: boolean;
+  isArtist?: boolean;
   imageShape?: "square" | "circle";
   trackNumber?: number;
   repostedBy?: string;
@@ -44,6 +50,7 @@ export interface SongCardProps {
 }
 
 function SongCard({
+  id,
   title,
   artists,
   artistId,
@@ -56,6 +63,7 @@ function SongCard({
   duration,
   releaseDate,
   explicit = false,
+  isArtist = false,
   imageShape = "square",
   trackNumber,
   repostedBy,
@@ -122,6 +130,20 @@ function SongCard({
       onPlay();
     }, 200);
   };
+
+  const liked = useIsTrackLiked(id);
+  const unlikeMutation = useUnlikeTrack();
+  const likeMutation = useLikeTrack();
+
+  const handleLike = useCallback(() => {
+    if (!id) return;
+
+    if (liked) {
+      unlikeMutation.mutate(id);
+    } else {
+      likeMutation.mutate(id);
+    }
+  }, [id, liked, unlikeMutation, likeMutation]);
 
   return (
     <div
@@ -287,6 +309,28 @@ function SongCard({
           />
         )}
         {trailingAction}
+        {!isArtist && (
+          <Button
+            type="button"
+            aria-label={liked ? t("common.unlike") : t("common.like")}
+            aria-pressed={liked}
+            title={liked ? t("common.unlike") : t("common.like")}
+            className="rounded-md bg-transparent border-0 p-0 text-text-primary transition-all duration-200 active:scale-[0.96] flex items-center justify-center cursor-pointer"
+            onKeyDown={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleLike();
+            }}
+          >
+            <LuHeart
+              size={20}
+              strokeWidth={1}
+              className={
+                liked ? "fill-red-500 text-red-500" : "text-text-secondary"
+              }
+            />
+          </Button>
+        )}
       </div>
     </div>
   );
