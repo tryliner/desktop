@@ -417,6 +417,7 @@ export function FullscreenPlayer({
     lyricsLoading,
     lyricsError,
     plainLyrics,
+    instrumental,
     availableProviders,
     currentLyricsTrackId,
   } = useLyricsStore();
@@ -453,7 +454,7 @@ export function FullscreenPlayer({
     !lyricsLoading &&
     !hasLyrics &&
     !lyricsError &&
-    plainLyrics === "[INSTRUMENTAL]";
+    (instrumental || plainLyrics === "[INSTRUMENTAL]");
   const isLyricsLoading = !hasLyrics && lyricsLoading;
   const isLyricsMissing = isMatchingTrack && !hasLyrics && !lyricsLoading;
 
