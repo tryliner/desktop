@@ -861,6 +861,10 @@
     },
     "connection": {
       "open_folder": "Abrir local salvo"
+    },
+    "lyrics_romanization": {
+      "title": "Romanizar letras",
+      "description": "Mostra as letras em coreano e chinês com caracteres latinos abaixo de cada linha."
     }
   },
   "toast": {

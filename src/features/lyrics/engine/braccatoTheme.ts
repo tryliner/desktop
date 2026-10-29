@@ -14,6 +14,9 @@ export const braccatoThemeCss = `
   --blyrics-word-wobble-transform-peak: none;
   --blyrics-word-wobble-transform-settle: none;
   --blyrics-word-wobble-transform-to: none;
+  --blyrics-translated-font-size: 1.5rem;
+  --blyrics-translated-font-weight: 500;
+  --blyrics-translated-color: color(display-p3 1 1 1 / 0.55);
 }
 
 .blyrics-container > div {
@@ -22,6 +25,14 @@ export const braccatoThemeCss = `
 
 .blyrics-container > div:hover {
   transform: none !important;
+}
+
+.blyrics-container .blyrics--romanized {
+  background: none;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  margin-top: 4px;
 }
 
 .blyrics-background-lyric {

@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { LocalTrackLibrary } from "./library";
 
 describe("LocalTrackLibrary", () => {
@@ -22,6 +22,7 @@ describe("LocalTrackLibrary", () => {
   });
 
   afterEach(async () => {
+    vi.restoreAllMocks();
     await fs.rm(path.dirname(root), { recursive: true, force: true });
   });
 
@@ -77,11 +78,37 @@ describe("LocalTrackLibrary", () => {
     ).rejects.toThrow();
   });
 
-  it("refuses an audio-named link that points at a non-audio file", async () => {
+  it("refuses an audio-named path that resolves to a non-audio file", async () => {
     const library = new LocalTrackLibrary(root);
     const secret = await source("id_rsa", "private key");
     const disguised = path.join(sources, "song.mp3");
-    await fs.symlink(secret, disguised);
+    vi.spyOn(fs, "realpath").mockResolvedValueOnce(secret);
+
+    const result = await library.importFiles([disguised]);
+
+    expect(result.added).toEqual([]);
+    expect(result.failed).toEqual(["song.mp3"]);
+  });
+
+  it("refuses an audio-named link that points at a non-audio file", async ({
+    skip,
+  }) => {
+    const library = new LocalTrackLibrary(root);
+    const secret = await source("id_rsa", "private key");
+    const disguised = path.join(sources, "song.mp3");
+    try {
+      await fs.symlink(secret, disguised);
+    } catch (error) {
+      if (
+        process.platform === "win32" &&
+        (error as NodeJS.ErrnoException).code === "EPERM"
+      ) {
+        skip(
+          "Creating file symlinks requires Windows Developer Mode or elevation",
+        );
+      }
+      throw error;
+    }
 
     const result = await library.importFiles([disguised]);
 

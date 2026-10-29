@@ -969,6 +969,10 @@
         "disabled": "Désactivé",
         "via_arrpc": "Connecté via arRPC"
       }
+    },
+    "lyrics_romanization": {
+      "title": "Romaniser les paroles",
+      "description": "Affiche les paroles coréennes et chinoises en lettres latines sous chaque ligne."
     }
   },
   "toast": {

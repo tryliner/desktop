@@ -743,6 +743,10 @@
     },
     "connection": {
       "open_folder": "Speicherort öffnen"
+    },
+    "lyrics_romanization": {
+      "title": "Liedtexte romanisieren",
+      "description": "Zeigt koreanische und chinesische Liedtexte in lateinischer Schrift unter jeder Zeile an."
     }
   },
   "toast": {

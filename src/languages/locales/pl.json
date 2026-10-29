@@ -802,6 +802,10 @@
     },
     "connection": {
       "open_folder": "Otwórz lokalizację zapisu"
+    },
+    "lyrics_romanization": {
+      "title": "Romanizuj teksty",
+      "description": "Pokazuje koreańskie i chińskie teksty alfabetem łacińskim pod każdą linijką."
     }
   },
   "toast": {

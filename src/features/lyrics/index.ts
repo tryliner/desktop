@@ -25,4 +25,9 @@ export {
   type LyricsWord,
   type SyncedLine,
 } from "./hooks/useLyricsAnimator";
+export {
+  useLyricsDisplayStore,
+  type LyricsDisplayState,
+} from "./store/lyricsDisplayStore";
+export { useLyricsRomanization } from "./hooks/useLyricsRomanization";
 export { LyricsProviderIsland } from "./ui/LyricsProviderIsland";
