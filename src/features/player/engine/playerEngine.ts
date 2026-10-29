@@ -1819,12 +1819,17 @@ class PlayerEngine {
               updatedAt: Date.now(),
             });
           }
+          if (!bestCandidate && event.instrumental) {
+            useLyricsStore.getState().setLyricsState({ instrumental: true });
+          }
           log(
             "cyan",
             "lyrics",
             event.best
               ? `done, best=${event.best.provider} q=${event.best.quality}`
-              : "done, no lyrics found",
+              : event.instrumental
+                ? "done, instrumental"
+                : "done, no lyrics found",
           );
           break;
         }

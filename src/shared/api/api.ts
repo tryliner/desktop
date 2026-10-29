@@ -1089,6 +1089,8 @@ export const api = {
       res = await fetch(`${getApiBaseUrl()}${path}`, {
         signal,
         headers: {
+          // a known instrumental comes back as plain json instead of a stream
+          Accept: "application/json, text/event-stream",
           ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
           ...correlationHeaders,
           ...signedHeaders,
@@ -1109,6 +1111,14 @@ export const api = {
     if (!res.ok || !res.body) {
       const respReqId = res.headers?.get?.("x-request-id") || requestId;
       throw new ApiError(res.status, res.statusText, undefined, respReqId);
+    }
+
+    if (res.headers.get("content-type")?.includes("application/json")) {
+      const body = (await res.json()) as { instrumental?: boolean };
+      yield body.instrumental
+        ? { type: "done", cached: true, status: "not_found", instrumental: true }
+        : { type: "done", cached: true, status: "not_found" };
+      return;
     }
 
     const reader = res.body.getReader();

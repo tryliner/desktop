@@ -60,6 +60,8 @@ export interface LyricsState {
   braccatoLyrics: Lyric[];
   syncedLines: SyncedLine[];
   plainLyrics: string | null;
+  // the server says the track has no words, shown instead of "no lyrics"
+  instrumental: boolean;
   lyricsQuality: number;
   currentLyricsTrackId: string | null;
   activeProvider: string | null;
@@ -104,6 +106,7 @@ export const useLyricsStore = create<LyricsState>()(
       braccatoLyrics: [],
       syncedLines: [],
       plainLyrics: null,
+      instrumental: false,
       lyricsQuality: 0,
       currentLyricsTrackId: null,
       activeProvider: null,
@@ -152,6 +155,10 @@ export const useLyricsStore = create<LyricsState>()(
 
         set({
           ...state,
+          // a new track or any words clear an instrumental answer unless it is set again
+          instrumental:
+            state.instrumental ??
+            (isNewTrack || state.rawLyrics ? false : current.instrumental),
           offsetMs: offset,
           baseBraccatoLyrics: baseBraccato,
           baseSyncedLines: baseSynced,
@@ -257,6 +264,7 @@ export const useLyricsStore = create<LyricsState>()(
           braccatoLyrics: [],
           syncedLines: [],
           plainLyrics: null,
+          instrumental: false,
           lyricsQuality: 0,
           currentLyricsTrackId: null,
           activeProvider: null,
