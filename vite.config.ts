@@ -5,6 +5,7 @@ import electron from "vite-plugin-electron/simple";
 import path from "path";
 import pkg from "./package.json" with { type: "json" };
 import { contentSecurityPolicyPlugin } from "./vite.csp.ts";
+import { japaneseDictionaryPlugin } from "./vite.japanese-dictionary.ts";
 
 export default defineConfig(({ command, mode }) => {
   if (command === "serve") {
@@ -25,6 +26,7 @@ export default defineConfig(({ command, mode }) => {
       react(),
       tailwindcss(),
       contentSecurityPolicyPlugin(),
+      japaneseDictionaryPlugin(),
       electron({
         main: {
           entry: "electron/main.ts",

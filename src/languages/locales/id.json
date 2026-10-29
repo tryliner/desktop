@@ -873,6 +873,18 @@
     },
     "connection": {
       "open_folder": "Buka lokasi penyimpanan"
+    },
+    "lyrics_romanization": {
+      "title": "Romanisasi lirik",
+      "description": "Tampilkan lirik Korea, Mandarin, dan Jepang dengan huruf Latin di bawah tiap baris.",
+      "language": "Bahasa bacaan untuk lagu ini",
+      "mode_auto": "Otomatis",
+      "mode_ja": "Jepang",
+      "mode_zh": "Mandarin",
+      "mode_off": "Lewati",
+      "loading": "Memuat…",
+      "failed": "Bacaan tidak tersedia",
+      "retry": "Coba lagi"
     }
   },
   "toast": {

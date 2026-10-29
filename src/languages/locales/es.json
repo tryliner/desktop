@@ -852,6 +852,18 @@
       "scope_main_app": "App principal",
       "scope_overlay": "Superposición",
       "reset_section": "Restablecer sección"
+    },
+    "lyrics_romanization": {
+      "title": "Romanizar letras",
+      "description": "Muestra las letras en coreano, chino y japonés con caracteres latinos bajo cada línea.",
+      "language": "Idioma de lectura de esta canción",
+      "mode_auto": "Automático",
+      "mode_ja": "Japonés",
+      "mode_zh": "Mandarín",
+      "mode_off": "Omitir",
+      "loading": "Cargando…",
+      "failed": "Lectura no disponible",
+      "retry": "Reintentar"
     }
   },
   "toast": {

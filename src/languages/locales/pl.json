@@ -802,6 +802,18 @@
     },
     "connection": {
       "open_folder": "Otwórz lokalizację zapisu"
+    },
+    "lyrics_romanization": {
+      "title": "Romanizuj teksty",
+      "description": "Pokazuje koreańskie, chińskie i japońskie teksty alfabetem łacińskim pod każdą linijką.",
+      "language": "Język odczytu tego utworu",
+      "mode_auto": "Automatycznie",
+      "mode_ja": "Japoński",
+      "mode_zh": "Mandaryński",
+      "mode_off": "Pomiń",
+      "loading": "Ładowanie…",
+      "failed": "Transkrypcja niedostępna",
+      "retry": "Spróbuj ponownie"
     }
   },
   "toast": {

@@ -861,6 +861,18 @@
     },
     "connection": {
       "open_folder": "Abrir local salvo"
+    },
+    "lyrics_romanization": {
+      "title": "Romanizar letras",
+      "description": "Mostra as letras em coreano, chinês e japonês com caracteres latinos abaixo de cada linha.",
+      "language": "Idioma de leitura desta música",
+      "mode_auto": "Automático",
+      "mode_ja": "Japonês",
+      "mode_zh": "Mandarim",
+      "mode_off": "Pular",
+      "loading": "Carregando…",
+      "failed": "Transcrição indisponível",
+      "retry": "Tentar novamente"
     }
   },
   "toast": {

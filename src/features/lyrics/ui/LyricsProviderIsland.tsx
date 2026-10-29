@@ -11,6 +11,7 @@ import {
   Refresh1Line,
 } from "@mingcute/react";
 import { useLyricsStore } from "../store/lyricsStore";
+import { RomanizationToggle } from "./RomanizationToggle";
 import { useTranslation } from "@/languages";
 import { cn } from "@/shared/lib";
 
@@ -196,6 +197,8 @@ export function LyricsProviderIsland() {
             <RightLine size={14} />
           </button>
         )}
+
+        <RomanizationToggle />
 
         {!isCurrentPlain && (
           <>

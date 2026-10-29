@@ -798,6 +798,18 @@
     },
     "connection": {
       "open_folder": "Apri la posizione di salvataggio"
+    },
+    "lyrics_romanization": {
+      "title": "Romanizza i testi",
+      "description": "Mostra i testi coreani, cinesi e giapponesi in caratteri latini sotto ogni riga.",
+      "language": "Lingua di lettura per questo brano",
+      "mode_auto": "Automatico",
+      "mode_ja": "Giapponese",
+      "mode_zh": "Mandarino",
+      "mode_off": "Salta",
+      "loading": "Caricamento…",
+      "failed": "Trascrizione non disponibile",
+      "retry": "Riprova"
     }
   },
   "toast": {

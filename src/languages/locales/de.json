@@ -743,6 +743,18 @@
     },
     "connection": {
       "open_folder": "Speicherort öffnen"
+    },
+    "lyrics_romanization": {
+      "title": "Liedtexte romanisieren",
+      "description": "Zeigt koreanische, chinesische und japanische Liedtexte in lateinischer Schrift unter jeder Zeile an.",
+      "language": "Lesesprache für dieses Lied",
+      "mode_auto": "Auto",
+      "mode_ja": "Japanisch",
+      "mode_zh": "Mandarin",
+      "mode_off": "Überspringen",
+      "loading": "Lädt…",
+      "failed": "Umschrift nicht verfügbar",
+      "retry": "Erneut versuchen"
     }
   },
   "toast": {

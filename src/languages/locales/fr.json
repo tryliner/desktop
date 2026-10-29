@@ -969,6 +969,18 @@
         "disabled": "Désactivé",
         "via_arrpc": "Connecté via arRPC"
       }
+    },
+    "lyrics_romanization": {
+      "title": "Romaniser les paroles",
+      "description": "Affiche les paroles coréennes, chinoises et japonaises en lettres latines sous chaque ligne.",
+      "language": "Langue de lecture pour ce morceau",
+      "mode_auto": "Auto",
+      "mode_ja": "Japonais",
+      "mode_zh": "Mandarin",
+      "mode_off": "Ignorer",
+      "loading": "Chargement…",
+      "failed": "Transcription indisponible",
+      "retry": "Réessayer"
     }
   },
   "toast": {

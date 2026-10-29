@@ -24,7 +24,9 @@
     "electron",
     "vite.config.ts",
     "vite.csp.ts",
-    "vitest.config.ts"
+    "vite.japanese-dictionary.ts",
+    "vitest.config.ts",
+    "vitest.setup.ts"
   ],
   "exclude": ["node_modules", "dist"]
 }
