@@ -856,6 +856,10 @@
       "scope_main_app": "App principal",
       "scope_overlay": "Superposición",
       "reset_section": "Restablecer sección"
+    },
+    "lyrics_romanization": {
+      "title": "Romanizar letras",
+      "description": "Muestra las letras en coreano con caracteres latinos bajo cada línea."
     }
   },
   "toast": {

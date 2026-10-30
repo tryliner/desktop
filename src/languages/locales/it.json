@@ -802,6 +802,10 @@
     },
     "connection": {
       "open_folder": "Apri la posizione di salvataggio"
+    },
+    "lyrics_romanization": {
+      "title": "Romanizza i testi",
+      "description": "Mostra i testi coreani in caratteri latini sotto ogni riga."
     }
   },
   "toast": {

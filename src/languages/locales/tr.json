@@ -802,6 +802,10 @@
     },
     "connection": {
       "open_folder": "Kaydedilen konumu aç"
+    },
+    "lyrics_romanization": {
+      "title": "Şarkı sözlerini romanize et",
+      "description": "Korece şarkı sözlerini her satırın altında Latin harfleriyle gösterir."
     }
   },
   "toast": {

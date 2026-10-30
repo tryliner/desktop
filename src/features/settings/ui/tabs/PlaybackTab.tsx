@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useTranslation } from "@/languages";
 import { usePlayerStore } from "@/features/player";
 import { ToggleSwitch } from "@/shared/ui";
+import { useLyricsDisplayStore } from "@/features/lyrics";
 import { SettingRow, SettingSection, SegmentedControl } from "../controls";
 
 export function PlaybackTab({ searchQuery }: { searchQuery?: string }) {
@@ -28,6 +29,12 @@ export function PlaybackTab({ searchQuery }: { searchQuery?: string }) {
   );
   const setPauseOnDeviceChange = usePlayerStore(
     (state) => state.setPauseOnDeviceChange,
+  );
+  const lyricsRomanization = useLyricsDisplayStore(
+    (state) => state.romanization,
+  );
+  const setLyricsRomanization = useLyricsDisplayStore(
+    (state) => state.setRomanization,
   );
 
   useEffect(() => {
@@ -119,6 +126,21 @@ export function PlaybackTab({ searchQuery }: { searchQuery?: string }) {
           <ToggleSwitch
             checked={pauseOnDeviceChange}
             onChange={setPauseOnDeviceChange}
+          />
+        }
+      />
+
+      <SettingRow
+        title={t("settings.lyrics_romanization.title")}
+        description={t("settings.lyrics_romanization.description")}
+        titleKey="settings.lyrics_romanization.title"
+        descKey="settings.lyrics_romanization.description"
+        searchQuery={searchQuery}
+        control={
+          <ToggleSwitch
+            checked={lyricsRomanization}
+            onChange={setLyricsRomanization}
+            ariaLabel={t("settings.lyrics_romanization.title")}
           />
         }
       />

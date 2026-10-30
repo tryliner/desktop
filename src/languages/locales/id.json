@@ -877,6 +877,10 @@
     },
     "connection": {
       "open_folder": "Buka lokasi penyimpanan"
+    },
+    "lyrics_romanization": {
+      "title": "Romanisasi lirik",
+      "description": "Tampilkan lirik Korea dengan huruf Latin di bawah tiap baris."
     }
   },
   "toast": {
