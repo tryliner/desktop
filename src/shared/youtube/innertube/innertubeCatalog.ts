@@ -127,16 +127,10 @@ async function getArtist(
   artistId: string,
   signal?: AbortSignal,
 ): Promise<ArtistDetails> {
-  const direct = await loadArtist(artistId, signal).catch(() => null);
-  if (direct) return direct;
-  const searched = await searchCatalog(artistId, "artist", signal).catch(
-    () => [],
-  );
-  const match = searched.find((item) => item.type === "artist");
-  if (match && match.id !== artistId) {
-    const resolved = await loadArtist(match.id, signal);
-    if (resolved) return resolved;
-  }
+  // ids only: no by-name search fallback, it picks whichever artist YouTube ranks
+  // first for the name, which is often someone else
+  const artist = await loadArtist(artistId, signal);
+  if (artist) return artist;
   throw notFound("Artist");
 }
 

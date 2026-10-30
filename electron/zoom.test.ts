@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   MAX_ZOOM,
   MIN_ZOOM,
+  effectiveZoom,
   maxZoomFor,
   nextZoomFactor,
   zoomActionFor,
@@ -46,5 +47,22 @@ describe("zoom shortcuts", () => {
     expect(maxZoomFor(1100, 705, 1100, 705)).toBe(1);
     expect(maxZoomFor(1440, 900, 1100, 705)).toBe(1.2);
     expect(maxZoomFor(3840, 2160, 1100, 705)).toBe(MAX_ZOOM);
+  });
+
+  it("shrinks below 1 when the work area is smaller than the layout", () => {
+    // 1920x1080 at 150% scaling with a taskbar: ~1280x672 of work area
+    expect(maxZoomFor(1280, 672, 1100, 705)).toBe(0.9);
+    // 1366x768 at 125%: ~1093x582
+    expect(maxZoomFor(1093, 582, 1100, 705)).toBe(MIN_ZOOM);
+    expect(maxZoomFor(640, 400, 1100, 705)).toBe(MIN_ZOOM);
+  });
+});
+
+describe("effective zoom", () => {
+  it("caps the user's zoom by what the window fits and restores it when it grows", () => {
+    expect(effectiveZoom(1, 0.9)).toBe(0.9);
+    expect(effectiveZoom(1.2, 0.9)).toBe(0.9);
+    expect(effectiveZoom(1.2, 1.5)).toBe(1.2);
+    expect(effectiveZoom(0.8, 1.5)).toBe(0.8);
   });
 });
