@@ -119,7 +119,7 @@ export interface LinerElectronApi {
     get: () => StoredAuthSession | null;
     set: (
       next: { accessToken: string; refreshToken: string } | null,
-    ) => Promise<StoredAuthSession | null>;
+    ) => Promise<boolean>;
   };
   onDeeplink: (cb: (target: DeeplinkTarget) => void) => () => void;
   diagnoseNetwork: (hosts: string[]) => Promise<MainNetResult>;
