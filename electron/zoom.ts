@@ -28,12 +28,9 @@ export function maxZoomFor(
   minHeight: number,
 ): number {
   const fit = Math.min(width / minWidth, height / minHeight);
-  // below 1 on screens smaller than the layout (e.g. 1080p at 150% scaling has
-  // ~672px of work area for a 705px layout), so the app shrinks instead of clipping
   return Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, Math.floor(fit * 10) / 10));
 }
 
-/** the zoom actually applied: what the user picked, capped by what the window fits */
 export function effectiveZoom(preferred: number, maxZoom: number): number {
   return Math.round(Math.min(preferred, maxZoom) * 10) / 10;
 }
@@ -61,8 +58,6 @@ export function attachZoomControls(
     const [width, height] = window.getContentSize();
     return maxZoomFor(width, height, minWidth, minHeight);
   };
-  // the user's own choice, kept apart from the fit cap so growing the window
-  // back gives them their zoom again instead of leaving it shrunk
   let preferred = 1;
   const sync = () => {
     const target = effectiveZoom(preferred, maxZoom());

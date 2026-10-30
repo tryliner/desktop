@@ -69,7 +69,6 @@ export default function ArtistLink({
     innerContent = <span>{text}</span>;
   } else if (artistList && artistList.length > 0) {
     innerContent = artistList.map((artist, index) => {
-      // only real catalog ids are navigable; a bare name is shown as plain text
       const targetId = isArtistId(artist.id)
         ? artist.id
         : artistList.length === 1 && isArtistId(artistId)

@@ -127,8 +127,6 @@ async function getArtist(
   artistId: string,
   signal?: AbortSignal,
 ): Promise<ArtistDetails> {
-  // ids only: no by-name search fallback, it picks whichever artist YouTube ranks
-  // first for the name, which is often someone else
   const artist = await loadArtist(artistId, signal);
   if (artist) return artist;
   throw notFound("Artist");
