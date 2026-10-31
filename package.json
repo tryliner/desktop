@@ -122,7 +122,7 @@
     "bgutils-js": "4.0.3",
     "clsx": "^2.1.1",
     "electron-updater": "^6.8.11",
-    "framer-motion": "^12.38.0",
+    "framer-motion": "^14.6.0",
     "googlevideo": "5.0.1",
     "gsap": "^3.15.0",
     "lottie-web": "^5.13.0",
