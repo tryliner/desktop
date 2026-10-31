@@ -1,4 +1,4 @@
-import type { Track } from "./track";
+import type { Track, TrackAlbum } from "./track";
 
 export type PlaybackContextType =
   "album" | "playlist" | "radio" | "search" | "library" | "explore" | "direct";
@@ -8,11 +8,22 @@ export interface PlaybackContext {
   id?: string;
 }
 
+// what the client knows about a played track; artists without an id and a
+// cover without dimensions are fine, the server fills in or resolves the rest
+export interface PlaybackTrackSnapshot {
+  id: string;
+  title: string;
+  artists: { id?: string; name: string }[];
+  album?: TrackAlbum;
+  durationMs?: number;
+  cover?: { url: string };
+}
+
 export interface RecordPlaybackEventRequest {
   playbackSessionId: string;
   listeningSessionId: string;
   trackId: string;
-  trackSnapshot?: Track;
+  trackSnapshot?: PlaybackTrackSnapshot;
   playedDurationMs: number;
   trackDurationMs?: number;
   completionRate: number;

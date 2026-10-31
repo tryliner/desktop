@@ -7,6 +7,7 @@ import {
 } from "../store/playerStore";
 import { playerRuntime } from "./playerRuntime";
 import { isRadioContext, shouldRefillRadio } from "./radioMode";
+import { playbackSnapshot } from "./playbackSnapshot";
 import { pitchShifter } from "./pitchShifter";
 import { EQ_MAX_CUSTOM_PRESETS, EQ_PRESET_NAME_MAX } from "./equalizer";
 import {
@@ -227,33 +228,12 @@ class PlaybackTelemetryTracker {
       (this.playedDurationMs >= 3000 || this.completed) &&
       !isLocalTrackId(this.activeTrackId)
     ) {
-      const snap = this.activeTrack;
-      const artistsList = snap?.artistList?.length
-        ? snap.artistList.map((a) => ({ id: a.id || "unknown", name: a.name }))
-        : snap?.artists
-          ? snap.artists.split(",").map((name) => ({
-              id: snap?.artistId || "unknown",
-              name: name.trim(),
-            }))
-          : [{ id: "unknown", name: "Unknown Artist" }];
-
       reported = this.sendEvent({
         playbackSessionId: this.playbackSessionId,
         listeningSessionId: this.getOrCreateListeningSession(),
         trackId: this.activeTrackId,
-        trackSnapshot: snap
-          ? {
-              id: snap.id,
-              title: snap.title || "Unknown Track",
-              artists: artistsList,
-              album: snap.album
-                ? { id: snap.album.id || "", title: snap.album.title || "" }
-                : undefined,
-              cover: snap.coverUrl
-                ? { url: snap.coverUrl, width: 512, height: 512 }
-                : undefined,
-              durationMs: snap.durationMs || this.trackDurationMs,
-            }
+        trackSnapshot: this.activeTrack
+          ? playbackSnapshot(this.activeTrack, this.trackDurationMs)
           : undefined,
         playedDurationMs: Math.round(this.playedDurationMs),
         trackDurationMs:
