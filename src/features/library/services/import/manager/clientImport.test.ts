@@ -148,9 +148,12 @@ describe("finalizeImportedPlaylist", () => {
 
   it("saves all matched tracks in one bulk request, deduplicated", async () => {
     vi.spyOn(api, "createPlaylist").mockResolvedValue(playlist);
-    const bulk = vi
-      .spyOn(api, "addPlaylistTrackSnapshots")
-      .mockResolvedValue({ added: 1, duplicates: 0, rejected: 0 });
+    const bulk = vi.spyOn(api, "addPlaylistTrackSnapshots").mockResolvedValue({
+      added: 1,
+      duplicates: 0,
+      rejected: 0,
+      playlist: { ...playlist, trackCount: 1 },
+    });
 
     await expect(
       finalizeImportedPlaylist("Mine", undefined, [track, track]),

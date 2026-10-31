@@ -1,10 +1,11 @@
-// generated from the api's route schemas, do not edit. Run: pnpm contract:export (in tryliner/api)
+// generated from the api's route schemas, do not edit. Run: pnpm contract:export <desktop>/src/shared/contracts/api.generated.ts (in tryliner/api)
 /* eslint-disable */
 
-export type AddTracksResult = {
+export type AddItemsResult = {
   added: number;
   duplicates: number;
   rejected: number;
+  playlist: Playlist;
 };
 
 export type ArtistSnapshot = {
@@ -206,8 +207,6 @@ export type DailyMix = {
 
 export type DailyMixes = {
   items: DailyMix[];
-  /** ISO 8601 time */
-  generatedAt: string;
 };
 
 export type ErrorResponse = {
@@ -284,7 +283,6 @@ export type LikedTracksPage = {
 };
 
 export type MostSaved = {
-  type: SavedType;
   items: MostSavedItem[];
 };
 
@@ -339,7 +337,6 @@ export type PlaylistList = {
 };
 
 export type PlaylistOwner = {
-  id: string;
   username: string | null;
   displayName: string | null;
   avatarUrl: string | null;
@@ -550,19 +547,13 @@ export interface ApiRoutes {
       500: ErrorResponse;
     };
   };
-  "GET /v1/playlists/:playlistId": {
-    params: {
-      playlistId: string;
-    };
-    query: {
-      cursor?: string;
-      limit?: number;
-    };
+  "GET /v1/me/playlists": {
+    params: never;
+    query: never;
     body: never;
     responses: {
-      200: PlaylistDetails;
-      400: ErrorResponse;
-      404: ErrorResponse;
+      200: PlaylistList;
+      401: ErrorResponse;
       500: ErrorResponse;
     };
   };
@@ -581,22 +572,13 @@ export interface ApiRoutes {
       500: ErrorResponse;
     };
   };
-  "GET /v1/me/playlists": {
-    params: never;
-    query: never;
-    body: never;
-    responses: {
-      200: PlaylistList;
-      401: ErrorResponse;
-      500: ErrorResponse;
-    };
-  };
-  "GET /v1/me/playlists/:playlistId": {
+  "GET /v1/playlists/:playlistId": {
     params: {
       playlistId: string;
     };
     query: {
       cursor?: string;
+      /** default: the whole playlist */
       limit?: number;
     };
     body: never;
@@ -609,7 +591,7 @@ export interface ApiRoutes {
       500: ErrorResponse;
     };
   };
-  "PATCH /v1/me/playlists/:playlistId": {
+  "PATCH /v1/playlists/:playlistId": {
     params: {
       playlistId: string;
     };
@@ -627,7 +609,7 @@ export interface ApiRoutes {
       500: ErrorResponse;
     };
   };
-  "DELETE /v1/me/playlists/:playlistId": {
+  "DELETE /v1/playlists/:playlistId": {
     params: {
       playlistId: string;
     };
@@ -641,26 +623,7 @@ export interface ApiRoutes {
       500: ErrorResponse;
     };
   };
-  "POST /v1/me/playlists/:playlistId/tracks/:trackId": {
-    params: {
-      playlistId: string;
-      /** youtube video id or sc:<soundcloud id> */
-      trackId: string;
-    };
-    query: never;
-    body: {
-      track?: Track;
-    } | null;
-    responses: {
-      201: PlaylistItem;
-      400: ErrorResponse;
-      401: ErrorResponse;
-      404: ErrorResponse;
-      409: ErrorResponse;
-      500: ErrorResponse;
-    };
-  };
-  "POST /v1/me/playlists/:playlistId/tracks": {
+  "POST /v1/playlists/:playlistId/items": {
     params: {
       playlistId: string;
     };
@@ -669,7 +632,7 @@ export interface ApiRoutes {
       tracks: unknown[];
     };
     responses: {
-      200: AddTracksResult;
+      200: AddItemsResult;
       400: ErrorResponse;
       401: ErrorResponse;
       404: ErrorResponse;
@@ -677,7 +640,7 @@ export interface ApiRoutes {
       500: ErrorResponse;
     };
   };
-  "DELETE /v1/me/playlists/:playlistId/items/:itemId": {
+  "DELETE /v1/playlists/:playlistId/items/:itemId": {
     params: {
       playlistId: string;
       itemId: string;
@@ -692,7 +655,7 @@ export interface ApiRoutes {
       500: ErrorResponse;
     };
   };
-  "POST /v1/me/playlists/:playlistId/items/:itemId/move": {
+  "POST /v1/playlists/:playlistId/items/:itemId/move": {
     params: {
       playlistId: string;
       itemId: string;
@@ -711,7 +674,22 @@ export interface ApiRoutes {
       500: ErrorResponse;
     };
   };
-  "PUT /v1/me/library/tracks/:trackId": {
+  "GET /v1/me/likes": {
+    params: never;
+    query: {
+      cursor?: string;
+      /** default 30 */
+      limit?: number;
+    };
+    body: never;
+    responses: {
+      200: LikedTracksPage;
+      400: ErrorResponse;
+      401: ErrorResponse;
+      500: ErrorResponse;
+    };
+  };
+  "PUT /v1/me/likes/:trackId": {
     params: {
       /** youtube video id or sc:<soundcloud id> */
       trackId: string;
@@ -728,7 +706,7 @@ export interface ApiRoutes {
       500: ErrorResponse;
     };
   };
-  "DELETE /v1/me/library/tracks/:trackId": {
+  "DELETE /v1/me/likes/:trackId": {
     params: {
       /** youtube video id or sc:<soundcloud id> */
       trackId: string;
@@ -742,23 +720,19 @@ export interface ApiRoutes {
       500: ErrorResponse;
     };
   };
-  "GET /v1/me/library/tracks": {
+  "GET /v1/me/saved/albums": {
     params: never;
-    query: {
-      cursor?: string;
-      limit?: number;
-    };
+    query: never;
     body: never;
     responses: {
-      200: LikedTracksPage;
-      400: ErrorResponse;
+      200: SavedCollections;
       401: ErrorResponse;
       500: ErrorResponse;
     };
   };
-  "PUT /v1/me/library/albums/:id": {
+  "PUT /v1/me/saved/albums/:albumId": {
     params: {
-      id: string;
+      albumId: string;
     };
     query: never;
     body: {
@@ -771,24 +745,12 @@ export interface ApiRoutes {
       500: ErrorResponse;
     };
   };
-  "GET /v1/me/library/albums": {
-    params: never;
+  "DELETE /v1/me/saved/albums/:albumId": {
+    params: {
+      albumId: string;
+    };
     query: never;
     body: never;
-    responses: {
-      200: SavedCollections;
-      401: ErrorResponse;
-      500: ErrorResponse;
-    };
-  };
-  "PUT /v1/me/library/playlists/:id": {
-    params: {
-      id: string;
-    };
-    query: never;
-    body: {
-      snapshot: CollectionSnapshotInput;
-    };
     responses: {
       204: null;
       400: ErrorResponse;
@@ -796,19 +758,19 @@ export interface ApiRoutes {
       500: ErrorResponse;
     };
   };
-  "GET /v1/me/library/playlists": {
+  "GET /v1/me/saved/artists": {
     params: never;
     query: never;
     body: never;
     responses: {
-      200: SavedCollections;
+      200: SavedArtists;
       401: ErrorResponse;
       500: ErrorResponse;
     };
   };
-  "PUT /v1/me/library/artists/:id": {
+  "PUT /v1/me/saved/artists/:artistId": {
     params: {
-      id: string;
+      artistId: string;
     };
     query: never;
     body: {
@@ -821,19 +783,47 @@ export interface ApiRoutes {
       500: ErrorResponse;
     };
   };
-  "GET /v1/me/library/artists": {
+  "DELETE /v1/me/saved/artists/:artistId": {
+    params: {
+      artistId: string;
+    };
+    query: never;
+    body: never;
+    responses: {
+      204: null;
+      400: ErrorResponse;
+      401: ErrorResponse;
+      500: ErrorResponse;
+    };
+  };
+  "GET /v1/me/saved/playlists": {
     params: never;
     query: never;
     body: never;
     responses: {
-      200: SavedArtists;
+      200: SavedCollections;
       401: ErrorResponse;
       500: ErrorResponse;
     };
   };
-  "DELETE /v1/me/library/albums/:id": {
+  "PUT /v1/me/saved/playlists/:playlistId": {
     params: {
-      id: string;
+      playlistId: string;
+    };
+    query: never;
+    body: {
+      snapshot: CollectionSnapshotInput;
+    };
+    responses: {
+      204: null;
+      400: ErrorResponse;
+      401: ErrorResponse;
+      500: ErrorResponse;
+    };
+  };
+  "DELETE /v1/me/saved/playlists/:playlistId": {
+    params: {
+      playlistId: string;
     };
     query: never;
     body: never;
@@ -844,33 +834,22 @@ export interface ApiRoutes {
       500: ErrorResponse;
     };
   };
-  "DELETE /v1/me/library/artists/:id": {
-    params: {
-      id: string;
+  "GET /v1/me/history": {
+    params: never;
+    query: {
+      cursor?: string;
+      /** default 30 */
+      limit?: number;
     };
-    query: never;
     body: never;
     responses: {
-      204: null;
+      200: HistoryPage;
       400: ErrorResponse;
       401: ErrorResponse;
       500: ErrorResponse;
     };
   };
-  "DELETE /v1/me/library/playlists/:id": {
-    params: {
-      id: string;
-    };
-    query: never;
-    body: never;
-    responses: {
-      204: null;
-      400: ErrorResponse;
-      401: ErrorResponse;
-      500: ErrorResponse;
-    };
-  };
-  "POST /v1/me/playback/events": {
+  "POST /v1/me/history": {
     params: never;
     query: never;
     body: {
@@ -897,21 +876,7 @@ export interface ApiRoutes {
       500: ErrorResponse;
     };
   };
-  "GET /v1/me/history": {
-    params: never;
-    query: {
-      cursor?: string;
-      limit?: number;
-    };
-    body: never;
-    responses: {
-      200: HistoryPage;
-      400: ErrorResponse;
-      401: ErrorResponse;
-      500: ErrorResponse;
-    };
-  };
-  "GET /v1/explore/popular": {
+  "GET /v1/charts/tracks": {
     params: never;
     query: {
       /** how far back plays are counted */
@@ -926,7 +891,7 @@ export interface ApiRoutes {
       500: ErrorResponse;
     };
   };
-  "GET /v1/explore/popular/albums": {
+  "GET /v1/charts/albums": {
     params: never;
     query: {
       /** how far back plays are counted */
@@ -941,9 +906,10 @@ export interface ApiRoutes {
       500: ErrorResponse;
     };
   };
-  "GET /v1/explore/most-saved": {
+  "GET /v1/charts/saved": {
     params: never;
     query: {
+      /** which saved collections are counted, default all */
       type?: SavedType;
       /** default 50 */
       limit?: number;
@@ -1049,7 +1015,7 @@ export interface ApiRoutes {
       503: ErrorResponse;
     };
   };
-  "POST /v1/presence/heartbeat": {
+  "POST /v1/me/presence": {
     params: never;
     query: never;
     body: {
@@ -1108,7 +1074,7 @@ export interface ApiRoutes {
       503: ErrorResponse;
     };
   };
-  "GET /v1/me/recommendations/daily-mixes": {
+  "GET /v1/me/mixes": {
     params: never;
     query: never;
     body: never;

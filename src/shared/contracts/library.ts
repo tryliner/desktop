@@ -11,8 +11,8 @@ export type {
 
 /** What the library keeps of a saved album or catalog playlist. */
 export type CollectionSnapshotInput =
-  ApiBody<"PUT /v1/me/library/albums/:id">["snapshot"];
+  ApiBody<"PUT /v1/me/saved/albums/:albumId">["snapshot"];
 
 /** What the library keeps of a saved artist. */
 export type ArtistSnapshotInput =
-  ApiBody<"PUT /v1/me/library/artists/:id">["snapshot"];
+  ApiBody<"PUT /v1/me/saved/artists/:artistId">["snapshot"];

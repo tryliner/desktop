@@ -1,5 +1,5 @@
 import type {
-  AddTracksResult,
+  AddItemsResult,
   LikedTracksPage,
   Playlist,
   PlaylistDetails,
@@ -7,17 +7,17 @@ import type {
   PlaylistOwner,
 } from "./api.generated";
 
-export type { AddTracksResult, LikedTracksPage, PlaylistOwner };
+export type { AddItemsResult, LikedTracksPage, PlaylistOwner };
 
-/** A user playlist: the same object in the list, create, update, move and details. */
+/** A user playlist: the same object in the list, create, update, move, add and details. */
 export type UserPlaylist = Playlist;
 
 /** One track of a user playlist; `id` is the item id (remove / move). */
 export type UserPlaylistItem = PlaylistItem;
 
 /**
- * `GET /v1/me/playlists/:id` and `GET /v1/playlists/:id` (public, or the
- * viewer's own): the playlist, its owner and a page of items.
+ * `GET /v1/playlists/:id` (the owner's view with a valid token of the owner,
+ * else public playlists only): the playlist, its owner and a page of items.
  */
 export type UserPlaylistDetails = PlaylistDetails;
 

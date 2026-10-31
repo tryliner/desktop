@@ -43,7 +43,7 @@ describe("PresenceClient", () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [url, init] = fetchMock.mock.calls[0];
-    expect(String(url)).toContain("/v1/presence/heartbeat");
+    expect(String(url)).toContain("/v1/me/presence");
     expect(init.method).toBe("POST");
     expect(init.headers.authorization).toBe("Bearer test-valid-jwt-token");
     expect(Object.keys(JSON.parse(init.body)).sort()).toEqual([

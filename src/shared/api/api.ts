@@ -428,7 +428,7 @@ export type {
 } from "../contracts";
 
 import type {
-  AddTracksResult,
+  AddItemsResult,
   AlbumDetails,
   ApiBody,
   ArtistDetails,
@@ -456,12 +456,27 @@ import type {
   TrackDetails,
   UserPlaylist,
   UserPlaylistDetails,
-  UserPlaylistItem,
 } from "../contracts";
 
 // ---- Endpoints --------------------------------------------------------------
 
 type CollectionKind = "albums" | "artists" | "playlists";
+
+// POST /v1/playlists/:id/items: 1-5000 tracks (or `{ id }`) appended in order,
+// all or nothing; the answer carries the playlist after the append
+function addItems(
+  playlistId: string,
+  tracks: ApiBody<"POST /v1/playlists/:playlistId/items">["tracks"],
+  timeoutMs = DEFAULT_TIMEOUT_MS,
+): Promise<AddItemsResult> {
+  const body: ApiBody<"POST /v1/playlists/:playlistId/items"> = { tracks };
+  return request<AddItemsResult>(
+    `/v1/playlists/${encodeURIComponent(playlistId)}/items`,
+    { method: "POST", body: JSON.stringify(body) },
+    true,
+    timeoutMs,
+  );
+}
 
 export const api = {
   async login(email: string, password: string): Promise<AuthTokens> {
@@ -551,7 +566,7 @@ export const api = {
   listLikedTracks(limit = 100, cursor?: string): Promise<LikedTracksPage> {
     const params = new URLSearchParams({ limit: String(limit) });
     if (cursor) params.set("cursor", cursor);
-    return request<LikedTracksPage>(`/v1/me/library/tracks?${params}`);
+    return request<LikedTracksPage>(`/v1/me/likes?${params}`);
   },
 
   // without a usable track the server falls back to its own catalog, and
@@ -559,17 +574,15 @@ export const api = {
   async likeTrack(id: string): Promise<void> {
     if (isLocalTrackId(id)) throw new Error("Local tracks stay on this device");
     const track = toApiTrack(await clientCatalog.resolveSnapshot(id));
-    const body: ApiBody<"PUT /v1/me/library/tracks/:trackId"> = track
-      ? { track }
-      : null;
-    return request<void>(`/v1/me/library/tracks/${encodeURIComponent(id)}`, {
+    const body: ApiBody<"PUT /v1/me/likes/:trackId"> = track ? { track } : null;
+    return request<void>(`/v1/me/likes/${encodeURIComponent(id)}`, {
       method: "PUT",
       ...(body ? { body: JSON.stringify(body) } : {}),
     });
   },
 
   unlikeTrack(id: string): Promise<void> {
-    return request<void>(`/v1/me/library/tracks/${encodeURIComponent(id)}`, {
+    return request<void>(`/v1/me/likes/${encodeURIComponent(id)}`, {
       method: "DELETE",
     });
   },
@@ -577,7 +590,7 @@ export const api = {
   listSavedCollections<T extends CollectionKind>(
     type: T,
   ): Promise<T extends "artists" ? SavedArtists : SavedCollections> {
-    return request(`/v1/me/library/${type}`);
+    return request(`/v1/me/saved/${type}`);
   },
 
   // the server can't look a collection up by id: the snapshot is what the
@@ -589,7 +602,7 @@ export const api = {
       ? ArtistSnapshotInput
       : CollectionSnapshotInput,
   ): Promise<void> {
-    return request<void>(`/v1/me/library/${type}/${encodeURIComponent(id)}`, {
+    return request<void>(`/v1/me/saved/${type}/${encodeURIComponent(id)}`, {
       method: "PUT",
       body: JSON.stringify({ snapshot }),
     });
@@ -599,7 +612,7 @@ export const api = {
     type: "albums" | "artists" | "playlists",
     id: string,
   ): Promise<void> {
-    return request<void>(`/v1/me/library/${type}/${encodeURIComponent(id)}`, {
+    return request<void>(`/v1/me/saved/${type}/${encodeURIComponent(id)}`, {
       method: "DELETE",
     });
   },
@@ -608,8 +621,9 @@ export const api = {
     return request<{ items: UserPlaylist[] }>("/v1/me/playlists");
   },
 
-  // a page of `limit` items (no etag), or the whole playlist with an etag the
-  // next read can send back for a 304
+  // the owner's view (the token is always sent): a page of `limit` items (no
+  // etag), or the whole playlist with an etag the next read can send back for
+  // a 304. A stale token is a 401, refreshed and retried like everywhere
   async readUserPlaylist(
     id: string,
     options: { limit?: number; etag?: string } = {},
@@ -620,7 +634,7 @@ export const api = {
     let status = 200;
     let etag: string | undefined;
     const body = await executeRequest<UserPlaylistDetails | undefined>(
-      `/v1/me/playlists/${encodeURIComponent(id)}${query}`,
+      `/v1/playlists/${encodeURIComponent(id)}${query}`,
       options.etag ? { headers: { "If-None-Match": options.etag } } : undefined,
       true,
       DEFAULT_TIMEOUT_MS,
@@ -633,7 +647,8 @@ export const api = {
     return { notModified: false, etag, ...body };
   },
 
-  // a public user playlist, or one the viewer owns
+  // a public user playlist, or one the viewer owns: the same url as
+  // readUserPlaylist, the token makes the owner's own link open their view
   getSharedPlaylist(id: string): Promise<UserPlaylistDetails> {
     return request<UserPlaylistDetails>(
       `/v1/playlists/${encodeURIComponent(id)}`,
@@ -651,35 +666,31 @@ export const api = {
 
   updatePlaylist(
     id: string,
-    input: ApiBody<"PATCH /v1/me/playlists/:playlistId">,
+    input: ApiBody<"PATCH /v1/playlists/:playlistId">,
   ): Promise<UserPlaylist> {
-    return request<UserPlaylist>(`/v1/me/playlists/${encodeURIComponent(id)}`, {
+    return request<UserPlaylist>(`/v1/playlists/${encodeURIComponent(id)}`, {
       method: "PATCH",
       body: JSON.stringify(input),
     });
   },
 
   deletePlaylist(id: string): Promise<void> {
-    return request<void>(`/v1/me/playlists/${encodeURIComponent(id)}`, {
+    return request<void>(`/v1/playlists/${encodeURIComponent(id)}`, {
       method: "DELETE",
     });
   },
 
-  // like likeTrack: 404 TRACK_UNKNOWN when neither the body nor the server's
-  // catalog knows the track
+  // a list of one: the track as the client catalog knows it, or `{ id }` for
+  // the server catalog's metadata. Already in the playlist is
+  // `duplicates: 1`, a track nobody knows `rejected: 1` (both answer 200)
   async addPlaylistTrack(
     playlistId: string,
     trackId: string,
-  ): Promise<UserPlaylistItem> {
+  ): Promise<AddItemsResult> {
     if (isLocalTrackId(trackId))
       throw new Error("Local tracks stay on this device");
     const track = toApiTrack(await clientCatalog.resolveSnapshot(trackId));
-    const body: ApiBody<"POST /v1/me/playlists/:playlistId/tracks/:trackId"> =
-      track ? { track } : null;
-    return request<UserPlaylistItem>(
-      `/v1/me/playlists/${encodeURIComponent(playlistId)}/tracks/${encodeURIComponent(trackId)}`,
-      { method: "POST", ...(body ? { body: JSON.stringify(body) } : {}) },
-    );
+    return addItems(playlistId, [track ?? { id: trackId }]);
   },
 
   // added + duplicates + rejected = tracks.length; unusable tracks are counted
@@ -687,16 +698,10 @@ export const api = {
   addPlaylistTrackSnapshots(
     playlistId: string,
     tracks: Track[],
-  ): Promise<AddTracksResult> {
-    return request<AddTracksResult>(
-      `/v1/me/playlists/${encodeURIComponent(playlistId)}/tracks`,
-      {
-        method: "POST",
-        body: JSON.stringify({
-          tracks: tracks.map((track) => toApiTrack(track) ?? track),
-        }),
-      },
-      true,
+  ): Promise<AddItemsResult> {
+    return addItems(
+      playlistId,
+      tracks.map((track) => toApiTrack(track) ?? track),
       60_000,
     );
   },
@@ -706,7 +711,7 @@ export const api = {
   async removePlaylistItem(playlistId: string, itemId: string): Promise<void> {
     try {
       await request<void>(
-        `/v1/me/playlists/${encodeURIComponent(playlistId)}/items/${encodeURIComponent(itemId)}`,
+        `/v1/playlists/${encodeURIComponent(playlistId)}/items/${encodeURIComponent(itemId)}`,
         { method: "DELETE" },
       );
     } catch (err) {
@@ -721,10 +726,12 @@ export const api = {
     beforeItemId: string | null,
     revision: number,
   ): Promise<UserPlaylist> {
-    const body: ApiBody<"POST /v1/me/playlists/:playlistId/items/:itemId/move"> =
-      { beforeItemId, revision };
+    const body: ApiBody<"POST /v1/playlists/:playlistId/items/:itemId/move"> = {
+      beforeItemId,
+      revision,
+    };
     return request<UserPlaylist>(
-      `/v1/me/playlists/${encodeURIComponent(playlistId)}/items/${encodeURIComponent(itemId)}/move`,
+      `/v1/playlists/${encodeURIComponent(playlistId)}/items/${encodeURIComponent(itemId)}/move`,
       { method: "POST", body: JSON.stringify(body) },
     );
   },
@@ -907,7 +914,7 @@ export const api = {
   },
 
   recordPlaybackEvent(payload: RecordPlaybackEventRequest): Promise<void> {
-    return request<void>("/v1/me/playback/events", {
+    return request<void>("/v1/me/history", {
       method: "POST",
       body: JSON.stringify(payload),
     });
@@ -924,7 +931,7 @@ export const api = {
     limit = 50,
   ): Promise<PopularTracksResponse> {
     const params = new URLSearchParams({ window, limit: String(limit) });
-    return request<PopularTracksResponse>(`/v1/explore/popular?${params}`);
+    return request<PopularTracksResponse>(`/v1/charts/tracks?${params}`);
   },
 
   getPopularAlbums(
@@ -932,9 +939,7 @@ export const api = {
     limit = 20,
   ): Promise<PopularAlbumsResponse> {
     const params = new URLSearchParams({ window, limit: String(limit) });
-    return request<PopularAlbumsResponse>(
-      `/v1/explore/popular/albums?${params}`,
-    );
+    return request<PopularAlbumsResponse>(`/v1/charts/albums?${params}`);
   },
 
   getMostSaved(
@@ -942,10 +947,10 @@ export const api = {
     limit = 20,
   ): Promise<MostSavedResponse> {
     const params = new URLSearchParams({ type, limit: String(limit) });
-    return request<MostSavedResponse>(`/v1/explore/most-saved?${params}`);
+    return request<MostSavedResponse>(`/v1/charts/saved?${params}`);
   },
 
   getDailyMixes(): Promise<DailyMixesResponse> {
-    return request<DailyMixesResponse>("/v1/me/recommendations/daily-mixes");
+    return request<DailyMixesResponse>("/v1/me/mixes");
   },
 };

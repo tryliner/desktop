@@ -85,11 +85,11 @@ export class PresenceClient {
       if (!accessToken || !this.isRunning) return;
 
       // who this is comes from the token: only what the server cannot know
-      const body: ApiBody<"POST /v1/presence/heartbeat"> = {
+      const body: ApiBody<"POST /v1/me/presence"> = {
         clientVersion: APP_VERSION.slice(0, 32),
         platform: getPlatform(),
       };
-      const res = await fetch(`${getApiBaseUrl()}/v1/presence/heartbeat`, {
+      const res = await fetch(`${getApiBaseUrl()}/v1/me/presence`, {
         method: "POST",
         headers: {
           "content-type": "application/json",

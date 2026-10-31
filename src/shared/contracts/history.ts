@@ -20,10 +20,10 @@ export type PlaybackContextType =
   "album" | "playlist" | "radio" | "search" | "library" | "explore" | "direct";
 
 /**
- * `POST /v1/me/playback/events`: the server types `track` loosely (it runs
+ * `POST /v1/me/history` (one play): the server types `track` loosely (it runs
  * it through its sanitizer), the client sends a Track.
  */
 export type RecordPlaybackEventRequest = Omit<
-  ApiBody<"POST /v1/me/playback/events">,
+  ApiBody<"POST /v1/me/history">,
   "track"
 > & { track?: WireTrack };
