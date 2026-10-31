@@ -15,8 +15,6 @@ import { telemetry } from "@/shared/telemetry";
 import type {
   PublicUser,
   UpdateProfileInput,
-  UserProfile,
-  LeaderboardResponse,
   DailyMixesResponse,
 } from "@/shared/contracts";
 
@@ -522,13 +520,7 @@ export type {
   ImportedTrack,
   ImportedPlaylist,
   PublicUser,
-  UserProfile,
   UpdateProfileInput,
-  UserPrivacySettings,
-  LeaderboardResponse,
-  LeaderboardEntry,
-  LeaderboardPeriod,
-  LeaderboardType,
   AuthTokens,
   AuthResult,
   PlaybackContextType,
@@ -617,86 +609,6 @@ export const api = {
     });
   },
 
-  getUserProfile(idOrUsername: string): Promise<UserProfile> {
-    return request<UserProfile>(
-      `/v1/users/${encodeURIComponent(idOrUsername)}`,
-    );
-  },
-
-  searchUsers(query: string): Promise<UserProfile[]> {
-    const params = new URLSearchParams({ q: query });
-    return request<UserProfile[]>(`/v1/users/search?${params}`);
-  },
-
-  followUser(idOrUsername: string): Promise<void> {
-    return request<void>(
-      `/v1/users/${encodeURIComponent(idOrUsername)}/follow`,
-      {
-        method: "POST",
-      },
-    );
-  },
-
-  unfollowUser(idOrUsername: string): Promise<void> {
-    return request<void>(
-      `/v1/users/${encodeURIComponent(idOrUsername)}/follow`,
-      {
-        method: "DELETE",
-      },
-    );
-  },
-
-  getUserFollowers(idOrUsername: string): Promise<UserProfile[]> {
-    return request<UserProfile[]>(
-      `/v1/users/${encodeURIComponent(idOrUsername)}/followers`,
-    );
-  },
-
-  getUserFollowing(idOrUsername: string): Promise<UserProfile[]> {
-    return request<UserProfile[]>(
-      `/v1/users/${encodeURIComponent(idOrUsername)}/following`,
-    );
-  },
-
-  getUserPlaylists(
-    idOrUsername: string,
-  ): Promise<{ items: ApiUserPlaylist[] }> {
-    return request<{ items: ApiUserPlaylist[] }>(
-      `/v1/users/${encodeURIComponent(idOrUsername)}/playlists`,
-    );
-  },
-
-  getUserHistory(
-    idOrUsername: string,
-    cursor?: string,
-    limit?: string,
-  ): Promise<PlaybackHistoryResponse> {
-    const params = new URLSearchParams();
-    if (cursor) params.set("cursor", cursor);
-    if (limit) params.set("limit", limit);
-    return request<PlaybackHistoryResponse>(
-      `/v1/users/${encodeURIComponent(idOrUsername)}/history?${params}`,
-    );
-  },
-
-  getArtistLeaderboard(
-    artistId: string,
-    period = "monthly",
-    limit = 10,
-  ): Promise<LeaderboardResponse> {
-    const params = new URLSearchParams({ period, limit: String(limit) });
-    return request<LeaderboardResponse>(
-      `/v1/leaderboards/artist/${encodeURIComponent(artistId)}?${params}`,
-    );
-  },
-
-  getGlobalLeaderboard(
-    period = "weekly",
-    limit = 20,
-  ): Promise<LeaderboardResponse> {
-    const params = new URLSearchParams({ period, limit: String(limit) });
-    return request<LeaderboardResponse>(`/v1/leaderboards/global?${params}`);
-  },
   search(q: string, type: SearchType = "all"): Promise<SearchResponse> {
     const params = new URLSearchParams({ q, type });
     return clientCatalog.search(q, type, () =>

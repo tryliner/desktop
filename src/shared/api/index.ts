@@ -44,11 +44,7 @@ export type {
 
 export type {
   PublicUser,
-  UserProfile,
-  UserPrivacySettings,
   UpdateProfileInput,
-  LeaderboardEntry,
-  LeaderboardResponse,
 } from "@/shared/contracts";
 
 export {
