@@ -476,6 +476,7 @@ import type {
   PopularTracksResponse,
   RadioResponse,
   RecordPlaybackEventRequest,
+  RecoveryLink,
   SavedArtists,
   SavedCollections,
   SearchResponse,
@@ -540,22 +541,17 @@ export const api = {
   },
 
   // one-time links a moderator emailed (liner://reset-password?id=<token>)
-  getPasswordReset(
-    token: string,
-  ): Promise<{ maskedEmail: string; expiresAt: string }> {
+  getPasswordReset(token: string): Promise<RecoveryLink> {
     return request(
-      `/v1/auth/password-reset/${encodeURIComponent(token)}`,
+      `/v1/auth/recovery-links/${encodeURIComponent(token)}`,
       undefined,
       false,
     );
   },
 
-  completePasswordReset(
-    token: string,
-    password: string,
-  ): Promise<{ success: true }> {
-    return request(
-      `/v1/auth/password-reset/${encodeURIComponent(token)}`,
+  completePasswordReset(token: string, password: string): Promise<void> {
+    return request<void>(
+      `/v1/auth/recovery-links/${encodeURIComponent(token)}`,
       { method: "POST", body: JSON.stringify({ password }) },
       false,
     );

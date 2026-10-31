@@ -1,6 +1,6 @@
 import type { ApiBody, AuthTokens, AuthUser } from "./api.generated";
 
-export type { AuthTokens, AuthUser };
+export type { AuthTokens, AuthUser, RecoveryLink } from "./api.generated";
 
 /** The signed-in user (`GET /v1/me`, the `user` of the token answers). */
 export type PublicUser = AuthUser;
