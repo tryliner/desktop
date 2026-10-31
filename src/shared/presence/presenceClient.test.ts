@@ -27,6 +27,9 @@ describe("PresenceClient", () => {
         username: "alice",
         displayName: "Alice",
         avatarUrl: null,
+        bannerUrl: null,
+        avatarFrame: null,
+        hiddenMedia: [],
       },
     });
   });

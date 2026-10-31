@@ -58,6 +58,9 @@ describe("auth-session token system", () => {
         username: null,
         displayName: null,
         avatarUrl: null,
+        bannerUrl: null,
+        avatarFrame: null,
+        hiddenMedia: [],
       },
     };
     expect(getSessionExpiryMs(session1)).toBe(
@@ -80,6 +83,9 @@ describe("auth-session token system", () => {
         username: null,
         displayName: null,
         avatarUrl: null,
+        bannerUrl: null,
+        avatarFrame: null,
+        hiddenMedia: [],
       },
     };
     setAuthSession(initialSession);
@@ -138,6 +144,9 @@ describe("auth-session token system", () => {
         username: null,
         displayName: null,
         avatarUrl: null,
+        bannerUrl: null,
+        avatarFrame: null,
+        hiddenMedia: [],
       },
     };
     setAuthSession(expiringSession);
@@ -168,6 +177,9 @@ describe("auth-session token system", () => {
         username: null,
         displayName: null,
         avatarUrl: null,
+        bannerUrl: null,
+        avatarFrame: null,
+        hiddenMedia: [],
       },
     };
     setAuthSession(validSession);
@@ -191,6 +203,9 @@ describe("auth-session token system", () => {
         username: null,
         displayName: null,
         avatarUrl: null,
+        bannerUrl: null,
+        avatarFrame: null,
+        hiddenMedia: [],
       },
     };
     setAuthSession(session);
@@ -235,6 +250,9 @@ describe("auth-session token system", () => {
         username: null,
         displayName: null,
         avatarUrl: null,
+        bannerUrl: null,
+        avatarFrame: null,
+        hiddenMedia: [],
       },
     };
     setAuthSession(expiringSession);
@@ -263,6 +281,9 @@ describe("auth-session token system", () => {
         username: null,
         displayName: null,
         avatarUrl: null,
+        bannerUrl: null,
+        avatarFrame: null,
+        hiddenMedia: [],
       },
     };
     setAuthSession(session);
@@ -310,6 +331,9 @@ describe("auth-session token system", () => {
         username: null,
         displayName: null,
         avatarUrl: null,
+        bannerUrl: null,
+        avatarFrame: null,
+        hiddenMedia: [],
       },
     });
     const reject = (status = 401, code = "INVALID_SIGNATURE") => ({

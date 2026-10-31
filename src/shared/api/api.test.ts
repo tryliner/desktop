@@ -81,6 +81,7 @@ const added = (counts: {
   rejected: number;
 }) => ({
   ...counts,
+  overLimit: 0,
   playlist: { ...playlist, revision: playlist.revision + counts.added },
 });
 
@@ -162,6 +163,7 @@ describe("api", () => {
         username: "me",
         displayName: null,
         avatarUrl: null,
+        avatarFrame: null,
       },
       items: [],
       nextCursor: "next",
@@ -197,7 +199,12 @@ describe("api", () => {
     });
     reply(200, {
       playlist,
-      owner: { username: "me", displayName: null, avatarUrl: null },
+      owner: {
+        username: "me",
+        displayName: null,
+        avatarUrl: null,
+        avatarFrame: null,
+      },
       items: [],
       nextCursor: null,
     });

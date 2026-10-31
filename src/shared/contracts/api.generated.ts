@@ -1,10 +1,16 @@
 // generated from the api's route schemas, do not edit. Run: pnpm contract:export <desktop>/src/shared/contracts/api.generated.ts (in tryliner/api)
 /* eslint-disable */
 
+export type ActivitySettings = {
+  listeningHistory: boolean;
+  nowPlaying: boolean;
+};
+
 export type AddItemsResult = {
   added: number;
   duplicates: number;
   rejected: number;
+  overLimit: number;
   playlist: Playlist;
 };
 
@@ -36,6 +42,19 @@ export type AuthUser = {
   username: string | null;
   displayName: string | null;
   avatarUrl: string | null;
+  bannerUrl: string | null;
+  avatarFrame: string | null;
+  hiddenMedia: ("avatar" | "banner" | "avatar_frame")[];
+};
+
+export type AvatarFrame = {
+  id: FrameId;
+  name: string;
+  imageUrl: string;
+};
+
+export type AvatarFrames = {
+  items: AvatarFrame[];
 };
 
 export type BundleManifest = {
@@ -218,7 +237,11 @@ export type ErrorResponse = {
   message: string;
   /** only on 429 */
   retryAfterSeconds?: number;
+  /** only on 403 PLAN_LIMIT_REACHED and 403 PLUS_REQUIRED */
+  details?: PlanLimitDetails | PlusRequiredDetails;
 };
+
+export type FrameId = "halo" | "neon" | "vinyl" | "gold" | "aurora" | "pulse";
 
 export type HealthResponse = {
   status: "ok";
@@ -271,6 +294,154 @@ export type HistoryResponse = {
 
 export type IngestState = "queued" | "waiting_demand" | "unfindable" | "skipped";
 
+export type LayoutModule = {
+  id: string;
+  type: "now_playing";
+  size: "wide";
+  visibility: Visibility;
+  hidden: boolean;
+  settings: Record<string, unknown>;
+} | {
+  id: string;
+  type: "top_artists";
+  size: ModuleSize;
+  visibility: Visibility;
+  hidden: boolean;
+  settings: {
+    range: TimeRange;
+    limit: number;
+  };
+} | {
+  id: string;
+  type: "top_tracks";
+  size: ModuleSize;
+  visibility: Visibility;
+  hidden: boolean;
+  settings: {
+    range: TimeRange;
+    limit: number;
+  };
+} | {
+  id: string;
+  type: "listening_stats";
+  size: ModuleSize;
+  visibility: Visibility;
+  hidden: boolean;
+  settings: {
+    range: TimeRange;
+  };
+} | {
+  id: string;
+  type: "recent_tracks";
+  size: ModuleSize;
+  visibility: Visibility;
+  hidden: boolean;
+  settings: {
+    limit: number;
+  };
+} | {
+  id: string;
+  type: "playlists";
+  size: ModuleSize;
+  visibility: Visibility;
+  hidden: boolean;
+  settings: {
+    limit: number;
+  };
+} | {
+  id: string;
+  type: "liked_tracks";
+  size: ModuleSize;
+  visibility: Visibility;
+  hidden: boolean;
+  settings: {
+    limit: number;
+  };
+} | {
+  id: string;
+  type: "pinned_track";
+  size: ModuleSize;
+  visibility: Visibility;
+  hidden: boolean;
+  settings: {
+    trackId: string | null;
+  };
+};
+
+export type LayoutModuleInput = {
+  id?: string;
+  type: "now_playing";
+  size?: "wide";
+  visibility?: Visibility;
+  hidden?: boolean;
+  settings?: Record<string, unknown>;
+} | {
+  id?: string;
+  type: "top_artists";
+  size?: ModuleSize;
+  visibility?: Visibility;
+  hidden?: boolean;
+  settings?: {
+    range?: TimeRange;
+    limit?: number;
+  };
+} | {
+  id?: string;
+  type: "top_tracks";
+  size?: ModuleSize;
+  visibility?: Visibility;
+  hidden?: boolean;
+  settings?: {
+    range?: TimeRange;
+    limit?: number;
+  };
+} | {
+  id?: string;
+  type: "listening_stats";
+  size?: ModuleSize;
+  visibility?: Visibility;
+  hidden?: boolean;
+  settings?: {
+    range?: TimeRange;
+  };
+} | {
+  id?: string;
+  type: "recent_tracks";
+  size?: ModuleSize;
+  visibility?: Visibility;
+  hidden?: boolean;
+  settings?: {
+    limit?: number;
+  };
+} | {
+  id?: string;
+  type: "playlists";
+  size?: ModuleSize;
+  visibility?: Visibility;
+  hidden?: boolean;
+  settings?: {
+    limit?: number;
+  };
+} | {
+  id?: string;
+  type: "liked_tracks";
+  size?: ModuleSize;
+  visibility?: Visibility;
+  hidden?: boolean;
+  settings?: {
+    limit?: number;
+  };
+} | {
+  id?: string;
+  type: "pinned_track";
+  size?: ModuleSize;
+  visibility?: Visibility;
+  hidden?: boolean;
+  settings?: {
+    trackId?: string | null;
+  };
+};
+
 export type LikedTrack = {
   track: Track;
   /** ISO 8601 time */
@@ -281,6 +452,50 @@ export type LikedTracksPage = {
   items: LikedTrack[];
   nextCursor: string | null;
 };
+
+export type MediaImage = {
+  kind: MediaKind;
+  url: string;
+  width: number;
+  height: number;
+  animated: boolean;
+};
+
+export type MediaKind = "avatar" | "banner";
+
+export type MediaUpload = {
+  uploadId: string;
+  url: string;
+  method: "PUT";
+  headers: {
+    "content-type": string;
+    "content-length": string;
+  };
+  maxBytes: number;
+  /** ISO 8601 time */
+  expiresAt: string;
+};
+
+export type ModuleSetting = {
+  name: "range";
+  kind: "range";
+  values: TimeRange[];
+  default: TimeRange;
+} | {
+  name: "limit";
+  kind: "count";
+  min: number;
+  max: number;
+  default: number;
+} | {
+  name: "trackId";
+  kind: "track";
+  default: null;
+};
+
+export type ModuleSize = "small" | "wide";
+
+export type ModuleType = "now_playing" | "top_artists" | "top_tracks" | "listening_stats" | "recent_tracks" | "playlists" | "liked_tracks" | "pinned_track";
 
 export type MostSaved = {
   items: MostSavedItem[];
@@ -293,6 +508,57 @@ export type MostSavedItem = {
   subtitle: string;
   coverUrl: string;
   saves: number;
+};
+
+export type MyFrame = {
+  frameId: FrameId | null;
+};
+
+export type MyPlan = {
+  plan: PlanName;
+  plusUntil: string | null;
+  limits: PlanLimits;
+  features: PlanFeature[];
+  usage: PlanUsage;
+  plus: {
+    limits: PlanLimits;
+    features: PlanFeature[];
+  };
+};
+
+export type MyProfile = {
+  editor: "fixed" | "full";
+  modules: LayoutModule[];
+  plusLayoutKept: boolean;
+  activity: ActivitySettings;
+};
+
+export type PlanFeature = "animated_avatar" | "profile_banner" | "avatar_frames" | "profile_editor" | "plus_profile_modules";
+
+export type PlanLimitDetails = {
+  resource: "playlists" | "tracksPerPlaylist" | "likedTracks" | "savedCollections" | "profileModules" | "imageUploadsPerHour" | "avatarBytes" | "bannerBytes";
+  limit: number;
+  count: number;
+  plusLimit: number;
+};
+
+export type PlanLimits = {
+  playlists: number;
+  tracksPerPlaylist: number;
+  likedTracks: number;
+  savedCollections: number;
+  profileModules: number;
+  imageUploadsPerHour: number;
+  avatarBytes: number;
+  bannerBytes: number;
+};
+
+export type PlanName = "free" | "plus";
+
+export type PlanUsage = {
+  playlists: number;
+  likedTracks: number;
+  savedCollections: number;
 };
 
 export type PlaybackContext = {
@@ -340,6 +606,11 @@ export type PlaylistOwner = {
   username: string | null;
   displayName: string | null;
   avatarUrl: string | null;
+  avatarFrame: string | null;
+};
+
+export type PlusRequiredDetails = {
+  feature: PlanFeature;
 };
 
 export type PopularAlbum = {
@@ -373,6 +644,124 @@ export type PopularTracks = {
 
 export type PopularWindow = "12h" | "24h" | "7d" | "30d" | "all";
 
+export type ProfileModule = {
+  id: string;
+  type: "now_playing";
+  size: ModuleSize;
+  visibility?: Visibility;
+  data: {
+    source: "realtime";
+    online: boolean;
+  };
+} | {
+  id: string;
+  type: "top_artists";
+  size: ModuleSize;
+  visibility?: Visibility;
+  data: {
+    range: TimeRange;
+    items: {
+      artist: {
+        id: string;
+        name: string;
+      };
+      plays: number;
+      cover: Cover | null;
+    }[];
+  };
+} | {
+  id: string;
+  type: "top_tracks";
+  size: ModuleSize;
+  visibility?: Visibility;
+  data: {
+    range: TimeRange;
+    items: {
+      track: Track;
+      plays: number;
+    }[];
+  };
+} | {
+  id: string;
+  type: "listening_stats";
+  size: ModuleSize;
+  visibility?: Visibility;
+  data: {
+    range: TimeRange;
+    minutes: number;
+    tracks: number;
+    artists: number;
+  };
+} | {
+  id: string;
+  type: "recent_tracks";
+  size: ModuleSize;
+  visibility?: Visibility;
+  data: {
+    items: {
+      track: Track;
+      /** ISO 8601 time */
+      playedAt: string;
+    }[];
+  };
+} | {
+  id: string;
+  type: "playlists";
+  size: ModuleSize;
+  visibility?: Visibility;
+  data: PlaylistList;
+} | {
+  id: string;
+  type: "liked_tracks";
+  size: ModuleSize;
+  visibility?: Visibility;
+  data: {
+    items: LikedTrack[];
+  };
+} | {
+  id: string;
+  type: "pinned_track";
+  size: ModuleSize;
+  visibility?: Visibility;
+  data: {
+    track: Track | null;
+  };
+};
+
+export type ProfileModuleCatalogue = {
+  items: ProfileModuleInfo[];
+};
+
+export type ProfileModuleInfo = {
+  type: ModuleType;
+  plan: PlanName;
+  sizes: ModuleSize[];
+  defaultSize: ModuleSize;
+  instances: {
+    free: number;
+    plus: number;
+  };
+  defaultVisibility: Visibility;
+  activity: "listeningHistory" | "nowPlaying" | null;
+  settings: ModuleSetting[];
+};
+
+export type ProfileUser = {
+  id: string;
+  username: string | null;
+  displayName: string | null;
+  avatarUrl: string | null;
+  bannerUrl: string | null;
+  avatarFrame: string | null;
+  plus: boolean;
+};
+
+export type ProfileView = {
+  user: ProfileUser;
+  isOwner: boolean;
+  modules: ProfileModule[];
+};
+
 export type R2Plan = {
   source: "r2";
   url: string;
@@ -381,6 +770,12 @@ export type R2Plan = {
   mimeType: string;
   codec: string | null;
   size: number;
+};
+
+export type RecoveryLink = {
+  maskedEmail: string;
+  /** ISO 8601 time */
+  expiresAt: string;
 };
 
 export type Release = {
@@ -443,6 +838,49 @@ export type SavedCollections = {
 
 export type SavedType = "all" | "album" | "playlist";
 
+export type Sticker = {
+  id: string;
+  name: string;
+  answers: StickerAnswer | null;
+  animationUrl: string;
+  previewUrl: string;
+};
+
+export type StickerAnswer = "accept" | "decline";
+
+export type StickerPack = {
+  id: string;
+  name: string;
+  plan: PlanName;
+  stickers: Sticker[];
+};
+
+export type StickerPacks = {
+  items: StickerPack[];
+};
+
+export type Subscription = {
+  id: string;
+  userId: string;
+  plan: "plus";
+  source: string;
+  /** active or canceled */
+  status: string;
+  currentPeriodEnd: string | null;
+  active: boolean;
+  note: string | null;
+  /** ISO 8601 time */
+  createdAt: string;
+  /** ISO 8601 time */
+  updatedAt: string;
+};
+
+export type Subscriptions = {
+  items: Subscription[];
+};
+
+export type TimeRange = "week" | "month" | "all";
+
 export type Track = {
   /** youtube video id or sc:<soundcloud id> */
   id: string;
@@ -463,6 +901,10 @@ export type Track = {
 export type UpdaterHealth = {
   status: "ok";
 };
+
+export type UploadContentType = "image/png" | "image/jpeg" | "image/webp" | "image/gif";
+
+export type Visibility = "everyone" | "friends" | "only_me";
 
 /**
  * Every route of the api by `METHOD url` as fastify registers it. The link host is served
@@ -547,6 +989,174 @@ export interface ApiRoutes {
       500: ErrorResponse;
     };
   };
+  "GET /v1/me/plan": {
+    params: never;
+    query: never;
+    body: never;
+    responses: {
+      200: MyPlan;
+      401: ErrorResponse;
+      500: ErrorResponse;
+    };
+  };
+  "POST /v1/admin/subscriptions": {
+    params: never;
+    query: never;
+    body: {
+      userId?: string;
+      email?: string;
+      source: "manual" | "gift" | "founder";
+      days?: number | null;
+      note?: string | null;
+    };
+    responses: {
+      201: Subscription;
+      400: ErrorResponse;
+      401: ErrorResponse;
+      404: ErrorResponse;
+      500: ErrorResponse;
+      503: ErrorResponse;
+    };
+  };
+  "GET /v1/admin/subscriptions": {
+    params: never;
+    query: {
+      userId: string;
+    };
+    body: never;
+    responses: {
+      200: Subscriptions;
+      400: ErrorResponse;
+      401: ErrorResponse;
+      500: ErrorResponse;
+      503: ErrorResponse;
+    };
+  };
+  "DELETE /v1/admin/subscriptions/:subscriptionId": {
+    params: {
+      subscriptionId: string;
+    };
+    query: never;
+    body: never;
+    responses: {
+      200: Subscription;
+      400: ErrorResponse;
+      401: ErrorResponse;
+      404: ErrorResponse;
+      500: ErrorResponse;
+      503: ErrorResponse;
+    };
+  };
+  "GET /v1/auth/recovery-links/:token": {
+    params: {
+      token: string;
+    };
+    query: never;
+    body: never;
+    responses: {
+      200: RecoveryLink;
+      400: ErrorResponse;
+      410: ErrorResponse;
+      500: ErrorResponse;
+    };
+  };
+  "POST /v1/auth/recovery-links/:token": {
+    params: {
+      token: string;
+    };
+    query: never;
+    body: {
+      password: string;
+    };
+    responses: {
+      204: null;
+      400: ErrorResponse;
+      410: ErrorResponse;
+      429: ErrorResponse;
+      500: ErrorResponse;
+    };
+  };
+  "POST /v1/me/media/:kind/uploads": {
+    params: {
+      kind: MediaKind;
+    };
+    query: never;
+    body: {
+      contentType: UploadContentType;
+      size: number;
+    };
+    responses: {
+      201: MediaUpload;
+      400: ErrorResponse;
+      401: ErrorResponse;
+      403: ErrorResponse;
+      500: ErrorResponse;
+      503: ErrorResponse;
+    };
+  };
+  "PUT /v1/me/media/:kind": {
+    params: {
+      kind: MediaKind;
+    };
+    query: never;
+    body: {
+      uploadId: string;
+    };
+    responses: {
+      200: MediaImage;
+      400: ErrorResponse;
+      401: ErrorResponse;
+      403: ErrorResponse;
+      404: ErrorResponse;
+      409: ErrorResponse;
+      500: ErrorResponse;
+      503: ErrorResponse;
+    };
+  };
+  "DELETE /v1/me/media/:kind": {
+    params: {
+      kind: MediaKind;
+    };
+    query: never;
+    body: never;
+    responses: {
+      204: null;
+      400: ErrorResponse;
+      401: ErrorResponse;
+      500: ErrorResponse;
+      503: ErrorResponse;
+    };
+  };
+  "GET /v1/frames": {
+    params: never;
+    query: never;
+    body: never;
+    responses: {
+      200: AvatarFrames;
+      500: ErrorResponse;
+    };
+  };
+  "PUT /v1/me/frame": {
+    params: never;
+    query: never;
+    body: MyFrame;
+    responses: {
+      200: MyFrame;
+      400: ErrorResponse;
+      401: ErrorResponse;
+      403: ErrorResponse;
+      500: ErrorResponse;
+    };
+  };
+  "GET /v1/stickers": {
+    params: never;
+    query: never;
+    body: never;
+    responses: {
+      200: StickerPacks;
+      500: ErrorResponse;
+    };
+  };
   "GET /v1/me/playlists": {
     params: never;
     query: never;
@@ -569,6 +1179,7 @@ export interface ApiRoutes {
       201: Playlist;
       400: ErrorResponse;
       401: ErrorResponse;
+      403: ErrorResponse;
       500: ErrorResponse;
     };
   };
@@ -635,6 +1246,7 @@ export interface ApiRoutes {
       200: AddItemsResult;
       400: ErrorResponse;
       401: ErrorResponse;
+      403: ErrorResponse;
       404: ErrorResponse;
       413: ErrorResponse;
       500: ErrorResponse;
@@ -702,6 +1314,7 @@ export interface ApiRoutes {
       204: null;
       400: ErrorResponse;
       401: ErrorResponse;
+      403: ErrorResponse;
       404: ErrorResponse;
       500: ErrorResponse;
     };
@@ -742,6 +1355,7 @@ export interface ApiRoutes {
       204: null;
       400: ErrorResponse;
       401: ErrorResponse;
+      403: ErrorResponse;
       500: ErrorResponse;
     };
   };
@@ -818,6 +1432,7 @@ export interface ApiRoutes {
       204: null;
       400: ErrorResponse;
       401: ErrorResponse;
+      403: ErrorResponse;
       500: ErrorResponse;
     };
   };
@@ -1024,6 +1639,64 @@ export interface ApiRoutes {
     };
     responses: {
       204: null;
+      400: ErrorResponse;
+      401: ErrorResponse;
+      500: ErrorResponse;
+    };
+  };
+  "GET /v1/profile-modules": {
+    params: never;
+    query: never;
+    body: never;
+    responses: {
+      200: ProfileModuleCatalogue;
+      500: ErrorResponse;
+    };
+  };
+  "GET /v1/profiles/:ref": {
+    params: {
+      ref: string;
+    };
+    query: never;
+    body: never;
+    responses: {
+      200: ProfileView;
+      400: ErrorResponse;
+      404: ErrorResponse;
+      500: ErrorResponse;
+    };
+  };
+  "GET /v1/me/profile": {
+    params: never;
+    query: never;
+    body: never;
+    responses: {
+      200: MyProfile;
+      401: ErrorResponse;
+      500: ErrorResponse;
+    };
+  };
+  "PUT /v1/me/profile/layout": {
+    params: never;
+    query: never;
+    body: {
+      modules: LayoutModuleInput[];
+    };
+    responses: {
+      200: MyProfile;
+      400: ErrorResponse;
+      401: ErrorResponse;
+      403: ErrorResponse;
+      404: ErrorResponse;
+      500: ErrorResponse;
+    };
+  };
+  "PUT /v1/me/profile/activity": {
+    params: never;
+    query: never;
+    body: ActivitySettings;
+    responses: {
+      200: MyProfile;
       400: ErrorResponse;
       401: ErrorResponse;
       500: ErrorResponse;
@@ -1277,6 +1950,8 @@ export interface ApiRoutes {
     body: never;
     responses: {
       200: string;
+      414: string;
+      500: string;
     };
   };
   "GET /link/health": {
@@ -1285,6 +1960,8 @@ export interface ApiRoutes {
     body: never;
     responses: {
       200: UpdaterHealth;
+      414: string;
+      500: string;
     };
   };
   "GET /link/artist": {
@@ -1340,6 +2017,30 @@ export interface ApiRoutes {
       200: string;
       400: string;
       404: string;
+      414: string;
+      500: string;
+    };
+  };
+  "GET /link/recovery/:token": {
+    params: {
+      token: string;
+    };
+    query: never;
+    body: never;
+    responses: {
+      200: string;
+      400: string;
+      410: string;
+      414: string;
+      500: string;
+    };
+  };
+  "GET /link/assets/mail-logo.png": {
+    params: never;
+    query: never;
+    body: never;
+    responses: {
+      200: string;
       414: string;
       500: string;
     };

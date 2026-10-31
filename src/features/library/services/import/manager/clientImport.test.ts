@@ -152,6 +152,7 @@ describe("finalizeImportedPlaylist", () => {
       added: 1,
       duplicates: 0,
       rejected: 0,
+      overLimit: 0,
       playlist: { ...playlist, trackCount: 1 },
     });
 
