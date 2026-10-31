@@ -56,7 +56,7 @@ function canonicalTrack(
     id,
     title: track.title,
     artists: track.artists.map((name, index) => ({
-      id: track.artistIds?.[index] ?? "unknown",
+      id: track.artistIds?.[index] ?? null,
       name,
     })),
     ...(track.album

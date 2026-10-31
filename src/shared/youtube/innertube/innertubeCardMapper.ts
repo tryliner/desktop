@@ -46,7 +46,7 @@ function endpointFrom(
 
 function plainSubtitleArtist(
   runs: JsonRecord[],
-): { id: string; name: string }[] {
+): { id: string | null; name: string }[] {
   const candidate = runs.find((run) => {
     const text = typeof run.text === "string" ? run.text.trim() : "";
     if (!text || text === "•") return false;
@@ -55,7 +55,7 @@ function plainSubtitleArtist(
     return parseDurationMs(text) === undefined;
   });
   return typeof candidate?.text === "string"
-    ? [{ id: "unknown", name: candidate.text.trim() }]
+    ? [{ id: null, name: candidate.text.trim() }]
     : [];
 }
 

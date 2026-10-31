@@ -62,9 +62,8 @@ function plainArtist(
       typeof candidate.text === "string" ? candidate.text.trim() : "";
     return Boolean(text) && text !== "•" && !/^\d{4}$/.test(text);
   });
-  if (typeof run?.text === "string")
-    return { id: "unknown", name: run.text.trim() };
-  return { id: "unknown", name: getText(byline) ?? "Unknown Artist" };
+  if (typeof run?.text === "string") return { id: null, name: run.text.trim() };
+  return { id: null, name: getText(byline) ?? "Unknown Artist" };
 }
 
 export function mapInnertubeRadioTrack(raw: unknown): Track | null {
@@ -76,12 +75,12 @@ export function mapInnertubeRadioTrack(raw: unknown): Track | null {
 
   const byline = bylineOf(renderer);
   const runs = getRuns(byline);
-  let artists = runsToArtists(runs);
+  let artists: TrackArtist[] = runsToArtists(runs);
   if (artists.length === 0) {
     const bylineText = getText(byline);
     artists = [
       {
-        id: "",
+        id: null,
         name: bylineText
           ? bylineText.split("•")[0]?.trim() || bylineText
           : "Unknown Artist",

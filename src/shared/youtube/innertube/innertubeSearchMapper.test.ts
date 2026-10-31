@@ -122,7 +122,7 @@ describe("innertube search mapper", () => {
     });
     expect(result).toMatchObject({
       id: "eVTXPUF4Oz4",
-      artists: [{ id: "unknown", name: "Linkin Park" }],
+      artists: [{ id: null, name: "Linkin Park" }],
       durationMs: 219_000,
     });
   });

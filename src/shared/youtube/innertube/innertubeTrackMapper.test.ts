@@ -34,7 +34,7 @@ describe("fallbackArtistsFromRuns", () => {
       { text: "2:43" },
     ];
     expect(fallbackArtistsFromRuns(runs)).toEqual([
-      { id: "unknown", name: "ROLDOZZZER" },
+      { id: null, name: "ROLDOZZZER" },
     ]);
   });
 
@@ -65,13 +65,13 @@ describe("fallbackArtistsFromRuns", () => {
     ];
     expect(fallbackArtistsFromRuns(runs)).toEqual([
       { id: "UC123", name: "VILLIAN" },
-      { id: "unknown", name: "Aarne" },
+      { id: null, name: "Aarne" },
     ]);
   });
 
   it("reads a plain artist column without a label", () => {
     expect(fallbackArtistsFromRuns([{ text: "2hollis" }])).toEqual([
-      { id: "unknown", name: "2hollis" },
+      { id: null, name: "2hollis" },
     ]);
   });
 
@@ -119,7 +119,7 @@ describe("mapInnertubeTrack", () => {
       },
     };
     const track = mapInnertubeTrack(row);
-    expect(track?.artists).toEqual([{ id: "unknown", name: "ROLDOZZZER" }]);
+    expect(track?.artists).toEqual([{ id: null, name: "ROLDOZZZER" }]);
     expect(track?.durationMs).toBe(93_000);
   });
 });

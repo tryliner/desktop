@@ -151,7 +151,7 @@ export function fallbackArtistsFromRuns(runs: JsonRecord[]): TrackArtist[] {
   }
   const segment = segments[0];
   if (!segment || parseDurationMs(segmentText(segment)) !== undefined) {
-    return [{ id: "unknown", name: "Unknown Artist" }];
+    return [{ id: null, name: "Unknown Artist" }];
   }
   const artists = segment.flatMap((run): TrackArtist[] => {
     const text = typeof run.text === "string" ? run.text.trim() : "";
@@ -162,11 +162,9 @@ export function fallbackArtistsFromRuns(runs: JsonRecord[]): TrackArtist[] {
       .split(/\s*(?:,|\s&\s)\s*/)
       .map((name) => name.trim())
       .filter(Boolean)
-      .map((name) => ({ id: "unknown", name }));
+      .map((name) => ({ id: null, name }));
   });
-  return artists.length > 0
-    ? artists
-    : [{ id: "unknown", name: "Unknown Artist" }];
+  return artists.length > 0 ? artists : [{ id: null, name: "Unknown Artist" }];
 }
 
 function fallbackArtistsFromColumn(renderer: JsonRecord): TrackArtist[] {
