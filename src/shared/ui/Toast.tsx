@@ -336,6 +336,12 @@ function ImportToastBridge({
     if (isAwaiting) return t("import.status_awaiting_sub");
     if (isFinalizing) return t("import.status_finalizing_sub");
     if (isCompleted) {
+      if (job.result?.overLimit) {
+        return t("import.status_completed_over_limit", {
+          added: job.result.imported,
+          left: job.result.overLimit,
+        });
+      }
       if (job.result?.imported) {
         return t("import.status_completed_sub", { count: job.result.imported });
       }

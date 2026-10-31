@@ -1101,6 +1101,7 @@
     "status_completed": "Playlist imported",
     "status_completed_sub": "{count} tracks added",
     "status_completed_sub_empty": "Playlist is ready to play",
+    "status_completed_over_limit": "{added} added, {left} left out: the playlist is at its limit",
     "status_failed": "Import failed",
     "status_failed_sub": "Something went wrong",
     "view_playlist": "Open playlist",

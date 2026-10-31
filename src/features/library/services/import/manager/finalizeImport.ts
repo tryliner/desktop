@@ -4,6 +4,7 @@ import type { Track } from "@/shared/contracts";
 export interface FinalizedPlaylist {
   playlistId: string;
   saved: number;
+  overLimit: number;
 }
 
 function uniqueTracks(tracks: Track[]): Track[] {
@@ -28,9 +29,12 @@ export async function finalizeImportedPlaylist(
       : {}),
   });
   const unique = uniqueTracks(tracks);
-  const saved =
-    unique.length > 0
-      ? (await api.addPlaylistTrackSnapshots(playlist.id, unique)).added
-      : 0;
-  return { playlistId: playlist.id, saved };
+  if (unique.length === 0) {
+    return { playlistId: playlist.id, saved: 0, overLimit: 0 };
+  }
+  const { added, overLimit } = await api.addPlaylistTrackSnapshots(
+    playlist.id,
+    unique,
+  );
+  return { playlistId: playlist.id, saved: added, overLimit };
 }

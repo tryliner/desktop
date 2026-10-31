@@ -78,7 +78,7 @@ export async function finalizeLocalImport(
   const total = record.job.result?.total ?? tracks.length;
   updateLocalImportJob(jobId, { status: "finalizing" });
   try {
-    const { playlistId, saved } = await finalizeImportedPlaylist(
+    const { playlistId, saved, overLimit } = await finalizeImportedPlaylist(
       title || record.job.title || "Imported playlist",
       description ?? record.job.description,
       tracks,
@@ -89,7 +89,12 @@ export async function finalizeLocalImport(
         status: "completed",
         requiresDecision: false,
         playlistId,
-        result: { total, imported: saved, skipped: Math.max(0, total - saved) },
+        result: {
+          total,
+          imported: saved,
+          skipped: Math.max(0, total - saved),
+          overLimit,
+        },
         finishedAt: new Date().toISOString(),
       },
       [],

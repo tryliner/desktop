@@ -158,8 +158,27 @@ describe("finalizeImportedPlaylist", () => {
 
     await expect(
       finalizeImportedPlaylist("Mine", undefined, [track, track]),
-    ).resolves.toEqual({ playlistId: "pl_1", saved: 1 });
+    ).resolves.toEqual({ playlistId: "pl_1", saved: 1, overLimit: 0 });
     expect(bulk).toHaveBeenCalledWith("pl_1", [track]);
+  });
+
+  it("reports the tracks the playlist limit left out", async () => {
+    vi.spyOn(api, "createPlaylist").mockResolvedValue(playlist);
+    vi.spyOn(api, "addPlaylistTrackSnapshots").mockResolvedValue({
+      added: 1,
+      duplicates: 0,
+      rejected: 0,
+      overLimit: 2,
+      playlist: { ...playlist, trackCount: 1 },
+    });
+    const others = [
+      { ...track, id: "aaaaaaaaaaa" },
+      { ...track, id: "bbbbbbbbbbb" },
+    ];
+
+    await expect(
+      finalizeImportedPlaylist("Mine", undefined, [track, ...others]),
+    ).resolves.toEqual({ playlistId: "pl_1", saved: 1, overLimit: 2 });
   });
 
   it("surfaces a failed bulk request instead of adding tracks one by one", async () => {

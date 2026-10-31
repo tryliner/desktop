@@ -22,6 +22,7 @@ export interface ImportResult {
   total: number;
   imported: number;
   skipped: number;
+  overLimit?: number;
 }
 
 export interface ImportJob {
