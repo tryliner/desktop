@@ -459,6 +459,8 @@ export default function LoginPage() {
                         type="text"
                         autoComplete="name"
                         placeholder={t("login.placeholder_display_name")}
+                        // the api refuses a longer display name (400)
+                        maxLength={64}
                         value={displayName}
                         hasError={Boolean(error) && errorField !== "username"}
                         aria-invalid={
