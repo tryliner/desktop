@@ -51,6 +51,23 @@ export interface UserPlaylistItem {
 
 export type ApiUserPlaylistItem = UserPlaylistItem;
 
+// GET /v1/playlists/:id: a public user playlist, or one the viewer owns
+export interface SharedPlaylistDetails extends UserPlaylist {
+  trackCount: number;
+  durationMs: number;
+  items: UserPlaylistItem[];
+}
+
+export type ApiSharedPlaylistDetails = SharedPlaylistDetails;
+
+const USER_PLAYLIST_ID =
+  /^(?:[0-9a-fA-F]{8}-(?:[0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}|pl-.+)$/;
+
+// user playlists are uuids (or legacy pl-…), catalog ones are VLPL…/PL…
+export function isUserPlaylistId(id: string): boolean {
+  return USER_PLAYLIST_ID.test(id);
+}
+
 export interface LikedTracksPage {
   items: { track: ApiTrack; likedAt: string }[];
   nextCursor: string | null;

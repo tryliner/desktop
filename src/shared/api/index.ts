@@ -25,6 +25,7 @@ export type {
   ApiCatalogPlaylistDetails,
   ApiUserPlaylist,
   ApiUserPlaylistItem,
+  ApiSharedPlaylistDetails,
   ApiLikedTracksPage,
   LyricsSyncLevel,
   LyricsCandidate,
@@ -42,10 +43,7 @@ export type {
   PopularTracksResponse,
 } from "./api";
 
-export type {
-  PublicUser,
-  UpdateProfileInput,
-} from "@/shared/contracts";
+export type { PublicUser, UpdateProfileInput } from "@/shared/contracts";
 
 export {
   getAuthSession,

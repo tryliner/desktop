@@ -502,6 +502,7 @@ export type {
   PlaylistDetails as ApiPlaylistDetails,
   UserPlaylist as ApiUserPlaylist,
   UserPlaylistItem as ApiUserPlaylistItem,
+  SharedPlaylistDetails as ApiSharedPlaylistDetails,
   LikedTracksPage as ApiLikedTracksPage,
   LyricsFormat,
   LyricsContentKind,
@@ -548,6 +549,7 @@ import type {
   ApiLikedTracksPage,
   ApiUserPlaylist,
   ApiUserPlaylistItem,
+  ApiSharedPlaylistDetails,
   LyricsStreamEvent,
   LyricsSearchResult,
   ImportJob,
@@ -805,6 +807,12 @@ export const api = {
       playlist: ApiUserPlaylist;
       items: ApiUserPlaylistItem[];
     }>(`/v1/me/playlists/${encodeURIComponent(id)}`);
+  },
+
+  getSharedPlaylist(id: string): Promise<ApiSharedPlaylistDetails> {
+    return request<ApiSharedPlaylistDetails>(
+      `/v1/playlists/${encodeURIComponent(id)}`,
+    );
   },
 
   createPlaylist(input: {

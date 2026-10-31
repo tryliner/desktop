@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { api, mediaUrl, toClientTrack } from "@/shared/api";
 import { queryCache } from "@/shared/cache/queryCache";
+import { isUserPlaylistId } from "@/shared/contracts";
 import type { Track } from "@/shared/types";
 import { YOUTUBE_THUMBNAIL_HOST } from "@/shared/youtube";
 import { getDailyMixArtists } from "@/features/home/hooks/useDailyMixes";
@@ -59,38 +60,28 @@ async function loadCollection(
     }
   }
 
-  const collection =
-    type === "playlist" ? await api.getPlaylist(id) : await api.getAlbum(id);
-
-  if (
-    (collection as any).playlist &&
-    Array.isArray((collection as any).items)
-  ) {
-    const userPlaylist = (collection as any).playlist;
-    const userItems = (collection as any).items as any[];
-    const covers = userItems
-      .map((i) => (i.track?.cover ? mediaUrl(i.track.cover.url) : ""))
-      .filter(Boolean)
-      .filter((url, idx, arr) => arr.indexOf(url) === idx)
-      .slice(0, 4);
-    const tracks: Track[] = userItems.map((item) => toClientTrack(item.track));
-    const ownerName =
-      userPlaylist.owner?.displayName || userPlaylist.owner?.username || "";
+  if (type === "playlist" && isUserPlaylistId(decodedId)) {
+    const shared = await api.getSharedPlaylist(decodedId);
+    const cover = shared.items.find((item) => item.track.cover)?.track.cover;
+    const ownerName = shared.owner?.displayName || shared.owner?.username || "";
     const formatted: CollectionPageData = {
       type: "playlist",
-      title: userPlaylist.title,
+      title: shared.title,
       author: ownerName || undefined,
-      description: userPlaylist.description || undefined,
-      coverUrl: covers[0] || "",
-      tracks,
+      description: shared.description || undefined,
+      coverUrl: cover ? mediaUrl(cover.url) : "",
+      tracks: shared.items.map((item) => toClientTrack(item.track)),
     };
     return formatted;
   }
 
+  const collection =
+    type === "playlist" ? await api.getPlaylist(id) : await api.getAlbum(id);
+
   const collectionCoverUrl = collection.cover
     ? mediaUrl(collection.cover.url)
     : "";
-  const tracks = (collection.tracks || []).map((t: any) => {
+  const tracks = collection.tracks.map((t) => {
     const clientTrack = toClientTrack(t);
     let updated = clientTrack;
     if (collection.type === "album") {
@@ -117,7 +108,8 @@ async function loadCollection(
     title: collection.title,
     author: collection.type === "playlist" ? collection.author : undefined,
     artists: collection.type === "album" ? collection.artists : undefined,
-    description: (collection as any).description,
+    description:
+      collection.type === "playlist" ? collection.description : undefined,
     year: collection.year,
     coverUrl: collectionCoverUrl,
     tracks,
