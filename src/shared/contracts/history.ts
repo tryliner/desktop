@@ -1,107 +1,29 @@
-import type { Track, TrackAlbum } from "./track";
+import type { ApiBody } from "./api.generated";
+import type { WireTrack } from "./track";
 
+export type {
+  PlaybackContext,
+  HistoryItem as PlaybackHistoryItem,
+  HistoryPage as PlaybackHistoryResponse,
+  PopularWindow as PopularTimeWindow,
+  PopularTrack as PopularTrackItem,
+  PopularTracks as PopularTracksResponse,
+  PopularAlbum as PopularAlbumEntry,
+  PopularAlbums as PopularAlbumsResponse,
+  SavedType as MostSavedType,
+  MostSavedItem as MostSavedEntry,
+  MostSaved as MostSavedResponse,
+} from "./api.generated";
+
+/** Where the client says a track was played from (`context.type`). */
 export type PlaybackContextType =
   "album" | "playlist" | "radio" | "search" | "library" | "explore" | "direct";
 
-export interface PlaybackContext {
-  type: PlaybackContextType | string;
-  id?: string;
-}
-
-// what the client knows about a played track; artists without an id and a
-// cover without dimensions are fine, the server fills in or resolves the rest
-export interface PlaybackTrackSnapshot {
-  id: string;
-  title: string;
-  artists: { id?: string; name: string }[];
-  album?: TrackAlbum;
-  durationMs?: number;
-  cover?: { url: string };
-}
-
-export interface RecordPlaybackEventRequest {
-  playbackSessionId: string;
-  listeningSessionId: string;
-  trackId: string;
-  trackSnapshot?: PlaybackTrackSnapshot;
-  playedDurationMs: number;
-  trackDurationMs?: number;
-  completionRate: number;
-  completed?: boolean;
-  skipped?: boolean;
-  loopCount?: number;
-  hasSeekBackward?: boolean;
-  context?: PlaybackContext;
-}
-
-export interface PlaybackHistoryItem {
-  id: string;
-  playbackSessionId: string;
-  listeningSessionId: string;
-  track: Track;
-  playedDurationMs: number;
-  completionRate: number;
-  completed: boolean;
-  skipped: boolean;
-  loopCount: number;
-  hasSeekBackward: boolean;
-  context?: PlaybackContext;
-  listenedAt: string;
-}
-
-export interface PlaybackHistoryResponse {
-  items: PlaybackHistoryItem[];
-  nextCursor: string | null;
-}
-
-export type PopularTimeWindow = "12h" | "24h" | "7d" | "30d" | "all";
-
-export interface PopularTrackItem {
-  rank: number;
-  track: Track;
-  playCount: number;
-  uniqueListeners: number;
-  score: number;
-  viewer?: {
-    liked: boolean;
-  };
-}
-
-export interface PopularTracksResponse {
-  window: PopularTimeWindow;
-  generatedAt: string;
-  items: PopularTrackItem[];
-}
-
-export interface PopularAlbumEntry {
-  id: string;
-  title: string;
-  artist: string;
-  coverUrl: string | null;
-  year?: number;
-  playCount: number;
-  uniqueListeners: number;
-  trackCount: number;
-  score: number;
-}
-
-export interface PopularAlbumsResponse {
-  window: PopularTimeWindow;
-  items: PopularAlbumEntry[];
-}
-
-export type MostSavedType = "all" | "album" | "playlist";
-
-export interface MostSavedEntry {
-  type: "album" | "playlist";
-  id: string;
-  title: string;
-  subtitle: string;
-  coverUrl: string | null;
-  saves: number;
-}
-
-export interface MostSavedResponse {
-  type: MostSavedType;
-  items: MostSavedEntry[];
-}
+/**
+ * `POST /v1/me/playback/events`: the server types `track` loosely (it runs
+ * it through its sanitizer), the client sends a Track.
+ */
+export type RecordPlaybackEventRequest = Omit<
+  ApiBody<"POST /v1/me/playback/events">,
+  "track"
+> & { track?: WireTrack };

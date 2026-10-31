@@ -4,7 +4,7 @@ import {
   getAuthSession,
   mediaUrl,
   toClientTrack,
-  type ApiUserPlaylist,
+  type ApiUserPlaylistDetails,
   type ApiUserPlaylistItem,
 } from "@/shared/api";
 import { queryCache } from "@/shared/cache/queryCache";
@@ -13,7 +13,7 @@ import type { Track } from "@/shared/types";
 export interface LibraryPlaylistSummary {
   id: string;
   title: string;
-  description?: string;
+  description: string | null;
   trackCount: number;
   coverUrl: string;
   coverUrls: string[];
@@ -25,7 +25,7 @@ export interface LibraryPlaylistSummary {
 export interface LibraryPlaylistDetail {
   id: string;
   title: string;
-  description?: string;
+  description: string | null;
   trackCount: number;
   coverUrl: string;
   coverUrls: string[];
@@ -165,25 +165,24 @@ export function usePlaylistsList() {
   return state;
 }
 
-function toDetail(
-  playlist: ApiUserPlaylist,
-  items: ApiUserPlaylistItem[],
-  trackCount: number,
-  durationMs: number,
-  partial: boolean,
-): LibraryPlaylistDetail {
+// `partial`: a first page, the rest of the items (nextCursor) is still loading
+function toDetail({
+  playlist,
+  items,
+  nextCursor,
+}: ApiUserPlaylistDetails): LibraryPlaylistDetail {
   const covers = extractCovers(items);
   return {
     id: playlist.id,
     title: playlist.title,
     description: playlist.description,
-    trackCount,
+    trackCount: playlist.trackCount,
     coverUrl: covers[0] ?? "",
     coverUrls: covers,
     revision: playlist.revision,
     tracks: items.map(toTrack),
-    durationMs,
-    ...(partial ? { partial: true } : {}),
+    durationMs: playlist.durationMs,
+    ...(nextCursor !== null ? { partial: true } : {}),
   };
 }
 
@@ -224,13 +223,7 @@ export function usePlaylist(id: string | null) {
           limit: FIRST_PAGE_SIZE,
         });
         if (!active || complete || response.notModified) return;
-        const detail = toDetail(
-          response.playlist,
-          response.items,
-          response.trackCount,
-          response.durationMs,
-          response.partial,
-        );
+        const detail = toDetail(response);
         setData(detail);
         setIsLoading(false);
       } catch {}
@@ -247,13 +240,7 @@ export function usePlaylist(id: string | null) {
         complete = true;
         if (response.notModified) return;
 
-        const detail = toDetail(
-          response.playlist,
-          response.items,
-          response.trackCount,
-          response.durationMs,
-          false,
-        );
+        const detail = toDetail(response);
         queryCache.set(cacheKey, detail);
         if (response.etag) queryCache.set(etagKey, response.etag);
         else queryCache.delete(etagKey);

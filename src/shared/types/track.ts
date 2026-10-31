@@ -1,7 +1,4 @@
-import type {
-  TrackArtist as ContractTrackArtist,
-  TrackAudioVariant,
-} from "../contracts";
+import type { TrackAudioVariant } from "../contracts";
 
 export interface TrackArtist {
   id?: string;
@@ -14,7 +11,7 @@ export interface Track {
   title: string;
   artists: string;
   artistId?: string;
-  artistList?: (ContractTrackArtist | TrackArtist)[];
+  artistList?: TrackArtist[];
   coverUrl: string;
   durationMs: number;
   playCount: number;

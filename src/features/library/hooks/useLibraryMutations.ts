@@ -1,5 +1,9 @@
 import { useCallback, useState } from "react";
 import { api } from "@/shared/api";
+import type {
+  ArtistSnapshotInput,
+  CollectionSnapshotInput,
+} from "@/shared/contracts";
 import { notifyLibraryChanged, evictPlaylistFromCache } from "./usePlaylists";
 import { applyOptimisticLike, applyOptimisticUnlike } from "./useLikedTracks";
 
@@ -80,22 +84,19 @@ export function useDeletePlaylist() {
   });
 }
 
-export function useSaveExternalItem() {
-  return useMutation(
-    ({
-      type,
-      id,
-      snapshot,
-    }: {
-      type: "album" | "artist" | "playlist";
+export type SaveExternalItemInput =
+  | { type: "artist"; id: string; snapshot: ArtistSnapshotInput }
+  | {
+      type: "album" | "playlist";
       id: string;
-      snapshot?: Record<string, unknown>;
-    }) =>
-      api.saveCollection(
-        `${type}s` as "albums" | "artists" | "playlists",
-        id,
-        snapshot,
-      ),
+      snapshot: CollectionSnapshotInput;
+    };
+
+export function useSaveExternalItem() {
+  return useMutation((input: SaveExternalItemInput) =>
+    input.type === "artist"
+      ? api.saveCollection("artists", input.id, input.snapshot)
+      : api.saveCollection(`${input.type}s`, input.id, input.snapshot),
   );
 }
 

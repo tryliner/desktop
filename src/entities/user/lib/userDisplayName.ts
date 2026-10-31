@@ -2,7 +2,9 @@ import type { PublicUser } from "../model/types";
 
 export function userDisplayName(
   user:
-    Pick<PublicUser, "displayName" | "username" | "email"> | null | undefined,
+    | Partial<Pick<PublicUser, "displayName" | "username" | "email">>
+    | null
+    | undefined,
 ): string | undefined {
   return (
     user?.displayName ||

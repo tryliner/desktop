@@ -1,5 +1,17 @@
+import type {
+  CatalogAlbumDetails,
+  CatalogArtistDetails,
+  CatalogPlaylistDetails as ApiCatalogPlaylistDetails,
+  CatalogSearchItem,
+} from "./api.generated";
 import type { Cover } from "./cover";
-import type { Track, ApiTrack } from "./track";
+import type { ApiTrack, Track } from "./track";
+
+// the catalog is read on the client (innertube, soundcloud) with
+// /v1/catalog/* as the fallback, so these are the api shapes with the client's
+// Cover and Track in place of the api ones, plus what only a client catalog adds
+
+type WithClientCover<T> = Omit<T, "cover"> & { cover?: Cover };
 
 export type SearchType = "all" | "track" | "artist" | "album" | "playlist";
 
@@ -11,116 +23,56 @@ export const SEARCH_TYPES: readonly SearchType[] = [
   "playlist",
 ];
 
-export interface SearchArtistItem {
-  type: "artist";
-  id: string;
-  name: string;
-  cover?: Cover;
-}
-
-export interface SearchAlbumItem {
-  type: "album";
-  id: string;
-  title: string;
-  artists: { id: string; name: string }[];
-  year?: number;
-  cover?: Cover;
-}
-
-export interface SearchPlaylistItem {
-  type: "playlist";
-  id: string;
-  title: string;
-  author?: string;
-  cover?: Cover;
-}
+export type SearchArtistItem = WithClientCover<
+  Extract<CatalogSearchItem, { type: "artist" }>
+>;
+export type SearchAlbumItem = WithClientCover<
+  Extract<CatalogSearchItem, { type: "album" }>
+>;
+export type SearchPlaylistItem = WithClientCover<
+  Extract<CatalogSearchItem, { type: "playlist" }>
+>;
 
 export type SearchResult =
-  | (Track & { type: "track"; viewer?: { liked: boolean } })
+  | (Track & { type: "track" })
   | SearchArtistItem
   | SearchAlbumItem
   | SearchPlaylistItem;
 
-export type ApiSearchItem = SearchResult;
-export type SearchResponse = { items: ApiSearchItem[] };
-export type ApiArtist = SearchArtistItem;
-export type ApiAlbum = SearchAlbumItem;
-export type ApiPlaylist = SearchPlaylistItem;
+export type SearchResponse = { items: SearchResult[] };
 
-export interface ArtistAlbum {
-  id: string;
-  title: string;
-  year?: number;
-  cover?: Cover;
-  explicit?: boolean;
+export type ArtistAlbum = WithClientCover<
+  CatalogArtistDetails["albums"][number]
+> & {
+  // track counts only the soundcloud catalog knows
   totalTracks?: number;
   trackCount?: number;
-}
+};
 
-export type ApiArtistAlbum = ArtistAlbum;
+export type ArtistRelease = ArtistAlbum &
+  Pick<CatalogArtistDetails["singles"][number], "releaseType">;
 
-export interface ArtistRelease extends ArtistAlbum {
-  releaseType: "single" | "ep";
-}
-
-export type ApiArtistRelease = ArtistRelease;
-
-export interface ArtistDetails {
-  type: "artist";
-  id: string;
-  name: string;
+export type ArtistDetails = Omit<
+  WithClientCover<CatalogArtistDetails>,
+  "tracks" | "albums" | "singles"
+> & {
+  /** soundcloud profiles carry a description */
   bio?: string;
-  cover?: Cover;
-  monthlyListeners?: string;
-  verified: boolean;
-  geniusImageUrl?: string;
-  geniusAka?: string[];
-  geniusUsername?: string;
   tracks: ApiTrack[];
   albums: ArtistAlbum[];
   singles: ArtistRelease[];
-}
+};
 
-export type ApiArtistDetails = ArtistDetails;
+export type AlbumDetails = Omit<
+  WithClientCover<CatalogAlbumDetails>,
+  "tracks"
+> & { tracks: ApiTrack[] };
 
-export interface AlbumDetails {
-  type: "album";
-  id: string;
-  title: string;
-  artists: { id: string; name: string }[];
-  year?: number;
-  cover?: Cover;
-  trackCount?: number;
-  durationMs?: number;
-  tracks: ApiTrack[];
-}
+export type CatalogPlaylistDetails = Omit<
+  WithClientCover<ApiCatalogPlaylistDetails>,
+  "tracks"
+> & { tracks: ApiTrack[] };
 
-export type ApiAlbumDetails = AlbumDetails;
-
-export interface CatalogPlaylistDetails {
-  type: "playlist";
-  id: string;
-  title: string;
-  author?: string;
-  description?: string;
-  year?: number;
-  cover?: Cover;
-  trackCount?: number;
-  durationMs?: number;
-  tracks: ApiTrack[];
-}
-
-export type ApiCatalogPlaylistDetails = CatalogPlaylistDetails;
-
-export interface RadioTrack {
-  id: string;
-  title: string;
-  artists: { id: string; name: string }[];
-  album?: { id: string; title: string };
-  durationMs: number;
-  cover?: Cover;
-  explicit?: boolean;
-}
-
-export type ApiRadioTrack = RadioTrack;
-export type RadioResponse = { items: ApiRadioTrack[] };
+/** Radio is client only (innertube, soundcloud related tracks). */
+export type RadioTrack = Track;
+export type RadioResponse = { items: RadioTrack[] };

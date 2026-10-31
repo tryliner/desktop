@@ -13,7 +13,7 @@ export interface LibraryItemDetail {
 export interface PlaylistOption {
   id: string;
   title: string;
-  description?: string;
+  description?: string | null;
   coverUrl: string;
   trackCount: number;
 }

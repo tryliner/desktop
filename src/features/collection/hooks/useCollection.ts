@@ -10,7 +10,7 @@ export interface CollectionPageData {
   type?: "playlist" | "album";
   title: string;
   author?: string;
-  artists?: { id: string; name: string }[];
+  artists?: { id: string | null; name: string }[];
   description?: string;
   year?: number;
   coverUrl: string;
@@ -31,9 +31,8 @@ async function loadCollection(
     const found = mixesRes.items.find((m) => m.id === id);
     if (found) {
       const clientTracks = found.tracks.map((t) => toClientTrack(t));
-      const primaryCover = found.cover?.url
-        ? mediaUrl(found.cover.url)
-        : clientTracks[0]?.coverUrl || clientTracks[1]?.coverUrl || "";
+      const primaryCover =
+        clientTracks.find((track) => track.coverUrl)?.coverUrl ?? "";
       const computedArtists = getDailyMixArtists(
         found.clusterArtists,
         clientTracks,
@@ -44,7 +43,6 @@ async function loadCollection(
         title: found.title,
         author:
           computedArtists.length > 0 ? computedArtists.join(", ") : "Daily Mix",
-        description: found.description,
         coverUrl: primaryCover,
         tracks: clientTracks,
         isDailyMix: true,
@@ -55,14 +53,14 @@ async function loadCollection(
 
   if (type === "playlist" && isUserPlaylistId(decodedId)) {
     const shared = await api.getSharedPlaylist(decodedId);
-    const cover = shared.items.find((item) => item.track.cover)?.track.cover;
-    const ownerName = shared.owner?.displayName || shared.owner?.username || "";
+    const coverUrl = shared.playlist.coverUrls[0];
+    const ownerName = shared.owner.displayName || shared.owner.username || "";
     const formatted: CollectionPageData = {
       type: "playlist",
-      title: shared.title,
+      title: shared.playlist.title,
       author: ownerName || undefined,
-      description: shared.description || undefined,
-      coverUrl: cover ? mediaUrl(cover.url) : "",
+      description: shared.playlist.description || undefined,
+      coverUrl: coverUrl ? mediaUrl(coverUrl) : "",
       tracks: shared.items.map((item) => toClientTrack(item.track)),
     };
     return formatted;

@@ -154,7 +154,6 @@ describe("soundcloudCatalog sets", () => {
       trackCount: 2,
     });
     expect(playlist.tracks.map((item) => item.id)).toEqual(["sc:1", "sc:2"]);
-    expect(playlist.durationMs).toBe(3000);
     expect(spy).toHaveBeenCalledTimes(2);
   });
 

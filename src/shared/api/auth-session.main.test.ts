@@ -10,7 +10,13 @@ const session = (
   accessToken,
   refreshToken,
   accessTokenExpiresAt: new Date(Date.now() - 1000).toISOString(),
-  user: { id: "u1", email: "user@example.com" },
+  user: {
+    id: "u1",
+    email: "user@example.com",
+    username: null,
+    displayName: null,
+    avatarUrl: null,
+  },
 });
 
 function installBridge(stored: AuthTokens | null) {

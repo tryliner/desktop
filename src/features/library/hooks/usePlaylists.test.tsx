@@ -28,25 +28,44 @@ vi.mock("@/shared/api", () => ({
 
 const playlist = {
   id: "pl1",
+  ownerId: "u1",
   title: "Big",
+  description: null,
   isPublic: false,
   revision: 3,
+  trackCount: 300,
+  durationMs: 300000,
+  coverUrls: [],
   createdAt: "2026-01-01T00:00:00.000Z",
   updatedAt: "2026-01-02T00:00:00.000Z",
 };
 
+const owner = { id: "u1", username: "u", displayName: null, avatarUrl: null };
+
 function items(count: number) {
   return Array.from({ length: count }, (_, i) => ({
     id: `item-${i}`,
-    position: i,
     addedAt: "2026-01-01T00:00:00.000Z",
     track: {
       id: `t${i}`,
       title: `Song ${i}`,
+      artists: [{ id: null, name: "Artist" }],
       durationMs: 1000,
-      cover: { url: `https://img/${i % 5}` },
+      cover: { url: `https://img/${i % 5}`, width: null, height: null },
     },
   }));
+}
+
+// a read of `count` items of a playlist of `total`, as readUserPlaylist answers
+function read(count: number, total: number, etag?: string) {
+  return {
+    notModified: false,
+    ...(etag ? { etag } : {}),
+    playlist: { ...playlist, trackCount: total, durationMs: total * 1000 },
+    owner,
+    items: items(count),
+    nextCursor: count < total ? "next" : null,
+  };
 }
 
 function deferred<T>() {
@@ -89,16 +108,7 @@ describe("usePlaylist", () => {
     const full = deferred<any>();
     (api.readUserPlaylist as any).mockImplementation(
       (_id: string, options: { limit?: number }) =>
-        options.limit
-          ? Promise.resolve({
-              notModified: false,
-              partial: true,
-              trackCount: 300,
-              durationMs: 300000,
-              playlist,
-              items: items(100),
-            })
-          : full.promise,
+        options.limit ? Promise.resolve(read(100, 300)) : full.promise,
     );
 
     act(() => root.render(<Probe id="pl1" />));
@@ -115,15 +125,7 @@ describe("usePlaylist", () => {
     expect(result?.data?.durationMs).toBe(300000);
 
     await act(async () => {
-      full.resolve({
-        notModified: false,
-        etag: '"pl-pl1-3"',
-        partial: false,
-        trackCount: 300,
-        durationMs: 300000,
-        playlist,
-        items: items(300),
-      });
+      full.resolve(read(300, 300, '"pl-pl1-3"'));
     });
 
     expect(result?.data?.partial).toBeUndefined();
@@ -143,15 +145,7 @@ describe("usePlaylist", () => {
       (_id: string, options: { limit?: number }) =>
         options.limit
           ? first.promise
-          : Promise.resolve({
-              notModified: false,
-              etag: '"pl-pl1-3"',
-              partial: false,
-              trackCount: 300,
-              durationMs: 300000,
-              playlist,
-              items: items(300),
-            }),
+          : Promise.resolve(read(300, 300, '"pl-pl1-3"')),
     );
 
     act(() => root.render(<Probe id="pl1" />));
@@ -159,28 +153,13 @@ describe("usePlaylist", () => {
     expect(result?.data?.tracks).toHaveLength(300);
 
     await act(async () => {
-      first.resolve({
-        notModified: false,
-        partial: true,
-        trackCount: 300,
-        durationMs: 300000,
-        playlist,
-        items: items(100),
-      });
+      first.resolve(read(100, 300));
     });
     expect(result?.data?.tracks).toHaveLength(300);
   });
 
   it("revisits from cache and only revalidates with the stored etag", async () => {
-    (api.readUserPlaylist as any).mockResolvedValue({
-      notModified: false,
-      etag: '"pl-pl1-3"',
-      partial: false,
-      trackCount: 3,
-      durationMs: 3000,
-      playlist,
-      items: items(3),
-    });
+    (api.readUserPlaylist as any).mockResolvedValue(read(3, 3, '"pl-pl1-3"'));
     act(() => root.render(<Probe id="pl1" />));
     await flush();
     act(() => root.unmount());

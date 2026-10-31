@@ -1,82 +1,30 @@
-import type { Cover } from "./cover";
-import type { Track, ApiTrack } from "./track";
+import type {
+  AddTracksResult,
+  LikedTracksPage,
+  Playlist,
+  PlaylistDetails,
+  PlaylistItem,
+  PlaylistOwner,
+} from "./api.generated";
 
-export interface PlaylistSummary {
-  id: string;
-  title: string;
-  description?: string;
-  revision: number;
-  trackCount: number;
-  durationMs: number;
-  cover?: Cover;
-  createdAt: Date | string;
-  updatedAt: Date | string;
-}
+export type { AddTracksResult, LikedTracksPage, PlaylistOwner };
 
-export type ApiPlaylistSummary = PlaylistSummary;
+/** A user playlist: the same object in the list, create, update, move and details. */
+export type UserPlaylist = Playlist;
 
-export interface PlaylistDetails extends PlaylistSummary {
-  tracks: Track[];
-}
+/** One track of a user playlist; `id` is the item id (remove / move). */
+export type UserPlaylistItem = PlaylistItem;
 
-export type ApiPlaylistDetails = PlaylistDetails;
-
-export interface UserPlaylist {
-  id: string;
-  title: string;
-  description?: string;
-  isPublic: boolean;
-  createdAt: string;
-  updatedAt: string;
-  revision: number;
-  ownerId?: string;
-  owner?: {
-    id: string;
-    username?: string | null;
-    displayName?: string | null;
-    avatarUrl?: string | null;
-  };
-}
-
-export type ApiUserPlaylist = UserPlaylist;
-
-// GET /v1/me/playlists rows; create/update responses carry neither field
-export interface UserPlaylistSummary extends UserPlaylist {
-  trackCount: number;
-  coverUrls: string[];
-}
-
-export type ApiUserPlaylistSummary = UserPlaylistSummary;
-
-export interface UserPlaylistItem {
-  id: string;
-  track: ApiTrack;
-  position: number;
-  addedAt: string;
-}
-
-export type ApiUserPlaylistItem = UserPlaylistItem;
-
-// GET /v1/playlists/:id: a public user playlist, or one the viewer owns
-export interface SharedPlaylistDetails extends UserPlaylist {
-  trackCount: number;
-  durationMs: number;
-  items: UserPlaylistItem[];
-}
-
-export type ApiSharedPlaylistDetails = SharedPlaylistDetails;
+/**
+ * `GET /v1/me/playlists/:id` and `GET /v1/playlists/:id` (public, or the
+ * viewer's own): the playlist, its owner and a page of items.
+ */
+export type UserPlaylistDetails = PlaylistDetails;
 
 const USER_PLAYLIST_ID =
-  /^(?:[0-9a-fA-F]{8}-(?:[0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}|pl-.+)$/;
+  /^[0-9a-fA-F]{8}-(?:[0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}$/;
 
-// user playlists are uuids (or legacy pl-…), catalog ones are VLPL…/PL…
+// user playlists are uuids, catalog ones are VLPL…/PL…
 export function isUserPlaylistId(id: string): boolean {
   return USER_PLAYLIST_ID.test(id);
 }
-
-export interface LikedTracksPage {
-  items: { track: ApiTrack; likedAt: string }[];
-  nextCursor: string | null;
-}
-
-export type ApiLikedTracksPage = LikedTracksPage;

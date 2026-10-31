@@ -23,10 +23,7 @@ function DailyMixCard({ mix, index }: DailyMixCardProps) {
     handleClick,
   } = useDailyMixActions(mix);
 
-  const subtitleText =
-    (mix.clusterArtists && mix.clusterArtists.length > 0
-      ? mix.clusterArtists.join(", ")
-      : mix.description) || "";
+  const subtitleText = mix.clusterArtists.join(", ");
 
   const mixNumber = mix.title.match(/\d+/)?.[0] ?? String((index ?? 0) + 1);
 

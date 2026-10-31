@@ -125,27 +125,9 @@ export function setAuthSession(next: AuthTokens | null): void {
  * or null if unknown.
  */
 export function getSessionExpiryMs(s: AuthTokens | null): number | null {
-  if (!s) return null;
-  if (s.accessTokenExpiresAt) {
-    const t =
-      typeof s.accessTokenExpiresAt === "number"
-        ? s.accessTokenExpiresAt
-        : new Date(s.accessTokenExpiresAt).getTime();
-    if (!isNaN(t) && t > 0) {
-      // If t is in seconds (e.g. 10-digit unix timestamp), convert to ms
-      return t < 10_000_000_000 ? t * 1000 : t;
-    }
-  }
-  if (s.expiresAt) {
-    const t =
-      typeof s.expiresAt === "number"
-        ? s.expiresAt < 10_000_000_000
-          ? s.expiresAt * 1000
-          : s.expiresAt
-        : new Date(s.expiresAt).getTime();
-    if (!isNaN(t) && t > 0) return t;
-  }
-  return null;
+  // the server sends the access token's real exp as an iso string
+  const t = s ? new Date(s.accessTokenExpiresAt).getTime() : NaN;
+  return Number.isFinite(t) && t > 0 ? t : null;
 }
 
 /**

@@ -22,7 +22,7 @@ type SearchFilter = "track" | "all" | "video";
 const MATCH_CONFIDENCE_FLOOR = 75;
 
 function toTrack(item: Extract<SearchResult, { type: "track" }>): Track {
-  const { type: _type, viewer: _viewer, ...track } = item;
+  const { type: _type, ...track } = item;
   return track;
 }
 

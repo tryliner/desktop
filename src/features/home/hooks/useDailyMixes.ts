@@ -1,15 +1,16 @@
 import { useEffect } from "react";
-import { api, toClientTrack, mediaUrl } from "@/shared/api";
+import { api, toClientTrack } from "@/shared/api";
 import { queryCache } from "@/shared/cache/queryCache";
 import type { Track } from "@/shared/types";
 import type { CollectionPageData } from "@/features/collection/hooks/useCollection";
 import { loadWithRetry, useSessionOwner } from "./sessionAwareLoad";
 import { freshFor, useCachedResource } from "@/shared/cache/useCachedResource";
 
+// the server sends the mix's artists and tracks; the cover is the first
+// track's and the subtitle is built from the artists here
 export interface DailyMix {
   id: string;
   title: string;
-  description: string;
   clusterArtists: string[];
   coverUrl?: string;
   trackCount: number;
@@ -75,16 +76,12 @@ function toDailyMixes(
 ): DailyMix[] {
   return items.map((mix) => {
     const clientTracks = mix.tracks.map((t) => toClientTrack(t));
-    const primaryCover = mix.cover?.url
-      ? mediaUrl(mix.cover.url)
-      : clientTracks[0]?.coverUrl || clientTracks[1]?.coverUrl;
     return {
       id: mix.id,
       title: mix.title,
-      description: mix.description,
       clusterArtists: getDailyMixArtists(mix.clusterArtists, clientTracks, 4),
-      coverUrl: primaryCover,
-      trackCount: mix.trackCount,
+      coverUrl: clientTracks.find((track) => track.coverUrl)?.coverUrl,
+      trackCount: clientTracks.length,
       tracks: clientTracks,
     };
   });
@@ -99,7 +96,6 @@ function primeMixCollections(mixes: DailyMix[]): void {
         mix.clusterArtists.length > 0
           ? mix.clusterArtists.join(", ")
           : "Daily Mix",
-      description: mix.description,
       coverUrl: mix.coverUrl || "",
       tracks: mix.tracks,
     };

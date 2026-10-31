@@ -12,6 +12,7 @@ import { pitchShifter } from "./pitchShifter";
 import { EQ_MAX_CUSTOM_PRESETS, EQ_PRESET_NAME_MAX } from "./equalizer";
 import {
   api,
+  ApiError,
   type ApiRadioTrack,
   type LyricsCandidate,
   type LyricsSyncLevel,
@@ -80,16 +81,25 @@ function restoreOriginalRelativeOrder<T>(
   });
 }
 
-function parsePlaybackContext(
+// "type:id" as the store keeps it; the api takes a type of 1-64 and an id of
+// 1-256 characters (400 otherwise)
+export function parsePlaybackContext(
   context: string | null,
 ): PlaybackContext | undefined {
   if (!context) return undefined;
-  if (context.includes(":")) {
-    const [type, ...rest] = context.split(":");
-    return { type, id: rest.join(":") };
-  }
-  return { type: context };
+  const [rawType = "", ...rest] = context.split(":");
+  const type = rawType.slice(0, 64);
+  if (!type) return undefined;
+  const id = rest.join(":").slice(0, 256);
+  return id ? { type, id } : { type };
 }
+
+// the api refuses a play longer than a day (400); no real event comes close
+const MAX_EVENT_DURATION_MS = 86_400_000;
+
+// tracks the server answered 404 TRACK_UNKNOWN for: without metadata to send,
+// another event for them would only fail the same way
+const unknownTrackIds = new Set<string>();
 
 type LyricsHint = { title: string; artist: string; durationMs?: number };
 
@@ -224,24 +234,32 @@ class PlaybackTelemetryTracker {
     const completionRate = Math.min(1.0, Math.max(0.0, rawRate));
     const isSkipped = !this.completed && this.playedDurationMs < 30000;
 
+    const track = this.activeTrack
+      ? playbackSnapshot(this.activeTrack, this.trackDurationMs)
+      : undefined;
     if (
       (this.playedDurationMs >= 3000 || this.completed) &&
-      !isLocalTrackId(this.activeTrackId)
+      !isLocalTrackId(this.activeTrackId) &&
+      (track || !unknownTrackIds.has(this.activeTrackId))
     ) {
       reported = this.sendEvent({
         playbackSessionId: this.playbackSessionId,
         listeningSessionId: this.getOrCreateListeningSession(),
         trackId: this.activeTrackId,
-        trackSnapshot: this.activeTrack
-          ? playbackSnapshot(this.activeTrack, this.trackDurationMs)
-          : undefined,
-        playedDurationMs: Math.round(this.playedDurationMs),
+        ...(track ? { track } : {}),
+        playedDurationMs: Math.min(
+          MAX_EVENT_DURATION_MS,
+          Math.round(this.playedDurationMs),
+        ),
         trackDurationMs:
-          this.trackDurationMs > 0 ? this.trackDurationMs : undefined,
+          this.trackDurationMs > 0 &&
+          this.trackDurationMs <= MAX_EVENT_DURATION_MS
+            ? Math.round(this.trackDurationMs)
+            : undefined,
         completionRate: Number(completionRate.toFixed(4)),
         completed: this.completed,
         skipped: isSkipped,
-        loopCount: this.loopCount,
+        loopCount: Math.min(10_000, this.loopCount),
         hasSeekBackward: this.hasSeekBackward,
         context: this.context,
       });
@@ -262,6 +280,9 @@ class PlaybackTelemetryTracker {
     return api.recordPlaybackEvent(payload).then(
       () => undefined,
       (err) => {
+        if (err instanceof ApiError && err.code === "TRACK_UNKNOWN") {
+          unknownTrackIds.add(payload.trackId);
+        }
         log(
           "yellow",
           "telemetry",

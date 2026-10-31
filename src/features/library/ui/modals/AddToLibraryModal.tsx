@@ -24,35 +24,43 @@ export default function AddToLibraryModal() {
   const handleAdd = useCallback(() => {
     if (!item) return;
 
-    // same shape the library list reads back (useExternalItems): name/title + cover.url
-    const cover = item.coverUrl ? { url: item.coverUrl } : undefined;
-    const snapshot =
+    // the snapshot is all the library tile shows (useExternalItems reads it
+    // back); the server takes texts and cover urls of up to 500 characters
+    const text = (value: string | undefined) =>
+      value?.trim().slice(0, 500) || undefined;
+    const cover =
+      item.coverUrl && item.coverUrl.length <= 500
+        ? { url: item.coverUrl }
+        : undefined;
+    const name = text(item.title) ?? item.id;
+    const author = text(item.subtitle);
+    const input =
       item.type === "artist"
         ? {
+            type: item.type,
             id: item.id,
-            name: item.title,
-            title: item.title,
-            ...(cover ? { cover } : {}),
+            snapshot: { name, ...(cover ? { cover } : {}) },
           }
         : {
+            type: item.type,
             id: item.id,
-            title: item.title,
-            ...(cover ? { cover } : {}),
-            ...(item.totalTracks ? { trackCount: item.totalTracks } : {}),
+            snapshot: {
+              title: name,
+              ...(author ? { author } : {}),
+              ...(cover ? { cover } : {}),
+              ...(item.totalTracks ? { trackCount: item.totalTracks } : {}),
+            },
           };
 
-    saveExternal.mutate(
-      { type: item.type, id: item.id, snapshot },
-      {
-        onSuccess: () => {
-          toast(t("common.added_to_library_success"), "checkmark", {
-            description: item.title || undefined,
-          });
-          close();
-        },
-        onError: () => toast(t("common.failed_to_add_library"), "error"),
+    saveExternal.mutate(input, {
+      onSuccess: () => {
+        toast(t("common.added_to_library_success"), "checkmark", {
+          description: item.title || undefined,
+        });
+        close();
       },
-    );
+      onError: () => toast(t("common.failed_to_add_library"), "error"),
+    });
   }, [item, toast, saveExternal, t, close]);
 
   return (

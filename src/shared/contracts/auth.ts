@@ -1,42 +1,9 @@
-export interface PublicUser {
-  id: string;
-  email?: string;
-  username?: string | null;
-  displayName?: string | null;
-  avatarUrl?: string | null;
-  bio?: string | null;
-  isPublic?: boolean;
-  showActivity?: boolean;
-  showHistory?: boolean;
-  showLikedTracks?: boolean;
-  participateLeaderboards?: boolean;
-}
+import type { ApiBody, AuthTokens, AuthUser } from "./api.generated";
 
-export type AuthUser = PublicUser;
+export type { AuthTokens, AuthUser };
 
-export interface AuthTokens {
-  accessToken: string;
-  refreshToken: string;
-  accessTokenExpiresAt: string;
-  user: PublicUser;
-  expiresAt?: number;
-}
+/** The signed-in user (`GET /v1/me`, the `user` of the token answers). */
+export type PublicUser = AuthUser;
 
-export interface AuthResult {
-  accessToken: string;
-  refreshToken: string;
-  accessTokenExpiresAt: string | Date;
-  user: PublicUser;
-}
-
-export interface RegisterInput {
-  email: string;
-  password: string;
-  username: string;
-  displayName: string;
-}
-
-export interface LoginInput {
-  email: string;
-  password: string;
-}
+export type RegisterInput = ApiBody<"POST /v1/auth/register">;
+export type LoginInput = ApiBody<"POST /v1/auth/login">;

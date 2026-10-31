@@ -21,12 +21,10 @@ function mapRendererTrack(
     sourceId: mapped.id,
     title: mapped.title,
     artists: mapped.artists.map((artist) => artist.name),
-    artistIds: mapped.artists.map((artist) =>
-      artist.id !== "unknown" ? artist.id : undefined,
-    ),
+    artistIds: mapped.artists.map((artist) => artist.id ?? undefined),
     album: mapped.album?.title,
     albumId: mapped.album?.id,
-    durationMs: mapped.durationMs,
+    durationMs: mapped.durationMs ?? undefined,
     coverUrl: mapped.cover?.url ?? youtubeThumbnailUrl(mapped.id),
   };
 }

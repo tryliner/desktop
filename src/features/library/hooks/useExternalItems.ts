@@ -13,42 +13,54 @@ export type EntityType = "album" | "artist" | "playlist";
 const EMPTY_ITEMS: LibraryItemViewModel[] = [];
 const SAVED_ITEMS_POLICY = { isFresh: freshFor(5 * 60_000) };
 
+function hrefOf(type: EntityType, id: string): string {
+  const encoded = encodeURIComponent(id);
+  return type === "artist"
+    ? `/artist?id=${encoded}`
+    : `/collection?type=${type}&id=${encoded}`;
+}
+
+// rows saved before snapshots were required hold only the id: they still
+// open, with the id as their title and no cover
 async function loadSavedItems(
   type: EntityType,
 ): Promise<LibraryItemViewModel[]> {
-  const collectionType =
-    type === "album" ? "albums" : type === "artist" ? "artists" : "playlists";
-  const response = await api.listSavedCollections(collectionType);
-  return response.items.map((entry: any) => {
-    const value = entry[type];
-    const rawCover = value.cover ? mediaUrl(value.cover.url) : "";
-    const cover =
-      type === "artist" ? toMaxQualityAvatarUrl(rawCover) : rawCover;
+  if (type === "artist") {
+    const response = await api.listSavedCollections("artists");
+    return response.items.map((entry) => {
+      const cover = entry.snapshot?.cover;
+      return {
+        id: entry.id,
+        title: entry.snapshot?.name ?? entry.id,
+        subtitle: "Artist",
+        imageUrl: cover ? toMaxQualityAvatarUrl(mediaUrl(cover.url)) : "",
+        kind: type,
+        href: hrefOf(type, entry.id),
+        addedAt: entry.savedAt,
+        isOwned: false,
+      };
+    });
+  }
+  const response = await api.listSavedCollections(
+    type === "album" ? "albums" : "playlists",
+  );
+  return response.items.map((entry) => {
+    const snapshot = entry.snapshot;
+    const tracks = snapshot?.trackCount
+      ? `${snapshot.trackCount} tracks`
+      : undefined;
     return {
-      id: value.id,
-      title: type === "artist" ? value.name : value.title,
+      id: entry.id,
+      title: snapshot?.title ?? entry.id,
       subtitle:
-        type === "artist"
-          ? "Artist"
-          : type === "playlist"
-            ? value.author ||
-              (value.trackCount ? `${value.trackCount} tracks` : "Playlist")
-            : [
-                value.year,
-                value.trackCount ? `${value.trackCount} tracks` : undefined,
-              ]
-                .filter(Boolean)
-                .join(" • "),
-      imageUrl: cover,
+        type === "playlist"
+          ? snapshot?.author || tracks || "Playlist"
+          : [snapshot?.author, tracks].filter(Boolean).join(" • "),
+      imageUrl: snapshot?.cover ? mediaUrl(snapshot.cover.url) : "",
       kind: type,
-      href:
-        type === "artist"
-          ? `/artist?id=${encodeURIComponent(value.id)}`
-          : type === "playlist"
-            ? `/collection?type=playlist&id=${encodeURIComponent(value.id)}`
-            : `/collection?type=album&id=${encodeURIComponent(value.id)}`,
+      href: hrefOf(type, entry.id),
       addedAt: entry.savedAt,
-      trackCount: value.trackCount,
+      trackCount: snapshot?.trackCount,
       isOwned: false,
     };
   });

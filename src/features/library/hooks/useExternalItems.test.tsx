@@ -17,9 +17,15 @@ vi.mock("@/shared/api", () => ({
 const artistsResponse = {
   items: [
     {
+      id: "a1",
+      snapshot: {
+        name: "SZA",
+        cover: { url: "sza.jpg", width: null, height: null },
+      },
       savedAt: "2026-10-20T10:00:00.000Z",
-      artist: { id: "a1", name: "SZA", cover: { url: "sza.jpg" } },
     },
+    // an old row that holds nothing but the id
+    { id: "a2", snapshot: null, savedAt: "2026-10-19T10:00:00.000Z" },
   ],
 };
 
@@ -54,7 +60,8 @@ describe("useExternalItems", () => {
       root.render(<Probe />);
     });
     expect(latest?.isLoading).toBe(false);
-    expect(latest?.data.map((item) => item.title)).toEqual(["SZA"]);
+    expect(latest?.data.map((item) => item.title)).toEqual(["SZA", "a2"]);
+    expect(latest?.data.map((item) => item.imageUrl)).toEqual(["sza.jpg", ""]);
 
     act(() => root.unmount());
     root = createRoot(container);
@@ -66,6 +73,6 @@ describe("useExternalItems", () => {
       root.render(<Probe />);
     });
     expect(latest?.isLoading).toBe(false);
-    expect(latest?.data.map((item) => item.title)).toEqual(["SZA"]);
+    expect(latest?.data.map((item) => item.title)).toEqual(["SZA", "a2"]);
   });
 });

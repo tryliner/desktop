@@ -47,25 +47,26 @@ describe("auth-session token system", () => {
     vi.restoreAllMocks();
   });
 
-  it("calculates expiry timestamp correctly from ISO string or numeric epoch", () => {
+  it("reads the expiry from the iso accessTokenExpiresAt", () => {
     const session1: AuthTokens = {
       accessToken: "a1",
       refreshToken: "r1",
       accessTokenExpiresAt: "2026-09-02T19:00:00.000Z",
-      user: { id: "u1", email: "test@liner.app" },
+      user: {
+        id: "u1",
+        email: "test@liner.app",
+        username: null,
+        displayName: null,
+        avatarUrl: null,
+      },
     };
     expect(getSessionExpiryMs(session1)).toBe(
       new Date("2026-09-02T19:00:00.000Z").getTime(),
     );
 
-    const session2: AuthTokens = {
-      accessToken: "a2",
-      refreshToken: "r2",
-      accessTokenExpiresAt: "",
-      expiresAt: 1788370000,
-      user: { id: "u2", email: "test2@liner.app" },
-    };
-    expect(getSessionExpiryMs(session2)).toBe(1788370000 * 1000);
+    expect(
+      getSessionExpiryMs({ ...session1, accessTokenExpiresAt: "" }),
+    ).toBeNull();
   });
 
   it("deduplicates parallel refresh requests into a single network call", async () => {
@@ -73,7 +74,13 @@ describe("auth-session token system", () => {
       accessToken: "expired_token",
       refreshToken: "refresh_token_123",
       accessTokenExpiresAt: new Date(Date.now() - 1000).toISOString(),
-      user: { id: "u1", email: "user@example.com" },
+      user: {
+        id: "u1",
+        email: "user@example.com",
+        username: null,
+        displayName: null,
+        avatarUrl: null,
+      },
     };
     setAuthSession(initialSession);
 
@@ -125,7 +132,13 @@ describe("auth-session token system", () => {
       accessToken: "soon_expired_token",
       refreshToken: "rt_abc",
       accessTokenExpiresAt: new Date(Date.now() + 10_000).toISOString(),
-      user: { id: "u1", email: "user@example.com" },
+      user: {
+        id: "u1",
+        email: "user@example.com",
+        username: null,
+        displayName: null,
+        avatarUrl: null,
+      },
     };
     setAuthSession(expiringSession);
 
@@ -149,7 +162,13 @@ describe("auth-session token system", () => {
       accessToken: "currently_valid_token",
       refreshToken: "rt_abc",
       accessTokenExpiresAt: new Date(Date.now() + 1500_000).toISOString(),
-      user: { id: "u1", email: "user@example.com" },
+      user: {
+        id: "u1",
+        email: "user@example.com",
+        username: null,
+        displayName: null,
+        avatarUrl: null,
+      },
     };
     setAuthSession(validSession);
 
@@ -166,7 +185,13 @@ describe("auth-session token system", () => {
       accessToken: "stale_token",
       refreshToken: "rt_in_flight",
       accessTokenExpiresAt: new Date(Date.now() + 500_000).toISOString(),
-      user: { id: "u1", email: "user@example.com" },
+      user: {
+        id: "u1",
+        email: "user@example.com",
+        username: null,
+        displayName: null,
+        avatarUrl: null,
+      },
     };
     setAuthSession(session);
 
@@ -204,7 +229,13 @@ describe("auth-session token system", () => {
       accessToken: "soon_expired_90s",
       refreshToken: "rt_90s",
       accessTokenExpiresAt: new Date(Date.now() + 90_000).toISOString(),
-      user: { id: "u1", email: "user@example.com" },
+      user: {
+        id: "u1",
+        email: "user@example.com",
+        username: null,
+        displayName: null,
+        avatarUrl: null,
+      },
     };
     setAuthSession(expiringSession);
 
@@ -226,7 +257,13 @@ describe("auth-session token system", () => {
       accessToken: "old_token",
       refreshToken: "rt_1",
       accessTokenExpiresAt: new Date(Date.now() - 1000).toISOString(),
-      user: { id: "u1", email: "user@example.com" },
+      user: {
+        id: "u1",
+        email: "user@example.com",
+        username: null,
+        displayName: null,
+        avatarUrl: null,
+      },
     };
     setAuthSession(session);
 
@@ -267,7 +304,13 @@ describe("auth-session token system", () => {
       accessToken: "old_token",
       refreshToken: "rt_1",
       accessTokenExpiresAt: new Date(Date.now() - 1000).toISOString(),
-      user: { id: "u1", email: "user@example.com" },
+      user: {
+        id: "u1",
+        email: "user@example.com",
+        username: null,
+        displayName: null,
+        avatarUrl: null,
+      },
     });
     const reject = (status = 401, code = "INVALID_SIGNATURE") => ({
       ok: false,

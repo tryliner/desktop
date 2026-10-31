@@ -229,6 +229,8 @@ function CollectionContent() {
         title: data.title,
         coverUrl: data.coverUrl,
         type: entityType,
+        subtitle:
+          data.author ?? data.artists?.map((artist) => artist.name).join(", "),
         totalTracks: entityType === "playlist" ? data.tracks.length : undefined,
       });
     }

@@ -69,7 +69,7 @@ function createCollector(enrichment: Map<string, TrackResult>) {
     }
     const detailed = enrichment.get(item.id);
     results.push(
-      detailed && detailed.durationMs > 0 && !item.durationMs
+      detailed?.durationMs && !item.durationMs
         ? { ...item, ...detailed }
         : item,
     );

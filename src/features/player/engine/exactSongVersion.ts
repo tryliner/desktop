@@ -16,7 +16,7 @@ const normalize = (value: string) =>
     .trim()
     .toLowerCase();
 
-const isChannelId = (id: string | undefined): id is string =>
+const isChannelId = (id: string | null | undefined): id is string =>
   Boolean(id?.startsWith("UC"));
 
 function primaryArtist(
@@ -36,7 +36,11 @@ function isExactSong(
 ): result is SongResult {
   if (result.type !== "track" || result.id === rowVideoId) return false;
   if (normalize(result.title) !== normalize(track.title)) return false;
-  if (Math.abs(result.durationMs - track.durationMs) > DURATION_TOLERANCE_MS)
+  // an unknown length (null or 0) never proves the same recording
+  if (
+    !result.durationMs ||
+    Math.abs(result.durationMs - track.durationMs) > DURATION_TOLERANCE_MS
+  )
     return false;
   return result.artists.some((candidate) =>
     isChannelId(artist.id) && isChannelId(candidate.id)

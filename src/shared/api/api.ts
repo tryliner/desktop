@@ -10,9 +10,9 @@ import {
 import { signApiRequest, syncServerTime } from "./requestSigner";
 import { clientCatalog } from "./clientCatalog";
 import { getLocalImportHandler } from "./localImports";
-import type { Track } from "@/shared/contracts";
+import type { DailyMixesResponse, Track } from "@/shared/contracts";
 import { telemetry } from "@/shared/telemetry";
-import type { DailyMixesResponse } from "@/shared/contracts";
+import { toApiTrack } from "./apiTrack";
 
 import { isLocalTrackId } from "@/shared/media/local";
 import { showToast } from "@/shared/ui/Toast";
@@ -318,15 +318,7 @@ async function executeRequest<T>(
 
 export type UserPlaylistRead =
   | { notModified: true }
-  | {
-      notModified: false;
-      etag?: string;
-      partial: boolean;
-      trackCount: number;
-      durationMs: number;
-      playlist: ApiUserPlaylist;
-      items: ApiUserPlaylistItem[];
-    };
+  | ({ notModified: false; etag?: string } & UserPlaylistDetails);
 
 async function request<T>(
   path: string,
@@ -390,15 +382,12 @@ export function resolveApiErrorMessage(
   return t(fallbackKey);
 }
 
-// ---- Types from @liner/contracts --------------------------------------------
+// ---- Types (src/shared/contracts, based on the generated api contract) ----
 
 export type {
   SearchType,
   Cover,
   ApiCover,
-  TrackArtist as ApiTrackArtist,
-  TrackAlbum as ApiTrackAlbum,
-  Track as ApiTrackBase,
   ApiTrack,
   TrackDetails as ApiTrackDetails,
   SearchArtistItem as ApiArtist,
@@ -413,32 +402,18 @@ export type {
   CatalogPlaylistDetails as ApiCatalogPlaylistDetails,
   RadioTrack as ApiRadioTrack,
   RadioResponse,
-  PlaylistSummary as ApiPlaylistSummary,
-  PlaylistDetails as ApiPlaylistDetails,
   UserPlaylist as ApiUserPlaylist,
-  UserPlaylistSummary as ApiUserPlaylistSummary,
   UserPlaylistItem as ApiUserPlaylistItem,
-  SharedPlaylistDetails as ApiSharedPlaylistDetails,
+  UserPlaylistDetails as ApiUserPlaylistDetails,
   LikedTracksPage as ApiLikedTracksPage,
-  LyricsFormat,
-  LyricsContentKind,
   LyricsSyncLevel,
-  LyricsQuality,
-  RawLyricsCandidate,
   LyricsCandidate,
   LyricsStreamEvent,
-  ImportReviewReason,
   ImportReview,
   ImportReviewDecision,
-  ImportSource,
-  ImportJobStatus,
-  ImportResult,
   ImportJob,
-  ImportedTrack,
-  ImportedPlaylist,
   PublicUser,
   AuthTokens,
-  AuthResult,
   PlaybackContextType,
   PlaybackContext,
   RecordPlaybackEventRequest,
@@ -453,34 +428,40 @@ export type {
 } from "../contracts";
 
 import type {
-  SearchType,
-  SearchResponse,
-  Track as ApiTrackBase,
-  ApiTrackDetails,
-  RadioResponse,
-  ApiAlbumDetails,
-  ApiArtistDetails,
-  ApiCatalogPlaylistDetails,
-  ApiLikedTracksPage,
-  ApiUserPlaylist,
-  ApiUserPlaylistSummary,
-  ApiUserPlaylistItem,
-  ApiSharedPlaylistDetails,
-  LyricsStreamEvent,
-  LyricsSearchResult,
+  AddTracksResult,
+  AlbumDetails,
+  ApiBody,
+  ArtistDetails,
+  ArtistSnapshotInput,
+  CatalogPlaylistDetails,
+  CollectionSnapshotInput,
   ImportJob,
   ImportReview,
   ImportReviewDecision,
-  RecordPlaybackEventRequest,
-  PlaybackHistoryResponse,
-  PopularTimeWindow,
-  PopularTracksResponse,
-  PopularAlbumsResponse,
+  LikedTracksPage,
+  LyricsSearchResult,
+  LyricsStreamEvent,
   MostSavedResponse,
   MostSavedType,
+  PlaybackHistoryResponse,
+  PopularAlbumsResponse,
+  PopularTimeWindow,
+  PopularTracksResponse,
+  RadioResponse,
+  RecordPlaybackEventRequest,
+  SavedArtists,
+  SavedCollections,
+  SearchResponse,
+  SearchType,
+  TrackDetails,
+  UserPlaylist,
+  UserPlaylistDetails,
+  UserPlaylistItem,
 } from "../contracts";
 
 // ---- Endpoints --------------------------------------------------------------
+
+type CollectionKind = "albums" | "artists" | "playlists";
 
 export const api = {
   async login(email: string, password: string): Promise<AuthTokens> {
@@ -527,9 +508,9 @@ export const api = {
     );
   },
 
-  getTrack(id: string): Promise<ApiTrackDetails> {
+  getTrack(id: string): Promise<TrackDetails> {
     return clientCatalog.getTrack(id, () =>
-      request<ApiTrackDetails>(`/v1/catalog/tracks/${encodeURIComponent(id)}`),
+      request<TrackDetails>(`/v1/catalog/tracks/${encodeURIComponent(id)}`),
     );
   },
 
@@ -543,9 +524,9 @@ export const api = {
     }));
   },
 
-  getAlbum(id: string): Promise<ApiAlbumDetails> {
+  getAlbum(id: string): Promise<AlbumDetails> {
     return clientCatalog.getAlbum(id, () =>
-      request<ApiAlbumDetails>(`/v1/catalog/albums/${encodeURIComponent(id)}`),
+      request<AlbumDetails>(`/v1/catalog/albums/${encodeURIComponent(id)}`),
     );
   },
 
@@ -553,36 +534,37 @@ export const api = {
     return clientCatalog.getArtistImage(id);
   },
 
-  getArtist(id: string): Promise<ApiArtistDetails> {
+  getArtist(id: string): Promise<ArtistDetails> {
     return clientCatalog.getArtist(id, () =>
-      request<ApiArtistDetails>(
-        `/v1/catalog/artists/${encodeURIComponent(id)}`,
-      ),
+      request<ArtistDetails>(`/v1/catalog/artists/${encodeURIComponent(id)}`),
     );
   },
 
-  getPlaylist(id: string): Promise<ApiCatalogPlaylistDetails> {
+  getPlaylist(id: string): Promise<CatalogPlaylistDetails> {
     return clientCatalog.getPlaylist(id, () =>
-      request<ApiCatalogPlaylistDetails>(
+      request<CatalogPlaylistDetails>(
         `/v1/catalog/playlists/${encodeURIComponent(id)}`,
       ),
     );
   },
 
-  listLikedTracks(limit = 100, cursor?: string): Promise<ApiLikedTracksPage> {
+  listLikedTracks(limit = 100, cursor?: string): Promise<LikedTracksPage> {
     const params = new URLSearchParams({ limit: String(limit) });
     if (cursor) params.set("cursor", cursor);
-    return request<ApiLikedTracksPage>(`/v1/me/library/tracks?${params}`);
+    return request<LikedTracksPage>(`/v1/me/library/tracks?${params}`);
   },
 
+  // without a usable track the server falls back to its own catalog, and
+  // answers 404 TRACK_UNKNOWN when it has never seen the id either
   async likeTrack(id: string): Promise<void> {
     if (isLocalTrackId(id)) throw new Error("Local tracks stay on this device");
-    const track = await clientCatalog.resolveSnapshot(id);
+    const track = toApiTrack(await clientCatalog.resolveSnapshot(id));
+    const body: ApiBody<"PUT /v1/me/library/tracks/:trackId"> = track
+      ? { track }
+      : null;
     return request<void>(`/v1/me/library/tracks/${encodeURIComponent(id)}`, {
       method: "PUT",
-      ...(track
-        ? { body: JSON.stringify({ track, trackSnapshot: track }) }
-        : {}),
+      ...(body ? { body: JSON.stringify(body) } : {}),
     });
   },
 
@@ -592,22 +574,24 @@ export const api = {
     });
   },
 
-  listSavedCollections(
-    type: "albums" | "artists" | "playlists",
-  ): Promise<{ items: unknown[] }> {
-    return request<{ items: unknown[] }>(`/v1/me/library/${type}`);
+  listSavedCollections<T extends CollectionKind>(
+    type: T,
+  ): Promise<T extends "artists" ? SavedArtists : SavedCollections> {
+    return request(`/v1/me/library/${type}`);
   },
 
-  // the catalog lives on the client now, so the server can't look a collection up by
-  // id any more: send what we know (name / title, cover) or the library shows a blank tile
-  saveCollection(
-    type: "albums" | "artists" | "playlists",
+  // the server can't look a collection up by id: the snapshot is what the
+  // library tile shows (an artist has a name, albums and playlists a title)
+  saveCollection<T extends CollectionKind>(
+    type: T,
     id: string,
-    snapshot?: Record<string, unknown>,
+    snapshot: T extends "artists"
+      ? ArtistSnapshotInput
+      : CollectionSnapshotInput,
   ): Promise<void> {
     return request<void>(`/v1/me/library/${type}/${encodeURIComponent(id)}`, {
       method: "PUT",
-      ...(snapshot ? { body: JSON.stringify({ snapshot }) } : {}),
+      body: JSON.stringify({ snapshot }),
     });
   },
 
@@ -620,29 +604,23 @@ export const api = {
     });
   },
 
-  listPlaylists(): Promise<{ items: ApiUserPlaylistSummary[] }> {
-    return request<{ items: ApiUserPlaylistSummary[] }>("/v1/me/playlists");
+  listPlaylists(): Promise<{ items: UserPlaylist[] }> {
+    return request<{ items: UserPlaylist[] }>("/v1/me/playlists");
   },
 
+  // a page of `limit` items (no etag), or the whole playlist with an etag the
+  // next read can send back for a 304
   async readUserPlaylist(
     id: string,
     options: { limit?: number; etag?: string } = {},
   ): Promise<UserPlaylistRead> {
-    const params = new URLSearchParams({ compact: "true" });
+    const params = new URLSearchParams();
     if (options.limit) params.set("limit", String(options.limit));
+    const query = params.size > 0 ? `?${params}` : "";
     let status = 200;
     let etag: string | undefined;
-    const body = await executeRequest<
-      | {
-          playlist: ApiUserPlaylist;
-          items: ApiUserPlaylistItem[];
-          trackCount: number;
-          durationMs: number;
-          partial?: true;
-        }
-      | undefined
-    >(
-      `/v1/me/playlists/${encodeURIComponent(id)}?${params}`,
+    const body = await executeRequest<UserPlaylistDetails | undefined>(
+      `/v1/me/playlists/${encodeURIComponent(id)}${query}`,
       options.etag ? { headers: { "If-None-Match": options.etag } } : undefined,
       true,
       DEFAULT_TIMEOUT_MS,
@@ -652,29 +630,20 @@ export const api = {
       },
     );
     if (status === 304 || !body) return { notModified: true };
-    return {
-      notModified: false,
-      etag,
-      partial: body.partial === true,
-      trackCount: body.trackCount,
-      durationMs: body.durationMs,
-      playlist: body.playlist,
-      items: body.items,
-    };
+    return { notModified: false, etag, ...body };
   },
 
-  getSharedPlaylist(id: string): Promise<ApiSharedPlaylistDetails> {
-    return request<ApiSharedPlaylistDetails>(
+  // a public user playlist, or one the viewer owns
+  getSharedPlaylist(id: string): Promise<UserPlaylistDetails> {
+    return request<UserPlaylistDetails>(
       `/v1/playlists/${encodeURIComponent(id)}`,
     );
   },
 
-  createPlaylist(input: {
-    title: string;
-    description?: string;
-    isPublic?: boolean;
-  }): Promise<ApiUserPlaylist> {
-    return request<ApiUserPlaylist>("/v1/me/playlists", {
+  createPlaylist(
+    input: ApiBody<"POST /v1/me/playlists">,
+  ): Promise<UserPlaylist> {
+    return request<UserPlaylist>("/v1/me/playlists", {
       method: "POST",
       body: JSON.stringify(input),
     });
@@ -682,12 +651,12 @@ export const api = {
 
   updatePlaylist(
     id: string,
-    input: { title?: string; description?: string | null; isPublic?: boolean },
-  ): Promise<ApiUserPlaylist> {
-    return request<ApiUserPlaylist>(
-      `/v1/me/playlists/${encodeURIComponent(id)}`,
-      { method: "PATCH", body: JSON.stringify(input) },
-    );
+    input: ApiBody<"PATCH /v1/me/playlists/:playlistId">,
+  ): Promise<UserPlaylist> {
+    return request<UserPlaylist>(`/v1/me/playlists/${encodeURIComponent(id)}`, {
+      method: "PATCH",
+      body: JSON.stringify(input),
+    });
   },
 
   deletePlaylist(id: string): Promise<void> {
@@ -696,32 +665,37 @@ export const api = {
     });
   },
 
+  // like likeTrack: 404 TRACK_UNKNOWN when neither the body nor the server's
+  // catalog knows the track
   async addPlaylistTrack(
     playlistId: string,
     trackId: string,
-    snapshot?: ApiTrackBase,
-  ): Promise<ApiUserPlaylistItem> {
+  ): Promise<UserPlaylistItem> {
     if (isLocalTrackId(trackId))
       throw new Error("Local tracks stay on this device");
-    const track = snapshot ?? (await clientCatalog.resolveSnapshot(trackId));
-    return request<ApiUserPlaylistItem>(
+    const track = toApiTrack(await clientCatalog.resolveSnapshot(trackId));
+    const body: ApiBody<"POST /v1/me/playlists/:playlistId/tracks/:trackId"> =
+      track ? { track } : null;
+    return request<UserPlaylistItem>(
       `/v1/me/playlists/${encodeURIComponent(playlistId)}/tracks/${encodeURIComponent(trackId)}`,
-      {
-        method: "POST",
-        ...(track
-          ? { body: JSON.stringify({ track, trackSnapshot: track }) }
-          : {}),
-      },
+      { method: "POST", ...(body ? { body: JSON.stringify(body) } : {}) },
     );
   },
 
+  // added + duplicates + rejected = tracks.length; unusable tracks are counted
+  // as rejected instead of failing the whole import
   addPlaylistTrackSnapshots(
     playlistId: string,
-    tracks: ApiTrackBase[],
-  ): Promise<{ added: number; rejected: number }> {
-    return request<{ added: number; rejected: number }>(
+    tracks: Track[],
+  ): Promise<AddTracksResult> {
+    return request<AddTracksResult>(
       `/v1/me/playlists/${encodeURIComponent(playlistId)}/tracks`,
-      { method: "POST", body: JSON.stringify({ tracks }) },
+      {
+        method: "POST",
+        body: JSON.stringify({
+          tracks: tracks.map((track) => toApiTrack(track) ?? track),
+        }),
+      },
       true,
       60_000,
     );
@@ -739,16 +713,12 @@ export const api = {
     itemId: string,
     beforeItemId: string | null,
     revision: number,
-  ): Promise<{ playlist: ApiUserPlaylist; items: ApiUserPlaylistItem[] }> {
-    return request<{
-      playlist: ApiUserPlaylist;
-      items: ApiUserPlaylistItem[];
-    }>(
+  ): Promise<UserPlaylist> {
+    const body: ApiBody<"POST /v1/me/playlists/:playlistId/items/:itemId/move"> =
+      { beforeItemId, revision };
+    return request<UserPlaylist>(
       `/v1/me/playlists/${encodeURIComponent(playlistId)}/items/${encodeURIComponent(itemId)}/move`,
-      {
-        method: "POST",
-        body: JSON.stringify({ beforeItemId, revision }),
-      },
+      { method: "POST", body: JSON.stringify(body) },
     );
   },
 
@@ -870,7 +840,12 @@ export const api = {
     if (res.headers.get("content-type")?.includes("application/json")) {
       const body = (await res.json()) as { instrumental?: boolean };
       yield body.instrumental
-        ? { type: "done", cached: true, status: "not_found", instrumental: true }
+        ? {
+            type: "done",
+            cached: true,
+            status: "not_found",
+            instrumental: true,
+          }
         : { type: "done", cached: true, status: "not_found" };
       return;
     }

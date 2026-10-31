@@ -28,19 +28,26 @@ describe("playbackSnapshot", () => {
       ],
       album: { id: "MPREb_1", title: "Whenever You Need Somebody" },
       durationMs: 213_000,
-      cover: { url: "https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg" },
+      cover: {
+        url: "https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg",
+        width: null,
+        height: null,
+      },
     });
   });
 
-  it("keeps artists without an id by name only", () => {
+  it("keeps artists without an id with a null id", () => {
     const snap = playbackSnapshot(
       {
         ...base,
-        artistList: [{ name: "Rick Astley" }, { id: "unknown", name: "Guest" }],
+        artistList: [{ name: "Rick Astley" }, { id: "", name: "Guest" }],
       },
       0,
     );
-    expect(snap?.artists).toEqual([{ name: "Rick Astley" }, { name: "Guest" }]);
+    expect(snap?.artists).toEqual([
+      { id: null, name: "Rick Astley" },
+      { id: null, name: "Guest" },
+    ]);
   });
 
   it("is left out without a structured artist list or a title", () => {
@@ -61,5 +68,11 @@ describe("playbackSnapshot", () => {
     expect(snap).not.toHaveProperty("album");
     expect(snap).not.toHaveProperty("cover");
     expect(snap?.durationMs).toBe(180_000);
+  });
+
+  it("sends an unknown duration as null", () => {
+    expect(playbackSnapshot({ ...base, durationMs: 0 }, 0)?.durationMs).toBe(
+      null,
+    );
   });
 });

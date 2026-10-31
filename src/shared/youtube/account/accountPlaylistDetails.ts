@@ -12,14 +12,16 @@ const TOPIC_SUFFIX = / - Topic$/;
 
 function toTrack(tile: TvTile): ApiTrack {
   const artistName = lineText(tile, 0)?.replace(TOPIC_SUFFIX, "");
-  const durationMs = tile.overlayText ? parseDurationMs(tile.overlayText) : 0;
+  const durationMs = tile.overlayText
+    ? parseDurationMs(tile.overlayText)
+    : undefined;
   return {
     id: tile.id,
     title: tile.title,
     artists: artistName
-      ? [{ id: lineBrowseId(tile, 0) ?? "unknown", name: artistName }]
+      ? [{ id: lineBrowseId(tile, 0) ?? null, name: artistName }]
       : [],
-    durationMs: durationMs ?? 0,
+    durationMs: durationMs ?? null,
     cover: tile.cover ?? videoThumbnailCover(tile.id),
   };
 }

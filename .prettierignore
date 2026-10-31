@@ -5,3 +5,4 @@ release
 pnpm-lock.yaml
 electron/signer.ts
 src/assets/animations
+src/shared/contracts/api.generated.ts

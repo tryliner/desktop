@@ -129,7 +129,6 @@ async function loadSet(setId: string, signal?: AbortSignal) {
     ...(year ? { year } : {}),
     ...(cover ? { cover } : {}),
     trackCount: numberValue(record.track_count) ?? tracks.length,
-    durationMs: tracks.reduce((total, track) => total + track.durationMs, 0),
     tracks,
   };
   return { record, summary };

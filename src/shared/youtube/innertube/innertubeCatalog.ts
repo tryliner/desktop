@@ -65,7 +65,7 @@ async function getTrack(
   );
   const match = searched.find((item) => item.id === trackId);
   if (match?.type === "track") {
-    const { type: _type, viewer: _viewer, ...track } = match;
+    const { type: _type, ...track } = match;
     return track;
   }
   throw notFound("Track");

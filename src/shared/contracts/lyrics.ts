@@ -42,14 +42,16 @@ export interface LyricsSearchResult {
   candidate: LyricsCandidate;
 }
 
+// the lyrics answers have no response schema on the server (they stay
+// byte-identical for partners), so these stay hand-written
 export type LyricsStreamEvent =
   | {
       type: "metadata";
       track: {
         id: string;
         title: string;
-        artists: { id: string; name: string }[];
-        durationMs: number;
+        artists: { id: string | null; name: string }[];
+        durationMs: number | null;
       };
     }
   | {
