@@ -3,19 +3,10 @@ import path from "node:path";
 import fs from "node:fs";
 import crypto from "node:crypto";
 import * as tar from "tar";
+import type { BundleManifest } from "../src/shared/contracts/api.generated";
 import type { BundleUpdateState } from "./bundle-stamp";
 
-export interface BundleManifest {
-  bundleVersion: string;
-  minAppVersion: string;
-  channel: string;
-  downloadUrl: string;
-  sha256: string;
-  size: number;
-  signature: string;
-  releasedAt: string;
-  releaseNotes?: string;
-}
+export type { BundleManifest };
 
 export interface ActiveBundleState {
   bundleVersion: string;
@@ -194,7 +185,11 @@ export class BundleManager {
     return !this.matches(state, manifest);
   }
 
-  private async fetchManifest(timeoutMs: number): Promise<BundleManifest> {
+  // null: 404 NO_BUNDLE, nothing is published for this client, keep the dist
+  // it runs. Any other failure throws (the state is unknown)
+  private async fetchManifest(
+    timeoutMs: number,
+  ): Promise<BundleManifest | null> {
     const res = await fetch(
       `${this.updaterUrl}/updates/manifest.json?t=${Date.now()}`,
       {
@@ -202,6 +197,12 @@ export class BundleManager {
         signal: AbortSignal.timeout(timeoutMs),
       },
     );
+    if (res.status === 404) {
+      const body = (await res.json().catch(() => null)) as {
+        code?: unknown;
+      } | null;
+      if (body?.code === "NO_BUNDLE") return null;
+    }
     if (!res.ok) throw new Error(`Server returned ${res.status}`);
     return (await res.json()) as BundleManifest;
   }
@@ -233,7 +234,7 @@ export class BundleManager {
   ): Promise<void> {
     this.pruneBundles();
     const deadline = Date.now() + budgetMs;
-    let manifest: BundleManifest;
+    let manifest: BundleManifest | null;
     try {
       manifest = await this.fetchManifest(
         Math.min(STARTUP_MANIFEST_TIMEOUT_MS, budgetMs),
@@ -241,6 +242,7 @@ export class BundleManager {
     } catch {
       return;
     }
+    if (!manifest) return;
     if (!this.isVersionCompatible(app.getVersion(), manifest.minAppVersion))
       return;
     if (!this.isUpgradeOver(this.installedState, manifest)) return;
@@ -268,6 +270,7 @@ export class BundleManager {
   public async peekUpdate(): Promise<BundleUpdateState> {
     try {
       const manifest = await this.fetchManifest(5_000);
+      if (!manifest) return { kind: "latest" };
       if (!this.isVersionCompatible(app.getVersion(), manifest.minAppVersion)) {
         return { kind: "needs-app-update" };
       }
@@ -290,6 +293,7 @@ export class BundleManager {
 
     try {
       const manifest = await this.fetchManifest(BACKGROUND_MANIFEST_TIMEOUT_MS);
+      if (!manifest) return { available: false, reason: "Already up to date" };
 
       if (!this.isVersionCompatible(app.getVersion(), manifest.minAppVersion)) {
         console.log(

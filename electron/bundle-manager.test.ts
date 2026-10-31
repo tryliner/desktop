@@ -45,7 +45,6 @@ function makeBundle(
     manifest: {
       bundleVersion: version,
       minAppVersion: "0.1.35",
-      channel: "stable",
       downloadUrl: `${UPDATER}/updates/bundles/bundle-${version}.tar.gz`,
       sha256,
       size: bytes.length,
@@ -212,6 +211,35 @@ describe("BundleManager", () => {
     expect(left).toHaveLength(1);
     expect(left[0]).toMatch(/^bundle-0\.1\.40-/);
     expect(runningHtml(next)).toBe("<html>0.1.40</html>");
+  });
+
+  it("treats 404 NO_BUNDLE as up to date and any other failure as unknown", async () => {
+    // a fresh response per call: a body can be read once
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(
+      async () =>
+        new Response(
+          JSON.stringify({
+            statusCode: 404,
+            error: "Not Found",
+            code: "NO_BUNDLE",
+            message: "No bundle is published for this client.",
+          }),
+          { status: 404 },
+        ),
+    );
+    const bundles = manager();
+    await bundles.updateBeforeLaunch();
+    expect(runningHtml(bundles)).toBe("<html>built-in</html>");
+    expect(await bundles.peekUpdate()).toEqual({ kind: "latest" });
+    expect(await bundles.checkForUpdates()).toEqual({
+      available: false,
+      reason: "Already up to date",
+    });
+
+    fetchSpy.mockImplementation(
+      async () => new Response("bad gateway", { status: 502 }),
+    );
+    expect(await bundles.peekUpdate()).toEqual({ kind: "unknown" });
   });
 
   it("never replaces a newer built-in bundle with an older published one", async () => {
