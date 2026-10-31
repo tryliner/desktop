@@ -63,8 +63,7 @@ export function Notch({
   useLayoutEffect(() => {
     const node = contentRef.current;
     if (!node) return;
-    const update = () =>
-      setContentWidth(Math.ceil(node.offsetWidth / 2) * 2);
+    const update = () => setContentWidth(Math.ceil(node.offsetWidth / 2) * 2);
     update();
     const observer = new ResizeObserver(update);
     observer.observe(node);

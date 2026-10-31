@@ -1,12 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import {
-  CheckLine,
-  CloseLine,
-  EyeCloseLine,
-  EyeLine,
-} from "@mingcute/react";
+import { CheckLine, CloseLine, EyeCloseLine, EyeLine } from "@mingcute/react";
 import Button from "@/shared/ui/Button";
 import TextInput from "@/shared/ui/TextInput";
 import WindowControls from "@/features/navigation/ui/WindowControls";
@@ -62,7 +57,8 @@ export default function ResetPasswordPage() {
     api
       .getPasswordReset(token)
       .then((link) => {
-        if (!cancelled) setStage({ kind: "form", maskedEmail: link.maskedEmail });
+        if (!cancelled)
+          setStage({ kind: "form", maskedEmail: link.maskedEmail });
       })
       .catch((err) => {
         if (cancelled) return;
@@ -229,7 +225,9 @@ export default function ResetPasswordPage() {
                     clearError();
                   }}
                   disabled={submitting}
-                  rightSlot={eye(showPassword, () => setShowPassword((v) => !v))}
+                  rightSlot={eye(showPassword, () =>
+                    setShowPassword((v) => !v),
+                  )}
                 />
                 <span
                   className={cn(
