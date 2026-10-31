@@ -1240,5 +1240,30 @@
     "youtube_back_title": "YouTube is back",
     "youtube_back_desc": "Every song can play again.",
     "still_youtube_title": "YouTube still isn't available"
+  },
+  "reset_password": {
+    "title": "Reset password",
+    "subtitle": "Choose a new password for your Liner account.",
+    "brand_done_title": "All set",
+    "brand_done_subtitle": "Your Liner password was changed.",
+    "brand_invalid_title": "Link expired",
+    "brand_invalid_subtitle": "Reset links work once and only for a limited time.",
+    "account": "Account",
+    "label_new": "New password",
+    "hint_length": "At least 8 characters.",
+    "btn_change": "Change password",
+    "btn_saving": "Saving…",
+    "btn_cancel": "Cancel",
+    "done_title": "Password changed",
+    "done_text": "You can sign in with your new password now. For your security, every device that was signed in has been signed out.",
+    "invalid_title": "This link can't be used",
+    "invalid_text": "It has expired or was already used. Ask Liner support to send you a new reset link.",
+    "offline_title": "Can't reach Liner",
+    "offline_text": "Check your connection and try again.",
+    "btn_retry": "Try again",
+    "btn_back_to_sign_in": "Back to sign in",
+    "errors": {
+      "too_many": "Too many attempts. Wait a few minutes and try again."
+    }
   }
 }

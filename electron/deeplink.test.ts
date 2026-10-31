@@ -2,6 +2,19 @@ import { describe, expect, it } from "vitest";
 import { findDeeplinkArg, parseDeeplink } from "./deeplink";
 
 describe("parseDeeplink", () => {
+  it("accepts password reset links with a well-formed token only", () => {
+    const token = `lrst_${"a".repeat(43)}`;
+    expect(parseDeeplink(`liner://reset-password?id=${token}`)).toEqual({
+      type: "reset-password",
+      id: token,
+    });
+    expect(parseDeeplink(`liner://reset-password?id=${token}x`)).toBeNull();
+    expect(parseDeeplink("liner://reset-password?id=lrst_short")).toBeNull();
+    expect(
+      parseDeeplink(`liner://reset-password?id=lmod_${"a".repeat(43)}`),
+    ).toBeNull();
+  });
+
   it("accepts real share targets", () => {
     expect(parseDeeplink("liner://artist?id=UCGtGpOIGHfRu1KYL9pi-mNQ")).toEqual(
       {

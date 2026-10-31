@@ -954,5 +954,30 @@
     "title": "Per titolo (A–Z)",
     "duration": "Per durata",
     "popularity": "Per popolarità"
+  },
+  "reset_password": {
+    "title": "Reimposta password",
+    "subtitle": "Scegli una nuova password per il tuo account Liner.",
+    "brand_done_title": "Fatto",
+    "brand_done_subtitle": "La tua password di Liner è stata cambiata.",
+    "brand_invalid_title": "Link scaduto",
+    "brand_invalid_subtitle": "I link di reimpostazione funzionano una sola volta e per un tempo limitato.",
+    "account": "Account",
+    "label_new": "Nuova password",
+    "hint_length": "Almeno 8 caratteri.",
+    "btn_change": "Cambia password",
+    "btn_saving": "Salvataggio…",
+    "btn_cancel": "Annulla",
+    "done_title": "Password cambiata",
+    "done_text": "Ora puoi accedere con la nuova password. Per sicurezza, tutti i dispositivi connessi sono stati disconnessi.",
+    "invalid_title": "Questo link non può essere usato",
+    "invalid_text": "È scaduto o è già stato usato. Chiedi al supporto Liner un nuovo link.",
+    "offline_title": "Impossibile raggiungere Liner",
+    "offline_text": "Controlla la connessione e riprova.",
+    "btn_retry": "Riprova",
+    "btn_back_to_sign_in": "Torna all'accesso",
+    "errors": {
+      "too_many": "Troppi tentativi. Attendi qualche minuto e riprova."
+    }
   }
 }

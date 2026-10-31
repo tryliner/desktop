@@ -1140,5 +1140,30 @@
     "copy_code": "Copier le code",
     "connected": "YouTube connecté",
     "qr_label": "Code QR de connexion"
+  },
+  "reset_password": {
+    "title": "Réinitialiser le mot de passe",
+    "subtitle": "Choisissez un nouveau mot de passe pour votre compte Liner.",
+    "brand_done_title": "C'est fait",
+    "brand_done_subtitle": "Votre mot de passe Liner a été modifié.",
+    "brand_invalid_title": "Lien expiré",
+    "brand_invalid_subtitle": "Les liens de réinitialisation ne fonctionnent qu'une fois et pour une durée limitée.",
+    "account": "Compte",
+    "label_new": "Nouveau mot de passe",
+    "hint_length": "Au moins 8 caractères.",
+    "btn_change": "Changer le mot de passe",
+    "btn_saving": "Enregistrement…",
+    "btn_cancel": "Annuler",
+    "done_title": "Mot de passe modifié",
+    "done_text": "Vous pouvez maintenant vous connecter avec votre nouveau mot de passe. Par sécurité, tous les appareils connectés ont été déconnectés.",
+    "invalid_title": "Ce lien ne peut pas être utilisé",
+    "invalid_text": "Il a expiré ou a déjà été utilisé. Demandez un nouveau lien au support Liner.",
+    "offline_title": "Impossible de joindre Liner",
+    "offline_text": "Vérifiez votre connexion et réessayez.",
+    "btn_retry": "Réessayer",
+    "btn_back_to_sign_in": "Retour à la connexion",
+    "errors": {
+      "too_many": "Trop de tentatives. Attendez quelques minutes et réessayez."
+    }
   }
 }

@@ -633,6 +633,28 @@ export const api = {
     return result;
   },
 
+  // one-time links a moderator emailed (liner://reset-password?id=<token>)
+  getPasswordReset(
+    token: string,
+  ): Promise<{ maskedEmail: string; expiresAt: string }> {
+    return request(
+      `/v1/auth/password-reset/${encodeURIComponent(token)}`,
+      undefined,
+      false,
+    );
+  },
+
+  completePasswordReset(
+    token: string,
+    password: string,
+  ): Promise<{ success: true }> {
+    return request(
+      `/v1/auth/password-reset/${encodeURIComponent(token)}`,
+      { method: "POST", body: JSON.stringify({ password }) },
+      false,
+    );
+  },
+
   getMe(): Promise<AuthUser> {
     return request<AuthUser>("/v1/me");
   },

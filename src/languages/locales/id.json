@@ -1039,5 +1039,30 @@
     "copy_code": "Salin kode",
     "connected": "YouTube terhubung",
     "qr_label": "Kode QR untuk masuk"
+  },
+  "reset_password": {
+    "title": "Atur ulang kata sandi",
+    "subtitle": "Pilih kata sandi baru untuk akun Liner kamu.",
+    "brand_done_title": "Selesai",
+    "brand_done_subtitle": "Kata sandi Liner kamu sudah diubah.",
+    "brand_invalid_title": "Tautan kedaluwarsa",
+    "brand_invalid_subtitle": "Tautan atur ulang hanya berlaku sekali dan untuk waktu terbatas.",
+    "account": "Akun",
+    "label_new": "Kata sandi baru",
+    "hint_length": "Minimal 8 karakter.",
+    "btn_change": "Ubah kata sandi",
+    "btn_saving": "Menyimpan…",
+    "btn_cancel": "Batal",
+    "done_title": "Kata sandi diubah",
+    "done_text": "Sekarang kamu bisa masuk dengan kata sandi baru. Demi keamanan, semua perangkat yang masuk telah dikeluarkan.",
+    "invalid_title": "Tautan ini tidak bisa digunakan",
+    "invalid_text": "Tautan sudah kedaluwarsa atau sudah dipakai. Minta tautan baru ke dukungan Liner.",
+    "offline_title": "Tidak bisa terhubung ke Liner",
+    "offline_text": "Periksa koneksi kamu lalu coba lagi.",
+    "btn_retry": "Coba lagi",
+    "btn_back_to_sign_in": "Kembali ke masuk",
+    "errors": {
+      "too_many": "Terlalu banyak percobaan. Tunggu beberapa menit lalu coba lagi."
+    }
   }
 }

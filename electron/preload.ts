@@ -29,7 +29,7 @@ export interface DiscordStatus {
 }
 
 export interface DeeplinkTarget {
-  type: "artist" | "album" | "playlist" | "track";
+  type: "artist" | "album" | "playlist" | "track" | "reset-password";
   id: string;
 }
 

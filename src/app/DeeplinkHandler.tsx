@@ -4,7 +4,7 @@ import { api, toClientTrack } from "@/shared/api";
 import { playerEngine } from "@/features/player";
 
 interface DeeplinkTarget {
-  type: "artist" | "album" | "playlist" | "track";
+  type: "artist" | "album" | "playlist" | "track" | "reset-password";
   id: string;
 }
 
@@ -17,6 +17,12 @@ export default function DeeplinkHandler() {
       void (async () => {
         try {
           switch (target.type) {
+            case "reset-password":
+              // works signed in or out (AuthLock lets this route through)
+              navigate(
+                `/reset-password?token=${encodeURIComponent(target.id)}`,
+              );
+              break;
             case "artist":
               navigate(`/artist?id=${encodeURIComponent(target.id)}`);
               break;

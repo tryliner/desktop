@@ -954,5 +954,30 @@
     "title": "Başlığa göre (A–Z)",
     "duration": "Süreye göre",
     "popularity": "Popülerliğe göre"
+  },
+  "reset_password": {
+    "title": "Şifreyi sıfırla",
+    "subtitle": "Liner hesabın için yeni bir şifre seç.",
+    "brand_done_title": "Tamamlandı",
+    "brand_done_subtitle": "Liner şifren değiştirildi.",
+    "brand_invalid_title": "Bağlantının süresi doldu",
+    "brand_invalid_subtitle": "Sıfırlama bağlantıları yalnızca bir kez ve sınırlı süre çalışır.",
+    "account": "Hesap",
+    "label_new": "Yeni şifre",
+    "hint_length": "En az 8 karakter.",
+    "btn_change": "Şifreyi değiştir",
+    "btn_saving": "Kaydediliyor…",
+    "btn_cancel": "İptal",
+    "done_title": "Şifre değiştirildi",
+    "done_text": "Artık yeni şifrenle giriş yapabilirsin. Güvenliğin için oturum açık olan tüm cihazlardan çıkış yapıldı.",
+    "invalid_title": "Bu bağlantı kullanılamaz",
+    "invalid_text": "Süresi dolmuş ya da zaten kullanılmış. Liner destekten yeni bir bağlantı iste.",
+    "offline_title": "Liner'a ulaşılamıyor",
+    "offline_text": "Bağlantını kontrol edip tekrar dene.",
+    "btn_retry": "Tekrar dene",
+    "btn_back_to_sign_in": "Girişe dön",
+    "errors": {
+      "too_many": "Çok fazla deneme. Birkaç dakika bekleyip tekrar dene."
+    }
   }
 }

@@ -898,5 +898,30 @@
     "title": "Nach Titel (A–Z)",
     "duration": "Nach Dauer",
     "popularity": "Nach Beliebtheit"
+  },
+  "reset_password": {
+    "title": "Passwort zurücksetzen",
+    "subtitle": "Wähle ein neues Passwort für dein Liner-Konto.",
+    "brand_done_title": "Fertig",
+    "brand_done_subtitle": "Dein Liner-Passwort wurde geändert.",
+    "brand_invalid_title": "Link abgelaufen",
+    "brand_invalid_subtitle": "Links zum Zurücksetzen funktionieren nur einmal und nur für begrenzte Zeit.",
+    "account": "Konto",
+    "label_new": "Neues Passwort",
+    "hint_length": "Mindestens 8 Zeichen.",
+    "btn_change": "Passwort ändern",
+    "btn_saving": "Wird gespeichert…",
+    "btn_cancel": "Abbrechen",
+    "done_title": "Passwort geändert",
+    "done_text": "Du kannst dich jetzt mit dem neuen Passwort anmelden. Zu deiner Sicherheit wurden alle angemeldeten Geräte abgemeldet.",
+    "invalid_title": "Dieser Link kann nicht verwendet werden",
+    "invalid_text": "Er ist abgelaufen oder wurde bereits verwendet. Bitte den Liner-Support um einen neuen Link.",
+    "offline_title": "Liner nicht erreichbar",
+    "offline_text": "Prüfe deine Verbindung und versuche es erneut.",
+    "btn_retry": "Erneut versuchen",
+    "btn_back_to_sign_in": "Zurück zur Anmeldung",
+    "errors": {
+      "too_many": "Zu viele Versuche. Warte ein paar Minuten und versuche es erneut."
+    }
   }
 }

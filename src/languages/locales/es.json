@@ -1009,5 +1009,30 @@
     "title": "Por título (A–Z)",
     "duration": "Por duración",
     "popularity": "Por popularidad"
+  },
+  "reset_password": {
+    "title": "Restablecer contraseña",
+    "subtitle": "Elige una nueva contraseña para tu cuenta de Liner.",
+    "brand_done_title": "Listo",
+    "brand_done_subtitle": "Tu contraseña de Liner se ha cambiado.",
+    "brand_invalid_title": "Enlace caducado",
+    "brand_invalid_subtitle": "Los enlaces de restablecimiento funcionan una sola vez y por tiempo limitado.",
+    "account": "Cuenta",
+    "label_new": "Nueva contraseña",
+    "hint_length": "Al menos 8 caracteres.",
+    "btn_change": "Cambiar contraseña",
+    "btn_saving": "Guardando…",
+    "btn_cancel": "Cancelar",
+    "done_title": "Contraseña cambiada",
+    "done_text": "Ya puedes iniciar sesión con tu nueva contraseña. Por seguridad, se cerró la sesión en todos los dispositivos.",
+    "invalid_title": "No se puede usar este enlace",
+    "invalid_text": "Ha caducado o ya se usó. Pide al soporte de Liner un nuevo enlace.",
+    "offline_title": "No se puede conectar con Liner",
+    "offline_text": "Revisa tu conexión e inténtalo de nuevo.",
+    "btn_retry": "Reintentar",
+    "btn_back_to_sign_in": "Volver a iniciar sesión",
+    "errors": {
+      "too_many": "Demasiados intentos. Espera unos minutos e inténtalo de nuevo."
+    }
   }
 }

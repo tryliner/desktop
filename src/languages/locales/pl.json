@@ -958,5 +958,30 @@
     "title": "Według tytułu (A–Z)",
     "duration": "Według długości",
     "popularity": "Według popularności"
+  },
+  "reset_password": {
+    "title": "Resetowanie hasła",
+    "subtitle": "Wybierz nowe hasło do konta Liner.",
+    "brand_done_title": "Gotowe",
+    "brand_done_subtitle": "Hasło do Liner zostało zmienione.",
+    "brand_invalid_title": "Link wygasł",
+    "brand_invalid_subtitle": "Linki do resetowania działają tylko raz i przez ograniczony czas.",
+    "account": "Konto",
+    "label_new": "Nowe hasło",
+    "hint_length": "Co najmniej 8 znaków.",
+    "btn_change": "Zmień hasło",
+    "btn_saving": "Zapisywanie…",
+    "btn_cancel": "Anuluj",
+    "done_title": "Hasło zmienione",
+    "done_text": "Możesz już zalogować się nowym hasłem. Dla bezpieczeństwa wylogowaliśmy wszystkie urządzenia.",
+    "invalid_title": "Tego linku nie można użyć",
+    "invalid_text": "Wygasł lub został już użyty. Poproś wsparcie Liner o nowy link.",
+    "offline_title": "Brak połączenia z Liner",
+    "offline_text": "Sprawdź połączenie i spróbuj ponownie.",
+    "btn_retry": "Spróbuj ponownie",
+    "btn_back_to_sign_in": "Wróć do logowania",
+    "errors": {
+      "too_many": "Zbyt wiele prób. Odczekaj kilka minut i spróbuj ponownie."
+    }
   }
 }

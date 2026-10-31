@@ -1019,5 +1019,30 @@
     "title": "Por título (A–Z)",
     "duration": "Por duração",
     "popularity": "Por popularidade"
+  },
+  "reset_password": {
+    "title": "Redefinir senha",
+    "subtitle": "Escolha uma nova senha para sua conta Liner.",
+    "brand_done_title": "Tudo pronto",
+    "brand_done_subtitle": "Sua senha do Liner foi alterada.",
+    "brand_invalid_title": "Link expirado",
+    "brand_invalid_subtitle": "Links de redefinição funcionam uma vez e por tempo limitado.",
+    "account": "Conta",
+    "label_new": "Nova senha",
+    "hint_length": "Pelo menos 8 caracteres.",
+    "btn_change": "Alterar senha",
+    "btn_saving": "Salvando…",
+    "btn_cancel": "Cancelar",
+    "done_title": "Senha alterada",
+    "done_text": "Você já pode entrar com a nova senha. Por segurança, todos os dispositivos conectados foram desconectados.",
+    "invalid_title": "Este link não pode ser usado",
+    "invalid_text": "Ele expirou ou já foi usado. Peça um novo link ao suporte do Liner.",
+    "offline_title": "Não foi possível conectar ao Liner",
+    "offline_text": "Verifique sua conexão e tente novamente.",
+    "btn_retry": "Tentar novamente",
+    "btn_back_to_sign_in": "Voltar ao login",
+    "errors": {
+      "too_many": "Muitas tentativas. Aguarde alguns minutos e tente novamente."
+    }
   }
 }
