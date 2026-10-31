@@ -509,10 +509,7 @@ function ArtistContent() {
           onClose={() => setIsProfileModalOpen(false)}
           name={data.title}
           verified={data.verified}
-          geniusImageUrl={data.geniusImageUrl}
           fallbackImageUrl={data.coverUrl}
-          geniusUsername={data.geniusUsername}
-          geniusAka={data.geniusAka}
           bio={data.description}
         />
       )}

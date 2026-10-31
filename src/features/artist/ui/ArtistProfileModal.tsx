@@ -11,10 +11,7 @@ interface ArtistProfileModalProps {
   onClose: () => void;
   name: string;
   verified?: boolean;
-  geniusImageUrl?: string;
   fallbackImageUrl?: string;
-  geniusUsername?: string;
-  geniusAka?: string[];
   bio?: string;
 }
 
@@ -160,20 +157,17 @@ function BioContent({ bio }: { bio: string }) {
   );
 }
 
-// compact artist profile modal with genius avatar, hover-scrolling aka and formatted bio
+// compact artist profile modal with the avatar and the formatted bio
 export default function ArtistProfileModal({
   open,
   onClose,
   name,
   verified,
-  geniusImageUrl,
   fallbackImageUrl,
-  geniusUsername,
-  geniusAka,
   bio,
 }: ArtistProfileModalProps) {
   const { t } = useTranslation();
-  const avatarSrc = geniusImageUrl || toMaxQualityAvatarUrl(fallbackImageUrl);
+  const avatarSrc = toMaxQualityAvatarUrl(fallbackImageUrl);
   const bioScrollRef = useRef<HTMLDivElement>(null);
   const [bioScrollMask, setBioScrollMask] = useState(
     "linear-gradient(to bottom, black 0%, black 100%)",
@@ -210,15 +204,6 @@ export default function ArtistProfileModal({
       ro.disconnect();
     };
   }, [open, bio, updateScrollMask]);
-
-  const subtitleParts: string[] = [];
-  if (geniusUsername) {
-    subtitleParts.push(`@${geniusUsername.replace(/^@/, "")}`);
-  }
-  if (geniusAka && geniusAka.length > 0) {
-    subtitleParts.push(`AKA: ${geniusAka.join(", ")}`);
-  }
-  const subtitle = subtitleParts.join(" • ");
 
   return (
     <Dialog
@@ -281,14 +266,6 @@ export default function ArtistProfileModal({
               </svg>
             ) : null}
           </div>
-
-          {subtitle && (
-            <ScrollableText
-              text={subtitle}
-              className="text-[12px] text-text-tertiary mt-[2px]"
-              fadeColorClass="from-bg-primary"
-            />
-          )}
         </div>
       </div>
 

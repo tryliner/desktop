@@ -24,9 +24,6 @@ export interface ArtistPageData {
   title: string;
   description: string;
   coverUrl: string;
-  geniusImageUrl?: string;
-  geniusAka?: string[];
-  geniusUsername?: string;
   monthlyListeners?: string;
   verified: boolean;
   followers?: number;
@@ -69,11 +66,6 @@ export function useArtist(id: string | null) {
           coverUrl: artist.cover
             ? toMaxQualityAvatarUrl(mediaUrl(artist.cover.url))
             : "",
-          geniusImageUrl: artist.geniusImageUrl
-            ? mediaUrl(artist.geniusImageUrl)
-            : undefined,
-          geniusAka: artist.geniusAka,
-          geniusUsername: artist.geniusUsername,
           totalTracks: tracks.length,
           tracks,
           popularSongs: tracks.slice(0, 5),
