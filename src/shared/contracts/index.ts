@@ -6,5 +6,4 @@ export * from "./playlists";
 export * from "./imports";
 export * from "./auth";
 export * from "./history";
-export * from "./users";
 export * from "./recommendations";

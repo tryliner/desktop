@@ -71,7 +71,3 @@ export async function resolveLinerStream(
 export function markLinerStreamFailed(reason: string): void {
   pause(UNAVAILABLE_BACKOFF_MS, `r2 stream failed: ${reason}`);
 }
-
-export function resetLinerPlaybackPause(): void {
-  pausedUntil = 0;
-}

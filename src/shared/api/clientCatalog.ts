@@ -19,10 +19,6 @@ import type {
   TrackDetails,
 } from "@/shared/contracts";
 
-export function isClientCatalogId(id: string): boolean {
-  return !isSoundCloudCatalogId(id);
-}
-
 async function preferClient<T>(
   label: string,
   client: () => Promise<T>,
@@ -100,17 +96,9 @@ export const clientCatalog = {
     return preferClient("track", () => innertubeCatalog.getTrack(id), server);
   },
 
-  getRadio(
-    id: string,
-    k: number | undefined,
-    server: () => Promise<RadioResponse>,
-  ): Promise<RadioResponse> {
+  getRadio(id: string, k: number | undefined): Promise<RadioResponse> {
     if (isSoundCloudCatalogId(id)) return soundcloudCatalog.getRadio(id, k);
-    return preferClient(
-      "radio",
-      () => innertubeCatalog.getRadio(id, { k }),
-      server,
-    );
+    return innertubeCatalog.getRadio(id, { k });
   },
 
   getAlbum(

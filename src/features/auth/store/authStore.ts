@@ -6,8 +6,6 @@ import {
   setAuthSession,
   refreshAuthSession,
   type AuthUser,
-  type PublicUser,
-  type UpdateProfileInput,
 } from "@/shared/api";
 import { playerEngine } from "@/features/player";
 import { queryCache } from "@/shared/cache/queryCache";
@@ -25,7 +23,6 @@ export type AuthState = {
     username: string,
     displayName: string,
   ) => Promise<void>;
-  updateProfile: (patch: UpdateProfileInput) => Promise<PublicUser>;
   logout: () => Promise<void>;
 };
 
@@ -114,17 +111,6 @@ export const useAuthStore = create<AuthState>((set) => ({
     if (typeof window !== "undefined") {
       window.dispatchEvent(new Event("library:changed"));
     }
-  },
-  updateProfile: async (patch) => {
-    const updated = await api.updateProfile(patch);
-    const current = getAuthSession();
-    if (current) {
-      setAuthSession({ ...current, user: { ...current.user, ...updated } });
-    }
-    set((prev) => ({
-      user: prev.user ? { ...prev.user, ...updated } : updated,
-    }));
-    return updated;
   },
   logout: async () => {
     await clearPlayback();

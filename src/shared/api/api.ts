@@ -12,11 +12,7 @@ import { clientCatalog } from "./clientCatalog";
 import { getLocalImportHandler } from "./localImports";
 import type { Track } from "@/shared/contracts";
 import { telemetry } from "@/shared/telemetry";
-import type {
-  PublicUser,
-  UpdateProfileInput,
-  DailyMixesResponse,
-} from "@/shared/contracts";
+import type { DailyMixesResponse } from "@/shared/contracts";
 
 import { isLocalTrackId } from "@/shared/media/local";
 import { showToast } from "@/shared/ui/Toast";
@@ -441,7 +437,6 @@ export type {
   ImportedTrack,
   ImportedPlaylist,
   PublicUser,
-  UpdateProfileInput,
   AuthTokens,
   AuthResult,
   PlaybackContextType,
@@ -525,13 +520,6 @@ export const api = {
     return request<AuthUser>("/v1/me");
   },
 
-  updateProfile(data: UpdateProfileInput): Promise<PublicUser> {
-    return request<PublicUser>("/v1/users/me", {
-      method: "PATCH",
-      body: JSON.stringify(data),
-    });
-  },
-
   search(q: string, type: SearchType = "all"): Promise<SearchResponse> {
     const params = new URLSearchParams({ q, type });
     return clientCatalog.search(q, type, () =>
@@ -547,53 +535,12 @@ export const api = {
 
   getRadio(
     id: string,
-    options?: {
-      history?: string[];
-      k?: number;
-      drift_rate?: number;
-      temperature?: number;
-      wave_id?: string;
-    },
+    options?: { history?: string[]; k?: number },
   ): Promise<RadioResponse> {
     const history = new Set(options?.history ?? []);
-    return clientCatalog
-      .getRadio(id, options?.k, () => api.getServerRadio(id, options))
-      .then((response) => ({
-        items: response.items.filter((item) => !history.has(item.id)),
-      }));
-  },
-
-  getServerRadio(
-    id: string,
-    options?: {
-      history?: string[];
-      k?: number;
-      drift_rate?: number;
-      temperature?: number;
-      wave_id?: string;
-    },
-  ): Promise<RadioResponse> {
-    if (options?.history && options.history.length > 0) {
-      return request<RadioResponse>(
-        `/v1/tracks/${encodeURIComponent(id)}/radio`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(options),
-        },
-      );
-    }
-    const params = new URLSearchParams();
-    if (options?.k) params.set("k", String(options.k));
-    if (options?.drift_rate)
-      params.set("drift_rate", String(options.drift_rate));
-    if (options?.temperature)
-      params.set("temperature", String(options.temperature));
-    if (options?.wave_id) params.set("wave_id", options.wave_id);
-    const qs = params.toString();
-    return request<RadioResponse>(
-      `/v1/tracks/${encodeURIComponent(id)}/radio${qs ? `?${qs}` : ""}`,
-    );
+    return clientCatalog.getRadio(id, options?.k).then((response) => ({
+      items: response.items.filter((item) => !history.has(item.id)),
+    }));
   },
 
   getAlbum(id: string): Promise<ApiAlbumDetails> {

@@ -120,10 +120,6 @@ export function setAuthSession(next: AuthTokens | null): void {
   emit();
 }
 
-export function getAccessToken(): string | null {
-  return getAuthSession()?.accessToken ?? null;
-}
-
 /**
  * Returns the timestamp in milliseconds when the access token expires,
  * or null if unknown.

@@ -44,12 +44,11 @@ export type {
   PopularTracksResponse,
 } from "./api";
 
-export type { PublicUser, UpdateProfileInput } from "@/shared/contracts";
+export type { PublicUser } from "@/shared/contracts";
 
 export {
   getAuthSession,
   setAuthSession,
-  getAccessToken,
   getSessionExpiryMs,
   refreshAuthSession,
   clearAuthSession,
