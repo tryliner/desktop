@@ -108,10 +108,11 @@ export default function CreatePlaylistModal() {
 
       if (pendingTrack) {
         try {
-          await addTrack.mutateAsync({
+          const { added } = await addTrack.mutateAsync({
             playlistId: playlist.id,
             trackId: pendingTrack.id,
           });
+          if (added === 0) throw new Error("track was rejected");
           toast(t("common.added_to_playlist"), "checkmark", {
             description: playlist.title || trimmed,
           });

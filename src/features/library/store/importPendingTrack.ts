@@ -23,7 +23,11 @@ export function watchPendingTrackAfterImport(
     void (async () => {
       const translate = createTranslatorSync(getStoredLocale());
       try {
-        await api.addPlaylistTrack(playlistId, pendingTrack.id);
+        const { added } = await api.addPlaylistTrack(
+          playlistId,
+          pendingTrack.id,
+        );
+        if (added === 0) throw new Error("track was rejected");
         notifyLibraryChanged();
         showToast(translate("common.added_to_playlist"), "checkmark", {
           description: pendingTrack.title || undefined,

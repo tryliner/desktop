@@ -6,7 +6,6 @@ import {
   AddLine,
 } from "@mingcute/react";
 import { useToast } from "@/shared/ui";
-import { ApiError } from "@/shared/api";
 import TextInput from "@/shared/ui/TextInput";
 import Dialog from "@/shared/ui/Dialog";
 import { DialogActions, DialogButton } from "@/shared/ui";
@@ -83,19 +82,25 @@ export default function AddToPlaylistModal() {
     const targetPlaylist = playlists.find((p) => p.id === playlistId);
     setAddingTo(playlistId);
     try {
-      await addTrack.mutateAsync({ playlistId, trackId: track.id });
-      toast(t("common.added_to_playlist"), "checkmark", {
-        description: targetPlaylist?.title || undefined,
+      const result = await addTrack.mutateAsync({
+        playlistId,
+        trackId: track.id,
       });
-      close();
-    } catch (error) {
-      if (error instanceof ApiError && error.status === 409) {
+      if (result.duplicates > 0) {
         toast(t("common.track_already_in_playlist"), "error", {
           description: track.title || undefined,
         });
-      } else {
+      } else if (result.added === 0) {
+        // rejected: neither the client nor the server catalog knows the track
         toast(t("common.failed_add_playlist"), "error");
+      } else {
+        toast(t("common.added_to_playlist"), "checkmark", {
+          description: targetPlaylist?.title || undefined,
+        });
+        close();
       }
+    } catch {
+      toast(t("common.failed_add_playlist"), "error");
     } finally {
       setAddingTo(null);
     }
