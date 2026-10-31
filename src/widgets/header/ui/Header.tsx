@@ -13,6 +13,8 @@ import { cn } from "@/shared/lib";
 const BACK_BUTTON_ROUTES = [
   "/library/playlist",
   "/library/local",
+  "/library/cached",
+  "/library/saved",
   "/artist",
   "/collection",
 ];

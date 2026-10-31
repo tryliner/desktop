@@ -30,6 +30,11 @@ export interface CachedAudioRecord {
   lastPlayedAt?: number;
 }
 
+export type CachedAudioEntry = Pick<
+  CachedAudioRecord,
+  "trackId" | "byteSize" | "savedAt" | "lastPlayedAt"
+>;
+
 export interface CachedLyricsRecord {
   trackId: string;
   syncLevel: LyricsSyncLevel;
@@ -391,6 +396,33 @@ class LinerDb {
       (a, b) => (a.lastPlayedAt ?? a.savedAt) - (b.lastPlayedAt ?? b.savedAt),
     );
     return memList;
+  }
+
+  async listAudioEntries(): Promise<CachedAudioEntry[]> {
+    const result = await this.runTransaction("audio", "readonly", (store) => {
+      return new Promise<CachedAudioEntry[]>((resolve) => {
+        const entries: CachedAudioEntry[] = [];
+        const req = store.openCursor();
+        req.onsuccess = () => {
+          const cursor = req.result;
+          if (cursor) {
+            const record = cursor.value as CachedAudioRecord;
+            entries.push({
+              trackId: record.trackId,
+              byteSize: record.byteSize,
+              savedAt: record.savedAt,
+              lastPlayedAt: record.lastPlayedAt,
+            });
+            cursor.continue();
+          } else {
+            resolve(entries);
+          }
+        };
+        req.onerror = () => resolve([]);
+      });
+    });
+
+    return result ?? [];
   }
 
   async hasAudio(trackId: string): Promise<boolean> {

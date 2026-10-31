@@ -2,11 +2,13 @@ import {
   useState,
   useRef,
   useEffect,
+  useLayoutEffect,
   useCallback,
   type ImgHTMLAttributes,
   type SyntheticEvent,
   type CSSProperties,
 } from "react";
+import { isCoverReady } from "../lib/coverArt";
 
 export interface ImageProps extends Omit<
   ImgHTMLAttributes<HTMLImageElement>,
@@ -48,7 +50,11 @@ export default function AppImage({
 }: ImageProps) {
   const resolvedSrc = typeof src === "string" ? src : (src?.src ?? "");
   const [currentSrc, setCurrentSrc] = useState(resolvedSrc);
-  const [isLoaded, setIsLoaded] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(() => isCoverReady(resolvedSrc));
+  const [shownInstantly, setShownInstantly] = useState(() =>
+    isCoverReady(resolvedSrc),
+  );
+  const syncedSrcRef = useRef(resolvedSrc);
   const [hasError, setHasError] = useState(false);
   const [isLetterboxed, setIsLetterboxed] = useState(false);
   const imgRef = useRef<HTMLImageElement>(null);
@@ -75,17 +81,22 @@ export default function AppImage({
 
   // Sync state if src prop changes
   useEffect(() => {
+    if (syncedSrcRef.current === resolvedSrc) return;
+    syncedSrcRef.current = resolvedSrc;
+    const ready = isCoverReady(resolvedSrc);
     setCurrentSrc(resolvedSrc);
-    setIsLoaded(false);
+    setIsLoaded(ready);
+    setShownInstantly(ready);
     setHasError(false);
     setIsLetterboxed(false);
     loadedSrcRef.current = null;
   }, [resolvedSrc]);
 
   // If already complete (e.g. from browser / service worker cache)
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (imgRef.current?.complete && imgRef.current.naturalWidth > 0) {
       checkLetterbox(imgRef.current);
+      setShownInstantly(true);
       setIsLoaded(true);
       if (loadedSrcRef.current !== currentSrc) {
         loadedSrcRef.current = currentSrc;
@@ -162,7 +173,10 @@ export default function AppImage({
     opacity: isLoaded ? 1 : 0,
     transformOrigin: "center center",
     transition:
-      style?.transition ?? "opacity 0.22s ease-in-out, filter 0.3s ease-out",
+      style?.transition ??
+      (shownInstantly
+        ? "filter 0.3s ease-out"
+        : "opacity 0.22s ease-in-out, filter 0.3s ease-out"),
     ...style,
     ...(combinedTransform ? { transform: combinedTransform } : {}),
   };

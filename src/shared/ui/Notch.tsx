@@ -10,6 +10,7 @@ import { cn } from "@/shared/lib/utils";
 const R = 8;
 const H = 30;
 const PAD_BOTTOM = 4;
+const MASK_BLEED = 4;
 
 type NotchAlign = "start" | "center" | "end";
 
@@ -62,7 +63,8 @@ export function Notch({
   useLayoutEffect(() => {
     const node = contentRef.current;
     if (!node) return;
-    const update = () => setContentWidth(Math.ceil(node.offsetWidth));
+    const update = () =>
+      setContentWidth(Math.ceil(node.offsetWidth / 2) * 2);
     update();
     const observer = new ResizeObserver(update);
     observer.observe(node);
@@ -70,20 +72,46 @@ export function Notch({
   }, []);
 
   const { w, h, left, d } = notchShape(align, contentWidth);
+  const maskW = w + 2 * MASK_BLEED;
+  const maskH = h + 2 * MASK_BLEED;
+  const flushBands = [
+    `<rect width="${maskW}" height="${MASK_BLEED}"/>`,
+    align === "end" &&
+      `<rect x="${MASK_BLEED + w}" width="${MASK_BLEED}" height="${maskH}"/>`,
+    align === "start" && `<rect width="${MASK_BLEED}" height="${maskH}"/>`,
+  ]
+    .filter(Boolean)
+    .join("");
+  const shapeMask = `url("data:image/svg+xml,${encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${maskW}" height="${maskH}">${flushBands}<path transform="translate(${MASK_BLEED} ${MASK_BLEED})" d="${d}"/></svg>`,
+  )}")`;
   const shapeStyle: CSSProperties = {
     width: w,
     height: h,
-    clipPath: `path('${d}')`,
+    maskImage: shapeMask,
+    WebkitMaskImage: shapeMask,
+    maskSize: `${maskW}px ${maskH}px`,
+    WebkitMaskSize: `${maskW}px ${maskH}px`,
+    maskPosition: `-${MASK_BLEED}px -${MASK_BLEED}px`,
+    WebkitMaskPosition: `-${MASK_BLEED}px -${MASK_BLEED}px`,
+    maskRepeat: "no-repeat",
+    WebkitMaskRepeat: "no-repeat",
   };
 
   return (
     <div className={cn("relative", className)} style={{ width: w, height: H }}>
+      {tone === "glass" && blur && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute top-0 left-0 backdrop-blur-[2px]"
+          style={shapeStyle}
+        />
+      )}
       <div
         aria-hidden
         className={cn(
           "pointer-events-none absolute top-0 left-0",
           tone === "canvas" ? "bg-bg-canvas" : "bg-black/35",
-          tone === "glass" && blur && "backdrop-blur-[2px]",
         )}
         style={shapeStyle}
       />

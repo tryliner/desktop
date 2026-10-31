@@ -40,6 +40,8 @@ import { useCoverReady, CoverImage, loadCoverElement } from "@/features/covers";
 import { useHasPageBackdrop } from "@/features/settings/store/customizationStore";
 import { ArtistLink } from "@/features/artist";
 import { isLocalTrackId } from "@/shared/media/local";
+import DropdownMenu from "@/shared/ui/DropdownMenu";
+import { useSongMenuItems } from "../hooks/useSongMenuItems";
 
 function rgbToHsl(r: number, g: number, b: number): [number, number, number] {
   r /= 255;
@@ -344,6 +346,34 @@ function MiniPlayer({
   const trackArtists = player.currentTrack?.artists ?? t("player.choose_track");
 
   const isCoverLoaded = useCoverReady(coverUrl);
+
+  const songMenuItems = useSongMenuItems({
+    id: currentTrack?.id,
+    title: currentTrack?.title ?? "",
+    artists: currentTrack?.artists ?? "",
+    coverUrl: currentTrack?.coverUrl ?? "",
+    durationMs: currentTrack?.durationMs,
+  });
+  const trackMenuItems = useMemo(
+    () =>
+      songMenuItems.filter(
+        (item) => item.id !== "like-track" && item.id !== "unlike-track",
+      ),
+    [songMenuItems],
+  );
+  const [trackMenuPosition, setTrackMenuPosition] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
+  const handleTrackContextMenu = useCallback(
+    (event: React.MouseEvent) => {
+      if (!currentTrack || trackMenuItems.length === 0) return;
+      event.preventDefault();
+      event.stopPropagation();
+      setTrackMenuPosition({ x: event.clientX, y: event.clientY });
+    },
+    [currentTrack, trackMenuItems.length],
+  );
 
   // off -> all (loop the whole queue/playlist) -> one (loop the track) -> off
   const repeatIcon = useMemo(() => {
@@ -692,7 +722,23 @@ function MiniPlayer({
               : "grid-cols-[286px_minmax(0,1fr)]"
           } ${!usesRoundedStyle && !embedded ? "pb-[4px]" : ""}`}
         >
-          <div className="flex h-full items-center gap-[16px] px-[18px] pt-[1px] pointer-events-none cursor-default">
+          <div
+            className="flex h-full items-center gap-[16px] px-[18px] pt-[1px] pointer-events-none cursor-default"
+            onContextMenu={handleTrackContextMenu}
+          >
+            {trackMenuPosition && (
+              <div className="absolute h-0 w-0 pointer-events-auto">
+                <DropdownMenu
+                  trigger={<span />}
+                  items={trackMenuItems}
+                  open
+                  onOpenChange={(open) => {
+                    if (!open) setTrackMenuPosition(null);
+                  }}
+                  position={trackMenuPosition}
+                />
+              </div>
+            )}
             <div
               role="button"
               tabIndex={0}
@@ -749,7 +795,7 @@ function MiniPlayer({
                 }}
               >
                 {player.currentTrack?.explicit && (
-                  <span className="inline-flex h-[14px] w-[14px] shrink-0 items-center justify-center rounded-[3.5px] bg-black/[0.1] dark:bg-white/[0.14] text-[8px] font-[600] leading-none text-text-secondary">
+                  <span className="inline-flex h-[14px] w-[14px] shrink-0 -translate-y-px items-center justify-center rounded-[3.5px] bg-black/[0.1] dark:bg-white/[0.14] text-[8px] font-[600] leading-none text-text-secondary">
                     <span className="translate-y-[0.5px] [text-box:trim-both_cap_alphabetic]">
                       E
                     </span>

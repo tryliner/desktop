@@ -4,6 +4,7 @@ import path from "node:path";
 import { Readable } from "node:stream";
 import { protocol } from "electron";
 import type { LocalTrackLibrary } from "./library.js";
+import type { SavedTrackLibrary } from "../saved-tracks/library.js";
 
 export const LOCAL_TRACK_SCHEME = "liner-local";
 
@@ -82,27 +83,49 @@ async function fileResponse(
   });
 }
 
-export function handleLocalTrackScheme(library: LocalTrackLibrary) {
+async function locateFile(
+  host: string,
+  id: string,
+  library: LocalTrackLibrary,
+  saved: SavedTrackLibrary,
+): Promise<{ path: string; mimeType?: string } | null> {
+  if (host === "audio" || host === "cover") {
+    const located = await library.locate(host, id);
+    if (!located) return null;
+    return {
+      path: located.path,
+      mimeType: host === "audio" ? located.record.mimeType : undefined,
+    };
+  }
+  if (host === "saved-audio") return saved.locate("audio", id);
+  if (host === "saved-cover") return saved.locate("cover", id);
+  return null;
+}
+
+export function handleLocalTrackScheme(
+  library: LocalTrackLibrary,
+  saved: SavedTrackLibrary,
+) {
   protocol.handle(LOCAL_TRACK_SCHEME, async (request) => {
     const url = new URL(request.url);
-    const kind =
-      url.hostname === "audio"
-        ? "audio"
-        : url.hostname === "cover"
-          ? "cover"
-          : null;
     const id = url.pathname.replace(/^\/+/, "");
-    const located = kind ? await library.locate(kind, id) : null;
-    if (!kind || !located)
+    const located = await locateFile(url.hostname, id, library, saved);
+    if (!located) {
+      console.warn(
+        `[local-tracks] ${url.hostname} ${id} is not in the library`,
+      );
       return new Response(null, { status: 404, headers: BASE_HEADERS });
+    }
     const mimeType =
-      kind === "audio"
-        ? located.record.mimeType
-        : (IMAGE_MIME[path.extname(located.path)] ??
-          "application/octet-stream");
+      located.mimeType ??
+      IMAGE_MIME[path.extname(located.path)] ??
+      "application/octet-stream";
     try {
       return await fileResponse(located.path, mimeType, request);
-    } catch {
+    } catch (error) {
+      console.warn(
+        `[local-tracks] could not read ${located.path}: ${error instanceof Error ? error.message : String(error)}`,
+      );
       return new Response(null, { status: 404, headers: BASE_HEADERS });
     }
   });

@@ -7,11 +7,16 @@ import {
   toVideoId,
 } from "@/shared/youtube";
 import {
+  isOfflineMode,
+  OFFLINE_UNAVAILABLE_MESSAGE,
+} from "@/features/connectivity/store/offlineModeStore";
+import {
   resolveSoundCloudStream,
   toSoundCloudTrackId,
 } from "@/shared/media/soundcloud";
 import { resolveLinerStream } from "@/shared/media/liner/linerPlayback";
 import { isLocalTrackId, localTrackAudioUrl } from "@/shared/media/local";
+import { savedAudioUrl, savedTrackRecord } from "@/shared/media/saved";
 import { isAbortError } from "@/shared/utils/abort";
 import { log } from "@/shared/utils/logger";
 import { rememberStreamOrigin } from "./nowPlayingLog";
@@ -161,9 +166,52 @@ async function resolveStream(
       codec: "local",
       bitrate: 0,
     };
-  if (toSoundCloudTrackId(track.id))
-    return resolveSoundCloud(track, progressive, signal);
-  const videoId = toVideoId(track.id);
-  if (videoId) return resolveYoutubeTrack(track, videoId, progressive, signal);
-  return resolveYoutubeStandIn(track, progressive, signal);
+  const saved = savedTrackRecord(track.id);
+  if (saved)
+    return {
+      url: savedAudioUrl(saved),
+      expiresAtMs: null,
+      mimeType: saved.mimeType,
+      codec: "local",
+      bitrate: 0,
+    };
+  if (isOfflineMode()) throw new Error(OFFLINE_UNAVAILABLE_MESSAGE);
+  const resolve = (bounded: AbortSignal | undefined) => {
+    if (toSoundCloudTrackId(track.id))
+      return resolveSoundCloud(track, progressive, bounded);
+    const videoId = toVideoId(track.id);
+    if (videoId)
+      return resolveYoutubeTrack(track, videoId, progressive, bounded);
+    return resolveYoutubeStandIn(track, progressive, bounded);
+  };
+  return progressive ? withResolveTimeout(signal, resolve) : resolve(signal);
+}
+
+export const RESOLVE_TIMEOUT_MS = 25_000;
+export const RESOLVE_TIMEOUT_MESSAGE =
+  "Timed out looking for a playable stream";
+
+export async function withResolveTimeout<T>(
+  signal: AbortSignal | undefined,
+  run: (signal: AbortSignal) => Promise<T>,
+  timeoutMs = RESOLVE_TIMEOUT_MS,
+): Promise<T> {
+  const controller = new AbortController();
+  const timedOut = new Error(RESOLVE_TIMEOUT_MESSAGE);
+  const forward = () => controller.abort(signal?.reason);
+  if (signal?.aborted) forward();
+  else signal?.addEventListener("abort", forward, { once: true });
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const deadline = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => {
+      controller.abort(timedOut);
+      reject(timedOut);
+    }, timeoutMs);
+  });
+  try {
+    return await Promise.race([run(controller.signal), deadline]);
+  } finally {
+    clearTimeout(timer);
+    signal?.removeEventListener("abort", forward);
+  }
 }

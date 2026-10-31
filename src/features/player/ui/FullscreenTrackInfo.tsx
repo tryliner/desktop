@@ -54,7 +54,7 @@ export function FullscreenTrackInfo({ onClose }: FullscreenTrackInfoProps) {
           {track?.explicit && (
             <span
               aria-label="Explicit"
-              className="inline-flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[5px] bg-white/70 text-black/80"
+              className="inline-flex h-[18px] w-[18px] shrink-0 -translate-y-px items-center justify-center rounded-[5px] bg-white/70 text-black/80"
             >
               <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden>
                 <path

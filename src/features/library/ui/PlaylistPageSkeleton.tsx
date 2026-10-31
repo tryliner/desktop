@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, type ReactNode } from "react";
 import { EntityHeroSkeleton } from "@/shared/ui";
 
 const TRACK_TITLE_WIDTHS = [
@@ -25,10 +25,16 @@ const TRACK_ARTIST_WIDTHS = [
 
 export interface PlaylistPageSkeletonProps {
   className?: string;
+  cover?: ReactNode;
+  title?: string;
+  subtitle?: string;
 }
 
 function PlaylistPageSkeletonComponent({
   className = "",
+  cover,
+  title,
+  subtitle,
 }: PlaylistPageSkeletonProps) {
   return (
     <div
@@ -36,7 +42,7 @@ function PlaylistPageSkeletonComponent({
     >
       <div className="relative z-10 flex flex-col gap-[20px] h-full w-full min-h-0 box-border">
         <div className="shrink-0 pl-[16px] pr-[12px] pt-[8px]">
-          <EntityHeroSkeleton />
+          <EntityHeroSkeleton cover={cover} title={title} subtitle={subtitle} />
         </div>
 
         <div className="min-w-0 flex-1 min-h-0 overflow-hidden mx-[4px] mb-[8px] rounded-[14px] bg-border-alpha-14 overflow-hidden">

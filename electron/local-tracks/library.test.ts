@@ -89,6 +89,57 @@ describe("LocalTrackLibrary", () => {
     expect(result.failed).toEqual(["song.mp3"]);
   });
 
+  it("keeps lyrics on disk with the track until the track is removed", async () => {
+    const library = new LocalTrackLibrary(root);
+    const { added } = await library.importFiles([
+      await source("Artist - Song.mp3", "mp3"),
+    ]);
+    const [record] = added;
+    const lyrics = { provider: "lrclib", lyrics: { content: "[00:01.00] hi" } };
+
+    expect(await library.setLyrics(record.id, "found", lyrics)).toBe(true);
+    expect(await new LocalTrackLibrary(root).readLyrics(record.id)).toEqual(
+      lyrics,
+    );
+    expect((await new LocalTrackLibrary(root).list())[0].lyrics).toBe("found");
+
+    await library.remove([record.id]);
+    await expect(
+      fs.access(path.join(root, "lyrics", `${record.id}.json`)),
+    ).rejects.toThrow();
+  });
+
+  it("records a missed search without writing a lyrics file", async () => {
+    const library = new LocalTrackLibrary(root);
+    const { added } = await library.importFiles([
+      await source("Artist - Quiet.mp3", "quiet"),
+    ]);
+
+    expect(await library.setLyrics(added[0].id, "missing")).toBe(true);
+    expect((await library.list())[0].lyrics).toBe("missing");
+    expect(await library.readLyrics(added[0].id)).toBeNull();
+    expect(await library.setLyrics("0".repeat(20), "missing")).toBe(false);
+  });
+
+  it("removes every track with its files and reports the space they used", async () => {
+    const library = new LocalTrackLibrary(root);
+    const { added } = await library.importFiles([
+      await source("One - A.mp3", "aaaa"),
+      await source("Two - B.mp3", "bbbbbb"),
+    ]);
+    await library.setLyrics(added[0].id, "found", { line: "x" });
+
+    const usage = await library.usage();
+    expect(usage.count).toBe(2);
+    expect(usage.bytes).toBeGreaterThanOrEqual(10);
+
+    expect(await library.removeAll()).toBe(2);
+    expect(await library.list()).toEqual([]);
+    await expect(fs.access(path.join(root, "audio"))).rejects.toThrow();
+    await expect(fs.access(path.join(root, "lyrics"))).rejects.toThrow();
+    expect(await library.usage()).toEqual({ count: 0, bytes: 0 });
+  });
+
   it("refuses ids that could escape the library folder", async () => {
     const library = new LocalTrackLibrary(root);
     expect(await library.locate("audio", "../../etc/passwd")).toBeNull();

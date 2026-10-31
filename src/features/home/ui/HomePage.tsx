@@ -9,6 +9,7 @@ import { useRecentlyPlayed } from "../hooks/useRecentlyPlayed";
 import { useDailyMixes } from "../hooks/useDailyMixes";
 import { useMostSaved, usePopularAlbums } from "../hooks/useExploreCollections";
 import { useTranslation } from "@/languages";
+import Button from "@/shared/ui/Button";
 import { usePageBackdrop } from "@/shared/lib";
 import { useHomeBackdrop } from "../hooks/useHomeBackdrop";
 import {
@@ -20,6 +21,11 @@ import {
 } from "@mingcute/react";
 
 export default function HomePage() {
+  const [attempt, setAttempt] = useState(0);
+  return <HomeFeed key={attempt} onRetry={() => setAttempt((n) => n + 1)} />;
+}
+
+function HomeFeed({ onRetry }: { onRetry: () => void }) {
   const { t } = useTranslation();
 
   const { tracks: listeningNow, isLoading: tracksLoading } = useListeningNow();
@@ -52,6 +58,14 @@ export default function HomePage() {
     savedLoading;
 
   const isReady = !isDataLoading;
+  const nothingLoaded =
+    !mixesLoading &&
+    !hasMixes &&
+    popularAlbums.length === 0 &&
+    listeningNow.length === 0 &&
+    !recentlyPlayed?.length &&
+    !popularTracksAllTime?.length &&
+    mostSaved.length === 0;
   const [skeletonExited, setSkeletonExited] = useState(() => !isDataLoading);
 
   useEffect(() => {
@@ -66,7 +80,25 @@ export default function HomePage() {
   return (
     <div className="relative h-full w-full overflow-y-auto overflow-x-hidden bg-transparent pt-(--page-inset-top) pb-(--page-inset-bottom)">
       <div className="relative z-1 grid grid-cols-1 items-start w-full">
-        {isReady && (
+        {isReady && nothingLoaded && (
+          <div className="col-start-1 row-start-1 flex min-h-[60vh] w-full flex-col items-center justify-center gap-[6px] px-[24px] text-center">
+            <span className="text-[15px] font-[600] text-text-primary">
+              {t("home.load_failed")}
+            </span>
+            <span className="text-[13px] text-text-secondary">
+              {t("playlist.load_failed_desc")}
+            </span>
+            <Button
+              variant="secondary"
+              onClick={onRetry}
+              className="mt-[10px] !h-[36px] !rounded-[10px] !border-0 px-[16px]"
+            >
+              {t("offline.try_again")}
+            </Button>
+          </div>
+        )}
+
+        {isReady && !nothingLoaded && (
           <div className="col-start-1 row-start-1 w-full pb-[16px]">
             {mixesLoading ? (
               <MixesSectionSkeleton />
@@ -140,7 +172,9 @@ export default function HomePage() {
                 ? "opacity-0 pointer-events-none"
                 : "opacity-100 pointer-events-auto"
             }`}
-            onTransitionEnd={() => setSkeletonExited(true)}
+            onTransitionEnd={(event) => {
+              if (event.target === event.currentTarget) setSkeletonExited(true);
+            }}
           >
             <HomePageSkeleton />
           </div>

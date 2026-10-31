@@ -43,8 +43,8 @@ export function BetaVisualsWarning({ docked }: BetaVisualsWarningProps) {
     <div
       ref={containerRef}
       className={cn(
-        "pointer-events-auto select-none",
-        docked ? "absolute right-full top-0 mr-[6px]" : "relative",
+        "flex pointer-events-auto select-none",
+        docked ? "absolute right-full top-0 mr-[6px]" : "relative ml-[4px]",
       )}
     >
       <button
@@ -53,26 +53,39 @@ export function BetaVisualsWarning({ docked }: BetaVisualsWarningProps) {
         aria-expanded={open}
         aria-label={t("player.beta_visuals.label")}
         className={cn(
-          "group inline-flex h-[26px] min-w-[26px] cursor-pointer items-center justify-center rounded-md border-none bg-transparent px-[5px] transition-colors hover:bg-white/10",
+          "group inline-flex h-[26px] min-w-[26px] cursor-pointer items-center justify-center rounded-md border-none bg-transparent px-[5px] transition-colors duration-300 hover:bg-white/10",
           warning ? "text-yellow-400" : "text-white/70 hover:text-white",
         )}
       >
         {warning && (
-          <span className="max-w-0 overflow-hidden whitespace-nowrap text-[12px] font-[600] opacity-0 transition-all duration-200 ease-out group-hover:mr-[6px] group-hover:max-w-[96px] group-hover:opacity-100">
-            {t("player.beta_visuals.label")}
+          <span className="grid grid-cols-[0fr] transition-[grid-template-columns] duration-[420ms] ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:grid-cols-[1fr]">
+            <span className="min-w-0 overflow-hidden">
+              <span className="block whitespace-nowrap pr-[6px] text-[12px] font-[600] opacity-0 transition-opacity duration-200 ease-out group-hover:opacity-100 group-hover:delay-[120ms] group-hover:duration-300">
+                {t("player.beta_visuals.label")}
+              </span>
+            </span>
           </span>
         )}
-        <Icon size={16} />
+        <Icon size={16} className="shrink-0" />
       </button>
 
       <AnimatePresence>
         {open && (
           <motion.div
             role="dialog"
-            initial={{ opacity: 0, y: -6, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -4, scale: 0.98 }}
-            transition={{ duration: 0.14, ease: [0.22, 1, 0.36, 1] }}
+            initial={{ opacity: 0, y: -10, scale: 0.94 }}
+            animate={{
+              opacity: 1,
+              y: 0,
+              scale: 1,
+              transition: { duration: 0.42, ease: [0.32, 0.72, 0, 1] },
+            }}
+            exit={{
+              opacity: 0,
+              y: -6,
+              scale: 0.97,
+              transition: { duration: 0.24, ease: [0.4, 0, 0.2, 1] },
+            }}
             className={cn(
               "absolute right-0 top-full z-50 mt-[6px] flex w-[268px] origin-top-right flex-col p-[11px]",
               "rounded-[16px] bg-bg-elevated/55 shadow-[0_14px_48px_rgba(0,0,0,0.35)]",

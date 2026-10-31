@@ -4,6 +4,7 @@ import { sidebarNavItems } from "@/features/navigation/data/navigation";
 import { useTranslation } from "@/languages";
 import { Tooltip } from "@/shared/ui";
 import { cn } from "@/shared/lib";
+import { useOfflineModeStore } from "@/features/connectivity";
 
 export interface SidebarNavItemsProps {
   searchOpen: boolean;
@@ -17,6 +18,7 @@ export function SidebarNavItems({
   const { pathname } = useLocation();
   const { t } = useTranslation();
   const [pendingHref, setPendingHref] = useState<string | null>(null);
+  const offline = useOfflineModeStore((state) => state.offline);
 
   useEffect(() => {
     setPendingHref(null);
@@ -41,6 +43,7 @@ export function SidebarNavItems({
     <>
       {sidebarNavItems
         .filter((item) => item.id !== "settings")
+        .filter((item) => !offline || item.id === "library")
         .map((item) => {
           const active = isItemActive(item.id, item.href);
           const Icon = item.Icon;

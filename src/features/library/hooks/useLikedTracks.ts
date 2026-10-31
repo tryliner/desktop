@@ -6,17 +6,21 @@ type LikedData = { tracks: Track[]; total: number };
 const EMPTY: LikedData = { tracks: [], total: 0 };
 let cache: LikedData = EMPTY;
 let loaded = false;
+let fetchedFromServer = false;
+let loadFailed = false;
 let request: Promise<void> | null = null;
 const listeners = new Set<() => void>();
-let view = { data: cache, isLoading: true };
+let view = { data: cache, isLoading: true, error: false };
 
 const optimisticOverrides = new Map<string, boolean>();
 
 function buildView(isLoading: boolean): {
   data: LikedData;
   isLoading: boolean;
+  error: boolean;
 } {
-  if (optimisticOverrides.size === 0) return { data: cache, isLoading };
+  const error = loadFailed;
+  if (optimisticOverrides.size === 0) return { data: cache, isLoading, error };
 
   let tracks = cache.tracks.filter(
     (t) => optimisticOverrides.get(t.id) !== false,
@@ -37,7 +41,7 @@ function buildView(isLoading: boolean): {
       ];
     }
   }
-  return { data: { tracks, total: tracks.length }, isLoading };
+  return { data: { tracks, total: tracks.length }, isLoading, error };
 }
 
 function emit(isLoading = false) {
@@ -54,7 +58,7 @@ function snapshot() {
   return view;
 }
 
-const SERVER_SNAPSHOT = { data: EMPTY, isLoading: true };
+const SERVER_SNAPSHOT = { data: EMPTY, isLoading: true, error: false };
 
 function load(force = false): Promise<void> {
   if (request) return request;
@@ -62,6 +66,7 @@ function load(force = false): Promise<void> {
   if (!session?.accessToken) {
     cache = EMPTY;
     loaded = false;
+    fetchedFromServer = false;
     emit(false);
     return Promise.resolve();
   }
@@ -84,17 +89,24 @@ function load(force = false): Promise<void> {
     } while (cursor);
     cache = { tracks, total: tracks.length };
     loaded = true;
+    fetchedFromServer = true;
+    loadFailed = false;
     optimisticOverrides.clear();
   })()
     .catch(() => {
-      if (!loaded) cache = EMPTY;
-      loaded = true;
+      if (!fetchedFromServer) cache = EMPTY;
+      loaded = fetchedFromServer;
+      loadFailed = true;
     })
     .finally(() => {
       request = null;
       emit(false);
     });
   return request;
+}
+
+export function reloadLikedTracks(): Promise<void> {
+  return load(true);
 }
 
 export function applyOptimisticLike(trackId: string): () => void {
@@ -125,6 +137,7 @@ if (typeof window !== "undefined") {
     if (!session?.accessToken) {
       cache = EMPTY;
       loaded = false;
+      fetchedFromServer = false;
       optimisticOverrides.clear();
       emit(false);
     } else {
@@ -133,6 +146,16 @@ if (typeof window !== "undefined") {
   };
   window.addEventListener("library:changed", handleRefresh);
   window.addEventListener("auth:changed", handleRefresh);
+}
+
+export const loadLikedTracks = load;
+export const subscribeLikedTracks = subscribe;
+
+export function likedTracksSnapshot(): {
+  tracks: Track[];
+  fromServer: boolean;
+} {
+  return { tracks: view.data.tracks, fromServer: fetchedFromServer };
 }
 
 export function useLikedTracks(_params?: { limit?: number; offset?: number }) {

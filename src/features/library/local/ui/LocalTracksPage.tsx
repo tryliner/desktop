@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { playerEngine } from "@/features/player";
 import {
   TrackSearchEmpty,
@@ -15,6 +15,7 @@ import { useLocalTracks } from "../hooks/useLocalTracks";
 import LocalTrackList from "./LocalTrackList";
 import LocalTracksEmpty from "./LocalTracksEmpty";
 import LocalTracksHero from "./LocalTracksHero";
+import RemoveAllLocalDialog from "./RemoveAllLocalDialog";
 
 const PAGE_KEY = "local";
 
@@ -24,6 +25,7 @@ export default function LocalTracksPage() {
   const classicSurfaces = useClassicSurfaces();
   const { tracks, isLoading } = useLocalTracks();
   const { chooseFiles, importing } = useLocalImport();
+  const [removeAllOpen, setRemoveAllOpen] = useState(false);
 
   const sort = useTrackSort(tracks, PAGE_KEY);
   const search = useTrackSearch(sort.sorted, PAGE_KEY);
@@ -69,6 +71,7 @@ export default function LocalTracksPage() {
             onPlayAll={playAll}
             onShuffle={shuffle}
             onAddFiles={() => void chooseFiles()}
+            onRemoveAll={() => setRemoveAllOpen(true)}
             search={
               <TrackSearchField
                 search={search}
@@ -112,6 +115,10 @@ export default function LocalTracksPage() {
           )}
         </div>
       </div>
+      <RemoveAllLocalDialog
+        open={removeAllOpen}
+        onClose={() => setRemoveAllOpen(false)}
+      />
     </div>
   );
 }

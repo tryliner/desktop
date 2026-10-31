@@ -91,8 +91,11 @@ function ArtistContent() {
   usePageBackdrop(data?.coverUrl);
   const [showAllTracks, setShowAllTracks] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
-  const [imagesLoaded, setImagesLoaded] = useState(false);
-  const [skeletonExited, setSkeletonExited] = useState(false);
+  const [imagesLoaded, setImagesLoaded] = useState(() => !loading && !!data);
+  const [skeletonExited, setSkeletonExited] = useState(
+    () => !loading && !!data,
+  );
+  const shownIdRef = useRef(id);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const decodedId = id ? decodeURIComponent(id) : "";
@@ -153,6 +156,8 @@ function ArtistContent() {
   }, [isReady, skeletonExited]);
 
   useEffect(() => {
+    if (shownIdRef.current === id) return;
+    shownIdRef.current = id;
     setShowAllTracks(false);
     setIsProfileModalOpen(false);
     setImagesLoaded(false);
@@ -496,7 +501,9 @@ function ArtistContent() {
             className={`col-start-1 row-start-1 w-full h-full z-10 transition-opacity duration-300 ease-out overflow-hidden pointer-events-none ${
               isReady ? "opacity-0" : "opacity-100"
             }`}
-            onTransitionEnd={() => setSkeletonExited(true)}
+            onTransitionEnd={(event) => {
+              if (event.target === event.currentTarget) setSkeletonExited(true);
+            }}
           >
             <ArtistPageSkeleton />
           </div>

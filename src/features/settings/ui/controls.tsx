@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { getTranslationsForAllLocales } from "@/languages";
 import { cn } from "@/shared/lib/utils";
 
@@ -34,8 +35,19 @@ function RowText({ title, description }: SearchableProps) {
         {title}
       </span>
       {description ? (
-        <span className="max-w-[420px] text-pretty text-text-tertiary text-[12px] leading-[17px]">
-          {description}
+        <span className="relative block max-w-[420px] text-pretty text-text-tertiary text-[12px] leading-[17px]">
+          <AnimatePresence mode="popLayout" initial={false}>
+            <motion.span
+              key={description}
+              className="block"
+              initial={{ y: 30, opacity: 0, filter: "blur(3px)" }}
+              animate={{ y: 0, opacity: 1, filter: "blur(0px)" }}
+              exit={{ y: -12, opacity: 0, filter: "blur(4px)" }}
+              transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+            >
+              {description}
+            </motion.span>
+          </AnimatePresence>
         </span>
       ) : null}
     </div>
@@ -86,17 +98,22 @@ export function SettingBlock({ children, ...text }: SettingBlockProps) {
 
 export function SettingSection({
   label,
+  action,
   children,
 }: {
   label?: string;
+  action?: ReactNode;
   children: ReactNode;
 }) {
   return (
     <section className="flex flex-col [&:has(>[data-settings-card]>div:empty)]:hidden">
       {label ? (
-        <h4 className="m-0 px-[2px] pb-[8px] text-text-primary text-[14px] font-[600] leading-[20px] tracking-[-0.005em]">
-          {label}
-        </h4>
+        <div className="flex items-center justify-between gap-[12px] px-[2px] pb-[8px]">
+          <h4 className="m-0 text-text-primary text-[14px] font-[600] leading-[20px] tracking-[-0.005em]">
+            {label}
+          </h4>
+          {action ? <div className="mr-[4px] flex shrink-0">{action}</div> : null}
+        </div>
       ) : null}
       <div
         data-settings-card

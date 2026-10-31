@@ -1,3 +1,5 @@
+export type LocalLyricsState = "found" | "missing" | "untagged";
+
 export interface LocalTrackRecord {
   id: string;
   title: string;
@@ -10,6 +12,12 @@ export interface LocalTrackRecord {
   coverFile?: string;
   byteSize: number;
   addedAt: number;
+  lyrics?: LocalLyricsState;
+}
+
+export interface LocalLibraryUsage {
+  count: number;
+  bytes: number;
 }
 
 export interface LocalImportResult {

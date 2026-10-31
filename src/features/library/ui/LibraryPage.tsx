@@ -21,7 +21,13 @@ import { useModalStore } from "../store/modalStore";
 import { useImportStore } from "../store/importStore";
 import { usePageBackdrop } from "@/shared/lib";
 import ImportingPlaylistCard from "./ImportingPlaylistCard";
+import OfflineMixCard from "./OfflineMixCard";
 import { LocalFilesCard } from "../local";
+import { CachedSongsCard, useCachedTracksStore } from "../cached";
+import { WifiOffLine } from "@mingcute/react";
+import { useOfflineModeStore } from "@/features/connectivity";
+import { goOnline } from "@/features/connectivity/engine/offlineController";
+import { useSavedTracks } from "../saved/hooks/useSavedTracks";
 
 const PAGE_SIZE = 24;
 
@@ -141,7 +147,7 @@ function LikesPlaylistCard({
   );
 }
 
-export default function LibraryPage() {
+function OnlineLibraryPage() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const likesCover = useLikesCover();
@@ -194,6 +200,10 @@ export default function LibraryPage() {
     () => youtubeItems.filter((item) => item.kind === "album"),
     [youtubeItems],
   );
+  const cachedVisibleOnline = useCachedTracksStore(
+    (state) => state.visibleOnline,
+  );
+  const showCachedSongs = cachedVisibleOnline;
   const { data: likedCount, isLoading: likedCountLoading } =
     useLikedTrackCount();
   const openCreatePlaylist = useModalStore((state) => state.openCreatePlaylist);
@@ -449,6 +459,14 @@ export default function LibraryPage() {
                               navigate("/library/playlist?id=likes")
                             }
                           />,
+                          ...(showCachedSongs
+                            ? [
+                                <CachedSongsCard
+                                  key="cached-songs-card"
+                                  viewMode={viewMode}
+                                />,
+                              ]
+                            : []),
                           <LocalFilesCard
                             key="local-files-card"
                             viewMode={viewMode}
@@ -473,4 +491,76 @@ export default function LibraryPage() {
       </div>
     </div>
   );
+}
+
+function OfflineLibraryPage() {
+  const navigate = useNavigate();
+  const { t } = useTranslation();
+  const likesCover = useLikesCover();
+  usePageBackdrop(likesCover, { blur: 56, dim: 0.22 });
+  const source = useOfflineModeStore((state) => state.source);
+  const checking = useOfflineModeStore((state) => state.checking);
+  const { tracks: savedLikes, isLoading: savedLoading } = useSavedTracks();
+
+  return (
+    <div className="relative h-full w-full overflow-hidden">
+      <div className="h-full w-full overflow-y-auto bg-transparent pb-(--page-inset-bottom)">
+        <div className="px-[12px] pt-[36px] pb-[10px]">
+          <h1
+            className="text-[26px] font-bold text-text-primary tracking-tight m-0 leading-tight"
+            style={{ fontFamily: "var(--font-inter), sans-serif" }}
+          >
+            {t("library.title")}
+          </h1>
+          <div
+            className="mt-[10px] flex flex-wrap items-center gap-[10px] text-[13px] text-text-secondary"
+            style={{ fontFamily: "var(--font-inter), sans-serif" }}
+          >
+            <span className="flex items-center gap-[8px]">
+              <WifiOffLine size={15} className="text-text-tertiary" />
+              {t(
+                source === "manual"
+                  ? "offline.library_status_manual"
+                  : "offline.library_status_auto",
+              )}
+            </span>
+            <button
+              type="button"
+              disabled={checking}
+              onClick={() => void goOnline()}
+              className="h-[28px] rounded-[9px] border-0 bg-black/[0.06] px-[12px] text-[12.5px] font-[500] text-text-primary transition-colors hover:bg-black/[0.1] disabled:cursor-default disabled:opacity-60 dark:bg-white/[0.1] dark:hover:bg-white/[0.15] cursor-pointer"
+            >
+              {checking
+                ? t("connectivity.retrying")
+                : t(
+                    source === "manual"
+                      ? "offline.go_online"
+                      : "offline.reconnect",
+                  )}
+            </button>
+          </div>
+        </div>
+
+        <div className="px-[12px] pt-[14px] pb-[20px]">
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(165px,1fr))] gap-[24px] pb-[24px]">
+            <OfflineMixCard />
+            {savedLikes.length > 0 || savedLoading ? (
+              <LikesPlaylistCard
+                count={savedLikes.length}
+                isLoading={savedLoading}
+                onClick={() => navigate("/library/saved")}
+              />
+            ) : null}
+            <CachedSongsCard />
+            <LocalFilesCard />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function LibraryPage() {
+  const offline = useOfflineModeStore((state) => state.offline);
+  return offline ? <OfflineLibraryPage /> : <OnlineLibraryPage />;
 }

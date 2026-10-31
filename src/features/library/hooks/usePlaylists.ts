@@ -69,8 +69,8 @@ export function evictPlaylistFromCache(id: string) {
   emit();
 }
 
-function emit() {
-  view = { data: cache, error: undefined, isLoading: false };
+function emit(error?: unknown, isLoading = false) {
+  view = { data: cache, error, isLoading };
   listeners.forEach((l) => l());
 }
 
@@ -100,11 +100,9 @@ function load(force = false): Promise<void> {
   }
   if (loaded && !force) return Promise.resolve();
 
-  if (!loaded) {
-    view = { data: cache, error: undefined, isLoading: true };
-    emit();
-  }
+  if (!loaded) emit(undefined, true);
 
+  let failure: unknown;
   request = (async () => {
     const response = await api.listPlaylists();
     const playlists = response.items.map((playlist) => {
@@ -120,11 +118,11 @@ function load(force = false): Promise<void> {
     .catch((err) => {
       if (!loaded) cache = EMPTY;
       loaded = true;
-      view.error = err;
+      failure = err;
     })
     .finally(() => {
       request = null;
-      emit();
+      emit(failure);
     });
   return request;
 }

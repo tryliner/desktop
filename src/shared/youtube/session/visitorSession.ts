@@ -13,11 +13,16 @@ interface VisitorSession {
 
 let cachedSession: VisitorSession | null = null;
 let pendingFetch: Promise<string> | null = null;
+let failedAt = 0;
+
+const FETCH_TIMEOUT_MS = 8_000;
+const FAILURE_COOLDOWN_MS = 60_000;
 
 const SESSION_TTL_MS = 5.5 * 60 * 60 * 1000; // 5.5 hours
 
 export function resetClientVisitorData(): void {
   cachedSession = null;
+  failedAt = 0;
 }
 
 export async function getClientVisitorData(): Promise<string> {
@@ -30,9 +35,14 @@ export async function getClientVisitorData(): Promise<string> {
     return pendingFetch;
   }
 
+  if (now - failedAt < FAILURE_COOLDOWN_MS) {
+    return cachedSession?.visitorData ?? "";
+  }
+
   pendingFetch = (async () => {
     try {
       const res = await fetch("https://www.youtube.com/sw.js_data", {
+        signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
         headers: {
           "user-agent":
             typeof navigator !== "undefined"
@@ -51,6 +61,7 @@ export async function getClientVisitorData(): Promise<string> {
         throw new Error("Could not parse visitorData from sw.js_data");
       }
 
+      failedAt = 0;
       cachedSession = {
         visitorData,
         expiresAt: Date.now() + SESSION_TTL_MS,
@@ -64,6 +75,7 @@ export async function getClientVisitorData(): Promise<string> {
 
       return visitorData;
     } catch (err) {
+      failedAt = Date.now();
       console.warn("[VisitorSession] Failed to fetch fresh visitorData:", err);
       // Fallback: if cached exists even if slightly expired, keep it
       if (cachedSession?.visitorData) {

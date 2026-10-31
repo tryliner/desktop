@@ -105,6 +105,21 @@ describe("radio playback", () => {
     ]);
   });
 
+  it("repeat-all loops a playlist instead of adding similar tracks", async () => {
+    usePlayerStore.setState({ autoplaySimilar: true });
+    getRadio.mockResolvedValue(radioItems(["s1", "s2"]));
+    const tracks = [mk("1"), mk("2")];
+    await playerEngine.playTrack(tracks[0], tracks, "playlist:p");
+    playerEngine.setRepeat("all");
+    await playerEngine.skipNext();
+    await vi.advanceTimersByTimeAsync(500);
+    expect(getRadio).not.toHaveBeenCalled();
+    await playerEngine.skipNext(true);
+    const state = usePlayerStore.getState();
+    expect(state.currentTrack?.id).toBe("1");
+    expect(state.queue.map((t) => t.id)).toEqual(["1", "2"]);
+  });
+
   it("plain playlists still loop with repeat-all", async () => {
     const tracks = [mk("1"), mk("2")];
     await playerEngine.playTrack(tracks[0], tracks, "playlist:p");

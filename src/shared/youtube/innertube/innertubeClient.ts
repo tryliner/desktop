@@ -33,6 +33,7 @@ export const WEB_REMIX_PROFILE: InnertubeProfile = {
 export { USER_AGENT_HEADER_OVERRIDE };
 
 const SESSION_REJECTED = new Set([401, 403]);
+const INNERTUBE_TIMEOUT_MS = 12_000;
 
 export class InnertubeError extends Error {
   constructor(
@@ -120,7 +121,12 @@ export async function postInnertube(
         method: "POST",
         headers: buildHeaders(profile, visitorData, authorization),
         body: JSON.stringify(payload),
-        signal: options.signal,
+        signal: options.signal
+          ? AbortSignal.any([
+              options.signal,
+              AbortSignal.timeout(INNERTUBE_TIMEOUT_MS),
+            ])
+          : AbortSignal.timeout(INNERTUBE_TIMEOUT_MS),
       });
     } catch (error) {
       if (options.signal?.aborted) throw error;

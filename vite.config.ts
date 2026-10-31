@@ -8,13 +8,15 @@ import { contentSecurityPolicyPlugin } from "./vite.csp.ts";
 
 export default defineConfig(({ command, mode }) => {
   if (command === "serve") {
-    const devSigningSecret = loadEnv(
-      mode,
-      process.cwd(),
-      "LINER_",
-    ).LINER_DEV_SIGNING_SECRET;
-    if (devSigningSecret)
-      process.env.LINER_DEV_SIGNING_SECRET = devSigningSecret;
+    const devEnv = loadEnv(mode, process.cwd(), ["LINER_", "VITE_API_URL"]);
+    for (const name of [
+      "LINER_DEV_SIGNING_SECRET",
+      "LINER_SIMULATE",
+      "LINER_SIMULATE_COUNTRY",
+      "VITE_API_URL",
+    ]) {
+      if (devEnv[name] && !process.env[name]) process.env[name] = devEnv[name];
+    }
   }
 
   return {

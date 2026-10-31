@@ -37,9 +37,17 @@ import { debouncedStorage } from "@/shared/utils/storage";
 import { showToast } from "@/shared/ui";
 import { createTranslatorSync, getStoredLocale } from "@/languages";
 import type { Track } from "@/shared/types";
-import { isLocalTrackId } from "@/shared/media/local";
+import { isLocalTrackId, localFileId } from "@/shared/media/local";
+import { readSavedLyrics } from "@/shared/media/saved";
+import {
+  LOCAL_LYRICS_UPDATED,
+  readStoredLocalLyrics,
+  isLyricsCandidate,
+} from "@/features/library/local/lyrics/localLyricsQueue";
 import { loadAmbientScript } from "@/shared/media/ambient";
 import { STREAMS_REFUSED_MESSAGE } from "@/shared/youtube";
+import { OFFLINE_UNAVAILABLE_MESSAGE } from "@/features/connectivity/store/offlineModeStore";
+import { noteYoutubeTrouble } from "@/features/connectivity/engine/offlineController";
 
 const MAX_CONSECUTIVE_AUTO_SKIPS = 3;
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
@@ -101,9 +109,11 @@ const MAX_EVENT_DURATION_MS = 86_400_000;
 // another event for them would only fail the same way
 const unknownTrackIds = new Set<string>();
 
-type LyricsHint = { title: string; artist: string; durationMs?: number };
+function continuesWithSimilar(state: PlayerState): boolean {
+  return state.autoplaySimilar && state.repeat === "off";
+}
 
-const localLyricsMisses = new Set<string>();
+type LyricsHint = { title: string; artist: string; durationMs?: number };
 
 function lyricsHint(track: Track): LyricsHint {
   const artist =
@@ -305,6 +315,7 @@ class PlayerEngine {
   // single in-flight similar-tracks request, so a refill and an end-of-queue wait share it
   private radioFetchInFlight: Promise<void> | null = null;
   private consecutiveAutoSkips = 0;
+  private consecutiveOfflineSkips = 0;
   private lastPreloadKey: string | null = null;
   private inFlightLyricsPrefetches = new Map<string, Promise<void>>();
 
@@ -312,6 +323,16 @@ class PlayerEngine {
     usePlayerStore.setState({
       dispatch: this.dispatch.bind(this),
     });
+
+    if (typeof window !== "undefined") {
+      window.addEventListener(LOCAL_LYRICS_UPDATED, (event) => {
+        const trackId = (event as CustomEvent<{ trackId?: string }>).detail
+          ?.trackId;
+        if (!trackId || this.currentLyricsTrackId !== trackId) return;
+        this.currentLyricsTrackId = null;
+        void this.fetchLyricsForTrack(usePlayerStore.getState().currentTrack);
+      });
+    }
 
     if (playerRuntime) {
       playerRuntime.onEnded = () => {
@@ -363,6 +384,7 @@ class PlayerEngine {
           if (state.status === "playing") {
             this.telemetry.onPlaying();
             this.consecutiveAutoSkips = 0;
+            this.consecutiveOfflineSkips = 0;
           } else if (state.status === "paused" || state.status === "idle") {
             this.telemetry.onPausedOrStopped();
           }
@@ -993,6 +1015,7 @@ class PlayerEngine {
     this.originalUpcomingQueue = [];
     this.lastPreloadKey = null;
     this.consecutiveAutoSkips = 0;
+    this.consecutiveOfflineSkips = 0;
     playerRuntime?.stop();
     usePlayerStore.getState().resetPlayback();
     useLyricsStore.getState().reset();
@@ -1119,8 +1142,30 @@ class PlayerEngine {
 
     const track = store.currentTrack;
     const translate = createTranslatorSync(getStoredLocale());
+    if (info.message.startsWith(OFFLINE_UNAVAILABLE_MESSAGE)) {
+      this.consecutiveOfflineSkips += 1;
+      if (this.consecutiveOfflineSkips > store.queue.length) {
+        showToast(translate("offline.nothing_playable"), "info", {
+          id: "offline-skip",
+        });
+        this.consecutiveOfflineSkips = 0;
+        this.stopPlayback();
+        store.setStatus("idle");
+        store.setPosition(0);
+        store.setDuration(0);
+        store.setCurrentTrack(null, -1);
+        return;
+      }
+      showToast(translate("offline.skipped_title"), "info", {
+        id: "offline-skip",
+        description: translate("offline.skipped_desc"),
+      });
+      void this.skipNext(false);
+      return;
+    }
     // youtube refusing every stream is about the connection (vpn, proxy, flagged ip), not this track
     const refused = info.message.startsWith(STREAMS_REFUSED_MESSAGE);
+    noteYoutubeTrouble(refused ? "refused" : "failed");
     const refusedToast = {
       description: translate("player.youtube_refused_description"),
     };
@@ -1235,8 +1280,7 @@ class PlayerEngine {
     const currentState = usePlayerStore.getState();
     // radio always continues; plain lists only when "autoplay similar" is on
     const radio = isRadioContext(currentState.playbackContext);
-    if (!radio && !currentState.autoplaySimilar) return;
-    if (!radio && currentState.repeat !== "off") return;
+    if (!radio && !continuesWithSimilar(currentState)) return;
     if (isLocalTrackId(seedTrackId)) return;
     const startContext = currentState.playbackContext;
 
@@ -1269,7 +1313,7 @@ class PlayerEngine {
         : session !== this.sessionId
     )
       return;
-    if (!radio && (!state.autoplaySimilar || state.repeat !== "off")) return;
+    if (!radio && !continuesWithSimilar(state)) return;
 
     const queuedIds = new Set(state.queue.map((track) => track.id));
     const additions = items
@@ -1466,95 +1510,29 @@ class PlayerEngine {
     signal: AbortSignal,
   ): Promise<void> {
     const trackId = track.id;
-    const isCurrent = () => token === this.lyricsLoadToken && !signal.aborted;
-
-    const stored =
-      lyricsCache.get(trackId) ||
-      (await linerDb.getLyrics(trackId).catch(() => null));
-    if (!isCurrent()) return;
-    const storedCandidate = stored?.candidate ?? null;
-    if (storedCandidate) {
-      this.showLyricsCandidate(
-        trackId,
-        storedCandidate,
-        stored?.availableProviders || [],
-      );
-      if (!isProvisionalLyricsCandidate(storedCandidate)) return;
-    }
-
-    const hint = lyricsHint(track);
-    if (
-      !hint.title.trim() ||
-      !hint.artist.trim() ||
-      localLyricsMisses.has(trackId)
-    ) {
-      if (!storedCandidate) this.showNoLyrics(trackId, null);
+    const cached = lyricsCache.get(trackId);
+    const candidate =
+      cached?.candidate ??
+      (await readStoredLocalLyrics(localFileId(trackId))) ??
+      (await linerDb.getLyrics(trackId).catch(() => null))?.candidate ??
+      null;
+    if (token !== this.lyricsLoadToken || signal.aborted) return;
+    if (!candidate) {
+      this.showNoLyrics(trackId, null);
       return;
     }
-
-    if (!storedCandidate) {
-      useLyricsStore.getState().setLyricsState({
-        lyricsLoading: true,
-        lyricsError: null,
-        currentLyricsTrackId: trackId,
-      });
-    }
-    log("cyan", "lyrics", `searching for local "${track.title}"`);
-
-    try {
-      const result = await api.searchLyrics(hint, signal);
-      if (!isCurrent()) return;
-      if (!result) {
-        localLyricsMisses.add(trackId);
-        if (!storedCandidate) this.showNoLyrics(trackId, null);
-        log("cyan", "lyrics", `no lyrics for local "${track.title}"`);
-        return;
-      }
-      const candidate = result.candidate;
-      if (
-        storedCandidate &&
-        !isBetterLyricsCandidate(candidate, storedCandidate)
-      ) {
-        return;
-      }
-      const providers = [
-        {
-          provider: candidate.provider,
-          syncLevel: candidate.syncLevel,
-          quality: candidate.quality.total,
-          candidate,
-        },
-      ];
-      this.showLyricsCandidate(trackId, candidate, providers);
-      lyricsCache.set(trackId, candidate, providers);
-      await linerDb.putLyrics({
-        trackId,
-        syncLevel: candidate.syncLevel,
-        quality: candidate.quality.total,
-        activeProvider: candidate.provider,
-        availableProviders: providers,
-        rawLyrics: candidate.lyrics.content,
-        rawFormat: candidate.lyrics.format,
-        candidate,
-        lastCheckedAt: Date.now(),
-        updatedAt: Date.now(),
-        userLocked: true,
-      });
-      log(
-        "green",
-        "lyrics",
-        `stored ${candidate.provider} lyrics for local "${track.title}"`,
-      );
-    } catch (error) {
-      if (!isCurrent()) return;
-      if (!storedCandidate)
-        this.showNoLyrics(trackId, "Failed to load lyrics.");
-      log(
-        "red",
-        "lyrics",
-        `local search failed: ${error instanceof Error ? error.message : String(error)}`,
-      );
-    }
+    const providers = cached?.availableProviders?.length
+      ? cached.availableProviders
+      : [
+          {
+            provider: candidate.provider,
+            syncLevel: candidate.syncLevel,
+            quality: candidate.quality.total,
+            candidate,
+          },
+        ];
+    if (!cached) lyricsCache.set(trackId, candidate, providers);
+    this.showLyricsCandidate(trackId, candidate, providers);
   }
 
   private async fetchLyricsForTrack(track: Track | null): Promise<void> {
@@ -1602,6 +1580,20 @@ class PlayerEngine {
         cached = await linerDb.getLyrics(trackId);
       } catch {
         cached = null;
+      }
+    }
+    if (!cached) {
+      const saved = await readSavedLyrics(trackId, isLyricsCandidate);
+      if (saved) {
+        cached = { trackId, candidate: saved, timestamp: Date.now() };
+        lyricsCache.set(trackId, saved, [
+          {
+            provider: saved.provider,
+            syncLevel: saved.syncLevel,
+            quality: saved.quality.total,
+            candidate: saved,
+          },
+        ]);
       }
     }
 
