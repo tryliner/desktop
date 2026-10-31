@@ -16,12 +16,10 @@ const DEEP_LINK_IDS: Record<string, RegExp> = {
   playlist: /^[A-Za-z0-9_-]{8,64}$/,
   // youtube video ids are always 11 base64url chars
   track: /^[A-Za-z0-9_-]{11}$/,
-  // one-time password reset links from link.tryliner.fun/reset/<token>
-  "reset-password": /^lrst_[A-Za-z0-9_-]{43}$/,
 };
 
 export interface DeeplinkTarget {
-  type: "artist" | "album" | "playlist" | "track" | "reset-password";
+  type: "artist" | "album" | "playlist" | "track";
   id: string;
 }
 

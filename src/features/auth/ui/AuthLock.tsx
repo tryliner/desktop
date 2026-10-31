@@ -5,9 +5,6 @@ import { getAuthSession } from "@/shared/api";
 import AppFrame from "@/features/navigation/ui/AppFrame";
 import { useWindowState } from "@/features/navigation/hooks/useWindowState";
 
-// screens reachable without a session; they render without the app frame
-const STANDALONE_PATHS = new Set(["/login", "/reset-password"]);
-
 export function AuthLock({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
@@ -29,25 +26,19 @@ export function AuthLock({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener("auth:changed", syncExpiredSession);
   }, [initialize]);
 
-  const standalone = STANDALONE_PATHS.has(pathname);
-  // a reset link can be opened signed in or out
-  const resetting = pathname === "/reset-password";
-
   useEffect(() => {
-    if (resetting) return;
-    if (status === "anonymous" && !standalone) {
+    if (status === "anonymous" && pathname !== "/login") {
       navigate("/login", { replace: true });
     }
     if (status === "authenticated" && pathname === "/login") {
       navigate("/", { replace: true });
     }
-  }, [pathname, navigate, status, standalone, resetting]);
+  }, [pathname, navigate, status]);
 
   if (
-    !resetting &&
-    (status === "initializing" ||
-      (status === "anonymous" && !standalone) ||
-      (status === "authenticated" && pathname === "/login"))
+    status === "initializing" ||
+    (status === "anonymous" && pathname !== "/login") ||
+    (status === "authenticated" && pathname === "/login")
   ) {
     return (
       <div
@@ -56,7 +47,7 @@ export function AuthLock({ children }: { children: React.ReactNode }) {
     );
   }
 
-  return standalone ? children : <AppFrame>{children}</AppFrame>;
+  return pathname === "/login" ? children : <AppFrame>{children}</AppFrame>;
 }
 
 export default AuthLock;
