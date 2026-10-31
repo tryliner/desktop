@@ -75,6 +75,7 @@ describe("getBrowserLocale", () => {
     ["pt-BR", "pt"],
     ["pt-PT", "pt"],
     ["en-GB", "en"],
+    ["vi-VN", "vi"],
   ])(
     "returns the matching locale when navigator.language is %s",
     (language, expected) => {

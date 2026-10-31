@@ -107,6 +107,12 @@ describe("createTranslatorSync with plurals", () => {
     expect(tUk("common.tracks", { count: 10 })).toBe("10 треків");
   });
 
+  it("translates correctly in Vietnamese", () => {
+    const tVi = createTranslatorSync("vi");
+    expect(tVi("common.sidebar.library")).toBe("Thư viện");
+    expect(tVi("common.tracks", { count: 3 })).toBe("3 bài hát");
+  });
+
   it("falls back to English when key is missing in target locale", () => {
     const tRu = createTranslatorSync("ru");
     expect(tRu("common.app.name")).toBe("Liner");
