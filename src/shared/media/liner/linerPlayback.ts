@@ -1,18 +1,16 @@
 import { getAuthSession, getValidAccessToken } from "@/shared/api/auth-session";
 import { getApiBaseUrl } from "@/shared/api/baseUrl";
+import type { ApiResponse, R2Plan } from "@/shared/contracts";
 import { isAbortError } from "@/shared/utils/abort";
 import { log } from "@/shared/utils/logger";
 
-export interface LinerAudioStream {
-  url: string;
-  expiresAt: string;
-  mimeType: string;
-  codec?: string;
-  size: number;
-}
+/** A presigned R2 url of the track's audio (`source: "r2"` plan). */
+export type LinerAudioStream = R2Plan;
+
+type PlaybackPlan = ApiResponse<"POST /v1/tracks/:trackId/playback">;
 
 const REQUEST_TIMEOUT_MS = 5_000;
-const UNAVAILABLE_BACKOFF_MS = 10 * 60_000;
+const STREAM_FAILED_BACKOFF_MS = 10 * 60_000;
 
 let pausedUntil = 0;
 
@@ -25,7 +23,10 @@ function pause(ms: number, reason: string): void {
   );
 }
 
-// presigned r2 url, or null so the caller falls back to youtube
+// the api answers every lookup with a plan: an r2 url, or "play it from the
+// source yourself" with a reason. Budget, caps and a missing r2 come with
+// retryAfterSeconds, the time before asking again makes sense. Null means:
+// play from youtube / soundcloud
 export async function resolveLinerStream(
   videoId: string,
   signal?: AbortSignal,
@@ -43,17 +44,12 @@ export async function resolveLinerStream(
         signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
       },
     );
-    if (res.ok) return (await res.json()) as LinerAudioStream;
-
-    const body = (await res.json().catch(() => ({}))) as {
-      code?: string;
-      retryAfterSeconds?: number;
-    };
-    if (res.status === 404 && body.code === "PLAYBACK_NOT_FOUND") return null;
-    if (res.status === 429)
-      pause(Math.max(1, body.retryAfterSeconds ?? 60) * 1000, "rate limited");
-    else if (res.status === 404 || res.status === 503)
-      pause(UNAVAILABLE_BACKOFF_MS, `api answered ${res.status}`);
+    // 400 (an id the api does not take), 401, 500: play from the source
+    if (!res.ok) return null;
+    const plan = (await res.json()) as PlaybackPlan;
+    if (plan.source === "r2") return plan;
+    if (plan.retryAfterSeconds)
+      pause(plan.retryAfterSeconds * 1000, plan.reason);
     return null;
   } catch (error) {
     if (isAbortError(error, signal) && signal?.aborted) throw error;
@@ -69,5 +65,5 @@ export async function resolveLinerStream(
 // the api answered but r2 itself is unreachable for this client (tls mitm, blocked
 // cloudflare): stop handing out r2 urls for a while so retries go to youtube
 export function markLinerStreamFailed(reason: string): void {
-  pause(UNAVAILABLE_BACKOFF_MS, `r2 stream failed: ${reason}`);
+  pause(STREAM_FAILED_BACKOFF_MS, `r2 stream failed: ${reason}`);
 }
