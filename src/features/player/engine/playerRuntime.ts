@@ -11,6 +11,23 @@ import { isSavedTrack } from "@/shared/media/saved";
 import { pitchShifter } from "./pitchShifter";
 import { FLAT_EQ, isEqActive } from "./equalizer";
 import { resolvePlaybackStream, type PlaybackStream } from "./streamResolver";
+import {
+  GAPLESS_HEAD_START_MS,
+  SKIP_FADE_MS,
+  TRANSITION_ARM_WINDOW_MS,
+  transitionMs,
+  transitionTiming,
+} from "./crossfade";
+import {
+  findOrCreateAudioElements,
+  markActiveAudio,
+  rampVolume,
+} from "./audioElements";
+import {
+  releaseStandbySource,
+  resolveStandbySource,
+  type StandbySource,
+} from "./standbySource";
 import { logNowPlaying } from "./nowPlayingLog";
 import {
   downloadAudioBytes,
@@ -27,11 +44,19 @@ const WAITING_GRACE_MS = 300; // a buffering hiccup shorter than this never show
 
 export class PlayerRuntime {
   private audio: HTMLAudioElement;
+  private standby: HTMLAudioElement;
+  private standbySlot: { trackId: string; source: StandbySource } | null = null;
+  private standbyEpoch = 0;
+  private preloadTicket = 0;
+  private pendingStandby: Track | null = null;
+  private transitionTimer: ReturnType<typeof setTimeout> | null = null;
+  private handoffTrackId: string | null = null;
+  private finishOutgoing: (() => void) | null = null;
   private currentTrackId: string | null = null;
   private loadEpoch = 0;
   private loadAbortController: AbortController | null = null;
   private isResetting = false;
-  private fadeTimer: ReturnType<typeof setTimeout> | null = null;
+  private stopFade: (() => void) | null = null;
   private stallStartTime: number | null = null;
   private loadStartTime = 0;
   private ttfbMs = 0;
@@ -60,26 +85,14 @@ export class PlayerRuntime {
   private waitingTimer: ReturnType<typeof setTimeout> | null = null;
   public onEnded?: () => void;
   public onError?: (info: { trackId: string; message: string }) => void;
+  public peekAutoNext?: () => Track | null;
 
   constructor() {
-    const win = typeof window !== "undefined" ? (window as any) : null;
-    let audio = (win?.__liner_audio ||
-      (typeof document !== "undefined" &&
-        document.getElementById("liner-audio"))) as HTMLAudioElement | null;
-    if (!audio) {
-      audio = new Audio();
-      audio.id = "liner-audio";
-      audio.crossOrigin = "anonymous";
-      audio.preload = "auto";
-      if (typeof document !== "undefined") {
-        document.body.appendChild(audio);
-      }
-    }
-    if (win) {
-      win.__liner_audio = audio;
-    }
-    this.audio = audio;
+    const { active, standby } = findOrCreateAudioElements();
+    this.audio = active;
+    this.standby = standby;
     this.setupAudioListeners(this.audio);
+    this.setupAudioListeners(this.standby);
 
     const initialVolume = usePlayerStore.getState().volume;
     this.audio.volume = initialVolume;
@@ -268,6 +281,7 @@ export class PlayerRuntime {
 
       const posMs = Math.round(audioEl.currentTime * 1000);
       usePlayerStore.getState().setPosition(posMs);
+      this.scheduleTransition();
       if (
         this.recoveryHoldUntilMs !== null &&
         posMs >= this.recoveryHoldUntilMs
@@ -298,6 +312,14 @@ export class PlayerRuntime {
       audioEl.addEventListener(type, () => {
         if (this.isResetting || audioEl !== this.audio) return;
         this.syncMediaSessionPosition();
+      });
+    }
+
+    for (const type of ["seeked", "ratechange", "pause"]) {
+      audioEl.addEventListener(type, () => {
+        if (audioEl !== this.audio) return;
+        this.clearTransition();
+        this.scheduleTransition();
       });
     }
 
@@ -524,10 +546,8 @@ export class PlayerRuntime {
   }
 
   private cancelFade(): void {
-    if (this.fadeTimer !== null) {
-      clearTimeout(this.fadeTimer);
-      this.fadeTimer = null;
-    }
+    this.stopFade?.();
+    this.stopFade = null;
   }
 
   private fadeVolume(
@@ -536,35 +556,162 @@ export class PlayerRuntime {
     onComplete?: () => void,
   ): void {
     this.cancelFade();
-    const startVolume = this.audio.volume;
-    const diff = targetVolume - startVolume;
-    if (Math.abs(diff) < 0.001 || durationMs <= 0) {
-      this.audio.volume = Math.max(0, Math.min(1, targetVolume));
+    this.stopFade = rampVolume(this.audio, targetVolume, durationMs, () => {
+      this.stopFade = null;
       onComplete?.();
+    });
+  }
+
+  private clearTransition(): void {
+    if (this.transitionTimer) clearTimeout(this.transitionTimer);
+    this.transitionTimer = null;
+  }
+
+  private clearStandby(): void {
+    this.standbyEpoch += 1;
+    this.clearTransition();
+    if (this.standbySlot) releaseStandbySource(this.standbySlot.source);
+    this.standbySlot = null;
+  }
+
+  private isStandbyReadyFor(trackId: string): boolean {
+    return (
+      this.standbySlot?.trackId === trackId && this.standby.readyState >= 3
+    );
+  }
+
+  private async prepareStandby(track: Track): Promise<void> {
+    if (this.finishOutgoing) {
+      this.pendingStandby = track;
       return;
     }
+    if (
+      track.id === this.currentTrackId ||
+      track.id === this.standbySlot?.trackId
+    )
+      return;
+    this.clearStandby();
+    const epoch = this.standbyEpoch;
+    const source = await resolveStandbySource(track);
+    if (!source) return;
+    if (
+      epoch !== this.standbyEpoch ||
+      this.finishOutgoing ||
+      track.id === this.currentTrackId
+    ) {
+      releaseStandbySource(source);
+      return;
+    }
+    this.standby.volume = 0;
+    this.standby.src = source.url;
+    this.standby.load();
+    this.standbySlot = { trackId: track.id, source };
+    log("cyan", "preload", `standby ready: "${track.title}"`);
+  }
 
-    const startTime = performance.now();
+  private scheduleTransition(): void {
+    if (this.transitionTimer || !this.standbySlot || this.audio.paused) return;
+    const next = this.peekAutoNext?.();
+    if (!next || next.id !== this.standbySlot.trackId) return;
+    const remainingMs =
+      ((this.audio.duration - this.audio.currentTime) * 1000) /
+      (this.audio.playbackRate || 1);
+    if (!Number.isFinite(remainingMs)) return;
+    const { currentTrack, crossfadeSeconds } = usePlayerStore.getState();
+    const { fadeMs, startInMs } = transitionTiming(
+      remainingMs,
+      transitionMs(currentTrack, next, crossfadeSeconds),
+    );
+    if (startInMs > TRANSITION_ARM_WINDOW_MS) return;
+    this.transitionTimer = setTimeout(
+      () => {
+        this.transitionTimer = null;
+        this.startTransition(next, fadeMs);
+      },
+      Math.max(0, startInMs),
+    );
+  }
 
-    const tick = () => {
-      const now = performance.now();
-      const elapsed = now - startTime;
-      const progress = Math.min(elapsed / durationMs, 1);
-      const eased = 0.5 - 0.5 * Math.cos(progress * Math.PI);
-      const current = startVolume + diff * eased;
-      this.audio.volume = Math.max(0, Math.min(1, current));
+  private startTransition(next: Track, fadeMs: number): void {
+    if (this.audio.paused || !this.isStandbyReadyFor(next.id)) return;
+    if (this.peekAutoNext?.()?.id !== next.id) return;
+    log("cyan", "audio", "near the end — handing off to the next track");
+    this.onEnded?.();
+    this.handOff(next, fadeMs);
+    this.handoffTrackId = next.id;
+    usePlayerStore.getState().dispatch({ type: "SKIP_NEXT", isAutoEnd: true });
+  }
 
-      if (progress < 1) {
-        // audio fade ticks independently of display vsync in background
-        this.fadeTimer = setTimeout(tick, 16);
-      } else {
-        this.fadeTimer = null;
-        this.audio.volume = Math.max(0, Math.min(1, targetVolume));
-        onComplete?.();
-      }
+  private handOff(track: Track, fadeMs: number): void {
+    const source = this.standbySlot?.source ?? null;
+    this.standbySlot = null;
+    this.loadEpoch += 1;
+    this.loadAbortController?.abort();
+    this.loadAbortController = null;
+    this.retireActive(fadeMs || GAPLESS_HEAD_START_MS);
+    const blob = source?.blobUrl ?? null;
+    this.activeBlobUrl = blob;
+    this.releaseActiveStream = source?.release ?? null;
+    this.currentTrackId = track.id;
+    this.attachedTrackId = track.id;
+    this.recoveryAttempts = 0;
+    this.recoveryHoldUntilMs = null;
+    this.audio.volume = fadeMs ? 0 : usePlayerStore.getState().volume;
+    this.applyPlaybackRateAndPitch();
+    const epoch = this.loadEpoch;
+    const playStartedAt = performance.now();
+    this.audio.play().then(
+      () => {
+        logNowPlaying(
+          track,
+          Boolean(blob),
+          Math.round(performance.now() - playStartedAt),
+        );
+        if (epoch !== this.loadEpoch || !fadeMs) return;
+        this.fadeVolume(usePlayerStore.getState().volume, fadeMs);
+      },
+      () => {
+        if (epoch !== this.loadEpoch) return;
+        this.handoffTrackId = null;
+        void this.loadAndPlay(track);
+      },
+    );
+    log(
+      "green",
+      "playback",
+      `${fadeMs ? `crossfade ${fadeMs}ms` : "gapless"} into "${track.title}"`,
+    );
+  }
+
+  private retireActive(fadeMs: number): void {
+    this.finishOutgoing?.();
+    this.clearStandby();
+    this.cancelFade();
+    const old = this.audio;
+    const blob = this.activeBlobUrl;
+    const release = this.releaseActiveStream;
+    this.activeBlobUrl = null;
+    this.releaseActiveStream = null;
+    this.attachedTrackId = null;
+    this.attachedFromLiner = false;
+    this.currentSessionExpiresAt = null;
+    this.audio = this.standby;
+    this.standby = old;
+    markActiveAudio(this.audio, old);
+
+    let stopRamp = () => {};
+    const finish = () => {
+      stopRamp();
+      this.finishOutgoing = null;
+      old.pause();
+      if (blob) URL.revokeObjectURL(blob);
+      release?.();
+      const pending = this.pendingStandby ?? this.peekAutoNext?.() ?? null;
+      this.pendingStandby = null;
+      if (pending) void this.prepareStandby(pending);
     };
-
-    this.fadeTimer = setTimeout(tick, 16);
+    this.finishOutgoing = finish;
+    stopRamp = rampVolume(old, 0, fadeMs, finish);
   }
 
   private releaseStream() {
@@ -664,15 +811,25 @@ export class PlayerRuntime {
     this.currentSessionExpiresAt = null;
     this.recoveryAttempts = 0;
     this.recoveryHoldUntilMs = null;
+    this.finishOutgoing?.();
+    this.clearTransition();
     this.safeResetAudioElement();
     usePlayerStore.getState().setStatus("paused");
     log("cyan", "playback", "pending load cancelled");
   }
 
   public async preloadTrack(track: Track): Promise<void> {
+    const ticket = ++this.preloadTicket;
+    await this.cacheAhead(track);
+    if (ticket !== this.preloadTicket) return;
+    await this.prepareStandby(track);
+  }
+
+  private async cacheAhead(track: Track): Promise<void> {
     if (isLocalTrackId(track.id) || isSavedTrack(track.id)) return;
     if (this.currentTrackId === track.id) return;
-    if (this.preloadingTrackId === track.id) return;
+    if (this.preloadingTrackId === track.id)
+      return this.preloadingPromise ?? undefined;
 
     const cached = await linerDb.getAudio(track.id);
     if (cached) return;
@@ -758,6 +915,19 @@ export class PlayerRuntime {
     startPositionMs: number = 0,
     bypassCache: boolean = false,
   ) {
+    if (
+      this.handoffTrackId === track.id &&
+      !bypassCache &&
+      startPositionMs === 0
+    ) {
+      this.handoffTrackId = null;
+      const store = usePlayerStore.getState();
+      if (!store.keepSpeedAcrossTracks) store.resetSpeedAndPitch();
+      this.updateMediaSessionMetadata(track);
+      store.setStatus("playing");
+      return;
+    }
+    this.handoffTrackId = null;
     this.cancelFade();
     this.pendingStartPositionMs = startPositionMs;
     const epoch = ++this.loadEpoch;
@@ -788,6 +958,17 @@ export class PlayerRuntime {
     if (!store.keepSpeedAcrossTracks && this.currentTrackId !== track.id) {
       store.resetSpeedAndPitch();
     }
+
+    if (
+      !bypassCache &&
+      startPositionMs === 0 &&
+      this.isStandbyReadyFor(track.id)
+    ) {
+      this.updateMediaSessionMetadata(track);
+      this.handOff(track, this.audio.paused ? 0 : SKIP_FADE_MS);
+      return;
+    }
+
     this.currentTrackId = track.id;
     this.loadStartTime = performance.now();
     this.updateMediaSessionMetadata(track);
@@ -795,7 +976,8 @@ export class PlayerRuntime {
     store.setStatus("loading", null);
     store.setPosition(startPositionMs > 0 ? startPositionMs : 0);
 
-    this.pauseForTransition();
+    if (this.audio.paused) this.pauseForTransition();
+    else this.retireActive(SKIP_FADE_MS);
 
     try {
       const cachedAudio =
@@ -1025,6 +1207,8 @@ export class PlayerRuntime {
     const epoch = ++this.loadEpoch;
     this.loadAbortController?.abort();
     this.loadAbortController = null;
+    this.finishOutgoing?.();
+    this.clearTransition();
     usePlayerStore.getState().setStatus("paused");
     log("cyan", "audio", "pause requested (fading out)");
 

@@ -349,6 +349,12 @@ class PlayerEngine {
         this.telemetry.onTrackCompleted(isRepeatOne);
       };
       playerRuntime.onError = (info) => this.handlePlaybackError(info);
+      playerRuntime.peekAutoNext = () => {
+        const index = this.computeNextIndex(true);
+        return index === null
+          ? null
+          : (usePlayerStore.getState().queue[index] ?? null);
+      };
     }
 
     if (typeof window !== "undefined") {

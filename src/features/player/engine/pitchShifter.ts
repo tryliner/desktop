@@ -8,7 +8,7 @@ import {
 
 const GRAIN_PERIOD = 0.038;
 const NUM_TAPS = 4;
-const GRAPH_VERSION = 2;
+const GRAPH_VERSION = 3;
 const BRANCH_TEARDOWN_MS = 200;
 const IDLE_SUSPEND_MS = 400;
 const REVERB_TAIL_SUSPEND_MS = 3000;
@@ -215,7 +215,7 @@ type BranchName = "pitch" | "reverb" | "eq";
 interface AudioEffectsGraph {
   version: number;
   ctx: AudioContext;
-  sourceNode: MediaElementAudioSourceNode;
+  sourceNode: AudioNode;
   pitchDryGain: GainNode;
   pitchWetGain: GainNode;
   pitchStageOutput: GainNode;
@@ -397,7 +397,7 @@ function disposeStaleGraph(graph: any): void {
 
 function buildGraph(
   ctx: AudioContext,
-  sourceNode: MediaElementAudioSourceNode,
+  sourceNode: AudioNode,
 ): AudioEffectsGraph {
   const pitchDryGain = ctx.createGain();
   const pitchWetGain = ctx.createGain();
@@ -489,7 +489,7 @@ function buildGraph(
 
 export class PitchShifterController {
   private context: AudioContext | null = null;
-  private sourceNode: MediaElementAudioSourceNode | null = null;
+  private sourceNode: AudioNode | null = null;
   private graph: AudioEffectsGraph | null = null;
   private audio: HTMLAudioElement | null = null;
   private isConnected = false;
@@ -546,7 +546,7 @@ export class PitchShifterController {
         return Boolean(
           g &&
           g.version === GRAPH_VERSION &&
-          g.sourceNode === sourceNode &&
+          g.sourceNode &&
           g.convolver &&
           g.reverbWetGain &&
           g.reverbSendGain &&
@@ -560,21 +560,21 @@ export class PitchShifterController {
         );
       };
 
-      let graph = (audioObj.__liner_pitch_graph || win.__liner_pitch_graph) as
-        AudioEffectsGraph | undefined;
+      let graph = win.__liner_pitch_graph as AudioEffectsGraph | undefined;
 
       if (!isCompleteGraph(graph)) {
         if (graph) disposeStaleGraph(graph);
-        delete audioObj.__liner_pitch_graph;
-        delete win.__liner_pitch_graph;
+        const sharedInputBus = ctx.createGain();
+        graph = buildGraph(ctx, sharedInputBus);
+        win.__liner_pitch_graph = graph;
+      }
 
+      if (audioObj.__liner_effects_bus !== graph.sourceNode) {
         try {
           sourceNode.disconnect();
         } catch {}
-
-        graph = buildGraph(ctx, sourceNode);
-        audioObj.__liner_pitch_graph = graph;
-        win.__liner_pitch_graph = graph;
+        sourceNode.connect(graph.sourceNode);
+        audioObj.__liner_effects_bus = graph.sourceNode;
       }
 
       this.context = graph.ctx;

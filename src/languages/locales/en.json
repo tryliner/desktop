@@ -782,6 +782,11 @@
       "title": "Autoplay similar tracks",
       "description": "Automatically add similar songs when your queue ends."
     },
+    "crossfade": {
+      "title": "Crossfade",
+      "description": "Blend the end of a song into the next one. Tracks from the same album always play gapless.",
+      "off": "Off"
+    },
     "track_double_click": {
       "title": "Double-click on track",
       "description": "Choose what happens when you double-click a song card.",

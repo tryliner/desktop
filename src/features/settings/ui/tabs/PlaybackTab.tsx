@@ -3,6 +3,7 @@ import { useTranslation } from "@/languages";
 import { usePlayerStore } from "@/features/player";
 import { ToggleSwitch } from "@/shared/ui";
 import { SettingRow, SettingSection, SegmentedControl } from "../controls";
+import { CrossfadeSetting } from "./CrossfadeSetting";
 
 export function PlaybackTab({ searchQuery }: { searchQuery?: string }) {
   const { t } = useTranslation();
@@ -49,6 +50,8 @@ export function PlaybackTab({ searchQuery }: { searchQuery?: string }) {
           />
         }
       />
+
+      <CrossfadeSetting searchQuery={searchQuery} />
 
       <SettingRow
         title={t("settings.track_double_click.title")}

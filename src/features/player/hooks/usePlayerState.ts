@@ -28,6 +28,7 @@ const EMPTY_STATE: PlayerState = {
   pitchSemitones: 0,
   isPitchLinked: true,
   keepSpeedAcrossTracks: true,
+  crossfadeSeconds: 0,
   isReverbEnabled: false,
   reverbLevel: 0.35,
   isEqEnabled: false,
