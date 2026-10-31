@@ -4,6 +4,7 @@ import { signApiRequest, syncServerTime } from "./requestSigner";
 export type { AuthTokens, AuthUser };
 
 import { getApiBaseUrl } from "./baseUrl";
+import { buildRoute } from "./route";
 
 const STORAGE_KEY = "liner_auth_session";
 const DEAD_REFRESH_CODES = new Set([
@@ -250,15 +251,21 @@ async function refreshHere(current: AuthTokens): Promise<AuthTokens | null> {
 }
 
 async function postRefresh(refreshToken: string): Promise<Response> {
-  const body = JSON.stringify({ refreshToken });
-  const signedHeaders = await signApiRequest("POST", "/v1/auth/refresh", body);
-  const response = await fetch(`${getApiBaseUrl()}/v1/auth/refresh`, {
-    method: "POST",
+  const route = buildRoute("POST /v1/auth/refresh", {
+    body: { refreshToken },
+  });
+  const signedHeaders = await signApiRequest(
+    route.method,
+    route.path,
+    route.body,
+  );
+  const response = await fetch(`${getApiBaseUrl()}${route.path}`, {
+    method: route.method,
     headers: {
       "Content-Type": "application/json",
       ...signedHeaders,
     },
-    body,
+    body: route.body,
   });
   const dateHeader = response.headers?.get?.("date");
   if (dateHeader) {
@@ -295,16 +302,22 @@ export async function clearAuthSession(): Promise<void> {
   }
   setAuthSession(null);
   if (!current?.refreshToken) return;
-  const body = JSON.stringify({ refreshToken: current.refreshToken });
-  const signedHeaders = await signApiRequest("POST", "/v1/auth/logout", body);
-  const response = await fetch(`${getApiBaseUrl()}/v1/auth/logout`, {
-    method: "POST",
+  const route = buildRoute("POST /v1/auth/logout", {
+    body: { refreshToken: current.refreshToken },
+  });
+  const signedHeaders = await signApiRequest(
+    route.method,
+    route.path,
+    route.body,
+  );
+  const response = await fetch(`${getApiBaseUrl()}${route.path}`, {
+    method: route.method,
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${current.accessToken}`,
       ...signedHeaders,
     },
-    body,
+    body: route.body,
   }).catch(() => undefined);
   if (response?.headers) {
     const logoutDate = response.headers?.get?.("date");

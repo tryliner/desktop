@@ -1,7 +1,7 @@
 import { getAuthSession, getValidAccessToken } from "../api/auth-session";
 import { getApiBaseUrl } from "../api/baseUrl";
 import { APP_VERSION } from "../config/version";
-import type { ApiBody } from "../contracts";
+import { buildRoute } from "../api/route";
 
 const DEFAULT_INTERVAL_MS = 60_000;
 const MIN_INTERVAL_MS = 15_000;
@@ -85,17 +85,19 @@ export class PresenceClient {
       if (!accessToken || !this.isRunning) return;
 
       // who this is comes from the token: only what the server cannot know
-      const body: ApiBody<"POST /v1/me/presence"> = {
-        clientVersion: APP_VERSION.slice(0, 32),
-        platform: getPlatform(),
-      };
-      const res = await fetch(`${getApiBaseUrl()}/v1/me/presence`, {
-        method: "POST",
+      const { method, path, body } = buildRoute("POST /v1/me/presence", {
+        body: {
+          clientVersion: APP_VERSION.slice(0, 32),
+          platform: getPlatform(),
+        },
+      });
+      const res = await fetch(`${getApiBaseUrl()}${path}`, {
+        method,
         headers: {
           "content-type": "application/json",
           authorization: `Bearer ${accessToken}`,
         },
-        body: JSON.stringify(body),
+        body,
         keepalive: true,
         signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
       });

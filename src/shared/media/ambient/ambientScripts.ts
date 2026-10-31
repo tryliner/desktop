@@ -1,4 +1,5 @@
 import { getApiBaseUrl } from "@/shared/api/baseUrl";
+import { buildRoute } from "@/shared/api/route";
 import { isLocalTrackId } from "@/shared/media/local";
 
 const DEV_OVERRIDE_KEY = "liner_ambient_dev_script";
@@ -15,8 +16,10 @@ function devOverride(): string | null {
 }
 
 async function download(trackId: string): Promise<string | null> {
-  const url = `${getApiBaseUrl()}/v1/tracks/${encodeURIComponent(trackId)}/ambient`;
-  const response = await fetch(url);
+  const { path } = buildRoute("GET /v1/tracks/:trackId/ambient", {
+    params: { trackId },
+  });
+  const response = await fetch(`${getApiBaseUrl()}${path}`);
   if (response.status === 404) return null;
   if (!response.ok)
     throw new Error(`ambient request failed: ${response.status}`);

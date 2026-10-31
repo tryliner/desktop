@@ -1,5 +1,6 @@
 import { getAuthSession, getValidAccessToken } from "@/shared/api/auth-session";
 import { getApiBaseUrl } from "@/shared/api/baseUrl";
+import { buildRoute } from "@/shared/api/route";
 import type { ApiResponse, R2Plan } from "@/shared/contracts";
 import { isAbortError } from "@/shared/utils/abort";
 import { log } from "@/shared/utils/logger";
@@ -42,14 +43,14 @@ export async function resolveLinerStream(
       ),
     ]);
     if (!token) return null;
-    const res = await fetch(
-      `${getApiBaseUrl()}/v1/tracks/${encodeURIComponent(videoId)}/playback`,
-      {
-        method: "POST",
-        headers: { authorization: `Bearer ${token}` },
-        signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
-      },
-    );
+    const { method, path } = buildRoute("POST /v1/tracks/:trackId/playback", {
+      params: { trackId: videoId },
+    });
+    const res = await fetch(`${getApiBaseUrl()}${path}`, {
+      method,
+      headers: { authorization: `Bearer ${token}` },
+      signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
+    });
     // 400 (an id the api does not take), 401, 500: play from the source
     if (!res.ok) return null;
     const plan = (await res.json()) as PlaybackPlan;
