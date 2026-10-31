@@ -46,8 +46,10 @@ describe("PresenceClient", () => {
     expect(String(url)).toContain("/v1/presence/heartbeat");
     expect(init.method).toBe("POST");
     expect(init.headers.authorization).toBe("Bearer test-valid-jwt-token");
-    expect(JSON.parse(init.body).username).toBe("alice");
-    expect(JSON.parse(init.body)).not.toHaveProperty("email");
+    expect(Object.keys(JSON.parse(init.body)).sort()).toEqual([
+      "clientVersion",
+      "platform",
+    ]);
 
     expect(client.getIntervalMs()).toBe(60_000);
     client.stop();

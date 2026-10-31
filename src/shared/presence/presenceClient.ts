@@ -1,6 +1,7 @@
 import { getAuthSession, getValidAccessToken } from "../api/auth-session";
 import { getApiBaseUrl } from "../api/baseUrl";
 import { APP_VERSION } from "../config/version";
+import type { ApiBody } from "../contracts";
 
 const DEFAULT_INTERVAL_MS = 60_000;
 const MIN_INTERVAL_MS = 15_000;
@@ -83,19 +84,18 @@ export class PresenceClient {
       const accessToken = await getValidAccessToken();
       if (!accessToken || !this.isRunning) return;
 
+      // who this is comes from the token: only what the server cannot know
+      const body: ApiBody<"POST /v1/presence/heartbeat"> = {
+        clientVersion: APP_VERSION.slice(0, 32),
+        platform: getPlatform(),
+      };
       const res = await fetch(`${getApiBaseUrl()}/v1/presence/heartbeat`, {
         method: "POST",
         headers: {
           "content-type": "application/json",
           authorization: `Bearer ${accessToken}`,
         },
-        body: JSON.stringify({
-          // no email: the bearer token already says who this is, the address has no reason to travel every minute
-          username: session.user?.username,
-          displayName: session.user?.displayName,
-          clientVersion: APP_VERSION,
-          platform: getPlatform(),
-        }),
+        body: JSON.stringify(body),
         keepalive: true,
         signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
       });
