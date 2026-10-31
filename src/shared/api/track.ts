@@ -1,4 +1,4 @@
-import { mediaUrl } from "./api";
+import { mediaUrl } from "./media";
 
 import type { Track as ContractTrack } from "../contracts";
 import type { Track } from "../types";

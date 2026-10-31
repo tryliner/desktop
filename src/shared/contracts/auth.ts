@@ -1,4 +1,4 @@
-import type { ApiBody, AuthTokens, AuthUser } from "./api.generated";
+import type { ApiBody, AuthUser } from "./api.generated";
 
 export type { AuthTokens, AuthUser, RecoveryLink } from "./api.generated";
 

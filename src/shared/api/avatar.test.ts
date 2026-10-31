@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { toMaxQualityAvatarUrl } from "./api";
+import { toMaxQualityAvatarUrl } from "./media";
 
 describe("toMaxQualityAvatarUrl", () => {
   it("returns empty string for empty input", () => {
