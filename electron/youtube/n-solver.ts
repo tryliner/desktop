@@ -1,3 +1,4 @@
+import { contextBridge } from "electron";
 import { parseScript, type ESTree } from "meriyah";
 import { findUrlFactory, type UrlFactory } from "./n-factory";
 
@@ -5,8 +6,6 @@ const PLAYER_VARIANTS = [
   "tv-player-ias-tcl.vflset/tv-player-ias-tcl.js",
   "tv-player-ias.vflset/tv-player-ias.js",
 ];
-const SKIPPED_METHODS = new Set(["constructor", "set", "get", "clone"]);
-const PROBE_URL = "https://youtube.com/watch?v=liner";
 
 interface PlayerUrl {
   set: (key: string, value: string) => void;
@@ -18,7 +17,7 @@ type UrlFactoryFn = (...args: Array<number | string>) => PlayerUrl;
 interface LoadedPlayer {
   signatureTimestamp: number;
   factory: UrlFactory;
-  create: UrlFactoryFn;
+  exportName: string;
 }
 
 export interface SolveResult {
@@ -50,6 +49,49 @@ function wrapperBody(program: ESTree.Program): ESTree.BlockStatement {
   throw new Error("YouTube TV player has an unexpected layout");
 }
 
+// serialized into the page's main world, so it must not use anything outside its own body
+function runPlayer(
+  exportName: string,
+  args: number[],
+  values: string[],
+  source?: string,
+): string[] {
+  const SKIPPED_METHODS = new Set(["constructor", "set", "get", "clone"]);
+  const PROBE_URL = "https://youtube.com/watch?v=liner";
+  if (source) new Function(source).call(globalThis);
+  const create: unknown = Reflect.get(globalThis, exportName);
+  if (typeof create !== "function")
+    throw new Error("YouTube TV player url factory is not callable");
+  return values.map((value) => {
+    const url = (create as UrlFactoryFn)(...args, PROBE_URL);
+    url.set("n", value);
+    const proto: object = Object.getPrototypeOf(url);
+    const keys = [...Object.keys(proto), ...Object.getOwnPropertyNames(proto)];
+    const method = keys.find(
+      (key) =>
+        !SKIPPED_METHODS.has(key) &&
+        typeof Reflect.get(url, key) === "function",
+    );
+    const transform: unknown = method ? Reflect.get(url, method) : undefined;
+    if (typeof transform !== "function")
+      throw new Error("YouTube TV player url has no transform");
+    Reflect.apply(transform, url, []);
+    return String(url.get("n") ?? "");
+  });
+}
+
+// the player script runs in the page's main world, out of reach of ipcRenderer
+function inMainWorld(
+  player: LoadedPlayer,
+  values: string[],
+  source?: string,
+): unknown {
+  return contextBridge.executeInMainWorld({
+    func: runPlayer,
+    args: [player.exportName, player.factory.args, values, source],
+  });
+}
+
 async function loadPlayer(playerId: string): Promise<LoadedPlayer> {
   const source = await fetchPlayer(playerId);
   const signatureTimestamp = Number(
@@ -60,33 +102,13 @@ async function loadPlayer(playerId: string): Promise<LoadedPlayer> {
   const body = wrapperBody(parseScript(source, { ranges: true }));
   const factory = findUrlFactory(body.body);
   if (!factory) throw new Error("YouTube TV player url factory not found");
-  const exportName = `__linerUrlFactory_${playerId.replace(/\W/g, "_")}`;
+  // raw id as a quoted key: replacing \W would give a-b and a_b the same global
+  const exportName = `__linerUrlFactory_${playerId}`;
   const end = (body.range?.[1] ?? source.length) - 1;
-  const instrumented = `${source.slice(0, end)};globalThis.${exportName}=${factory.name};${source.slice(end)}`;
-  new Function(instrumented).call(globalThis);
-  const create: unknown = Reflect.get(globalThis, exportName);
-  if (typeof create !== "function")
-    throw new Error("YouTube TV player url factory is not callable");
-  return { signatureTimestamp, factory, create: create as UrlFactoryFn };
-}
-
-function transformN(player: LoadedPlayer, value: string): string {
-  const url = player.create(...player.factory.args, PROBE_URL);
-  url.set("n", value);
-  const proto: object = Object.getPrototypeOf(url);
-  const keys = [...Object.keys(proto), ...Object.getOwnPropertyNames(proto)];
-  const method = keys.find(
-    (key) =>
-      !SKIPPED_METHODS.has(key) && typeof Reflect.get(url, key) === "function",
-  );
-  const transform: unknown = method ? Reflect.get(url, method) : undefined;
-  if (typeof transform !== "function")
-    throw new Error("YouTube TV player url has no transform");
-  Reflect.apply(transform, url, []);
-  const result = String(url.get("n") ?? "");
-  if (!result || result === value || !/^[\w-]+$/.test(result))
-    throw new Error("YouTube TV player returned an invalid n value");
-  return result;
+  const instrumented = `${source.slice(0, end)};globalThis[${JSON.stringify(exportName)}]=${factory.name};${source.slice(end)}`;
+  const player = { signatureTimestamp, factory, exportName };
+  inMainWorld(player, [], instrumented);
+  return player;
 }
 
 export async function solveN(
@@ -100,8 +122,18 @@ export async function solveN(
     loading.catch(() => players.delete(playerId));
   }
   const player = await loading;
+  const results = inMainWorld(player, values);
   return {
     signatureTimestamp: player.signatureTimestamp,
-    values: values.map((value) => transformN(player, value)),
+    values: values.map((value, index) => {
+      const result: unknown = Array.isArray(results) ? results[index] : null;
+      if (
+        typeof result !== "string" ||
+        result === value ||
+        !/^[\w-]+$/.test(result)
+      )
+        throw new Error("YouTube TV player returned an invalid n value");
+      return result;
+    }),
   };
 }
