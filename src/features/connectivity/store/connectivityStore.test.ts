@@ -51,11 +51,6 @@ describe("connectivityStore trip logic", () => {
       path: "/v1/tracks/trk_1/lyrics",
       latencyMs: 50,
     });
-    recordFailure({
-      method: "GET",
-      path: "/v1/playback/sess_123/media",
-      latencyMs: 50,
-    });
 
     const state = useConnectivityStore.getState();
     expect(state.tripped).toBe(false);

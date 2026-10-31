@@ -18,7 +18,6 @@ import type {
   DailyMixesResponse,
 } from "@/shared/contracts";
 
-import { usePlayerStore } from "@/features/player/store/playerStore";
 import { isLocalTrackId } from "@/shared/media/local";
 import { showToast } from "@/shared/ui/Toast";
 import { createTranslatorSync, getStoredLocale } from "@/languages";
@@ -39,10 +38,6 @@ function translate(key: string, vars?: Record<string, string | number>) {
 }
 
 import { getApiBaseUrl } from "./baseUrl";
-
-const CLIENT_VERSION =
-  (import.meta.env.VITE_CLIENT_VERSION as string | undefined) ||
-  "1.0.4-desktop";
 
 const DEFAULT_TIMEOUT_MS = 15000;
 
@@ -112,44 +107,6 @@ async function fetchWithTimeout(
   }
 }
 
-function getPlatform(): string {
-  if (typeof navigator === "undefined") return "desktop";
-  const ua = navigator.userAgent.toLowerCase();
-  if (ua.includes("win")) return "windows";
-  if (ua.includes("mac")) return "macos";
-  if (ua.includes("linux")) return "linux";
-  return "desktop";
-}
-
-function getActiveSessionId(): string | undefined {
-  try {
-    const id = usePlayerStore.getState().currentTrack?.id;
-    return id && !isLocalTrackId(id) ? id : undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-function extractSubFromToken(token: string): string | undefined {
-  try {
-    const parts = token.split(".");
-    if (parts.length < 2) return undefined;
-    const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
-    const json = decodeURIComponent(
-      atob(base64)
-        .split("")
-        .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
-        .join(""),
-    );
-    const payload = JSON.parse(json);
-    return typeof payload.sub === "string" && payload.sub.trim().length > 0
-      ? payload.sub.trim()
-      : undefined;
-  } catch {
-    return undefined;
-  }
-}
-
 export function mediaUrl(path: string): string {
   if (!path) return "";
   if (path.startsWith("http://") || path.startsWith("https://")) return path;
@@ -213,33 +170,6 @@ async function executeRequest<T>(
   const extraHeaders = (init?.headers as Record<string, string>) ?? {};
   const { Authorization: _ignoredAuth, ...restHeaders } = extraHeaders;
 
-  const requestId =
-    extraHeaders["x-request-id"] ||
-    extraHeaders["X-Request-Id"] ||
-    (typeof crypto !== "undefined" && crypto.randomUUID
-      ? crypto.randomUUID()
-      : `req_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`);
-  const correlationHeaders: Record<string, string> = {
-    "x-request-id": requestId,
-    "x-client-version": CLIENT_VERSION,
-    "x-platform": getPlatform(),
-  };
-
-  const userId =
-    currentSession?.user?.id ||
-    (accessToken ? extractSubFromToken(accessToken) : undefined);
-  if (userId) {
-    correlationHeaders["x-user-id"] = userId;
-  }
-  if (currentSession?.user?.username) {
-    correlationHeaders["x-user-name"] = currentSession.user.username;
-  }
-
-  const activeSessionId = getActiveSessionId();
-  if (activeSessionId) {
-    correlationHeaders["x-session-id"] = activeSessionId;
-  }
-
   let res: Response;
   try {
     res = await fetchWithTimeout(
@@ -249,7 +179,6 @@ async function executeRequest<T>(
         headers: {
           ...(hasBody ? { "Content-Type": "application/json" } : {}),
           ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-          ...correlationHeaders,
           ...signedHeaders,
           ...restHeaders,
         },
@@ -261,7 +190,7 @@ async function executeRequest<T>(
       throw err;
     }
     const durationMs = Math.round(performance.now() - startTime);
-    telemetry.trackNetwork(method, path, 0, durationMs, requestId);
+    telemetry.trackNetwork(method, path, 0, durationMs);
     if (isConnectivityFailure(err) && !isPlaybackPath(path)) {
       recordConnectivityFailure({
         method,
@@ -302,6 +231,7 @@ async function executeRequest<T>(
 
     if (!nextToken) {
       const durationMs = Math.round(performance.now() - startTime);
+      const requestId = res.headers?.get?.("x-request-id") ?? undefined;
       telemetry.trackNetwork(method, path, res.status, durationMs, requestId);
       const body = (await res.json().catch(() => ({}))) as Record<
         string,
@@ -309,11 +239,7 @@ async function executeRequest<T>(
       >;
       const code = typeof body?.code === "string" ? body.code : undefined;
       const message =
-        typeof body?.message === "string"
-          ? body.message
-          : typeof body?.error === "string"
-            ? body.error
-            : "Unauthorized";
+        typeof body?.message === "string" ? body.message : "Unauthorized";
       throw new ApiError(res.status, message, code, requestId);
     }
 
@@ -326,7 +252,6 @@ async function executeRequest<T>(
           ...init,
           headers: {
             ...(hasBody ? { "Content-Type": "application/json" } : {}),
-            ...correlationHeaders,
             ...restHeaders,
             ...refreshedSignedHeaders,
             ...(nextToken ? { Authorization: `Bearer ${nextToken}` } : {}),
@@ -340,7 +265,7 @@ async function executeRequest<T>(
       }
     } catch (err) {
       const durationMs = Math.round(performance.now() - startTime);
-      telemetry.trackNetwork(method, path, 0, durationMs, requestId);
+      telemetry.trackNetwork(method, path, 0, durationMs);
       if (isConnectivityFailure(err) && !isPlaybackPath(path)) {
         recordConnectivityFailure({
           method,
@@ -354,6 +279,7 @@ async function executeRequest<T>(
   }
 
   const durationMs = Math.round(performance.now() - startTime);
+  const requestId = res.headers?.get?.("x-request-id") ?? undefined;
   telemetry.trackNetwork(method, path, res.status, durationMs, requestId);
   onResponse?.(res);
   if (res.status === 304) return undefined as unknown as T;
@@ -363,19 +289,12 @@ async function executeRequest<T>(
       string,
       unknown
     >;
-    const resRequestId =
-      res.headers?.get?.("x-request-id") ||
-      (typeof body.reqId === "string"
-        ? body.reqId
-        : typeof body.requestId === "string"
-          ? body.requestId
-          : undefined);
 
     if (res.status >= 500) {
       showToast(translate("common.error_server_title"), "error", {
         id: `server-error-${res.status}`,
         description: translate("common.error_server"),
-        requestId: resRequestId,
+        requestId,
       });
     }
 
@@ -383,7 +302,7 @@ async function executeRequest<T>(
       res.status,
       typeof body.message === "string" ? body.message : res.statusText,
       typeof body.code === "string" ? body.code : undefined,
-      resRequestId,
+      requestId,
     );
     if (isConnectivityFailure(apiErr) && !isPlaybackPath(path)) {
       recordConnectivityFailure({
@@ -972,17 +891,6 @@ export const api = {
     const path = `/v1/tracks/${encodeURIComponent(id)}/lyrics${hintParams ? `?${hintParams}` : ""}`;
     const signedHeaders = await signApiRequest("GET", path);
     const accessToken = await getValidAccessToken();
-    const requestId =
-      typeof crypto !== "undefined" && crypto.randomUUID
-        ? crypto.randomUUID()
-        : `req_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-
-    const correlationHeaders: Record<string, string> = {
-      "x-request-id": requestId,
-      "x-client-version": CLIENT_VERSION,
-      "x-platform": getPlatform(),
-      "x-session-id": id,
-    };
 
     let res: Response;
     try {
@@ -992,7 +900,6 @@ export const api = {
           // a known instrumental comes back as plain json instead of a stream
           Accept: "application/json, text/event-stream",
           ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-          ...correlationHeaders,
           ...signedHeaders,
         },
       });
@@ -1009,7 +916,7 @@ export const api = {
     }
 
     if (!res.ok || !res.body) {
-      const respReqId = res.headers?.get?.("x-request-id") || requestId;
+      const respReqId = res.headers?.get?.("x-request-id") ?? undefined;
       throw new ApiError(res.status, res.statusText, undefined, respReqId);
     }
 

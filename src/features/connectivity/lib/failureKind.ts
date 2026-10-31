@@ -25,9 +25,7 @@ export function stripQuery(path: string): string {
 }
 
 export function isPlaybackPath(path: string): boolean {
-  const stripped = stripQuery(path);
-  return (
-    /^\/v1\/tracks\/[^/]+\/(?:playback|lyrics)(?:\/|$)/.test(stripped) ||
-    /^\/v1\/playback(?:\/|$)/.test(stripped)
+  return /^\/v1\/tracks\/[^/]+\/(?:playback|lyrics)(?:\/|$)/.test(
+    stripQuery(path),
   );
 }
