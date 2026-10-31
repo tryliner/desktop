@@ -701,11 +701,18 @@ export const api = {
     );
   },
 
-  removePlaylistItem(playlistId: string, itemId: string): Promise<void> {
-    return request<void>(
-      `/v1/me/playlists/${encodeURIComponent(playlistId)}/items/${encodeURIComponent(itemId)}`,
-      { method: "DELETE" },
-    );
+  // an item that is already gone (removed elsewhere) is 404 ITEM_NOT_FOUND:
+  // what the caller wanted, so it counts as removed
+  async removePlaylistItem(playlistId: string, itemId: string): Promise<void> {
+    try {
+      await request<void>(
+        `/v1/me/playlists/${encodeURIComponent(playlistId)}/items/${encodeURIComponent(itemId)}`,
+        { method: "DELETE" },
+      );
+    } catch (err) {
+      if (err instanceof ApiError && err.code === "ITEM_NOT_FOUND") return;
+      throw err;
+    }
   },
 
   movePlaylistItem(
