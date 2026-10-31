@@ -6,7 +6,12 @@ import { libraryApi } from "./endpoints/library";
 import { lyricsApi } from "./endpoints/lyrics";
 import { playlistsApi } from "./endpoints/playlists";
 
-export { ApiError, resolveApiErrorMessage } from "./apiError";
+export {
+  ApiError,
+  planLimitMessage,
+  planLimitOf,
+  resolveApiErrorMessage,
+} from "./apiError";
 export { mediaUrl, toMaxQualityAvatarUrl } from "./media";
 export { call, type CallOptions } from "./call";
 export type { UserPlaylistRead } from "./endpoints/playlists";

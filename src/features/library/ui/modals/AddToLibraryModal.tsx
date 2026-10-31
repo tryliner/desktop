@@ -9,6 +9,7 @@ import Dialog from "@/shared/ui/Dialog";
 import CoverImage from "@/features/covers/ui/CoverImage";
 import { useSaveExternalItem } from "../../hooks";
 import { useTranslation } from "@/languages";
+import { planLimitMessage } from "@/shared/api";
 import { useModalStore } from "../../store/modalStore";
 
 export default function AddToLibraryModal() {
@@ -59,7 +60,11 @@ export default function AddToLibraryModal() {
         });
         close();
       },
-      onError: () => toast(t("common.failed_to_add_library"), "error"),
+      onError: (err) =>
+        toast(
+          planLimitMessage(err, t) ?? t("common.failed_to_add_library"),
+          "error",
+        ),
     });
   }, [item, toast, saveExternal, t, close]);
 

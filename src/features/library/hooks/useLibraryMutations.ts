@@ -6,6 +6,7 @@ import type {
 } from "@/shared/contracts";
 import { notifyLibraryChanged, evictPlaylistFromCache } from "./usePlaylists";
 import { applyOptimisticLike, applyOptimisticUnlike } from "./useLikedTracks";
+import { notifyPlanLimit } from "../lib/notifyPlanLimit";
 
 type Options = {
   onSuccess?: (...args: any[]) => void;
@@ -151,6 +152,7 @@ export function useLikeTrack() {
       return result;
     } catch (err) {
       rollback();
+      notifyPlanLimit(err);
       throw err;
     } finally {
       setIsPending(false);

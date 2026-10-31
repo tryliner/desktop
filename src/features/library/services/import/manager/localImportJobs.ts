@@ -2,6 +2,8 @@ import {
   LOCAL_IMPORT_PREFIX,
   registerLocalImportHandler,
 } from "@/shared/api/localImports";
+import { planLimitMessage } from "@/shared/api/apiError";
+import { createTranslatorSync, getStoredLocale } from "@/languages";
 import type {
   ImportJob,
   ImportReview,
@@ -95,9 +97,10 @@ export async function finalizeLocalImport(
     return { finalized: true };
   } catch (error) {
     const message =
-      error instanceof Error
+      planLimitMessage(error, createTranslatorSync(getStoredLocale())) ??
+      (error instanceof Error
         ? error.message
-        : "Failed to save imported playlist";
+        : "Failed to save imported playlist");
     updateLocalImportJob(jobId, {
       status: "failed",
       error: { code: "FINALIZE_FAILED", message },

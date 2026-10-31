@@ -14,7 +14,7 @@ import {
 import { useTranslation } from "@/languages";
 import { useModalStore } from "../../store/modalStore";
 import { useImportStore } from "../../store/importStore";
-import { resolveApiErrorMessage } from "@/shared/api";
+import { planLimitMessage, resolveApiErrorMessage } from "@/shared/api";
 import { isYoutubeHost } from "@/shared/youtube";
 
 type Tab = "create" | "import";
@@ -116,14 +116,19 @@ export default function CreatePlaylistModal() {
           toast(t("common.added_to_playlist"), "checkmark", {
             description: playlist.title || trimmed,
           });
-        } catch {
-          toast(t("common.failed_add_playlist"), "error");
+        } catch (err) {
+          toast(
+            planLimitMessage(err, t) ?? t("common.failed_add_playlist"),
+            "error",
+          );
         }
       }
 
       close();
-    } catch {
-      setCreateError(t("common.failed_create_playlist"));
+    } catch (err) {
+      setCreateError(
+        planLimitMessage(err, t) ?? t("common.failed_create_playlist"),
+      );
     }
   }
 

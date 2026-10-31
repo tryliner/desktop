@@ -1,5 +1,5 @@
 import type { StoreApi, UseBoundStore } from "zustand";
-import { api } from "@/shared/api";
+import { api, planLimitMessage } from "@/shared/api";
 import { showToast } from "@/shared/ui";
 import { createTranslatorSync, getStoredLocale } from "@/languages";
 import { notifyLibraryChanged } from "../hooks/usePlaylists";
@@ -32,8 +32,12 @@ export function watchPendingTrackAfterImport(
         showToast(translate("common.added_to_playlist"), "checkmark", {
           description: pendingTrack.title || undefined,
         });
-      } catch {
-        showToast(translate("common.failed_add_playlist"), "error");
+      } catch (err) {
+        showToast(
+          planLimitMessage(err, translate) ??
+            translate("common.failed_add_playlist"),
+          "error",
+        );
       }
     })();
   });

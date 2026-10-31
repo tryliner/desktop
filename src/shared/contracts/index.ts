@@ -19,5 +19,6 @@ export type {
   ClientPlan,
   ErrorResponse,
   PlaybackPlan,
+  PlanLimitDetails,
   R2Plan,
 } from "./api.generated";

@@ -11,6 +11,7 @@ import Dialog from "@/shared/ui/Dialog";
 import { DialogActions, DialogButton } from "@/shared/ui";
 import CoverImage from "@/features/covers/ui/CoverImage";
 import { useTranslation } from "@/languages";
+import { planLimitMessage } from "@/shared/api";
 import { useAddPlaylistTracks, usePlaylistsList } from "../../hooks";
 import { useModalStore } from "../../store/modalStore";
 
@@ -99,8 +100,11 @@ export default function AddToPlaylistModal() {
         });
         close();
       }
-    } catch {
-      toast(t("common.failed_add_playlist"), "error");
+    } catch (err) {
+      toast(
+        planLimitMessage(err, t) ?? t("common.failed_add_playlist"),
+        "error",
+      );
     } finally {
       setAddingTo(null);
     }

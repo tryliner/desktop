@@ -187,6 +187,7 @@
     "error_not_found": "Not found. It might have been deleted.",
     "error_session_expired": "Session expired. Please sign in again.",
     "error_too_many": "Too many requests. Wait a bit and try again.",
+    "error_plan_limit": "Limit reached: {used} of {limit}. Liner Plus allows {plusLimit}.",
     "error_something_wrong": "Something went wrong. Try again.",
     "tracks_plural": "{count} tracks",
     "songs_plural": "{count} songs",
