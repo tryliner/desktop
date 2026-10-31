@@ -16,55 +16,49 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("toClientTrack", () => {
-  it("maps backend track properly", () => {
-    const backend = {
+  it("maps an api track", () => {
+    const c1 = toClientTrack({
       id: "4IbRT6Vfl_U",
       title: "One Dance",
       artists: [{ id: "UCECJhbsxgI5hWFz8EU0TY-g", name: "Drake" }],
       durationMs: 227000,
-    };
-    const c1 = toClientTrack(backend);
+      cover: { url: "https://i.ytimg.com/a.jpg", width: null, height: null },
+    });
     expect(c1.artistId).toBe("UCECJhbsxgI5hWFz8EU0TY-g");
     expect(c1.artistList).toEqual([
       { id: "UCECJhbsxgI5hWFz8EU0TY-g", name: "Drake" },
     ]);
     expect(c1.artists).toBe("Drake");
-
-    const c2 = toClientTrack(c1);
-    expect(c2.artistId).toBe("UCECJhbsxgI5hWFz8EU0TY-g");
-    expect(c2.artistList).toEqual([
-      { id: "UCECJhbsxgI5hWFz8EU0TY-g", name: "Drake" },
-    ]);
-    expect(c2.artists).toBe("Drake");
+    expect(c1.coverUrl).toBe("https://i.ytimg.com/a.jpg");
+    expect(c1.durationMs).toBe(227000);
   });
 
-  it("handles track with singular artist or comma-separated string", () => {
-    const t1 = toClientTrack({
-      id: "1",
-      title: "Test",
-      artist: { id: "art1", name: "Solo Artist" },
-    });
-    expect(t1.artistId).toBe("art1");
-    expect(t1.artistList).toEqual([{ id: "art1", name: "Solo Artist" }]);
-    expect(t1.artists).toBe("Solo Artist");
-
-    const t2 = toClientTrack({
-      id: "2",
+  it("renders unknown artist ids and durations gracefully", () => {
+    const t = toClientTrack({
+      id: "sc:123",
       title: "Test 2",
-      artists: "Artist A, Artist B",
-      artistId: "idA",
+      artists: [
+        { id: null, name: "Artist A" },
+        { id: "idB", name: "Artist B" },
+      ],
+      durationMs: null,
     });
-    expect(t2.artistId).toBe("idA");
-    expect(t2.artistList).toEqual([
-      { id: "idA", name: "Artist A" },
-      { id: "", name: "Artist B" },
+    expect(t.artists).toBe("Artist A, Artist B");
+    expect(t.artistId).toBe("idB");
+    expect(t.artistList).toEqual([
+      { id: "", name: "Artist A" },
+      { id: "idB", name: "Artist B" },
     ]);
+    expect(t.durationMs).toBe(0);
+    expect(t.coverUrl).toBe("");
   });
 
   it("maps album metadata when present", () => {
     const t = toClientTrack({
-      id: "track1",
+      id: "track1abcde",
       title: "Come Together",
+      artists: [{ id: null, name: "The Beatles" }],
+      durationMs: null,
       album: { id: "alb1", title: "Abbey Road" },
     });
     expect(t.album).toEqual({ id: "alb1", title: "Abbey Road" });

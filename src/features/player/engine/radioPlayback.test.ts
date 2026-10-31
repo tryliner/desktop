@@ -12,15 +12,14 @@ const mk = (id: string): Track => ({
   playCount: 0,
 });
 
-const radioItems = (ids: string[]) =>
-  ({
-    items: ids.map((id) => ({
-      id,
-      title: `Track ${id}`,
-      artists: `Artist ${id}`,
-      durationMs: 180000,
-    })),
-  }) as any;
+const radioItems = (ids: string[]) => ({
+  items: ids.map((id) => ({
+    id,
+    title: `Track ${id}`,
+    artists: [{ id: null, name: `Artist ${id}` }],
+    durationMs: 180000,
+  })),
+});
 
 describe("radio playback", () => {
   let getRadio: ReturnType<typeof vi.spyOn>;
