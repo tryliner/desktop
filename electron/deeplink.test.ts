@@ -22,6 +22,16 @@ describe("parseDeeplink", () => {
     });
   });
 
+  it("accepts soundcloud track ids", () => {
+    expect(parseDeeplink("liner://track?id=sc%3A123456")).toEqual({
+      type: "track",
+      id: "sc:123456",
+    });
+    expect(parseDeeplink("liner://track?id=sc:0123")).toBeNull();
+    expect(parseDeeplink("liner://track?id=sc:")).toBeNull();
+    expect(parseDeeplink("liner://track?id=yt:RGdkabupfPI")).toBeNull();
+  });
+
   it("accepts artist names used when a track has no channel id", () => {
     expect(parseDeeplink("liner://artist?id=LATIN%20MAFIA")).toEqual({
       type: "artist",

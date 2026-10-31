@@ -11,11 +11,12 @@ const DEEP_LINK_IDS: Record<string, RegExp> = {
     /^(?:UC[A-Za-z0-9_-]{22}|[A-Za-z0-9_-]{1,22}|(?=.*[^A-Za-z0-9_-])[^\p{Cc}/\\]{1,160})(?![\s\S])/u,
   // innertube album browse ids, e.g. MPREb_xCxkOKReFZv
   album: /^MPRE[A-Za-z0-9_-]{4,64}$/,
-  // catalog playlists (VLPL…/PL…) and user playlists (uuid / pl-…),
+  // catalog playlists (VLPL…/PL…) and user playlists (uuid),
   // all just opaque tokens from the same safe charset
   playlist: /^[A-Za-z0-9_-]{8,64}$/,
-  // youtube video ids are always 11 base64url chars
-  track: /^[A-Za-z0-9_-]{11}$/,
+  // the track ids liner stores (the link server's TrackId): an 11 char youtube
+  // video id or sc:<soundcloud track id>
+  track: /^(?:[A-Za-z0-9_-]{11}|sc:[1-9][0-9]{0,19})$/,
 };
 
 export interface DeeplinkTarget {
