@@ -13,7 +13,6 @@ vi.mock("@/shared/api", () => ({
   api: {
     readUserPlaylist: vi.fn(),
     listPlaylists: vi.fn(),
-    getUserPlaylist: vi.fn(),
   },
   getAuthSession: () => ({ accessToken: "test-token", user: { id: "u1" } }),
   mediaUrl: (url: string) => url,
@@ -204,7 +203,7 @@ describe("usePlaylist", () => {
 });
 
 describe("usePlaylistsList", () => {
-  it("takes track counts and covers from the list without fetching each playlist", async () => {
+  it("takes track counts and covers from the list", async () => {
     (api.listPlaylists as any).mockResolvedValue({
       items: [
         {
@@ -225,7 +224,6 @@ describe("usePlaylistsList", () => {
     act(() => root.render(<Probe />));
     await flush();
 
-    expect(api.getUserPlaylist).not.toHaveBeenCalled();
     expect(state?.data.playlists[0]).toMatchObject({
       trackCount: 42,
       coverUrl: "https://img/a",

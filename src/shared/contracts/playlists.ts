@@ -29,8 +29,6 @@ export interface UserPlaylist {
   createdAt: string;
   updatedAt: string;
   revision: number;
-  trackCount?: number;
-  coverUrls?: string[];
   ownerId?: string;
   owner?: {
     id: string;
@@ -41,6 +39,14 @@ export interface UserPlaylist {
 }
 
 export type ApiUserPlaylist = UserPlaylist;
+
+// GET /v1/me/playlists rows; create/update responses carry neither field
+export interface UserPlaylistSummary extends UserPlaylist {
+  trackCount: number;
+  coverUrls: string[];
+}
+
+export type ApiUserPlaylistSummary = UserPlaylistSummary;
 
 export interface UserPlaylistItem {
   id: string;

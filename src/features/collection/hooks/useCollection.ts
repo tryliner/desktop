@@ -25,19 +25,12 @@ async function loadCollection(
   id: string,
 ): Promise<CollectionPageData> {
   const decodedId = id ? decodeURIComponent(id) : "";
-  const isDailyMix =
-    decodedId.startsWith("daily-mix") ||
-    decodedId.startsWith("mix-") ||
-    id.startsWith("daily-mix") ||
-    id.startsWith("mix-");
 
-  if (type === "playlist" && isDailyMix) {
+  if (type === "playlist" && id.startsWith("daily-mix-")) {
     const mixesRes = await api.getDailyMixes();
-    const found = mixesRes.items?.find(
-      (m) => m.id === id || m.id === decodedId,
-    );
+    const found = mixesRes.items.find((m) => m.id === id);
     if (found) {
-      const clientTracks = (found.tracks || []).map((t) => toClientTrack(t));
+      const clientTracks = found.tracks.map((t) => toClientTrack(t));
       const primaryCover = found.cover?.url
         ? mediaUrl(found.cover.url)
         : clientTracks[0]?.coverUrl || clientTracks[1]?.coverUrl || "";

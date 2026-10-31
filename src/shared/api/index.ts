@@ -24,6 +24,7 @@ export type {
   ApiArtistDetails,
   ApiCatalogPlaylistDetails,
   ApiUserPlaylist,
+  ApiUserPlaylistSummary,
   ApiUserPlaylistItem,
   ApiSharedPlaylistDetails,
   ApiLikedTracksPage,

@@ -73,8 +73,8 @@ const EMPTY_MIXES: DailyMix[] = [];
 function toDailyMixes(
   items: Awaited<ReturnType<typeof api.getDailyMixes>>["items"],
 ): DailyMix[] {
-  return (items || []).map((mix) => {
-    const clientTracks = (mix.tracks || []).map((t) => toClientTrack(t));
+  return items.map((mix) => {
+    const clientTracks = mix.tracks.map((t) => toClientTrack(t));
     const primaryCover = mix.cover?.url
       ? mediaUrl(mix.cover.url)
       : clientTracks[0]?.coverUrl || clientTracks[1]?.coverUrl;
@@ -84,7 +84,7 @@ function toDailyMixes(
       description: mix.description,
       clusterArtists: getDailyMixArtists(mix.clusterArtists, clientTracks, 4),
       coverUrl: primaryCover,
-      trackCount: mix.trackCount || clientTracks.length,
+      trackCount: mix.trackCount,
       tracks: clientTracks,
     };
   });

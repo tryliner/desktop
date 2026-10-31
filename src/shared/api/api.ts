@@ -501,6 +501,7 @@ export type {
   PlaylistSummary as ApiPlaylistSummary,
   PlaylistDetails as ApiPlaylistDetails,
   UserPlaylist as ApiUserPlaylist,
+  UserPlaylistSummary as ApiUserPlaylistSummary,
   UserPlaylistItem as ApiUserPlaylistItem,
   SharedPlaylistDetails as ApiSharedPlaylistDetails,
   LikedTracksPage as ApiLikedTracksPage,
@@ -548,6 +549,7 @@ import type {
   ApiCatalogPlaylistDetails,
   ApiLikedTracksPage,
   ApiUserPlaylist,
+  ApiUserPlaylistSummary,
   ApiUserPlaylistItem,
   ApiSharedPlaylistDetails,
   LyricsStreamEvent,
@@ -752,8 +754,8 @@ export const api = {
     });
   },
 
-  listPlaylists(): Promise<{ items: ApiUserPlaylist[] }> {
-    return request<{ items: ApiUserPlaylist[] }>("/v1/me/playlists");
+  listPlaylists(): Promise<{ items: ApiUserPlaylistSummary[] }> {
+    return request<{ items: ApiUserPlaylistSummary[] }>("/v1/me/playlists");
   },
 
   async readUserPlaylist(
@@ -768,9 +770,9 @@ export const api = {
       | {
           playlist: ApiUserPlaylist;
           items: ApiUserPlaylistItem[];
-          trackCount?: number;
-          durationMs?: number;
-          partial?: boolean;
+          trackCount: number;
+          durationMs: number;
+          partial?: true;
         }
       | undefined
     >(
@@ -788,25 +790,11 @@ export const api = {
       notModified: false,
       etag,
       partial: body.partial === true,
-      trackCount: body.trackCount ?? body.items.length,
-      durationMs:
-        body.durationMs ??
-        body.items.reduce(
-          (sum, item) => sum + (item.track?.durationMs || 0),
-          0,
-        ),
+      trackCount: body.trackCount,
+      durationMs: body.durationMs,
       playlist: body.playlist,
       items: body.items,
     };
-  },
-
-  getUserPlaylist(
-    id: string,
-  ): Promise<{ playlist: ApiUserPlaylist; items: ApiUserPlaylistItem[] }> {
-    return request<{
-      playlist: ApiUserPlaylist;
-      items: ApiUserPlaylistItem[];
-    }>(`/v1/me/playlists/${encodeURIComponent(id)}`);
   },
 
   getSharedPlaylist(id: string): Promise<ApiSharedPlaylistDetails> {
@@ -864,16 +852,8 @@ export const api = {
   addPlaylistTrackSnapshots(
     playlistId: string,
     tracks: ApiTrackBase[],
-  ): Promise<{
-    items: ApiUserPlaylistItem[];
-    added: number;
-    rejected: number;
-  }> {
-    return request<{
-      items: ApiUserPlaylistItem[];
-      added: number;
-      rejected: number;
-    }>(
+  ): Promise<{ added: number; rejected: number }> {
+    return request<{ added: number; rejected: number }>(
       `/v1/me/playlists/${encodeURIComponent(playlistId)}/tracks`,
       { method: "POST", body: JSON.stringify({ tracks }) },
       true,

@@ -39,29 +39,6 @@ const FIRST_PAGE_SIZE = 100;
 
 type PlaylistList = { playlists: LibraryPlaylistSummary[]; total: number };
 
-const COVER_CACHE_KEY = "liner:playlist-covers-v2";
-type CoverCacheEntry = {
-  coverUrls: string[];
-  trackCount: number;
-  updatedAt: string;
-};
-type CoverCache = Record<string, CoverCacheEntry>;
-
-function readCoverCache(): CoverCache {
-  if (typeof window === "undefined") return {};
-  try {
-    return JSON.parse(localStorage.getItem(COVER_CACHE_KEY) ?? "{}");
-  } catch {
-    return {};
-  }
-}
-
-function writeCoverCache(c: CoverCache) {
-  try {
-    localStorage.setItem(COVER_CACHE_KEY, JSON.stringify(c));
-  } catch {}
-}
-
 function extractCovers(items: ApiUserPlaylistItem[]): string[] {
   return items
     .map((i) => (i.track.cover ? mediaUrl(i.track.cover.url) : ""))
@@ -129,61 +106,13 @@ function load(force = false): Promise<void> {
   }
 
   request = (async () => {
-    const coverCache = readCoverCache();
     const response = await api.listPlaylists();
-
-    const playlists = await Promise.all(
-      response.items.map(async (playlist) => {
-        if (playlist.trackCount !== undefined && playlist.coverUrls) {
-          const coverUrls = playlist.coverUrls
-            .map((url) => mediaUrl(url))
-            .filter(Boolean);
-          coverCache[playlist.id] = {
-            coverUrls,
-            trackCount: playlist.trackCount,
-            updatedAt: playlist.updatedAt,
-          };
-          return {
-            ...playlist,
-            trackCount: playlist.trackCount,
-            coverUrl: coverUrls[0] ?? "",
-            coverUrls,
-          };
-        }
-
-        const cached = coverCache[playlist.id];
-
-        if (cached && cached.updatedAt === playlist.updatedAt) {
-          return {
-            ...playlist,
-            trackCount: cached.trackCount,
-            coverUrl: cached.coverUrls[0] ?? "",
-            coverUrls: cached.coverUrls,
-          };
-        }
-
-        const detail = await api.getUserPlaylist(playlist.id);
-        const covers = extractCovers(detail.items);
-        const entry: CoverCacheEntry = {
-          coverUrls: covers,
-          trackCount: detail.items.length,
-          updatedAt: playlist.updatedAt,
-        };
-        coverCache[playlist.id] = entry;
-        return {
-          ...playlist,
-          trackCount: detail.items.length,
-          coverUrl: covers[0] ?? "",
-          coverUrls: covers,
-        };
-      }),
-    );
-
-    const liveIds = new Set(response.items.map((p) => p.id));
-    for (const id of Object.keys(coverCache)) {
-      if (!liveIds.has(id)) delete coverCache[id];
-    }
-    writeCoverCache(coverCache);
+    const playlists = response.items.map((playlist) => {
+      const coverUrls = playlist.coverUrls
+        .map((url) => mediaUrl(url))
+        .filter(Boolean);
+      return { ...playlist, coverUrl: coverUrls[0] ?? "", coverUrls };
+    });
 
     cache = { playlists, total: playlists.length };
     loaded = true;
@@ -258,20 +187,6 @@ function toDetail(
   };
 }
 
-function rememberCovers(
-  id: string,
-  detail: LibraryPlaylistDetail,
-  updatedAt: string,
-) {
-  const coverCache = readCoverCache();
-  coverCache[id] = {
-    coverUrls: detail.coverUrls,
-    trackCount: detail.trackCount,
-    updatedAt,
-  };
-  writeCoverCache(coverCache);
-}
-
 export function usePlaylist(id: string | null) {
   const cacheKey = id ? `playlist:detail:${id}` : null;
   const cached = cacheKey
@@ -339,7 +254,6 @@ export function usePlaylist(id: string | null) {
           response.durationMs,
           false,
         );
-        rememberCovers(id, detail, response.playlist.updatedAt);
         queryCache.set(cacheKey, detail);
         if (response.etag) queryCache.set(etagKey, response.etag);
         else queryCache.delete(etagKey);

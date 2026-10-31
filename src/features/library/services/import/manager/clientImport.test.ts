@@ -150,7 +150,7 @@ describe("finalizeImportedPlaylist", () => {
     vi.spyOn(api, "createPlaylist").mockResolvedValue(playlist);
     const bulk = vi
       .spyOn(api, "addPlaylistTrackSnapshots")
-      .mockResolvedValue({ items: [], added: 1, rejected: 0 });
+      .mockResolvedValue({ added: 1, rejected: 0 });
 
     await expect(
       finalizeImportedPlaylist("Mine", undefined, [track, track]),
@@ -158,20 +158,16 @@ describe("finalizeImportedPlaylist", () => {
     expect(bulk).toHaveBeenCalledWith("pl_1", [track]);
   });
 
-  it("falls back to per-track adds with snapshots when the bulk endpoint is missing", async () => {
+  it("surfaces a failed bulk request instead of adding tracks one by one", async () => {
     vi.spyOn(api, "createPlaylist").mockResolvedValue(playlist);
     vi.spyOn(api, "addPlaylistTrackSnapshots").mockRejectedValue(
       new ApiError(404, "Not Found"),
     );
-    const single = vi
-      .spyOn(api, "addPlaylistTrack")
-      .mockResolvedValue(
-        {} as Awaited<ReturnType<typeof api.addPlaylistTrack>>,
-      );
+    const single = vi.spyOn(api, "addPlaylistTrack");
 
     await expect(
       finalizeImportedPlaylist("Mine", undefined, [track]),
-    ).resolves.toEqual({ playlistId: "pl_1", saved: 1 });
-    expect(single).toHaveBeenCalledWith("pl_1", track.id, track);
+    ).rejects.toBeInstanceOf(ApiError);
+    expect(single).not.toHaveBeenCalled();
   });
 });
