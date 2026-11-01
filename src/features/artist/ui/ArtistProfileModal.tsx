@@ -1,12 +1,8 @@
 import { useRef, useState, useCallback, useEffect } from "react";
 import { useTranslation } from "@/languages";
+import { CloseLine } from "@mingcute/react";
 import Dialog from "@/shared/ui/Dialog";
-import {
-  DialogActions,
-  DialogButton,
-  DialogHeader,
-  ScrollableText,
-} from "@/shared/ui";
+import { DialogHeader, ScrollableText } from "@/shared/ui";
 import CoverImage from "../../covers/ui/CoverImage";
 import { toMaxQualityAvatarUrl } from "@/shared/api";
 
@@ -230,27 +226,27 @@ export default function ArtistProfileModal({
       onOpenChange={(next) => (!next ? onClose() : undefined)}
       maxWidth={440}
     >
-      <div className="flex flex-col gap-[16px] px-[20px] pb-[20px]">
-        <div className="flex items-center gap-[14px]">
+      <div className="flex flex-col gap-[14px] px-[20px] pb-[20px]">
+        <div className="flex items-center gap-[12px]">
           {avatarSrc ? (
-            <div className="relative h-[56px] w-[56px] shrink-0 overflow-hidden rounded-full bg-black/[0.05] dark:bg-white/[0.07]">
+            <div className="relative h-[44px] w-[44px] shrink-0 overflow-hidden rounded-full bg-black/[0.05] dark:bg-white/[0.07]">
               <CoverImage
                 src={avatarSrc}
                 alt={name}
                 fill
-                sizes="56px"
+                sizes="44px"
                 className="object-cover object-center"
                 draggable={false}
               />
             </div>
           ) : (
-            <div className="flex h-[56px] w-[56px] shrink-0 items-center justify-center rounded-full bg-black/[0.05] text-[20px] font-[600] text-text-tertiary dark:bg-white/[0.07]">
+            <div className="flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-full bg-black/[0.05] text-[17px] font-[600] text-text-tertiary dark:bg-white/[0.07]">
               {name.charAt(0).toUpperCase()}
             </div>
           )}
 
           <DialogHeader
-            className="min-w-0 flex-1"
+            className="min-w-0 flex-1 items-center"
             title={
               <span className="flex min-w-0 items-center gap-[6px]">
                 <ScrollableText text={name} className="shrink min-w-0" />
@@ -276,6 +272,16 @@ export default function ArtistProfileModal({
             description={
               subtitle ? <ScrollableText text={subtitle} /> : undefined
             }
+            trailing={
+              <button
+                type="button"
+                aria-label={t("common.close")}
+                onClick={onClose}
+                className="-mr-[6px] inline-flex h-[30px] w-[30px] cursor-pointer items-center justify-center rounded-[9px] border-0 bg-transparent p-0 text-text-tertiary transition-colors hover:bg-black/[0.05] hover:text-text-primary dark:hover:bg-white/[0.07]"
+              >
+                <CloseLine size={17} />
+              </button>
+            }
           />
         </div>
 
@@ -298,12 +304,6 @@ export default function ArtistProfileModal({
             {t("artist.no_biography")}
           </div>
         )}
-
-        <DialogActions className="mt-[2px]">
-          <DialogButton type="button" onClick={onClose}>
-            {t("common.close")}
-          </DialogButton>
-        </DialogActions>
       </div>
     </Dialog>
   );
