@@ -23,9 +23,9 @@ import {
   HERO_BUTTON_CLASS,
   HERO_GLASS_BUTTON_CLASS,
   HERO_GLASS_CLASS,
+  ListPanel,
 } from "@/shared/ui";
 import { usePageBackdrop } from "@/shared/lib";
-import { useClassicSurfaces } from "@/features/settings/store/customizationStore";
 import { useLikesCover } from "../hooks/useLikesCover";
 import { useSavedTracksStore } from "../saved";
 import { isSavedTrack } from "@/shared/media/saved";
@@ -259,7 +259,6 @@ function LibraryPlaylistContent() {
     };
   })();
   const likesCover = useLikesCover();
-  const classicSurfaces = useClassicSurfaces();
   const { data: playlistList } = usePlaylistsList();
   const summary = isLikesMode
     ? undefined
@@ -896,15 +895,7 @@ function LibraryPlaylistContent() {
                 />
               </div>
 
-              <div
-                className={`grow shrink-0 mt-[20px] mx-[4px] rounded-t-[14px] bg-fill-subtle overflow-hidden px-[8px] pt-[8px] ${
-                  classicSurfaces ? "" : "backdrop-blur-xl"
-                }`}
-                style={{
-                  marginBottom: "calc(var(--page-inset-bottom) * -1)",
-                  paddingBottom: "calc(var(--page-inset-bottom) + 16px)",
-                }}
-              >
+              <ListPanel>
                 {currentTracks.length === 0 ? (
                   <div className="flex min-h-[50vh] flex-col items-center justify-center gap-[12px] text-center">
                     <PlaylistFill size={40} className="text-border-alpha-33" />
@@ -1054,7 +1045,7 @@ function LibraryPlaylistContent() {
                     />
                   </FloatingDragCard>
                 )}
-              </div>
+              </ListPanel>
             </div>
           </div>
         )}

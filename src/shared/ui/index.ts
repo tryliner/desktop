@@ -89,3 +89,10 @@ export {
 } from "./DialogActions";
 export { default as QrCode, type QrCodeProps } from "./QrCode";
 export { ISLAND_SURFACE } from "./islandSurface";
+export {
+  default as Panel,
+  ListPanel,
+  PANEL_GLASS_CLASS,
+  PANEL_FILL_CLASS,
+  type PanelProps,
+} from "./Panel";

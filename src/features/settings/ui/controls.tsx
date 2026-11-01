@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { getTranslationsForAllLocales } from "@/languages";
 import { cn } from "@/shared/lib/utils";
+import { PANEL_FILL_CLASS } from "@/shared/ui";
 
 const rowSurface = "px-[16px]";
 
@@ -117,7 +118,11 @@ export function SettingSection({
           ) : null}
         </div>
       ) : null}
-      <div data-settings-card className="rounded-[14px] bg-fill py-[4px]">
+      {/* 14px until the settings pass moves it onto rounded-item */}
+      <div
+        data-settings-card
+        className={cn(PANEL_FILL_CLASS, "rounded-[14px] py-[4px]")}
+      >
         <div className="flex flex-col">{children}</div>
       </div>
     </section>

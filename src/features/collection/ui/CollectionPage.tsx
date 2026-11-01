@@ -38,9 +38,9 @@ import {
   HERO_BUTTON_CLASS,
   HERO_GLASS_BUTTON_CLASS,
   HERO_GLASS_CLASS,
+  ListPanel,
 } from "@/shared/ui";
 import { usePageBackdrop } from "@/shared/lib";
-import { useClassicSurfaces } from "@/features/settings/store/customizationStore";
 import type { Track } from "@/shared/types";
 import { useTranslation } from "@/languages";
 import { useModalStore } from "@/features/library";
@@ -67,7 +67,6 @@ function CollectionContent() {
   const location = useLocation();
   const preview = readCollectionPreview(location.state);
   const { data, loading } = useCollection(type, id);
-  const classicSurfaces = useClassicSurfaces();
   usePageBackdrop(preview?.coverUrl || data?.coverUrl);
   const isSingleArtistAlbum = useMemo(() => {
     if (type === "playlist" || !data || data.tracks.length === 0) return false;
@@ -516,15 +515,7 @@ function CollectionContent() {
                 />
               </div>
 
-              <div
-                className={`grow shrink-0 mt-[20px] mx-[4px] rounded-t-[14px] bg-fill-subtle overflow-hidden px-[8px] pt-[8px] ${
-                  classicSurfaces ? "" : "backdrop-blur-xl"
-                }`}
-                style={{
-                  marginBottom: "calc(var(--page-inset-bottom) * -1)",
-                  paddingBottom: "calc(var(--page-inset-bottom) + 16px)",
-                }}
-              >
+              <ListPanel>
                 <section>
                   {search.matches && search.matches.length === 0 ? (
                     <TrackSearchEmpty
@@ -573,7 +564,7 @@ function CollectionContent() {
                     </div>
                   )}
                 </section>
-              </div>
+              </ListPanel>
             </div>
           </div>
         )}

@@ -12,9 +12,8 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { HeartLine, PlayFill } from "@mingcute/react";
 import { LuShuffle } from "react-icons/lu";
 import { playerEngine, SongCardWithMenu } from "@/features/player";
-import { useClassicSurfaces } from "@/features/settings/store/customizationStore";
 import { useTranslation } from "@/languages";
-import { cn, usePageBackdrop } from "@/shared/lib";
+import { usePageBackdrop } from "@/shared/lib";
 import type { Track } from "@/shared/types";
 import {
   EntityHero,
@@ -24,6 +23,7 @@ import {
   HERO_GLASS_CLASS,
   HeroSubtitle,
   HERO_TITLE_CLASS,
+  ListPanel,
 } from "@/shared/ui";
 import Button from "@/shared/ui/Button";
 import {
@@ -154,7 +154,6 @@ export function SavedTracksView({
 }: SavedTracksViewProps) {
   const { t } = useTranslation();
   const scrollRef = useRef<HTMLDivElement>(null);
-  const classicSurfaces = useClassicSurfaces();
   usePageBackdrop(cover || undefined, { blur: 56, dim: 0.22 });
 
   const sort = useTrackSort(tracks, pageKey);
@@ -249,16 +248,7 @@ export function SavedTracksView({
           />
         </div>
 
-        <div
-          className={cn(
-            "mx-[4px] mt-[20px] shrink-0 grow overflow-hidden rounded-t-[14px] bg-fill-subtle px-[8px] pt-[8px]",
-            !classicSurfaces && "backdrop-blur-xl",
-          )}
-          style={{
-            marginBottom: "calc(var(--page-inset-bottom) * -1)",
-            paddingBottom: "calc(var(--page-inset-bottom) + 16px)",
-          }}
-        >
+        <ListPanel>
           {isLoading ? null : empty ? (
             <div
               className="flex min-h-[50vh] flex-col items-center justify-center gap-[14px] text-center"
@@ -288,7 +278,7 @@ export function SavedTracksView({
               scrollRef={scrollRef}
             />
           )}
-        </div>
+        </ListPanel>
       </div>
     </div>
   );

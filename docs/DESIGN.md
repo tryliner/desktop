@@ -47,8 +47,8 @@ as one surface):
 
 - Glass fill: `bg-black/[0.05] dark:bg-white/[0.09]` (`HERO_GLASS_CLASS`)
 - Glass button: `HERO_GLASS_BUTTON_CLASS`, hover goes to `0.09` / `0.16`
-- List panel under a hero: `bg-fill-subtle` with `backdrop-blur-xl`,
-  dropped when `useClassicSurfaces()` is on
+- List panel under a hero: `ListPanel` from `@/shared/ui` (`bg-fill-subtle`, blurred only in
+  the dark theme where the cover backdrop is on)
 
 ## Type
 
@@ -83,6 +83,14 @@ as one surface):
   the fullscreen background at 60 fps or less.
 
 ## Building blocks
+
+- **Surfaces**: `Panel` from `@/shared/ui`. `variant="glass"` is a top-level container
+  (dialogs, popovers, floating sheets), `variant="fill"` (default) is a quiet block inside
+  one. Where a component can't be a plain `div` (a `motion.div`), use
+  `PANEL_GLASS_CLASS` / `PANEL_FILL_CLASS`. Glass only on the outer container; never
+  nest glass in glass.
+- **Settings**: `SettingSection`, `SettingRow` and `SettingBlock` from
+  `src/features/settings/ui/controls.tsx`. A section is a fill panel of rows.
 
 - **Entity page** (playlist, album, local files): `EntityHero` with a 168px cover, title,
   subtitle, a meta chip (`HERO_CHIP_CLASS`: count · duration), primary "Play all", a

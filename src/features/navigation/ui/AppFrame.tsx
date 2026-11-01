@@ -30,7 +30,6 @@ import WindowControlsNotch from "./WindowControlsNotch";
 import RightDrawer from "./RightDrawer";
 import { FullscreenRouteContext } from "../fullscreenRouteContext";
 import DynamicBlurBackground from "./DynamicBlurBackground";
-import AmbientTopGlow from "./AmbientTopGlow";
 import { useGlobalShortcuts } from "../hooks/useGlobalShortcuts";
 import { useDisableButtonFocus } from "../hooks/useDisableButtonFocus";
 import { useWindowState } from "../hooks/useWindowState";
@@ -67,7 +66,7 @@ import {
 import {
   SettingsModal,
   useHasPageBackdrop,
-  useClassicSurfaces,
+  useEffectiveCoverGlow,
 } from "@/features/settings";
 import { UpdateModal, UpdateToastBridge } from "@/features/updater";
 import { YoutubeSignInNotice } from "@/features/youtube-auth";
@@ -719,7 +718,7 @@ export default function AppFrame({ children }: AppFrameProps) {
         (!document.documentElement.getAttribute("data-theme") &&
           window.matchMedia?.("(prefers-color-scheme: dark)")?.matches));
   const hasPageBackdrop = useHasPageBackdrop();
-  const classicSurfaces = useClassicSurfaces();
+  const coverGlow = useEffectiveCoverGlow();
   const glassBlur = useGlassBlur();
 
   return (
@@ -734,13 +733,7 @@ export default function AppFrame({ children }: AppFrameProps) {
         if (e.currentTarget.scrollTop !== 0) e.currentTarget.scrollTop = 0;
       }}
     >
-      {classicSurfaces ? (
-        isDark ? (
-          <AmbientTopGlow />
-        ) : null
-      ) : (
-        <DynamicBlurBackground isDark={isDark} />
-      )}
+      {coverGlow ? <DynamicBlurBackground isDark={isDark} /> : null}
 
       <AnimatePresence>
         {!isFullscreenPlayer && (

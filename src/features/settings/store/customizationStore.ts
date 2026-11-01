@@ -28,7 +28,3 @@ export function useHasPageBackdrop(): boolean {
   const hasCover = usePageBackdropStore((s) => Boolean(s.coverUrl));
   return coverGlow && hasCover;
 }
-
-export function useClassicSurfaces(): boolean {
-  return !useEffectiveCoverGlow();
-}

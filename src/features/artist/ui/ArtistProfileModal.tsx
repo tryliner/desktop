@@ -2,7 +2,7 @@ import { useRef, useState, useCallback, useEffect } from "react";
 import { useTranslation } from "@/languages";
 import { CloseLine } from "@mingcute/react";
 import Dialog from "@/shared/ui/Dialog";
-import { DialogHeader, ScrollableText } from "@/shared/ui";
+import { DialogHeader, Panel, ScrollableText } from "@/shared/ui";
 import CoverImage from "../../covers/ui/CoverImage";
 import { toMaxQualityAvatarUrl } from "@/shared/api";
 
@@ -286,7 +286,7 @@ export default function ArtistProfileModal({
         </div>
 
         {bio ? (
-          <div className="overflow-hidden rounded-item bg-fill">
+          <Panel className="overflow-hidden">
             <div
               ref={bioScrollRef}
               onScroll={updateScrollMask}
@@ -298,11 +298,11 @@ export default function ArtistProfileModal({
             >
               <BioContent bio={bio} />
             </div>
-          </div>
+          </Panel>
         ) : (
-          <div className="flex h-[88px] items-center justify-center rounded-item bg-fill px-[14px] text-center text-body text-text-tertiary">
+          <Panel className="flex h-[88px] items-center justify-center px-[14px] text-center text-body text-text-tertiary">
             {t("artist.no_biography")}
-          </div>
+          </Panel>
         )}
       </div>
     </Dialog>

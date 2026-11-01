@@ -2,9 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PlayFill, Refresh2Line } from "@mingcute/react";
 import { LuShuffle, LuTrash2 } from "react-icons/lu";
 import { playerEngine } from "@/features/player";
-import { useClassicSurfaces } from "@/features/settings/store/customizationStore";
 import { useTranslation } from "@/languages";
-import { cn, usePageBackdrop } from "@/shared/lib";
+import { usePageBackdrop } from "@/shared/lib";
 import cachedSongsCover from "@/assets/cached-songs-cover.svg";
 import {
   EntityHero,
@@ -14,6 +13,7 @@ import {
   HERO_GLASS_CLASS,
   HeroSubtitle,
   HERO_TITLE_CLASS,
+  ListPanel,
 } from "@/shared/ui";
 import Button from "@/shared/ui/Button";
 import {
@@ -36,7 +36,6 @@ const INTER = { fontFamily: "var(--font-inter), sans-serif" };
 export default function CachedTracksPage() {
   const { t } = useTranslation();
   const scrollRef = useRef<HTMLDivElement>(null);
-  const classicSurfaces = useClassicSurfaces();
   const items = useCachedTracksStore((state) => state.items);
   const loaded = useCachedTracksStore((state) => state.loaded);
   const load = useCachedTracksStore((state) => state.load);
@@ -171,16 +170,7 @@ export default function CachedTracksPage() {
           />
         </div>
 
-        <div
-          className={cn(
-            "mx-[4px] mt-[20px] shrink-0 grow overflow-hidden rounded-t-[14px] bg-fill-subtle px-[8px] pt-[8px]",
-            !classicSurfaces && "backdrop-blur-xl",
-          )}
-          style={{
-            marginBottom: "calc(var(--page-inset-bottom) * -1)",
-            paddingBottom: "calc(var(--page-inset-bottom) + 16px)",
-          }}
-        >
+        <ListPanel>
           {!loaded ? null : empty ? (
             <div
               className="flex min-h-[50vh] flex-col items-center justify-center gap-[14px] text-center"
@@ -209,7 +199,7 @@ export default function CachedTracksPage() {
               scrollRef={scrollRef}
             />
           )}
-        </div>
+        </ListPanel>
       </div>
     </div>
   );
