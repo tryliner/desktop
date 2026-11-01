@@ -66,6 +66,7 @@ export interface PopularAlbumEntry {
   id: string;
   title: string;
   artist: string;
+  artists?: { id: string; name: string }[];
   coverUrl: string | null;
   year?: number;
   playCount: number;
@@ -86,6 +87,7 @@ export interface MostSavedEntry {
   id: string;
   title: string;
   subtitle: string;
+  artists?: { id: string; name: string }[];
   coverUrl: string | null;
   saves: number;
 }

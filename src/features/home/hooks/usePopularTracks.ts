@@ -1,5 +1,5 @@
 import { api, toClientTrack } from "@/shared/api";
-import type { Track } from "@/shared/types";
+import type { Track, TrackArtist } from "@/shared/types";
 import { freshFor, useCachedResource } from "@/shared/cache/useCachedResource";
 
 export type PopularTrackItem = Track;
@@ -8,6 +8,7 @@ export interface PopularAlbumItem {
   id: string;
   title: string;
   artist: string;
+  artistList?: TrackArtist[];
   coverUrl: string;
   totalTracks: number;
   albumType: string;

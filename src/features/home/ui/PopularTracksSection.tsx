@@ -280,6 +280,7 @@ function AlbumCard({
           )}
           <ArtistLink
             name={item.item.artist}
+            artistList={item.item.artistList}
             className="text-[13px] text-text-tertiary"
           />
         </div>
