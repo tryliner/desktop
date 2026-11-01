@@ -33,7 +33,10 @@ export class PowTimeoutError extends Error {
 
 function solveDeadline(expiresAt: string, startedAt: number): number {
   const remaining = Date.parse(expiresAt) - startedAt;
-  const budget = Number.isFinite(remaining) && remaining > 0 && remaining <= 10 * 60_000 ? remaining : FALLBACK_BUDGET_MS;
+  const budget =
+    Number.isFinite(remaining) && remaining > 0 && remaining <= 10 * 60_000
+      ? remaining
+      : FALLBACK_BUDGET_MS;
   return startedAt + Math.max(1_000, budget - SAFETY_MARGIN_MS);
 }
 
@@ -54,7 +57,8 @@ function fromBase64Url(value: string): Uint8Array {
   const padded = base64 + "=".repeat((4 - (base64.length % 4)) % 4);
   const binary = atob(padded);
   const bytes = new Uint8Array(binary.length);
-  for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
+  for (let index = 0; index < binary.length; index += 1)
+    bytes[index] = binary.charCodeAt(index);
   return bytes;
 }
 

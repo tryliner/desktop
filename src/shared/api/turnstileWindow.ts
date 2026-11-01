@@ -18,7 +18,12 @@ interface TurnstileMessage {
 const FRAME_WIDTH = 320;
 const FRAME_HEIGHT = 84;
 
-function overlay(): { root: HTMLDivElement; card: HTMLDivElement; cancel: HTMLButtonElement; status: HTMLParagraphElement } {
+function overlay(): {
+  root: HTMLDivElement;
+  card: HTMLDivElement;
+  cancel: HTMLButtonElement;
+  status: HTMLParagraphElement;
+} {
   const root = document.createElement("div");
   root.setAttribute("role", "dialog");
   root.setAttribute("aria-modal", "true");
@@ -49,7 +54,13 @@ function overlay(): { root: HTMLDivElement; card: HTMLDivElement; cancel: HTMLBu
   title.textContent = "Quick check before you continue";
   Object.assign(title.style, { margin: "0" });
   const status = document.createElement("p");
-  Object.assign(status.style, { margin: "0", minHeight: "18px", color: "#a1a1aa", fontWeight: "400", fontSize: "12px" });
+  Object.assign(status.style, {
+    margin: "0",
+    minHeight: "18px",
+    color: "#a1a1aa",
+    fontWeight: "400",
+    fontSize: "12px",
+  });
   const cancel = document.createElement("button");
   cancel.type = "button";
   cancel.textContent = "Cancel";
@@ -67,7 +78,10 @@ function overlay(): { root: HTMLDivElement; card: HTMLDivElement; cancel: HTMLBu
   return { root, card, cancel, status };
 }
 
-export function requestTurnstileToken(apiBaseUrl: string, action: TurnstileAction): Promise<string> {
+export function requestTurnstileToken(
+  apiBaseUrl: string,
+  action: TurnstileAction,
+): Promise<string> {
   return new Promise((resolve, reject) => {
     const origin = new URL(apiBaseUrl).origin;
     const { root, card, cancel, status } = overlay();
@@ -76,7 +90,11 @@ export function requestTurnstileToken(apiBaseUrl: string, action: TurnstileActio
     frame.title = "Human check";
     frame.width = String(FRAME_WIDTH);
     frame.height = String(FRAME_HEIGHT);
-    Object.assign(frame.style, { border: "0", background: "transparent", colorScheme: "dark" });
+    Object.assign(frame.style, {
+      border: "0",
+      background: "transparent",
+      colorScheme: "dark",
+    });
     card.append(frame, status, cancel);
 
     const finish = () => {
@@ -85,16 +103,19 @@ export function requestTurnstileToken(apiBaseUrl: string, action: TurnstileActio
       root.remove();
     };
     const onMessage = (event: MessageEvent<TurnstileMessage>) => {
-      if (event.origin !== origin || event.source !== frame.contentWindow) return;
+      if (event.origin !== origin || event.source !== frame.contentWindow)
+        return;
       const data = event.data;
-      if (!data || data.source !== "liner-turnstile" || data.action !== action) return;
+      if (!data || data.source !== "liner-turnstile" || data.action !== action)
+        return;
       if (data.type === "token" && data.token) {
         finish();
         resolve(data.token);
       } else if (data.type === "expired") {
         status.textContent = "The check expired, it will refresh.";
       } else if (data.type === "error") {
-        status.textContent = "The check could not load. Check your connection and try again.";
+        status.textContent =
+          "The check could not load. Check your connection and try again.";
       }
     };
     const onKey = (event: KeyboardEvent) => {

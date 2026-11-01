@@ -41,9 +41,17 @@ function translate(key: string, vars?: Record<string, string | number>) {
 }
 
 import { getApiBaseUrl } from "./baseUrl";
-import { PowTimeoutError, SUPPORTED_POW_ALGORITHM, type PowChallenge, type PowSolution } from "./proofOfWork";
+import {
+  PowTimeoutError,
+  SUPPORTED_POW_ALGORITHM,
+  type PowChallenge,
+  type PowSolution,
+} from "./proofOfWork";
 import { solvePow } from "./proofOfWorkRunner";
-import { TurnstileCancelledError, requestTurnstileToken } from "./turnstileWindow";
+import {
+  TurnstileCancelledError,
+  requestTurnstileToken,
+} from "./turnstileWindow";
 
 const CLIENT_VERSION =
   (import.meta.env.VITE_CLIENT_VERSION as string | undefined) || "1.0.4-desktop";
@@ -545,18 +553,25 @@ interface AuthProof {
   turnstile?: string;
 }
 
-async function humanCheck(challenge: PowChallenge, purpose: "login" | "register"): Promise<string | undefined> {
+async function humanCheck(
+  challenge: PowChallenge,
+  purpose: "login" | "register",
+): Promise<string | undefined> {
   const mode = challenge.turnstile?.mode ?? "off";
   if (mode === "off") return undefined;
   try {
     return await requestTurnstileToken(getApiBaseUrl(), purpose);
   } catch (error) {
-    if (mode === "optional" && error instanceof TurnstileCancelledError) return undefined;
+    if (mode === "optional" && error instanceof TurnstileCancelledError)
+      return undefined;
     throw error;
   }
 }
 
-async function authProofFor(purpose: "login" | "register", email: string): Promise<AuthProof> {
+async function authProofFor(
+  purpose: "login" | "register",
+  email: string,
+): Promise<AuthProof> {
   let challenge: PowChallenge;
   try {
     challenge = await request<PowChallenge>(
@@ -569,7 +584,9 @@ async function authProofFor(purpose: "login" | "register", email: string): Promi
     throw error;
   }
   const work =
-    challenge.mode === "off" || challenge.algorithm !== SUPPORTED_POW_ALGORITHM ? undefined : solvePow(challenge);
+    challenge.mode === "off" || challenge.algorithm !== SUPPORTED_POW_ALGORITHM
+      ? undefined
+      : solvePow(challenge);
   void work?.catch(() => undefined);
   const turnstile = await humanCheck(challenge, purpose);
   return { pow: await work, turnstile };
@@ -585,7 +602,9 @@ async function withAuthProof<T>(
   } catch (error) {
     const retryable =
       error instanceof PowTimeoutError ||
-      (error instanceof ApiError && !!error.code && RETRYABLE_POW_CODES.has(error.code));
+      (error instanceof ApiError &&
+        !!error.code &&
+        RETRYABLE_POW_CODES.has(error.code));
     if (!retryable) throw error;
     return send(await authProofFor(purpose, email));
   }
