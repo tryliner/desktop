@@ -15,6 +15,7 @@ function contentSecurityPolicy(isDev: boolean): string {
     "img-src 'self' * http: https: data: blob: liner-local:",
     "media-src 'self' * http: https: data: blob: liner-local:",
     "connect-src 'self' * http: https: ws: wss: data: blob:",
+    `frame-src 'self' https://*.tryliner.fun https://challenges.cloudflare.com${isDev ? " http://127.0.0.1:* http://localhost:*" : ""}`,
     "worker-src 'self' blob:",
     "object-src 'none'",
     "base-uri 'self'",
