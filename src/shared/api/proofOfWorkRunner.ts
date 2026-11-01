@@ -1,7 +1,7 @@
 import PowWorker from "./proofOfWork.worker?worker&inline";
-import { solvePowChallenge, type PowChallenge, type PowSolution } from "./proofOfWork";
+import { PowTimeoutError, solvePowChallenge, type PowChallenge, type PowSolution } from "./proofOfWork";
 
-type WorkerReply = { ok: true; solution: PowSolution } | { ok: false; message: string };
+type WorkerReply = { ok: true; solution: PowSolution } | { ok: false; timeout?: boolean; message: string };
 
 class WorkerUnavailable extends Error {}
 
@@ -17,7 +17,7 @@ function solveInWorker(challenge: PowChallenge): Promise<PowSolution> {
     worker.onmessage = (event: MessageEvent<WorkerReply>) => {
       worker.terminate();
       if (event.data.ok) resolve(event.data.solution);
-      else reject(new Error(event.data.message));
+      else reject(event.data.timeout ? new PowTimeoutError() : new Error(event.data.message));
     };
     worker.onerror = (event) => {
       worker.terminate();

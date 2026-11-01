@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { argon2id } from "hash-wasm";
-import { leadingZeroBits, solvePowChallenge, type PowChallenge } from "./proofOfWork";
+import { PowTimeoutError, leadingZeroBits, solvePowChallenge, type PowChallenge } from "./proofOfWork";
 
 const SERVER_REFERENCE = "9590934b4f561101282723d04ea3988e94720ff5fdbe6a6dfeb94f34d6b1dbc9";
 
@@ -50,9 +50,11 @@ describe("proof of work solver", () => {
     expect(leadingZeroBits(hash)).toBeGreaterThanOrEqual(3);
   });
 
-  it("gives up once the challenge expires", async () => {
+  it("gives up a few seconds before the challenge expires, so a new one can be fetched", async () => {
+    const started = Date.now();
     await expect(
-      solvePowChallenge(challenge({ difficulty: 30, expiresAt: new Date(Date.now() - 1).toISOString() })),
-    ).rejects.toThrow();
+      solvePowChallenge(challenge({ difficulty: 30, expiresAt: new Date(Date.now() + 2_000).toISOString() })),
+    ).rejects.toBeInstanceOf(PowTimeoutError);
+    expect(Date.now() - started).toBeLessThan(2_000);
   });
 });
