@@ -1,4 +1,8 @@
-import { PowTimeoutError, solvePowChallenge, type PowChallenge } from "./proofOfWork";
+import {
+  PowTimeoutError,
+  solvePowChallenge,
+  type PowChallenge,
+} from "./proofOfWork";
 
 self.onmessage = async (event: MessageEvent<PowChallenge>) => {
   try {
