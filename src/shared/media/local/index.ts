@@ -9,6 +9,5 @@ export {
   localRecordToTrack,
   type LocalImportResult,
   type LocalLibraryUsage,
-  type LocalLyricsState,
   type LocalTrackRecord,
 } from "./localTrack";

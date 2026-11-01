@@ -57,6 +57,18 @@ function offlineModeAction() {
 }
 
 import { getApiBaseUrl } from "./baseUrl";
+import {
+  PowTimeoutError,
+  SUPPORTED_POW_ALGORITHM,
+  type PowChallenge,
+  type PowSolution,
+} from "./proofOfWork";
+import { solvePow } from "./proofOfWorkRunner";
+import {
+  isHumanCheckMode,
+  runHumanCheck,
+  type HumanCheckAction,
+} from "./humanCheck";
 
 const CLIENT_VERSION =
   (import.meta.env.VITE_CLIENT_VERSION as string | undefined) ||
@@ -597,14 +609,99 @@ import type {
   MostSavedType,
 } from "../contracts";
 
+const RETRYABLE_POW_CODES = new Set(["POW_EXPIRED", "POW_REUSED"]);
+
+interface AuthProof {
+  pow?: PowSolution;
+  turnstile?: string;
+  edge?: boolean;
+}
+
+function authBody(proof: AuthProof) {
+  return { pow: proof.pow, turnstile: proof.turnstile };
+}
+
+function authInit(proof: AuthProof, body: unknown): RequestInit {
+  return {
+    method: "POST",
+    body: JSON.stringify(body),
+    ...(proof.edge ? { credentials: "include" as const } : {}),
+  };
+}
+
+function blockedBeforeOurServer(error: unknown): boolean {
+  return error instanceof TypeError || statusOf(error) === 0;
+}
+
+async function humanCheck(
+  challenge: PowChallenge,
+  purpose: HumanCheckAction,
+): Promise<string | undefined> {
+  const requested = challenge.turnstile?.mode;
+  const mode = isHumanCheckMode(requested) ? requested : "off";
+  if (mode === "off" && !challenge.turnstile?.edge) return undefined;
+  return runHumanCheck(purpose, mode === "off" ? "optional" : mode);
+}
+
+async function authProofFor(
+  purpose: HumanCheckAction,
+  email: string,
+): Promise<AuthProof> {
+  let challenge: PowChallenge;
+  try {
+    challenge = await request<PowChallenge>(
+      "/v1/auth/challenge",
+      { method: "POST", body: JSON.stringify({ purpose, email }) },
+      false,
+    );
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return {};
+    throw error;
+  }
+  const work =
+    challenge.mode === "off" || challenge.algorithm !== SUPPORTED_POW_ALGORITHM
+      ? undefined
+      : solvePow(challenge);
+  void work?.catch(() => undefined);
+  const turnstile = await humanCheck(challenge, purpose);
+  return {
+    pow: await work,
+    turnstile,
+    edge: challenge.turnstile?.edge === true,
+  };
+}
+
+async function withAuthProof<T>(
+  purpose: HumanCheckAction,
+  email: string,
+  send: (proof: AuthProof) => Promise<T>,
+): Promise<T> {
+  let proof: AuthProof | undefined;
+  try {
+    proof = await authProofFor(purpose, email);
+    return await send(proof);
+  } catch (error) {
+    const retryable =
+      error instanceof PowTimeoutError ||
+      (error instanceof ApiError &&
+        !!error.code &&
+        RETRYABLE_POW_CODES.has(error.code)) ||
+      (proof?.edge === true && blockedBeforeOurServer(error));
+    if (!retryable) throw error;
+    return send(await authProofFor(purpose, email));
+  }
+}
+
 // ---- Endpoints --------------------------------------------------------------
 
 export const api = {
   async login(email: string, password: string): Promise<AuthTokens> {
-    const result = await request<AuthTokens>(
-      "/v1/auth/login",
-      { method: "POST", body: JSON.stringify({ email, password }) },
-      false,
+    const result = await withAuthProof("login", email, (proof) =>
+      request<AuthTokens>(
+        "/v1/auth/login",
+        authInit(proof, { email, password, ...authBody(proof) }),
+        false,
+      ),
     );
     setAuthSession(result);
     return result;
@@ -616,18 +713,18 @@ export const api = {
     username: string,
     displayName: string,
   ): Promise<AuthTokens> {
-    const result = await request<AuthTokens>(
-      "/v1/auth/register",
-      {
-        method: "POST",
-        body: JSON.stringify({
+    const result = await withAuthProof("register", email, (proof) =>
+      request<AuthTokens>(
+        "/v1/auth/register",
+        authInit(proof, {
           email,
           password,
           username: username.trim().toLowerCase(),
           displayName: displayName.trim(),
+          ...authBody(proof),
         }),
-      },
-      false,
+        false,
+      ),
     );
     setAuthSession(result);
     return result;
@@ -748,44 +845,9 @@ export const api = {
     },
   ): Promise<RadioResponse> {
     const history = new Set(options?.history ?? []);
-    return clientCatalog
-      .getRadio(id, options?.k, () => api.getServerRadio(id, options))
-      .then((response) => ({
-        items: response.items.filter((item) => !history.has(item.id)),
-      }));
-  },
-
-  getServerRadio(
-    id: string,
-    options?: {
-      history?: string[];
-      k?: number;
-      drift_rate?: number;
-      temperature?: number;
-      wave_id?: string;
-    },
-  ): Promise<RadioResponse> {
-    if (options?.history && options.history.length > 0) {
-      return request<RadioResponse>(
-        `/v1/tracks/${encodeURIComponent(id)}/radio`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(options),
-        },
-      );
-    }
-    const params = new URLSearchParams();
-    if (options?.k) params.set("k", String(options.k));
-    if (options?.drift_rate)
-      params.set("drift_rate", String(options.drift_rate));
-    if (options?.temperature)
-      params.set("temperature", String(options.temperature));
-    if (options?.wave_id) params.set("wave_id", options.wave_id);
-    const qs = params.toString();
-    return request<RadioResponse>(
-      `/v1/tracks/${encodeURIComponent(id)}/radio${qs ? `?${qs}` : ""}`,
-    );
+    return clientCatalog.getRadio(id, options?.k).then((response) => ({
+      items: response.items.filter((item) => !history.has(item.id)),
+    }));
   },
 
   getAlbum(id: string): Promise<ApiAlbumDetails> {
@@ -1129,6 +1191,8 @@ export const api = {
           ? AbortSignal.any([signal, connect.signal])
           : connect.signal,
         headers: {
+          // a known instrumental comes back as plain json instead of a stream
+          Accept: "application/json, text/event-stream",
           ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
           ...correlationHeaders,
           ...signedHeaders,
@@ -1151,6 +1215,19 @@ export const api = {
     if (!res.ok || !res.body) {
       const respReqId = res.headers?.get?.("x-request-id") || requestId;
       throw new ApiError(res.status, res.statusText, undefined, respReqId);
+    }
+
+    if (res.headers.get("content-type")?.includes("application/json")) {
+      const body = (await res.json()) as { instrumental?: boolean };
+      yield body.instrumental
+        ? {
+            type: "done",
+            cached: true,
+            status: "not_found",
+            instrumental: true,
+          }
+        : { type: "done", cached: true, status: "not_found" };
+      return;
     }
 
     const reader = res.body.getReader();

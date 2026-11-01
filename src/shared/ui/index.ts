@@ -66,6 +66,7 @@ export {
   default as EntityHero,
   HERO_TITLE_CLASS,
   HERO_SUBTITLE_CLASS,
+  HeroSubtitle,
   HERO_CHIP_CLASS,
   HERO_BUTTON_CLASS,
   HERO_GLASS_BUTTON_CLASS,

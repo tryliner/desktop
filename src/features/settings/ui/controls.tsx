@@ -112,7 +112,9 @@ export function SettingSection({
           <h4 className="m-0 text-text-primary text-[14px] font-[600] leading-[20px] tracking-[-0.005em]">
             {label}
           </h4>
-          {action ? <div className="mr-[4px] flex shrink-0">{action}</div> : null}
+          {action ? (
+            <div className="mr-[4px] flex shrink-0">{action}</div>
+          ) : null}
         </div>
       ) : null}
       <div

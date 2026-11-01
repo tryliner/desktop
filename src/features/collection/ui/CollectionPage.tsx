@@ -33,6 +33,7 @@ import {
   DropdownMenu,
   HERO_TITLE_CLASS,
   HERO_SUBTITLE_CLASS,
+  HeroSubtitle,
   HERO_CHIP_CLASS,
   HERO_BUTTON_CLASS,
   HERO_GLASS_BUTTON_CLASS,
@@ -67,10 +68,7 @@ function CollectionContent() {
   const preview = readCollectionPreview(location.state);
   const { data, loading } = useCollection(type, id);
   const classicSurfaces = useClassicSurfaces();
-  usePageBackdrop(
-    preview?.coverUrl || data?.coverUrl,
-    type === "playlist" ? { dim: 0.05 } : undefined,
-  );
+  usePageBackdrop(preview?.coverUrl || data?.coverUrl);
   const isSingleArtistAlbum = useMemo(() => {
     if (type === "playlist" || !data || data.tracks.length === 0) return false;
     const first = data.tracks[0].artists;
@@ -360,7 +358,7 @@ function CollectionContent() {
                     ) : data.author ? (
                       <p className={HERO_SUBTITLE_CLASS}>{data.author}</p>
                     ) : data.description ? (
-                      <p className={HERO_SUBTITLE_CLASS}>{data.description}</p>
+                      <HeroSubtitle text={data.description} />
                     ) : undefined
                   }
                   meta={

@@ -197,7 +197,8 @@
     "restore": "Restaurer",
     "maximize": "Agrandir",
     "add_to_library_desc": "Cet élément sera ajouté à ta bibliothèque.",
-    "failed_to_remove_library": "Impossible de retirer de la bibliothèque"
+    "failed_to_remove_library": "Impossible de retirer de la bibliothèque",
+    "forward": "Suivant"
   },
   "home": {
     "speedDial": "Accès rapide",
@@ -274,7 +275,7 @@
       "remove": "Supprimer de l'appareil",
       "remove_all": "Tout supprimer",
       "remove_all_title": "Supprimer toute la musique locale ?",
-      "remove_all_desc": "{tracks} ({size}) seront supprimés de Liner, avec leurs pochettes et leurs paroles. Vos fichiers d'origine restent à leur place.",
+      "remove_all_desc": "{tracks} ({size}) seront supprimés de Liner, avec leurs pochettes. Tes fichiers d'origine restent à leur place.",
       "removed_all": "Musique locale supprimée"
     },
     "offline_mix": {
@@ -392,7 +393,9 @@
       "account_not_found": "Compte introuvable ou session expirée. Essaie de t'inscrire.",
       "failed_start_auth": "Impossible de lancer l'authentification Telegram",
       "registration_failed": "Échec de l'inscription : {status}",
-      "verification_canceled": "Vérification annulée."
+      "verification_canceled": "Vérification annulée.",
+      "human_check_cancelled": "Termine la vérification de sécurité pour continuer.",
+      "human_check_failed": "La vérification de sécurité n'a pas abouti. Réessaie."
     },
     "toasts": {
       "login_successful": "Connexion réussie",
@@ -796,7 +799,7 @@
         "liked": "Titres aimés"
       },
       "local_confirm_title": "Supprimer aussi votre musique locale ?",
-      "local_confirm_desc": "La musique locale est votre bibliothèque importée, pas du cache. {tracks} ({size}) seront supprimés de Liner, avec leurs pochettes et leurs paroles. Vos fichiers d'origine restent à leur place.",
+      "local_confirm_desc": "{tracks} ({size}) seront supprimés de Liner, avec leurs pochettes. Tes fichiers d'origine restent à leur place.",
       "local_confirm_button": "Supprimer la musique locale",
       "removing_liked_title": "Suppression des titres aimés téléchargés…",
       "removing_local_title": "Suppression des fichiers importés…",
@@ -1249,5 +1252,15 @@
     "youtube_back_title": "YouTube est de retour",
     "youtube_back_desc": "Tous les titres peuvent à nouveau être lus.",
     "still_youtube_title": "YouTube n'est toujours pas disponible"
+  },
+  "human_check": {
+    "title": "Confirme que tu n'es pas un robot",
+    "description": "Une rapide vérification Cloudflare protège les comptes Liner des robots. Elle se valide généralement toute seule en une seconde.",
+    "expired": "La vérification a expiré et redémarre.",
+    "failed": "La vérification n'a pas pu se charger. Vérifie ta connexion et réessaie.",
+    "waiting": "Vérification…",
+    "retry": "Réessayer",
+    "cancel": "Annuler",
+    "skip": "Passer"
   }
 }

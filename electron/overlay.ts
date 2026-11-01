@@ -796,6 +796,7 @@ export class OverlayManager {
   private scheduleWarm() {
     if (
       this.disposed ||
+      this.compositor ||
       !this.isAuthenticated ||
       !this.enabled ||
       !this.autoShowOnMinimize

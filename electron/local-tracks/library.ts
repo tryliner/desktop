@@ -4,12 +4,11 @@ import { importLocalFile } from "./importer.js";
 import type {
   LocalImportResult,
   LocalLibraryUsage,
-  LocalLyricsState,
   LocalTrackRecord,
 } from "./types.js";
 
 const ID_PATTERN = /^[a-f0-9]{20}$/;
-const LIBRARY_FOLDERS = ["audio", "covers", "lyrics"] as const;
+const LIBRARY_FOLDERS = ["audio", "covers"] as const;
 
 async function folderBytes(folder: string): Promise<number> {
   try {
@@ -39,10 +38,6 @@ export class LocalTrackLibrary {
 
   private filePath(...parts: string[]) {
     return path.join(this.root, ...parts);
-  }
-
-  private lyricsPath(id: string) {
-    return this.filePath("lyrics", `${id}.json`);
   }
 
   private serialized<T>(task: () => Promise<T>): Promise<T> {
@@ -121,7 +116,6 @@ export class LocalTrackLibrary {
             force: true,
           });
         }
-        await fsp.rm(this.lyricsPath(record.id), { force: true });
       }
     });
   }
@@ -150,42 +144,6 @@ export class LocalTrackLibrary {
         } catch {}
       }
       return { count: records.length, bytes };
-    });
-  }
-
-  async readLyrics(id: string): Promise<unknown | null> {
-    if (!ID_PATTERN.test(id)) return null;
-    try {
-      return JSON.parse(await fsp.readFile(this.lyricsPath(id), "utf8"));
-    } catch {
-      return null;
-    }
-  }
-
-  setLyrics(
-    id: string,
-    state: LocalLyricsState,
-    lyrics?: unknown,
-  ): Promise<boolean> {
-    return this.serialized(async () => {
-      if (!ID_PATTERN.test(id)) return false;
-      const records = await this.load();
-      const index = records.findIndex((record) => record.id === id);
-      if (index === -1) return false;
-      if (state === "found") {
-        if (lyrics === undefined || lyrics === null) return false;
-        await fsp.mkdir(this.filePath("lyrics"), { recursive: true });
-        const target = this.lyricsPath(id);
-        const temp = `${target}.tmp`;
-        await fsp.writeFile(temp, JSON.stringify(lyrics));
-        await fsp.rename(temp, target);
-      } else {
-        await fsp.rm(this.lyricsPath(id), { force: true });
-      }
-      const next = [...records];
-      next[index] = { ...records[index], lyrics: state };
-      await this.save(next);
-      return true;
     });
   }
 

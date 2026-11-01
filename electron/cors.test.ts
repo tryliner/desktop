@@ -19,6 +19,21 @@ describe("withOpenCors", () => {
     expect(statusLine).toBeUndefined();
   });
 
+  it("keeps the server's own cors headers when it allows credentials", () => {
+    const headers = {
+      "access-control-allow-origin": ["http://localhost:5173"],
+      "access-control-allow-credentials": ["true"],
+      "access-control-allow-headers": ["content-type,x-liner-signature"],
+    };
+    const preflight = withOpenCors(headers, "OPTIONS");
+    expect(preflight.responseHeaders).toEqual(headers);
+    expect(preflight.statusLine).toBeUndefined();
+    expect(
+      withOpenCors({ "Access-Control-Allow-Credentials": ["false"] }, "GET")
+        .responseHeaders["access-control-allow-origin"],
+    ).toEqual(["*"]);
+  });
+
   it("answers preflight requests with 200", () => {
     expect(withOpenCors({}, "OPTIONS").statusLine).toBe("HTTP/1.1 200 OK");
   });

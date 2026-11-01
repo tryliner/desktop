@@ -73,6 +73,7 @@
     "save_to_library": "Simpan ke pustaka",
     "share": "Bagikan",
     "back": "Kembali",
+    "forward": "Maju",
     "link_copied": "Tautan disalin",
     "download": "Unduh",
     "more": "Lainnya",
@@ -746,7 +747,7 @@
         "local": "Musik Lokal"
       },
       "local_confirm_title": "Hapus juga musik lokalmu?",
-      "local_confirm_desc": "Musik Lokal adalah pustaka yang kamu impor, bukan cache. {tracks} ({size}) akan dihapus dari Liner beserta sampul dan liriknya. File aslimu tetap di tempatnya.",
+      "local_confirm_desc": "Musik Lokal adalah pustaka yang kamu impor, bukan cache. {tracks} ({size}) akan dihapus dari Liner beserta sampulnya. File aslimu tetap di tempatnya.",
       "local_confirm_button": "Hapus musik lokal"
     },
     "theme": {
