@@ -669,8 +669,12 @@
         "covers": "Copertine",
         "audio": "Tracce audio",
         "lyrics": "Testi",
-        "metadata": "Catalogo e ricerca"
-      }
+        "metadata": "Catalogo e ricerca",
+        "local": "Musica locale"
+      },
+      "local_confirm_title": "Eliminare anche la tua musica locale?",
+      "local_confirm_desc": "La musica locale è la tua libreria importata, non cache. {tracks} ({size}) verranno eliminati da Liner, insieme a copertine e testi. I tuoi file originali restano dove sono.",
+      "local_confirm_button": "Elimina musica locale"
     },
     "theme": {
       "title": "Tema",

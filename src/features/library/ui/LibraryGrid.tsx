@@ -230,7 +230,6 @@ function LibraryItemRow({ item }: { item: LibraryItemViewModel }) {
           <h3
             className="m-0 max-w-[min(52vw,560px)] overflow-hidden text-ellipsis whitespace-nowrap text-[16px] leading-[1.2] text-text-primary"
             style={{
-              fontFamily: "var(--font-inter), sans-serif",
               fontWeight: 400,
             }}
             title={item.title}
@@ -240,7 +239,6 @@ function LibraryItemRow({ item }: { item: LibraryItemViewModel }) {
           <p
             className="m-0 flex min-w-0 items-center text-[15px] leading-[1.2] overflow-hidden text-text-secondary"
             style={{
-              fontFamily: "var(--font-inter), sans-serif",
               fontWeight: 350,
             }}
           >
@@ -257,7 +255,6 @@ function LibraryItemRow({ item }: { item: LibraryItemViewModel }) {
           <span
             className="text-[14px] text-text-tertiary"
             style={{
-              fontFamily: "var(--font-inter), sans-serif",
               fontWeight: 400,
             }}
           >
@@ -330,7 +327,6 @@ function EmptyLibraryState({
           type="button"
           onClick={() => useModalStore.getState().openCreatePlaylist()}
           className="inline-flex items-center gap-[6px] !h-[36px] rounded-lg px-[16px] text-[13px] font-[500] bg-btn-primary-bg text-btn-primary-text hover:opacity-90 active:scale-[0.96] transition-all border-0 cursor-pointer mt-[2px]"
-          style={{ fontFamily: "var(--font-inter), sans-serif" }}
         >
           <AddLine size={16} />
           <span>{t("library.create_playlist")}</span>
@@ -354,7 +350,6 @@ function EmptyLibraryState({
           type="button"
           onClick={() => useModalStore.getState().openSearch()}
           className="inline-flex items-center gap-[6px] !h-[36px] rounded-lg px-[16px] text-[13px] font-[500] bg-bg-elevated border border-border-primary text-text-primary hover:bg-border-alpha-14 active:scale-[0.96] transition-all cursor-pointer mt-[2px]"
-          style={{ fontFamily: "var(--font-inter), sans-serif" }}
         >
           <Search3Fill size={15} />
           <span>{t("library.search_music")}</span>
@@ -377,7 +372,6 @@ function EmptyLibraryState({
         type="button"
         onClick={() => useModalStore.getState().openSearch()}
         className="inline-flex items-center gap-[6px] !h-[36px] rounded-lg px-[16px] text-[13px] font-[500] bg-bg-elevated border border-border-primary text-text-primary hover:bg-border-alpha-14 active:scale-[0.96] transition-all cursor-pointer mt-[2px]"
-        style={{ fontFamily: "var(--font-inter), sans-serif" }}
       >
         <Search3Fill size={15} />
         <span>{t("library.search_music")}</span>

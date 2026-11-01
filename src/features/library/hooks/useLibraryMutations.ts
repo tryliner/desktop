@@ -76,7 +76,7 @@ export function useCreatePlaylist() {
 export function useDeletePlaylist() {
   return useMutation(async ({ playlistId }: { playlistId: string }) => {
     evictPlaylistFromCache(playlistId);
-    return api.deletePlaylist(playlistId);
+    await api.deletePlaylist(playlistId);
   });
 }
 

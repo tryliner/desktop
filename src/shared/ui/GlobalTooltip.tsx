@@ -86,7 +86,6 @@ function GlobalTooltipPortal({
         transition={{ duration: 0.08, ease: "easeOut" }}
         className="rounded-lg border-0 bg-[#1c1c1f] px-2.5 py-1 text-[12px] font-medium text-white shadow-xl shadow-black/50 whitespace-nowrap leading-tight select-none subpixel-antialiased [[data-cover-glow=on]_&]:bg-black/45 [[data-cover-glow=on]_&]:backdrop-blur-[24px] [[data-cover-glow=on]_&]:backdrop-saturate-150 [[data-cover-glow=on]_&]:shadow-black/25"
         style={{
-          fontFamily: "var(--font-inter), sans-serif",
           textRendering: "geometricPrecision",
         }}
       >

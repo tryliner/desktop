@@ -261,7 +261,6 @@ export default function ArtistProfileModal({
             <ScrollableText
               text={name}
               className="shrink min-w-0 text-[16px] font-[600] tracking-[-0.01em] text-text-primary"
-              style={{ fontFamily: "var(--font-inter), sans-serif" }}
               fadeColorClass="from-bg-primary"
             />
             {/* twitter / md3 wavy verified badge */}
@@ -303,16 +302,12 @@ export default function ArtistProfileModal({
             style={{
               WebkitMaskImage: bioScrollMask,
               maskImage: bioScrollMask,
-              fontFamily: "var(--font-inter), sans-serif",
             }}
           >
             <BioContent bio={bio} />
           </div>
         ) : (
-          <p
-            className="m-0 text-[13px] text-text-tertiary italic"
-            style={{ fontFamily: "var(--font-inter), sans-serif" }}
-          >
+          <p className="m-0 text-[13px] text-text-tertiary italic">
             {t("artist.no_biography")}
           </p>
         )}

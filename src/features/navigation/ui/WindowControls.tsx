@@ -82,7 +82,7 @@ export default function WindowControls({
     isFullscreen
       ? "w-[26px] h-[26px]"
       : bare
-        ? "w-[30px] h-[30px]"
+        ? "w-[26px] h-[26px]"
         : "w-[34px] h-[34px]",
     onDarkGlass
       ? "text-white opacity-70 hover:opacity-100 hover:bg-white/12"

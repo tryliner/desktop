@@ -7,8 +7,6 @@ interface LocalFilesCardProps {
   viewMode?: "grid" | "list";
 }
 
-const INTER = { fontFamily: "var(--font-inter), sans-serif" };
-
 export default function LocalFilesCard({
   viewMode = "grid",
 }: LocalFilesCardProps) {
@@ -30,7 +28,7 @@ export default function LocalFilesCard({
         <div className="relative h-[48px] w-[48px] shrink-0 overflow-hidden rounded-md">
           <LocalFilesCover />
         </div>
-        <div className="flex min-w-0 flex-col gap-[2px]" style={INTER}>
+        <div className="flex min-w-0 flex-col gap-[2px]">
           <h3 className="m-0 truncate text-[16px] leading-[1.2] font-[400] text-text-primary">
             {t("library.local.title")}
           </h3>

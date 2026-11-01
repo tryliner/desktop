@@ -6,6 +6,19 @@ export const TRIP_COUNT = 3;
 export const TRIP_WINDOW_MS = 60_000;
 export const MAX_FAILURES = 20;
 
+export type TripOutcome = "show" | "handled";
+
+interface ConnectivityHooks {
+  suppress: () => boolean;
+  onTrip: () => Promise<TripOutcome>;
+}
+
+let hooks: ConnectivityHooks | null = null;
+
+export function setConnectivityHooks(next: ConnectivityHooks | null): void {
+  hooks = next;
+}
+
 export interface FailureEntry {
   at: number;
   method: string;
@@ -38,10 +51,25 @@ export const useConnectivityStore = create<ConnectivityState>((set, get) => ({
 
   recordFailure: (entry) => {
     if (isPlaybackPath(entry.path)) return;
+    if (hooks?.suppress()) return;
     const at = Date.now();
     const failures = [...get().failures, { ...entry, at }].slice(-MAX_FAILURES);
     const recent = failures.filter((f) => at - f.at <= TRIP_WINDOW_MS).length;
-    if (recent >= TRIP_COUNT) {
+    if (recent >= TRIP_COUNT && hooks && !get().tripped) {
+      set({ failures, tripped: true });
+      void hooks
+        .onTrip()
+        .catch((): TripOutcome => "show")
+        .then((outcome) => {
+          if (!get().tripped) return;
+          if (outcome === "handled") {
+            get().reset();
+            return;
+          }
+          set({ visible: true });
+          void get().runDiagnostics();
+        });
+    } else if (recent >= TRIP_COUNT && !hooks) {
       set({ failures, tripped: true, visible: true });
       void get().runDiagnostics();
     } else {

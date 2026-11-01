@@ -554,7 +554,6 @@ export function SearchModal({
               }}
               className="w-full flex-1 bg-transparent border-none outline-none text-text-primary text-[16px] font-[400] placeholder:text-text-tertiary tracking-tight"
               style={{
-                fontFamily: "var(--font-inter), sans-serif",
                 lineHeight: "1.2",
               }}
             />
@@ -617,9 +616,6 @@ export function SearchModal({
                           : "text-text-secondary hover:text-text-primary hover:bg-border-alpha-14"
                       }
                     `}
-                        style={{
-                          fontFamily: "var(--font-inter), sans-serif",
-                        }}
                       >
                         {isActive && (
                           <motion.div

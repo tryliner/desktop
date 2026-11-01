@@ -179,10 +179,7 @@ export const Slider = memo(function Slider({
       </div>
 
       {showValue && (
-        <span
-          className="w-[42px] shrink-0 text-right text-[12px] font-[500] tabular-nums text-text-tertiary"
-          style={{ fontFamily: "var(--font-inter), sans-serif" }}
-        >
+        <span className="w-[42px] shrink-0 text-right text-[12px] font-[500] tabular-nums text-text-tertiary">
           {displayLabel}
         </span>
       )}

@@ -163,7 +163,6 @@ function SongCard({
           <div
             className={`flex ${imageSizeClass} shrink-0 items-center justify-center ${titleSizeClass} text-text-tertiary`}
             style={{
-              fontFamily: "var(--font-inter), sans-serif",
               fontWeight: 400,
             }}
           >
@@ -204,7 +203,6 @@ function SongCard({
             <h3
               className={`m-0 max-w-[min(52vw,560px)] overflow-hidden text-ellipsis whitespace-nowrap ${titleSizeClass} leading-[1.2] text-text-primary`}
               style={{
-                fontFamily: "var(--font-inter), sans-serif",
                 fontWeight: hideArtists ? 500 : 400,
               }}
             >
@@ -228,7 +226,6 @@ function SongCard({
             <p
               className={`m-0 flex min-w-0 items-center ${artistSizeClass} leading-[1.2] text-text-secondary overflow-hidden`}
               style={{
-                fontFamily: "var(--font-inter), sans-serif",
                 fontWeight: 350,
               }}
             >
@@ -256,7 +253,6 @@ function SongCard({
           <span
             className="text-[14px] text-text-tertiary"
             style={{
-              fontFamily: "var(--font-inter), sans-serif",
               fontWeight: 400,
             }}
           >
@@ -267,7 +263,6 @@ function SongCard({
           <span
             className="text-[14px] text-text-tertiary"
             style={{
-              fontFamily: "var(--font-inter), sans-serif",
               fontWeight: 400,
             }}
           >

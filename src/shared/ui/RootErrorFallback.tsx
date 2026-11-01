@@ -162,16 +162,10 @@ export function RootErrorFallback({
           </div>
 
           {/* Title & Subtitle */}
-          <h1
-            className="text-[22px] md:text-[24px] font-[600] text-text-primary tracking-tight m-0 mb-2"
-            style={{ fontFamily: "var(--font-inter), sans-serif" }}
-          >
+          <h1 className="text-[22px] md:text-[24px] font-[600] text-text-primary tracking-tight m-0 mb-2">
             {titleText}
           </h1>
-          <p
-            className="text-[14px] text-text-secondary leading-relaxed m-0 mb-6 max-w-[460px]"
-            style={{ fontFamily: "var(--font-inter), sans-serif" }}
-          >
+          <p className="text-[14px] text-text-secondary leading-relaxed m-0 mb-6 max-w-[460px]">
             {subtitleText}
           </p>
 

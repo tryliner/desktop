@@ -6,8 +6,6 @@ import { AboutTabLinks } from "./AboutTabLinks";
 import { AboutBackdrop } from "./AboutBackdrop";
 import { useAboutAppVersion } from "./useAboutAppVersion";
 
-const font = { fontFamily: "var(--font-inter), sans-serif" } as const;
-
 export function AboutTab({ searchQuery }: { searchQuery?: string }) {
   const { t } = useTranslation();
   const {
@@ -60,10 +58,7 @@ export function AboutTab({ searchQuery }: { searchQuery?: string }) {
       </div>
 
       <div className="relative mt-auto flex flex-col items-start gap-[10px] pt-[40px]">
-        <span
-          className="text-[13px] text-text-secondary select-none"
-          style={font}
-        >
+        <span className="text-[13px] text-text-secondary select-none">
           {bundleInfo?.isOta
             ? `Client ${bundleInfo.bundleVersion}${bundleInfo.sha256 ? ` (${bundleInfo.sha256.slice(0, 7)})` : ""} · Core ${appVersion}`
             : `Client ${appVersion} (native)`}

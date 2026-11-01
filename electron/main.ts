@@ -75,6 +75,15 @@ import {
 import { DiscordRpcManager } from "./discord.js";
 import { PoTokenService } from "./youtube/potoken.js";
 import { setupLocalTracks } from "./local-tracks/ipc.js";
+import {
+  createSavedTrackLibrary,
+  setupSavedTracks,
+} from "./saved-tracks/ipc.js";
+import { setupNetProbe } from "./netprobe/ipc.js";
+import {
+  installNetSimulation,
+  simulatedResponseStatus,
+} from "./netsim/install.js";
 import { registerLocalTrackScheme } from "./local-tracks/protocol.js";
 import { LOCAL_AUDIO_EXTENSIONS } from "./local-tracks/types.js";
 import { setupBackup } from "./backup.js";
@@ -743,9 +752,13 @@ if (!gotTheLock) {
     } else {
       app.setAsDefaultProtocolClient(DEEP_LINK_SCHEME);
     }
-    setupLocalTracks();
+    const savedTracks = createSavedTrackLibrary();
+    setupLocalTracks(savedTracks);
+    setupSavedTracks(savedTracks);
     setupBackup();
     setupListenBrainz();
+    installNetSimulation(session.defaultSession);
+    setupNetProbe();
     touchBarManager = new TouchBarManager(
       path.join(__dirname, "preload.cjs"),
       RENDERER_DIST,
@@ -1120,10 +1133,18 @@ if (!gotTheLock) {
     // other hosts keep their own cors headers. dev builds also talk to a
     // local api (see .env.example)
     session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+      const cors = needsOpenCors(details.url, !app.isPackaged)
+        ? withOpenCors(details.responseHeaders, details.method)
+        : {};
+      const statusLine = simulatedResponseStatus(details.url, details.method);
       callback(
-        needsOpenCors(details.url, !app.isPackaged)
-          ? withOpenCors(details.responseHeaders, details.method)
-          : {},
+        statusLine
+          ? {
+              responseHeaders: details.responseHeaders,
+              ...cors,
+              statusLine,
+            }
+          : cors,
       );
     });
 

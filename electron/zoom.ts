@@ -28,7 +28,11 @@ export function maxZoomFor(
   minHeight: number,
 ): number {
   const fit = Math.min(width / minWidth, height / minHeight);
-  return Math.max(1, Math.min(MAX_ZOOM, Math.floor(fit * 10) / 10));
+  return Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, Math.floor(fit * 10) / 10));
+}
+
+export function effectiveZoom(preferred: number, maxZoom: number): number {
+  return Math.round(Math.min(preferred, maxZoom) * 10) / 10;
 }
 
 export function nextZoomFactor(
@@ -54,10 +58,19 @@ export function attachZoomControls(
     const [width, height] = window.getContentSize();
     return maxZoomFor(width, height, minWidth, minHeight);
   };
-  const apply = (action: ZoomAction) =>
-    contents.setZoomFactor(
-      nextZoomFactor(contents.getZoomFactor(), action, maxZoom()),
+  let preferred = 1;
+  const sync = () => {
+    const target = effectiveZoom(preferred, maxZoom());
+    if (contents.getZoomFactor() !== target) contents.setZoomFactor(target);
+  };
+  const apply = (action: ZoomAction) => {
+    preferred = nextZoomFactor(
+      effectiveZoom(preferred, maxZoom()),
+      action,
+      Math.max(1, maxZoom()),
     );
+    sync();
+  };
 
   contents.setVisualZoomLevelLimits(1, 1).catch(() => undefined);
   contents.on("before-input-event", (event, input) => {
@@ -67,8 +80,7 @@ export function attachZoomControls(
     apply(action);
   });
   contents.on("zoom-changed", (_event, direction) => apply(direction));
-  window.on("resize", () => {
-    const limit = maxZoom();
-    if (contents.getZoomFactor() > limit) contents.setZoomFactor(limit);
-  });
+  window.on("resize", sync);
+  contents.on("did-finish-load", sync);
+  sync();
 }

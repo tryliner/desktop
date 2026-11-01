@@ -19,3 +19,10 @@ export {
 } from "./junk";
 export { normalizeWords } from "./phonetic";
 export { findCatalogMatch, type TrackMatchOutcome } from "./findCatalogMatch";
+export {
+  isSameRecording,
+  recordingProfile,
+  type RecordingProfile,
+} from "./sameRecording";
+export { getVersionTags } from "./versionTags";
+export { artistsMatch } from "./artists";

@@ -19,6 +19,12 @@ export {
   searchCatalog,
   type InnertubeSearchFilter,
 } from "./innertube/innertubeSearch";
+export {
+  getQueryTokens,
+  isJunkVideo,
+  matchesQueryWell,
+  normalizeSearchText,
+} from "./innertube/innertubeSearchRanking";
 export { videoThumbnailCover } from "./innertube/innertubeThumbnail";
 export {
   downloadAudioBytes,

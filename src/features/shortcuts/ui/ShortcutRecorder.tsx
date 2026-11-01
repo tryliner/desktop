@@ -234,7 +234,6 @@ export function ShortcutRecorder({
                   : "h-[30px] px-[12px] rounded-[8px] bg-black/[0.08] text-text-secondary dark:bg-black/40"
               : "bg-transparent p-0"
         }`}
-        style={{ fontFamily: "var(--font-inter), sans-serif" }}
       >
         <AnimatePresence mode="wait" initial={false}>
           {isRecording ? (
@@ -290,7 +289,6 @@ export function ShortcutRecorder({
             exit={{ opacity: 0, y: 4, scale: 0.95 }}
             transition={{ duration: 0.12, ease: "easeOut" }}
             className="absolute left-0 top-full mt-[6px] z-40 pointer-events-none whitespace-nowrap px-[10px] py-[6px] rounded-[8px] bg-rose-600 shadow-xl flex items-center gap-1.5 text-[12px] font-[500] text-white select-none border-0"
-            style={{ fontFamily: "var(--font-inter), sans-serif" }}
           >
             <span>{errorMessage}</span>
           </motion.div>

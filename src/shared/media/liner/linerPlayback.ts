@@ -13,6 +13,7 @@ export interface LinerAudioStream {
 
 const REQUEST_TIMEOUT_MS = 5_000;
 const UNAVAILABLE_BACKOFF_MS = 10 * 60_000;
+const NETWORK_BACKOFF_MS = 60_000;
 
 let pausedUntil = 0;
 
@@ -33,7 +34,12 @@ export async function resolveLinerStream(
   if (Date.now() < pausedUntil || !getAuthSession()?.accessToken) return null;
   const timeout = AbortSignal.timeout(REQUEST_TIMEOUT_MS);
   try {
-    const token = await getValidAccessToken();
+    const token = await Promise.race([
+      getValidAccessToken(),
+      new Promise<null>((resolve) =>
+        timeout.addEventListener("abort", () => resolve(null), { once: true }),
+      ),
+    ]);
     if (!token) return null;
     const res = await fetch(
       `${getApiBaseUrl()}/v1/tracks/${encodeURIComponent(videoId)}/playback`,
@@ -57,11 +63,7 @@ export async function resolveLinerStream(
     return null;
   } catch (error) {
     if (isAbortError(error, signal) && signal?.aborted) throw error;
-    log(
-      "yellow",
-      "playback",
-      `liner audio lookup failed, using youtube: ${String(error)}`,
-    );
+    pause(NETWORK_BACKOFF_MS, `lookup failed: ${String(error)}`);
     return null;
   }
 }

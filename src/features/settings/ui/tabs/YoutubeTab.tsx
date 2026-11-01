@@ -1,7 +1,7 @@
 import {
-  PlayCircleLine,
-  Playlist2Line,
-  UserQuestionLine,
+  PlayCircleFill,
+  Playlist2Fill,
+  UserQuestionFill,
 } from "@mingcute/react";
 import { useTranslation } from "@/languages";
 import { ToggleSwitch } from "@/shared/ui";
@@ -19,7 +19,7 @@ export function YoutubeTab({ searchQuery }: { searchQuery?: string }) {
   const setSyncLibrary = useYoutubePreferences((s) => s.setSyncLibrary);
 
   return (
-    <div className="flex flex-col gap-[22px]">
+    <div className="flex flex-col gap-[28px]">
       {!searchQuery?.trim() && <YoutubeAccountCard />}
       <SettingSection
         label={t("settings.youtube.section_playback") || "Playback"}
@@ -34,7 +34,7 @@ export function YoutubeTab({ searchQuery }: { searchQuery?: string }) {
             "Request YouTube audio with your signed-in account so streams are not blocked."
           }
           explained
-          icon={<PlayCircleLine size={20} />}
+          icon={<PlayCircleFill size={20} />}
           titleKey="settings.youtube.account_playback.title"
           descKey="settings.youtube.account_playback.description"
           searchQuery={searchQuery}
@@ -52,7 +52,7 @@ export function YoutubeTab({ searchQuery }: { searchQuery?: string }) {
             "Show the sign-in card when YouTube blocks playback instead of skipping the track."
           }
           explained
-          icon={<UserQuestionLine size={20} />}
+          icon={<UserQuestionFill size={20} />}
           titleKey="settings.youtube.prompt_sign_in.title"
           descKey="settings.youtube.prompt_sign_in.description"
           searchQuery={searchQuery}
@@ -66,7 +66,7 @@ export function YoutubeTab({ searchQuery }: { searchQuery?: string }) {
             t("settings.youtube.sync_library.description") ||
             "Show playlists from your YouTube account in the library next to Liner playlists."
           }
-          icon={<Playlist2Line size={20} />}
+          icon={<Playlist2Fill size={20} />}
           titleKey="settings.youtube.sync_library.title"
           descKey="settings.youtube.sync_library.description"
           searchQuery={searchQuery}

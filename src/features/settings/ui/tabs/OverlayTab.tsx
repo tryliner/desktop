@@ -206,8 +206,8 @@ export function OverlayTab({ searchQuery }: { searchQuery?: string }) {
       <div
         className={
           enabled
-            ? "flex flex-col gap-[8px] transition-all duration-200"
-            : "flex flex-col gap-[8px] opacity-40 grayscale pointer-events-none select-none transition-all duration-200"
+            ? "flex flex-col transition-all duration-200"
+            : "flex flex-col opacity-40 grayscale pointer-events-none select-none transition-all duration-200"
         }
       >
         <SettingRow
@@ -295,7 +295,6 @@ export function OverlayTab({ searchQuery }: { searchQuery?: string }) {
                         : "bg-border-alpha-20 text-text-secondary cursor-pointer"
                       : "bg-border-alpha-14 hover:bg-border-alpha-20 text-text-primary cursor-pointer active:scale-[0.99]"
                 }`}
-                style={{ fontFamily: "var(--font-inter), sans-serif" }}
               >
                 <AnimatePresence mode="wait" initial={false}>
                   {isRecording ? (

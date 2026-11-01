@@ -51,7 +51,7 @@ export function DiscordTab({ searchQuery }: { searchQuery?: string }) {
   }, []);
 
   return (
-    <div className="flex flex-col gap-[18px]">
+    <div className="flex flex-col gap-[28px]">
       {!searchQuery?.trim() && <DiscordAccountCard />}
 
       {/* Main enable switch */}

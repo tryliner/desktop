@@ -667,8 +667,12 @@
         "covers": "Carátulas de álbum",
         "audio": "Pistas de audio",
         "lyrics": "Letras",
-        "metadata": "Catálogo y búsqueda"
-      }
+        "metadata": "Catálogo y búsqueda",
+        "local": "Música local"
+      },
+      "local_confirm_title": "¿Borrar también tu música local?",
+      "local_confirm_desc": "La música local es tu biblioteca importada, no caché. Se borrarán de Liner {tracks} ({size}), junto con sus portadas y letras. Tus archivos originales se quedan donde están.",
+      "local_confirm_button": "Borrar música local"
     },
     "theme": {
       "title": "Tema",

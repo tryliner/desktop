@@ -113,7 +113,6 @@ export const TrackSearchField = memo(function TrackSearchField({
       role="search"
       data-no-window-drag
       className={`flex h-[32px] w-[220px] items-center gap-[8px] rounded-[9px] px-[10px] text-text-primary ${className}`}
-      style={{ fontFamily: "var(--font-inter), sans-serif" }}
     >
       <Search2Line size={16} className="shrink-0 text-text-secondary" />
       <input
@@ -186,10 +185,7 @@ export const TrackSearchEmpty = memo(function TrackSearchEmpty({
 }) {
   const { t } = useTranslation();
   return (
-    <div
-      className="flex min-h-[40vh] flex-col items-center justify-center gap-[10px] text-center select-none"
-      style={{ fontFamily: "var(--font-inter), sans-serif" }}
-    >
+    <div className="flex min-h-[40vh] flex-col items-center justify-center gap-[10px] text-center select-none">
       <Search2Line size={32} className="text-text-tertiary/70" />
       <p className="m-0 max-w-[360px] truncate text-[14px] font-[500] text-text-primary">
         {t("track_search.no_results", { query })}

@@ -22,6 +22,11 @@ export {
   type SoundCloudUrlStream,
 } from "./soundcloudStream";
 export { soundcloudCatalog } from "./soundcloudCatalog";
+export {
+  searchSoundCloudTracks,
+  type SoundCloudSearchHit,
+  type SoundCloudSearchTrack,
+} from "./soundcloudSearch";
 export { SoundCloudCatalogError } from "./soundcloudCatalogRequest";
 export { hydrateSoundCloudStubs } from "./soundcloudStubs";
 export {

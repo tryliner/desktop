@@ -87,10 +87,7 @@ export default function ImportLikesModal() {
         />
 
         {importError && (
-          <p
-            className="text-accent-secondary text-[12px] m-0 font-[350]"
-            style={{ fontFamily: "var(--font-inter), sans-serif" }}
-          >
+          <p className="text-accent-secondary text-[12px] m-0 font-[350]">
             {importError}
           </p>
         )}

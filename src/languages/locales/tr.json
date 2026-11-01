@@ -669,8 +669,12 @@
         "covers": "Kapak Görselleri",
         "audio": "Ses Parçaları",
         "lyrics": "Şarkı Sözleri",
-        "metadata": "Katalog ve Arama"
-      }
+        "metadata": "Katalog ve Arama",
+        "local": "Yerel Müzik"
+      },
+      "local_confirm_title": "Yerel müziğin de silinsin mi?",
+      "local_confirm_desc": "Yerel Müzik, içe aktardığın kitaplığındır, önbellek değil. {tracks} ({size}) kapakları ve sözleriyle birlikte Liner'dan silinecek. Orijinal dosyaların yerinde kalır.",
+      "local_confirm_button": "Yerel müziği sil"
     },
     "theme": {
       "title": "Tema",

@@ -32,17 +32,13 @@ export default function EnvironmentWarning() {
     <div className="fixed left-1/2 top-[12px] z-[150] w-[min(560px,calc(100vw-32px))] -translate-x-1/2 rounded-lg bg-[#221d0e] px-[14px] py-[10px]">
       <div className="flex items-center gap-[10px]">
         <WarningFill size={16} className="shrink-0 text-amber-200/90" />
-        <p
-          className="m-0 min-w-0 flex-1 text-[12.5px] leading-[1.45] font-[500] text-[#f0e6c8]"
-          style={{ fontFamily: "var(--font-inter), sans-serif" }}
-        >
+        <p className="m-0 min-w-0 flex-1 text-[12.5px] leading-[1.45] font-[500] text-[#f0e6c8]">
           {t("common.env_warning")}
         </p>
         <button
           type="button"
           onClick={skip}
           className="shrink-0 rounded-md bg-transparent border border-[#f0e6c8]/25 px-[10px] py-[4px] text-[12px] font-[600] text-[#f0e6c8] hover:bg-white/10 cursor-pointer transition-colors"
-          style={{ fontFamily: "var(--font-inter), sans-serif" }}
         >
           {t("common.env_skip")}
         </button>

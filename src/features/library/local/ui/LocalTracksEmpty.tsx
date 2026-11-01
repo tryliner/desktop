@@ -8,8 +8,6 @@ interface LocalTracksEmptyProps {
   onAddFiles: () => void;
 }
 
-const INTER = { fontFamily: "var(--font-inter), sans-serif" };
-
 export default function LocalTracksEmpty({
   importing,
   onAddFiles,
@@ -18,7 +16,7 @@ export default function LocalTracksEmpty({
   return (
     <div className="flex min-h-[50vh] flex-col items-center justify-center gap-[14px] text-center">
       <FileMusicLine size={40} className="text-border-alpha-33" />
-      <div className="flex flex-col gap-[4px]" style={INTER}>
+      <div className="flex flex-col gap-[4px]">
         <p className="m-0 text-[15px] font-[500] text-text-primary">
           {t("library.local.empty_title")}
         </p>

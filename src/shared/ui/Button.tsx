@@ -53,7 +53,6 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         variantClasses[variant]
       } ${sizeClasses[size]} ${className}`.trim()}
       style={{
-        fontFamily: "var(--font-inter), sans-serif",
         letterSpacing: "0",
         lineHeight: "normal",
       }}

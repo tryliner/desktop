@@ -53,7 +53,6 @@ const TextInput = forwardRef<HTMLInputElement, TextInputProps>(
           disabled={disabled}
           className="w-full bg-transparent border-none p-0 text-[inherit] font-[400] text-text-primary placeholder:text-text-tertiary outline-none disabled:cursor-not-allowed [&::-ms-reveal]:hidden [&::-ms-clear]:hidden [&:-webkit-autofill]:shadow-[0_0_0_1000px_var(--bg-primary)_inset] [&:-webkit-autofill]:[-webkit-text-fill-color:var(--text-primary)]"
           style={{
-            fontFamily: "var(--font-inter), sans-serif",
             letterSpacing: "0",
             lineHeight: "normal",
           }}

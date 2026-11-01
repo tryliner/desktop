@@ -39,3 +39,5 @@ export const useLyricsEdgeBlur = () =>
 
 export const useKawarpEnabled = () =>
   useVisualModeStore((s) => s.mode !== "lite");
+
+export const useGlassBlur = () => useVisualModeStore((s) => s.mode === "full");

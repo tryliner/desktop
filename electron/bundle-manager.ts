@@ -91,9 +91,11 @@ export class BundleManager {
         const indexHtml = path.join(parsed.bundleDir, "dist", "index.html");
 
         // Validate bundle exists on disk and is compatible with current appVersion
+        // a bundle older than the app itself is stale: the built-in dist is newer
         if (
           fs.existsSync(indexHtml) &&
-          this.isVersionCompatible(app.getVersion(), parsed.minAppVersion)
+          this.isVersionCompatible(app.getVersion(), parsed.minAppVersion) &&
+          this.compareVersions(parsed.bundleVersion, app.getVersion()) >= 0
         ) {
           this.activeState = parsed;
           this.installedState = parsed;

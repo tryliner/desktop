@@ -728,7 +728,6 @@ function NotificationCard({
   onDismiss: () => void;
 }) {
   const { t } = useSafeTranslation();
-  const [hovered, setHovered] = useState(false);
   const [copiedId, setCopiedId] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -815,14 +814,8 @@ function NotificationCard({
           dismiss();
         }
       }}
-      onMouseEnter={() => {
-        setHovered(true);
-        onDeckHover?.(true);
-      }}
-      onMouseLeave={() => {
-        setHovered(false);
-        onDeckHover?.(false);
-      }}
+      onMouseEnter={() => onDeckHover?.(true)}
+      onMouseLeave={() => onDeckHover?.(false)}
       data-no-window-drag
       className={`relative flex items-center gap-[8px] rounded-[12px] bg-bg-elevated pl-[12px] ${
         resolvedAction ? "pr-[5px]" : "pr-[12px]"
@@ -835,7 +828,6 @@ function NotificationCard({
         gridArea: "1 / 1",
         zIndex,
         transformOrigin: "bottom center",
-        fontFamily: "var(--font-inter), sans-serif",
         maxWidth: "min(520px, calc(100vw - 32px))",
         minHeight: "38px",
         width:
@@ -852,11 +844,9 @@ function NotificationCard({
       </span>
       <div className="flex min-w-0 flex-1 flex-col justify-center overflow-hidden">
         <div className="flex min-w-0 items-center gap-[6px]">
-          <ScrollableText
-            text={item.message}
-            className="max-w-[220px] shrink-0 text-text-primary text-[13px] font-[600] leading-tight"
-            isParentHovered={hovered && index === 0}
-          />
+          <span className="block min-w-0 max-w-[220px] shrink-0 truncate text-text-primary text-[13px] font-[600] leading-tight">
+            {item.message}
+          </span>
           {item.description && (
             <>
               <span
@@ -865,11 +855,12 @@ function NotificationCard({
               >
                 ·
               </span>
-              <ScrollableText
-                text={item.description}
-                className="min-w-0 max-w-[260px] text-text-tertiary text-[12.5px] leading-tight translate-y-[1px]"
-                isParentHovered={hovered && index === 0}
-              />
+              <span
+                className="block min-w-0 max-w-[260px] truncate text-text-tertiary text-[12.5px] leading-tight translate-y-[1px]"
+                title={item.description}
+              >
+                {item.description}
+              </span>
             </>
           )}
         </div>

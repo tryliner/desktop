@@ -174,6 +174,19 @@ describe("BundleManager", () => {
     },
   );
 
+  it("runs the built-in dist when the installed bundle is older than the app", async () => {
+    serve(makeBundle("0.1.41"));
+    await manager().updateBeforeLaunch();
+    vi.restoreAllMocks();
+
+    env.appVersion = "0.2.10";
+    vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("offline"));
+    const next = manager();
+    await next.updateBeforeLaunch();
+    expect(runningHtml(next)).toBe("<html>built-in</html>");
+    expect(next.getActiveState()).toBeNull();
+  });
+
   it("refuses a bundle signed with a different key", async () => {
     serve(
       makeBundle("0.1.43", crypto.generateKeyPairSync("ed25519").privateKey),

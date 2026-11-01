@@ -44,6 +44,20 @@ pnpm dev
 
 `pnpm dev` starts the Electron app with Vite. `pnpm test` runs Vitest. `pnpm exec tsc -b` typechecks without packaging.
 
+### Simulating outages
+
+Set `LINER_SIMULATE` before `pnpm dev`, or put it in `.env.local`, to test how the app behaves when YouTube or Liner's servers fail. Packaged builds ignore it.
+
+| Value | Effect |
+| --- | --- |
+| `youtube-timeout` | Requests to YouTube hosts (`youtube.com`, `googlevideo.com`, `ytimg.com`, `ggpht.com`) hang until the caller gives up. |
+| `youtube-blocked` | Requests to YouTube hosts fail at once, as with a regional or ISP block. |
+| `youtube-refused` | YouTube answers, but every `googlevideo.com` stream returns HTTP 403, as when YouTube rejects a VPN or flagged IP. |
+| `liner-timeout` | Requests to `*.tryliner.fun` and `VITE_API_URL` hang until the caller gives up. |
+| `liner-down` | Requests to `*.tryliner.fun` and `VITE_API_URL` fail at once. |
+
+Combine values with commas, for example `LINER_SIMULATE=liner-down,youtube-blocked`. `LINER_SIMULATE_COUNTRY=RU` makes the network probe report that country, which the "YouTube isn't available in …" modal names. To test the device-offline modal, open DevTools (`Ctrl+Shift+I`), choose Network, then Offline, or turn off Wi-Fi. The switch lives in `electron/netsim/` and cancels matching requests in the default session, so renderer fetches, `<audio>` streams and main-process `net.fetch` calls all see the failure. Node `fetch` calls in the main process, such as the bundle updater, are not affected.
+
 Packaging is optional. You only need it when the change is in the installer or the packaged window:
 
 ```bash

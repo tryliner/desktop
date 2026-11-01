@@ -744,8 +744,12 @@
         "covers": "Sampul",
         "audio": "Lagu Audio",
         "lyrics": "Lirik",
-        "metadata": "Katalog & Pencarian"
-      }
+        "metadata": "Katalog & Pencarian",
+        "local": "Musik Lokal"
+      },
+      "local_confirm_title": "Hapus juga musik lokalmu?",
+      "local_confirm_desc": "Musik Lokal adalah pustaka yang kamu impor, bukan cache. {tracks} ({size}) akan dihapus dari Liner beserta sampul dan liriknya. File aslimu tetap di tempatnya.",
+      "local_confirm_button": "Hapus musik lokal"
     },
     "theme": {
       "title": "Tema",

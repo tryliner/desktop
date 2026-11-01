@@ -120,7 +120,7 @@ describe("toClientTrack", () => {
     document.body.removeChild(container);
   });
 
-  it("navigates with artist name when artistId is absent", async () => {
+  it("shows the name as plain text when artistId is absent", async () => {
     const { createRoot } = await import("react-dom/client");
     const { default: ArtistLink } =
       await import("../../features/artist/ui/ArtistLink");
@@ -151,15 +151,15 @@ describe("toClientTrack", () => {
       );
     });
 
-    const button = container.querySelector("[role='button']") as HTMLElement;
-    expect(button).not.toBeNull();
-    expect(button?.textContent).toBe("The Beatles");
+    expect(container.querySelector("[role='button']")).toBeNull();
+    expect(container.textContent).toBe("The Beatles");
 
+    const text = container.querySelector("span span span") as HTMLElement;
     await act(async () => {
-      button.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      text.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     });
 
-    expect(currentLocation).toBe("/artist?id=The%20Beatles");
+    expect(currentLocation).toBe("/");
 
     await act(async () => {
       root.unmount();

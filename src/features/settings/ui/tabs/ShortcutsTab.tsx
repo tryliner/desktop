@@ -33,8 +33,6 @@ import {
 } from "@/features/shortcuts";
 import { ShortcutRecorder } from "@/features/shortcuts/ui/ShortcutRecorder";
 
-const font = { fontFamily: "var(--font-inter), sans-serif" } as const;
-
 type ScopeFilter = "mainApp" | "miniplayer" | "global";
 
 export function ShortcutsTab({
@@ -689,7 +687,6 @@ export function ShortcutsTab({
                     : "bg-black/[0.05] text-text-primary hover:bg-black/[0.08] dark:bg-white/[0.08] dark:hover:bg-white/[0.12]"
                 }`}
                 style={{
-                  fontFamily: "var(--font-inter), sans-serif",
                   fontWeight: 500,
                 }}
               >
@@ -735,7 +732,6 @@ export function ShortcutsTab({
                 "Search shortcuts..."
               }
               className="w-full bg-transparent border-none outline-none text-[13px] text-text-primary placeholder:text-text-tertiary p-0 min-w-0 truncate"
-              style={font}
             />
             {localSearchQuery && (
               <button
@@ -783,10 +779,7 @@ export function ShortcutsTab({
           className="flex flex-wrap gap-[8px] pt-[10px]"
         >
           {filteredItems.length === 0 ? (
-            <div
-              className="w-full py-8 text-center text-text-tertiary text-[13px]"
-              style={font}
-            >
+            <div className="w-full py-8 text-center text-text-tertiary text-[13px]">
               {t("search.no_results") || "No matching shortcuts found"}
             </div>
           ) : (
@@ -810,15 +803,11 @@ export function ShortcutsTab({
                       <Icon size={20} weight="Bold" />
                     </span>
                     <div className="flex flex-col gap-[2px] min-w-0">
-                      <span
-                        className="text-[13.5px] font-[500] leading-tight text-text-primary truncate"
-                        style={font}
-                      >
+                      <span className="text-[13.5px] font-[500] leading-tight text-text-primary truncate">
                         {item.title}
                       </span>
                       <span
                         className={`text-[11px] font-[500] leading-none ${scopeTagStyles[item.scope]}`}
-                        style={font}
                       >
                         {scopeTagLabels[item.scope]}
                       </span>
@@ -862,7 +851,6 @@ export function ShortcutsTab({
             <h3
               className="text-[15px] font-[600] text-text-primary m-0 leading-tight"
               style={{
-                fontFamily: "var(--font-inter), sans-serif",
                 letterSpacing: "-0.01em",
               }}
             >
@@ -870,10 +858,7 @@ export function ShortcutsTab({
                 ? "Все горячие клавиши будут сброшены"
                 : "All shortkeys will be reset"}
             </h3>
-            <p
-              className="text-[12.5px] text-text-tertiary m-0 mt-[4px] leading-snug"
-              style={{ fontFamily: "var(--font-inter), sans-serif" }}
-            >
+            <p className="text-[12.5px] text-text-tertiary m-0 mt-[4px] leading-snug">
               {isRu
                 ? "Все комбинации клавиш вернутся к значениям по умолчанию. Это действие нельзя отменить."
                 : "All customized shortcut keys will be restored to their factory defaults. This action cannot be undone."}

@@ -187,6 +187,15 @@ export function clearScreenCache(): void {
     .catch(() => undefined);
 }
 
+export function clearPersistedScreenCache(): void {
+  pendingWrites.clear();
+  void openDb()
+    .then((db) => {
+      db.transaction(STORE, "readwrite").objectStore(STORE).clear();
+    })
+    .catch(() => undefined);
+}
+
 export function getScreenCacheStats(): { count: number } {
   return { count: entries.size };
 }

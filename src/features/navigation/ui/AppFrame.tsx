@@ -26,7 +26,7 @@ import {
 import Header from "./Header";
 import Sidebar from "./Sidebar";
 import { cn } from "@/shared/lib";
-import WindowControls from "./WindowControls";
+import WindowControlsNotch from "./WindowControlsNotch";
 import RightDrawer from "./RightDrawer";
 import { FullscreenRouteContext } from "../fullscreenRouteContext";
 import DynamicBlurBackground from "./DynamicBlurBackground";
@@ -49,6 +49,7 @@ import {
   usePlayerStore,
   useAbLoop,
   useTraySync,
+  useGlassBlur,
 } from "@/features/player";
 import { useLocalFileOpen } from "@/features/library";
 import { useListeningStats } from "@/features/stats";
@@ -77,6 +78,7 @@ import {
 } from "@/features/settings";
 import { UpdateModal, UpdateToastBridge } from "@/features/updater";
 import { YoutubeSignInNotice } from "@/features/youtube-auth";
+import { useOfflineModeStore } from "@/features/connectivity";
 
 interface AppFrameProps {
   children: React.ReactNode;
@@ -124,6 +126,7 @@ export default function AppFrame({ children }: AppFrameProps) {
   const closeSearch = useModalStore((state) => state.closeSearch);
   const toggleSearch = useModalStore((state) => state.toggleSearch);
   const openSettings = useModalStore((state) => state.openSettings);
+  const offline = useOfflineModeStore((state) => state.offline);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [queuePopupOpen, setQueuePopupOpen] = useState(false);
@@ -139,6 +142,10 @@ export default function AppFrame({ children }: AppFrameProps) {
       navigate("/", { replace: true });
     }
   }, [pathname, openSettings, navigate]);
+
+  useEffect(() => {
+    if (offline && searchOpen) closeSearch();
+  }, [offline, searchOpen, closeSearch]);
 
   useEffect(() => {
     for (const key of LEGACY_LAYOUT_STORAGE_KEYS) {
@@ -288,6 +295,8 @@ export default function AppFrame({ children }: AppFrameProps) {
     pathname === "/artist" ||
     pathname === "/library/playlist" ||
     pathname === "/library/local" ||
+    pathname === "/library/cached" ||
+    pathname === "/library/saved" ||
     pathname === "/collection";
   const handleEscapeFallback = useCallback(() => {
     if (queuePopupOpen || searchOpen || isFullscreenPlayer) return false;
@@ -723,6 +732,7 @@ export default function AppFrame({ children }: AppFrameProps) {
           window.matchMedia?.("(prefers-color-scheme: dark)")?.matches));
   const hasPageBackdrop = useHasPageBackdrop();
   const classicSurfaces = useClassicSurfaces();
+  const glassBlur = useGlassBlur();
 
   const wallpaperUrl = useCustomizationStore((s) => s.wallpaperUrl);
   const wallpaperBlur = useCustomizationStore((s) => s.wallpaperBlur);
@@ -752,6 +762,7 @@ export default function AppFrame({ children }: AppFrameProps) {
       className={`app-shell-enter relative flex flex-col h-full w-full overflow-hidden p-1.5 gap-1.5 ${
         isFullscreenPlayer ? "bg-black" : hasCustomBg ? "bg-transparent" : "bg-bg-canvas"
       } ${isEdgeToEdge ? "rounded-none" : "rounded-[12px]"}`}
+      style={isEdgeToEdge ? undefined : { clipPath: "inset(0 round 12px)" }}
       onScroll={(e) => {
         if (e.currentTarget.scrollLeft !== 0) e.currentTarget.scrollLeft = 0;
         if (e.currentTarget.scrollTop !== 0) e.currentTarget.scrollTop = 0;
@@ -909,7 +920,9 @@ export default function AppFrame({ children }: AppFrameProps) {
             onAnimationComplete={() =>
               setFullscreenEffectsReady(fullscreenPlayerOpen)
             }
-            className="dark absolute inset-0 z-[70] overflow-hidden rounded-[inherit] bg-black will-change-transform"
+            className={`dark absolute inset-0 z-[70] overflow-hidden rounded-[inherit] bg-black ${
+              fullscreenEffectsReady ? "" : "will-change-transform"
+            }`}
           >
             <FullscreenPlayer
               onClose={closeFullscreenPlayer}
@@ -988,7 +1001,6 @@ export default function AppFrame({ children }: AppFrameProps) {
                 }}
                 className="w-full flex-1 bg-transparent border-none outline-none text-text-primary text-[16px] placeholder:text-text-tertiary font-[400] tracking-tight"
                 style={{
-                  fontFamily: "var(--font-inter), sans-serif",
                   lineHeight: "1.2",
                 }}
               />
@@ -1049,7 +1061,6 @@ export default function AppFrame({ children }: AppFrameProps) {
                             }
                           `}
                           style={{
-                            fontFamily: "var(--font-inter), sans-serif",
                             lineHeight: "1.2",
                           }}
                         >
@@ -1084,20 +1095,10 @@ export default function AppFrame({ children }: AppFrameProps) {
                           transition={{ duration: 0.08 }}
                           className="flex h-full flex-col items-center justify-center gap-[6px] px-[20px] text-center"
                         >
-                          <p
-                            className="m-0 text-[14px] text-text-primary font-medium"
-                            style={{
-                              fontFamily: "var(--font-inter), sans-serif",
-                            }}
-                          >
+                          <p className="m-0 text-[14px] text-text-primary font-medium">
                             {t("common.no_results")}
                           </p>
-                          <p
-                            className="m-0 text-[12px] text-text-tertiary"
-                            style={{
-                              fontFamily: "var(--font-inter), sans-serif",
-                            }}
-                          >
+                          <p className="m-0 text-[12px] text-text-tertiary">
                             {t("common.try_another_search")}
                           </p>
                         </motion.div>
@@ -1157,20 +1158,14 @@ export default function AppFrame({ children }: AppFrameProps) {
       </AnimatePresence>
 
       <AppOverlays />
-      <AnimatePresence>
-        {isFullscreenPlayer && (
-          <motion.div
-            key="fullscreen-window-controls"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
-            className="absolute top-[6px] right-[6px] z-[80] pointer-events-auto select-none"
-          >
-            <WindowControls isFullscreen embedded />
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {isFullscreenPlayer && (
+        <div
+          data-theme="dark"
+          className="dark absolute top-1.5 right-1.5 z-[80]"
+        >
+          <WindowControlsNotch tone="glass" blur={glassBlur} />
+        </div>
+      )}
     </div>
   );
 }

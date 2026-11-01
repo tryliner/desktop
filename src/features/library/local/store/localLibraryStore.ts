@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import {
+  isLocalTrackId,
   localRecordToTrack,
   toLocalTrackId,
   type LocalImportResult,
@@ -7,6 +8,16 @@ import {
 } from "@/shared/media/local";
 import { linerDb } from "@/shared/storage/linerDb";
 import { lyricsCache } from "@/features/lyrics";
+import { createAppLocalLyricsQueue } from "../lyrics/localLyricsQueue";
+import { playerEngine } from "@/features/player/engine/playerEngine";
+
+async function releasePlayingTrack(fileIds: string[] | "all") {
+  const current = playerEngine.getSnapshot().currentTrack?.id;
+  if (!current || !isLocalTrackId(current)) return;
+  const removed =
+    fileIds === "all" || fileIds.map(toLocalTrackId).includes(current);
+  if (removed) await playerEngine.stopAndClear().catch(() => {});
+}
 import type { Track } from "@/shared/types";
 
 type LoadState = "idle" | "loading" | "ready" | "unavailable";
@@ -20,6 +31,7 @@ interface LocalLibraryState {
   importPaths: (paths: string[]) => Promise<LocalImportResult | null>;
   pickFiles: () => Promise<LocalImportResult | null>;
   remove: (fileIds: string[]) => Promise<void>;
+  removeAll: () => Promise<number>;
 }
 
 const newestFirst = (records: LocalTrackRecord[]) =>
@@ -39,6 +51,7 @@ export const useLocalLibraryStore = create<LocalLibraryState>((set, get) => {
       const result = await request();
       if (result && result.added.length > 0) {
         set(withTracks([...get().records, ...result.added]));
+        void lyricsQueue.enqueue(result.added);
       }
       return result;
     } finally {
@@ -61,10 +74,9 @@ export const useLocalLibraryStore = create<LocalLibraryState>((set, get) => {
       if (get().loadState === "loading") return;
       set({ loadState: "loading" });
       try {
-        set({
-          ...withTracks(await bridge.localTracksList()),
-          loadState: "ready",
-        });
+        const records = await bridge.localTracksList();
+        set({ ...withTracks(records), loadState: "ready" });
+        void lyricsQueue.enqueue(records);
       } catch {
         set({ loadState: "ready" });
       }
@@ -89,10 +101,44 @@ export const useLocalLibraryStore = create<LocalLibraryState>((set, get) => {
       set(
         withTracks(get().records.filter((record) => !removing.has(record.id))),
       );
+      lyricsQueue.forget(fileIds);
+      await releasePlayingTrack(fileIds);
       await bridge.localTracksRemove(fileIds);
       const trackIds = fileIds.map(toLocalTrackId);
       for (const trackId of trackIds) lyricsCache.delete(trackId);
       await linerDb.deleteLyrics(trackIds);
     },
+
+    removeAll: async () => {
+      const bridge = window.linerElectron;
+      if (!bridge) return 0;
+      const fileIds = get().records.map((record) => record.id);
+      lyricsQueue.forget(fileIds);
+      set(withTracks([]));
+      await releasePlayingTrack("all");
+      const removed = await bridge.localTracksRemoveAll();
+      const trackIds = fileIds.map(toLocalTrackId);
+      for (const trackId of trackIds) lyricsCache.delete(trackId);
+      await linerDb.deleteLyrics(trackIds);
+      return removed;
+    },
   };
 });
+
+const lyricsQueue = createAppLocalLyricsQueue((fileId, state) => {
+  const { records } = useLocalLibraryStore.getState();
+  if (!records.some((record) => record.id === fileId)) return;
+  useLocalLibraryStore.setState(
+    withTracks(
+      records.map((record) =>
+        record.id === fileId ? { ...record, lyrics: state } : record,
+      ),
+    ),
+  );
+});
+
+if (typeof window !== "undefined") {
+  const retry = () => void lyricsQueue.retry();
+  window.addEventListener("online", retry);
+  window.addEventListener("auth:changed", retry);
+}

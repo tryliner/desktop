@@ -1,0 +1,41 @@
+<svg width="1000" height="1000" viewBox="0 0 1000 1000" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g clip-path="url(#clip0_cached)">
+<rect width="1000" height="1000" rx="20" fill="url(#paint0_radial_cached)"/>
+<rect width="1000" height="1000" rx="20" fill="black" fill-opacity="0.2"/>
+<g filter="url(#filter1_f_cached)">
+<path d="M560.5 798.5L1206 690V1467H456L560.5 798.5Z" fill="#FF7A33" fill-opacity="0.3"/>
+</g>
+<g filter="url(#filter2_f_cached)">
+<path d="M366 -390.685L1206.01 -532L738.511 205L654 215.5L366 -390.685Z" fill="#FFA640" fill-opacity="0.3"/>
+</g>
+<g filter="url(#filter3_f_cached)">
+<path d="M-289 734.87L771 913L181.067 -16L197.458 80.4295L-289 734.87Z" fill="#FF5A2E" fill-opacity="0.3"/>
+</g>
+<circle cx="500" cy="500" r="200" stroke="white" stroke-opacity="0.7" stroke-width="44"/>
+<path d="M500 390V500L572 548" stroke="white" stroke-opacity="0.7" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<defs>
+<filter id="filter1_f_cached" x="356" y="590" width="950" height="977" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feGaussianBlur stdDeviation="50" result="effect1_foregroundBlur_cached"/>
+</filter>
+<filter id="filter2_f_cached" x="266" y="-632" width="1040.01" height="947.5" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feGaussianBlur stdDeviation="50" result="effect1_foregroundBlur_cached"/>
+</filter>
+<filter id="filter3_f_cached" x="-479.8" y="-206.8" width="1441.6" height="1310.6" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feGaussianBlur stdDeviation="95.4" result="effect1_foregroundBlur_cached"/>
+</filter>
+<radialGradient id="paint0_radial_cached" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(457.5 538.5) rotate(76.9968) scale(746.646 2727.2)">
+<stop offset="0.492945" stop-color="#1E110A"/>
+<stop offset="0.964992" stop-color="#94441A"/>
+</radialGradient>
+<clipPath id="clip0_cached">
+<rect width="1000" height="1000" rx="20" fill="white"/>
+</clipPath>
+</defs>
+</svg>

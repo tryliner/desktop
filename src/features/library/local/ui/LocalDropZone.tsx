@@ -6,7 +6,6 @@ import { isAudioFile, useAudioFileDrop } from "../hooks/useAudioFileDrop";
 import { useLocalImport } from "../hooks/useLocalImport";
 import LocalDropStack from "./LocalDropStack";
 
-const INTER = { fontFamily: "var(--font-inter), sans-serif" };
 const EASE = [0.22, 1, 0.36, 1] as const;
 
 export default function LocalDropZone() {
@@ -40,7 +39,6 @@ export default function LocalDropZone() {
           exit={{ opacity: 0 }}
           transition={{ duration: 0.18, ease: "easeOut" }}
           className="pointer-events-none fixed inset-0 z-[9998] flex items-center justify-center bg-black/45 backdrop-blur-2xl backdrop-saturate-150"
-          style={INTER}
         >
           <motion.div
             initial={{ opacity: 0, scale: 1.015 }}

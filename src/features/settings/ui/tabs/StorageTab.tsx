@@ -3,10 +3,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import lottie, {
   type AnimationItem,
 } from "lottie-web/build/player/lottie_light";
-import { FolderOpenLine, CheckLine } from "@mingcute/react";
 import { CheckCircle } from "@solar-icons/react";
 import Button from "@/shared/ui/Button";
-import { useToast } from "@/shared/ui";
+import { ToggleSwitch, useToast } from "@/shared/ui";
+import { useCachedTracksStore } from "@/features/library/cached";
+import { PresetPills } from "@/shared/ui/PresetPills";
 import { useTranslation } from "@/languages";
 import cleanDuckAnimationData from "@/assets/animations/clean_duck.json";
 import {
@@ -19,68 +20,26 @@ import {
   getAudioCacheLimitBytes,
   setAudioCacheLimitBytes,
   type StorageAnalytics,
-  type StorageCategoryId,
+  LIBRARY_CATEGORY_IDS,
 } from "@/shared/utils/cacheManager";
 import BackupRestoreSection from "./BackupRestoreSection";
+import { useSavedTracksStore } from "@/features/library/saved";
+import { SettingRow, SettingSection } from "../controls";
+import {
+  SMOOTH_EASE,
+  StorageOverview,
+  useSongEstimate,
+} from "./StorageOverview";
+import { StorageSizeAction } from "./StorageSizeAction";
+import { StorageFolderButton } from "./StorageFolderButton";
+import { StorageDownloadsSection } from "./StorageDownloadsSection";
 
-function polarToCartesian(
-  centerX: number,
-  centerY: number,
-  radius: number,
-  angleInDegrees: number,
-) {
-  const angleInRadians = ((angleInDegrees - 90) * Math.PI) / 180.0;
-  return {
-    x: centerX + radius * Math.cos(angleInRadians),
-    y: centerY + radius * Math.sin(angleInRadians),
-  };
-}
+const GB = 1024 * 1024 * 1024;
+const CACHE_LIMIT_OPTIONS = [GB, 3 * GB, 10 * GB, 0];
+const FALLBACK_SONG_BYTES = 4 * 1024 * 1024;
+const MIN_SONG_BYTES = 2 * 1024 * 1024;
+const MAX_SONG_BYTES = 12 * 1024 * 1024;
 
-function describeDonutSegment(
-  x: number,
-  y: number,
-  innerRadius: number,
-  outerRadius: number,
-  startAngle: number,
-  endAngle: number,
-) {
-  const delta = Math.max(0.1, endAngle - startAngle);
-  const safeEndAngle = delta >= 360 ? startAngle + 359.99 : startAngle + delta;
-  const startOuter = polarToCartesian(x, y, outerRadius, startAngle);
-  const endOuter = polarToCartesian(x, y, outerRadius, safeEndAngle);
-  const startInner = polarToCartesian(x, y, innerRadius, safeEndAngle);
-  const endInner = polarToCartesian(x, y, innerRadius, startAngle);
-
-  const largeArcFlag = delta > 180 ? "1" : "0";
-
-  return [
-    "M",
-    startOuter.x,
-    startOuter.y,
-    "A",
-    outerRadius,
-    outerRadius,
-    0,
-    largeArcFlag,
-    1,
-    endOuter.x,
-    endOuter.y,
-    "L",
-    startInner.x,
-    startInner.y,
-    "A",
-    innerRadius,
-    innerRadius,
-    0,
-    largeArcFlag,
-    0,
-    endInner.x,
-    endInner.y,
-    "Z",
-  ].join(" ");
-}
-
-// authentic telegram animated tgs duck sticker for cache cleaning
 function TelegramCleaningDuck({ size = 130 }: { size?: number }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const animRef = useRef<AnimationItem | null>(null);
@@ -111,60 +70,69 @@ function TelegramCleaningDuck({ size = 130 }: { size?: number }) {
   );
 }
 
-export function StorageTab({
-  searchQuery: _searchQuery,
-}: {
-  searchQuery?: string;
-}) {
+type ClearKind = "cache" | "liked" | "local";
+
+const CLEAR_COPY: Record<
+  ClearKind,
+  { working: string; workingDesc: string; done: string; doneDesc: string }
+> = {
+  cache: {
+    working: "settings.storage.clearing_title",
+    workingDesc: "settings.storage.clearing_subtitle",
+    done: "settings.storage.cleared_title",
+    doneDesc: "settings.storage.cleared_subtitle",
+  },
+  liked: {
+    working: "settings.storage.removing_liked_title",
+    workingDesc: "settings.storage.removing_subtitle",
+    done: "settings.storage.removed_title",
+    doneDesc: "settings.storage.removed_liked_subtitle",
+  },
+  local: {
+    working: "settings.storage.removing_local_title",
+    workingDesc: "settings.storage.removing_subtitle",
+    done: "settings.storage.removed_title",
+    doneDesc: "settings.storage.removed_local_subtitle",
+  },
+};
+
+const FADE = {
+  initial: { opacity: 0, scale: 0.985 },
+  animate: { opacity: 1, scale: 1 },
+  exit: { opacity: 0, scale: 0.985 },
+  transition: { duration: 0.32, ease: SMOOTH_EASE },
+};
+
+export function StorageTab({ searchQuery }: { searchQuery?: string }) {
   const { t } = useTranslation();
   const { toast } = useToast();
 
-  const initialCached = getCachedStorageAnalytics();
-  const [analytics, setAnalytics] = useState<StorageAnalytics | null>(
-    initialCached,
+  const [analytics, setAnalytics] = useState<StorageAnalytics | null>(() =>
+    getCachedStorageAnalytics(),
   );
-  const [loading, setLoading] = useState(!initialCached);
-  const [selectedCategories, setSelectedCategories] = useState<
-    Set<StorageCategoryId>
-  >(() => {
-    if (initialCached) {
-      return new Set(
-        initialCached.categories.filter((c) => c.bytes > 0).map((c) => c.id),
-      );
-    }
-    return new Set(["covers", "audio", "lyrics", "metadata"]);
-  });
   const [clearing, setClearing] = useState(false);
+  const [clearKind, setClearKind] = useState<ClearKind>("cache");
   const [clearingProgress, setClearingProgress] = useState(0);
-  const [clearedSuccess, setClearedSuccess] = useState(false);
-  const [hoveredCategoryId, setHoveredCategoryId] =
-    useState<StorageCategoryId | null>(null);
+  const [freedBytes, setFreedBytes] = useState<number | null>(null);
   const [cacheLimit, setCacheLimit] = useState<number>(() =>
     getAudioCacheLimitBytes(),
   );
-
-  const steps = useMemo(
-    () => [
-      { label: "250 MB", bytes: 250 * 1024 * 1024 },
-      { label: "1 GB", bytes: 1024 * 1024 * 1024 },
-      { label: "2 GB", bytes: 2 * 1024 * 1024 * 1024 },
-      { label: "3 GB", bytes: 3 * 1024 * 1024 * 1024 },
-      { label: "5 GB", bytes: 5 * 1024 * 1024 * 1024 },
-      { label: "10 GB", bytes: 10 * 1024 * 1024 * 1024 },
-      { label: t("settings.storage.no_limit"), bytes: 0 },
-    ],
-    [t],
+  const savedCount = useSavedTracksStore((state) => state.records.length);
+  const cachedVisibleOnline = useCachedTracksStore(
+    (state) => state.visibleOnline,
+  );
+  const setCachedVisibleOnline = useCachedTracksStore(
+    (state) => state.setVisibleOnline,
   );
 
-  const foundIdx = steps.findIndex((s) => s.bytes === cacheLimit);
-  const activeIdx = foundIdx >= 0 ? foundIdx : 3;
-  const pct = (activeIdx / (steps.length - 1)) * 100;
+  const refresh = async () => {
+    setAnalytics(await refreshStorageAnalytics(true));
+  };
 
   const handleLimitChange = async (newLimit: number) => {
     setCacheLimit(newLimit);
     await setAudioCacheLimitBytes(newLimit);
-    const updated = await refreshStorageAnalytics();
-    setAnalytics(updated);
+    await refresh();
   };
 
   useEffect(() => {
@@ -175,154 +143,106 @@ export function StorageTab({
   }, []);
 
   useEffect(() => {
-    if (!analytics) {
-      setLoading(true);
+    const timer = setTimeout(() => {
       refreshStorageAnalytics()
-        .then((data) => {
-          setAnalytics(data);
-          setSelectedCategories((prev) => {
-            if (prev.size === 0) {
-              return new Set(
-                data.categories.filter((c) => c.bytes > 0).map((c) => c.id),
-              );
-            }
-            return prev;
-          });
-        })
+        .then(setAnalytics)
         .catch(() => {
           toast(t("settings.cache.local_cache.error"), "error");
-        })
-        .finally(() => {
-          setLoading(false);
         });
-    }
-  }, [analytics, t, toast]);
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [savedCount, t, toast]);
 
-  const toggleCategory = (id: StorageCategoryId) => {
-    setSelectedCategories((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
-  };
+  const { cacheCategories, musicCategories } = useMemo(() => {
+    const all = analytics?.categories ?? [];
+    return {
+      cacheCategories: all.filter((c) => !LIBRARY_CATEGORY_IDS.has(c.id)),
+      musicCategories: all.filter((c) => LIBRARY_CATEGORY_IDS.has(c.id)),
+    };
+  }, [analytics]);
 
-  const selectedBytes = useMemo(() => {
-    if (!analytics) return 0;
-    return analytics.categories
-      .filter((c) => selectedCategories.has(c.id))
-      .reduce((sum, c) => sum + c.bytes, 0);
-  }, [analytics, selectedCategories]);
+  const cacheBytes = cacheCategories.reduce((sum, c) => sum + c.bytes, 0);
+  const musicBytes = musicCategories.reduce((sum, c) => sum + c.bytes, 0);
 
-  // handles selective or complete cache clearance with cute progression
-  const handleClearSelected = async () => {
-    if (selectedCategories.size === 0) return;
+  const songBytes = useMemo(() => {
+    const sample = musicCategories.find(
+      (c) => c.bytes > 0 && (c.count ?? 0) > 0,
+    );
+    if (!sample) return FALLBACK_SONG_BYTES;
+    const average = sample.bytes / (sample.count ?? 1);
+    return Math.min(MAX_SONG_BYTES, Math.max(MIN_SONG_BYTES, average));
+  }, [musicCategories]);
+
+  const cacheLimitSongs = useSongEstimate(cacheLimit, songBytes);
+  const cacheLimitDescription =
+    cacheLimit > 0
+      ? t("settings.storage.cache_limit_hint", { count: cacheLimitSongs })
+      : t("settings.storage.cache_limit_unlimited");
+
+  const runClear = async (
+    kind: ClearKind,
+    expected: number,
+    work: () => Promise<unknown>,
+  ) => {
+    setClearKind(kind);
     setClearing(true);
     setClearingProgress(15);
 
     try {
-      const targetIds = Array.from(selectedCategories);
       setClearingProgress(40);
-      await clearStorageCategories(targetIds);
+      await Promise.all([
+        work(),
+        new Promise((resolve) => setTimeout(resolve, 900)),
+      ]);
       setClearingProgress(80);
 
-      // brief pause so user sees the telegram sweeping duck animation
       await new Promise((resolve) => setTimeout(resolve, 260));
       setClearingProgress(100);
       await new Promise((resolve) => setTimeout(resolve, 140));
 
-      const fresh = await refreshStorageAnalytics();
-      setAnalytics(fresh);
+      await refresh();
       setClearing(false);
-      setClearedSuccess(true);
+      setFreedBytes(expected);
     } catch {
       setClearing(false);
-      toast(t("settings.cache.local_cache.error"), "error");
+      toast(
+        t(
+          kind === "cache"
+            ? "settings.cache.local_cache.error"
+            : "settings.storage.remove_failed",
+        ),
+        "error",
+      );
+      void refresh();
     }
+  };
+
+  const clearCache = () => {
+    const ids = cacheCategories.map((c) => c.id);
+    if (ids.length === 0) return;
+    void runClear("cache", cacheBytes, () => clearStorageCategories(ids));
   };
 
   const handleOpenFolder = async () => {
     const opened = await openCacheFolder();
-    if (opened) {
-      toast(t("settings.storage.open_folder"), "success");
-    } else {
-      toast(t("settings.connection.open_folder"), "info");
-    }
+    if (!opened) toast(t("settings.connection.open_folder"), "info");
   };
-
-  const formattedCenter = useMemo(() => {
-    if (selectedBytes <= 0) return { val: "0", unit: "" };
-    const parts = formatStorageBytes(selectedBytes).split(" ");
-    return { val: parts[0] || "0", unit: parts[1] || "" };
-  }, [selectedBytes]);
-
-  const donutSlices = useMemo((): Array<{
-    id: StorageCategoryId;
-    color: string;
-    startAngle: number;
-    endAngle: number;
-  }> => {
-    if (!analytics || selectedBytes <= 0) return [];
-    const active = analytics.categories.filter(
-      (c) => selectedCategories.has(c.id) && c.bytes > 0,
-    );
-
-    if (active.length === 0) return [];
-    if (active.length === 1) {
-      return [
-        {
-          id: active[0].id,
-          color: active[0].color,
-          startAngle: 0,
-          endAngle: 359.99,
-        },
-      ];
-    }
-
-    const baseGap = 2;
-    let currentAngle = 0;
-
-    return active.map((item) => {
-      const sliceFraction = item.bytes / selectedBytes;
-      const rawSpan = sliceFraction * 360;
-      const sliceGap = Math.min(baseGap, rawSpan * 0.35);
-      const startAngle = currentAngle + sliceGap / 2;
-      const endAngle = Math.max(
-        startAngle + 0.8,
-        currentAngle + rawSpan - sliceGap / 2,
-      );
-      currentAngle += rawSpan;
-
-      return {
-        id: item.id,
-        color: item.color,
-        startAngle,
-        endAngle,
-      };
-    });
-  }, [analytics, selectedBytes, selectedCategories]);
 
   return (
     <div className="flex-1 flex flex-col relative w-full h-full min-h-[460px]">
-      <AnimatePresence mode="popLayout">
+      <AnimatePresence mode="popLayout" initial={false}>
         {clearing ? (
           <motion.div
             key="clearing"
-            initial={{ opacity: 0, filter: "blur(3px)" }}
-            animate={{ opacity: 1, filter: "blur(0px)" }}
-            exit={{ opacity: 0, filter: "blur(3px)" }}
-            transition={{ duration: 0.16, ease: "easeOut" }}
+            {...FADE}
             className="flex-1 flex flex-col items-center justify-center my-auto py-6 text-center px-4 w-full h-full"
           >
             <TelegramCleaningDuck size={140} />
             <h3 className="text-text-primary text-[17px] font-[600] m-0 mt-3">
-              {t("settings.storage.clearing_title")}
+              {t(CLEAR_COPY[clearKind].working)}
             </h3>
             <p className="text-text-tertiary text-[13px] max-w-[320px] m-0 mt-1 leading-normal">
-              {t("settings.storage.clearing_subtitle")}
+              {t(CLEAR_COPY[clearKind].workingDesc)}
             </p>
             <div className="w-[200px] h-[4px] bg-border-alpha-14 rounded-full overflow-hidden mt-5">
               <div
@@ -330,33 +250,31 @@ export function StorageTab({
                 style={{ width: `${clearingProgress}%` }}
               />
             </div>
-            <span className="text-text-tertiary text-[12px] font-mono mt-2">
-              {clearingProgress}%
-            </span>
           </motion.div>
-        ) : clearedSuccess ? (
+        ) : freedBytes !== null ? (
           <motion.div
             key="cleared"
-            initial={{ opacity: 0, filter: "blur(3px)" }}
-            animate={{ opacity: 1, filter: "blur(0px)" }}
-            exit={{ opacity: 0, filter: "blur(3px)" }}
-            transition={{ duration: 0.16, ease: "easeOut" }}
+            {...FADE}
             className="flex-1 flex flex-col items-center justify-center my-auto py-6 text-center px-4 w-full h-full"
           >
-            <div className="w-[64px] h-[64px] rounded-full bg-[#10B981]/15 flex items-center justify-center text-[#10B981] mb-2">
-              <CheckCircle size={40} weight="Bold" />
+            <div className="w-[64px] h-[64px] rounded-full bg-border-alpha-14 flex items-center justify-center text-text-primary mb-2">
+              <CheckCircle size={36} weight="Bold" />
             </div>
             <h3 className="text-text-primary text-[18px] font-[600] m-0 mt-2">
-              {t("settings.storage.cleared_title")}
+              {freedBytes > 0
+                ? t("settings.storage.freed_title", {
+                    size: formatStorageBytes(freedBytes),
+                  })
+                : t(CLEAR_COPY[clearKind].done)}
             </h3>
             <p className="text-text-tertiary text-[13px] max-w-[340px] m-0 mt-1 leading-normal">
-              {t("settings.storage.cleared_subtitle")}
+              {t(CLEAR_COPY[clearKind].doneDesc)}
             </p>
             <Button
               variant="secondary"
               size="default"
               type="button"
-              onClick={() => setClearedSuccess(false)}
+              onClick={() => setFreedBytes(null)}
               className="mt-6 min-w-[120px]"
             >
               {t("settings.storage.done_button")}
@@ -365,264 +283,96 @@ export function StorageTab({
         ) : (
           <motion.div
             key="main"
-            initial={{ opacity: 0, filter: "blur(3px)" }}
-            animate={{ opacity: 1, filter: "blur(0px)" }}
-            exit={{ opacity: 0, filter: "blur(3px)" }}
-            transition={{ duration: 0.16, ease: "easeOut" }}
-            className="flex-1 flex flex-col gap-[20px] pt-[8px] w-full"
+            {...FADE}
+            className="flex flex-col gap-[18px] pt-[8px] pb-[4px] w-full"
           >
-            <div className="bg-bg-panel border border-border-primary/60 dark:border-transparent dark:bg-white/[0.035] pl-[10px] pr-[16px] py-[10px] rounded-2xl">
-              <div className="flex flex-col sm:flex-row items-center gap-4">
-                <div className="flex-1 w-full flex flex-col gap-0.5">
-                  {analytics?.categories.map((cat) => {
-                    const isSelected = selectedCategories.has(cat.id);
-                    const isHovered = hoveredCategoryId === cat.id;
-                    const total = analytics.totalBytes || 1;
-                    const pct = Math.round((cat.bytes / total) * 100);
-                    const pctLabel =
-                      cat.bytes === 0 ? "0%" : pct === 0 ? "<1%" : `${pct}%`;
+            {!searchQuery?.trim() ? (
+              <StorageOverview
+                musicBytes={musicBytes}
+                cacheBytes={cacheBytes}
+                freeBytes={analytics?.freeBytes}
+              />
+            ) : null}
 
-                    return (
-                      <button
-                        key={cat.id}
-                        type="button"
-                        onClick={() => toggleCategory(cat.id)}
-                        onMouseEnter={() => setHoveredCategoryId(cat.id)}
-                        onMouseLeave={() => setHoveredCategoryId(null)}
-                        className={`group w-full flex items-center justify-between px-[10px] py-[8px] rounded-lg transition-all border-0 cursor-pointer text-left ${
-                          isSelected
-                            ? isHovered
-                              ? "bg-border-alpha-14 opacity-100"
-                              : "bg-transparent opacity-100"
-                            : isHovered
-                              ? "bg-border-alpha-14/60 opacity-65"
-                              : "bg-transparent opacity-40"
-                        }`}
-                      >
-                        <div className="flex items-center gap-[9px] min-w-0">
-                          <div
-                            className={`w-[15px] h-[15px] rounded-[4px] flex items-center justify-center transition-all shrink-0 border ${
-                              isSelected
-                                ? "bg-text-primary border-text-primary text-bg-primary"
-                                : "border-border-secondary bg-border-alpha-14 group-hover:border-text-secondary"
-                            }`}
-                          >
-                            {isSelected && (
-                              <motion.div
-                                initial={{ scale: 0.5, opacity: 0 }}
-                                animate={{ scale: 1, opacity: 1 }}
-                                exit={{ scale: 0.5, opacity: 0 }}
-                                transition={{ duration: 0.12 }}
-                                className="flex items-center justify-center"
-                              >
-                                <CheckLine size={11} className="stroke-[1.5]" />
-                              </motion.div>
-                            )}
-                          </div>
+            <StorageDownloadsSection
+              songBytes={songBytes}
+              liked={musicCategories.find((c) => c.id === "liked")}
+              local={musicCategories.find((c) => c.id === "local")}
+              onRemove={(kind, bytes, remove) =>
+                void runClear(kind, bytes, remove)
+              }
+              searchQuery={searchQuery}
+            />
 
-                          <div
-                            className="w-[8px] h-[8px] rounded-full shrink-0 transition-opacity"
-                            style={{ backgroundColor: cat.color }}
-                          />
-
-                          <span className="text-text-primary text-[12.5px] font-[500] truncate">
-                            {t(cat.labelKey)}
-                          </span>
-
-                          <span className="text-[10px] font-[600] px-[5px] py-[0.5px] rounded bg-border-alpha-14 text-text-tertiary">
-                            {pctLabel}
-                          </span>
-                        </div>
-
-                        <span className="text-text-secondary text-[12px] font-[500] shrink-0">
-                          {formatStorageBytes(cat.bytes)}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <div className="flex flex-col items-center justify-center shrink-0 px-6">
-                  <div className="flex flex-col items-center">
-                    <div className="relative w-[136px] h-[136px] flex items-center justify-center">
-                      <svg
-                        width="136"
-                        height="136"
-                        viewBox="0 0 200 200"
-                        className="overflow-visible"
-                      >
-                        <circle
-                          cx="100"
-                          cy="100"
-                          r="70"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="24"
-                          className="text-border-alpha-14"
-                        />
-
-                        <AnimatePresence>
-                          {donutSlices.map((slice) => {
-                            const isHovered = hoveredCategoryId === slice.id;
-                            const pathData = describeDonutSegment(
-                              100,
-                              100,
-                              isHovered ? 57.5 : 58,
-                              isHovered ? 83.5 : 82,
-                              slice.startAngle,
-                              slice.endAngle,
-                            );
-
-                            return (
-                              <motion.path
-                                key={slice.id}
-                                d={pathData}
-                                fill={slice.color}
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                                transition={{ duration: 0.15, ease: "easeOut" }}
-                                className="cursor-pointer transition-opacity origin-center"
-                                onMouseEnter={() =>
-                                  setHoveredCategoryId(slice.id)
-                                }
-                                onMouseLeave={() => setHoveredCategoryId(null)}
-                              />
-                            );
-                          })}
-                        </AnimatePresence>
-                      </svg>
-
-                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
-                        <div className="relative flex items-center justify-center">
-                          <span className="text-[19px] font-[700] text-text-primary tracking-tight leading-none">
-                            {formattedCenter.val}
-                          </span>
-                          {formattedCenter.unit ? (
-                            <span className="absolute top-full left-1/2 -translate-x-1/2 mt-0.5 text-[10px] font-[600] text-text-tertiary uppercase leading-none whitespace-nowrap">
-                              {formattedCenter.unit}
-                            </span>
-                          ) : null}
-                        </div>
-                      </div>
-                    </div>
-
-                    <span className="text-[11.5px] font-[500] text-text-tertiary -mt-1 text-center select-none tracking-tight">
-                      {t("settings.storage.usage_title")}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-[14px] bg-bg-panel border border-border-primary/60 dark:border-transparent dark:bg-white/[0.035] p-[16px] rounded-2xl">
-              <div className="pl-[6px]">
-                <h5 className="text-text-primary text-[13.5px] font-[600] m-0">
-                  {t("settings.storage.cache_limit")}
-                </h5>
-                <p className="text-text-tertiary text-[11.5px] m-0 mt-0.5">
-                  {t("settings.storage.cache_limit_desc")}
-                </p>
-              </div>
-
-              <div className="flex flex-col gap-2 pt-2 pb-1 px-6">
-                <div className="relative w-full h-[18px] flex items-center select-none group">
-                  <div className="absolute left-0 right-0 h-[2px] rounded-full bg-border-alpha-33 dark:bg-white/15 pointer-events-none" />
-                  <div
-                    className="absolute left-0 h-[2px] rounded-full bg-text-primary transition-all duration-150 pointer-events-none"
-                    style={{ width: `${pct}%` }}
+            <SettingSection
+              label={t("settings.storage.cache_title")}
+              action={
+                <StorageFolderButton
+                  label={t("settings.storage.open_folder_short")}
+                  onOpen={() => void handleOpenFolder()}
+                />
+              }
+            >
+              <SettingRow
+                title={t("settings.storage.cache_row_title")}
+                description={t("settings.storage.cache_row_desc")}
+                explained
+                titleKey="settings.storage.cache_row_title"
+                descKey="settings.storage.cache_row_desc"
+                searchQuery={searchQuery}
+                control={
+                  <StorageSizeAction
+                    bytes={cacheBytes}
+                    actionLabel={t("settings.storage.clear")}
+                    confirmLabel={t("settings.storage.clear_size", {
+                      size: formatStorageBytes(cacheBytes),
+                    })}
+                    disabled={cacheBytes === 0}
+                    onConfirm={clearCache}
                   />
-
-                  {steps.map((s, i) => {
-                    const tickPct = (i / (steps.length - 1)) * 100;
-                    const isPassed = i <= activeIdx;
-                    return (
-                      <div
-                        key={s.bytes}
-                        className={`absolute w-[2px] h-[6px] rounded-full -translate-x-1/2 transition-colors pointer-events-none ${
-                          isPassed
-                            ? "bg-text-primary opacity-80"
-                            : "bg-border-alpha-33 dark:bg-white/35"
-                        }`}
-                        style={{ left: `${tickPct}%` }}
-                      />
-                    );
-                  })}
-
-                  <div
-                    className="absolute w-[12px] h-[12px] rounded-full bg-text-primary -translate-x-1/2 transition-all duration-150 pointer-events-none group-hover:scale-125"
-                    style={{ left: `${pct}%` }}
+                }
+              />
+              <SettingRow
+                title={t("settings.storage.cache_limit")}
+                description={cacheLimitDescription}
+                explained
+                titleKey="settings.storage.cache_limit"
+                searchQuery={searchQuery}
+                control={
+                  <PresetPills
+                    ariaLabel={t("settings.storage.cache_limit")}
+                    size="md"
+                    fill={false}
+                    value={cacheLimit}
+                    onChange={(value) => void handleLimitChange(value)}
+                    options={CACHE_LIMIT_OPTIONS.map((bytes) => ({
+                      value: bytes,
+                      label:
+                        bytes === 0
+                          ? t("settings.storage.no_limit")
+                          : `${bytes / GB} GB`,
+                    }))}
                   />
-
-                  <input
-                    type="range"
-                    min={0}
-                    max={steps.length - 1}
-                    step={1}
-                    value={activeIdx}
-                    onChange={(e) => {
-                      const idx = Number(e.target.value);
-                      if (steps[idx]) {
-                        void handleLimitChange(steps[idx].bytes);
-                      }
-                    }}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 m-0 p-0"
+                }
+              />
+              <SettingRow
+                title={t("settings.storage.cached_in_library")}
+                description={t("settings.storage.cached_in_library_desc")}
+                explained
+                titleKey="settings.storage.cached_in_library"
+                descKey="settings.storage.cached_in_library_desc"
+                searchQuery={searchQuery}
+                control={
+                  <ToggleSwitch
+                    checked={cachedVisibleOnline}
+                    onChange={setCachedVisibleOnline}
+                    ariaLabel={t("settings.storage.cached_in_library")}
                   />
-                </div>
-
-                <div className="relative w-full h-[16px] select-none text-[11px]">
-                  {steps.map((s, i) => {
-                    const tickPct = (i / (steps.length - 1)) * 100;
-                    const isActive = i === activeIdx;
-                    return (
-                      <span
-                        key={s.bytes}
-                        onClick={() => void handleLimitChange(s.bytes)}
-                        style={{ left: `${tickPct}%` }}
-                        className={`absolute -translate-x-1/2 whitespace-nowrap cursor-pointer transition-colors ${
-                          isActive
-                            ? "text-text-primary font-[600]"
-                            : "text-text-tertiary hover:text-text-secondary font-[500]"
-                        }`}
-                      >
-                        {s.label}
-                      </span>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
+                }
+              />
+            </SettingSection>
 
             <BackupRestoreSection />
-
-            <div className="mt-auto flex items-center gap-[8px] pt-4">
-              <Button
-                variant="primary"
-                size="default"
-                type="button"
-                disabled={selectedBytes === 0 || loading}
-                onClick={handleClearSelected}
-                className="flex-1 justify-center !h-[40px] !text-[13.5px] font-[500] rounded-xl"
-              >
-                {selectedBytes > 0
-                  ? t("settings.storage.clear_button", {
-                      size: formatStorageBytes(selectedBytes),
-                    })
-                  : t("settings.storage.clear_selected")}
-              </Button>
-
-              <Button
-                variant="secondary"
-                size="default"
-                type="button"
-                onClick={handleOpenFolder}
-                title={t("settings.storage.open_folder")}
-                className="flex items-center gap-[6px] !h-[40px] px-[14px] font-[500] text-[13px] rounded-xl shrink-0"
-              >
-                <FolderOpenLine size={16} />
-                <span>{t("settings.storage.open_folder")}</span>
-              </Button>
-            </div>
           </motion.div>
         )}
       </AnimatePresence>

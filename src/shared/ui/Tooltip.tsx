@@ -170,7 +170,6 @@ function Tooltip({
                       : "flex h-[30px] items-center whitespace-nowrap leading-none"
                   } ${className}`}
                   style={{
-                    fontFamily: "var(--font-inter), sans-serif",
                     textRendering: "geometricPrecision",
                   }}
                 >

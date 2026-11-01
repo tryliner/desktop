@@ -27,6 +27,8 @@ import {
 import { usePageBackdrop } from "@/shared/lib";
 import { useClassicSurfaces } from "@/features/settings/store/customizationStore";
 import { useLikesCover } from "../hooks/useLikesCover";
+import { useSavedTracksStore } from "../saved";
+import { isSavedTrack } from "@/shared/media/saved";
 import { useAuthStore } from "@/features/auth";
 import { userDisplayName } from "@/entities/user";
 import {
@@ -37,6 +39,7 @@ import {
   MusicLine,
   CheckLine,
   ShareForwardLine,
+  DownloadLine,
 } from "@mingcute/react";
 import { AnimatePresence, motion } from "framer-motion";
 import { LuPencil, LuTrash2, LuText, LuShuffle } from "react-icons/lu";
@@ -48,9 +51,12 @@ import CoverImage from "@/features/covers/ui/CoverImage";
 import { useModalStore } from "../store/modalStore";
 import {
   usePlaylist,
+  usePlaylistsList,
   useLikedTracks,
   useReorderPlaylistTracks,
+  reloadLikedTracks,
 } from "../hooks";
+import { statusOf } from "@/features/connectivity";
 import { useListReorder } from "@/shared/hooks";
 import { playerEngine } from "@/features/player";
 import type { Track } from "@/shared/types";
@@ -122,10 +128,72 @@ const TrackItem = memo(function TrackItem({
   );
 });
 
+function PlaylistHeroCover({
+  urls,
+  title,
+  likesCover,
+}: {
+  urls: string[];
+  title: string;
+  likesCover?: string;
+}) {
+  if (urls.length === 0) {
+    return likesCover ? (
+      <img
+        src={likesCover}
+        alt={title}
+        draggable={false}
+        className="absolute inset-0 h-full w-full object-cover select-none"
+      />
+    ) : (
+      <PlaylistFill size={48} className="text-border-alpha-33" />
+    );
+  }
+  if (urls.length === 1) {
+    return (
+      <CoverImage
+        src={urls[0]}
+        alt={title}
+        fill
+        sizes="180px"
+        className="object-cover"
+        draggable={false}
+        unoptimized
+      />
+    );
+  }
+  const cells = urls.slice(0, 4);
+  return (
+    <div className="absolute inset-0 grid grid-cols-2 gap-[1.5px] bg-border-alpha-8">
+      {cells.map((url, i) => {
+        const spanFull = cells.length === 3 && i === 0;
+        return (
+          <div
+            key={i}
+            className={`relative overflow-hidden${spanFull ? " row-span-2" : ""}`}
+          >
+            <CoverImage
+              src={url}
+              alt={`${title} cover ${i + 1}`}
+              fill
+              sizes="140px"
+              className="object-cover"
+              draggable={false}
+              unoptimized
+            />
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function LibraryPlaylistContent() {
   const [searchParams] = useSearchParams();
   const id = searchParams.get("id");
   const isLikesMode = id === "likes";
+  const saveLikedEnabled = useSavedTracksStore((state) => state.enabled);
+  useSavedTracksStore((state) => state.records);
   const currentUser = useAuthStore((state) => state.user);
   const likesOwnerName = userDisplayName(currentUser);
   const decodedId = id ? decodeURIComponent(id) : null;
@@ -138,13 +206,23 @@ function LibraryPlaylistContent() {
   const titleRef = useRef<HTMLHeadingElement>(null);
   const descriptionRef = useRef<HTMLParagraphElement>(null);
 
-  const { data: playlistDetail, isLoading: playlistLoading } = usePlaylist(
-    isLikesMode ? null : decodedId,
-  );
+  const {
+    data: playlistDetail,
+    isLoading: playlistLoading,
+    error: playlistError,
+  } = usePlaylist(isLikesMode ? null : decodedId);
 
-  const { data: likesData, isLoading: likesLoading } = useLikedTracks(
-    isLikesMode ? { limit: 1000, offset: 0 } : undefined,
-  );
+  const {
+    data: likesData,
+    isLoading: likesLoading,
+    error: likesError,
+  } = useLikedTracks(isLikesMode ? { limit: 1000, offset: 0 } : undefined);
+
+  const loadFailed = isLikesMode
+    ? likesError && likesData.tracks.length === 0
+    : !playlistDetail &&
+      playlistError !== undefined &&
+      statusOf(playlistError) !== 404;
 
   const isLoading = isLikesMode ? likesLoading : playlistLoading;
 
@@ -182,8 +260,34 @@ function LibraryPlaylistContent() {
   })();
   const likesCover = useLikesCover();
   const classicSurfaces = useClassicSurfaces();
+  const { data: playlistList } = usePlaylistsList();
+  const summary = isLikesMode
+    ? undefined
+    : playlistList?.playlists?.find((playlist) => playlist.id === decodedId);
+  const preview = isLikesMode
+    ? {
+        title: t("playlist.liked_songs"),
+        subtitle: likesOwnerName || undefined,
+        coverUrls: [] as string[],
+      }
+    : summary
+      ? {
+          title: summary.title || t("playlist.untitled_playlist"),
+          subtitle: summary.description?.trim() || undefined,
+          coverUrls:
+            summary.coverUrls?.length > 0
+              ? summary.coverUrls
+              : summary.coverUrl
+                ? [summary.coverUrl]
+                : [],
+        }
+      : undefined;
   usePageBackdrop(
-    isLikesMode ? likesCover : (viewData?.coverUrls?.[0] ?? viewData?.coverUrl),
+    isLikesMode
+      ? likesCover
+      : (viewData?.coverUrls?.[0] ??
+          (viewData?.coverUrl || undefined) ??
+          preview?.coverUrls[0]),
     { dim: 0.05 },
   );
 
@@ -383,8 +487,12 @@ function LibraryPlaylistContent() {
     return Array.from(urls);
   }, [viewData]);
 
-  const [imagesLoaded, setImagesLoaded] = useState(false);
-  const [skeletonExited, setSkeletonExited] = useState(false);
+  const [imagesLoaded, setImagesLoaded] = useState(
+    () => !isLoading && !!viewData,
+  );
+  const [skeletonExited, setSkeletonExited] = useState(
+    () => !isLoading && !!viewData,
+  );
 
   useEffect(() => {
     if (isLoading || !viewData) {
@@ -422,15 +530,48 @@ function LibraryPlaylistContent() {
   }, [isLoading, viewData, urlsToPreload]);
 
   const isReady = !isLoading && !!viewData && imagesLoaded;
+  const contentLayerRef = useRef<HTMLDivElement>(null);
+  const swapsInPlace = Boolean(preview);
 
   useEffect(() => {
-    if (isReady && !skeletonExited) {
-      const timer = setTimeout(() => {
-        setSkeletonExited(true);
-      }, 250);
-      return () => clearTimeout(timer);
-    }
-  }, [isReady, skeletonExited]);
+    if (!isReady || skeletonExited) return;
+    let timer: ReturnType<typeof setTimeout>;
+    const settle = () => {
+      const layer = contentLayerRef.current;
+      const shown =
+        !swapsInPlace ||
+        !layer ||
+        Number(getComputedStyle(layer).opacity) >= 0.99;
+      if (shown) setSkeletonExited(true);
+      else timer = setTimeout(settle, 120);
+    };
+    timer = setTimeout(settle, 250);
+    return () => clearTimeout(timer);
+  }, [isReady, skeletonExited, swapsInPlace]);
+
+  if (!isLoading && loadFailed) {
+    return (
+      <div className="h-full w-full bg-transparent flex flex-col items-center justify-center gap-[6px] px-[24px] text-center">
+        <span className="text-[15px] font-[600] text-text-primary">
+          {t(
+            isLikesMode ? "playlist.likes_load_failed" : "playlist.load_failed",
+          )}
+        </span>
+        <span className="text-[13px] text-text-secondary">
+          {t("playlist.load_failed_desc")}
+        </span>
+        {isLikesMode ? (
+          <Button
+            variant="secondary"
+            onClick={() => void reloadLikedTracks()}
+            className="mt-[10px] !h-[36px] !rounded-[10px] !border-0 px-[16px]"
+          >
+            {t("offline.try_again")}
+          </Button>
+        ) : null}
+      </div>
+    );
+  }
 
   if (!isLoading && !viewData) {
     return (
@@ -447,9 +588,20 @@ function LibraryPlaylistContent() {
       <div className="relative z-1 grid grid-cols-1 w-full h-full min-h-0 overflow-hidden">
         {viewData && (
           <div
-            className={`col-start-1 row-start-1 w-full h-full min-h-0 overflow-hidden transition-opacity duration-200 ease-out ${
-              isReady ? "opacity-100" : "opacity-0 pointer-events-none"
-            }`}
+            className={`col-start-1 row-start-1 w-full h-full min-h-0 overflow-hidden ${
+              swapsInPlace
+                ? "relative z-20 transition-opacity duration-[180ms] ease-out"
+                : "transition-opacity duration-200 ease-out"
+            } ${isReady ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+            ref={contentLayerRef}
+            onTransitionEnd={(event) => {
+              if (
+                swapsInPlace &&
+                isReady &&
+                event.target === event.currentTarget
+              )
+                setSkeletonExited(true);
+            }}
           >
             <div
               ref={scrollRef}
@@ -462,63 +614,13 @@ function LibraryPlaylistContent() {
                 data-no-window-drag
               >
                 <EntityHero
-                  cover={(() => {
-                    const urls =
-                      viewData.coverUrls ??
-                      (viewData.coverUrl ? [viewData.coverUrl] : []);
-                    if (urls.length === 0) {
-                      return isLikesMode ? (
-                        <img
-                          src={likesCover}
-                          alt={viewData.title}
-                          draggable={false}
-                          className="absolute inset-0 h-full w-full object-cover select-none"
-                        />
-                      ) : (
-                        <PlaylistFill
-                          size={48}
-                          className="text-border-alpha-33"
-                        />
-                      );
-                    }
-                    if (urls.length === 1) {
-                      return (
-                        <CoverImage
-                          src={urls[0]}
-                          alt={viewData.title}
-                          fill
-                          sizes="180px"
-                          className="object-cover"
-                          draggable={false}
-                          unoptimized
-                        />
-                      );
-                    }
-                    const cells = urls.slice(0, 4);
-                    return (
-                      <div className="absolute inset-0 grid grid-cols-2 gap-[1.5px] bg-border-alpha-8">
-                        {cells.map((url, i) => {
-                          const spanFull = cells.length === 3 && i === 0;
-                          return (
-                            <div
-                              key={i}
-                              className={`relative overflow-hidden${spanFull ? " row-span-2" : ""}`}
-                            >
-                              <CoverImage
-                                src={url}
-                                alt={`${viewData.title} cover ${i + 1}`}
-                                fill
-                                sizes="140px"
-                                className="object-cover"
-                                draggable={false}
-                                unoptimized
-                              />
-                            </div>
-                          );
-                        })}
-                      </div>
-                    );
-                  })()}
+                  cover={
+                    <PlaylistHeroCover
+                      urls={viewData.coverUrls}
+                      title={viewData.title}
+                      likesCover={isLikesMode ? likesCover : undefined}
+                    />
+                  }
                   title={
                     <h1
                       ref={titleRef}
@@ -611,7 +713,6 @@ function LibraryPlaylistContent() {
                         type="button"
                         onClick={() => setIsEditingDescription(true)}
                         className="cursor-pointer border-0 bg-transparent p-0 text-left text-[13px] font-[400] text-text-tertiary transition-colors hover:text-text-primary"
-                        style={{ fontFamily: "var(--font-inter), sans-serif" }}
                       >
                         {t("common.add_description")}
                       </button>
@@ -648,6 +749,24 @@ function LibraryPlaylistContent() {
                           })()}
                         </span>
                       </div>
+                      {isLikesMode &&
+                      saveLikedEnabled &&
+                      viewData.tracks.length > 0 ? (
+                        <div className={HERO_CHIP_CLASS}>
+                          <DownloadLine
+                            size={13}
+                            className="text-text-secondary shrink-0"
+                          />
+                          <span>
+                            {t("library.saved_count", {
+                              saved: viewData.tracks.filter((track) =>
+                                isSavedTrack(track.id),
+                              ).length,
+                              total: viewData.tracks.length,
+                            })}
+                          </span>
+                        </div>
+                      ) : null}
                     </div>
                   }
                   actions={
@@ -791,16 +910,10 @@ function LibraryPlaylistContent() {
                   <div className="flex min-h-[50vh] flex-col items-center justify-center gap-[12px] text-center">
                     <PlaylistFill size={40} className="text-border-alpha-33" />
                     <div className="flex flex-col gap-[4px]">
-                      <p
-                        className="m-0 text-[15px] font-[500] text-text-primary"
-                        style={{ fontFamily: "var(--font-inter), sans-serif" }}
-                      >
+                      <p className="m-0 text-[15px] font-[500] text-text-primary">
                         {t("playlist.empty_title")}
                       </p>
-                      <p
-                        className="m-0 text-[13px] text-text-tertiary"
-                        style={{ fontFamily: "var(--font-inter), sans-serif" }}
-                      >
+                      <p className="m-0 text-[13px] text-text-tertiary">
                         {t("playlist.empty_subtitle")}
                       </p>
                     </div>
@@ -949,12 +1062,30 @@ function LibraryPlaylistContent() {
 
         {!skeletonExited && (
           <div
-            className={`col-start-1 row-start-1 w-full h-full z-10 transition-opacity duration-200 ease-out overflow-hidden pointer-events-none ${
-              isReady ? "opacity-0" : "opacity-100"
+            className={`col-start-1 row-start-1 w-full h-full overflow-hidden pointer-events-none ${
+              swapsInPlace
+                ? "z-0"
+                : `z-10 transition-opacity duration-200 ease-out ${
+                    isReady ? "opacity-0" : "opacity-100"
+                  }`
             }`}
-            onTransitionEnd={() => setSkeletonExited(true)}
+            onTransitionEnd={(event) => {
+              if (event.target === event.currentTarget) setSkeletonExited(true);
+            }}
           >
-            <PlaylistPageSkeleton />
+            <PlaylistPageSkeleton
+              cover={
+                preview ? (
+                  <PlaylistHeroCover
+                    urls={preview.coverUrls}
+                    title={preview.title}
+                    likesCover={isLikesMode ? likesCover : undefined}
+                  />
+                ) : undefined
+              }
+              title={preview?.title}
+              subtitle={preview?.subtitle}
+            />
           </div>
         )}
       </div>

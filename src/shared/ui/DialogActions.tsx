@@ -2,8 +2,6 @@ import type { ReactNode } from "react";
 import Button, { type ButtonProps } from "./Button";
 import { cn } from "@/shared/lib";
 
-const font = { fontFamily: "var(--font-inter), sans-serif" } as const;
-
 /**
  * Title + description block for dialogs, so every modal shares one typography.
  */
@@ -23,17 +21,11 @@ export function DialogHeader({
       className={cn("flex items-start justify-between gap-[12px]", className)}
     >
       <div className="flex min-w-0 flex-1 flex-col gap-[4px]">
-        <h2
-          className="m-0 text-[18px] font-[600] leading-[1.2] tracking-[-0.01em] text-text-primary"
-          style={font}
-        >
+        <h2 className="m-0 text-[18px] font-[600] leading-[1.2] tracking-[-0.01em] text-text-primary">
           {title}
         </h2>
         {description && (
-          <p
-            className="m-0 text-[13px] leading-[1.45] text-text-tertiary"
-            style={font}
-          >
+          <p className="m-0 text-[13px] leading-[1.45] text-text-tertiary">
             {description}
           </p>
         )}

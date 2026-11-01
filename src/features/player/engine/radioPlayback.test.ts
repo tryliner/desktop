@@ -106,6 +106,21 @@ describe("radio playback", () => {
     ]);
   });
 
+  it("repeat-all loops a playlist instead of adding similar tracks", async () => {
+    usePlayerStore.setState({ autoplaySimilar: true });
+    getRadio.mockResolvedValue(radioItems(["s1", "s2"]));
+    const tracks = [mk("1"), mk("2")];
+    await playerEngine.playTrack(tracks[0], tracks, "playlist:p");
+    playerEngine.setRepeat("all");
+    await playerEngine.skipNext();
+    await vi.advanceTimersByTimeAsync(500);
+    expect(getRadio).not.toHaveBeenCalled();
+    await playerEngine.skipNext(true);
+    const state = usePlayerStore.getState();
+    expect(state.currentTrack?.id).toBe("1");
+    expect(state.queue.map((t) => t.id)).toEqual(["1", "2"]);
+  });
+
   it("plain playlists still loop with repeat-all", async () => {
     const tracks = [mk("1"), mk("2")];
     await playerEngine.playTrack(tracks[0], tracks, "playlist:p");
@@ -113,5 +128,40 @@ describe("radio playback", () => {
     await playerEngine.skipNext();
     await playerEngine.skipNext();
     expect(usePlayerStore.getState().currentTrack?.id).toBe("1");
+  });
+  it("repeat-all keeps looping the playlist instead of appending similar tracks", async () => {
+    usePlayerStore.setState({ autoplaySimilar: true });
+    getRadio.mockResolvedValue(radioItems(["s1", "s2"]));
+    const tracks = [mk("1"), mk("2")];
+    await playerEngine.playTrack(tracks[0], tracks, "playlist:p");
+    playerEngine.setRepeat("all");
+    await playerEngine.skipNext();
+    await vi.advanceTimersByTimeAsync(500);
+    expect(getRadio).not.toHaveBeenCalled();
+    expect(usePlayerStore.getState().queue.map((t) => t.id)).toEqual([
+      "1",
+      "2",
+    ]);
+
+    await playerEngine.skipNext(true);
+    expect(usePlayerStore.getState().currentTrack?.id).toBe("1");
+  });
+
+  it("drops similar tracks that arrive after repeat was turned on", async () => {
+    usePlayerStore.setState({ autoplaySimilar: true });
+    let resolve!: (v: unknown) => void;
+    getRadio.mockReturnValueOnce(new Promise((r) => (resolve = r)));
+    const tracks = [mk("1"), mk("2")];
+    await playerEngine.playTrack(tracks[1], tracks, "playlist:p");
+    await vi.advanceTimersByTimeAsync(500);
+    expect(getRadio).toHaveBeenCalledTimes(1);
+
+    playerEngine.setRepeat("all");
+    resolve(radioItems(["s1", "s2"]));
+    await vi.advanceTimersByTimeAsync(0);
+    expect(usePlayerStore.getState().queue.map((t) => t.id)).toEqual([
+      "1",
+      "2",
+    ]);
   });
 });

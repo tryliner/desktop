@@ -1,5 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { useConnectivityStore } from "./connectivityStore";
+import {
+  setConnectivityHooks,
+  useConnectivityStore,
+} from "./connectivityStore";
 
 vi.mock("../lib/diagnostics", () => ({
   runAllChecks: vi.fn().mockResolvedValue({ checks: [], main: null }),
@@ -86,5 +89,51 @@ describe("connectivityStore trip logic", () => {
     expect(useConnectivityStore.getState().failures.length).toBeLessThanOrEqual(
       20,
     );
+  });
+});
+
+describe("connectivityStore hooks", () => {
+  beforeEach(() => {
+    useConnectivityStore.getState().reset();
+  });
+
+  it("ignores failures while suppressed", () => {
+    setConnectivityHooks({ suppress: () => true, onTrip: vi.fn() });
+    for (let i = 0; i < 5; i++)
+      useConnectivityStore
+        .getState()
+        .recordFailure({ method: "GET", path: "/v1/me", latencyMs: 1 });
+    expect(useConnectivityStore.getState().failures).toHaveLength(0);
+    setConnectivityHooks(null);
+  });
+
+  it("keeps the wall hidden when the trip handler takes over", async () => {
+    const onTrip = vi.fn().mockResolvedValue("handled");
+    setConnectivityHooks({ suppress: () => false, onTrip });
+    for (let i = 0; i < 3; i++)
+      useConnectivityStore
+        .getState()
+        .recordFailure({ method: "GET", path: "/v1/me", latencyMs: 1 });
+    await vi.waitFor(() => expect(onTrip).toHaveBeenCalledTimes(1));
+    await Promise.resolve();
+    const state = useConnectivityStore.getState();
+    expect(state.visible).toBe(false);
+    expect(state.tripped).toBe(false);
+    setConnectivityHooks(null);
+  });
+
+  it("shows the wall when the trip handler asks for it", async () => {
+    setConnectivityHooks({
+      suppress: () => false,
+      onTrip: vi.fn().mockResolvedValue("show"),
+    });
+    for (let i = 0; i < 3; i++)
+      useConnectivityStore
+        .getState()
+        .recordFailure({ method: "GET", path: "/v1/me", latencyMs: 1 });
+    await vi.waitFor(() =>
+      expect(useConnectivityStore.getState().visible).toBe(true),
+    );
+    setConnectivityHooks(null);
   });
 });

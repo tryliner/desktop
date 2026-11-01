@@ -47,8 +47,6 @@ function detectSourceLabel(raw: string): string | null {
   return null;
 }
 
-const font = { fontFamily: "var(--font-inter), sans-serif" } as const;
-
 export default function CreatePlaylistModal() {
   const { t } = useTranslation();
   const { toast } = useToast();
@@ -195,7 +193,6 @@ export default function CreatePlaylistModal() {
                   ? "bg-black/[0.07] dark:bg-white/[0.12] text-text-primary"
                   : "bg-transparent text-text-secondary hover:text-text-primary"
               }`}
-              style={font}
             >
               {item.label}
             </button>
@@ -223,10 +220,7 @@ export default function CreatePlaylistModal() {
               }}
               disabled={createPlaylist.isPending}
               rightSlot={
-                <span
-                  className="text-[11px] text-text-tertiary tabular-nums"
-                  style={font}
-                >
+                <span className="text-[11px] text-text-tertiary tabular-nums">
                   {title.length}/{TITLE_MAX}
                 </span>
               }
@@ -241,20 +235,18 @@ export default function CreatePlaylistModal() {
                 disabled={createPlaylist.isPending}
                 onChange={(e) => setDescription(e.target.value)}
                 className="w-full resize-none rounded-[12px] border-0 bg-black/[0.05] dark:bg-white/[0.07] px-[14px] py-[12px] text-[14px] font-[400] text-text-primary placeholder:text-text-tertiary outline-none transition-colors duration-150 focus:bg-black/[0.07] dark:focus:bg-white/[0.1] disabled:opacity-50"
-                style={font}
               />
             ) : (
               <button
                 type="button"
                 onClick={() => setShowDescription(true)}
                 className="self-start bg-transparent border-none p-0 text-[12px] text-text-tertiary hover:text-text-primary transition-colors cursor-pointer"
-                style={font}
               >
                 + {t("common.description_placeholder")}
               </button>
             )}
             {createError && (
-              <span className="text-[12px] text-accent-primary" style={font}>
+              <span className="text-[12px] text-accent-primary">
                 {createError}
               </span>
             )}
@@ -314,7 +306,7 @@ export default function CreatePlaylistModal() {
               }
             />
             {importError && (
-              <span className="text-[12px] text-accent-primary" style={font}>
+              <span className="text-[12px] text-accent-primary">
                 {importError}
               </span>
             )}

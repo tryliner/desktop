@@ -356,10 +356,7 @@ export default function ImportReviewModal() {
         {/* Header */}
         <div className="flex items-start justify-between gap-[12px]">
           <div className="flex flex-col gap-[4px] min-w-0 flex-1">
-            <h2
-              className="m-0 text-[18px] font-[500] text-text-primary flex items-center gap-[8px]"
-              style={{ fontFamily: "var(--font-inter), sans-serif" }}
-            >
+            <h2 className="m-0 text-[18px] font-[500] text-text-primary flex items-center gap-[8px]">
               {t("import.review_title")}
               {items.length > 0 && (
                 <span className="text-[12px] px-[8px] py-[2px] rounded-full bg-border-alpha-14 text-text-secondary font-normal">
@@ -367,10 +364,7 @@ export default function ImportReviewModal() {
                 </span>
               )}
             </h2>
-            <p
-              className="m-0 text-[13px] text-text-tertiary"
-              style={{ fontFamily: "var(--font-inter), sans-serif" }}
-            >
+            <p className="m-0 text-[13px] text-text-tertiary">
               {t("import.review_description")}
             </p>
           </div>

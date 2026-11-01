@@ -1,5 +1,3 @@
-const font = { fontFamily: "var(--font-inter), sans-serif" } as const;
-
 function ThemeMock({ mode }: { mode: "light" | "dark" }) {
   const dark = mode === "dark";
   return (
@@ -120,7 +118,7 @@ export function ThemeCard({
               ? "text-text-primary"
               : "text-text-secondary"
         }`}
-        style={{ ...font, fontWeight: active ? 500 : 400 }}
+        style={{ fontWeight: active ? 500 : 400 }}
       >
         {label}
       </span>

@@ -47,7 +47,6 @@ export function EntityHero({
   return (
     <section
       className="flex w-full min-w-0 items-start gap-[22px]"
-      style={{ fontFamily: "var(--font-inter), sans-serif" }}
       data-no-window-drag
     >
       <div

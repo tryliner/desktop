@@ -7,9 +7,11 @@ import { isStandaloneAudioFile } from "@/shared/storage/audioFormat";
 import type { Track } from "@/shared/types";
 import { markLinerStreamFailed } from "@/shared/media/liner/linerPlayback";
 import { isLocalTrackId } from "@/shared/media/local";
+import { isSavedTrack } from "@/shared/media/saved";
 import { pitchShifter } from "./pitchShifter";
 import { FLAT_EQ, isEqActive } from "./equalizer";
 import { resolvePlaybackStream, type PlaybackStream } from "./streamResolver";
+import { logNowPlaying } from "./nowPlayingLog";
 import {
   downloadAudioBytes,
   isBotCheckError,
@@ -716,7 +718,7 @@ export class PlayerRuntime {
   }
 
   public async preloadTrack(track: Track): Promise<void> {
-    if (isLocalTrackId(track.id)) return;
+    if (isLocalTrackId(track.id) || isSavedTrack(track.id)) return;
     if (this.currentTrackId === track.id) return;
     if (this.preloadingTrackId === track.id) return;
 
@@ -845,7 +847,10 @@ export class PlayerRuntime {
     this.pauseForTransition();
 
     try {
-      const cachedAudio = bypassCache ? null : await linerDb.getAudio(track.id);
+      const cachedAudio =
+        bypassCache || isSavedTrack(track.id)
+          ? null
+          : await linerDb.getAudio(track.id);
       if (epoch !== this.loadEpoch || controller.signal.aborted) {
         return;
       }
@@ -909,11 +914,7 @@ export class PlayerRuntime {
           usePlayerStore.getState().setStatus("playing");
           this.fadeVolume(usePlayerStore.getState().volume, this.loadFadeInMs());
         }
-        log(
-          "green",
-          "playback",
-          `started (cached): ${track.title} in ${audioStartLatencyMs}ms`,
-        );
+        logNowPlaying(track, true, audioStartLatencyMs);
         return;
       }
 
@@ -986,11 +987,7 @@ export class PlayerRuntime {
         this.fadeVolume(usePlayerStore.getState().volume, this.loadFadeInMs());
         this.cacheAudioInBackground(track, stream, bgCacheController.signal);
       }
-      log(
-        "green",
-        "playback",
-        `started: ${track.title} in ${audioStartLatencyMs}ms`,
-      );
+      logNowPlaying(track, false, audioStartLatencyMs);
 
       telemetry.trackPlaybackHealth("INIT_LATENCY", {
         trackId: track.id,
@@ -1218,7 +1215,7 @@ export class PlayerRuntime {
     stream: PlaybackStream,
     signal: AbortSignal,
   ) {
-    if (isLocalTrackId(track.id)) return;
+    if (isLocalTrackId(track.id) || isSavedTrack(track.id)) return;
     if (track.durationMs && track.durationMs > 20 * 60 * 1000) return;
     const generation = audioCache.currentGeneration();
     void (async () => {
