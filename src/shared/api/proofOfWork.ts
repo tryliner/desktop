@@ -20,6 +20,21 @@ export interface PowSolution {
 
 export const SUPPORTED_POW_ALGORITHM = "argon2id-v1";
 const MAX_EXTRA_BITS = 6;
+const FALLBACK_BUDGET_MS = 55_000;
+const SAFETY_MARGIN_MS = 3_000;
+
+export class PowTimeoutError extends Error {
+  constructor() {
+    super("The sign-in check took too long, try again.");
+    this.name = "PowTimeoutError";
+  }
+}
+
+function solveDeadline(expiresAt: string, startedAt: number): number {
+  const remaining = Date.parse(expiresAt) - startedAt;
+  const budget = Number.isFinite(remaining) && remaining > 0 && remaining <= 10 * 60_000 ? remaining : FALLBACK_BUDGET_MS;
+  return startedAt + Math.max(1_000, budget - SAFETY_MARGIN_MS);
+}
 
 export function leadingZeroBits(bytes: Uint8Array): number {
   let bits = 0;
@@ -47,11 +62,11 @@ export async function solvePowChallenge(
   signal?: AbortSignal,
 ): Promise<PowSolution> {
   const salt = fromBase64Url(challenge.salt);
-  const deadline = Date.parse(challenge.expiresAt);
+  const deadline = solveDeadline(challenge.expiresAt, Date.now());
   const maxTries = 2 ** Math.min(challenge.difficulty + MAX_EXTRA_BITS, 30);
   for (let nonce = 0; nonce < maxTries; nonce += 1) {
     if (signal?.aborted) throw new DOMException("Aborted", "AbortError");
-    if (Number.isFinite(deadline) && Date.now() >= deadline) break;
+    if (Date.now() >= deadline) break;
     const hash = await argon2id({
       password: `${challenge.token}:${nonce}`,
       salt,
@@ -65,5 +80,5 @@ export async function solvePowChallenge(
       return { token: challenge.token, nonce: String(nonce) };
     }
   }
-  throw new Error("The sign-in check took too long, try again.");
+  throw new PowTimeoutError();
 }
