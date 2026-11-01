@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { needsOpenCors, withOpenCors } from "./cors";
+import { keepsOwnCors, needsOpenCors, withOpenCors } from "./cors";
 
 describe("withOpenCors", () => {
   it("replaces server cors headers instead of duplicating them", () => {
@@ -19,13 +19,13 @@ describe("withOpenCors", () => {
     expect(statusLine).toBeUndefined();
   });
 
-  it("keeps the server's own cors headers when it allows credentials", () => {
+  it("keeps a liner host's own cors headers when it allows credentials", () => {
     const headers = {
       "access-control-allow-origin": ["http://localhost:5173"],
       "access-control-allow-credentials": ["true"],
       "access-control-allow-headers": ["content-type,x-liner-signature"],
     };
-    const preflight = withOpenCors(headers, "OPTIONS");
+    const preflight = withOpenCors(headers, "OPTIONS", true);
     expect(preflight.responseHeaders).toEqual(headers);
     expect(preflight.statusLine).toBeUndefined();
     expect(
@@ -34,8 +34,31 @@ describe("withOpenCors", () => {
     ).toEqual(["*"]);
   });
 
+  it("opens cors for other hosts even when they allow credentials", () => {
+    const { responseHeaders } = withOpenCors(
+      {
+        "access-control-allow-origin": ["https://music.youtube.com"],
+        "access-control-allow-credentials": ["true"],
+      },
+      "POST",
+    );
+    expect(responseHeaders["access-control-allow-origin"]).toEqual(["*"]);
+    expect(responseHeaders["access-control-allow-credentials"]).toBeUndefined();
+  });
+
   it("answers preflight requests with 200", () => {
     expect(withOpenCors({}, "OPTIONS").statusLine).toBe("HTTP/1.1 200 OK");
+  });
+});
+
+describe("keepsOwnCors", () => {
+  it("keeps cors only for liner hosts and the dev loopback", () => {
+    expect(keepsOwnCors("https://api.tryliner.fun/v1/auth/login")).toBe(true);
+    expect(
+      keepsOwnCors("https://rr4---sn-x.googlevideo.com/videoplayback"),
+    ).toBe(false);
+    expect(keepsOwnCors("http://localhost:1337/v1/me")).toBe(false);
+    expect(keepsOwnCors("http://localhost:1337/v1/me", true)).toBe(true);
   });
 });
 
