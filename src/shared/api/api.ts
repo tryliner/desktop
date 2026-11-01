@@ -41,6 +41,8 @@ function translate(key: string, vars?: Record<string, string | number>) {
 }
 
 import { getApiBaseUrl } from "./baseUrl";
+import { SUPPORTED_POW_ALGORITHM, type PowChallenge, type PowSolution } from "./proofOfWork";
+import { solvePow } from "./proofOfWorkRunner";
 
 const CLIENT_VERSION =
   (import.meta.env.VITE_CLIENT_VERSION as string | undefined) || "1.0.4-desktop";
@@ -535,14 +537,46 @@ import type {
   MostSavedType,
 } from "../contracts";
 
+const RETRYABLE_POW_CODES = new Set(["POW_EXPIRED", "POW_REUSED"]);
+
+async function proofOfWorkFor(purpose: "login" | "register"): Promise<PowSolution | undefined> {
+  let challenge: PowChallenge;
+  try {
+    challenge = await request<PowChallenge>(
+      "/v1/auth/challenge",
+      { method: "POST", body: JSON.stringify({ purpose }) },
+      false,
+    );
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return undefined;
+    throw error;
+  }
+  if (challenge.mode === "off" || challenge.algorithm !== SUPPORTED_POW_ALGORITHM) return undefined;
+  return solvePow(challenge);
+}
+
+async function withProofOfWork<T>(
+  purpose: "login" | "register",
+  send: (pow: PowSolution | undefined) => Promise<T>,
+): Promise<T> {
+  try {
+    return await send(await proofOfWorkFor(purpose));
+  } catch (error) {
+    if (!(error instanceof ApiError) || !error.code || !RETRYABLE_POW_CODES.has(error.code)) throw error;
+    return send(await proofOfWorkFor(purpose));
+  }
+}
+
 // ---- Endpoints --------------------------------------------------------------
 
 export const api = {
   async login(email: string, password: string): Promise<AuthTokens> {
-    const result = await request<AuthTokens>(
-      "/v1/auth/login",
-      { method: "POST", body: JSON.stringify({ email, password }) },
-      false,
+    const result = await withProofOfWork("login", (pow) =>
+      request<AuthTokens>(
+        "/v1/auth/login",
+        { method: "POST", body: JSON.stringify({ email, password, pow }) },
+        false,
+      ),
     );
     setAuthSession(result);
     return result;
@@ -554,18 +588,21 @@ export const api = {
     username: string,
     displayName: string,
   ): Promise<AuthTokens> {
-    const result = await request<AuthTokens>(
-      "/v1/auth/register",
-      {
-        method: "POST",
-        body: JSON.stringify({
-          email,
-          password,
-          username: username.trim().toLowerCase(),
-          displayName: displayName.trim(),
-        }),
-      },
-      false,
+    const result = await withProofOfWork("register", (pow) =>
+      request<AuthTokens>(
+        "/v1/auth/register",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            email,
+            password,
+            username: username.trim().toLowerCase(),
+            displayName: displayName.trim(),
+            pow,
+          }),
+        },
+        false,
+      ),
     );
     setAuthSession(result);
     return result;
