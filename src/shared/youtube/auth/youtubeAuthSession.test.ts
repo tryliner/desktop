@@ -71,6 +71,40 @@ describe("youtube auth session backed by the main process", () => {
     expect(localStorage.getItem(STORAGE_KEY)).toBeNull();
   });
 
+  it("keeps a shared refresh alive when the caller that started it aborts", async () => {
+    vi.doMock("./tvOauthClient", () => ({
+      getTvOauthClient: async () => ({
+        clientId: "id",
+        clientSecret: "secret",
+      }),
+    }));
+    let finishRefresh = (_response: Response) => {};
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        (_url: string, init?: RequestInit) =>
+          new Promise<Response>((resolve, reject) => {
+            init?.signal?.addEventListener("abort", () =>
+              reject(new DOMException("Aborted", "AbortError")),
+            );
+            finishRefresh = resolve;
+          }),
+      ),
+    );
+    const bridge = installBridge({ ...tokens("rt_shared"), expiresAt: 0 });
+    const auth = await loadModule();
+    const first = new AbortController();
+    const firstAuthorization = auth.getYoutubeAuthorization(first.signal);
+    const secondAuthorization = auth.getYoutubeAuthorization();
+    await vi.waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+    first.abort();
+    await expect(firstAuthorization).rejects.toThrow();
+    finishRefresh(Response.json({ access_token: "fresh", expires_in: 3600 }));
+    await expect(secondAuthorization).resolves.toBe("Bearer fresh");
+    expect(bridge.stored?.accessToken).toBe("fresh");
+    vi.doUnmock("./tvOauthClient");
+  });
+
   it("falls back to localStorage outside electron", async () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(tokens("rt_web")));
     const auth = await loadModule();

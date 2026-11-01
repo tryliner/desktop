@@ -23,6 +23,7 @@ import {
   parseRawLyrics,
   useLyricsStore,
   lyricsCache,
+  isLyricsCandidate,
   shouldCacheLyricsCandidate,
   isProvisionalLyricsCandidate,
   compareLyricsCandidates,
@@ -35,13 +36,8 @@ import { debouncedStorage } from "@/shared/utils/storage";
 import { showToast } from "@/shared/ui";
 import { createTranslatorSync, getStoredLocale } from "@/languages";
 import type { Track } from "@/shared/types";
-import { isLocalTrackId, localFileId, localTrackLyricsUrl } from "@/shared/media/local";
+import { isLocalTrackId, localTrackLyricsUrl } from "@/shared/media/local";
 import { readSavedLyrics } from "@/shared/media/saved";
-import {
-  LOCAL_LYRICS_UPDATED,
-  readStoredLocalLyrics,
-  isLyricsCandidate,
-} from "@/features/library/local/lyrics/localLyricsQueue";
 import { loadAmbientScript } from "@/shared/media/ambient";
 import { STREAMS_REFUSED_MESSAGE } from "@/shared/youtube";
 import { OFFLINE_UNAVAILABLE_MESSAGE } from "@/features/connectivity/store/offlineModeStore";
@@ -114,12 +110,21 @@ function newRadioWaveId(): string {
 
 type LyricsHint = { title: string; artist: string; durationMs?: number };
 
+function lyricsArtistName(raw: string): string {
+  const cleaned = raw
+    .replace(/(^|\s)[#@][^\s#@]+/g, " ")
+    .replace(/\s+-\s+topic$/i, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  return cleaned || raw.trim();
+}
+
 function lyricsHint(track: Track): LyricsHint {
   const artist =
     track.artistList?.[0]?.name || track.artists.split(",")[0] || "";
   return {
     title: track.title,
-    artist: artist.trim(),
+    artist: lyricsArtistName(artist),
     durationMs: track.durationMs,
   };
 }
@@ -333,16 +338,6 @@ class PlayerEngine {
     usePlayerStore.setState({
       dispatch: this.dispatch.bind(this),
     });
-
-    if (typeof window !== "undefined") {
-      window.addEventListener(LOCAL_LYRICS_UPDATED, (event) => {
-        const trackId = (event as CustomEvent<{ trackId?: string }>).detail
-          ?.trackId;
-        if (!trackId || this.currentLyricsTrackId !== trackId) return;
-        this.currentLyricsTrackId = null;
-        void this.fetchLyricsForTrack(usePlayerStore.getState().currentTrack);
-      });
-    }
 
     if (playerRuntime) {
       playerRuntime.onEnded = () => {
@@ -1537,29 +1532,15 @@ class PlayerEngine {
     const isCurrent = () => token === this.lyricsLoadToken && !signal.aborted;
 
     const cached = lyricsCache.get(trackId);
-    const candidate =
-      cached?.candidate ??
-      (await readStoredLocalLyrics(localFileId(trackId))) ??
-      (await linerDb.getLyrics(trackId).catch(() => null))?.candidate ??
-      null;
-    if (!isCurrent()) return;
-    if (candidate) {
-      const providers = cached?.availableProviders?.length
-        ? cached.availableProviders
-        : [
-            {
-              provider: candidate.provider,
-              syncLevel: candidate.syncLevel,
-              quality: candidate.quality.total,
-              candidate,
-            },
-          ];
-      if (!cached) lyricsCache.set(trackId, candidate, providers);
-      this.showLyricsCandidate(trackId, candidate, providers);
-      if (!isProvisionalLyricsCandidate(candidate)) return;
+    if (cached?.candidate && isCurrent()) {
+      this.showLyricsCandidate(
+        trackId,
+        cached.candidate,
+        cached.availableProviders || [],
+      );
+      return;
     }
 
-    // Try local paired .lrc file
     try {
       const lrcUrl = localTrackLyricsUrl(trackId);
       const res = await fetch(lrcUrl, { signal });
@@ -1584,6 +1565,14 @@ class PlayerEngine {
               content,
             },
           };
+          lyricsCache.set(trackId, localCandidate, [
+            {
+              provider: "local_lrc",
+              syncLevel: "line_level",
+              quality: 100,
+              candidate: localCandidate,
+            },
+          ]);
           this.showLyricsCandidate(trackId, localCandidate, [
             {
               provider: "local_lrc",
@@ -1600,22 +1589,9 @@ class PlayerEngine {
       // Fallback
     }
 
-    if (!candidate) {
+    if (isCurrent()) {
       this.showNoLyrics(trackId, null);
-      return;
     }
-    const providers = cached?.availableProviders?.length
-      ? cached.availableProviders
-      : [
-          {
-            provider: candidate.provider,
-            syncLevel: candidate.syncLevel,
-            quality: candidate.quality.total,
-            candidate,
-          },
-        ];
-    if (!cached) lyricsCache.set(trackId, candidate, providers);
-    this.showLyricsCandidate(trackId, candidate, providers);
   }
 
   private async fetchLyricsForTrack(track: Track | null): Promise<void> {
@@ -1636,15 +1612,11 @@ class PlayerEngine {
     }
     if (isLocalTrackId(trackId)) {
       this.currentLyricsTrackId = trackId;
-      const localToken = ++this.lyricsLoadToken;
+      const token = ++this.lyricsLoadToken;
       this.lyricsAbort?.abort();
-      const localController = new AbortController();
-      this.lyricsAbort = localController;
-      await this.loadLocalTrackLyrics(
-        track,
-        localToken,
-        localController.signal,
-      );
+      const controller = new AbortController();
+      this.lyricsAbort = controller;
+      await this.loadLocalTrackLyrics(track, token, controller.signal);
       return;
     }
 
@@ -1880,12 +1852,17 @@ class PlayerEngine {
               updatedAt: Date.now(),
             });
           }
+          if (!bestCandidate && event.instrumental) {
+            useLyricsStore.getState().setLyricsState({ instrumental: true });
+          }
           log(
             "cyan",
             "lyrics",
             event.best
               ? `done, best=${event.best.provider} q=${event.best.quality}`
-              : "done, no lyrics found",
+              : event.instrumental
+                ? "done, instrumental"
+                : "done, no lyrics found",
           );
           break;
         }

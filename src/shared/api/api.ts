@@ -759,44 +759,9 @@ export const api = {
     },
   ): Promise<RadioResponse> {
     const history = new Set(options?.history ?? []);
-    return clientCatalog
-      .getRadio(id, options?.k, () => api.getServerRadio(id, options))
-      .then((response) => ({
-        items: response.items.filter((item) => !history.has(item.id)),
-      }));
-  },
-
-  getServerRadio(
-    id: string,
-    options?: {
-      history?: string[];
-      k?: number;
-      drift_rate?: number;
-      temperature?: number;
-      wave_id?: string;
-    },
-  ): Promise<RadioResponse> {
-    if (options?.history && options.history.length > 0) {
-      return request<RadioResponse>(
-        `/v1/tracks/${encodeURIComponent(id)}/radio`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(options),
-        },
-      );
-    }
-    const params = new URLSearchParams();
-    if (options?.k) params.set("k", String(options.k));
-    if (options?.drift_rate)
-      params.set("drift_rate", String(options.drift_rate));
-    if (options?.temperature)
-      params.set("temperature", String(options.temperature));
-    if (options?.wave_id) params.set("wave_id", options.wave_id);
-    const qs = params.toString();
-    return request<RadioResponse>(
-      `/v1/tracks/${encodeURIComponent(id)}/radio${qs ? `?${qs}` : ""}`,
-    );
+    return clientCatalog.getRadio(id, options?.k).then((response) => ({
+      items: response.items.filter((item) => !history.has(item.id)),
+    }));
   },
 
   getAlbum(id: string): Promise<ApiAlbumDetails> {
@@ -1140,6 +1105,8 @@ export const api = {
           ? AbortSignal.any([signal, connect.signal])
           : connect.signal,
         headers: {
+          // a known instrumental comes back as plain json instead of a stream
+          Accept: "application/json, text/event-stream",
           ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
           ...correlationHeaders,
           ...signedHeaders,
@@ -1162,6 +1129,19 @@ export const api = {
     if (!res.ok || !res.body) {
       const respReqId = res.headers?.get?.("x-request-id") || requestId;
       throw new ApiError(res.status, res.statusText, undefined, respReqId);
+    }
+
+    if (res.headers.get("content-type")?.includes("application/json")) {
+      const body = (await res.json()) as { instrumental?: boolean };
+      yield body.instrumental
+        ? {
+            type: "done",
+            cached: true,
+            status: "not_found",
+            instrumental: true,
+          }
+        : { type: "done", cached: true, status: "not_found" };
+      return;
     }
 
     const reader = res.body.getReader();

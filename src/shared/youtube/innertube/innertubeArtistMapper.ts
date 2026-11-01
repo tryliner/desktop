@@ -11,7 +11,10 @@ import {
   mapInnertubeBrowseTracks,
   microformatCover,
 } from "./innertubeCollectionMapper";
-import { isVerifiedArtist } from "./monthlyListeners";
+import {
+  isVerifiedArtist,
+  parseMonthlyListenersCount,
+} from "./monthlyListeners";
 
 const LISTENERS_PATTERN =
   /[\d.,]+[KMBkmb]?\s*(?:monthly (?:audience|listeners)|слушателей за месяц|слухачів за місяць)/i;
@@ -40,6 +43,15 @@ function parseMonthlyListeners(
     getText(header.subtitle)?.match(LISTENERS_PATTERN)?.[0] ??
     getText(header.secondSubtitle)?.match(LISTENERS_PATTERN)?.[0]
   );
+}
+
+function parseSubscribers(
+  header: Record<string, unknown> | undefined,
+): number | undefined {
+  const button = asRecord(
+    asRecord(header?.subscriptionButton)?.subscribeButtonRenderer,
+  );
+  return parseMonthlyListenersCount(getText(button?.subscriberCountText));
 }
 
 function mapReleaseItem(raw: unknown): ArtistAlbum | null {
@@ -110,6 +122,8 @@ export function mapInnertubeArtistDetails(
   const name = getText(header?.title);
   if (!name) return null;
   const monthlyListeners = parseMonthlyListeners(header);
+  const followers = parseSubscribers(header);
+  const bio = getText(header?.description)?.trim();
   const cover =
     microformatCover(body, true) ??
     coverFromThumbnail(header?.thumbnail, { isArtist: true });
@@ -121,6 +135,8 @@ export function mapInnertubeArtistDetails(
     verified: isVerifiedArtist(monthlyListeners),
     ...(cover ? { cover } : {}),
     ...(monthlyListeners ? { monthlyListeners } : {}),
+    ...(followers !== undefined ? { followers } : {}),
+    ...(bio ? { bio } : {}),
     tracks: mapInnertubeBrowseTracks(body, [{ id, name }]),
     albums: releases.albums,
     singles: releases.singles,

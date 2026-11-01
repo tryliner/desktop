@@ -72,6 +72,7 @@
     "save_to_library": "Enregistrer dans la bibliothèque",
     "share": "Partager",
     "back": "Retour",
+    "forward": "Suivant",
     "link_copied": "Lien copié",
     "download": "Télécharger",
     "more": "Plus",
@@ -275,7 +276,7 @@
       "remove": "Supprimer de l'appareil",
       "remove_all": "Tout supprimer",
       "remove_all_title": "Supprimer toute la musique locale ?",
-      "remove_all_desc": "{tracks} ({size}) seront supprimés de Liner, avec leurs pochettes et leurs paroles. Vos fichiers d'origine restent à leur place.",
+      "remove_all_desc": "{tracks} ({size}) seront supprimés de Liner, avec leurs pochettes. Vos fichiers d'origine restent à leur place.",
       "removed_all": "Musique locale supprimée"
     }
   },
@@ -777,7 +778,7 @@
         "local": "Musique locale"
       },
       "local_confirm_title": "Supprimer aussi votre musique locale ?",
-      "local_confirm_desc": "La musique locale est votre bibliothèque importée, pas du cache. {tracks} ({size}) seront supprimés de Liner, avec leurs pochettes et leurs paroles. Vos fichiers d'origine restent à leur place.",
+      "local_confirm_desc": "La musique locale est votre bibliothèque importée, pas du cache. {tracks} ({size}) seront supprimés de Liner, avec leurs pochettes. Vos fichiers d'origine restent à leur place.",
       "local_confirm_button": "Supprimer la musique locale"
     },
     "theme": {

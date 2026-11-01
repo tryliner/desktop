@@ -5,7 +5,7 @@ import {
   useLikeTrack,
   useUnlikeTrack,
 } from "@/features/library/hooks";
-import { ArtistLink } from "@/features/artist";
+import { ArtistAvatar, ArtistLink } from "@/features/artist";
 import { isLocalTrackId } from "@/shared/media/local";
 import { useTranslation } from "@/languages";
 import { ScrollableText } from "@/shared/ui";
@@ -63,6 +63,13 @@ export function FullscreenTrackInfo({ onClose }: FullscreenTrackInfoProps) {
                 />
               </svg>
             </span>
+          )}
+          {!isLocal && (
+            <ArtistAvatar
+              artistId={track?.artistId}
+              artistList={track?.artistList}
+              className="h-[18px] w-[18px]"
+            />
           )}
           <ArtistLink
             name={track?.artists || ""}

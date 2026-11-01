@@ -288,7 +288,6 @@ function LibraryPlaylistContent() {
       : (viewData?.coverUrls?.[0] ??
           (viewData?.coverUrl || undefined) ??
           preview?.coverUrls[0]),
-    { dim: 0.05 },
   );
 
   useEffect(() => {

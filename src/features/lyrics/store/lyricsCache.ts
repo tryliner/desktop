@@ -28,6 +28,11 @@ export function isWordLevelSync(syncLevel: LyricsSyncLevel): boolean {
   return syncLevel === "word_level" || syncLevel === "syllable_level";
 }
 
+export function isLyricsCandidate(value: unknown): value is LyricsCandidate {
+  const lyrics = (value as { lyrics?: { content?: unknown } } | null)?.lyrics;
+  return typeof lyrics?.content === "string" && lyrics.content.length > 0;
+}
+
 export function shouldCacheLyricsCandidate(
   candidate?: LyricsCandidate | null,
 ): boolean {

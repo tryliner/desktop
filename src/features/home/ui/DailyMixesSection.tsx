@@ -33,7 +33,7 @@ function DailyMixesSection({
       <div
         className={`${headingMarginTop} px-3 flex items-center`}
       >
-        <div className="flex items-center gap-3">
+        <div className="group flex items-center gap-3">
           <MixFluidSquare coverUrl={firstCoverUrl} />
           <h2
             className="font-roboto-flex-heading text-text-primary text-[36px] m-0 leading-none tracking-tight"

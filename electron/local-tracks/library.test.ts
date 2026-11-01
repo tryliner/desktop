@@ -48,28 +48,6 @@ describe("LocalTrackLibrary", () => {
     expect(await new LocalTrackLibrary(root).list()).toEqual([record]);
   });
 
-  it("detects and imports paired .lrc file when available and removes it on track delete", async () => {
-    const library = new LocalTrackLibrary(root);
-    const audio = await source("test-song.mp3", "audio content");
-    await source("test-song.lrc", "[00:01.00]Line 1\n[00:05.00]Line 2");
-
-    const result = await library.importFiles([audio]);
-    expect(result.added).toHaveLength(1);
-    const [record] = result.added;
-    expect(record.lrcFile).toBeDefined();
-
-    const locatedLyrics = await library.locate("lyrics", record.id);
-    expect(locatedLyrics).not.toBeNull();
-    await expect(
-      fs.readFile(locatedLyrics!.path, "utf8"),
-    ).resolves.toContain("Line 1");
-
-    // Remove track and verify lyrics file is cleaned up
-    await library.remove([record.id]);
-    expect(await library.locate("lyrics", record.id)).toBeNull();
-    await expect(fs.access(locatedLyrics!.path)).rejects.toThrow();
-  });
-
   it("skips the same file twice and rejects files that are not audio", async () => {
     const library = new LocalTrackLibrary(root);
     const first = await source("a.flac", "same bytes");
@@ -111,46 +89,12 @@ describe("LocalTrackLibrary", () => {
     expect(result.failed).toEqual(["song.mp3"]);
   });
 
-  it("keeps lyrics on disk with the track until the track is removed", async () => {
-    const library = new LocalTrackLibrary(root);
-    const { added } = await library.importFiles([
-      await source("Artist - Song.mp3", "mp3"),
-    ]);
-    const [record] = added;
-    const lyrics = { provider: "lrclib", lyrics: { content: "[00:01.00] hi" } };
-
-    expect(await library.setLyrics(record.id, "found", lyrics)).toBe(true);
-    expect(await new LocalTrackLibrary(root).readLyrics(record.id)).toEqual(
-      lyrics,
-    );
-    expect((await new LocalTrackLibrary(root).list())[0].lyrics).toBe("found");
-
-    await library.remove([record.id]);
-    await expect(
-      fs.access(path.join(root, "lyrics", `${record.id}.json`)),
-    ).rejects.toThrow();
-  });
-
-  it("records a missed search without writing a lyrics file", async () => {
-    const library = new LocalTrackLibrary(root);
-    const { added } = await library.importFiles([
-      await source("Artist - Quiet.mp3", "quiet"),
-    ]);
-
-    expect(await library.setLyrics(added[0].id, "missing")).toBe(true);
-    expect((await library.list())[0].lyrics).toBe("missing");
-    expect(await library.readLyrics(added[0].id)).toBeNull();
-    expect(await library.setLyrics("0".repeat(20), "missing")).toBe(false);
-  });
-
   it("removes every track with its files and reports the space they used", async () => {
     const library = new LocalTrackLibrary(root);
-    const { added } = await library.importFiles([
+    await library.importFiles([
       await source("One - A.mp3", "aaaa"),
       await source("Two - B.mp3", "bbbbbb"),
     ]);
-    await library.setLyrics(added[0].id, "found", { line: "x" });
-
     const usage = await library.usage();
     expect(usage.count).toBe(2);
     expect(usage.bytes).toBeGreaterThanOrEqual(10);
@@ -158,37 +102,7 @@ describe("LocalTrackLibrary", () => {
     expect(await library.removeAll()).toBe(2);
     expect(await library.list()).toEqual([]);
     await expect(fs.access(path.join(root, "audio"))).rejects.toThrow();
-    await expect(fs.access(path.join(root, "lyrics"))).rejects.toThrow();
     expect(await library.usage()).toEqual({ count: 0, bytes: 0 });
-  });
-
-  it("reconciles the index and preserves remaining folders when folder removal fails", async () => {
-    const library = new LocalTrackLibrary(root);
-    const { added } = await library.importFiles([
-      await source("One - A.mp3", "aaaa"),
-    ]);
-    await library.setLyrics(added[0].id, "found", { line: "x" });
-
-    const originalRm = fs.rm;
-    vi.spyOn(fs, "rm").mockImplementation(async (targetPath, options) => {
-      if (String(targetPath).endsWith("lyrics")) {
-        throw new Error("Simulated rm failure on lyrics");
-      }
-      return originalRm(targetPath, options);
-    });
-
-    try {
-      await expect(library.removeAll()).rejects.toThrow(
-        "Simulated rm failure on lyrics",
-      );
-      expect(await library.list()).toEqual([]);
-      await expect(fs.access(path.join(root, "audio"))).rejects.toThrow();
-      await expect(
-        fs.access(path.join(root, "lyrics")),
-      ).resolves.toBeUndefined();
-    } finally {
-      vi.restoreAllMocks();
-    }
   });
 
   it("retains tracks in the index when audio folder removal fails", async () => {
@@ -219,31 +133,19 @@ describe("LocalTrackLibrary", () => {
     }
   });
 
-  it("restores previous lyrics sidecar if saving index fails", async () => {
+  it("copies paired .lrc file into lyrics folder when present", async () => {
     const library = new LocalTrackLibrary(root);
-    const { added } = await library.importFiles([
-      await source("One - A.mp3", "aaaa"),
-    ]);
-    await library.setLyrics(added[0].id, "found", { line: "original" });
+    const audio = await source("01 - Test.mp3", "dummy audio");
+    await source("01 - Test.lrc", "[00:01.00]Hello world");
 
-    const originalWriteFile = fs.writeFile;
-    vi.spyOn(fs, "writeFile").mockImplementation(async (file, data, options) => {
-      if (String(file).includes("library.json.tmp")) {
-        throw new Error("Disk write error");
-      }
-      return originalWriteFile(file, data, options);
-    });
+    const result = await library.importFiles([audio]);
+    expect(result.added).toHaveLength(1);
+    expect(result.added[0].lrcFile).toBeDefined();
 
-    try {
-      await expect(
-        library.setLyrics(added[0].id, "found", { line: "replacement" }),
-      ).rejects.toThrow("Disk write error");
-      expect(await library.readLyrics(added[0].id)).toEqual({
-        line: "original",
-      });
-    } finally {
-      vi.restoreAllMocks();
-    }
+    const located = await library.locate("lyrics", result.added[0].id);
+    expect(located).not.toBeNull();
+    const lrcContent = await fs.readFile(located!.path, "utf8");
+    expect(lrcContent).toContain("[00:01.00]Hello world");
   });
 
   it("refuses ids that could escape the library folder", async () => {

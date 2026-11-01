@@ -67,10 +67,7 @@ function CollectionContent() {
   const preview = readCollectionPreview(location.state);
   const { data, loading } = useCollection(type, id);
   const classicSurfaces = useClassicSurfaces();
-  usePageBackdrop(
-    preview?.coverUrl || data?.coverUrl,
-    type === "playlist" ? { dim: 0.05 } : undefined,
-  );
+  usePageBackdrop(preview?.coverUrl || data?.coverUrl);
   const isSingleArtistAlbum = useMemo(() => {
     if (type === "playlist" || !data || data.tracks.length === 0) return false;
     const first = data.tracks[0].artists;

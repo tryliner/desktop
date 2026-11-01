@@ -77,6 +77,7 @@
     "save_to_library": "Save to library",
     "share": "Share",
     "back": "Back",
+    "forward": "Forward",
     "link_copied": "Link copied",
     "download": "Download",
     "more": "More",
@@ -277,7 +278,7 @@
       "duplicates_removed_other": "Removed {count} duplicates",
       "remove_all": "Remove all imported files",
       "remove_all_title": "Remove all local music?",
-      "remove_all_desc": "{tracks} ({size}) will be removed from Liner, together with their covers and lyrics. Your original files stay where they are.",
+      "remove_all_desc": "{tracks} ({size}) will be removed from Liner, together with their covers. Your original files stay where they are.",
       "removed_all": "Local music removed"
     },
     "offline_mix": {
@@ -920,7 +921,7 @@
         "liked": "Liked songs"
       },
       "local_confirm_title": "Remove imported files?",
-      "local_confirm_desc": "{tracks} ({size}) will be deleted from Liner, together with their covers and lyrics. Your original files stay where they are.",
+      "local_confirm_desc": "{tracks} ({size}) will be deleted from Liner, together with their covers. Your original files stay where they are.",
       "local_confirm_button": "Remove imported files",
       "total_on_device": "{size} on this device",
       "music_title": "Your music",

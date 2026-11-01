@@ -4,7 +4,6 @@ export {
   type ParsedLyrics,
   type WordData,
 } from "./engine/lyricsParser";
-export { braccatoThemeCss } from "./engine/braccatoTheme";
 export {
   useLyricsStore,
   hasSyncedLyricsSources,
@@ -12,6 +11,7 @@ export {
 } from "./store/lyricsStore";
 export {
   lyricsCache,
+  isLyricsCandidate,
   shouldCacheLyricsCandidate,
   isProvisionalLyricsCandidate,
   mergeLyricsProvider,
@@ -26,3 +26,8 @@ export {
   type SyncedLine,
 } from "./hooks/useLyricsAnimator";
 export { LyricsProviderIsland } from "./ui/LyricsProviderIsland";
+export {
+  LyricsCanvasRenderer,
+  type LyricsClock,
+  type EdgesListener,
+} from "./canvas/lyricsCanvasRenderer";

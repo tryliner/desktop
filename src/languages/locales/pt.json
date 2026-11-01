@@ -76,6 +76,7 @@
     "save_to_library": "Salvar na biblioteca",
     "share": "Compartilhar",
     "back": "Voltar",
+    "forward": "Avançar",
     "link_copied": "Link copiado",
     "download": "Baixar",
     "more": "Mais",
@@ -736,7 +737,7 @@
         "local": "Música local"
       },
       "local_confirm_title": "Apagar também a sua música local?",
-      "local_confirm_desc": "A música local é a sua biblioteca importada, não cache. {tracks} ({size}) serão apagadas do Liner, junto com capas e letras. Os seus arquivos originais continuam onde estão.",
+      "local_confirm_desc": "A música local é a sua biblioteca importada, não cache. {tracks} ({size}) serão apagadas do Liner, junto com as capas. Os seus arquivos originais continuam onde estão.",
       "local_confirm_button": "Apagar música local"
     },
     "theme": {

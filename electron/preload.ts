@@ -11,7 +11,6 @@ import type { NetProbeResult } from "./netprobe/types";
 import type {
   LocalImportResult,
   LocalLibraryUsage,
-  LocalLyricsState,
   LocalTrackRecord,
 } from "./local-tracks/types";
 import type {
@@ -218,12 +217,6 @@ export interface LinerElectronApi {
   localTracksRemove: (ids: string[]) => Promise<void>;
   localTracksRemoveAll: () => Promise<number>;
   localTracksUsage: () => Promise<LocalLibraryUsage>;
-  localTracksGetLyrics: (id: string) => Promise<unknown | null>;
-  localTracksSetLyrics: (
-    id: string,
-    state: LocalLyricsState,
-    lyrics?: unknown,
-  ) => Promise<boolean>;
   savedTracksList: () => Promise<SavedTrackRecord[]>;
   savedTracksSave: (input: SavedTrackInput) => Promise<SavedTrackRecord | null>;
   savedTracksRemove: (trackIds: string[]) => Promise<number>;
@@ -536,10 +529,6 @@ const api: LinerElectronApi = {
   localTracksRemove: (ids) => ipcRenderer.invoke("local-tracks:remove", ids),
   localTracksRemoveAll: () => ipcRenderer.invoke("local-tracks:remove-all"),
   localTracksUsage: () => ipcRenderer.invoke("local-tracks:usage"),
-  localTracksGetLyrics: (id) =>
-    ipcRenderer.invoke("local-tracks:lyrics-get", id),
-  localTracksSetLyrics: (id, state, lyrics) =>
-    ipcRenderer.invoke("local-tracks:lyrics-set", id, state, lyrics),
   savedTracksList: () => ipcRenderer.invoke("saved-tracks:list"),
   savedTracksSave: (input) => ipcRenderer.invoke("saved-tracks:save", input),
   savedTracksRemove: (trackIds) =>

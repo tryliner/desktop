@@ -715,44 +715,6 @@ class LinerDb {
     });
   }
 
-  async deleteLyrics(trackIds: string[]): Promise<void> {
-    if (trackIds.length === 0) return;
-    for (const id of trackIds) this.memLyrics.delete(id);
-    await this.runTransaction("lyrics", "readwrite", (store) =>
-      Promise.all(
-        trackIds.map(
-          (id) =>
-            new Promise<void>((resolve) => {
-              const req = store.delete(id);
-              req.onsuccess = () => resolve();
-              req.onerror = () => resolve();
-            }),
-        ),
-      ).then(() => undefined),
-    );
-  }
-
-  async clearCachedLyrics(keep: (trackId: string) => boolean): Promise<void> {
-    for (const id of this.memLyrics.keys()) {
-      if (!keep(id)) this.memLyrics.delete(id);
-    }
-    await this.runTransaction("lyrics", "readwrite", (store) => {
-      return new Promise<void>((resolve) => {
-        const req = store.openCursor();
-        req.onsuccess = () => {
-          const cursor = req.result;
-          if (!cursor) {
-            resolve();
-            return;
-          }
-          if (!keep(String(cursor.key))) cursor.delete();
-          cursor.continue();
-        };
-        req.onerror = () => resolve();
-      });
-    });
-  }
-
   async close(): Promise<void> {
     if (this.dbPromise) {
       try {
