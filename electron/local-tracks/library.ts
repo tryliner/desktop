@@ -8,7 +8,7 @@ import type {
 } from "./types.js";
 
 const ID_PATTERN = /^[a-f0-9]{20}$/;
-const LIBRARY_FOLDERS = ["audio", "covers"] as const;
+const LIBRARY_FOLDERS = ["audio", "covers", "lyrics"] as const;
 
 async function folderBytes(folder: string): Promise<number> {
   try {

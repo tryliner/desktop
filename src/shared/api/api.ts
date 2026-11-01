@@ -1105,7 +1105,6 @@ export const api = {
           ? AbortSignal.any([signal, connect.signal])
           : connect.signal,
         headers: {
-          // a known instrumental comes back as plain json instead of a stream
           Accept: "application/json, text/event-stream",
           ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
           ...correlationHeaders,

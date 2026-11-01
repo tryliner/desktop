@@ -133,19 +133,25 @@ describe("LocalTrackLibrary", () => {
     }
   });
 
-  it("copies paired .lrc file into lyrics folder when present", async () => {
+  it("copies paired .lrc file into lyrics folder when present and deletes it on removal", async () => {
     const library = new LocalTrackLibrary(root);
     const audio = await source("01 - Test.mp3", "dummy audio");
     await source("01 - Test.lrc", "[00:01.00]Hello world");
 
     const result = await library.importFiles([audio]);
     expect(result.added).toHaveLength(1);
-    expect(result.added[0].lrcFile).toBeDefined();
+    const record = result.added[0];
+    expect(record.lrcFile).toBeDefined();
 
-    const located = await library.locate("lyrics", result.added[0].id);
+    const located = await library.locate("lyrics", record.id);
     expect(located).not.toBeNull();
     const lrcContent = await fs.readFile(located!.path, "utf8");
     expect(lrcContent).toContain("[00:01.00]Hello world");
+
+    await library.remove([record.id]);
+    await expect(
+      fs.access(path.join(root, "lyrics", record.lrcFile!)),
+    ).rejects.toThrow();
   });
 
   it("does not delete folders when saving the empty index fails during removeAll", async () => {
