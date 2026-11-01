@@ -44,6 +44,7 @@ import DropdownMenu from "@/shared/ui/DropdownMenu";
 import { useSongMenuItems } from "../hooks/useSongMenuItems";
 
 const PROGRESS_STEP_MS = 1000;
+const PROGRESS_JUMP_TRANSITION = "transform 380ms cubic-bezier(0.22, 1, 0.36, 1)";
 
 function rgbToHsl(r: number, g: number, b: number): [number, number, number] {
   r /= 255;
@@ -563,6 +564,17 @@ function MiniPlayer({
   const [scrubRatio, setScrubRatio] = useState<number | null>(null);
   const activeProgress = scrubRatio !== null ? scrubRatio : secondProgress;
 
+  // anything other than the regular one-step tick (a new track, a seek, a
+  // repeat) is a jump: it eases out quickly instead of crawling linearly
+  const [shownProgress, setShownProgress] = useState(secondProgress);
+  const [progressJumped, setProgressJumped] = useState(false);
+  if (secondProgress !== shownProgress) {
+    const delta = secondProgress - shownProgress;
+    const step = durationMs > 0 ? PROGRESS_STEP_MS / durationMs : 0;
+    setProgressJumped(delta < 0 || delta > step * 1.5);
+    setShownProgress(secondProgress);
+  }
+
   return (
     <div
       ref={miniPlayerRootRef}
@@ -687,9 +699,9 @@ function MiniPlayer({
               transition:
                 scrubRatio !== null
                   ? "none"
-                  : isPlaying
+                  : isPlaying && !progressJumped
                     ? `transform ${PROGRESS_STEP_MS}ms linear`
-                    : "transform 200ms cubic-bezier(0.22, 1, 0.36, 1)",
+                    : PROGRESS_JUMP_TRANSITION,
             }}
           />
         )}
