@@ -748,44 +748,9 @@ export const api = {
     },
   ): Promise<RadioResponse> {
     const history = new Set(options?.history ?? []);
-    return clientCatalog
-      .getRadio(id, options?.k, () => api.getServerRadio(id, options))
-      .then((response) => ({
-        items: response.items.filter((item) => !history.has(item.id)),
-      }));
-  },
-
-  getServerRadio(
-    id: string,
-    options?: {
-      history?: string[];
-      k?: number;
-      drift_rate?: number;
-      temperature?: number;
-      wave_id?: string;
-    },
-  ): Promise<RadioResponse> {
-    if (options?.history && options.history.length > 0) {
-      return request<RadioResponse>(
-        `/v1/tracks/${encodeURIComponent(id)}/radio`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(options),
-        },
-      );
-    }
-    const params = new URLSearchParams();
-    if (options?.k) params.set("k", String(options.k));
-    if (options?.drift_rate)
-      params.set("drift_rate", String(options.drift_rate));
-    if (options?.temperature)
-      params.set("temperature", String(options.temperature));
-    if (options?.wave_id) params.set("wave_id", options.wave_id);
-    const qs = params.toString();
-    return request<RadioResponse>(
-      `/v1/tracks/${encodeURIComponent(id)}/radio${qs ? `?${qs}` : ""}`,
-    );
+    return clientCatalog.getRadio(id, options?.k).then((response) => ({
+      items: response.items.filter((item) => !history.has(item.id)),
+    }));
   },
 
   getAlbum(id: string): Promise<ApiAlbumDetails> {
@@ -1158,7 +1123,12 @@ export const api = {
     if (res.headers.get("content-type")?.includes("application/json")) {
       const body = (await res.json()) as { instrumental?: boolean };
       yield body.instrumental
-        ? { type: "done", cached: true, status: "not_found", instrumental: true }
+        ? {
+            type: "done",
+            cached: true,
+            status: "not_found",
+            instrumental: true,
+          }
         : { type: "done", cached: true, status: "not_found" };
       return;
     }

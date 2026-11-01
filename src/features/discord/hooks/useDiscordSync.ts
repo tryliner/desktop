@@ -1,46 +1,27 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { usePlayerState } from "@/features/player/hooks/usePlayerState";
 import { useCoverSrc } from "@/features/covers";
-import { api, mediaUrl, toMaxQualityAvatarUrl } from "@/shared/api";
+import {
+  primaryArtistId as resolvePrimaryArtistId,
+  useArtistAvatar,
+} from "@/features/artist";
+import { toMaxQualityAvatarUrl } from "@/shared/api";
 import { getAuthSession } from "@/shared/api/auth-session";
 import type { DiscordRpcStatePayload } from "../contracts";
 import { useDiscordSettingsStore } from "../store/discordSettingsStore";
 import { isLocalTrackId } from "@/shared/media/local";
 
-const artistAvatarCache = new Map<string, string | null>();
-const pendingArtistAvatars = new Map<string, Promise<string | null>>();
-
-function loadArtistAvatar(artistId: string): Promise<string | null> {
-  const pending = pendingArtistAvatars.get(artistId);
-  if (pending) return pending;
-  const request = api
-    .getArtistImage(artistId)
-    .then((url) => (url ? toMaxQualityAvatarUrl(mediaUrl(url)) || null : null))
-    .catch(() => null)
-    .then((url) => {
-      artistAvatarCache.set(artistId, url);
-      pendingArtistAvatars.delete(artistId);
-      return url;
-    });
-  pendingArtistAvatars.set(artistId, request);
-  return request;
-}
-
 export function useDiscordSync() {
   const player = usePlayerState();
   const currentTrack = player.currentTrack;
   const effectiveCover = useCoverSrc(currentTrack?.coverUrl);
-  const [loadedAvatar, setLoadedAvatar] = useState<{
-    artistId: string;
-    url: string | null;
-  } | null>(null);
-
-  const primaryArtistId =
-    currentTrack?.artistId ||
-    (Array.isArray(currentTrack?.artistList) &&
-    currentTrack.artistList.length > 0
-      ? currentTrack.artistList[0]?.id
-      : undefined);
+  const primaryArtistId = resolvePrimaryArtistId(
+    currentTrack?.artistId,
+    currentTrack?.artistList,
+  );
+  const rawArtistAvatar = useArtistAvatar(primaryArtistId);
+  const artistAvatar =
+    toMaxQualityAvatarUrl(rawArtistAvatar ?? undefined) || undefined;
 
   // Sync settings on mount
   useEffect(() => {
@@ -75,29 +56,6 @@ export function useDiscordSync() {
       window.removeEventListener("auth:changed", handleAuthChange);
     };
   }, []);
-
-  useEffect(() => {
-    if (
-      !primaryArtistId ||
-      primaryArtistId === "unknown" ||
-      artistAvatarCache.has(primaryArtistId)
-    )
-      return;
-    let active = true;
-    void loadArtistAvatar(primaryArtistId).then((url) => {
-      if (active) setLoadedAvatar({ artistId: primaryArtistId, url });
-    });
-    return () => {
-      active = false;
-    };
-  }, [primaryArtistId]);
-
-  const artistAvatar =
-    (primaryArtistId &&
-      (loadedAvatar?.artistId === primaryArtistId
-        ? loadedAvatar.url
-        : artistAvatarCache.get(primaryArtistId))) ||
-    undefined;
 
   // Track position prediction for seek detection
   const lastStateRef = useRef<{

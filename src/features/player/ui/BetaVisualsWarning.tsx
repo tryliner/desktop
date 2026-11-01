@@ -43,8 +43,8 @@ export function BetaVisualsWarning({ docked }: BetaVisualsWarningProps) {
     <div
       ref={containerRef}
       className={cn(
-        "flex pointer-events-auto select-none",
-        docked ? "absolute right-full top-0 mr-[6px]" : "relative ml-[4px]",
+        "pointer-events-auto flex select-none",
+        docked ? "absolute right-full top-0 mr-[6px]" : "relative",
       )}
     >
       <button

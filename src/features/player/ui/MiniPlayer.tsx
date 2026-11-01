@@ -38,10 +38,12 @@ import { TimelineSlider } from "./TimelineSlider";
 import { useTheme } from "next-themes";
 import { useCoverReady, CoverImage, loadCoverElement } from "@/features/covers";
 import { useHasPageBackdrop } from "@/features/settings/store/customizationStore";
-import { ArtistLink } from "@/features/artist";
+import { ArtistAvatar, ArtistLink } from "@/features/artist";
 import { isLocalTrackId } from "@/shared/media/local";
 import DropdownMenu from "@/shared/ui/DropdownMenu";
 import { useSongMenuItems } from "../hooks/useSongMenuItems";
+
+const PROGRESS_STEP_MS = 1000;
 
 function rgbToHsl(r: number, g: number, b: number): [number, number, number] {
   r /= 255;
@@ -341,6 +343,14 @@ function MiniPlayer({
       : 0;
 
   const isPlaying = player.status === "playing";
+  const secondProgress =
+    isPlaying && durationMs > 0
+      ? Math.min(
+          1,
+          (Math.floor(player.positionMs / PROGRESS_STEP_MS) + 1) *
+            (PROGRESS_STEP_MS / durationMs),
+        )
+      : progress;
   const isLoading = player.status === "loading";
   const trackTitle = player.currentTrack?.title ?? t("player.nothing_playing");
   const trackArtists = player.currentTrack?.artists ?? t("player.choose_track");
@@ -551,7 +561,7 @@ function MiniPlayer({
   }, [clearVolumeHoverTimer, eqOpen, speedOpen, volumeOpen]);
 
   const [scrubRatio, setScrubRatio] = useState<number | null>(null);
-  const activeProgress = scrubRatio !== null ? scrubRatio : progress;
+  const activeProgress = scrubRatio !== null ? scrubRatio : secondProgress;
 
   return (
     <div
@@ -670,15 +680,16 @@ function MiniPlayer({
       >
         {usesBackgroundProgress && (
           <div
-            className="absolute inset-y-0 left-0 z-0 pointer-events-none"
+            className="absolute inset-0 z-0 pointer-events-none origin-left"
             style={{
               backgroundColor: accentColor,
-              width: `${activeProgress * 100}%`,
-              willChange: "width",
+              transform: `scaleX(${activeProgress})`,
               transition:
                 scrubRatio !== null
                   ? "none"
-                  : "width 200ms cubic-bezier(0.22, 1, 0.36, 1)",
+                  : isPlaying
+                    ? `transform ${PROGRESS_STEP_MS}ms linear`
+                    : "transform 200ms cubic-bezier(0.22, 1, 0.36, 1)",
             }}
           />
         )}
@@ -800,6 +811,13 @@ function MiniPlayer({
                       E
                     </span>
                   </span>
+                )}
+                {!isLocal && (
+                  <ArtistAvatar
+                    artistId={player.currentTrack?.artistId}
+                    artistList={player.currentTrack?.artistList}
+                    className="h-[15px] w-[15px]"
+                  />
                 )}
                 <ArtistLink
                   name={trackArtists}

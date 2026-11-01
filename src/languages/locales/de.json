@@ -73,6 +73,7 @@
     "save_to_library": "Zur Mediathek hinzufügen",
     "share": "Teilen",
     "back": "Zurück",
+    "forward": "Vorwärts",
     "link_copied": "Link kopiert",
     "download": "Download",
     "more": "Mehr",
@@ -616,7 +617,7 @@
         "local": "Lokale Musik"
       },
       "local_confirm_title": "Auch deine lokale Musik löschen?",
-      "local_confirm_desc": "Lokale Musik ist deine importierte Bibliothek, kein Cache. {tracks} ({size}) werden samt Covern und Songtexten aus Liner gelöscht. Deine Originaldateien bleiben, wo sie sind.",
+      "local_confirm_desc": "Lokale Musik ist deine importierte Bibliothek, kein Cache. {tracks} ({size}) werden samt Covern aus Liner gelöscht. Deine Originaldateien bleiben, wo sie sind.",
       "local_confirm_button": "Lokale Musik löschen"
     },
     "theme": {

@@ -760,7 +760,12 @@ export default function AppFrame({ children }: AppFrameProps) {
         )}
       </AnimatePresence>
 
-      <div className="flex-1 min-h-0 flex flex-row w-full gap-1.5 overflow-hidden relative z-10">
+      <div
+        className={cn(
+          "flex-1 min-h-0 flex flex-row w-full gap-1.5 overflow-hidden relative z-10",
+          fullscreenPlayerOpen && fullscreenEffectsReady && "invisible",
+        )}
+      >
         <aside
           ref={sidebarRef}
           className="w-[58px] mt-[56px] shrink-0 z-[45] relative flex flex-col"

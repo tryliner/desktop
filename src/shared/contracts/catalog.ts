@@ -72,6 +72,7 @@ export interface ArtistDetails {
   bio?: string;
   cover?: Cover;
   monthlyListeners?: string;
+  followers?: number;
   verified: boolean;
   geniusImageUrl?: string;
   geniusAka?: string[];

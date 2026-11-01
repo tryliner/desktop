@@ -12,7 +12,6 @@ import { useTranslation } from "@/languages";
 import cleanDuckAnimationData from "@/assets/animations/clean_duck.json";
 import {
   getCachedStorageAnalytics,
-  setStorageTabOpen,
   refreshStorageAnalytics,
   clearStorageCategories,
   openCacheFolder,
@@ -135,9 +134,15 @@ export function StorageTab({ searchQuery }: { searchQuery?: string }) {
   };
 
   useEffect(() => {
-    setStorageTabOpen(true);
+    if (!getCachedStorageAnalytics()) return;
+    let cancelled = false;
+    refreshStorageAnalytics()
+      .then((data) => {
+        if (!cancelled) setAnalytics(data);
+      })
+      .catch(() => {});
     return () => {
-      setStorageTabOpen(false);
+      cancelled = true;
     };
   }, []);
 
