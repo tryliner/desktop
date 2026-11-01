@@ -4,6 +4,5 @@ export { PlayerBar } from "./player-bar";
 export { MiniPlayer } from "./mini-player";
 export { FullscreenPlayer } from "./fullscreen-player";
 export { RightDrawer } from "./right-drawer";
-export { SearchModal } from "./search-modal";
 export { SettingsModal } from "./settings-modal";
 export { AppFrame } from "./app-frame";
