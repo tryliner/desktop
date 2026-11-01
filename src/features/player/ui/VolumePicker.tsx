@@ -243,7 +243,7 @@ export const VolumePicker = memo(function VolumePicker({
               !trackBg
                 ? isActive
                   ? "bg-black/[0.18] dark:bg-white/[0.22]"
-                  : "bg-black/[0.08] dark:bg-white/[0.12]"
+                  : "bg-fill-hover"
                 : ""
             } ${trackClassName}`}
           >
@@ -372,7 +372,7 @@ export const VolumePicker = memo(function VolumePicker({
 
       {showValue && (
         <span
-          className={`w-[32px] shrink-0 text-right text-[12px] font-[500] tabular-nums ${
+          className={`w-[32px] shrink-0 text-right text-caption font-[500] tabular-nums ${
             !valueClassName
               ? "text-text-tertiary group-hover:text-text-secondary"
               : ""

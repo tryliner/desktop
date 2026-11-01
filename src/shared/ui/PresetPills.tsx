@@ -22,7 +22,7 @@ export interface PresetPillsProps<T> {
 
 const SIZE_CLASSES = {
   sm: "h-[26px] rounded-[6px] text-[11px] font-[600]",
-  md: "h-[30px] rounded-[8px] px-[12px] text-[12px] font-[600]",
+  md: "h-[30px] rounded-control px-[12px] text-caption font-[600]",
 };
 
 export function PresetPills<T>({

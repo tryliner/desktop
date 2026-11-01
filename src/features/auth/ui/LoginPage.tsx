@@ -207,7 +207,7 @@ export default function LoginPage() {
 
       <WindowControls variant="glass" isFullscreen />
 
-      <section className="relative z-10 mx-4 my-auto grid max-h-[calc(100%-48px)] w-full max-w-[780px] grid-cols-[300px_1fr] gap-[8px] overflow-y-auto rounded-[20px] border border-border-primary bg-bg-panel p-[8px]">
+      <section className="relative z-10 mx-4 my-auto grid max-h-[calc(100%-48px)] w-full max-w-[780px] grid-cols-[300px_1fr] gap-[8px] overflow-y-auto rounded-panel border border-border-primary bg-bg-panel p-[8px]">
         <LoginBrandPanel title={heading} subtitle={subheading} />
 
         <div className="flex w-full flex-col px-[28px] pb-[22px] pt-[26px]">
@@ -253,7 +253,7 @@ export default function LoginPage() {
                       className="overflow-hidden flex flex-col"
                     >
                       <label
-                        className="mb-[7px] text-[12px] font-[500] text-text-secondary"
+                        className="mb-[7px] text-caption font-[500] text-text-secondary"
                         htmlFor="auth-email"
                       >
                         {t("login.label_email")}
@@ -279,7 +279,7 @@ export default function LoginPage() {
                       />
 
                       <label
-                        className="mb-[7px] mt-[15px] text-[12px] font-[500] text-text-secondary"
+                        className="mb-[7px] mt-[15px] text-caption font-[500] text-text-secondary"
                         htmlFor="auth-password"
                       >
                         {t("login.label_password")}
@@ -337,7 +337,7 @@ export default function LoginPage() {
                             className="overflow-hidden"
                           >
                             <label
-                              className="mb-[7px] mt-[15px] block text-[12px] font-[500] text-text-secondary"
+                              className="mb-[7px] mt-[15px] block text-caption font-[500] text-text-secondary"
                               htmlFor="auth-confirm"
                             >
                               {t("login.label_confirm_password")}
@@ -396,7 +396,7 @@ export default function LoginPage() {
                       className="overflow-hidden flex flex-col"
                     >
                       <label
-                        className="mb-[7px] block text-[12px] font-[500] text-text-secondary"
+                        className="mb-[7px] block text-caption font-[500] text-text-secondary"
                         htmlFor="auth-username"
                       >
                         {t("login.label_username")}
@@ -454,7 +454,7 @@ export default function LoginPage() {
                       )}
 
                       <label
-                        className="mb-[7px] mt-[14px] block text-[12px] font-[500] text-text-secondary"
+                        className="mb-[7px] mt-[14px] block text-caption font-[500] text-text-secondary"
                         htmlFor="auth-display-name"
                       >
                         {t("login.label_display_name")}
@@ -490,7 +490,7 @@ export default function LoginPage() {
                         initial={{ opacity: 0, y: -3 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0 }}
-                        className="m-0 text-[12px] font-[500] leading-[1.4] text-accent-primary"
+                        className="m-0 text-caption font-[500] leading-[1.4] text-accent-primary"
                       >
                         {error}
                       </motion.p>

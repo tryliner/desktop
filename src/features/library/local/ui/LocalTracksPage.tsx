@@ -87,7 +87,7 @@ export default function LocalTracksPage() {
 
         <div
           className={cn(
-            "mx-[4px] mt-[20px] shrink-0 grow overflow-hidden rounded-t-[14px] bg-black/[0.03] px-[8px] pt-[8px] dark:bg-white/[0.04]",
+            "mx-[4px] mt-[20px] shrink-0 grow overflow-hidden rounded-t-[14px] bg-fill-subtle px-[8px] pt-[8px]",
             !classicSurfaces && "backdrop-blur-xl",
           )}
           style={{

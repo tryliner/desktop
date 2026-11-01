@@ -79,7 +79,7 @@ export default function OfflineMixCard() {
         {loading ? (
           <div className="h-[13px] w-[56%] animate-pulse rounded bg-border-alpha-14" />
         ) : (
-          <span className="truncate text-[13px] text-text-tertiary">
+          <span className="truncate text-body text-text-tertiary">
             {t("common.songs", { count: tracks.length })}
           </span>
         )}

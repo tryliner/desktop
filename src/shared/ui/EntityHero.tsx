@@ -6,7 +6,7 @@ export const HERO_TITLE_CLASS =
   "font-roboto-flex-heading m-0 text-[30px] leading-[1.15] text-text-primary line-clamp-1";
 
 const HERO_SUBTITLE_TEXT =
-  "m-0 text-[18px] font-[400] leading-[1.3] text-text-secondary";
+  "m-0 text-heading font-[400] leading-[1.3] text-text-secondary";
 
 export const HERO_SUBTITLE_CLASS = `${HERO_SUBTITLE_TEXT} line-clamp-1`;
 
@@ -22,7 +22,7 @@ export const HERO_GLASS_CLASS = "bg-black/[0.05] dark:bg-white/[0.09]";
 
 // same tint as the glass buttons, so chips and buttons read as one surface
 export const HERO_CHIP_CLASS =
-  "inline-flex h-[26px] items-center gap-[6px] rounded-[9px] px-[11px] text-[12px] font-[400] text-text-primary select-none bg-black/[0.05] dark:bg-white/[0.1]";
+  "inline-flex h-[26px] items-center gap-[6px] rounded-[9px] px-[11px] text-caption font-[400] text-text-primary select-none bg-black/[0.05] dark:bg-white/[0.1]";
 
 export const HERO_BUTTON_CLASS =
   "!h-[32px] !rounded-[9px] !border-0 !text-[14px] flex items-center justify-center gap-[7px] shrink-0";

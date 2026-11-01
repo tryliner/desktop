@@ -20,7 +20,7 @@ export function SettingsUserFooter({ onClose }: SettingsUserFooterProps) {
 
   return (
     <div className="shrink-0 px-[10px] pt-[6px] pb-[10px]">
-      <div className="flex min-w-0 items-center gap-[10px] rounded-[12px] bg-black/[0.05] dark:bg-white/[0.07] p-[8px] pr-[6px]">
+      <div className="flex min-w-0 items-center gap-[10px] rounded-item bg-fill p-[8px] pr-[6px]">
         <span className="relative shrink-0">
           <UserAvatar user={user ?? null} size={32} />
           <span
@@ -29,10 +29,10 @@ export function SettingsUserFooter({ onClose }: SettingsUserFooterProps) {
           />
         </span>
         <span className="flex min-w-0 flex-1 flex-col gap-[2px] font-sans">
-          <span className="truncate text-[13px] leading-[16px] font-[500] text-text-primary">
+          <span className="truncate text-body leading-[16px] font-[500] text-text-primary">
             {displayName}
           </span>
-          <span className="truncate text-[12px] leading-[15px] text-text-tertiary">
+          <span className="truncate text-caption leading-[15px] text-text-tertiary">
             {handle}
           </span>
         </span>
@@ -44,7 +44,7 @@ export function SettingsUserFooter({ onClose }: SettingsUserFooterProps) {
           }}
           title={signOutLabel}
           aria-label={signOutLabel}
-          className="flex h-[30px] w-[30px] shrink-0 cursor-pointer items-center justify-center rounded-[8px] border-0 bg-transparent p-0 text-text-tertiary transition-colors hover:bg-red-500/10 hover:text-red-500"
+          className="flex h-[30px] w-[30px] shrink-0 cursor-pointer items-center justify-center rounded-control border-0 bg-transparent p-0 text-text-tertiary transition-colors hover:bg-red-500/10 hover:text-red-500"
         >
           <ExitLine size={16} />
         </button>

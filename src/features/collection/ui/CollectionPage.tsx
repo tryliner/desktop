@@ -517,7 +517,7 @@ function CollectionContent() {
               </div>
 
               <div
-                className={`grow shrink-0 mt-[20px] mx-[4px] rounded-t-[14px] bg-black/[0.03] dark:bg-white/[0.04] overflow-hidden px-[8px] pt-[8px] ${
+                className={`grow shrink-0 mt-[20px] mx-[4px] rounded-t-[14px] bg-fill-subtle overflow-hidden px-[8px] pt-[8px] ${
                   classicSurfaces ? "" : "backdrop-blur-xl"
                 }`}
                 style={{

@@ -164,7 +164,7 @@ export function LyricsProviderIsland() {
               setDropdownOpen((v) => !v);
             }
           }}
-          className={`flex items-center gap-[6px] h-[26px] min-h-[26px] max-h-[26px] px-[8px] rounded-md text-[12px] font-[500] text-white transition-all border-none bg-transparent ${
+          className={`flex items-center gap-[6px] h-[26px] min-h-[26px] max-h-[26px] px-[8px] rounded-md text-caption font-[500] text-white transition-all border-none bg-transparent ${
             hasMultiple ? "hover:bg-white/10 cursor-pointer" : "cursor-default"
           }`}
         >
@@ -220,7 +220,7 @@ export function LyricsProviderIsland() {
                 setDropdownOpen(false);
                 setOffsetOpen((v) => !v);
               }}
-              className={`flex items-center gap-[4px] h-[26px] min-h-[26px] max-h-[26px] px-[6px] rounded-md text-[12px] font-mono transition-all border-none bg-transparent hover:bg-white/10 cursor-pointer ${
+              className={`flex items-center gap-[4px] h-[26px] min-h-[26px] max-h-[26px] px-[6px] rounded-md text-caption font-mono transition-all border-none bg-transparent hover:bg-white/10 cursor-pointer ${
                 offsetMs !== 0
                   ? "text-white font-[600]"
                   : "text-white/80 font-[500]"
@@ -269,7 +269,7 @@ export function LyricsProviderIsland() {
                     selectProvider(option.provider);
                     setDropdownOpen(false);
                   }}
-                  className={`flex items-center justify-between gap-[8px] w-full px-[8px] py-[6px] rounded-md text-[12px] transition-colors border-none cursor-pointer text-left ${
+                  className={`flex items-center justify-between gap-[8px] w-full px-[8px] py-[6px] rounded-md text-caption transition-colors border-none cursor-pointer text-left ${
                     isActive
                       ? "bg-white/15 text-white font-[500]"
                       : "bg-transparent text-white/70 hover:bg-white/10 hover:text-white font-[400]"
@@ -300,7 +300,7 @@ export function LyricsProviderIsland() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-[6px]">
                 <TimeLine size={14} className="text-white" />
-                <span className="text-[12px] font-[600] text-white">
+                <span className="text-caption font-[600] text-white">
                   {t("player.lyrics_offset")}
                 </span>
               </div>
@@ -354,7 +354,7 @@ export function LyricsProviderIsland() {
                     }
                   }}
                   placeholder="0"
-                  className="w-full text-center text-[13px] font-mono font-[600] text-white bg-transparent border-none outline-none p-0"
+                  className="w-full text-center text-body font-mono font-[600] text-white bg-transparent border-none outline-none p-0"
                 />
               </div>
 

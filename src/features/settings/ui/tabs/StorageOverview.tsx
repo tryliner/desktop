@@ -91,11 +91,11 @@ export function StorageOverview({
           <span className="text-[28px] font-[600] leading-none tracking-[-0.02em] tabular-nums text-text-primary">
             {value}
           </span>
-          <span className="text-[15px] text-text-tertiary">{unit}</span>
+          <span className="text-title text-text-tertiary">{unit}</span>
         </div>
         {freeBytes !== undefined ? (
           <span
-            className={`text-[13px] tabular-nums ${
+            className={`text-body tabular-nums ${
               lowDisk ? "text-amber-500" : "text-text-tertiary"
             }`}
           >
@@ -108,7 +108,7 @@ export function StorageOverview({
 
       <div className="mt-[14px] flex h-[8px] gap-[3px]">
         {empty ? (
-          <div className="h-full flex-1 rounded-full bg-black/[0.06] dark:bg-white/[0.08]" />
+          <div className="h-full flex-1 rounded-full bg-fill" />
         ) : (
           segments.map((segment) => (
             <motion.div
@@ -126,7 +126,7 @@ export function StorageOverview({
         )}
       </div>
 
-      <div className="mt-[12px] flex gap-[20px] text-[13px] tabular-nums text-text-tertiary">
+      <div className="mt-[12px] flex gap-[20px] text-body tabular-nums text-text-tertiary">
         <Legend
           swatch="bg-text-primary"
           label={`${t("settings.storage.music_title")} ${formatStorageBytes(musicBytes)}`}

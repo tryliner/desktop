@@ -40,7 +40,7 @@ export function SectionHeading({
           {badge}
         </div>
         {subtitle && (
-          <p className="text-[13px] text-text-tertiary m-0 mt-0.5 font-normal">
+          <p className="text-body text-text-tertiary m-0 mt-0.5 font-normal">
             {subtitle}
           </p>
         )}

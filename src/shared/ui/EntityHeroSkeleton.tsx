@@ -24,7 +24,7 @@ export function EntityHeroSkeleton({
         {title ? (
           <h1 className={HERO_TITLE_CLASS}>{title}</h1>
         ) : (
-          <div className="skeleton-shimmer mt-[4px] h-[30px] w-[40%] rounded-[8px]" />
+          <div className="skeleton-shimmer mt-[4px] h-[30px] w-[40%] rounded-control" />
         )}
         {title && subtitle ? (
           <p className={`${HERO_SUBTITLE_CLASS} mt-[4px]`}>{subtitle}</p>

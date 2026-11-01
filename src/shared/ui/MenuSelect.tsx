@@ -34,9 +34,9 @@ export default function MenuSelect<T extends string = string>({
       aria-haspopup="menu"
       aria-expanded={open}
       className={cn(
-        "flex h-[34px] min-w-0 cursor-pointer items-center gap-[8px] rounded-[11px] border-0 pr-[10px] pl-[12px] font-sans text-[13px] font-[500] text-text-primary transition-colors",
-        "bg-black/[0.05] hover:bg-black/[0.08] dark:bg-white/[0.07] dark:hover:bg-white/[0.1]",
-        open && "bg-black/[0.08] dark:bg-white/[0.1]",
+        "flex h-[34px] min-w-0 cursor-pointer items-center gap-[8px] rounded-[11px] border-0 pr-[10px] pl-[12px] font-sans text-body font-[500] text-text-primary transition-colors",
+        "bg-fill hover:bg-fill-hover",
+        open && "bg-fill-hover",
         "disabled:cursor-not-allowed disabled:opacity-50",
         className,
       )}

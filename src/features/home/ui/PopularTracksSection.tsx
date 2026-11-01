@@ -165,7 +165,7 @@ function TrackCard({
         <span className="truncate text-[14px] font-[500] text-text-primary">
           {item.item.title}
         </span>
-        <div className="flex min-w-0 items-center overflow-hidden text-[13px] text-text-tertiary">
+        <div className="flex min-w-0 items-center overflow-hidden text-body text-text-tertiary">
           {item.item.explicit && (
             <ExplicitBadge size="md" className="mr-[6px] shrink-0" />
           )}
@@ -173,7 +173,7 @@ function TrackCard({
             name={item.item.artists}
             artistId={item.item.artistId}
             artistList={item.item.artistList}
-            className="text-[13px] text-text-tertiary"
+            className="text-body text-text-tertiary"
           />
         </div>
       </div>
@@ -274,14 +274,14 @@ function AlbumCard({
         <span className="truncate text-[14px] font-[500] text-text-primary">
           {item.item.title}
         </span>
-        <div className="flex min-w-0 items-center overflow-hidden text-[13px] text-text-tertiary">
+        <div className="flex min-w-0 items-center overflow-hidden text-body text-text-tertiary">
           {item.item.explicit && (
             <ExplicitBadge size="md" className="mr-[6px] shrink-0" />
           )}
           <ArtistLink
             name={item.item.artist}
             artistList={item.item.artistList}
-            className="text-[13px] text-text-tertiary"
+            className="text-body text-text-tertiary"
           />
         </div>
       </div>
@@ -382,7 +382,7 @@ function PlaylistCard({
         <span className="truncate text-[14px] font-[500] text-text-primary">
           {item.item.title}
         </span>
-        <span className="truncate text-[13px] text-text-tertiary">
+        <span className="truncate text-body text-text-tertiary">
           {item.item.owner}
         </span>
       </div>

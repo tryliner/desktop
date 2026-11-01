@@ -86,7 +86,7 @@ function SongCard({
       ? "h-[36px] w-[48px]"
       : "h-[48px] w-[48px]";
   const titleSizeClass = compact ? "text-[14px]" : "text-[16px]";
-  const artistSizeClass = compact ? "text-[12px]" : "text-[15px]";
+  const artistSizeClass = compact ? "text-caption" : "text-title";
   const gapClass = compact ? "gap-[12px]" : "gap-[16px]";
   const paddingClass = compact
     ? "p-[6px]"
@@ -214,7 +214,7 @@ function SongCard({
             </h3>
             {repostedBy && (
               <div
-                className="flex items-center gap-[4px] text-text-tertiary text-[13px]"
+                className="flex items-center gap-[4px] text-text-tertiary text-body"
                 title={t("common.reposted_by", { name: repostedBy })}
               >
                 <RepeatFill size={14} />

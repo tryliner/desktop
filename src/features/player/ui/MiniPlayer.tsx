@@ -44,7 +44,8 @@ import DropdownMenu from "@/shared/ui/DropdownMenu";
 import { useSongMenuItems } from "../hooks/useSongMenuItems";
 
 const PROGRESS_STEP_MS = 1000;
-const PROGRESS_JUMP_TRANSITION = "transform 380ms cubic-bezier(0.22, 1, 0.36, 1)";
+const PROGRESS_JUMP_TRANSITION =
+  "transform 380ms cubic-bezier(0.22, 1, 0.36, 1)";
 
 function rgbToHsl(r: number, g: number, b: number): [number, number, number] {
   r /= 255;
@@ -589,7 +590,7 @@ function MiniPlayer({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 6, scale: 0.96, pointerEvents: "none" }}
             transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
-            className="absolute bottom-[52px] z-[99] w-[46px] rounded-[11px] p-[4px] bg-black/[0.05] backdrop-blur-2xl backdrop-saturate-150 dark:bg-white/[0.07] prevent-seek"
+            className="absolute bottom-[52px] z-[99] w-[46px] rounded-[11px] p-[4px] bg-fill backdrop-blur-2xl backdrop-saturate-150 prevent-seek"
             style={volumePopupStyle}
             onPointerDown={(e) => e.stopPropagation()}
             onMouseEnter={clearVolumeHoverTimer}
@@ -611,7 +612,7 @@ function MiniPlayer({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.985 }}
             transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
-            className="absolute bottom-[74px] z-[92] w-[300px] rounded-[14px] p-[16px] bg-black/[0.05] backdrop-blur-2xl backdrop-saturate-150 dark:bg-white/[0.07] prevent-seek"
+            className="absolute bottom-[74px] z-[92] w-[300px] rounded-[14px] p-[16px] bg-fill backdrop-blur-2xl backdrop-saturate-150 prevent-seek"
             style={speedPopupStyle}
             onPointerDown={(e) => e.stopPropagation()}
           >
@@ -629,7 +630,7 @@ function MiniPlayer({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.985 }}
             transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
-            className="absolute bottom-[74px] z-[92] w-[300px] rounded-[14px] p-[16px] bg-black/[0.05] backdrop-blur-2xl backdrop-saturate-150 dark:bg-white/[0.07] prevent-seek"
+            className="absolute bottom-[74px] z-[92] w-[300px] rounded-[14px] p-[16px] bg-fill backdrop-blur-2xl backdrop-saturate-150 prevent-seek"
             style={eqPopupStyle}
             onPointerDown={(e) => e.stopPropagation()}
           >
@@ -643,7 +644,7 @@ function MiniPlayer({
           usesRoundedStyle
             ? "rounded-full border-[0.5px] border-border-tertiary bg-bg-primary"
             : embedded
-              ? `rounded-[12px] ${
+              ? `rounded-item ${
                   hasPageBackdrop
                     ? "bg-bg-glass dark:bg-black/20 backdrop-blur-[48px] backdrop-saturate-150"
                     : "bg-bg-primary"
@@ -766,7 +767,7 @@ function MiniPlayer({
               role="button"
               tabIndex={0}
               aria-label="Open player"
-              className={`relative h-[38px] w-[38px] shrink-0 overflow-hidden rounded-[8px] bg-bg-elevated cursor-pointer pointer-events-auto prevent-seek ${
+              className={`relative h-[38px] w-[38px] shrink-0 overflow-hidden rounded-control bg-bg-elevated cursor-pointer pointer-events-auto prevent-seek ${
                 coverUrl && !isCoverLoaded ? "animate-pulse" : ""
               }`}
               onClick={onFullscreenOpen}
@@ -783,7 +784,7 @@ function MiniPlayer({
                 onLoad={(e) => {
                   extractAccentColor(e.currentTarget as HTMLImageElement);
                 }}
-                className="h-[38px] w-[38px] object-cover rounded-[8px]"
+                className="h-[38px] w-[38px] object-cover rounded-control"
               />
             </div>
             <div className="flex min-w-0 flex-col pointer-events-none">
@@ -812,13 +813,13 @@ function MiniPlayer({
                 </span>
               </p>
               <p
-                className="m-0 mt-[4px] flex min-w-0 items-center gap-[5px] text-[13px] font-[300] text-text-tertiary pointer-events-none"
+                className="m-0 mt-[4px] flex min-w-0 items-center gap-[5px] text-body font-[300] text-text-tertiary pointer-events-none"
                 style={{
                   lineHeight: "15px",
                 }}
               >
                 {player.currentTrack?.explicit && (
-                  <span className="inline-flex h-[14px] w-[14px] shrink-0 -translate-y-px items-center justify-center rounded-[3.5px] bg-black/[0.1] dark:bg-white/[0.14] text-[8px] font-[600] leading-none text-text-secondary">
+                  <span className="inline-flex h-[14px] w-[14px] shrink-0 -translate-y-px items-center justify-center rounded-[3.5px] bg-fill-strong text-[8px] font-[600] leading-none text-text-secondary">
                     <span className="translate-y-[0.5px] [text-box:trim-both_cap_alphabetic]">
                       E
                     </span>
@@ -866,7 +867,7 @@ function MiniPlayer({
             <div
               className={`ml-auto flex items-center gap-[2px] rounded-lg p-[3px] pointer-events-auto prevent-seek cursor-default ${
                 hasPageBackdrop
-                  ? "bg-black/[0.04] dark:bg-white/[0.06]"
+                  ? "bg-fill-subtle"
                   : "bg-[#ebebed] dark:bg-[#141414]"
               }`}
               onPointerDown={(e) => e.stopPropagation()}

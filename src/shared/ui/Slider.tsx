@@ -145,7 +145,7 @@ export const Slider = memo(function Slider({
       onMouseLeave={() => setIsHovered(false)}
     >
       {label && (
-        <span className="text-[12px] font-medium text-text-secondary select-none">
+        <span className="text-caption font-medium text-text-secondary select-none">
           {label}
         </span>
       )}
@@ -164,9 +164,7 @@ export const Slider = memo(function Slider({
         <div
           ref={trackRef}
           className={`relative h-[6px] w-full rounded-full overflow-hidden transition-colors duration-150 ${
-            isActive
-              ? "bg-black/[0.20] dark:bg-white/[0.24]"
-              : "bg-black/[0.10] dark:bg-white/[0.14]"
+            isActive ? "bg-black/[0.20] dark:bg-white/[0.24]" : "bg-fill-strong"
           }`}
         >
           <div
@@ -179,7 +177,7 @@ export const Slider = memo(function Slider({
       </div>
 
       {showValue && (
-        <span className="w-[42px] shrink-0 text-right text-[12px] font-[500] tabular-nums text-text-tertiary">
+        <span className="w-[42px] shrink-0 text-right text-caption font-[500] tabular-nums text-text-tertiary">
           {displayLabel}
         </span>
       )}

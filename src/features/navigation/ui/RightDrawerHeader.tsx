@@ -87,7 +87,7 @@ export function RightDrawerHeader({
         <h2 className="m-0 truncate text-[16px] font-[600] leading-tight tracking-tight text-text-primary">
           {t("player.queue")}
         </h2>
-        <span className="truncate text-[12px] leading-tight text-text-tertiary">
+        <span className="truncate text-caption leading-tight text-text-tertiary">
           {t("common.tracks", { count: trackCount })}
         </span>
       </div>

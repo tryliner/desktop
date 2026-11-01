@@ -727,7 +727,7 @@ export default function AppFrame({ children }: AppFrameProps) {
       ref={appFrameRef}
       className={`app-shell-enter relative flex flex-col h-full w-full overflow-hidden p-1.5 gap-1.5 ${
         isFullscreenPlayer ? "bg-black" : "bg-bg-canvas"
-      } ${isEdgeToEdge ? "rounded-none" : "rounded-[12px]"}`}
+      } ${isEdgeToEdge ? "rounded-none" : "rounded-item"}`}
       style={isEdgeToEdge ? undefined : { clipPath: "inset(0 round 12px)" }}
       onScroll={(e) => {
         if (e.currentTarget.scrollLeft !== 0) e.currentTarget.scrollLeft = 0;
@@ -908,7 +908,7 @@ export default function AppFrame({ children }: AppFrameProps) {
               top: 6,
             }}
           >
-            <div className="w-[min(660px,calc(100vw-72px))] h-[54px] rounded-[8px] pointer-events-auto flex items-center px-[18px] gap-[14px] bg-bg-panel border border-border-primary/50">
+            <div className="w-[min(660px,calc(100vw-72px))] h-[54px] rounded-control pointer-events-auto flex items-center px-[18px] gap-[14px] bg-bg-panel border border-border-primary/50">
               <span className="shrink-0 flex items-center justify-center text-text-tertiary">
                 <AnimatePresence mode="wait" initial={false}>
                   {searchLoading ? (
@@ -986,7 +986,7 @@ export default function AppFrame({ children }: AppFrameProps) {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -6, scale: 0.99 }}
                   transition={{ duration: 0.1, ease: [0.16, 1, 0.3, 1] }}
-                  className="w-[min(660px,calc(100vw-72px))] mt-[8px] max-h-[500px] h-[500px] rounded-[8px] pointer-events-auto flex flex-col overflow-hidden bg-bg-panel border border-border-primary/50"
+                  className="w-[min(660px,calc(100vw-72px))] mt-[8px] max-h-[500px] h-[500px] rounded-control pointer-events-auto flex flex-col overflow-hidden bg-bg-panel border border-border-primary/50"
                 >
                   <div className="flex gap-[6px] px-[14px] pt-[12px] pb-[6px] shrink-0 overflow-x-auto">
                     {filterKeys.map((key) => {
@@ -1004,7 +1004,7 @@ export default function AppFrame({ children }: AppFrameProps) {
                           type="button"
                           onClick={() => setActiveFilter(key)}
                           className={`
-                            relative flex items-center gap-[7px] px-[13px] py-[7px] rounded-[12px] text-[13.5px] font-normal transition-colors border-none bg-transparent cursor-pointer select-none shrink-0
+                            relative flex items-center gap-[7px] px-[13px] py-[7px] rounded-item text-[13.5px] font-normal transition-colors border-none bg-transparent cursor-pointer select-none shrink-0
                             ${
                               isActive
                                 ? "text-text-primary font-medium"
@@ -1018,7 +1018,7 @@ export default function AppFrame({ children }: AppFrameProps) {
                           {isActive && (
                             <motion.div
                               layoutId="activeFilterPill"
-                              className="absolute inset-0 rounded-[12px] bg-border-alpha-14 pointer-events-none z-0"
+                              className="absolute inset-0 rounded-item bg-border-alpha-14 pointer-events-none z-0"
                               transition={{
                                 type: "spring",
                                 stiffness: 450,
@@ -1049,7 +1049,7 @@ export default function AppFrame({ children }: AppFrameProps) {
                           <p className="m-0 text-[14px] text-text-primary font-medium">
                             {t("common.no_results")}
                           </p>
-                          <p className="m-0 text-[12px] text-text-tertiary">
+                          <p className="m-0 text-caption text-text-tertiary">
                             {t("common.try_another_search")}
                           </p>
                         </motion.div>
@@ -1088,7 +1088,7 @@ export default function AppFrame({ children }: AppFrameProps) {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -6, scale: 0.99 }}
                   transition={{ duration: 0.1, ease: [0.16, 1, 0.3, 1] }}
-                  className="w-[min(660px,calc(100vw-72px))] mt-[8px] max-h-[480px] h-auto rounded-[8px] pointer-events-auto flex flex-col overflow-hidden bg-bg-panel border border-border-primary/50"
+                  className="w-[min(660px,calc(100vw-72px))] mt-[8px] max-h-[480px] h-auto rounded-control pointer-events-auto flex flex-col overflow-hidden bg-bg-panel border border-border-primary/50"
                 >
                   <SearchHistoryList
                     onSelectQuery={handleSelectHistoryQuery}

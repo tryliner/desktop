@@ -140,7 +140,7 @@ export const TrackSearchField = memo(function TrackSearchField({
       />
       {hasQuery && matches && (
         <span
-          className="shrink-0 text-[12px] tabular-nums text-text-tertiary select-none"
+          className="shrink-0 text-caption tabular-nums text-text-tertiary select-none"
           aria-live="polite"
         >
           {t("track_search.count", {
@@ -193,7 +193,7 @@ export const TrackSearchEmpty = memo(function TrackSearchEmpty({
       <button
         type="button"
         onClick={onClear}
-        className="cursor-pointer border-0 bg-transparent p-0 text-[13px] text-text-tertiary transition-colors hover:text-text-primary"
+        className="cursor-pointer border-0 bg-transparent p-0 text-body text-text-tertiary transition-colors hover:text-text-primary"
       >
         {t("track_search.clear")}
       </button>

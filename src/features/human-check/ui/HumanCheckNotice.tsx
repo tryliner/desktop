@@ -8,7 +8,7 @@ import CheckFrame from "./CheckFrame";
 import ShieldBadge from "./ShieldBadge";
 
 const buttonBase =
-  "h-[40px] flex-1 rounded-[12px] px-[18px] text-[14.5px] font-[500] transition-colors";
+  "h-[40px] flex-1 rounded-item px-[18px] text-[14.5px] font-[500] transition-colors";
 
 export default function HumanCheckNotice() {
   const { t } = useTranslation();
@@ -61,7 +61,7 @@ export default function HumanCheckNotice() {
               <h2 className="text-[16px] font-[600] leading-[1.25] tracking-[-0.01em] text-text-primary">
                 {t("human_check.title")}
               </h2>
-              <p className="mt-[5px] text-[13px] leading-[1.4] text-text-secondary">
+              <p className="mt-[5px] text-body leading-[1.4] text-text-secondary">
                 {description}
               </p>
             </div>

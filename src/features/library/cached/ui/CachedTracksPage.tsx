@@ -173,7 +173,7 @@ export default function CachedTracksPage() {
 
         <div
           className={cn(
-            "mx-[4px] mt-[20px] shrink-0 grow overflow-hidden rounded-t-[14px] bg-black/[0.03] px-[8px] pt-[8px] dark:bg-white/[0.04]",
+            "mx-[4px] mt-[20px] shrink-0 grow overflow-hidden rounded-t-[14px] bg-fill-subtle px-[8px] pt-[8px]",
             !classicSurfaces && "backdrop-blur-xl",
           )}
           style={{
@@ -188,10 +188,10 @@ export default function CachedTracksPage() {
             >
               <Refresh2Line size={40} className="text-border-alpha-33" />
               <div className="flex flex-col gap-[4px]">
-                <p className="m-0 text-[15px] font-[500] text-text-primary">
+                <p className="m-0 text-title font-[500] text-text-primary">
                   {t("library.cached.empty_title")}
                 </p>
-                <p className="m-0 max-w-[360px] text-[13px] text-text-tertiary">
+                <p className="m-0 max-w-[360px] text-body text-text-tertiary">
                   {t("library.cached.empty_subtitle")}
                 </p>
               </div>

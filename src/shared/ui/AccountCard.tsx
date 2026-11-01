@@ -12,7 +12,7 @@ export interface AccountCardProps {
 }
 
 export const accountCardActionClassName =
-  "h-[44px] shrink-0 rounded-[14px] px-[22px] text-[15px] font-[500] transition-colors disabled:cursor-default disabled:opacity-60";
+  "h-[44px] shrink-0 rounded-[14px] px-[22px] text-title font-[500] transition-colors disabled:cursor-default disabled:opacity-60";
 
 export default function AccountCard({
   media,
@@ -25,7 +25,7 @@ export default function AccountCard({
 }: AccountCardProps) {
   return (
     <div className="flex items-center gap-[16px] rounded-[16px] bg-black/[0.04] p-[14px] dark:bg-white/[0.08]">
-      <div className="relative size-[64px] shrink-0 overflow-hidden rounded-[12px] bg-black/[0.06] dark:bg-white/[0.08]">
+      <div className="relative size-[64px] shrink-0 overflow-hidden rounded-item bg-fill">
         {media ?? (
           <div
             className={cn(
@@ -40,8 +40,8 @@ export default function AccountCard({
       <div className="flex min-w-0 flex-1 flex-col gap-[4px]">
         {loading ? (
           <>
-            <span className="h-[14px] w-[110px] animate-pulse rounded-full bg-black/[0.08] dark:bg-white/[0.1]" />
-            <span className="h-[11px] w-[160px] animate-pulse rounded-full bg-black/[0.06] dark:bg-white/[0.07]" />
+            <span className="h-[14px] w-[110px] animate-pulse rounded-full bg-fill-hover" />
+            <span className="h-[11px] w-[160px] animate-pulse rounded-full bg-fill" />
           </>
         ) : (
           <>

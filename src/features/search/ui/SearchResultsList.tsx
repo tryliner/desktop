@@ -122,7 +122,7 @@ export const SearchResultsList = memo(function SearchResultsList({
         })}
       </div>
       {partialWarning ? (
-        <div className="text-accent-tertiary text-[12px] px-[8px] py-[6px] mt-[6px]">
+        <div className="text-accent-tertiary text-caption px-[8px] py-[6px] mt-[6px]">
           {partialWarning}
         </div>
       ) : null}

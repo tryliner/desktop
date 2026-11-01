@@ -20,7 +20,7 @@ const LIMIT_OPTIONS = [2, 5, 20, 0];
 
 function RowIcon({ children }: { children: ReactNode }) {
   return (
-    <span className="flex h-[36px] w-[36px] items-center justify-center rounded-[8px] bg-black/[0.05] text-text-secondary dark:bg-white/[0.08]">
+    <span className="flex h-[36px] w-[36px] items-center justify-center rounded-control bg-fill text-text-secondary">
       {children}
     </span>
   );

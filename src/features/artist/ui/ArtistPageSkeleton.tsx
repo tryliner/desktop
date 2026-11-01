@@ -51,7 +51,7 @@ function ArtistHeroSkeleton() {
       </div>
 
       <div className="flex min-w-0 flex-1 flex-col self-stretch justify-center">
-        <div className="skeleton-shimmer h-[30px] w-[36%] rounded-[8px]" />
+        <div className="skeleton-shimmer h-[30px] w-[36%] rounded-control" />
         <div className="skeleton-shimmer mt-[8px] h-[18px] w-[24%] rounded-[6px]" />
 
         <div className="mt-[20px] flex items-center gap-[8px]">
@@ -89,7 +89,7 @@ function ArtistPageSkeleton({ className = "" }: ArtistPageSkeletonProps) {
                   className="h-[52px] rounded-md px-[12px] flex items-center gap-[14px]"
                 >
                   <div className="skeleton-shimmer h-[14px] w-[16px] rounded-[3px]" />
-                  <div className="skeleton-shimmer h-[40px] w-[40px] rounded-[12px] shrink-0" />
+                  <div className="skeleton-shimmer h-[40px] w-[40px] rounded-item shrink-0" />
                   <div className="flex-1 min-w-0 flex flex-col gap-1.5">
                     <div
                       className={`skeleton-shimmer h-[14px] ${TRACK_TITLE_WIDTHS[i]} rounded-[4px]`}

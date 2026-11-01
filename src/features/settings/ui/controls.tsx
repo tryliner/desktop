@@ -35,7 +35,7 @@ function RowText({ title, description }: SearchableProps) {
         {title}
       </span>
       {description ? (
-        <span className="relative block max-w-[420px] text-pretty text-text-tertiary text-[12px] leading-[17px]">
+        <span className="relative block max-w-[420px] text-pretty text-text-tertiary text-caption leading-[17px]">
           <AnimatePresence mode="popLayout" initial={false}>
             <motion.span
               key={description}
@@ -117,10 +117,7 @@ export function SettingSection({
           ) : null}
         </div>
       ) : null}
-      <div
-        data-settings-card
-        className="rounded-[14px] bg-black/[0.05] py-[4px] dark:bg-white/[0.07]"
-      >
+      <div data-settings-card className="rounded-[14px] bg-fill py-[4px]">
         <div className="flex flex-col">{children}</div>
       </div>
     </section>

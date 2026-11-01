@@ -26,14 +26,14 @@ export default function ArtistAboutText({
   const { t } = useTranslation();
   return (
     <div className="mt-[6px] flex max-w-[560px] flex-col items-start gap-[2px]">
-      <p className="m-0 line-clamp-2 text-[13px] leading-[1.5] font-[400] text-text-secondary select-text">
+      <p className="m-0 line-clamp-2 text-body leading-[1.5] font-[400] text-text-secondary select-text">
         {stripMarkdown(description)}
       </p>
       {description.length > 120 && (
         <button
           type="button"
           onClick={onShowAll}
-          className="cursor-pointer border-0 bg-transparent p-0 text-[12px] font-[500] text-text-tertiary transition-colors hover:text-text-primary"
+          className="cursor-pointer border-0 bg-transparent p-0 text-caption font-[500] text-text-tertiary transition-colors hover:text-text-primary"
         >
           {t("artist.show_all")}
         </button>

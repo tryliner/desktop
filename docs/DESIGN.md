@@ -29,23 +29,43 @@ Use the theme tokens from `src/app/globals.css`. They switch with the theme.
 | Hairlines and quiet fills          | `border-alpha-14`, `border-alpha-33` (as `bg-`, `text-` or `border-`) |
 | Accent                             | `accent-primary` (liked heart, active state)                          |
 
-Glass tints (the same everywhere, so chips and buttons read as one surface):
+Quiet fills for things sitting inside a surface (inputs, rows, segmented controls,
+secondary buttons, panels). One class covers both themes:
+
+| Class            | Light     | Dark      | Use                        |
+| ---------------- | --------- | --------- | -------------------------- |
+| `bg-fill-subtle` | black 3%  | white 4%  | barely-there backgrounds   |
+| `bg-fill`        | black 5%  | white 7%  | default field, panel, chip |
+| `bg-fill-hover`  | black 8%  | white 10% | hover, selected tab        |
+| `bg-fill-strong` | black 10% | white 14% | pressed, active            |
+
+`bg-surface-glass` is the dialog glass, used with `backdrop-blur-2xl`. Use these instead
+of writing `bg-black/[0.05] dark:bg-white/[0.07]` by hand.
+
+Glass tints on top of the cover backdrop (the same everywhere, so chips and buttons read
+as one surface):
 
 - Glass fill: `bg-black/[0.05] dark:bg-white/[0.09]` (`HERO_GLASS_CLASS`)
 - Glass button: `HERO_GLASS_BUTTON_CLASS`, hover goes to `0.09` / `0.16`
-- List panel under a hero: `bg-black/[0.03] dark:bg-white/[0.04]` with `backdrop-blur-xl`,
+- List panel under a hero: `bg-fill-subtle` with `backdrop-blur-xl`,
   dropped when `useClassicSurfaces()` is on
 
 ## Type
 
 - Inter everywhere (`font-family: var(--font-inter)`), Montserrat only in the player.
 - Hero title: `HERO_TITLE_CLASS` (30px heading font). Hero subtitle: `HERO_SUBTITLE_CLASS` (18px).
-- Body and list rows: 14px / 500 for titles, 13px tertiary for the second line.
+- Type scale: `text-caption` 12px, `text-body` 13px, `text-title` 15px, `text-heading`
+  18px. Prefer these over `text-[Npx]`.
+- Body and list rows: 14px / 500 for titles, `text-body` tertiary for the second line.
 - Toast: 13px / 600 message, 12.5px tertiary description after a `·`.
 
 ## Shape
 
-- Radii in use: 4, 6, 8, 9, 10, 12, 14, 16, 18, 20px. Pick the one the neighbours use.
+- Radius scale: `rounded-control` 8px (small controls, chips), `rounded-item` 12px
+  (fields, rows, cards, dialog buttons), `rounded-panel` 20px (dialogs, top-level
+  containers). Older code still has 4, 6, 9, 10, 14, 16, 18px; new code uses the scale.
+- The scales are registered with tailwind-merge in `src/shared/lib/utils.ts`. A new step
+  has to be added there too, or `cn()` reads it as a colour and drops it.
 - Buttons and chips in a hero: 9px. Dropdown menu: 11px with 8px items. Toast: 12px.
   Cover in a hero: 10px. Library tiles: `rounded-md`. Big floating art: 16px.
 - The app window itself is rounded 12px and goes square when maximised

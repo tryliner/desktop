@@ -4,7 +4,7 @@ import logo from "@/assets/logo.svg";
 export default function ShieldBadge() {
   return (
     <div className="relative size-[48px] shrink-0">
-      <div className="absolute inset-0 flex items-center justify-center rounded-[12px] bg-black/[0.06] dark:bg-white/[0.08]">
+      <div className="absolute inset-0 flex items-center justify-center rounded-item bg-fill">
         <img
           src={logo}
           alt=""

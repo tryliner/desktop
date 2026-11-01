@@ -245,7 +245,7 @@ export function StorageTab({ searchQuery }: { searchQuery?: string }) {
             <h3 className="text-text-primary text-[17px] font-[600] m-0 mt-3">
               {t(CLEAR_COPY[clearKind].working)}
             </h3>
-            <p className="text-text-tertiary text-[13px] max-w-[320px] m-0 mt-1 leading-normal">
+            <p className="text-text-tertiary text-body max-w-[320px] m-0 mt-1 leading-normal">
               {t(CLEAR_COPY[clearKind].workingDesc)}
             </p>
             <div className="w-[200px] h-[4px] bg-border-alpha-14 rounded-full overflow-hidden mt-5">
@@ -264,14 +264,14 @@ export function StorageTab({ searchQuery }: { searchQuery?: string }) {
             <div className="w-[64px] h-[64px] rounded-full bg-border-alpha-14 flex items-center justify-center text-text-primary mb-2">
               <CheckCircle size={36} weight="Bold" />
             </div>
-            <h3 className="text-text-primary text-[18px] font-[600] m-0 mt-2">
+            <h3 className="text-text-primary text-heading font-[600] m-0 mt-2">
               {freedBytes > 0
                 ? t("settings.storage.freed_title", {
                     size: formatStorageBytes(freedBytes),
                   })
                 : t(CLEAR_COPY[clearKind].done)}
             </h3>
-            <p className="text-text-tertiary text-[13px] max-w-[340px] m-0 mt-1 leading-normal">
+            <p className="text-text-tertiary text-body max-w-[340px] m-0 mt-1 leading-normal">
               {t(CLEAR_COPY[clearKind].doneDesc)}
             </p>
             <Button

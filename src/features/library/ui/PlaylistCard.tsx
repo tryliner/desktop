@@ -144,7 +144,7 @@ function PlaylistCard({
         <span className="truncate text-[14px] font-[500] text-text-primary">
           {title}
         </span>
-        <span className="flex min-w-0 items-center gap-[5px] text-[13px] text-text-tertiary">
+        <span className="flex min-w-0 items-center gap-[5px] text-body text-text-tertiary">
           {badge}
           <span className="truncate">{author}</span>
         </span>

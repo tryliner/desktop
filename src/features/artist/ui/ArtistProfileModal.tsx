@@ -125,7 +125,7 @@ function BioContent({ bio }: { bio: string }) {
           return (
             <div
               key={idx}
-              className="font-[600] text-text-primary text-[13px] pt-[10px] pb-[2px] first:pt-0"
+              className="font-[600] text-text-primary text-body pt-[10px] pb-[2px] first:pt-0"
             >
               {renderInlineText(headingText)}
             </div>
@@ -140,7 +140,7 @@ function BioContent({ bio }: { bio: string }) {
               key={idx}
               className="flex items-start gap-[6px] pl-[4px] py-[1px]"
             >
-              <span className="text-text-tertiary select-none text-[12px] leading-[1.6]">
+              <span className="text-text-tertiary select-none text-caption leading-[1.6]">
                 •
               </span>
               <span className="flex-1 min-w-0">
@@ -229,7 +229,7 @@ export default function ArtistProfileModal({
       <div className="flex flex-col gap-[14px] px-[20px] pb-[20px]">
         <div className="flex items-center gap-[10px]">
           {avatarSrc ? (
-            <div className="relative h-[36px] w-[36px] shrink-0 overflow-hidden rounded-full bg-black/[0.05] dark:bg-white/[0.07]">
+            <div className="relative h-[36px] w-[36px] shrink-0 overflow-hidden rounded-full bg-fill">
               <CoverImage
                 src={avatarSrc}
                 alt={name}
@@ -240,7 +240,7 @@ export default function ArtistProfileModal({
               />
             </div>
           ) : (
-            <div className="flex h-[36px] w-[36px] shrink-0 items-center justify-center rounded-full bg-black/[0.05] text-[15px] font-[600] text-text-tertiary dark:bg-white/[0.07]">
+            <div className="flex h-[36px] w-[36px] shrink-0 items-center justify-center rounded-full bg-fill text-title font-[600] text-text-tertiary">
               {name.charAt(0).toUpperCase()}
             </div>
           )}
@@ -277,7 +277,7 @@ export default function ArtistProfileModal({
                 type="button"
                 aria-label={t("common.close")}
                 onClick={onClose}
-                className="-mr-[6px] inline-flex h-[30px] w-[30px] cursor-pointer items-center justify-center rounded-[9px] border-0 bg-transparent p-0 text-text-tertiary transition-colors hover:bg-black/[0.05] hover:text-text-primary dark:hover:bg-white/[0.07]"
+                className="-mr-[6px] inline-flex h-[30px] w-[30px] cursor-pointer items-center justify-center rounded-[9px] border-0 bg-transparent p-0 text-text-tertiary transition-colors hover:bg-fill hover:text-text-primary"
               >
                 <CloseLine size={17} />
               </button>
@@ -286,11 +286,11 @@ export default function ArtistProfileModal({
         </div>
 
         {bio ? (
-          <div className="overflow-hidden rounded-[12px] bg-black/[0.05] dark:bg-white/[0.07]">
+          <div className="overflow-hidden rounded-item bg-fill">
             <div
               ref={bioScrollRef}
               onScroll={updateScrollMask}
-              className="max-h-[320px] overflow-y-auto px-[14px] py-[12px] text-[13px] font-[400] leading-[1.6] text-text-secondary select-text"
+              className="max-h-[320px] overflow-y-auto px-[14px] py-[12px] text-body font-[400] leading-[1.6] text-text-secondary select-text"
               style={{
                 WebkitMaskImage: bioScrollMask,
                 maskImage: bioScrollMask,
@@ -300,7 +300,7 @@ export default function ArtistProfileModal({
             </div>
           </div>
         ) : (
-          <div className="flex h-[88px] items-center justify-center rounded-[12px] bg-black/[0.05] px-[14px] text-center text-[13px] text-text-tertiary dark:bg-white/[0.07]">
+          <div className="flex h-[88px] items-center justify-center rounded-item bg-fill px-[14px] text-center text-body text-text-tertiary">
             {t("artist.no_biography")}
           </div>
         )}

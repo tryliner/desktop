@@ -153,7 +153,7 @@ function PageCoverBackdropComponent({
 
   return (
     <div
-      className="pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-[12px] select-none ease-out"
+      className="pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-item select-none ease-out"
       style={{
         backgroundColor:
           bottomRgb && visibleId !== HIDDEN_LAYER_ID

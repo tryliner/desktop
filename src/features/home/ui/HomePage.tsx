@@ -82,10 +82,10 @@ function HomeFeed({ onRetry }: { onRetry: () => void }) {
       <div className="relative z-1 grid grid-cols-1 items-start w-full">
         {isReady && nothingLoaded && (
           <div className="col-start-1 row-start-1 flex min-h-[60vh] w-full flex-col items-center justify-center gap-[6px] px-[24px] text-center">
-            <span className="text-[15px] font-[600] text-text-primary">
+            <span className="text-title font-[600] text-text-primary">
               {t("home.load_failed")}
             </span>
-            <span className="text-[13px] text-text-secondary">
+            <span className="text-body text-text-secondary">
               {t("playlist.load_failed_desc")}
             </span>
             <Button

@@ -77,7 +77,7 @@ export default function ReleaseCard({
           <span className="truncate text-[14px] font-[500] text-text-primary">
             {title}
           </span>
-          <span className="flex items-center gap-[5px] truncate text-[13px] text-text-tertiary">
+          <span className="flex items-center gap-[5px] truncate text-body text-text-tertiary">
             {explicit && <ExplicitBadge />}
             <span>{label}</span>
             {year && (

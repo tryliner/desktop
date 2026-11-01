@@ -54,7 +54,7 @@ export function AboutTabLinks() {
           key={link.id}
           type="button"
           onClick={() => openUrl(link.url)}
-          className="flex h-[38px] items-center gap-[8px] rounded-[11px] border-0 bg-black/[0.05] px-[14px] text-[14px] font-[500] text-text-primary transition-colors hover:bg-black/[0.08] dark:bg-white/[0.08] dark:hover:bg-white/[0.12]"
+          className="flex h-[38px] items-center gap-[8px] rounded-[11px] border-0 bg-fill px-[14px] text-[14px] font-[500] text-text-primary transition-colors hover:bg-fill-hover"
         >
           {link.icon}
           {link.label}

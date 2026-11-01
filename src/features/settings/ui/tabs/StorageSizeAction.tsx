@@ -10,7 +10,7 @@ const PADDING_X = 24;
 type Mode = "idle" | "hover" | "armed";
 
 const MODE_CLASSES: Record<Mode, string> = {
-  idle: "bg-black/[0.05] text-text-secondary dark:bg-white/[0.07]",
+  idle: "bg-fill text-text-secondary",
   hover: "bg-[#ff3b30]/[0.12] text-[#ff3b30] dark:text-[#ff453a]",
   armed: "bg-[#ff3b30] text-white dark:bg-[#ff453a]",
 };
@@ -87,7 +87,7 @@ export function StorageSizeAction({
       animate={width === null ? undefined : { width }}
       transition={{ duration: 0.35, ease: SMOOTH_EASE }}
       className={cn(
-        "relative flex h-[30px] shrink-0 items-center justify-center overflow-hidden rounded-full border-0 px-[12px] text-[13px] font-[500] tabular-nums whitespace-nowrap transition-colors duration-300",
+        "relative flex h-[30px] shrink-0 items-center justify-center overflow-hidden rounded-full border-0 px-[12px] text-body font-[500] tabular-nums whitespace-nowrap transition-colors duration-300",
         disabled ? "cursor-default" : "cursor-pointer",
         MODE_CLASSES[mode],
       )}

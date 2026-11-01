@@ -390,7 +390,7 @@ export default function SettingsModal() {
               type="button"
               aria-label={t("common.close") || "Close"}
               onClick={handleClose}
-              className="-mt-[2px] -mr-[6px] inline-flex h-[30px] w-[30px] cursor-pointer items-center justify-center rounded-[9px] border-0 bg-transparent p-0 text-text-tertiary transition-colors hover:bg-black/[0.05] hover:text-text-primary dark:hover:bg-white/[0.07]"
+              className="-mt-[2px] -mr-[6px] inline-flex h-[30px] w-[30px] cursor-pointer items-center justify-center rounded-[9px] border-0 bg-transparent p-0 text-text-tertiary transition-colors hover:bg-fill hover:text-text-primary"
             >
               <CloseLine size={17} />
             </button>

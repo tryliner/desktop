@@ -55,9 +55,7 @@ function IssueIcon({ issue }: { issue: ConnectionIssue }) {
     <span
       className={cn(
         "flex h-[36px] w-[36px] shrink-0 items-center justify-center rounded-full",
-        youtube
-          ? "bg-red-500/15 text-red-400"
-          : "bg-black/[0.06] text-text-secondary dark:bg-white/[0.08]",
+        youtube ? "bg-red-500/15 text-red-400" : "bg-fill text-text-secondary",
       )}
     >
       <Icon size={18} />
@@ -108,7 +106,7 @@ export default function ConnectionIssueModal() {
               {title}
             </h2>
             <p
-              className="m-0 text-[13px] leading-[1.45] text-text-tertiary"
+              className="m-0 text-body leading-[1.45] text-text-tertiary"
               style={font}
             >
               {t(copy.desc)}
@@ -131,7 +129,7 @@ export default function ConnectionIssueModal() {
             {t("offline.try_again")}
           </DialogButton>
           <DialogButton
-            className="!min-w-0 !flex-auto !px-[10px] !bg-black/[0.03] !text-text-secondary dark:!bg-white/[0.04]"
+            className="!min-w-0 !flex-auto !px-[10px] !bg-fill-subtle !text-text-secondary"
             onClick={dismiss}
           >
             {t("offline.dont_show_again")}

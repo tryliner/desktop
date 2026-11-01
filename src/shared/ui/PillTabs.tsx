@@ -38,8 +38,8 @@ export function PillTabs<T extends string = string>({
   );
 
   const sizeStyles = {
-    sm: "h-[30px] px-[12px] text-[12px] gap-[6px] rounded-lg",
-    md: "h-[36px] px-[16px] text-[13px] gap-[8px] rounded-xl",
+    sm: "h-[30px] px-[12px] text-caption gap-[6px] rounded-lg",
+    md: "h-[36px] px-[16px] text-body gap-[8px] rounded-xl",
     lg: "h-[42px] px-[20px] text-[14px] gap-[10px] rounded-2xl",
   }[size];
 

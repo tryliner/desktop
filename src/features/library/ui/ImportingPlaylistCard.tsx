@@ -159,7 +159,7 @@ export default function ImportingPlaylistCard({
         <span className="truncate text-[14px] font-[500] text-text-primary">
           {displayTitle}
         </span>
-        <span className="truncate text-[13px] text-text-tertiary flex items-center gap-[5px]">
+        <span className="truncate text-body text-text-tertiary flex items-center gap-[5px]">
           <span
             className={`inline-block h-[6px] w-[6px] rounded-full bg-text-primary shrink-0 ${
               isAwaiting ? "" : "animate-pulse"

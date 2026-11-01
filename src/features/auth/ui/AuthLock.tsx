@@ -42,7 +42,7 @@ export function AuthLock({ children }: { children: React.ReactNode }) {
   ) {
     return (
       <div
-        className={`h-full w-full bg-bg-canvas ${isEdgeToEdge ? "rounded-none" : "rounded-[12px]"}`}
+        className={`h-full w-full bg-bg-canvas ${isEdgeToEdge ? "rounded-none" : "rounded-item"}`}
       />
     );
   }

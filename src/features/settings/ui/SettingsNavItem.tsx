@@ -9,7 +9,7 @@ export interface SettingsNavIconProps {
 }
 
 const itemClass =
-  "group relative flex h-[32px] w-full cursor-pointer items-center gap-[10px] rounded-[9px] border-0 bg-transparent px-[9px] text-left text-[13px] font-[500] leading-none transition-colors";
+  "group relative flex h-[32px] w-full cursor-pointer items-center gap-[10px] rounded-[9px] border-0 bg-transparent px-[9px] text-left text-body font-[500] leading-none transition-colors";
 
 export function NavItem({
   icon: Icon,
@@ -41,7 +41,7 @@ export function NavItem({
         <motion.span
           layoutId="settings-nav-active"
           transition={{ type: "spring", stiffness: 520, damping: 40 }}
-          className="absolute inset-0 rounded-[9px] bg-black/[0.07] dark:bg-white/[0.12]"
+          className="absolute inset-0 rounded-[9px] bg-fill-hover"
         />
       ) : null}
       <Icon
@@ -61,7 +61,7 @@ export function NavItem({
 
 export function GroupLabel({ children }: { children: ReactNode }) {
   return (
-    <p className="m-0 px-[9px] pb-[6px] text-[12px] font-[500] leading-[16px] text-text-tertiary">
+    <p className="m-0 px-[9px] pb-[6px] text-caption font-[500] leading-[16px] text-text-tertiary">
       {children}
     </p>
   );

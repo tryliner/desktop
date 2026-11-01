@@ -52,7 +52,7 @@ export default function RemoveFromPlaylistModal() {
 
         {/* Track preview */}
         {detail && (
-          <div className="flex items-center gap-[14px] p-[10px] rounded-[14px] bg-black/[0.05] dark:bg-white/[0.07] mb-[20px]">
+          <div className="flex items-center gap-[14px] p-[10px] rounded-[14px] bg-fill mb-[20px]">
             <div className="relative h-[52px] w-[52px] shrink-0 overflow-hidden rounded-md bg-border-alpha-14">
               {detail.trackCoverUrl && (
                 <CoverImage
@@ -69,7 +69,7 @@ export default function RemoveFromPlaylistModal() {
               <span className="text-[14px] font-[500] text-text-primary truncate">
                 {detail.trackTitle}
               </span>
-              <span className="text-[12px] text-text-tertiary truncate">
+              <span className="text-caption text-text-tertiary truncate">
                 {detail.trackArtists}
               </span>
             </div>

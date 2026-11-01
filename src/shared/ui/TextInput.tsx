@@ -13,7 +13,7 @@ export interface TextInputProps extends Omit<
 
 const sizeClasses: Record<NonNullable<TextInputProps["size"]>, string> = {
   default: "h-[44px] px-[14px] text-[14px]",
-  sm: "h-[36px] px-[12px] text-[13px]",
+  sm: "h-[36px] px-[12px] text-body",
 };
 
 const TextInput = forwardRef<HTMLInputElement, TextInputProps>(

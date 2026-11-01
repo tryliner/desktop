@@ -148,7 +148,7 @@ export function RootErrorFallback({
   return (
     <div
       role="alert"
-      className="relative flex flex-col h-screen w-screen overflow-hidden rounded-[12px] bg-bg-canvas p-1.5 select-none"
+      className="relative flex flex-col h-screen w-screen overflow-hidden rounded-item bg-bg-canvas p-1.5 select-none"
     >
       {/* Window Controls */}
       <WindowControls />
@@ -209,7 +209,7 @@ export function RootErrorFallback({
             <button
               type="button"
               onClick={() => setShowDetails((prev) => !prev)}
-              className="inline-flex items-center gap-1.5 text-[13px] text-text-tertiary hover:text-text-primary transition-colors border-none bg-transparent cursor-pointer py-1 px-2 rounded-xs"
+              className="inline-flex items-center gap-1.5 text-body text-text-tertiary hover:text-text-primary transition-colors border-none bg-transparent cursor-pointer py-1 px-2 rounded-xs"
             >
               <span>{showDetails ? hideDetailsText : showDetailsText}</span>
               {showDetails ? (
@@ -222,7 +222,7 @@ export function RootErrorFallback({
             <button
               type="button"
               onClick={handleCopy}
-              className="inline-flex items-center gap-1.5 text-[13px] text-text-tertiary hover:text-text-primary transition-colors border-none bg-transparent cursor-pointer py-1 px-2 rounded-xs"
+              className="inline-flex items-center gap-1.5 text-body text-text-tertiary hover:text-text-primary transition-colors border-none bg-transparent cursor-pointer py-1 px-2 rounded-xs"
             >
               {isCopied ? (
                 <>
@@ -249,7 +249,7 @@ export function RootErrorFallback({
                   {error?.name || "Error"}
                 </span>
               </div>
-              <pre className="text-[12px] font-mono text-text-secondary whitespace-pre-wrap break-all leading-relaxed m-0 select-text">
+              <pre className="text-caption font-mono text-text-secondary whitespace-pre-wrap break-all leading-relaxed m-0 select-text">
                 {errorDetailsString}
               </pre>
             </div>

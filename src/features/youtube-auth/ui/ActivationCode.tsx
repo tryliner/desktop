@@ -68,7 +68,7 @@ export default function ActivationCode({ code }: ActivationCodeProps) {
           </span>
         </motion.span>
       ) : (
-        <span className="h-[10px] w-[86px] animate-pulse rounded-full bg-black/[0.1] dark:bg-white/[0.14]" />
+        <span className="h-[10px] w-[86px] animate-pulse rounded-full bg-fill-strong" />
       )}
     </button>
   );

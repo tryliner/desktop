@@ -49,7 +49,7 @@ export default function CheckFrame({ action, attempt }: CheckFrameProps) {
     <div className="relative mx-auto h-[88px] w-[320px] shrink-0">
       <div
         className={cn(
-          "absolute inset-x-[10px] top-[11px] h-[65px] animate-pulse rounded-[10px] bg-black/[0.08] transition-opacity duration-300 dark:bg-white/[0.1]",
+          "absolute inset-x-[10px] top-[11px] h-[65px] animate-pulse rounded-[10px] bg-fill-hover transition-opacity duration-300",
           ready && "opacity-0",
         )}
       />

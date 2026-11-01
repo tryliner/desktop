@@ -765,10 +765,10 @@ export function ShortcutsTab({
                 }}
                 className={`group relative inline-flex h-[34px] items-center justify-center rounded-[10px] ${
                   isRu ? "px-[13px]" : "px-[14px]"
-                } text-[13px] leading-none transition-colors duration-150 border-0 cursor-pointer select-none active:scale-[0.97] ${
+                } text-body leading-none transition-colors duration-150 border-0 cursor-pointer select-none active:scale-[0.97] ${
                   isActive
                     ? "bg-transparent text-bg-primary"
-                    : "bg-black/[0.05] text-text-primary hover:bg-black/[0.08] dark:bg-white/[0.08] dark:hover:bg-white/[0.12]"
+                    : "bg-fill text-text-primary hover:bg-fill-hover"
                 }`}
                 style={{
                   fontWeight: 500,
@@ -789,7 +789,7 @@ export function ShortcutsTab({
                 <span className="relative z-10 leading-none flex items-center gap-1.5">
                   <span className="leading-none">{tab.label}</span>
                   <span
-                    className={`text-[12px] font-normal tabular-nums leading-none transition-colors ${
+                    className={`text-caption font-normal tabular-nums leading-none transition-colors ${
                       isActive
                         ? "text-bg-primary/60"
                         : "text-text-tertiary group-hover:text-text-secondary"
@@ -805,7 +805,7 @@ export function ShortcutsTab({
 
         {/* Right Tools: Search Field + Small Reset Button */}
         <div className="relative flex items-center justify-end flex-1 min-w-0 gap-2">
-          <div className="h-[34px] px-3 rounded-[10px] bg-black/[0.05] dark:bg-white/[0.08] flex items-center gap-2 transition-colors w-full max-w-[220px] min-w-[130px] border-none outline-none ring-0">
+          <div className="h-[34px] px-3 rounded-[10px] bg-fill flex items-center gap-2 transition-colors w-full max-w-[220px] min-w-[130px] border-none outline-none ring-0">
             <Search2Line size={15} className="text-text-tertiary shrink-0" />
             <input
               type="text"
@@ -815,7 +815,7 @@ export function ShortcutsTab({
                 t("settings.shortcuts.search_placeholder") ||
                 "Search shortcuts..."
               }
-              className="w-full bg-transparent border-none outline-none text-[13px] text-text-primary placeholder:text-text-tertiary p-0 min-w-0 truncate"
+              className="w-full bg-transparent border-none outline-none text-body text-text-primary placeholder:text-text-tertiary p-0 min-w-0 truncate"
             />
             {localSearchQuery && (
               <button
@@ -840,7 +840,7 @@ export function ShortcutsTab({
               aria-label={
                 t("settings.shortcuts.reset_all") || "Reset all shortcuts"
               }
-              className="h-[34px] w-[34px] rounded-[10px] bg-black/[0.05] hover:bg-black/[0.08] dark:bg-white/[0.08] dark:hover:bg-white/[0.12] flex items-center justify-center text-text-secondary hover:text-text-primary transition-colors cursor-pointer shrink-0 border-0 p-0 active:scale-[0.95]"
+              className="h-[34px] w-[34px] rounded-[10px] bg-fill hover:bg-fill-hover flex items-center justify-center text-text-secondary hover:text-text-primary transition-colors cursor-pointer shrink-0 border-0 p-0 active:scale-[0.95]"
             >
               <ResetIcon
                 size={14.5}
@@ -863,7 +863,7 @@ export function ShortcutsTab({
           className="flex flex-wrap gap-[8px] pt-[10px]"
         >
           {filteredItems.length === 0 ? (
-            <div className="w-full py-8 text-center text-text-tertiary text-[13px]">
+            <div className="w-full py-8 text-center text-text-tertiary text-body">
               {t("search.no_results") || "No matching shortcuts found"}
             </div>
           ) : (
@@ -879,7 +879,7 @@ export function ShortcutsTab({
                       prev === item.id ? null : item.id,
                     );
                   }}
-                  className="inline-flex min-h-[50px] items-center gap-[14px] rounded-[14px] bg-black/[0.05] py-[8px] pl-[12px] pr-[8px] transition-colors group select-none cursor-pointer hover:bg-black/[0.08] dark:bg-white/[0.08] dark:hover:bg-white/[0.1]"
+                  className="inline-flex min-h-[50px] items-center gap-[14px] rounded-[14px] bg-fill py-[8px] pl-[12px] pr-[8px] transition-colors group select-none cursor-pointer hover:bg-fill-hover"
                 >
                   {/* Left: Icon + Title + Scope Badge */}
                   <div className="flex items-center gap-[10px] min-w-0 pointer-events-none">
@@ -934,7 +934,7 @@ export function ShortcutsTab({
           {/* Header */}
           <div className="flex flex-col gap-[3px]">
             <h3
-              className="text-[15px] font-[600] text-text-primary m-0 leading-tight"
+              className="text-title font-[600] text-text-primary m-0 leading-tight"
               style={{
                 letterSpacing: "-0.01em",
               }}
@@ -956,7 +956,7 @@ export function ShortcutsTab({
               variant="secondary"
               size="sm"
               onClick={() => setIsResetModalOpen(false)}
-              className="flex-1 !h-[34px] text-[13px] !rounded-lg"
+              className="flex-1 !h-[34px] text-body !rounded-lg"
             >
               {t("common.cancel") || (isRu ? "Отмена" : "Cancel")}
             </Button>
@@ -965,7 +965,7 @@ export function ShortcutsTab({
               variant="primary"
               size="sm"
               onClick={handleConfirmResetAll}
-              className="flex-1 !h-[34px] text-[13px] !rounded-lg !bg-accent-secondary !text-bg-primary hover:!opacity-90"
+              className="flex-1 !h-[34px] text-body !rounded-lg !bg-accent-secondary !text-bg-primary hover:!opacity-90"
             >
               {isRu ? "Продолжить" : "Continue"}
             </Button>

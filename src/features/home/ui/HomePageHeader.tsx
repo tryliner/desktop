@@ -132,7 +132,7 @@ function HomePageHeader({
               onClick={onQuickPlay}
               data-no-window-drag
               className={cn(
-                "group flex items-center gap-2 px-4 py-2 rounded-full text-[13px] font-semibold cursor-pointer transition-colors duration-150 active:scale-95 shrink-0 mt-1 font-sans",
+                "group flex items-center gap-2 px-4 py-2 rounded-full text-body font-semibold cursor-pointer transition-colors duration-150 active:scale-95 shrink-0 mt-1 font-sans",
                 "bg-btn-primary-bg text-btn-primary-text",
               )}
             >
@@ -154,7 +154,7 @@ function HomePageHeader({
                 type="button"
                 onClick={() => onFilterChange(filter.id)}
                 className={cn(
-                  "relative px-3.5 py-1.5 rounded-full text-[13px] font-medium transition-colors duration-150 cursor-pointer active:scale-95 shrink-0 select-none font-sans",
+                  "relative px-3.5 py-1.5 rounded-full text-body font-medium transition-colors duration-150 cursor-pointer active:scale-95 shrink-0 select-none font-sans",
                   isActive
                     ? "bg-text-primary text-bg-canvas font-semibold"
                     : "bg-bg-elevated text-text-secondary hover:text-text-primary",

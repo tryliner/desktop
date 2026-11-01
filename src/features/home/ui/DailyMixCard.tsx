@@ -52,7 +52,7 @@ function DailyMixCard({ mix, index }: DailyMixCardProps) {
         <ScrollableText
           text={subtitleText}
           isParentHovered={isCardHovered}
-          className="text-[13px] text-text-tertiary"
+          className="text-body text-text-tertiary"
           fadeColorClass="from-bg-primary"
         />
       </div>

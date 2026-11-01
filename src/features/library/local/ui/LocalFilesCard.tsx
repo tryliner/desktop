@@ -35,7 +35,7 @@ export default function LocalFilesCard({
           {count === null ? (
             <span className="h-[12px] w-[60px] animate-pulse rounded bg-border-alpha-14" />
           ) : (
-            <p className="m-0 truncate text-[15px] leading-[1.2] font-[350] text-text-secondary">
+            <p className="m-0 truncate text-title leading-[1.2] font-[350] text-text-secondary">
               {count}
             </p>
           )}
@@ -59,9 +59,7 @@ export default function LocalFilesCard({
         {count === null ? (
           <div className="h-[13px] w-[56%] animate-pulse rounded bg-border-alpha-14" />
         ) : (
-          <span className="truncate text-[13px] text-text-tertiary">
-            {count}
-          </span>
+          <span className="truncate text-body text-text-tertiary">{count}</span>
         )}
       </div>
     </div>

@@ -127,7 +127,7 @@ export default function Dialog({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.97, y: 10 }}
             transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-            className={`pointer-events-auto w-full mx-[16px] max-h-[85vh] flex flex-col rounded-[20px] border-0 bg-[#f5f5f7]/92 dark:bg-[#161618]/90 backdrop-blur-2xl backdrop-saturate-150 shadow-[0_24px_80px_rgba(0,0,0,0.35)] overflow-hidden relative ${
+            className={`pointer-events-auto w-full mx-[16px] max-h-[85vh] flex flex-col rounded-panel border-0 bg-surface-glass backdrop-blur-2xl backdrop-saturate-150 shadow-[0_24px_80px_rgba(0,0,0,0.35)] overflow-hidden relative ${
               className || "pt-[20px]"
             }`}
             style={{ maxWidth, minHeight, ...(maxHeight ? { maxHeight } : {}) }}

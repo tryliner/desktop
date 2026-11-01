@@ -356,15 +356,15 @@ export default function ImportReviewModal() {
         {/* Header */}
         <div className="flex items-start justify-between gap-[12px]">
           <div className="flex flex-col gap-[4px] min-w-0 flex-1">
-            <h2 className="m-0 text-[18px] font-[500] text-text-primary flex items-center gap-[8px]">
+            <h2 className="m-0 text-heading font-[500] text-text-primary flex items-center gap-[8px]">
               {t("import.review_title")}
               {items.length > 0 && (
-                <span className="text-[12px] px-[8px] py-[2px] rounded-full bg-border-alpha-14 text-text-secondary font-normal">
+                <span className="text-caption px-[8px] py-[2px] rounded-full bg-border-alpha-14 text-text-secondary font-normal">
                   {items.length}
                 </span>
               )}
             </h2>
-            <p className="m-0 text-[13px] text-text-tertiary">
+            <p className="m-0 text-body text-text-tertiary">
               {t("import.review_description")}
             </p>
           </div>
@@ -374,7 +374,7 @@ export default function ImportReviewModal() {
               <button
                 type="button"
                 onClick={handleSelectAll}
-                className="text-[12px] font-[500] text-text-secondary hover:text-text-primary px-[8px] py-[4px] rounded-md hover:bg-border-alpha-14 transition-colors cursor-pointer border border-transparent hover:border-border-primary"
+                className="text-caption font-[500] text-text-secondary hover:text-text-primary px-[8px] py-[4px] rounded-md hover:bg-border-alpha-14 transition-colors cursor-pointer border border-transparent hover:border-border-primary"
               >
                 {t("import.select_all")}
               </button>
@@ -382,7 +382,7 @@ export default function ImportReviewModal() {
               <button
                 type="button"
                 onClick={handleDeselectAll}
-                className="text-[12px] font-[500] text-text-secondary hover:text-text-primary px-[8px] py-[4px] rounded-md hover:bg-border-alpha-14 transition-colors cursor-pointer border border-transparent hover:border-border-primary"
+                className="text-caption font-[500] text-text-secondary hover:text-text-primary px-[8px] py-[4px] rounded-md hover:bg-border-alpha-14 transition-colors cursor-pointer border border-transparent hover:border-border-primary"
               >
                 {t("import.deselect_all")}
               </button>
@@ -398,7 +398,7 @@ export default function ImportReviewModal() {
           {!loading && items.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-[48px] gap-[10px] text-text-tertiary">
               <PlaylistFill size={28} className="opacity-70" />
-              <span className="text-[13px]">{t("common.no_results")}</span>
+              <span className="text-body">{t("common.no_results")}</span>
             </div>
           ) : loading ? (
             <div className="flex flex-col gap-[10px]">
@@ -446,10 +446,10 @@ export default function ImportReviewModal() {
                     {/* Original track row */}
                     <div className="flex items-start justify-between gap-[10px]">
                       <div className="flex flex-col min-w-0 flex-1">
-                        <span className="text-[13px] font-[500] text-text-primary truncate">
+                        <span className="text-body font-[500] text-text-primary truncate">
                           {item.sourceTrack.title}
                         </span>
-                        <span className="text-[12px] text-text-tertiary truncate">
+                        <span className="text-caption text-text-tertiary truncate">
                           {item.sourceTrack.artists.join(", ")}
                           {item.sourceTrack.durationMs ? (
                             <>
@@ -532,7 +532,7 @@ export default function ImportReviewModal() {
                               </div>
 
                               <div className="flex flex-col min-w-0 flex-1">
-                                <span className="text-[13px] font-[500] truncate text-text-primary">
+                                <span className="text-body font-[500] truncate text-text-primary">
                                   {proposed.title}
                                 </span>
                                 <div className="flex items-center gap-[6px] text-[11px] text-text-tertiary truncate">
@@ -569,7 +569,7 @@ export default function ImportReviewModal() {
                                 onClick={() =>
                                   toggleDecision(item.id, "approve")
                                 }
-                                className={`inline-flex items-center justify-center gap-[4px] px-[10px] py-[5px] rounded-md text-[12px] font-[500] transition-all duration-150 cursor-pointer border active:scale-[0.96] ${
+                                className={`inline-flex items-center justify-center gap-[4px] px-[10px] py-[5px] rounded-md text-caption font-[500] transition-all duration-150 cursor-pointer border active:scale-[0.96] ${
                                   isApproved
                                     ? "bg-btn-primary-bg text-btn-primary-text border-transparent"
                                     : "bg-transparent text-text-secondary border-border-primary hover:bg-border-alpha-14 hover:text-text-primary"
@@ -581,7 +581,7 @@ export default function ImportReviewModal() {
                               <button
                                 type="button"
                                 onClick={() => toggleDecision(item.id, "deny")}
-                                className={`inline-flex items-center justify-center gap-[4px] px-[10px] py-[5px] rounded-md text-[12px] font-[500] transition-all duration-150 cursor-pointer border active:scale-[0.96] ${
+                                className={`inline-flex items-center justify-center gap-[4px] px-[10px] py-[5px] rounded-md text-caption font-[500] transition-all duration-150 cursor-pointer border active:scale-[0.96] ${
                                   !isApproved
                                     ? "bg-border-alpha-14 text-text-primary border-border-primary"
                                     : "bg-transparent text-text-tertiary border-transparent hover:text-text-secondary"
@@ -595,7 +595,7 @@ export default function ImportReviewModal() {
                         );
                       })()
                     ) : (
-                      <div className="flex items-center justify-between gap-[12px] p-[8px] rounded-md bg-bg-primary/40 border border-border-primary/40 text-text-tertiary text-[12px]">
+                      <div className="flex items-center justify-between gap-[12px] p-[8px] rounded-md bg-bg-primary/40 border border-border-primary/40 text-text-tertiary text-caption">
                         <span>{t("import.no_candidate_found")}</span>
                         <span className="text-[11px] px-[8px] py-[3px] rounded bg-border-alpha-14 text-text-tertiary font-medium">
                           {t("import.skipped")}

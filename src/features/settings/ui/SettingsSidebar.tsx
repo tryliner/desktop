@@ -48,7 +48,7 @@ export function SettingsSidebar<T extends string>({
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder={t("settings.search_placeholder")}
           aria-label={t("settings.search_placeholder")}
-          className="!gap-[8px] !rounded-[12px] !border-transparent !bg-black/[0.05] dark:!bg-white/[0.07]"
+          className="!gap-[8px] !rounded-item !border-transparent !bg-fill"
           icon={<Search2Line size={14} className="text-text-tertiary" />}
           rightSlot={
             searchQuery ? (
@@ -73,7 +73,7 @@ export function SettingsSidebar<T extends string>({
         className="flex min-h-0 flex-1 flex-col gap-[18px] overflow-y-auto px-[10px] pt-[4px] pb-[12px]"
       >
         {groups.length === 0 ? (
-          <p className="m-0 px-[8px] text-[12px] text-text-tertiary">
+          <p className="m-0 px-[8px] text-caption text-text-tertiary">
             {t("search.no_results")}
           </p>
         ) : (

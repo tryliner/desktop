@@ -30,7 +30,7 @@ export function RulerControl({
 
   return (
     <section className="flex flex-col gap-[6px]">
-      <span className="text-[13px] font-[500] text-text-primary">{label}</span>
+      <span className="text-body font-[500] text-text-primary">{label}</span>
       <TickRuler
         value={value}
         min={min}

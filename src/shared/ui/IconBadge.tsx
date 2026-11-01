@@ -20,7 +20,7 @@ export default function IconBadge({
       aria-label={label}
       title={label}
       className={cn(
-        "inline-flex shrink-0 items-center justify-center rounded-[3px] bg-black/[0.1] text-text-secondary dark:bg-white/[0.14]",
+        "inline-flex shrink-0 items-center justify-center rounded-[3px] bg-fill-strong text-text-secondary",
         size === "md" ? "size-[15px]" : "size-[13px]",
         className,
       )}

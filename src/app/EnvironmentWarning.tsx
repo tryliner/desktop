@@ -38,7 +38,7 @@ export default function EnvironmentWarning() {
         <button
           type="button"
           onClick={skip}
-          className="shrink-0 rounded-md bg-transparent border border-[#f0e6c8]/25 px-[10px] py-[4px] text-[12px] font-[600] text-[#f0e6c8] hover:bg-white/10 cursor-pointer transition-colors"
+          className="shrink-0 rounded-md bg-transparent border border-[#f0e6c8]/25 px-[10px] py-[4px] text-caption font-[600] text-[#f0e6c8] hover:bg-white/10 cursor-pointer transition-colors"
         >
           {t("common.env_skip")}
         </button>

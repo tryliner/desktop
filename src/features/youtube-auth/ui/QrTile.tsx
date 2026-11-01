@@ -13,7 +13,7 @@ export default function QrTile({ value }: QrTileProps) {
 
   return (
     <div className="relative aspect-square max-h-[132px] min-h-0 max-w-full flex-1">
-      <div className="absolute inset-0 animate-pulse rounded-[16px] bg-black/[0.08] dark:bg-white/[0.1]" />
+      <div className="absolute inset-0 animate-pulse rounded-[16px] bg-fill-hover" />
       <AnimatePresence initial={false}>
         {value && (
           <motion.div

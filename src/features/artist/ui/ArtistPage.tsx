@@ -377,7 +377,7 @@ function ArtistContent() {
                         <button
                           type="button"
                           onClick={() => setShowAllTracks((prev) => !prev)}
-                          className="text-[13px] font-[500] text-text-secondary hover:text-text-primary transition-colors cursor-pointer bg-transparent border-0 p-0"
+                          className="text-body font-[500] text-text-secondary hover:text-text-primary transition-colors cursor-pointer bg-transparent border-0 p-0"
                         >
                           {showAllTracks
                             ? t("artist.show_less")
