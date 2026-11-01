@@ -42,7 +42,7 @@ body:
     attributes:
       label: Liner version
       description: Settings → About.
-      placeholder: 0.2.10
+      placeholder: 0.2.12
     validations:
       required: true
 

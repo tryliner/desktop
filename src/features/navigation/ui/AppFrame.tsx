@@ -22,10 +22,15 @@ import {
   User2Fill,
   AlbumFill,
   PlaylistFill,
+  YoutubeFill,
+  CloudFill,
+  DownLine,
 } from "@mingcute/react";
 import Header from "./Header";
 import Sidebar from "./Sidebar";
 import { cn } from "@/shared/lib";
+import { DropdownMenu } from "@/shared/ui";
+import type { SearchSource } from "@/shared/contracts";
 import WindowControlsNotch from "./WindowControlsNotch";
 import RightDrawer from "./RightDrawer";
 import { FullscreenRouteContext } from "../fullscreenRouteContext";
@@ -129,6 +134,24 @@ export default function AppFrame({ children }: AppFrameProps) {
   const offline = useOfflineModeStore((state) => state.offline);
 
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchSource, setSearchSource] = useState<SearchSource>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("liner_search_source_v1");
+        if (saved === "youtube" || saved === "soundcloud") {
+          return saved;
+        }
+      } catch {}
+    }
+    return "youtube";
+  });
+
+  const handleSelectSource = useCallback((source: SearchSource) => {
+    setSearchSource(source);
+    try {
+      localStorage.setItem("liner_search_source_v1", source);
+    } catch {}
+  }, []);
   const [queuePopupOpen, setQueuePopupOpen] = useState(false);
   const fullscreenPlayerOpen = usePlayerStore((state) => state.fullscreen);
   const setFullscreenPlayerOpen = usePlayerStore(
@@ -340,56 +363,66 @@ export default function AppFrame({ children }: AppFrameProps) {
     items: allResults,
     loading: allLoading,
     hasLoaded: allHasLoaded,
+    error: allError,
     runNow: runAllSearchNow,
     partialWarning,
   } = useSearchAll(searchQuery, {
     enabled: searchOpen && isAllSearchFilter,
     limit: 20,
     debounceMs: 320,
+    source: searchSource,
   });
 
   const {
     tracks: trackResults,
     loading: trackLoading,
     hasLoaded: trackHasLoaded,
+    error: trackError,
     runNow: runTrackSearchNow,
   } = useSearchTracks(searchQuery, {
     enabled: searchOpen && isTrackSearchFilter,
     limit: 20,
     debounceMs: 320,
+    source: searchSource,
   });
 
   const {
     artists: artistResults,
     loading: artistLoading,
     hasLoaded: artistHasLoaded,
+    error: artistError,
     runNow: runArtistSearchNow,
   } = useSearchArtists(searchQuery, {
     enabled: searchOpen && isArtistSearchFilter,
     limit: 20,
     debounceMs: 320,
+    source: searchSource,
   });
 
   const {
     albums: albumResults,
     loading: albumLoading,
     hasLoaded: albumHasLoaded,
+    error: albumError,
     runNow: runAlbumSearchNow,
   } = useSearchAlbums(searchQuery, {
     enabled: searchOpen && isAlbumSearchFilter,
     limit: 20,
     debounceMs: 320,
+    source: searchSource,
   });
 
   const {
     playlists: playlistResults,
     loading: playlistLoading,
     hasLoaded: playlistHasLoaded,
+    error: playlistError,
     runNow: runPlaylistSearchNow,
   } = useSearchPlaylists(searchQuery, {
     enabled: searchOpen && isPlaylistSearchFilter,
     limit: 20,
     debounceMs: 320,
+    source: searchSource,
   });
 
   const searchResults = useMemo(() => {
@@ -522,10 +555,21 @@ export default function AppFrame({ children }: AppFrameProps) {
           ? albumHasLoaded
           : playlistHasLoaded;
 
+  const activeError = isAllSearchFilter
+    ? allError
+    : isTrackSearchFilter
+      ? trackError
+      : isArtistSearchFilter
+        ? artistError
+        : isAlbumSearchFilter
+          ? albumError
+          : playlistError;
+
   const isSearchEmpty =
     searchQuery.trim().length >= 2 &&
     !searchLoading &&
     searchHasLoaded &&
+    !activeError &&
     searchResults.length === 0;
 
   const runSearchNow = () => {
@@ -858,18 +902,12 @@ export default function AppFrame({ children }: AppFrameProps) {
               </div>
             </div>
 
-            <AnimatePresence>
-              {searchOpen && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-                  className="absolute inset-0 bg-black/12 backdrop-blur-[2px] pointer-events-auto z-[30]"
-                  onClick={() => closeSearch()}
-                />
-              )}
-            </AnimatePresence>
+            {searchOpen && (
+              <div
+                className="absolute inset-0 pointer-events-auto z-[30]"
+                onClick={() => closeSearch()}
+              />
+            )}
 
             {!isFullscreenPlayer && (
               <AnimatePresence initial={false}>
@@ -946,6 +984,21 @@ export default function AppFrame({ children }: AppFrameProps) {
         ) : null}
       </AnimatePresence>
 
+      {/* dims the whole window, header and player included; clicks pass through so
+          window controls and dragging keep working, the page is guarded above */}
+      <AnimatePresence>
+        {searchOpen && (
+          <motion.div
+            key="search-dim"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+            className="absolute inset-0 z-[50] bg-black/20 pointer-events-none rounded-[inherit]"
+          />
+        )}
+      </AnimatePresence>
+
       <AnimatePresence>
         {searchOpen && (
           <motion.div
@@ -962,7 +1015,7 @@ export default function AppFrame({ children }: AppFrameProps) {
               top: 6,
             }}
           >
-            <div className="w-[min(660px,calc(100vw-72px))] h-[54px] rounded-[8px] pointer-events-auto flex items-center px-[18px] gap-[14px] bg-bg-panel/95 border border-border-primary/50 backdrop-blur-2xl">
+            <div className="w-[min(660px,calc(100vw-72px))] h-[54px] rounded-[8px] pointer-events-auto flex items-center px-[18px] gap-[14px] bg-bg-panel border border-border-primary/50">
               <span className="shrink-0 flex items-center justify-center text-text-tertiary">
                 <AnimatePresence mode="wait" initial={false}>
                   {searchLoading ? (
@@ -989,6 +1042,47 @@ export default function AppFrame({ children }: AppFrameProps) {
                   )}
                 </AnimatePresence>
               </span>
+
+              {/* Search Source Selector */}
+              <div style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}>
+                <DropdownMenu
+                  trigger={
+                    <button
+                      type="button"
+                      title={`Source: ${searchSource === "youtube" ? "YouTube" : "SoundCloud"}. Click to switch.`}
+                      className="flex items-center gap-1.5 h-[30px] px-2.5 rounded-lg bg-black/5 dark:bg-white/[0.08] hover:bg-black/10 dark:hover:bg-white/[0.14] text-text-primary text-xs font-medium transition-all border border-black/5 dark:border-white/10 cursor-pointer shrink-0 select-none active:scale-95"
+                    >
+                      {searchSource === "youtube" ? (
+                        <YoutubeFill size={15} className="text-red-500 shrink-0" />
+                      ) : (
+                        <CloudFill size={15} className="text-amber-500 shrink-0" />
+                      )}
+                      <span className="hidden sm:inline">
+                        {searchSource === "youtube" ? "YouTube" : "SoundCloud"}
+                      </span>
+                      <DownLine size={12} className="text-text-tertiary" />
+                    </button>
+                  }
+                  items={[
+                    {
+                      id: "youtube",
+                      label: "YouTube",
+                      icon: <YoutubeFill size={16} className="text-red-500" />,
+                      active: searchSource === "youtube",
+                      onClick: () => handleSelectSource("youtube"),
+                    },
+                    {
+                      id: "soundcloud",
+                      label: "SoundCloud",
+                      icon: <CloudFill size={16} className="text-amber-500" />,
+                      active: searchSource === "soundcloud",
+                      onClick: () => handleSelectSource("soundcloud"),
+                    },
+                  ]}
+                  side="bottom"
+                  align="start"
+                />
+              </div>
 
               <input
                 ref={searchInputRef}
@@ -1040,7 +1134,7 @@ export default function AppFrame({ children }: AppFrameProps) {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -6, scale: 0.99 }}
                   transition={{ duration: 0.1, ease: [0.16, 1, 0.3, 1] }}
-                  className="w-[min(660px,calc(100vw-72px))] mt-[8px] max-h-[500px] h-[500px] rounded-[8px] pointer-events-auto flex flex-col overflow-hidden bg-bg-panel/95 border border-border-primary/50 backdrop-blur-2xl"
+                  className="w-[min(660px,calc(100vw-72px))] mt-[8px] max-h-[500px] h-[500px] rounded-[8px] pointer-events-auto flex flex-col overflow-hidden bg-bg-panel border border-border-primary/50"
                 >
                   <div className="flex gap-[6px] px-[14px] pt-[12px] pb-[6px] shrink-0 overflow-x-auto">
                     {filterKeys.map((key) => {
@@ -1091,7 +1185,24 @@ export default function AppFrame({ children }: AppFrameProps) {
 
                   <div className="relative flex-1 min-h-0 overflow-hidden">
                     <AnimatePresence mode="wait">
-                      {isSearchEmpty ? (
+                      {activeError && !searchLoading && searchResults.length === 0 ? (
+                        <motion.div
+                          key="search-error"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ duration: 0.08 }}
+                          className="flex h-full flex-col items-center justify-center gap-[6px] px-[20px] text-center"
+                        >
+                          <p className="m-0 text-[14px] text-text-primary font-medium">
+                            Search request failed
+                          </p>
+                          <p className="m-0 text-[12px] text-text-tertiary max-w-[360px] line-clamp-2">
+                            {activeError.message ||
+                              "Could not reach search provider. Please try again."}
+                          </p>
+                        </motion.div>
+                      ) : isSearchEmpty ? (
                         <motion.div
                           key="search-empty"
                           initial={{ opacity: 0 }}
@@ -1142,7 +1253,7 @@ export default function AppFrame({ children }: AppFrameProps) {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -6, scale: 0.99 }}
                   transition={{ duration: 0.1, ease: [0.16, 1, 0.3, 1] }}
-                  className="w-[min(660px,calc(100vw-72px))] mt-[8px] max-h-[480px] h-auto rounded-[8px] pointer-events-auto flex flex-col overflow-hidden bg-bg-panel/95 border border-border-primary/50 backdrop-blur-2xl"
+                  className="w-[min(660px,calc(100vw-72px))] mt-[8px] max-h-[480px] h-auto rounded-[8px] pointer-events-auto flex flex-col overflow-hidden bg-bg-panel border border-border-primary/50"
                 >
                   <SearchHistoryList
                     onSelectQuery={handleSelectHistoryQuery}

@@ -33,6 +33,7 @@ import {
   DropdownMenu,
   HERO_TITLE_CLASS,
   HERO_SUBTITLE_CLASS,
+  HeroSubtitle,
   HERO_CHIP_CLASS,
   HERO_BUTTON_CLASS,
   HERO_GLASS_BUTTON_CLASS,
@@ -357,7 +358,7 @@ function CollectionContent() {
                     ) : data.author ? (
                       <p className={HERO_SUBTITLE_CLASS}>{data.author}</p>
                     ) : data.description ? (
-                      <p className={HERO_SUBTITLE_CLASS}>{data.description}</p>
+                      <HeroSubtitle text={data.description} />
                     ) : undefined
                   }
                   meta={

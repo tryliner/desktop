@@ -30,7 +30,6 @@ export class LyricsScene {
     void loadLyricsFonts(this.typography).then(this.remeasure);
   }
 
-  // widths cached before a font file arrived are wrong, start over
   private readonly remeasure = () => {
     this.measure = createTextMeasure(this.ctx);
     this.relayout();

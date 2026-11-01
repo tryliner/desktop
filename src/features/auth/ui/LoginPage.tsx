@@ -14,6 +14,7 @@ import {
   useAuthStore,
 } from "../store/authStore";
 import { useTranslation } from "@/languages";
+import { HumanCheckNotice } from "@/features/human-check";
 import { cn } from "@/shared/lib";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -61,6 +62,10 @@ export default function LoginPage() {
     if (code === "invalid_username") return t("login.errors.username_invalid");
     if (code === "invalid_input")
       return t("login.errors.display_name_required");
+    if (code === "human_check_cancelled")
+      return t("login.errors.human_check_cancelled");
+    if (code === "human_check_failed")
+      return t("login.errors.human_check_failed");
     return authErrorMessage(nextError);
   };
 
@@ -616,6 +621,7 @@ export default function LoginPage() {
           </p>
         </div>
       </section>
+      <HumanCheckNotice />
     </main>
   );
 }

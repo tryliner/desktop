@@ -22,7 +22,7 @@ import {
   HERO_CHIP_CLASS,
   HERO_GLASS_BUTTON_CLASS,
   HERO_GLASS_CLASS,
-  HERO_SUBTITLE_CLASS,
+  HeroSubtitle,
   HERO_TITLE_CLASS,
 } from "@/shared/ui";
 import Button from "@/shared/ui/Button";
@@ -66,6 +66,8 @@ const SavedTrackRow = memo(function SavedTrackRow({
         id={track.id}
         title={track.title}
         artists={track.artists}
+        artistId={track.artistId}
+        artistList={track.artistList}
         coverUrl={track.coverUrl}
         duration={formatTrackDuration(track.durationMs)}
         durationMs={track.durationMs}
@@ -204,7 +206,7 @@ export function SavedTracksView({
               />
             }
             title={<h1 className={HERO_TITLE_CLASS}>{title}</h1>}
-            subtitle={<p className={HERO_SUBTITLE_CLASS}>{subtitle}</p>}
+            subtitle={<HeroSubtitle text={subtitle} />}
             meta={
               <div className={HERO_CHIP_CLASS}>
                 <span>{t("common.songs", { count: tracks.length })}</span>

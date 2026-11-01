@@ -1,4 +1,4 @@
-import type { Track } from "@/shared/types";
+import type { Track, TrackArtist } from "@/shared/types";
 import type {
   LyricsCandidate,
   LyricsSyncLevel,
@@ -14,6 +14,8 @@ export interface CachedTrackRecord {
   id: string;
   title: string;
   artists: string;
+  artistId?: string;
+  artistList?: TrackArtist[];
   albumTitle?: string;
   albumId?: string;
   coverUrl?: string;
@@ -250,6 +252,8 @@ class LinerDb {
       id: track.id,
       title: track.title,
       artists: track.artists,
+      artistId: track.artistId,
+      artistList: track.artistList?.map(({ id, name }) => ({ id, name })),
       albumTitle: track.album?.title,
       albumId: track.album?.id,
       coverUrl: track.coverUrl,

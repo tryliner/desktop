@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { api, ApiError } from "@/shared/api";
+import { api, ApiError, HumanCheckCancelledError } from "@/shared/api";
 import {
   clearAuthSession,
   getAuthSession,
@@ -169,6 +169,7 @@ useAuthStore.subscribe((state, previous) => {
 });
 
 export function getAuthErrorCode(error: unknown): string {
+  if (error instanceof HumanCheckCancelledError) return "human_check_cancelled";
   if (!(error instanceof ApiError)) return "server_unavailable";
   if (error.status === 0) return "server_unavailable";
   // 5xx and cloudflare 52x: the server is down, not the user's input or connection
@@ -178,6 +179,7 @@ export function getAuthErrorCode(error: unknown): string {
   if (error.code === "USERNAME_TAKEN") return "username_taken";
   if (error.code === "INVALID_USERNAME") return "invalid_username";
   if (error.code === "INVALID_INPUT") return "invalid_input";
+  if (error.code?.startsWith("TURNSTILE_")) return "human_check_failed";
   return "unknown_error";
 }
 

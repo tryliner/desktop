@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import {
   DEFAULT_SHORTCUTS,
+  OPTIONAL_GLOBAL_ACTIONS,
   type ShortcutsSettings,
   type GlobalShortcutsSettings,
   type MainAppShortcutsSettings,
@@ -43,6 +44,8 @@ function pickKnownShortcuts<T extends object>(
   return result;
 }
 
+const SHORTCUTS_STORAGE_KEY = "liner_shortcuts_settings_v1";
+
 function notifyElectronGlobalShortcuts(global: GlobalShortcutsSettings) {
   if (
     typeof window !== "undefined" &&
@@ -51,6 +54,9 @@ function notifyElectronGlobalShortcuts(global: GlobalShortcutsSettings) {
     window.linerElectron.updateOverlaySettings({
       shortcut: global.toggleOverlay,
       likeShortcut: global.quickLikeSong,
+      mediaShortcuts: Object.fromEntries(
+        OPTIONAL_GLOBAL_ACTIONS.map((action) => [action, global[action]]),
+      ),
     });
   }
 }
@@ -154,7 +160,7 @@ export const useShortcutsStore = create<ShortcutsStoreState>()(
       },
     }),
     {
-      name: "liner_shortcuts_settings_v1",
+      name: SHORTCUTS_STORAGE_KEY,
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         global: state.global,
@@ -206,3 +212,11 @@ export const useShortcutsStore = create<ShortcutsStoreState>()(
     },
   ),
 );
+
+if (typeof window !== "undefined") {
+  window.addEventListener("storage", (event) => {
+    if (event.key === SHORTCUTS_STORAGE_KEY) {
+      void useShortcutsStore.persist.rehydrate();
+    }
+  });
+}

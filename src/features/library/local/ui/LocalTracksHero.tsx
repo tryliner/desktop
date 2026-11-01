@@ -7,7 +7,7 @@ import {
   HERO_BUTTON_CLASS,
   HERO_CHIP_CLASS,
   HERO_GLASS_BUTTON_CLASS,
-  HERO_SUBTITLE_CLASS,
+  HeroSubtitle,
   HERO_TITLE_CLASS,
 } from "@/shared/ui";
 import Button from "@/shared/ui/Button";
@@ -48,9 +48,7 @@ export default function LocalTracksHero({
     <EntityHero
       cover={<LocalFilesCover className="absolute inset-0" />}
       title={<h1 className={HERO_TITLE_CLASS}>{t("library.local.title")}</h1>}
-      subtitle={
-        <p className={HERO_SUBTITLE_CLASS}>{t("library.local.subtitle")}</p>
-      }
+      subtitle={<HeroSubtitle text={t("library.local.subtitle")} />}
       meta={
         <div className={HERO_CHIP_CLASS}>
           <MusicLine size={13} className="shrink-0 text-text-secondary" />

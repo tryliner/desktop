@@ -97,4 +97,45 @@ describe("shortcutsStore", () => {
     expect(useShortcutsStore.getState().isRecording).toBe(false);
     expect(pauseOverlayShortcuts).toHaveBeenCalledWith(false);
   });
+
+  it("binds and clears optional global shortcuts and sends them to electron", () => {
+    const updateOverlaySettings = vi.fn();
+    (window as any).linerElectron = { updateOverlaySettings };
+
+    expect(useShortcutsStore.getState().global.playPause).toBe("");
+
+    useShortcutsStore.getState().setGlobalShortcut("playPause", "Ctrl+Alt+P");
+    expect(useShortcutsStore.getState().global.playPause).toBe("Control+Alt+P");
+    expect(updateOverlaySettings).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        mediaShortcuts: expect.objectContaining({
+          playPause: "Control+Alt+P",
+          nextTrack: "",
+        }),
+      }),
+    );
+
+    useShortcutsStore.getState().setGlobalShortcut("playPause", "");
+    expect(useShortcutsStore.getState().global.playPause).toBe("");
+    expect(updateOverlaySettings).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        mediaShortcuts: expect.objectContaining({ playPause: "" }),
+      }),
+    );
+  });
+
+  it("picks up shortcuts another window saved", async () => {
+    const saved = JSON.parse(
+      localStorage.getItem("liner_shortcuts_settings_v1") ?? "{}",
+    );
+    saved.state.miniplayer.nextTrack = "N";
+    localStorage.setItem("liner_shortcuts_settings_v1", JSON.stringify(saved));
+
+    window.dispatchEvent(
+      new StorageEvent("storage", { key: "liner_shortcuts_settings_v1" }),
+    );
+    await vi.waitFor(() =>
+      expect(useShortcutsStore.getState().miniplayer.nextTrack).toBe("N"),
+    );
+  });
 });
