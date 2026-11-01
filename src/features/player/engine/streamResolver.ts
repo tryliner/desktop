@@ -31,6 +31,7 @@ import {
 } from "./playbackStream";
 import { findYoutubeStandIn } from "./youtubeStandIn";
 import { findExactSongVersion } from "./exactSongVersion";
+import { appAllowsAccountPlayback } from "./accountPlayback";
 
 export interface ResolveStreamOptions {
   progressive?: boolean;
@@ -60,7 +61,11 @@ async function resolveYoutubeAudio(
   progressive: boolean,
   signal?: AbortSignal,
 ): Promise<PlaybackStream> {
-  if (isYoutubeSignedIn() && prefersAccountPlayback()) {
+  if (
+    isYoutubeSignedIn() &&
+    prefersAccountPlayback() &&
+    (await appAllowsAccountPlayback())
+  ) {
     try {
       const stream = await resolveTvAudio(videoId, progressive, signal);
       log("cyan", "playback", `resolved youtube tv audio for ${videoId}`);
