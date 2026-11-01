@@ -103,6 +103,19 @@ const FADE = {
   transition: { duration: 0.32, ease: SMOOTH_EASE },
 };
 
+function getTargetCategoryBytes(
+  data: StorageAnalytics | null,
+  kind: ClearKind,
+): number {
+  if (!data) return 0;
+  if (kind === "cache") {
+    return data.categories
+      .filter((c) => !LIBRARY_CATEGORY_IDS.has(c.id))
+      .reduce((sum, c) => sum + c.bytes, 0);
+  }
+  return data.categories.find((c) => c.id === kind)?.bytes ?? 0;
+}
+
 export function StorageTab({ searchQuery }: { searchQuery?: string }) {
   const { t } = useTranslation();
   const { toast } = useToast();
@@ -188,18 +201,12 @@ export function StorageTab({ searchQuery }: { searchQuery?: string }) {
     setClearing(true);
     setClearingProgress(15);
 
-    const getTargetBytes = (data: StorageAnalytics | null) => {
-      if (!data) return 0;
-      if (kind === "cache") {
-        return data.categories
-          .filter((c) => !LIBRARY_CATEGORY_IDS.has(c.id))
-          .reduce((sum, c) => sum + c.bytes, 0);
-      }
-      return data.categories.find((c) => c.id === kind)?.bytes ?? 0;
-    };
-    const beforeBytes = getTargetBytes(analytics) || expected;
-
     try {
+      const initialAnalytics = await refreshStorageAnalytics(true);
+      setAnalytics(initialAnalytics);
+      const beforeBytes =
+        getTargetCategoryBytes(initialAnalytics, kind) || expected;
+
       setClearingProgress(40);
       await Promise.all([
         work(),
@@ -214,7 +221,7 @@ export function StorageTab({ searchQuery }: { searchQuery?: string }) {
       const updated = await refreshStorageAnalytics(true);
       setAnalytics(updated);
       setClearing(false);
-      const afterBytes = getTargetBytes(updated);
+      const afterBytes = getTargetCategoryBytes(updated, kind);
       const actuallyFreed = Math.max(0, beforeBytes - afterBytes);
       setFreedBytes(actuallyFreed);
     } catch {

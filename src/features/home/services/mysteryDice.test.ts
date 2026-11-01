@@ -95,10 +95,12 @@ describe("mysteryDice service", () => {
 
   it("shuffles items while preserving all elements", () => {
     const original = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+    const originalCopy = [...original];
     const shuffled = fisherYatesShuffle(original);
 
+    expect(original).toEqual(originalCopy);
     expect(shuffled).toHaveLength(original.length);
-    expect(shuffled.sort()).toEqual(original.sort());
+    expect([...shuffled].sort((a, b) => a - b)).toEqual(originalCopy);
   });
 
   it("deduplicates consecutive tracks from the same artist", () => {

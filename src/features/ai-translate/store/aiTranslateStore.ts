@@ -1,10 +1,26 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { persist, createJSONStorage } from "zustand/middleware";
 import type { AiProvider } from "../types";
 import {
   translateSongLyrics,
   romanizeSongLyrics,
 } from "../services/aiTranslateService";
+
+const MAX_CACHE_ENTRIES = 500;
+let configGeneration = 0;
+
+function trimCache(
+  cache: Record<string, string[]>,
+  max = MAX_CACHE_ENTRIES,
+): Record<string, string[]> {
+  const keys = Object.keys(cache);
+  if (keys.length <= max) return cache;
+  const pruned: Record<string, string[]> = {};
+  for (const k of keys.slice(keys.length - max)) {
+    pruned[k] = cache[k];
+  }
+  return pruned;
+}
 
 export function getTranslationCacheKey(
   trackId: string,
@@ -83,10 +99,34 @@ export const useAiTranslateStore = create<AiTranslateState>()(
       translationsByTrackId: {},
       romanizationsByTrackId: {},
 
-      setProvider: (provider) => set({ provider, error: null }),
+      setProvider: (provider) => {
+        configGeneration++;
+        set({
+          provider,
+          error: null,
+          translationsByTrackId: {},
+          romanizationsByTrackId: {},
+        });
+      },
       setApiKey: (apiKey) => set({ apiKey, error: null }),
-      setBaseUrl: (baseUrl) => set({ baseUrl, error: null }),
-      setModel: (model) => set({ model, error: null }),
+      setBaseUrl: (baseUrl) => {
+        configGeneration++;
+        set({
+          baseUrl,
+          error: null,
+          translationsByTrackId: {},
+          romanizationsByTrackId: {},
+        });
+      },
+      setModel: (model) => {
+        configGeneration++;
+        set({
+          model,
+          error: null,
+          translationsByTrackId: {},
+          romanizationsByTrackId: {},
+        });
+      },
       setSingableMode: (singableMode) => set({ singableMode }),
       toggleSingableMode: () =>
         set((s) => ({ singableMode: !s.singableMode })),
@@ -97,8 +137,10 @@ export const useAiTranslateStore = create<AiTranslateState>()(
         set((s) => ({ showTranslation: !s.showTranslation })),
       toggleRomanization: () =>
         set((s) => ({ showRomanization: !s.showRomanization })),
-      clearCache: () =>
-        set({ translationsByTrackId: {}, romanizationsByTrackId: {} }),
+      clearCache: () => {
+        configGeneration++;
+        set({ translationsByTrackId: {}, romanizationsByTrackId: {} });
+      },
 
       translateTrackLyrics: async (
         trackId: string,
@@ -106,6 +148,7 @@ export const useAiTranslateStore = create<AiTranslateState>()(
         lyricsProvider?: string | null,
       ) => {
         if (!trackId || lines.length === 0) return null;
+        const requestGen = configGeneration;
         const { provider, apiKey, targetLang, model, baseUrl, singableMode } = get();
         const cacheKey = getTranslationCacheKey(
           trackId,
@@ -129,15 +172,18 @@ export const useAiTranslateStore = create<AiTranslateState>()(
             singableMode,
           });
 
+          if (configGeneration !== requestGen) return null;
+
           set((s) => ({
             isTranslating: false,
-            translationsByTrackId: {
+            translationsByTrackId: trimCache({
               ...s.translationsByTrackId,
               [cacheKey]: translated,
-            },
+            }),
           }));
           return translated;
         } catch (err: any) {
+          if (configGeneration !== requestGen) return null;
           const errorMsg = err.message || "Translation failed";
           set({
             isTranslating: false,
@@ -153,6 +199,7 @@ export const useAiTranslateStore = create<AiTranslateState>()(
         lyricsProvider?: string | null,
       ) => {
         if (!trackId || lines.length === 0) return null;
+        const requestGen = configGeneration;
         const cacheKey = getRomanizationCacheKey(trackId, lyricsProvider);
         const existing = get().romanizationsByTrackId[cacheKey];
         if (existing && existing.length === lines.length) {
@@ -170,15 +217,18 @@ export const useAiTranslateStore = create<AiTranslateState>()(
             baseUrl: baseUrl.trim() || undefined,
           });
 
+          if (configGeneration !== requestGen) return null;
+
           set((s) => ({
             isRomanizing: false,
-            romanizationsByTrackId: {
+            romanizationsByTrackId: trimCache({
               ...s.romanizationsByTrackId,
               [cacheKey]: romanized,
-            },
+            }),
           }));
           return romanized;
         } catch (err: any) {
+          if (configGeneration !== requestGen) return null;
           const errorMsg = err.message || "Romanization failed";
           set({
             isRomanizing: false,
@@ -191,6 +241,27 @@ export const useAiTranslateStore = create<AiTranslateState>()(
     {
       name: "liner_ai_translate_v1",
       version: 2,
+      storage: createJSONStorage(() => ({
+        getItem: (name: string) => {
+          try {
+            return localStorage.getItem(name);
+          } catch {
+            return null;
+          }
+        },
+        setItem: (name: string, value: string) => {
+          try {
+            localStorage.setItem(name, value);
+          } catch (err) {
+            console.warn("[aiTranslateStore] Persistence write failed:", err);
+          }
+        },
+        removeItem: (name: string) => {
+          try {
+            localStorage.removeItem(name);
+          } catch {}
+        },
+      })),
       migrate: (persisted: unknown, version: number) => {
         const state = (persisted ?? {}) as Partial<AiTranslateState>;
         if (version < 2) {

@@ -34,4 +34,13 @@ describe("findDuplicateGroups", () => {
     expect(groups[0].keep.id).toBe("new");
     expect(groups[0].remove.map((item) => item.id)).toEqual(["old"]);
   });
+
+  it("does not treat zero or unknown durations as duplicate matches", () => {
+    const groups = findDuplicateGroups([
+      record("known", "Song Name", "Artist", 200_000),
+      record("unknown", "Song Name", "Artist", 0),
+    ]);
+
+    expect(groups).toHaveLength(0);
+  });
 });

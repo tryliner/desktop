@@ -19,13 +19,16 @@ export type OverlayDisplayMode = "track_info" | "lyrics" | "visualizer";
 function MiniOverlayVisualizer({
   isPlaying,
   volume,
+  isActive = true,
 }: {
   isPlaying: boolean;
   volume: number;
+  isActive?: boolean;
 }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
+    if (!isActive) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
@@ -84,7 +87,7 @@ function MiniOverlayVisualizer({
 
     animId = requestAnimationFrame(render);
     return () => cancelAnimationFrame(animId);
-  }, [isPlaying, volume]);
+  }, [isActive, isPlaying, volume]);
 
   return (
     <div className="flex items-center h-full w-full py-1">
@@ -490,7 +493,11 @@ export function OverlayPlayer() {
               </div>
             ) : displayMode === "visualizer" ? (
               <div className="flex min-w-0 flex-1 items-center overflow-hidden">
-                <MiniOverlayVisualizer isPlaying={isPlaying} volume={state.volume} />
+                <MiniOverlayVisualizer
+                  isActive={isShown}
+                  isPlaying={isPlaying}
+                  volume={state.volume}
+                />
               </div>
             ) : (
               <div className="flex min-w-0 flex-1 flex-col justify-center overflow-hidden">

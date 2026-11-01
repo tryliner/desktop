@@ -142,7 +142,9 @@ export class LocalTrackLibrary {
         await this.save([]);
         return count;
       } catch (error) {
-        await this.reconcile();
+        try {
+          await this.reconcile();
+        } catch {}
         throw error;
       }
     });
@@ -152,10 +154,14 @@ export class LocalTrackLibrary {
     const records = await this.load();
     const surviving: LocalTrackRecord[] = [];
     for (const record of records) {
-      const audioExists = await fsp
-        .stat(this.filePath("audio", record.audioFile))
-        .then(() => true)
-        .catch(() => false);
+      let audioExists = true;
+      try {
+        await fsp.stat(this.filePath("audio", record.audioFile));
+      } catch (err: any) {
+        if (err?.code === "ENOENT") {
+          audioExists = false;
+        }
+      }
       if (!audioExists) continue;
 
       let coverFile = record.coverFile;
@@ -229,8 +235,12 @@ export class LocalTrackLibrary {
       let previousContent: string | null = null;
       try {
         previousContent = await fsp.readFile(target, "utf8");
-      } catch {
-        previousContent = null;
+      } catch (err: any) {
+        if (err?.code === "ENOENT") {
+          previousContent = null;
+        } else {
+          throw err;
+        }
       }
 
       if (state === "found") {

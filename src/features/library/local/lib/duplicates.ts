@@ -12,8 +12,7 @@ function normalize(value: string) {
 const DURATION_TOLERANCE_MS = 5_000;
 
 function similarDuration(a: number, b: number) {
-  // An unknown duration can't disprove a match.
-  if (a <= 0 || b <= 0) return true;
+  if (a <= 0 || b <= 0) return false;
   return Math.abs(a - b) <= DURATION_TOLERANCE_MS;
 }
 

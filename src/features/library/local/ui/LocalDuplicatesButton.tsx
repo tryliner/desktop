@@ -83,6 +83,17 @@ export default function LocalDuplicatesButton() {
                       count: group.remove.length + 1,
                     })}
                   </p>
+                  <div className="mt-[6px] flex flex-col gap-[2px] border-t border-black/5 pt-[6px] dark:border-white/5">
+                    {group.remove.map((rem) => (
+                      <p
+                        key={rem.id}
+                        className="m-0 truncate text-[11px] text-text-tertiary opacity-80"
+                      >
+                        ↳ {rem.fileName || rem.title}
+                        {rem.album ? ` · ${rem.album}` : ""}
+                      </p>
+                    ))}
+                  </div>
                 </div>
               ))}
             </div>

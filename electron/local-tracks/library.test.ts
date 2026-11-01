@@ -181,13 +181,38 @@ describe("LocalTrackLibrary", () => {
       await expect(library.removeAll()).rejects.toThrow(
         "Simulated rm failure on lyrics",
       );
-      // Index is empty because audio files were removed
       expect(await library.list()).toEqual([]);
-      // Audio folder was removed
       await expect(fs.access(path.join(root, "audio"))).rejects.toThrow();
-      // Lyrics folder remains reflecting partial removal state
       await expect(
         fs.access(path.join(root, "lyrics")),
+      ).resolves.toBeUndefined();
+    } finally {
+      vi.restoreAllMocks();
+    }
+  });
+
+  it("retains tracks in the index when audio folder removal fails", async () => {
+    const library = new LocalTrackLibrary(root);
+    const { added } = await library.importFiles([
+      await source("One - A.mp3", "aaaa"),
+    ]);
+
+    const originalRm = fs.rm;
+    vi.spyOn(fs, "rm").mockImplementation(async (targetPath, options) => {
+      if (String(targetPath).endsWith("audio")) {
+        throw new Error("Simulated rm failure on audio");
+      }
+      return originalRm(targetPath, options);
+    });
+
+    try {
+      await expect(library.removeAll()).rejects.toThrow(
+        "Simulated rm failure on audio",
+      );
+      const list = await library.list();
+      expect(list.some((track) => track.id === added[0].id)).toBe(true);
+      await expect(
+        fs.access(path.join(root, "audio")),
       ).resolves.toBeUndefined();
     } finally {
       vi.restoreAllMocks();
@@ -213,7 +238,6 @@ describe("LocalTrackLibrary", () => {
       await expect(
         library.setLyrics(added[0].id, "found", { line: "replacement" }),
       ).rejects.toThrow("Disk write error");
-      // Sidecar was restored to original content
       expect(await library.readLyrics(added[0].id)).toEqual({
         line: "original",
       });

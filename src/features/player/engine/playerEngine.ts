@@ -1653,10 +1653,6 @@ class PlayerEngine {
     this.lyricsAbort?.abort();
     const controller = new AbortController();
     this.lyricsAbort = controller;
-    const streamDeadline = setTimeout(
-      () => controller.abort(),
-      LYRICS_STREAM_DEADLINE_MS,
-    );
     let bestCandidate: LyricsCandidate | null = null;
 
     const memoryCached = lyricsCache.get(trackId);
@@ -1745,7 +1741,7 @@ class PlayerEngine {
     if (this.inFlightLyricsPrefetches.has(trackId)) {
       try {
         await this.inFlightLyricsPrefetches.get(trackId);
-        if (token !== this.lyricsLoadToken || controller.signal.aborted) return;
+        if (token !== this.lyricsLoadToken) return;
         const freshCached =
           lyricsCache.get(trackId) || (await linerDb.getLyrics(trackId));
         if (freshCached && freshCached.candidate) {
@@ -1773,7 +1769,12 @@ class PlayerEngine {
 
     log("cyan", "lyrics", `fetching for "${track.title}"`);
 
+    let streamDeadline: ReturnType<typeof setTimeout> | undefined;
     try {
+      streamDeadline = setTimeout(
+        () => controller.abort(),
+        LYRICS_STREAM_DEADLINE_MS,
+      );
       for await (const event of api.streamLyrics(
         trackId,
         controller.signal,
@@ -1902,7 +1903,9 @@ class PlayerEngine {
         });
       }
     } finally {
-      clearTimeout(streamDeadline);
+      if (streamDeadline) {
+        clearTimeout(streamDeadline);
+      }
       if (token === this.lyricsLoadToken) {
         useLyricsStore.getState().setLyricsState({ lyricsLoading: false });
       }

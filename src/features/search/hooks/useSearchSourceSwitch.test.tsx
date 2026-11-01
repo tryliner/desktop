@@ -136,4 +136,56 @@ describe("Search Hooks source switching (7.6)", () => {
     expect(hookResult.tracks).toHaveLength(1);
     expect(hookResult.tracks[0].id).toBe("sc:track");
   });
+
+  it("ignores stale response when earlier source request resolves after newer source request", async () => {
+    let resolveYt: any;
+    const ytPromise = new Promise((resolve) => {
+      resolveYt = resolve;
+    });
+
+    (api.search as any)
+      .mockImplementationOnce(() => ytPromise)
+      .mockResolvedValueOnce({
+        items: [
+          { type: "track", id: "sc_fast", title: "SoundCloud Fast", artists: [] },
+        ],
+      });
+
+    let hookResult: any = null;
+
+    function TestComponent({ source }: { source: SearchSource }) {
+      hookResult = useSearchAll("daft punk", {
+        enabled: true,
+        limit: 10,
+        debounceMs: 0,
+        source,
+      });
+      return null;
+    }
+
+    act(() => {
+      root.render(<TestComponent source="youtube" />);
+    });
+    await flushPromises();
+
+    act(() => {
+      root.render(<TestComponent source="soundcloud" />);
+    });
+    await flushPromises();
+
+    expect(hookResult.items).toHaveLength(1);
+    expect(hookResult.items[0].id).toBe("sc_fast");
+
+    await act(async () => {
+      resolveYt({
+        items: [
+          { type: "track", id: "yt_slow", title: "YouTube Slow", artists: [] },
+        ],
+      });
+    });
+    await flushPromises();
+
+    expect(hookResult.items).toHaveLength(1);
+    expect(hookResult.items[0].id).toBe("sc_fast");
+  });
 });

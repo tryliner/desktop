@@ -109,10 +109,19 @@ const portableDir = path.dirname(app.getPath("exe"));
 const isPortableMode =
   process.argv.includes("--portable") ||
   fs.existsSync(path.join(portableDir, "portable"));
+let activePortableMode = false;
 if (isPortableMode) {
-  const dataDir = path.join(portableDir, "data");
-  fs.mkdirSync(dataDir, { recursive: true });
-  app.setPath("userData", dataDir);
+  try {
+    const dataDir = path.join(portableDir, "data");
+    fs.mkdirSync(dataDir, { recursive: true });
+    app.setPath("userData", dataDir);
+    activePortableMode = true;
+  } catch (err) {
+    console.error(
+      "[main] Failed to initialize portable data directory, falling back to default userData:",
+      err,
+    );
+  }
 }
 
 function isHardwareAccelerationEnabled(): boolean {
@@ -882,7 +891,7 @@ if (!gotTheLock) {
     });
 
     ipcMain.handle("app:get-platform-info", () => ({
-      portable: isPortableMode,
+      portable: activePortableMode,
       dataPath: app.getPath("userData"),
     }));
 
