@@ -613,6 +613,23 @@ const RETRYABLE_POW_CODES = new Set(["POW_EXPIRED", "POW_REUSED"]);
 interface AuthProof {
   pow?: PowSolution;
   turnstile?: string;
+  edge?: boolean;
+}
+
+function authBody(proof: AuthProof) {
+  return { pow: proof.pow, turnstile: proof.turnstile };
+}
+
+function authInit(proof: AuthProof, body: unknown): RequestInit {
+  return {
+    method: "POST",
+    body: JSON.stringify(body),
+    ...(proof.edge ? { credentials: "include" as const } : {}),
+  };
+}
+
+function blockedBeforeOurServer(error: unknown): boolean {
+  return error instanceof TypeError || statusOf(error) === 0;
 }
 
 async function humanCheck(
@@ -620,11 +637,11 @@ async function humanCheck(
   purpose: "login" | "register",
 ): Promise<string | undefined> {
   const mode = challenge.turnstile?.mode ?? "off";
-  if (mode === "off") return undefined;
+  if (mode === "off" && !challenge.turnstile?.edge) return undefined;
   try {
     return await requestTurnstileToken(getApiBaseUrl(), purpose);
   } catch (error) {
-    if (mode === "optional" && error instanceof TurnstileCancelledError)
+    if (mode !== "required" && error instanceof TurnstileCancelledError)
       return undefined;
     throw error;
   }
@@ -651,7 +668,11 @@ async function authProofFor(
       : solvePow(challenge);
   void work?.catch(() => undefined);
   const turnstile = await humanCheck(challenge, purpose);
-  return { pow: await work, turnstile };
+  return {
+    pow: await work,
+    turnstile,
+    edge: challenge.turnstile?.edge === true,
+  };
 }
 
 async function withAuthProof<T>(
@@ -659,14 +680,17 @@ async function withAuthProof<T>(
   email: string,
   send: (proof: AuthProof) => Promise<T>,
 ): Promise<T> {
+  let proof: AuthProof | undefined;
   try {
-    return await send(await authProofFor(purpose, email));
+    proof = await authProofFor(purpose, email);
+    return await send(proof);
   } catch (error) {
     const retryable =
       error instanceof PowTimeoutError ||
       (error instanceof ApiError &&
         !!error.code &&
-        RETRYABLE_POW_CODES.has(error.code));
+        RETRYABLE_POW_CODES.has(error.code)) ||
+      (proof?.edge === true && blockedBeforeOurServer(error));
     if (!retryable) throw error;
     return send(await authProofFor(purpose, email));
   }
@@ -679,7 +703,7 @@ export const api = {
     const result = await withAuthProof("login", email, (proof) =>
       request<AuthTokens>(
         "/v1/auth/login",
-        { method: "POST", body: JSON.stringify({ email, password, ...proof }) },
+        authInit(proof, { email, password, ...authBody(proof) }),
         false,
       ),
     );
@@ -696,16 +720,13 @@ export const api = {
     const result = await withAuthProof("register", email, (proof) =>
       request<AuthTokens>(
         "/v1/auth/register",
-        {
-          method: "POST",
-          body: JSON.stringify({
-            email,
-            password,
-            username: username.trim().toLowerCase(),
-            displayName: displayName.trim(),
-            ...proof,
-          }),
-        },
+        authInit(proof, {
+          email,
+          password,
+          username: username.trim().toLowerCase(),
+          displayName: displayName.trim(),
+          ...authBody(proof),
+        }),
         false,
       ),
     );

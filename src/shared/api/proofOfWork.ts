@@ -11,7 +11,11 @@ export interface PowChallenge {
   parallelism: number;
   hashLength: number;
   expiresAt: string;
-  turnstile?: { mode: "off" | "optional" | "required"; siteKey?: string };
+  turnstile?: {
+    mode: "off" | "optional" | "required";
+    siteKey?: string;
+    edge?: boolean;
+  };
 }
 
 export interface PowSolution {
