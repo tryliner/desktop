@@ -64,6 +64,7 @@ export type LyricsStreamEvent =
       type: "provider";
       provider: string;
       status: "not_found";
+      instrumental?: true;
       durationMs?: number;
     }
   | {
@@ -82,4 +83,6 @@ export type LyricsStreamEvent =
         syncLevel: LyricsSyncLevel;
       };
       status?: "not_found";
+      // nothing has words and a source says the song is an instrumental
+      instrumental?: true;
     };

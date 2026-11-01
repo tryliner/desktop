@@ -41,7 +41,7 @@ export default function CachedTracksPage() {
   const loaded = useCachedTracksStore((state) => state.loaded);
   const load = useCachedTracksStore((state) => state.load);
   const [clearing, setClearing] = useState(false);
-  usePageBackdrop(cachedSongsCover, { dim: 0.05 });
+  usePageBackdrop(cachedSongsCover);
 
   useEffect(() => {
     void load();

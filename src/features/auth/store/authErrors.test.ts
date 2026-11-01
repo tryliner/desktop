@@ -7,7 +7,7 @@ vi.mock("@/features/player", () => ({
 }));
 
 import { getAuthErrorCode } from "./authStore";
-import { ApiError } from "@/shared/api";
+import { ApiError, HumanCheckCancelledError } from "@/shared/api";
 
 describe("getAuthErrorCode", () => {
   it("tells a server outage apart from a wrong password", () => {
@@ -26,5 +26,14 @@ describe("getAuthErrorCode", () => {
       ),
     ).toBe("invalid_credentials");
     expect(getAuthErrorCode(new ApiError(401, ""))).toBe("unknown_error");
+  });
+
+  it("names a closed or rejected human check", () => {
+    expect(getAuthErrorCode(new HumanCheckCancelledError())).toBe(
+      "human_check_cancelled",
+    );
+    expect(
+      getAuthErrorCode(new ApiError(403, "Forbidden", "TURNSTILE_INVALID")),
+    ).toBe("human_check_failed");
   });
 });

@@ -68,8 +68,8 @@ function PageCoverBackdropComponent({
   coverSrc,
   coverCrossOrigin = "anonymous",
   isDark = true,
-  blur = 32,
-  dim = 0,
+  blur = 56,
+  dim = 0.22,
 }: PageCoverBackdropProps) {
   const [layers, setLayers] = useState<Layer[]>(() =>
     coverSrc ? [{ id: nextLayerId++, src: coverSrc }] : [],
@@ -185,10 +185,10 @@ function PageCoverBackdropComponent({
                 prev.has(layer.src) ? prev : new Set(prev).add(layer.src),
               )
             }
-            className="absolute inset-0 h-full w-full object-cover select-none transform-gpu ease-out"
+            className="absolute inset-0 h-full w-full object-cover select-none ease-out"
             style={{
               filter: `blur(${blur}px) saturate(130%)`,
-              transform: "scale(1.1) translateZ(0)",
+              transform: "scale(1.1)",
               opacity:
                 loadedIds.has(layer.id) &&
                 (visibleId === null || visibleId === layer.id)

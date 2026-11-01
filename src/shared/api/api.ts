@@ -65,9 +65,10 @@ import {
 } from "./proofOfWork";
 import { solvePow } from "./proofOfWorkRunner";
 import {
-  TurnstileCancelledError,
-  requestTurnstileToken,
-} from "./turnstileWindow";
+  isHumanCheckMode,
+  runHumanCheck,
+  type HumanCheckAction,
+} from "./humanCheck";
 
 const CLIENT_VERSION =
   (import.meta.env.VITE_CLIENT_VERSION as string | undefined) ||
@@ -634,21 +635,16 @@ function blockedBeforeOurServer(error: unknown): boolean {
 
 async function humanCheck(
   challenge: PowChallenge,
-  purpose: "login" | "register",
+  purpose: HumanCheckAction,
 ): Promise<string | undefined> {
-  const mode = challenge.turnstile?.mode ?? "off";
+  const requested = challenge.turnstile?.mode;
+  const mode = isHumanCheckMode(requested) ? requested : "off";
   if (mode === "off" && !challenge.turnstile?.edge) return undefined;
-  try {
-    return await requestTurnstileToken(getApiBaseUrl(), purpose);
-  } catch (error) {
-    if (mode !== "required" && error instanceof TurnstileCancelledError)
-      return undefined;
-    throw error;
-  }
+  return runHumanCheck(purpose, mode === "off" ? "optional" : mode);
 }
 
 async function authProofFor(
-  purpose: "login" | "register",
+  purpose: HumanCheckAction,
   email: string,
 ): Promise<AuthProof> {
   let challenge: PowChallenge;
@@ -676,7 +672,7 @@ async function authProofFor(
 }
 
 async function withAuthProof<T>(
-  purpose: "login" | "register",
+  purpose: HumanCheckAction,
   email: string,
   send: (proof: AuthProof) => Promise<T>,
 ): Promise<T> {
@@ -849,44 +845,9 @@ export const api = {
     },
   ): Promise<RadioResponse> {
     const history = new Set(options?.history ?? []);
-    return clientCatalog
-      .getRadio(id, options?.k, () => api.getServerRadio(id, options))
-      .then((response) => ({
-        items: response.items.filter((item) => !history.has(item.id)),
-      }));
-  },
-
-  getServerRadio(
-    id: string,
-    options?: {
-      history?: string[];
-      k?: number;
-      drift_rate?: number;
-      temperature?: number;
-      wave_id?: string;
-    },
-  ): Promise<RadioResponse> {
-    if (options?.history && options.history.length > 0) {
-      return request<RadioResponse>(
-        `/v1/tracks/${encodeURIComponent(id)}/radio`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(options),
-        },
-      );
-    }
-    const params = new URLSearchParams();
-    if (options?.k) params.set("k", String(options.k));
-    if (options?.drift_rate)
-      params.set("drift_rate", String(options.drift_rate));
-    if (options?.temperature)
-      params.set("temperature", String(options.temperature));
-    if (options?.wave_id) params.set("wave_id", options.wave_id);
-    const qs = params.toString();
-    return request<RadioResponse>(
-      `/v1/tracks/${encodeURIComponent(id)}/radio${qs ? `?${qs}` : ""}`,
-    );
+    return clientCatalog.getRadio(id, options?.k).then((response) => ({
+      items: response.items.filter((item) => !history.has(item.id)),
+    }));
   },
 
   getAlbum(id: string): Promise<ApiAlbumDetails> {
@@ -1230,6 +1191,8 @@ export const api = {
           ? AbortSignal.any([signal, connect.signal])
           : connect.signal,
         headers: {
+          // a known instrumental comes back as plain json instead of a stream
+          Accept: "application/json, text/event-stream",
           ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
           ...correlationHeaders,
           ...signedHeaders,
@@ -1252,6 +1215,19 @@ export const api = {
     if (!res.ok || !res.body) {
       const respReqId = res.headers?.get?.("x-request-id") || requestId;
       throw new ApiError(res.status, res.statusText, undefined, respReqId);
+    }
+
+    if (res.headers.get("content-type")?.includes("application/json")) {
+      const body = (await res.json()) as { instrumental?: boolean };
+      yield body.instrumental
+        ? {
+            type: "done",
+            cached: true,
+            status: "not_found",
+            instrumental: true,
+          }
+        : { type: "done", cached: true, status: "not_found" };
+      return;
     }
 
     const reader = res.body.getReader();

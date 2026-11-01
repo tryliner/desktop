@@ -1,3 +1,4 @@
+import { untilAborted } from "@/shared/utils/abort";
 import { getTvOauthClient } from "./tvOauthClient";
 import {
   pollTvDeviceToken,
@@ -15,6 +16,7 @@ const STORAGE_KEY = "liner_youtube_tv_session";
 const PAGE_ID_STORAGE_KEY = "liner_youtube_page_id";
 const REVOKE_URL = "https://www.youtube.com/o/oauth2/revoke";
 const REFRESH_MARGIN_MS = 60_000;
+const REFRESH_TIMEOUT_MS = 30_000;
 const TERMINAL_REFRESH_ERRORS = new Set([
   "invalid_grant",
   "unauthorized_client",
@@ -165,8 +167,8 @@ export async function completeYoutubeTvSignIn(
 
 async function refresh(
   current: YoutubeAuthTokens,
-  signal?: AbortSignal,
 ): Promise<YoutubeAuthTokens | null> {
+  const signal = AbortSignal.timeout(REFRESH_TIMEOUT_MS);
   try {
     const next = await refreshTvTokens(
       await getTvOauthClient(signal),
@@ -192,10 +194,10 @@ export async function getYoutubeAuthorization(
   if (!current) return null;
   if (current.expiresAt - REFRESH_MARGIN_MS > Date.now())
     return toAuthorizationHeader(current);
-  pendingRefresh ??= refresh(current, signal).finally(() => {
+  pendingRefresh ??= refresh(current).finally(() => {
     pendingRefresh = null;
   });
-  const next = await pendingRefresh;
+  const next = await untilAborted(pendingRefresh, signal);
   return next ? toAuthorizationHeader(next) : null;
 }
 

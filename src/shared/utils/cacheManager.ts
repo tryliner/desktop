@@ -1,6 +1,5 @@
 import { linerDb } from "@/shared/storage/linerDb";
 import { useLocalLibraryStore } from "@/features/library/local/store/localLibraryStore";
-import { isLocalTrackId } from "@/shared/media/local";
 import {
   audioCache,
   DEFAULT_AUDIO_CACHE_LIMIT_BYTES,
@@ -480,7 +479,7 @@ export async function clearStorageCategories(
 
   if (set.has("lyrics")) {
     lyricsCache.clear();
-    await linerDb.clearCachedLyrics(isLocalTrackId);
+    await linerDb.clearStore("lyrics");
     if (typeof window !== "undefined" && window.localStorage) {
       localStorage.removeItem("lyrics-storage");
       const toRemove: string[] = [];
@@ -574,18 +573,11 @@ function writePersistedAnalytics(data: StorageAnalytics): void {
 }
 
 let cachedStorageAnalytics: StorageAnalytics | null = readPersistedAnalytics();
-let isStorageTabOpen = false;
-let backgroundIntervalId: ReturnType<typeof setInterval> | null = null;
 let inflightAnalytics: Promise<StorageAnalytics> | null = null;
 
 // returns cached analytics synchronously if available
 export function getCachedStorageAnalytics(): StorageAnalytics | null {
   return cachedStorageAnalytics;
-}
-
-// notifies background scheduler whether storage tab is open (pauses polling to prevent UI flicker)
-export function setStorageTabOpen(isOpen: boolean): void {
-  isStorageTabOpen = isOpen;
 }
 
 // performs background update of storage analytics
@@ -610,7 +602,6 @@ export async function refreshStorageAnalytics(
   }
 }
 
-// initializes background polling (every 60s when storage tab is closed)
 export function initBackgroundStorageAnalytics(): void {
   if (typeof window === "undefined") return;
 
@@ -618,15 +609,6 @@ export function initBackgroundStorageAnalytics(): void {
   setTimeout(() => {
     void refreshStorageAnalytics();
   }, 1500);
-
-  // periodic background interval (60 seconds)
-  if (!backgroundIntervalId) {
-    backgroundIntervalId = setInterval(() => {
-      // skip update if user currently has storage tab open so nothing blinks or jumps
-      if (isStorageTabOpen) return;
-      void refreshStorageAnalytics();
-    }, 60_000);
-  }
 }
 
 // automatically start in browser/electron
