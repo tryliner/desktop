@@ -799,18 +799,12 @@ export default function AppFrame({ children }: AppFrameProps) {
               </div>
             </div>
 
-            <AnimatePresence>
-              {searchOpen && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-                  className="absolute inset-0 bg-black/20 pointer-events-auto z-[30]"
-                  onClick={() => closeSearch()}
-                />
-              )}
-            </AnimatePresence>
+            {searchOpen && (
+              <div
+                className="absolute inset-0 pointer-events-auto z-[30]"
+                onClick={() => closeSearch()}
+              />
+            )}
 
             {!isFullscreenPlayer && (
               <AnimatePresence initial={false}>
@@ -881,6 +875,21 @@ export default function AppFrame({ children }: AppFrameProps) {
             </FullscreenRouteContext.Provider>
           </div>
         ) : null}
+      </AnimatePresence>
+
+      {/* dims the whole window, header and player included; clicks pass through so
+          window controls and dragging keep working, the page is guarded above */}
+      <AnimatePresence>
+        {searchOpen && (
+          <motion.div
+            key="search-dim"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+            className="absolute inset-0 z-[50] bg-black/20 pointer-events-none rounded-[inherit]"
+          />
+        )}
       </AnimatePresence>
 
       <AnimatePresence>
