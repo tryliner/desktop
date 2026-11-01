@@ -9,6 +9,7 @@ import { PlayerMorphIcon, ICON_PLAY, ICON_PAUSE } from "./morphPlayerIcons";
 import { usePlayerState } from "../hooks/usePlayerState";
 import { playerEngine } from "../engine/playerEngine";
 import { isRadioContext, nextRepeatMode } from "../engine/radioMode";
+import { useAbLoopStore } from "../store/abLoopStore";
 import { useTranslation } from "@/languages";
 import { cn } from "@/shared/lib";
 
@@ -46,6 +47,11 @@ function PlayPauseIcon({ status }: PlayPauseIconProps) {
 export function FullscreenTransportControls() {
   const player = usePlayerState();
   const { t } = useTranslation();
+  const aMs = useAbLoopStore((state) => state.aMs);
+  const bMs = useAbLoopStore((state) => state.bMs);
+  const setA = useAbLoopStore((state) => state.setA);
+  const setB = useAbLoopStore((state) => state.setB);
+  const clearLoop = useAbLoopStore((state) => state.clear);
 
   return (
     <div className="flex w-full items-center justify-center gap-[18px]">
@@ -111,6 +117,40 @@ export function FullscreenTransportControls() {
         ) : (
           <Repeat size={24} />
         )}
+      </button>
+
+      <button
+        type="button"
+        aria-label="Set loop start"
+        title="Set loop start (A)"
+        onClick={() => setA(player.positionMs)}
+        className={cn(
+          iconButtonClass,
+          "!w-[28px] text-[11px] font-[700]",
+          aMs !== null ? "!opacity-100" : "!opacity-60",
+        )}
+      >
+        A
+      </button>
+
+      <button
+        type="button"
+        aria-label={bMs !== null ? "Clear loop" : "Set loop end"}
+        title={bMs !== null ? "Clear loop" : "Set loop end (B)"}
+        onClick={() =>
+          bMs !== null
+            ? clearLoop()
+            : aMs !== null && player.positionMs > aMs
+              ? setB(player.positionMs)
+              : undefined
+        }
+        className={cn(
+          iconButtonClass,
+          "!w-[28px] text-[11px] font-[700]",
+          bMs !== null ? "!opacity-100" : "!opacity-60",
+        )}
+      >
+        B
       </button>
     </div>
   );

@@ -18,6 +18,11 @@ export interface OverlayTrackInfo {
   durationMs?: number;
 }
 
+export interface OverlayLyricLine {
+  time: number;
+  text: string;
+}
+
 export interface OverlayStatePayload {
   status: "playing" | "paused" | "loading" | "buffering" | "idle" | "error";
   track: OverlayTrackInfo | null;
@@ -27,6 +32,7 @@ export interface OverlayStatePayload {
   durationMs: number;
   volume: number;
   isLiked: boolean;
+  lyrics?: OverlayLyricLine[];
 }
 
 export interface OverlayAction {

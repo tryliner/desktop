@@ -206,7 +206,9 @@
     "popularArtists": "Artis Tren",
     "popularPlaylists": "Playlist Populer",
     "dailyMixes": "Mix Untukmu",
-    "dailyMixesSubtitle": "Playlist segar yang dikurasi dari artis dan genre favoritmu"
+    "dailyMixesSubtitle": "Playlist segar yang dikurasi dari artis dan genre favoritmu",
+    "mysteryDice": "Mystery Dice",
+    "rollingDice": "Rolling Dice..."
   },
   "library": {
     "title": "Pustaka",
@@ -777,6 +779,22 @@
       "download_current_song": {
         "title": "Unduh lagu saat ini",
         "description": "Unduh lagu yang sedang diputar sebagai file MP3."
+      },
+      "normalizer": {
+        "title": "Loudness Normalization",
+        "description": "Equalize track volume using EBU R128 dynamic range compression."
+      },
+      "crossfeed": {
+        "title": "Spatial Audio (Dolby Atmos 3D)",
+        "description": "Simulate 3D immersive surround soundstage with height elevation, out-of-head acoustics, and Dolby Atmos cinema dimension on headphones."
+      },
+      "crossfade": {
+        "title": "Crossfade",
+        "description": "Memudarkan lagu saat ini dan memudarkan lagu berikutnya saat lagu berakhir."
+      },
+      "visualizer": {
+        "title": "Visualisator Spektrum Audio",
+        "description": "Menampilkan visualisator spektrum audio dinamis 60/120fps di pemutar."
       }
     },
     "profile": {

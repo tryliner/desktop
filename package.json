@@ -52,6 +52,22 @@
         ]
       }
     ],
+    "fileAssociations": [
+      {
+        "ext": [
+          "mp3",
+          "flac",
+          "m4a",
+          "aac",
+          "ogg",
+          "opus",
+          "wav",
+          "webm"
+        ],
+        "name": "Audio file",
+        "role": "Viewer"
+      }
+    ],
     "files": [
       "dist/**/*",
       "dist-electron/**/*",

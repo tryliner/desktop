@@ -9,11 +9,15 @@ import {
   AddLine,
   MinimizeLine,
   Refresh1Line,
+  TranslateLine,
+  FontLine,
 } from "@mingcute/react";
 import { useLyricsStore } from "../store/lyricsStore";
 import { useTranslation } from "@/languages";
 import { cn } from "@/shared/lib";
-import { ISLAND_SURFACE } from "@/shared/ui";
+import { ISLAND_SURFACE, showToast } from "@/shared/ui";
+import { useAiTranslateStore, getTranslationCacheKey } from "@/features/ai-translate";
+import { usePlayerStore } from "@/features/player/store/playerStore";
 
 function formatOffsetBadge(ms: number): string {
   if (ms === 0) return "0.0s";
@@ -44,6 +48,77 @@ export function LyricsProviderIsland() {
   const [unit, setUnit] = useState<"ms" | "s">("ms");
   const [inputValue, setInputValue] = useState(String(offsetMs));
   const isInputFocusedRef = useRef(false);
+
+  const currentTrack = usePlayerStore((s) => s.currentTrack);
+  const showTranslation = useAiTranslateStore((s) => s.showTranslation);
+  const showRomanization = useAiTranslateStore((s) => s.showRomanization);
+  const isTranslating = useAiTranslateStore((s) => s.isTranslating);
+  const isRomanizing = useAiTranslateStore((s) => s.isRomanizing);
+  const toggleTranslation = useAiTranslateStore((s) => s.toggleTranslation);
+  const toggleRomanization = useAiTranslateStore((s) => s.toggleRomanization);
+  const translateTrackLyrics = useAiTranslateStore((s) => s.translateTrackLyrics);
+  const romanizeTrackLyrics = useAiTranslateStore((s) => s.romanizeTrackLyrics);
+  const translationsByTrackId = useAiTranslateStore((s) => s.translationsByTrackId);
+  const romanizationsByTrackId = useAiTranslateStore((s) => s.romanizationsByTrackId);
+  const targetLang = useAiTranslateStore((s) => s.targetLang);
+  const singableMode = useAiTranslateStore((s) => s.singableMode);
+
+  const cacheKey = currentTrack ? getTranslationCacheKey(currentTrack.id, targetLang, singableMode) : "";
+  const hasTranslation = Boolean(cacheKey && translationsByTrackId[cacheKey]?.length);
+  const hasRomanization = Boolean(currentTrack && romanizationsByTrackId[currentTrack.id]?.length);
+  // Romaji/Pinyin only makes sense for CJK lyrics; on an English or Vietnamese
+  // track the extra button would just burn requests and render nothing.
+  const hasRomanizableLyrics = braccatoLyrics.some((lyric) =>
+    /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uac00-\ud7af]/.test(
+      lyric.words || lyric.parts?.map((part) => part.words).join("") || "",
+    ),
+  );
+
+  const getLyricsLines = () => {
+    return braccatoLyrics.map(
+      (l) => l.words || l.parts?.map((p) => p.words).join("") || "",
+    );
+  };
+
+  const handleToggleTranslation = async () => {
+    if (hasTranslation) {
+      toggleTranslation();
+      return;
+    }
+    if (!currentTrack || braccatoLyrics.length === 0) return;
+    const lines = getLyricsLines();
+    if (lines.length === 0) return;
+    const result = await translateTrackLyrics(currentTrack.id, lines);
+    if (result) {
+      useAiTranslateStore.getState().setShowTranslation(true);
+    } else {
+      showToast.error("Could not translate lyrics", {
+        description:
+          useAiTranslateStore.getState().error ??
+          "Please check your API key in Settings.",
+      });
+    }
+  };
+
+  const handleToggleRomanization = async () => {
+    if (hasRomanization) {
+      toggleRomanization();
+      return;
+    }
+    if (!currentTrack || braccatoLyrics.length === 0) return;
+    const lines = getLyricsLines();
+    if (lines.length === 0) return;
+    const result = await romanizeTrackLyrics(currentTrack.id, lines);
+    if (result) {
+      useAiTranslateStore.getState().setShowRomanization(true);
+    } else {
+      showToast.error("Could not romanize lyrics", {
+        description:
+          useAiTranslateStore.getState().error ??
+          "Please check your API key in Settings.",
+      });
+    }
+  };
 
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -250,6 +325,64 @@ export function LyricsProviderIsland() {
             >
               <AddLine size={12} />
             </button>
+
+            <div className="w-[1px] h-[14px] bg-white/15 mx-[1px]" />
+
+            <button
+              type="button"
+              onClick={handleToggleTranslation}
+              disabled={isTranslating}
+              aria-label={singableMode ? "Singable Lyrics" : "Translate Lyrics"}
+              title={
+                isTranslating
+                  ? singableMode
+                    ? "Adapting singable lyrics..."
+                    : "Translating lyrics..."
+                  : hasTranslation
+                    ? showTranslation
+                      ? "Hide translation"
+                      : "Show translation"
+                    : singableMode
+                      ? "Translate singable lyrics (AI)"
+                      : "Translate lyrics (AI)"
+              }
+              className={`flex items-center gap-[4px] h-[26px] min-h-[26px] max-h-[26px] px-[6px] rounded-md text-[11px] font-medium transition-all border cursor-pointer ${
+                showTranslation && hasTranslation
+                  ? singableMode
+                    ? "bg-emerald-600/30 text-emerald-200 border-emerald-500/40"
+                    : "bg-white/20 text-white border-white/30"
+                  : "bg-transparent border-transparent text-white/70 hover:bg-white/10 hover:text-white"
+              }`}
+            >
+              <TranslateLine size={12} className={isTranslating ? "animate-spin text-white/80" : ""} />
+              <span>{isTranslating ? "..." : singableMode ? "Singable" : "Translate"}</span>
+            </button>
+
+            {hasRomanizableLyrics && (
+              <button
+                type="button"
+                onClick={handleToggleRomanization}
+                disabled={isRomanizing}
+                aria-label="Romanize lyrics"
+                title={
+                  isRomanizing
+                    ? "Romanizing lyrics..."
+                    : hasRomanization
+                      ? showRomanization
+                        ? "Hide Romanization"
+                        : "Show Romanization"
+                      : "Romanize lyrics (Pronunciation)"
+                }
+                className={`flex items-center gap-[4px] h-[26px] min-h-[26px] max-h-[26px] px-[6px] rounded-md text-[11px] font-medium transition-all border-none cursor-pointer ${
+                  showRomanization && hasRomanization
+                    ? "bg-blue-600/30 text-blue-200 border border-blue-500/40"
+                    : "bg-transparent text-white/70 hover:bg-white/10 hover:text-white"
+                }`}
+              >
+                <FontLine size={12} className={isRomanizing ? "animate-spin text-blue-400" : ""} />
+                <span>{isRomanizing ? "..." : "Romaji"}</span>
+              </button>
+            )}
           </>
         )}
       </div>

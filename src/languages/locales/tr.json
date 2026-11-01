@@ -207,7 +207,9 @@
     "popularArtists": "Trend Sanatçılar",
     "popularPlaylists": "Popüler Çalma Listeleri",
     "dailyMixes": "Günlük Mixler",
-    "dailyMixesSubtitle": "Sevdiğin sanatçılar ve türler etrafında hazırlanan taze çalma listeleri"
+    "dailyMixesSubtitle": "Sevdiğin sanatçılar ve türler etrafında hazırlanan taze çalma listeleri",
+    "mysteryDice": "Mystery Dice",
+    "rollingDice": "Rolling Dice..."
   },
   "library": {
     "title": "Kitaplık",
@@ -702,6 +704,22 @@
       "download_current_song": {
         "title": "Çalan şarkıyı indir",
         "description": "Çalan parçayı MP3 dosyası olarak indirir."
+      },
+      "normalizer": {
+        "title": "Loudness Normalization",
+        "description": "Equalize track volume using EBU R128 dynamic range compression."
+      },
+      "crossfeed": {
+        "title": "Spatial Audio (Dolby Atmos 3D)",
+        "description": "Simulate 3D immersive surround soundstage with height elevation, out-of-head acoustics, and Dolby Atmos cinema dimension on headphones."
+      },
+      "crossfade": {
+        "title": "?apraz Ge?i?",
+        "description": "?ark? bitti?inde mevcut par?ay? yava??a kapat?r ve sonrakini a?ar."
+      },
+      "visualizer": {
+        "title": "Ses Spektrum G?rselle?tirici",
+        "description": "Oynat?c?da dinamik 60/120fps ses frekans spektrumu g?rselle?tirici g?sterir."
       }
     },
     "profile": {

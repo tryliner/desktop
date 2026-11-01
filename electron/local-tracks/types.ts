@@ -8,6 +8,7 @@ export interface LocalTrackRecord {
   audioFile: string;
   mimeType: string;
   coverFile?: string;
+  lrcFile?: string;
   byteSize: number;
   addedAt: number;
 }

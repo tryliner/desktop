@@ -3,6 +3,8 @@ import type { Track, ApiTrack } from "./track";
 
 export type SearchType = "all" | "track" | "artist" | "album" | "playlist";
 
+export type SearchSource = "youtube" | "soundcloud";
+
 export const SEARCH_TYPES: readonly SearchType[] = [
   "all",
   "track",

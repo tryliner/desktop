@@ -17,6 +17,9 @@ export {
 } from "./store/playerStore";
 export { usePlayerState } from "./hooks/usePlayerState";
 export { useAppIconSync } from "./hooks/useAppIconSync";
+export { useTraySync } from "./hooks/useTraySync";
+export { useAbLoop } from "./hooks/useAbLoop";
+export { useAbLoopStore } from "./store/abLoopStore";
 export {
   useSongMenuItems,
   type SongMenuContext,

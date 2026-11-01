@@ -41,6 +41,9 @@ const OPEN_CORS_DOMAINS = [
   // google fonts from index.html
   "fonts.googleapis.com",
   "fonts.gstatic.com",
+  // free song translation / romanization (the gtx endpoint sends no cors
+  // headers, so renderer fetches would fail under webSecurity otherwise)
+  "translate.googleapis.com",
 ];
 
 const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]"]);

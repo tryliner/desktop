@@ -5,10 +5,17 @@ import {
   eqPreampDb,
   isEqActive,
 } from "./equalizer";
+import {
+  EBU_R128_NORMALIZER,
+  CROSSFEED_PRESETS,
+  dbToLinear,
+  isCrossfeedActive,
+  type CrossfeedMode,
+} from "./dsp";
 
 const GRAIN_PERIOD = 0.038;
 const NUM_TAPS = 4;
-const GRAPH_VERSION = 2;
+const GRAPH_VERSION = 3;
 const BRANCH_TEARDOWN_MS = 200;
 const IDLE_SUSPEND_MS = 400;
 const REVERB_TAIL_SUSPEND_MS = 3000;
@@ -210,7 +217,45 @@ function createReverbImpulseResponse(context: AudioContext): AudioBuffer {
   return buffer;
 }
 
-type BranchName = "pitch" | "reverb" | "eq";
+function createSpatialImpulseResponse(context: AudioContext): AudioBuffer {
+  const duration = 0.22;
+  const sampleRate = context.sampleRate || 44100;
+  const length = Math.floor(sampleRate * duration);
+
+  const buffer = context.createBuffer(2, length, sampleRate);
+  const left = buffer.getChannelData(0);
+  const right = buffer.getChannelData(1);
+
+  // Early reflection taps (ms) mimicking reference Atmos theater acoustics
+  const taps = [
+    { ms: 14, gainL: 0.70, gainR: 0.40 },
+    { ms: 21, gainL: 0.45, gainR: 0.65 },
+    { ms: 29, gainL: 0.50, gainR: 0.35 },
+    { ms: 38, gainL: 0.30, gainR: 0.45 },
+    { ms: 49, gainL: 0.25, gainR: 0.20 },
+    { ms: 63, gainL: 0.15, gainR: 0.18 },
+  ];
+
+  for (const tap of taps) {
+    const idx = Math.floor((tap.ms / 1000) * sampleRate);
+    if (idx < length) {
+      left[idx] = tap.gainL;
+      right[idx] = tap.gainR;
+    }
+  }
+
+  // Smooth diffuse decay
+  for (let i = 0; i < length; i++) {
+    const t = i / sampleRate;
+    const decay = Math.exp(-t * 22);
+    left[i] += (Math.random() * 2 - 1) * 0.12 * decay;
+    right[i] += (Math.random() * 2 - 1) * 0.12 * decay;
+  }
+
+  return buffer;
+}
+
+type BranchName = "pitch" | "reverb" | "eq" | "normalizer" | "crossfeed";
 
 interface AudioEffectsGraph {
   version: number;
@@ -227,11 +272,40 @@ interface AudioEffectsGraph {
   reverbHighpass: BiquadFilterNode;
   reverbWetGain: GainNode;
   reverbConnected: boolean;
+  normalizerCompressor: DynamicsCompressorNode;
+  normalizerDryGain: GainNode;
+  normalizerWetGain: GainNode;
+  normalizerOutput: GainNode;
+  normalizerConnected: boolean;
   eqPreamp: GainNode;
   eqFilters: BiquadFilterNode[];
   eqChainGain: GainNode;
   eqBypassGain: GainNode;
   eqConnected: boolean;
+  crossfeedInput: GainNode;
+  crossfeedBypassGain: GainNode;
+  crossfeedWetGain: GainNode;
+  crossfeedSplitter: ChannelSplitterNode;
+  crossfeedMerger: ChannelMergerNode;
+  directLeftGain: GainNode;
+  directRightGain: GainNode;
+  crossLeftDelay: DelayNode;
+  crossRightDelay: DelayNode;
+  crossLeftFilter: BiquadFilterNode;
+  crossRightFilter: BiquadFilterNode;
+  crossLeftGain: GainNode;
+  crossRightGain: GainNode;
+  surroundLeftDelay: DelayNode;
+  surroundRightDelay: DelayNode;
+  surroundLeftGain: GainNode;
+  surroundRightGain: GainNode;
+  elevationFilterLeft: BiquadFilterNode;
+  elevationFilterRight: BiquadFilterNode;
+  spatialConvolver: ConvolverNode;
+  spatialRoomGain: GainNode;
+  crossfeedOutput: GainNode;
+  crossfeedConnected: boolean;
+  analyserNode: AnalyserNode;
   teardowns: Record<BranchName, ReturnType<typeof setTimeout> | null>;
 }
 
@@ -242,6 +316,8 @@ export interface AudioEffectsParams {
   reverbLevel?: number;
   isEqEnabled?: boolean;
   eqGains?: number[];
+  isNormalizerEnabled?: boolean;
+  crossfeedMode?: CrossfeedMode;
 }
 
 function cancelTeardown(graph: AudioEffectsGraph, branch: BranchName): void {
@@ -333,6 +409,97 @@ function setReverbStage(
   });
 }
 
+function setNormalizerStage(
+  graph: AudioEffectsGraph,
+  active: boolean,
+  now: number,
+): void {
+  if (active) {
+    cancelTeardown(graph, "normalizer");
+    if (!graph.normalizerConnected) {
+      try {
+        graph.normalizerCompressor.connect(graph.normalizerWetGain);
+      } catch {}
+      graph.normalizerConnected = true;
+    }
+    graph.normalizerDryGain.gain.setTargetAtTime(0, now, 0.02);
+    graph.normalizerWetGain.gain.setTargetAtTime(1, now, 0.02);
+    return;
+  }
+
+  graph.normalizerDryGain.gain.setTargetAtTime(1, now, 0.02);
+  graph.normalizerWetGain.gain.setTargetAtTime(0, now, 0.02);
+  if (!graph.normalizerConnected) return;
+  scheduleTeardown(graph, "normalizer", () => {
+    if (!graph.normalizerConnected) return;
+    graph.normalizerConnected = false;
+    try {
+      graph.normalizerCompressor.disconnect(graph.normalizerWetGain);
+    } catch {}
+  });
+}
+
+function setCrossfeedStage(
+  graph: AudioEffectsGraph,
+  mode: CrossfeedMode,
+  now: number,
+): void {
+  const active = isCrossfeedActive(mode);
+  if (active) {
+    cancelTeardown(graph, "crossfeed");
+    const config = CROSSFEED_PRESETS[mode as keyof typeof CROSSFEED_PRESETS];
+    const crossGain = dbToLinear(config.crossGainDb);
+
+    if (!graph.crossfeedConnected) {
+      try {
+        if (!graph.spatialConvolver.buffer) {
+          graph.spatialConvolver.buffer = createSpatialImpulseResponse(graph.ctx);
+        }
+        graph.crossfeedInput.connect(graph.crossfeedSplitter);
+        graph.crossfeedMerger.connect(graph.crossfeedWetGain);
+      } catch {}
+      graph.crossfeedConnected = true;
+    }
+
+    graph.crossLeftDelay.delayTime.setTargetAtTime(config.delaySeconds, now, 0.02);
+    graph.crossRightDelay.delayTime.setTargetAtTime(config.delaySeconds, now, 0.02);
+    graph.crossLeftFilter.frequency.setTargetAtTime(config.cutoffHz, now, 0.02);
+    graph.crossRightFilter.frequency.setTargetAtTime(config.cutoffHz, now, 0.02);
+    graph.crossLeftGain.gain.setTargetAtTime(crossGain, now, 0.02);
+    graph.crossRightGain.gain.setTargetAtTime(crossGain, now, 0.02);
+
+    // Surround Haas decorrelation (side soundstage widening)
+    const surroundGain = dbToLinear(config.surroundGainDb);
+    graph.surroundLeftDelay.delayTime.setTargetAtTime(config.surroundDelaySeconds, now, 0.02);
+    graph.surroundRightDelay.delayTime.setTargetAtTime(config.surroundDelaySeconds * 1.25, now, 0.02);
+    graph.surroundLeftGain.gain.setTargetAtTime(surroundGain, now, 0.02);
+    graph.surroundRightGain.gain.setTargetAtTime(surroundGain, now, 0.02);
+
+    // Pinna elevation filtering (Atmos height cues)
+    graph.elevationFilterLeft.gain.setTargetAtTime(config.elevationGainDb, now, 0.02);
+    graph.elevationFilterRight.gain.setTargetAtTime(config.elevationGainDb, now, 0.02);
+
+    // Spatial room early reflections
+    graph.spatialRoomGain.gain.setTargetAtTime(config.spatialRoomWet, now, 0.02);
+
+    graph.crossfeedBypassGain.gain.setTargetAtTime(0, now, 0.02);
+    graph.crossfeedWetGain.gain.setTargetAtTime(1, now, 0.02);
+    return;
+  }
+
+  graph.crossfeedBypassGain.gain.setTargetAtTime(1, now, 0.02);
+  graph.crossfeedWetGain.gain.setTargetAtTime(0, now, 0.02);
+  if (!graph.crossfeedConnected) return;
+  scheduleTeardown(graph, "crossfeed", () => {
+    if (!graph.crossfeedConnected) return;
+    graph.crossfeedConnected = false;
+    try {
+      graph.crossfeedInput.disconnect(graph.crossfeedSplitter);
+      graph.crossfeedMerger.disconnect(graph.crossfeedWetGain);
+    } catch {}
+  });
+}
+
 function setEqStage(
   graph: AudioEffectsGraph,
   active: boolean,
@@ -342,8 +509,8 @@ function setEqStage(
   if (active) {
     cancelTeardown(graph, "eq");
     if (!graph.eqConnected) {
-      graph.masterOutputGain.connect(graph.eqPreamp);
-      graph.eqChainGain.connect(graph.ctx.destination);
+      graph.normalizerOutput.connect(graph.eqPreamp);
+      graph.eqChainGain.connect(graph.crossfeedInput);
       graph.eqConnected = true;
     }
   }
@@ -363,8 +530,8 @@ function setEqStage(
   scheduleTeardown(graph, "eq", () => {
     if (!graph.eqConnected) return;
     graph.eqConnected = false;
-    graph.masterOutputGain.disconnect(graph.eqPreamp);
-    graph.eqChainGain.disconnect(graph.ctx.destination);
+    graph.normalizerOutput.disconnect(graph.eqPreamp);
+    graph.eqChainGain.disconnect(graph.crossfeedInput);
   });
 }
 
@@ -388,10 +555,37 @@ function disposeStaleGraph(graph: any): void {
     graph.convolver?.disconnect();
     graph.reverbHighpass?.disconnect();
     graph.reverbWetGain?.disconnect();
+    graph.normalizerCompressor?.disconnect();
+    graph.normalizerDryGain?.disconnect();
+    graph.normalizerWetGain?.disconnect();
+    graph.normalizerOutput?.disconnect();
     graph.eqPreamp?.disconnect();
     for (const filter of graph.eqFilters ?? []) filter.disconnect();
     graph.eqChainGain?.disconnect();
     graph.eqBypassGain?.disconnect();
+    graph.crossfeedInput?.disconnect();
+    graph.crossfeedBypassGain?.disconnect();
+    graph.crossfeedWetGain?.disconnect();
+    graph.crossfeedSplitter?.disconnect();
+    graph.crossfeedMerger?.disconnect();
+    graph.directLeftGain?.disconnect();
+    graph.directRightGain?.disconnect();
+    graph.crossLeftDelay?.disconnect();
+    graph.crossRightDelay?.disconnect();
+    graph.crossLeftFilter?.disconnect();
+    graph.crossRightFilter?.disconnect();
+    graph.crossLeftGain?.disconnect();
+    graph.crossRightGain?.disconnect();
+    graph.surroundLeftDelay?.disconnect();
+    graph.surroundRightDelay?.disconnect();
+    graph.surroundLeftGain?.disconnect();
+    graph.surroundRightGain?.disconnect();
+    graph.elevationFilterLeft?.disconnect();
+    graph.elevationFilterRight?.disconnect();
+    graph.spatialConvolver?.disconnect();
+    graph.spatialRoomGain?.disconnect();
+    graph.crossfeedOutput?.disconnect();
+    graph.analyserNode?.disconnect();
   } catch {}
 }
 
@@ -433,6 +627,30 @@ function buildGraph(
   convolver.connect(reverbHighpass);
   reverbHighpass.connect(reverbWetGain);
 
+  // Normalizer Stage
+  const normalizerCompressor = ctx.createDynamicsCompressor
+    ? ctx.createDynamicsCompressor()
+    : (ctx.createGain() as any);
+  if (normalizerCompressor.threshold) {
+    normalizerCompressor.threshold.value = EBU_R128_NORMALIZER.threshold;
+    normalizerCompressor.knee.value = EBU_R128_NORMALIZER.knee;
+    normalizerCompressor.ratio.value = EBU_R128_NORMALIZER.ratio;
+    normalizerCompressor.attack.value = EBU_R128_NORMALIZER.attack;
+    normalizerCompressor.release.value = EBU_R128_NORMALIZER.release;
+  }
+  const normalizerDryGain = ctx.createGain();
+  normalizerDryGain.gain.value = 1.0;
+  const normalizerWetGain = ctx.createGain();
+  normalizerWetGain.gain.value = 0.0;
+  const normalizerOutput = ctx.createGain();
+  normalizerOutput.gain.value = 1.0;
+
+  masterOutputGain.connect(normalizerDryGain);
+  normalizerDryGain.connect(normalizerOutput);
+  masterOutputGain.connect(normalizerCompressor);
+  normalizerWetGain.connect(normalizerOutput);
+
+  // Equalizer Stage
   const eqPreamp = ctx.createGain();
   eqPreamp.gain.value = 1.0;
   const eqFilters = EQ_BANDS.map((frequency, i) => {
@@ -460,8 +678,115 @@ function buildGraph(
   }
   eqTail.connect(eqChainGain);
 
-  masterOutputGain.connect(eqBypassGain);
-  eqBypassGain.connect(ctx.destination);
+  // Crossfeed Stage
+  const crossfeedInput = ctx.createGain();
+  crossfeedInput.gain.value = 1.0;
+  const crossfeedBypassGain = ctx.createGain();
+  crossfeedBypassGain.gain.value = 1.0;
+  const crossfeedWetGain = ctx.createGain();
+  crossfeedWetGain.gain.value = 0.0;
+  const crossfeedOutput = ctx.createGain();
+  crossfeedOutput.gain.value = 1.0;
+
+  normalizerOutput.connect(eqBypassGain);
+  eqBypassGain.connect(crossfeedInput);
+  crossfeedInput.connect(crossfeedBypassGain);
+  crossfeedBypassGain.connect(crossfeedOutput);
+  crossfeedWetGain.connect(crossfeedOutput);
+
+  const crossfeedSplitter = ctx.createChannelSplitter
+    ? ctx.createChannelSplitter(2)
+    : (ctx.createGain() as any);
+  const crossfeedMerger = ctx.createChannelMerger
+    ? ctx.createChannelMerger(2)
+    : (ctx.createGain() as any);
+
+  const directLeftGain = ctx.createGain();
+  directLeftGain.gain.value = 1.0;
+  const directRightGain = ctx.createGain();
+  directRightGain.gain.value = 1.0;
+
+  const crossLeftDelay = ctx.createDelay ? ctx.createDelay(0.01) : (ctx.createGain() as any);
+  const crossRightDelay = ctx.createDelay ? ctx.createDelay(0.01) : (ctx.createGain() as any);
+  const crossLeftFilter = ctx.createBiquadFilter();
+  crossLeftFilter.type = "lowpass";
+  const crossRightFilter = ctx.createBiquadFilter();
+  crossRightFilter.type = "lowpass";
+  const crossLeftGain = ctx.createGain();
+  const crossRightGain = ctx.createGain();
+
+  const surroundLeftDelay = ctx.createDelay ? ctx.createDelay(0.05) : (ctx.createGain() as any);
+  const surroundRightDelay = ctx.createDelay ? ctx.createDelay(0.05) : (ctx.createGain() as any);
+  const surroundLeftGain = ctx.createGain();
+  const surroundRightGain = ctx.createGain();
+
+  const elevationFilterLeft = ctx.createBiquadFilter();
+  elevationFilterLeft.type = "highshelf";
+  elevationFilterLeft.frequency.value = 9500;
+  elevationFilterLeft.gain.value = 0;
+
+  const elevationFilterRight = ctx.createBiquadFilter();
+  elevationFilterRight.type = "highshelf";
+  elevationFilterRight.frequency.value = 9500;
+  elevationFilterRight.gain.value = 0;
+
+  const spatialConvolver = ctx.createConvolver ? ctx.createConvolver() : (ctx.createGain() as any);
+  if (spatialConvolver.normalize !== undefined) {
+    spatialConvolver.normalize = true;
+  }
+  const spatialRoomGain = ctx.createGain();
+  spatialRoomGain.gain.value = 0.0;
+
+  if (crossfeedSplitter.connect && crossfeedMerger.connect) {
+    try {
+      // Direct paths with pinna elevation
+      crossfeedSplitter.connect(directLeftGain, 0);
+      directLeftGain.connect(elevationFilterLeft);
+      elevationFilterLeft.connect(crossfeedMerger, 0, 0);
+
+      crossfeedSplitter.connect(directRightGain, 1);
+      directRightGain.connect(elevationFilterRight);
+      elevationFilterRight.connect(crossfeedMerger, 0, 1);
+
+      // Head-shadow cross-ear acoustic diffraction (ITD & ILD)
+      crossfeedSplitter.connect(crossLeftDelay, 0);
+      crossLeftDelay.connect(crossLeftFilter);
+      crossLeftFilter.connect(crossLeftGain);
+      crossLeftGain.connect(crossfeedMerger, 0, 1);
+
+      crossfeedSplitter.connect(crossRightDelay, 1);
+      crossRightDelay.connect(crossRightFilter);
+      crossRightFilter.connect(crossRightGain);
+      crossRightGain.connect(crossfeedMerger, 0, 0);
+
+      // Surround Haas decorrelation (side soundstage widening)
+      crossfeedSplitter.connect(surroundLeftDelay, 0);
+      surroundLeftDelay.connect(surroundLeftGain);
+      surroundLeftGain.connect(crossfeedMerger, 0, 1);
+
+      crossfeedSplitter.connect(surroundRightDelay, 1);
+      surroundRightDelay.connect(surroundRightGain);
+      surroundRightGain.connect(crossfeedMerger, 0, 0);
+
+      // Spatial theater early reflections
+      crossfeedSplitter.connect(spatialConvolver);
+      spatialConvolver.connect(spatialRoomGain);
+      spatialRoomGain.connect(crossfeedMerger, 0, 0);
+      spatialRoomGain.connect(crossfeedMerger, 0, 1);
+    } catch {}
+  }
+
+  // Analyser Node
+  const analyserNode = ctx.createAnalyser
+    ? ctx.createAnalyser()
+    : (ctx.createGain() as any);
+  if (analyserNode.fftSize !== undefined) {
+    analyserNode.fftSize = 256;
+    analyserNode.smoothingTimeConstant = 0.82;
+  }
+
+  crossfeedOutput.connect(analyserNode);
+  analyserNode.connect(ctx.destination);
 
   return {
     version: GRAPH_VERSION,
@@ -478,12 +803,41 @@ function buildGraph(
     reverbHighpass,
     reverbWetGain,
     reverbConnected: false,
+    normalizerCompressor,
+    normalizerDryGain,
+    normalizerWetGain,
+    normalizerOutput,
+    normalizerConnected: false,
     eqPreamp,
     eqFilters,
     eqChainGain,
     eqBypassGain,
     eqConnected: false,
-    teardowns: { pitch: null, reverb: null, eq: null },
+    crossfeedInput,
+    crossfeedBypassGain,
+    crossfeedWetGain,
+    crossfeedSplitter,
+    crossfeedMerger,
+    directLeftGain,
+    directRightGain,
+    crossLeftDelay,
+    crossRightDelay,
+    crossLeftFilter,
+    crossRightFilter,
+    crossLeftGain,
+    crossRightGain,
+    surroundLeftDelay,
+    surroundRightDelay,
+    surroundLeftGain,
+    surroundRightGain,
+    elevationFilterLeft,
+    elevationFilterRight,
+    spatialConvolver,
+    spatialRoomGain,
+    crossfeedOutput,
+    crossfeedConnected: false,
+    analyserNode,
+    teardowns: { pitch: null, reverb: null, eq: null, normalizer: null, crossfeed: null },
   };
 }
 
@@ -553,9 +907,13 @@ export class PitchShifterController {
           g.pitchStageOutput &&
           g.masterOutputGain &&
           g.masterDryGain &&
+          g.normalizerCompressor &&
+          g.normalizerOutput &&
           g.eqPreamp &&
           g.eqChainGain &&
           g.eqBypassGain &&
+          g.crossfeedOutput &&
+          g.analyserNode &&
           g.eqFilters?.length === EQ_BANDS.length,
         );
       };
@@ -688,6 +1046,9 @@ export class PitchShifterController {
     let isEqEnabled = false;
     let eqGains = FLAT_EQ;
 
+    let isNormalizerEnabled = false;
+    let crossfeedMode: CrossfeedMode = "off";
+
     if (typeof arg1 === "object" && arg1 !== null) {
       semitones = arg1.pitchSemitones ?? 0;
       isPitchLinked = arg1.isPitchLinked ?? true;
@@ -695,6 +1056,8 @@ export class PitchShifterController {
       reverbLevel = arg1.reverbLevel ?? 0.35;
       isEqEnabled = arg1.isEqEnabled ?? false;
       eqGains = arg1.eqGains ?? FLAT_EQ;
+      isNormalizerEnabled = arg1.isNormalizerEnabled ?? false;
+      crossfeedMode = arg1.crossfeedMode ?? "off";
     } else {
       semitones = typeof arg1 === "number" ? arg1 : 0;
       isPitchLinked = arg2 ?? true;
@@ -713,8 +1076,16 @@ export class PitchShifterController {
         : 0;
     setReverbStage(this.graph, reverbWet, now);
 
+    setNormalizerStage(this.graph, isNormalizerEnabled, now);
+
     const eqActive = isEqActive(isEqEnabled, eqGains);
     setEqStage(this.graph, eqActive, eqActive ? eqGains : FLAT_EQ, now);
+
+    setCrossfeedStage(this.graph, crossfeedMode, now);
+  }
+
+  public getAnalyserNode(): AnalyserNode | null {
+    return this.graph?.analyserNode ?? null;
   }
 }
 

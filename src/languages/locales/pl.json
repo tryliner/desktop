@@ -211,7 +211,9 @@
     "popularArtists": "Popularni wykonawcy",
     "popularPlaylists": "Popularne playlisty",
     "dailyMixes": "Codzienne miksy",
-    "dailyMixesSubtitle": "Świeże playlisty tworzone wokół twoich ulubionych wykonawców i gatunków"
+    "dailyMixesSubtitle": "Świeże playlisty tworzone wokół twoich ulubionych wykonawców i gatunków",
+    "mysteryDice": "Mystery Dice",
+    "rollingDice": "Rolling Dice..."
   },
   "library": {
     "title": "Biblioteka",
@@ -706,6 +708,22 @@
       "download_current_song": {
         "title": "Pobierz bieżący utwór",
         "description": "Pobiera odtwarzany utwór jako plik MP3."
+      },
+      "normalizer": {
+        "title": "Loudness Normalization",
+        "description": "Equalize track volume using EBU R128 dynamic range compression."
+      },
+      "crossfeed": {
+        "title": "Spatial Audio (Dolby Atmos 3D)",
+        "description": "Simulate 3D immersive surround soundstage with height elevation, out-of-head acoustics, and Dolby Atmos cinema dimension on headphones."
+      },
+      "crossfade": {
+        "title": "P?ynne przej?cie",
+        "description": "Wycisza bie??cy utw?r i pog?a?nia nast?pny, gdy utw?r si? ko?czy."
+      },
+      "visualizer": {
+        "title": "Wizualizator widma audio",
+        "description": "Wy?wietl dynamiczny wizualizator widma 60/120fps w pe?nym odtwarzaczu."
       }
     },
     "profile": {

@@ -44,6 +44,7 @@ export default function AppImage({
   onLoad,
   onError,
   draggable = false,
+  unoptimized: _unoptimized,
   ...rest
 }: ImageProps) {
   const resolvedSrc = typeof src === "string" ? src : (src?.src ?? "");

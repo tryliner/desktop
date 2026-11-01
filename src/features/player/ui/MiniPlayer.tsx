@@ -38,6 +38,7 @@ import { TimelineSlider } from "./TimelineSlider";
 import { useTheme } from "next-themes";
 import { useCoverReady, CoverImage, loadCoverElement } from "@/features/covers";
 import { useHasPageBackdrop } from "@/features/settings/store/customizationStore";
+import { SleepTimerButton } from "@/features/sleep-timer";
 import { ArtistLink } from "@/features/artist";
 import { isLocalTrackId } from "@/shared/media/local";
 
@@ -198,6 +199,12 @@ export interface MiniPlayerProps {
   onQueueToggle?: () => void;
   onFullscreenOpen?: () => void;
   embedded?: boolean;
+  /**
+   * Surface styling (background/backdrop filter) for the player card itself.
+   * Kept off the outer 64px root so popups that overflow upward (volume,
+   * speed, EQ) aren't clipped by the filter's bounding box.
+   */
+  surfaceStyle?: React.CSSProperties;
 }
 
 function MiniPlayer({
@@ -205,6 +212,7 @@ function MiniPlayer({
   onQueueToggle,
   onFullscreenOpen,
   embedded = false,
+  surfaceStyle,
 }: MiniPlayerProps) {
   const player = usePlayerState();
   const { t } = useTranslation();
@@ -357,12 +365,11 @@ function MiniPlayer({
   // progress fill sliding underneath never changes it. Values are the hover tint
   // pre-composited over the toolbox on bg-primary (dark #0a0a0a, light #f5f5f7).
   // The toolbox pill itself is the opaque bg-toolbox equivalent for the same reason.
-  const activeToggleClass = hasPageBackdrop
-    ? "!bg-black/[0.08] dark:!bg-white/[0.14] !text-text-primary"
-    : "!bg-[#dfdfe1] dark:!bg-[#292929] !text-text-primary";
+  const activeToggleClass =
+    "!bg-black/10 dark:!bg-white/[0.18] !text-text-primary backdrop-blur-sm";
 
   const iconButtonClass =
-    "inline-flex h-[30px] w-[30px] items-center justify-center rounded-md text-text-secondary transition-colors duration-150 hover:bg-black/[0.05] dark:hover:bg-white/[0.09] hover:text-text-primary active:scale-[0.96] border-none bg-transparent cursor-pointer";
+    "inline-flex h-[30px] w-[30px] items-center justify-center rounded-lg text-text-secondary transition-colors duration-150 hover:bg-black/[0.08] dark:hover:bg-white/[0.12] hover:text-text-primary active:scale-[0.96] border-none bg-transparent cursor-pointer";
 
   const clearVolumeHoverTimer = useCallback(() => {
     if (volumeHoverCloseTimerRef.current) {
@@ -587,14 +594,17 @@ function MiniPlayer({
       </AnimatePresence>
 
       <div
+        style={surfaceStyle}
         className={`relative h-[64px] w-full overflow-hidden cursor-pointer ${
           usesRoundedStyle
             ? "rounded-full border-[0.5px] border-border-tertiary bg-bg-primary"
             : embedded
               ? `rounded-[12px] ${
-                  hasPageBackdrop
-                    ? "bg-bg-glass dark:bg-black/20 backdrop-blur-[48px] backdrop-saturate-150"
-                    : "bg-bg-primary"
+                  surfaceStyle?.backgroundColor
+                    ? ""
+                    : hasPageBackdrop
+                      ? "bg-bg-glass dark:bg-black/20 backdrop-blur-[48px] backdrop-saturate-150"
+                      : "bg-bg-primary"
                 }`
               : "rounded-3xl border-[0.5px] border-border-tertiary bg-bg-primary"
         }`}
@@ -688,7 +698,7 @@ function MiniPlayer({
         <div
           className={`relative grid h-full pointer-events-none ${
             embedded
-              ? "grid-cols-[280px_minmax(0,1fr)_260px]"
+              ? "grid-cols-[280px_minmax(0,1fr)_auto]"
               : "grid-cols-[286px_minmax(0,1fr)]"
           } ${!usesRoundedStyle && !embedded ? "pb-[4px]" : ""}`}
         >
@@ -785,16 +795,12 @@ function MiniPlayer({
           </div>
 
           <div
-            className={`flex h-full items-center pl-[10px] pr-[18px] pointer-events-none ${
+            className={`flex h-full items-center pl-[10px] pr-[22px] pointer-events-none ${
               embedded ? "col-start-3" : ""
             }`}
           >
             <div
-              className={`ml-auto flex items-center gap-[2px] rounded-lg p-[3px] pointer-events-auto prevent-seek cursor-default ${
-                hasPageBackdrop
-                  ? "bg-black/[0.04] dark:bg-white/[0.06]"
-                  : "bg-[#ebebed] dark:bg-[#141414]"
-              }`}
+              className="ml-auto flex items-center gap-[2px] rounded-xl p-[3px] pointer-events-auto prevent-seek cursor-default backdrop-blur-2xl backdrop-saturate-150 border border-black/5 dark:border-white/10 shadow-[0_2px_12px_rgba(0,0,0,0.15)] bg-black/[0.04] dark:bg-white/[0.07] hover:bg-black/[0.06] dark:hover:bg-white/[0.09] transition-all duration-200"
               onPointerDown={(e) => e.stopPropagation()}
             >
               <button
@@ -839,7 +845,7 @@ function MiniPlayer({
                 aria-label={t("player.equalizer")}
                 title={t("player.equalizer")}
                 className={`${iconButtonClass} ${
-                  eqOpen || eqActive ? "bg-white/[0.09] text-white" : ""
+                  eqOpen || eqActive ? "!bg-black/10 dark:!bg-white/[0.18] !text-text-primary backdrop-blur-sm" : ""
                 }`}
                 onPointerDown={(e) => e.stopPropagation()}
                 onClick={() => {
@@ -909,7 +915,7 @@ function MiniPlayer({
                 type="button"
                 aria-label="Volume"
                 className={`${iconButtonClass} ${
-                  volumeOpen ? "bg-bg-toolbox-active text-text-primary" : ""
+                  volumeOpen ? "!bg-black/10 dark:!bg-white/[0.18] !text-text-primary backdrop-blur-sm" : ""
                 }`}
                 onPointerDown={(e) => e.stopPropagation()}
                 onMouseEnter={handleVolumeMouseEnter}
@@ -939,6 +945,7 @@ function MiniPlayer({
                   <VolumeLoud size={18} weight="Outline" />
                 )}
               </button>
+              <SleepTimerButton className={iconButtonClass} />
               <button
                 type="button"
                 aria-label={t("player.open_player")}
@@ -955,7 +962,7 @@ function MiniPlayer({
                 <MaximizeSquare3 size={18} weight="Outline" />
               </button>
               <span
-                className="mx-[3px] h-[16px] w-px bg-border-toolbox-divider"
+                className="mx-[3px] h-[16px] w-px bg-black/10 dark:bg-white/15"
                 aria-hidden="true"
               />
               <button

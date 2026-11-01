@@ -31,7 +31,7 @@ function DailyMixesSection({
   return (
     <div className="flex flex-col">
       <div
-        className={`${headingMarginTop} px-3 flex items-center justify-between`}
+        className={`${headingMarginTop} px-3 flex items-center`}
       >
         <div className="flex items-center gap-3">
           <MixFluidSquare coverUrl={firstCoverUrl} />

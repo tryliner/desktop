@@ -21,10 +21,12 @@ export default function YoutubeAccountCard() {
   };
 
   const title = signedIn
-    ? (account?.name ?? "")
+    ? (account?.name?.trim() || "YouTube Account")
     : t("settings.youtube.signed_out_title") || "Not signed in";
   const subtitle = signedIn
-    ? (account?.email ?? account?.handle ?? "")
+    ? (account?.email ??
+      account?.handle ??
+      (loading ? "Loading account details..." : "Connected to YouTube"))
     : t("settings.youtube.signed_out_description") ||
       "Sign in to keep YouTube playback working";
 

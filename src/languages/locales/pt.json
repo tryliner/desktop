@@ -213,7 +213,9 @@
     "popularArtists": "Artistas em alta",
     "popularPlaylists": "Playlists populares",
     "dailyMixes": "Mixes diários",
-    "dailyMixesSubtitle": "Playlists novas e atualizadas em torno dos seus artistas e gêneros favoritos"
+    "dailyMixesSubtitle": "Playlists novas e atualizadas em torno dos seus artistas e gêneros favoritos",
+    "mysteryDice": "Mystery Dice",
+    "rollingDice": "Rolling Dice..."
   },
   "library": {
     "title": "Biblioteca",
@@ -765,6 +767,22 @@
       "download_current_song": {
         "title": "Baixar a música atual",
         "description": "Baixe a faixa da reprodução atual como um arquivo MP3."
+      },
+      "normalizer": {
+        "title": "Loudness Normalization",
+        "description": "Equalize track volume using EBU R128 dynamic range compression."
+      },
+      "crossfeed": {
+        "title": "Spatial Audio (Dolby Atmos 3D)",
+        "description": "Simulate 3D immersive surround soundstage with height elevation, out-of-head acoustics, and Dolby Atmos cinema dimension on headphones."
+      },
+      "crossfade": {
+        "title": "Transi??o suave",
+        "description": "Diminui a faixa atual e aumenta a pr?xima quando uma m?sica termina."
+      },
+      "visualizer": {
+        "title": "Visualizador de espectro de ?udio",
+        "description": "Exibe visualizador din?mico de espectro a 60/120fps no reprodutor."
       }
     },
     "profile": {

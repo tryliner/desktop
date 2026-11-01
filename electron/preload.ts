@@ -118,6 +118,11 @@ export interface LinerElectronApi {
     options?: { isDefault?: boolean },
   ) => Promise<void>;
   getAppVersion: () => Promise<string>;
+  getGpuAcceleration: () => Promise<boolean>;
+  setGpuAcceleration: (enabled: boolean) => Promise<boolean>;
+  getCloseToTray: () => Promise<boolean>;
+  setCloseToTray: (enabled: boolean) => Promise<boolean>;
+  relaunch: () => Promise<void>;
   getCacheStats: () => Promise<ElectronCacheStats>;
   openCacheFolder: () => Promise<boolean>;
   clearCoversCache: () => Promise<boolean>;
@@ -177,6 +182,7 @@ export interface LinerElectronApi {
   toggleOverlay: () => Promise<boolean>;
   isOverlayOpen: () => Promise<boolean>;
   closeOverlay: () => void;
+  setOverlayWidth?: (width: number) => void;
   onOverlayState: (cb: (state: any) => void) => () => void;
   getOverlayInitialState: () => Promise<any>;
   updateOverlaySettings: (settings: any) => void;
@@ -197,7 +203,30 @@ export interface LinerElectronApi {
   localTracksImport: (paths: string[]) => Promise<LocalImportResult>;
   localTracksPick: () => Promise<LocalImportResult | null>;
   localTracksRemove: (ids: string[]) => Promise<void>;
+  onLocalTracksOpen: (cb: (paths: string[]) => void) => () => void;
   pathForFile: (file: File) => string;
+  trayUpdateState: (state: {
+    title: string;
+    artist: string;
+  } | null) => void;
+  getPlatformInfo: () => Promise<{ portable: boolean; dataPath: string }>;
+  exportBackup: (payload: string) => Promise<{
+    ok: boolean;
+    path?: string;
+    error?: string;
+  }>;
+  importBackup: () => Promise<{ ok: boolean; data?: string; error?: string }>;
+  listenBrainzRequest: (input: {
+    method?: "GET" | "POST";
+    path: string;
+    token: string;
+    body?: unknown;
+  }) => Promise<{
+    ok: boolean;
+    status: number;
+    data: unknown;
+    error?: string;
+  }>;
 }
 
 const isHyprland = Boolean(
@@ -205,6 +234,17 @@ const isHyprland = Boolean(
   process.env.XDG_CURRENT_DESKTOP?.toLowerCase().includes("hyprland") ||
   process.env.XDG_SESSION_DESKTOP?.toLowerCase().includes("hyprland"),
 );
+
+const localOpenListeners = new Set<(paths: string[]) => void>();
+const pendingLocalOpen: string[][] = [];
+
+ipcRenderer.on("local-tracks:open-files", (_event, paths: string[]) => {
+  if (localOpenListeners.size === 0) {
+    pendingLocalOpen.push(paths);
+    return;
+  }
+  for (const listener of localOpenListeners) listener(paths);
+});
 
 const api: LinerElectronApi = {
   platform: process.platform,
@@ -280,6 +320,13 @@ const api: LinerElectronApi = {
   setAppIcon: (dataUrl, options) =>
     ipcRenderer.invoke("app:set-icon", dataUrl, options),
   getAppVersion: () => ipcRenderer.invoke("app:get-version"),
+  getGpuAcceleration: () => ipcRenderer.invoke("system:get-gpu-acceleration"),
+  setGpuAcceleration: (enabled: boolean) =>
+    ipcRenderer.invoke("system:set-gpu-acceleration", enabled),
+  getCloseToTray: () => ipcRenderer.invoke("app:get-close-to-tray"),
+  setCloseToTray: (enabled: boolean) =>
+    ipcRenderer.invoke("app:set-close-to-tray", enabled),
+  relaunch: () => ipcRenderer.invoke("system:relaunch"),
   getCacheStats: () => ipcRenderer.invoke("storage:get-cache-stats"),
   openCacheFolder: () => ipcRenderer.invoke("shell:open-cache-folder"),
   clearCoversCache: () => ipcRenderer.invoke("storage:clear-covers-cache"),
@@ -403,6 +450,9 @@ const api: LinerElectronApi = {
   closeOverlay: () => {
     ipcRenderer.send("overlay:close");
   },
+  setOverlayWidth: (width: number) => {
+    ipcRenderer.send("overlay:set-width", width);
+  },
   onOverlayState: (cb) => {
     const listener = (_event: unknown, state: any) => cb(state);
     ipcRenderer.on("overlay:state", listener);
@@ -450,7 +500,24 @@ const api: LinerElectronApi = {
     ipcRenderer.invoke("local-tracks:import", paths),
   localTracksPick: () => ipcRenderer.invoke("local-tracks:pick"),
   localTracksRemove: (ids) => ipcRenderer.invoke("local-tracks:remove", ids),
+  onLocalTracksOpen: (cb) => {
+    localOpenListeners.add(cb);
+    if (pendingLocalOpen.length > 0) {
+      for (const paths of pendingLocalOpen.splice(0)) cb(paths);
+    }
+    return () => {
+      localOpenListeners.delete(cb);
+    };
+  },
   pathForFile: (file) => webUtils.getPathForFile(file),
+  trayUpdateState: (state) => {
+    ipcRenderer.send("tray:update-state", state);
+  },
+  getPlatformInfo: () => ipcRenderer.invoke("app:get-platform-info"),
+  exportBackup: (payload) => ipcRenderer.invoke("backup:export", payload),
+  importBackup: () => ipcRenderer.invoke("backup:import"),
+  listenBrainzRequest: (input) =>
+    ipcRenderer.invoke("listenbrainz:request", input),
 };
 
 if (location.hostname === "www.youtube.com") {

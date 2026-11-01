@@ -126,20 +126,22 @@ function HomePageHeader({
             </div>
           </div>
 
-          {canQuickPlay && onQuickPlay && (
-            <button
-              type="button"
-              onClick={onQuickPlay}
-              data-no-window-drag
-              className={cn(
-                "group flex items-center gap-2 px-4 py-2 rounded-full text-[13px] font-semibold cursor-pointer transition-colors duration-150 active:scale-95 shrink-0 mt-1 font-sans",
-                "bg-btn-primary-bg text-btn-primary-text",
-              )}
-            >
-              <PlayFill className="w-3.5 h-3.5 fill-current" />
-              <span>{t("home.quickPlay") || "Quick Play"}</span>
-            </button>
-          )}
+          <div className="flex items-center gap-2 shrink-0 mt-1" data-no-window-drag>
+            {canQuickPlay && onQuickPlay && (
+              <button
+                type="button"
+                onClick={onQuickPlay}
+                data-no-window-drag
+                className={cn(
+                  "group flex items-center gap-2 px-4 py-2 rounded-full text-[13px] font-semibold cursor-pointer transition-colors duration-150 active:scale-95 shrink-0 font-sans",
+                  "bg-btn-primary-bg text-btn-primary-text",
+                )}
+              >
+                <PlayFill className="w-3.5 h-3.5 fill-current" />
+                <span>{t("home.quickPlay") || "Quick Play"}</span>
+              </button>
+            )}
+          </div>
         </div>
 
         <div

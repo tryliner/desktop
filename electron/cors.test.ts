@@ -34,6 +34,11 @@ describe("needsOpenCors", () => {
     );
     expect(needsOpenCors("https://api.tryliner.fun/v1/me")).toBe(true);
     expect(needsOpenCors("https://cf-hls-media.sndcdn.com/a.m3u8")).toBe(true);
+    expect(
+      needsOpenCors(
+        "https://translate.googleapis.com/translate_a/single?client=gtx",
+      ),
+    ).toBe(true);
   });
 
   it("leaves other hosts alone", () => {

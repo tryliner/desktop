@@ -6,3 +6,5 @@ export { AboutTab } from "./AboutTab";
 export { OverlayTab } from "./OverlayTab";
 export { DiscordTab } from "./DiscordTab";
 export { YoutubeTab } from "./YoutubeTab";
+export { AiTab } from "./AiTab";
+export { default as ListenBrainzTab } from "@/features/listenbrainz/ui/ListenBrainzTab";

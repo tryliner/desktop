@@ -34,6 +34,21 @@ export async function importLocalFile(
   if (tags.cover && coverFile) {
     await fsp.writeFile(path.join(root, "covers", coverFile), tags.cover.data);
   }
+
+  // Check for paired .lrc file in the same directory (same filename with .lrc extension)
+  let lrcFile: string | undefined;
+  try {
+    const parsedSource = path.parse(source);
+    const candidateLrc = path.join(parsedSource.dir, `${parsedSource.name}.lrc`);
+    if (fs.existsSync(candidateLrc)) {
+      lrcFile = `${id}.lrc`;
+      await fsp.mkdir(path.join(root, "lyrics"), { recursive: true });
+      await fsp.copyFile(candidateLrc, path.join(root, "lyrics", lrcFile));
+    }
+  } catch {
+    // Non-fatal if lrc reading fails
+  }
+
   return {
     id,
     title: tags.title,
@@ -44,6 +59,7 @@ export async function importLocalFile(
     audioFile,
     mimeType: tags.mimeType,
     ...(coverFile ? { coverFile } : {}),
+    ...(lrcFile ? { lrcFile } : {}),
     byteSize: stat.size,
     addedAt: Date.now(),
   };

@@ -9,8 +9,10 @@ import {
   session,
   nativeImage,
   powerSaveBlocker,
+  Tray,
+  Menu,
 } from "electron";
-import type { Display, Rectangle } from "electron";
+import type { Display, Rectangle, NativeImage } from "electron";
 import { autoUpdater } from "electron-updater";
 import path from "node:path";
 import fs from "node:fs";
@@ -74,6 +76,9 @@ import { DiscordRpcManager } from "./discord.js";
 import { PoTokenService } from "./youtube/potoken.js";
 import { setupLocalTracks } from "./local-tracks/ipc.js";
 import { registerLocalTrackScheme } from "./local-tracks/protocol.js";
+import { LOCAL_AUDIO_EXTENSIONS } from "./local-tracks/types.js";
+import { setupBackup } from "./backup.js";
+import { setupListenBrainz } from "./listenbrainz.js";
 import { attachZoomControls } from "./zoom.js";
 import {
   YOUTUBE_REQUEST_URLS,
@@ -89,11 +94,174 @@ process.on("unhandledRejection", (reason) => {
   console.error("\x1b[41;37m main error \x1b[0m unhandled rejection:", reason);
 });
 
-// gpu & performance switches (keeps cpu low inside vms / budget laptops)
-app.commandLine.appendSwitch("enable-gpu-rasterization");
-app.commandLine.appendSwitch("enable-zero-copy");
-app.commandLine.appendSwitch("ignore-gpu-blocklist");
-app.commandLine.appendSwitch("enable-native-gpu-memory-buffers");
+// Portable mode: --portable or a file named "portable" next to the executable
+// keeps userData inside the app folder instead of the OS profile.
+const portableDir = path.dirname(app.getPath("exe"));
+const isPortableMode =
+  process.argv.includes("--portable") ||
+  fs.existsSync(path.join(portableDir, "portable"));
+if (isPortableMode) {
+  const dataDir = path.join(portableDir, "data");
+  fs.mkdirSync(dataDir, { recursive: true });
+  app.setPath("userData", dataDir);
+}
+
+function isHardwareAccelerationEnabled(): boolean {
+  try {
+    const configPath = path.join(app.getPath("userData"), "hardware-acceleration.json");
+    if (fs.existsSync(configPath)) {
+      const data = JSON.parse(fs.readFileSync(configPath, "utf8"));
+      if (typeof data.enabled === "boolean") {
+        return data.enabled;
+      }
+    }
+  } catch {
+    // default true
+  }
+  return true;
+}
+
+const hwAccelEnabled = isHardwareAccelerationEnabled();
+if (!hwAccelEnabled) {
+  app.disableHardwareAcceleration();
+} else {
+  // gpu & performance switches (keeps cpu low inside vms / budget laptops)
+  app.commandLine.appendSwitch("enable-gpu-rasterization");
+  app.commandLine.appendSwitch("enable-zero-copy");
+  app.commandLine.appendSwitch("ignore-gpu-blocklist");
+  app.commandLine.appendSwitch("enable-native-gpu-memory-buffers");
+}
+
+let appTray: Tray | null = null;
+
+function isCloseToTrayEnabled(): boolean {
+  try {
+    const configPath = path.join(app.getPath("userData"), "close-to-tray.json");
+    if (fs.existsSync(configPath)) {
+      const data = JSON.parse(fs.readFileSync(configPath, "utf8"));
+      if (typeof data.enabled === "boolean") {
+        return data.enabled;
+      }
+    }
+  } catch {}
+  return true;
+}
+
+function setCloseToTrayConfig(enabled: boolean): void {
+  try {
+    const configPath = path.join(app.getPath("userData"), "close-to-tray.json");
+    fs.writeFileSync(configPath, JSON.stringify({ enabled }), "utf8");
+  } catch (err) {
+    console.error("Failed to write close-to-tray config:", err);
+  }
+}
+
+let closeToTrayEnabled = isCloseToTrayEnabled();
+
+function getTrayIcon(): NativeImage {
+  try {
+    const iconCandidates = [
+      process.env.VITE_PUBLIC ? path.join(process.env.VITE_PUBLIC, "icon.png") : "",
+      path.join(__dirname, "../build/icon.ico"),
+      path.join(__dirname, "../build/icon.png"),
+      path.join(process.cwd(), "public/icon.png"),
+    ];
+    for (const p of iconCandidates) {
+      if (p && fs.existsSync(p)) {
+        return nativeImage.createFromPath(p);
+      }
+    }
+  } catch {}
+  return nativeImage.createEmpty();
+}
+
+let trayNowPlaying: { title: string; artist: string } | null = null;
+let showMainWindow = () => {};
+
+function trayMenu(): Menu {
+  const nowPlayingLabel = trayNowPlaying
+    ? `${trayNowPlaying.title} — ${trayNowPlaying.artist}`
+    : "Nothing playing";
+  return Menu.buildFromTemplate([
+    { label: nowPlayingLabel, enabled: false },
+    { type: "separator" },
+    {
+      label: "Open Liner",
+      click: showMainWindow,
+    },
+    { type: "separator" },
+    {
+      label: "Play / Pause",
+      click: () => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send("overlay:action", { type: "togglePlay" });
+        }
+      },
+    },
+    {
+      label: "Next Track",
+      click: () => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send("overlay:action", { type: "next" });
+        }
+      },
+    },
+    {
+      label: "Previous Track",
+      click: () => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send("overlay:action", { type: "prev" });
+        }
+      },
+    },
+    { type: "separator" },
+    {
+      label: "Quit Liner",
+      click: () => {
+        shutdown.quit();
+      },
+    },
+  ]);
+}
+
+function refreshTray(): void {
+  if (!appTray || appTray.isDestroyed()) return;
+  appTray.setToolTip(
+    trayNowPlaying
+      ? `${trayNowPlaying.title} — ${trayNowPlaying.artist}`
+      : "Liner",
+  );
+  appTray.setContextMenu(trayMenu());
+}
+
+function createOrUpdateTray(): Tray | null {
+  if (appTray && !appTray.isDestroyed()) {
+    return appTray;
+  }
+
+  const icon = getTrayIcon();
+  if (icon.isEmpty()) {
+    return null;
+  }
+
+  try {
+    const trayIcon = icon.resize({ width: 16, height: 16 });
+    appTray = new Tray(trayIcon);
+    showMainWindow = () => {
+      if (!mainWindow || mainWindow.isDestroyed()) return;
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.show();
+      mainWindow.focus();
+    };
+    refreshTray();
+    appTray.on("click", showMainWindow);
+    appTray.on("double-click", showMainWindow);
+    return appTray;
+  } catch (err) {
+    console.error("Failed to create tray icon:", err);
+    return null;
+  }
+}
 // forces resilient http/1.1 to prevent chromium err_http2_ping_failed on dropped network frames
 app.commandLine.appendSwitch("disable-http2");
 if (detectCompositor() !== "none") {
@@ -197,6 +365,12 @@ const shutdown = createShutdown({
       spawnedChildren.clear();
     },
     () => {
+      if (appTray && !appTray.isDestroyed()) {
+        appTray.destroy();
+        appTray = null;
+      }
+    },
+    () => {
       // destroy() skips close handlers, so a hidden or stuck window cannot veto the quit
       for (const win of BrowserWindow.getAllWindows()) {
         if (!win.isDestroyed()) win.destroy();
@@ -228,6 +402,32 @@ function flushPendingDeeplink() {
   if (pendingDeeplink && mainWindow) {
     mainWindow.webContents.send("deeplink:open", pendingDeeplink);
     pendingDeeplink = null;
+  }
+}
+
+const AUDIO_FILE_RE = new RegExp(`\\.(${LOCAL_AUDIO_EXTENSIONS.join("|")})$`, "i");
+
+function findAudioFileArgs(argv: string[]): string[] {
+  return argv.filter(
+    (arg) => AUDIO_FILE_RE.test(arg) && fs.existsSync(arg),
+  );
+}
+
+let pendingAudioFiles = findAudioFileArgs(process.argv);
+
+function deliverAudioFiles(paths: string[]) {
+  if (paths.length === 0) return;
+  if (mainWindow && !mainWindow.webContents.isLoading()) {
+    mainWindow.webContents.send("local-tracks:open-files", paths);
+  } else {
+    pendingAudioFiles.push(...paths);
+  }
+}
+
+function flushPendingAudioFiles() {
+  if (pendingAudioFiles.length > 0 && mainWindow) {
+    mainWindow.webContents.send("local-tracks:open-files", pendingAudioFiles);
+    pendingAudioFiles = [];
   }
 }
 
@@ -406,6 +606,18 @@ function createWindow() {
   });
   mainWindow.on("closed", () => bundleErrorStamp.dispose());
 
+  mainWindow.on("close", (event) => {
+    if (closeToTrayEnabled && !shutdown.isQuitting()) {
+      event.preventDefault();
+      mainWindow?.hide();
+      createOrUpdateTray();
+    }
+  });
+
+  if (closeToTrayEnabled) {
+    createOrUpdateTray();
+  }
+
   mainWindow.webContents.on("before-input-event", (_event, input) => {
     if (input.type === "keyDown") {
       if (
@@ -444,6 +656,7 @@ function createWindow() {
   // renderer ready, deliver any cold-start deeplink waiting in the queue
   mainWindow.webContents.on("did-finish-load", () => {
     flushPendingDeeplink();
+    flushPendingAudioFiles();
   });
 
   mainWindow.on("closed", () => {
@@ -498,12 +711,19 @@ if (!gotTheLock) {
       mainWindow.focus();
     }
     if (raw) deliverDeeplink(parseDeeplink(raw));
+    deliverAudioFiles(findAudioFileArgs(argv));
   });
 
   // macos cold-start / running deeplink delivery
   app.on("open-url", (event, url) => {
     event.preventDefault();
     deliverDeeplink(parseDeeplink(url));
+  });
+
+  // macOS "Open with Liner"
+  app.on("open-file", (event, filePath) => {
+    event.preventDefault();
+    deliverAudioFiles([filePath]);
   });
 
   app.whenReady().then(() => {
@@ -524,6 +744,8 @@ if (!gotTheLock) {
       app.setAsDefaultProtocolClient(DEEP_LINK_SCHEME);
     }
     setupLocalTracks();
+    setupBackup();
+    setupListenBrainz();
     touchBarManager = new TouchBarManager(
       path.join(__dirname, "preload.cjs"),
       RENDERER_DIST,
@@ -644,6 +866,65 @@ if (!gotTheLock) {
 
     ipcMain.handle("app:get-version", () => {
       return app.getVersion();
+    });
+
+    ipcMain.handle("app:get-platform-info", () => ({
+      portable: isPortableMode,
+      dataPath: app.getPath("userData"),
+    }));
+
+    ipcMain.on("tray:update-state", (_event, state: unknown) => {
+      const value = state as { title?: unknown; artist?: unknown } | null;
+      trayNowPlaying =
+        value && typeof value.title === "string" && value.title.length > 0
+          ? {
+              title: value.title,
+              artist:
+                typeof value.artist === "string" && value.artist.length > 0
+                  ? value.artist
+                  : "Unknown artist",
+            }
+          : null;
+      refreshTray();
+    });
+
+    ipcMain.handle("system:get-gpu-acceleration", () => {
+      return hwAccelEnabled;
+    });
+
+    ipcMain.handle("app:get-close-to-tray", () => {
+      return closeToTrayEnabled;
+    });
+
+    ipcMain.handle("app:set-close-to-tray", (_event, enabled: boolean) => {
+      closeToTrayEnabled = Boolean(enabled);
+      setCloseToTrayConfig(closeToTrayEnabled);
+      if (!closeToTrayEnabled) {
+        if (appTray && !appTray.isDestroyed()) {
+          appTray.destroy();
+          appTray = null;
+        }
+      } else {
+        createOrUpdateTray();
+      }
+      return closeToTrayEnabled;
+    });
+
+    ipcMain.handle("system:set-gpu-acceleration", (_event, enabled: boolean) => {
+      try {
+        const configPath = path.join(app.getPath("userData"), "hardware-acceleration.json");
+        fs.mkdirSync(path.dirname(configPath), { recursive: true });
+        fs.writeFileSync(configPath, JSON.stringify({ enabled }), "utf8");
+        return true;
+      } catch (err) {
+        console.error("Failed to write hardware-acceleration.json:", err);
+        return false;
+      }
+    });
+
+    ipcMain.handle("system:relaunch", () => {
+      app.relaunch();
+      app.exit(0);
     });
 
     let lastIconBytes: Buffer | null = null;

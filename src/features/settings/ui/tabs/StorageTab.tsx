@@ -21,6 +21,7 @@ import {
   type StorageAnalytics,
   type StorageCategoryId,
 } from "@/shared/utils/cacheManager";
+import BackupRestoreSection from "./BackupRestoreSection";
 
 function polarToCartesian(
   centerX: number,
@@ -591,6 +592,8 @@ export function StorageTab({
                 </div>
               </div>
             </div>
+
+            <BackupRestoreSection />
 
             <div className="mt-auto flex items-center gap-[8px] pt-4">
               <Button

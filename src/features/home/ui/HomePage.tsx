@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import PopularTracksSection from "./PopularTracksSection";
 import DailyMixesSection from "./DailyMixesSection";
+import MysteryDiceRow from "./MysteryDiceRow";
 import HomePageSkeleton, { MixesSectionSkeleton } from "./HomePageSkeleton";
 import { usePopularTracksAllTime } from "../hooks/usePopularTracks";
 import { useListeningNow } from "../hooks/useListeningNow";
@@ -81,6 +82,8 @@ export default function HomePage() {
                 </div>
               )
             )}
+
+            <MysteryDiceRow />
 
             {popularAlbums.length > 0 && (
               <PopularTracksSection

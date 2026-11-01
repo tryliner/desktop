@@ -40,3 +40,15 @@ export {
   useCoverFluidColors,
   type FluidColors,
 } from "./hooks/useCoverFluidColors";
+export { default as MysteryDiceButton, type MysteryDiceButtonProps } from "./ui/MysteryDiceButton";
+export { default as MysteryDiceRow, type MysteryDiceRowProps } from "./ui/MysteryDiceRow";
+export { useMysteryDiceStore } from "./store/mysteryDiceStore";
+export {
+  classifyGenre,
+  calculateTrackScore,
+  fisherYatesShuffle,
+  deduplicateConsecutiveArtists,
+  generateMysteryQueue,
+  type MysteryGenre,
+  MYSTERY_GENRES,
+} from "./services/mysteryDice";

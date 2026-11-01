@@ -37,6 +37,7 @@ describe("OverlayPlayer animation loop", () => {
       },
       overlayReady: () => {},
       sendOverlayAction: () => {},
+      setOverlayWidth: vi.fn(),
     } as never;
     await act(async () => {
       root.render(<OverlayPlayer />);
@@ -128,5 +129,52 @@ describe("OverlayPlayer animation loop", () => {
     await advance(100);
     expect(progressPercent()).toBeGreaterThan(24.9);
     expect(progressPercent()).toBeLessThan(25.5);
+  });
+
+  it("cycles display mode on artwork double click (track info -> lyrics -> visualizer -> track info)", async () => {
+    localStorage.clear();
+    initialState = {
+      ...playingState,
+      lyrics: [
+        { time: 10_000, text: "First line" },
+        { time: 25_000, text: "Active lyric line" },
+        { time: 50_000, text: "Next line" },
+      ],
+    };
+    await mount();
+
+    // Default mode: shows song title
+    expect(container.textContent).toContain("Song");
+    expect(container.textContent).toContain("Artist");
+
+    const artwork = container.querySelector(".group\\/artwork");
+    expect(artwork).not.toBeNull();
+
+    // Double click 1: switch to lyrics mode
+    await act(async () => {
+      artwork?.dispatchEvent(
+        new MouseEvent("dblclick", { bubbles: true, cancelable: true }),
+      );
+    });
+    expect(container.textContent).toContain("Active lyric line");
+    expect(localStorage.getItem("liner_overlay_display_mode")).toBe("lyrics");
+
+    // Double click 2: switch to visualizer mode
+    await act(async () => {
+      artwork?.dispatchEvent(
+        new MouseEvent("dblclick", { bubbles: true, cancelable: true }),
+      );
+    });
+    expect(container.querySelector("canvas")).not.toBeNull();
+    expect(localStorage.getItem("liner_overlay_display_mode")).toBe("visualizer");
+
+    // Double click 3: loop back to track_info mode
+    await act(async () => {
+      artwork?.dispatchEvent(
+        new MouseEvent("dblclick", { bubbles: true, cancelable: true }),
+      );
+    });
+    expect(container.textContent).toContain("Song");
+    expect(localStorage.getItem("liner_overlay_display_mode")).toBe("track_info");
   });
 });

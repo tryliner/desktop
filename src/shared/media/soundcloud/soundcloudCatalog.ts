@@ -4,6 +4,8 @@ import type {
   ArtistDetails,
   CatalogPlaylistDetails,
   RadioResponse,
+  SearchResult,
+  SearchType,
   TrackDetails,
 } from "@/shared/contracts";
 import {
@@ -27,6 +29,7 @@ import {
   mapSoundCloudArtist,
   mapSoundCloudCatalogTrack,
   mapSoundCloudRelease,
+  mapSoundCloudSearchItem,
   mapSoundCloudTracks,
   soundCloudCover,
   soundCloudPlaylistCover,
@@ -38,6 +41,7 @@ import { toSoundCloudTrackId } from "./soundcloudTrack";
 
 const ARTIST_TRACK_LIMIT = "50";
 const ARTIST_TOP_LIMIT = "10";
+const SEARCH_LIMIT = "20";
 const DEFAULT_RADIO_SIZE = 25;
 
 function uniqueTracks(tracks: ApiTrack[]): ApiTrack[] {
@@ -191,6 +195,22 @@ async function getRadio(
   return { items: mapSoundCloudTracks(related).slice(0, k) };
 }
 
+async function search(
+  query: string,
+  type: SearchType = "all",
+  signal?: AbortSignal,
+): Promise<SearchResult[]> {
+  const record = await getJson(
+    "/search",
+    { q: query, limit: SEARCH_LIMIT },
+    signal,
+  );
+  const items = asArray(record.collection).flatMap(
+    (raw) => mapSoundCloudSearchItem(raw) ?? [],
+  );
+  return type === "all" ? items : items.filter((item) => item.type === type);
+}
+
 export const soundcloudCatalog = {
   getArtist,
   getArtistImage,
@@ -198,4 +218,5 @@ export const soundcloudCatalog = {
   getPlaylist,
   getTrack,
   getRadio,
+  search,
 };

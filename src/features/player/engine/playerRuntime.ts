@@ -30,6 +30,7 @@ export class PlayerRuntime {
   private loadAbortController: AbortController | null = null;
   private isResetting = false;
   private fadeTimer: ReturnType<typeof setTimeout> | null = null;
+  private crossfadeArmed = false;
   private stallStartTime: number | null = null;
   private loadStartTime = 0;
   private ttfbMs = 0;
@@ -94,6 +95,12 @@ export class PlayerRuntime {
           this.audio.volume = state.volume;
         }
       }
+      if (state.crossfadeMs !== prevState.crossfadeMs && this.crossfadeArmed) {
+        this.crossfadeArmed = false;
+        if (!this.audio.paused) {
+          this.fadeVolume(state.volume, 180);
+        }
+      }
       if (
         state.playbackRate !== prevState.playbackRate ||
         state.isPitchLinked !== prevState.isPitchLinked ||
@@ -101,7 +108,9 @@ export class PlayerRuntime {
         state.isReverbEnabled !== prevState.isReverbEnabled ||
         state.reverbLevel !== prevState.reverbLevel ||
         state.isEqEnabled !== prevState.isEqEnabled ||
-        state.eqGains !== prevState.eqGains
+        state.eqGains !== prevState.eqGains ||
+        state.isNormalizerEnabled !== prevState.isNormalizerEnabled ||
+        state.crossfeedMode !== prevState.crossfeedMode
       ) {
         const rate = state.playbackRate ?? 1;
         const preservesPitch = !state.isPitchLinked;
@@ -266,6 +275,7 @@ export class PlayerRuntime {
 
       const posMs = Math.round(audioEl.currentTime * 1000);
       usePlayerStore.getState().setPosition(posMs);
+      this.maybeStartCrossfade(audioEl);
       if (
         this.recoveryHoldUntilMs !== null &&
         posMs >= this.recoveryHoldUntilMs
@@ -298,6 +308,11 @@ export class PlayerRuntime {
         this.syncMediaSessionPosition();
       });
     }
+
+    audioEl.addEventListener("seeked", () => {
+      if (this.isResetting || audioEl !== this.audio) return;
+      this.resetCrossfadeAfterJump();
+    });
 
     audioEl.addEventListener("waiting", () => {
       if (this.isResetting || audioEl !== this.audio) return;
@@ -370,6 +385,7 @@ export class PlayerRuntime {
     audioEl.addEventListener("pause", () => {
       if (this.isResetting || audioEl !== this.audio) return;
       log("cyan", "audio", "paused");
+      this.crossfadeArmed = false;
       const st = usePlayerStore.getState().status;
       if (st === "playing") {
         usePlayerStore.getState().setStatus("paused");
@@ -502,9 +518,13 @@ export class PlayerRuntime {
       const reverbLevel = store.reverbLevel ?? 0.35;
       const isEqEnabled = store.isEqEnabled ?? false;
       const eqGains = store.eqGains ?? FLAT_EQ;
+      const isNormalizerEnabled = store.isNormalizerEnabled ?? false;
+      const crossfeedMode = store.crossfeedMode ?? "off";
       const needsEffects =
         isReverbEnabled ||
         isEqActive(isEqEnabled, eqGains) ||
+        isNormalizerEnabled ||
+        crossfeedMode !== "off" ||
         (!isPitchLinked && Math.abs(pitchSemitones) >= 0.05);
       if (!needsEffects && !pitchShifter.isAttached()) return;
       pitchShifter.attach(this.audio);
@@ -515,6 +535,8 @@ export class PlayerRuntime {
         reverbLevel,
         isEqEnabled,
         eqGains,
+        isNormalizerEnabled,
+        crossfeedMode,
       });
     } catch (err) {
       console.error("[PlayerRuntime] applyPlaybackRateAndPitch error:", err);
@@ -563,6 +585,32 @@ export class PlayerRuntime {
     };
 
     this.fadeTimer = setTimeout(tick, 16);
+  }
+
+  private loadFadeInMs(): number {
+    const crossfadeMs = usePlayerStore.getState().crossfadeMs;
+    return crossfadeMs > 0 ? Math.min(crossfadeMs, 1500) : 180;
+  }
+
+  private maybeStartCrossfade(audioEl: HTMLAudioElement): void {
+    if (this.crossfadeArmed || audioEl.paused) return;
+    const crossfadeMs = usePlayerStore.getState().crossfadeMs;
+    if (crossfadeMs <= 0) return;
+    const remainingMs = (audioEl.duration - audioEl.currentTime) * 1000;
+    if (!Number.isFinite(remainingMs) || remainingMs <= 0) return;
+    if (remainingMs > crossfadeMs) return;
+    this.crossfadeArmed = true;
+    this.fadeVolume(0, remainingMs);
+  }
+
+  private resetCrossfadeAfterJump(): void {
+    if (!this.crossfadeArmed) return;
+    this.crossfadeArmed = false;
+    const crossfadeMs = usePlayerStore.getState().crossfadeMs;
+    const remainingMs = (this.audio.duration - this.audio.currentTime) * 1000;
+    if (remainingMs > crossfadeMs) {
+      this.fadeVolume(usePlayerStore.getState().volume, 180);
+    }
   }
 
   private releaseStream() {
@@ -757,6 +805,7 @@ export class PlayerRuntime {
     bypassCache: boolean = false,
   ) {
     this.cancelFade();
+    this.crossfadeArmed = false;
     this.pendingStartPositionMs = startPositionMs;
     const epoch = ++this.loadEpoch;
 
@@ -858,7 +907,7 @@ export class PlayerRuntime {
 
         if (epoch === this.loadEpoch) {
           usePlayerStore.getState().setStatus("playing");
-          this.fadeVolume(usePlayerStore.getState().volume, 180);
+          this.fadeVolume(usePlayerStore.getState().volume, this.loadFadeInMs());
         }
         log(
           "green",
@@ -934,7 +983,7 @@ export class PlayerRuntime {
 
       if (epoch === this.loadEpoch) {
         usePlayerStore.getState().setStatus("playing");
-        this.fadeVolume(usePlayerStore.getState().volume, 180);
+        this.fadeVolume(usePlayerStore.getState().volume, this.loadFadeInMs());
         this.cacheAudioInBackground(track, stream, bgCacheController.signal);
       }
       log(

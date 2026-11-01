@@ -90,7 +90,9 @@ export function handleLocalTrackScheme(library: LocalTrackLibrary) {
         ? "audio"
         : url.hostname === "cover"
           ? "cover"
-          : null;
+          : url.hostname === "lyrics"
+            ? "lyrics"
+            : null;
     const id = url.pathname.replace(/^\/+/, "");
     const located = kind ? await library.locate(kind, id) : null;
     if (!kind || !located)
@@ -98,8 +100,10 @@ export function handleLocalTrackScheme(library: LocalTrackLibrary) {
     const mimeType =
       kind === "audio"
         ? located.record.mimeType
-        : (IMAGE_MIME[path.extname(located.path)] ??
-          "application/octet-stream");
+        : kind === "lyrics"
+          ? "text/plain; charset=utf-8"
+          : (IMAGE_MIME[path.extname(located.path)] ??
+            "application/octet-stream");
     try {
       return await fileResponse(located.path, mimeType, request);
     } catch {

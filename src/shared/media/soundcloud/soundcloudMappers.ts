@@ -3,6 +3,7 @@ import type {
   ArtistAlbum,
   ArtistRelease,
   Cover,
+  SearchResult,
 } from "@/shared/contracts";
 import {
   asArray,
@@ -117,4 +118,48 @@ export function soundCloudReleaseType(
   if (setType === "single") return "single";
   if (setType === "ep") return "ep";
   return "album";
+}
+
+export function mapSoundCloudSearchItem(raw: unknown): SearchResult | null {
+  const record = asRecord(raw);
+  const kind = trimmedString(record?.kind);
+  if (!record || !kind) return null;
+
+  if (kind === "track") {
+    const track = mapSoundCloudCatalogTrack(record);
+    return track ? { ...track, type: "track" } : null;
+  }
+
+  if (kind === "user") {
+    const artist = mapSoundCloudArtist(record);
+    if (!artist) return null;
+    const cover = soundCloudCover(record.avatar_url);
+    return {
+      type: "artist",
+      id: artist.id,
+      name: trimmedString(record.full_name) ?? artist.name,
+      ...(cover ? { cover } : {}),
+    };
+  }
+
+  if (kind === "playlist") {
+    const release = mapSoundCloudRelease(record);
+    if (!release) return null;
+    if (record.is_album === true) {
+      const artist = mapSoundCloudArtist(record.user);
+      return {
+        type: "album",
+        ...release,
+        artists: artist ? [artist] : [],
+      };
+    }
+    const author = mapSoundCloudArtist(record.user)?.name;
+    return {
+      type: "playlist",
+      ...release,
+      ...(author ? { author } : {}),
+    };
+  }
+
+  return null;
 }

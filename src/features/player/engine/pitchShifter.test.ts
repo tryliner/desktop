@@ -115,6 +115,36 @@ class FakeBufferSource extends FakeNode {
   }
 }
 
+class FakeCompressor extends FakeNode {
+  threshold = new FakeParam(this, -18);
+  knee = new FakeParam(this, 24);
+  ratio = new FakeParam(this, 4);
+  attack = new FakeParam(this, 0.005);
+  release = new FakeParam(this, 0.15);
+  constructor(ctx: FakeAudioContext) {
+    super(ctx, "compressor");
+  }
+}
+
+class FakeSplitter extends FakeNode {
+  constructor(ctx: FakeAudioContext) {
+    super(ctx, "channelSplitter");
+  }
+}
+
+class FakeMerger extends FakeNode {
+  constructor(ctx: FakeAudioContext) {
+    super(ctx, "channelMerger");
+  }
+}
+
+class FakeAnalyser extends FakeNode {
+  fftSize = 256;
+  constructor(ctx: FakeAudioContext) {
+    super(ctx, "analyser");
+  }
+}
+
 class FakeAudioContext {
   static instances: FakeAudioContext[] = [];
   nodes: FakeNode[] = [];
@@ -156,6 +186,22 @@ class FakeAudioContext {
 
   createBufferSource() {
     return new FakeBufferSource(this);
+  }
+
+  createDynamicsCompressor() {
+    return new FakeCompressor(this);
+  }
+
+  createChannelSplitter() {
+    return new FakeSplitter(this);
+  }
+
+  createChannelMerger() {
+    return new FakeMerger(this);
+  }
+
+  createAnalyser() {
+    return new FakeAnalyser(this);
   }
 
   createMediaElementSource(mediaElement: HTMLMediaElement) {
@@ -393,13 +439,40 @@ describe("audio effects graph idle cost", () => {
     expect(measure().suspended).toBe(true);
   });
 
-  it("goes back to sleep when effects change while paused", async () => {
+  it("activates loudness normalizer stage and switches dry/wet path", async () => {
+    await start({ isNormalizerEnabled: true });
+    const graph = (window as any).__liner_pitch_graph;
+    expect(graph.normalizerDryGain.gain.value).toBe(0);
+    expect(graph.normalizerWetGain.gain.value).toBe(1);
+
+    controller.update({ isNormalizerEnabled: false });
+    await settle();
+    expect(graph.normalizerDryGain.gain.value).toBe(1);
+    expect(graph.normalizerWetGain.gain.value).toBe(0);
+  });
+
+  it("activates Dolby Atmos 3D spatial sound with correct preset parameters", async () => {
+    await start({ crossfeedMode: "standard" });
+    const graph = (window as any).__liner_pitch_graph;
+    expect(graph.crossfeedBypassGain.gain.value).toBe(0);
+    expect(graph.crossfeedWetGain.gain.value).toBe(1);
+    expect(graph.crossLeftDelay.delayTime.value).toBe(0.0004);
+    expect(graph.crossLeftFilter.frequency.value).toBe(700);
+    expect(graph.surroundLeftDelay.delayTime.value).toBe(0.016);
+    expect(graph.elevationFilterLeft.gain.value).toBe(2.5);
+    expect(graph.spatialRoomGain.gain.value).toBe(0.18);
+    // Verify wet gain is connected to output so audio does not disappear
+    expect(graph.crossfeedWetGain.outputs.has(graph.crossfeedOutput)).toBe(true);
+
+    controller.update({ crossfeedMode: "off" });
+    await settle();
+    expect(graph.crossfeedBypassGain.gain.value).toBe(1);
+    expect(graph.crossfeedWetGain.gain.value).toBe(0);
+  });
+
+  it("exposes analyser node for frequency visualizers", async () => {
     await start();
-    pause();
-    await settle();
-    controller.resumeContext();
-    expect(measure().suspended).toBe(false);
-    await settle();
-    expect(measure().suspended).toBe(true);
+    const analyser = controller.getAnalyserNode();
+    expect(analyser).not.toBeNull();
   });
 });

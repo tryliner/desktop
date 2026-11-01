@@ -8,6 +8,8 @@ import {
   DiscordFill,
   KeyboardLine,
   YoutubeFill,
+  Translate2Line,
+  CloudFill,
 } from "@mingcute/react";
 import {
   Play,
@@ -34,6 +36,8 @@ import {
   OverlayTab,
   DiscordTab,
   YoutubeTab,
+  AiTab,
+  ListenBrainzTab,
 } from "./tabs";
 
 type TabId =
@@ -42,6 +46,8 @@ type TabId =
   | "Overlay"
   | "Discord"
   | "Youtube"
+  | "ListenBrainz"
+  | "AI"
   | "Appearance"
   | "Storage"
   | "About";
@@ -55,6 +61,8 @@ const TAB_ICONS: Record<TabId, React.ComponentType<any>> = {
   Overlay: Widget5,
   Discord: DiscordFill,
   Youtube: YoutubeFill,
+  ListenBrainz: CloudFill,
+  AI: Translate2Line,
   Appearance: Palette,
   Storage: Database,
   About: InfoCircle,
@@ -65,7 +73,7 @@ type TabGroupKey = "player" | "interface" | "integrations" | "application";
 const TAB_GROUPS: { labelKey: TabGroupKey; ids: TabId[] }[] = [
   { labelKey: "player", ids: ["Playback", "Shortcuts"] },
   { labelKey: "interface", ids: ["Appearance", "Overlay"] },
-  { labelKey: "integrations", ids: ["Youtube", "Discord"] },
+  { labelKey: "integrations", ids: ["Youtube", "Discord", "ListenBrainz", "AI"] },
   { labelKey: "application", ids: ["Storage", "About"] },
 ];
 
@@ -275,6 +283,8 @@ export default function SettingsModal() {
     Overlay: t("settings.tabs.overlay") || "Overlay",
     Discord: t("settings.tabs.discord") || "Discord RPC",
     Youtube: t("settings.tabs.youtube") || "YouTube",
+    ListenBrainz: "ListenBrainz",
+    AI: "AI Translate",
     Appearance: t("settings.tabs.appearance"),
     Storage: t("settings.tabs.storage"),
     About: t("settings.tabs.about"),
@@ -294,6 +304,8 @@ export default function SettingsModal() {
     Youtube:
       t("settings.youtube.description") ||
       "Sign in to your YouTube account to prevent playback errors.",
+    ListenBrainz: t("settings.listenbrainz.description"),
+    AI: "Translate song lyrics with musical context using AI (Gemini, OpenAI, DeepSeek, OpenAI Compatible, Google Translate).",
     Appearance: t("settings.theme.description"),
     Storage: t("settings.storage.description"),
     About: t("settings.about.tagline"),
@@ -310,6 +322,8 @@ export default function SettingsModal() {
       Overlay: "settings.tabs.overlay",
       Discord: "settings.tabs.discord",
       Youtube: "settings.tabs.youtube",
+      ListenBrainz: "settings.tabs.listenbrainz",
+      AI: "settings.tabs.ai",
       Appearance: "settings.theme.title",
       Storage: "settings.tabs.storage",
       About: "settings.tabs.about",
@@ -321,6 +335,8 @@ export default function SettingsModal() {
       Overlay: "settings.overlay.description",
       Discord: "settings.discord.description",
       Youtube: "settings.youtube.description",
+      ListenBrainz: "settings.listenbrainz.description",
+      AI: "settings.ai.description",
       Appearance: "settings.theme.description",
       Storage: "settings.storage.description",
       About: "settings.about.tagline",
@@ -626,6 +642,10 @@ export default function SettingsModal() {
               {activeTab === "Youtube" && (
                 <YoutubeTab searchQuery={searchQuery} />
               )}
+              {activeTab === "ListenBrainz" && (
+                <ListenBrainzTab searchQuery={searchQuery} />
+              )}
+              {activeTab === "AI" && <AiTab searchQuery={searchQuery} />}
               {activeTab === "Appearance" && (
                 <AppearanceTab searchQuery={searchQuery} />
               )}

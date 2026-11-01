@@ -3,6 +3,7 @@ export {
   localFileId,
   localTrackAudioUrl,
   localTrackCoverUrl,
+  localTrackLyricsUrl,
   toLocalTrackId,
 } from "./localTrackIds";
 export {

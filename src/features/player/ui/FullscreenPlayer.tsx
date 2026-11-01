@@ -1,6 +1,7 @@
-import { useCallback, useEffect, createElement, useRef, useState } from "react";
+import { useCallback, useEffect, createElement, useRef, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { shouldReleaseTopPin, startsPinnedToTop } from "./lyricsTopPin";
+import { applyLyricsSubtitles } from "../lib/lyricsSubtitles";
 import { usePlayerStore } from "../store/playerStore";
 import {
   useKawarpEnabled,
@@ -16,6 +17,7 @@ import {
   LyricsProviderIsland,
   braccatoThemeCss,
 } from "@/features/lyrics";
+import { useAiTranslateStore, getTranslationCacheKey } from "@/features/ai-translate";
 import { AnimatePresence, motion } from "framer-motion";
 import { PlayerUiElements } from "./PlayerUiElements";
 import { DownLine } from "@mingcute/react";
@@ -30,6 +32,7 @@ import "@braccato/core/styles/lyrics.css";
 import "@braccato/core/styles/instrumental.css";
 import KawarpWrapper from "./KawarpWrapper";
 import AmbientLayer from "./AmbientLayer";
+import { SpectrumVisualizer } from "@/features/visualizer";
 import { BetaVisualsWarning } from "./BetaVisualsWarning";
 import { useTranslation } from "@/languages";
 
@@ -38,9 +41,19 @@ const KAWARP_FADE_IN_MS = 600;
 
 interface BraccatoLyricsViewProps {
   lyrics: any[];
+  translations?: string[];
+  romanizations?: string[];
+  showTranslation?: boolean;
+  showRomanization?: boolean;
 }
 
-function BraccatoLyricsView({ lyrics }: BraccatoLyricsViewProps) {
+function BraccatoLyricsView({
+  lyrics,
+  translations,
+  romanizations,
+  showTranslation = true,
+  showRomanization = true,
+}: BraccatoLyricsViewProps) {
   const status = usePlayerStore((s) => s.status);
   const edgeFade = useLyricsEdgeFade();
   const edgeBlur = useLyricsEdgeBlur();
@@ -50,9 +63,44 @@ function BraccatoLyricsView({ lyrics }: BraccatoLyricsViewProps) {
   const lastWheelTimeRef = useRef(0);
   const isInFreeSearchRef = useRef(false);
   const waitingForAudioAfterClickRef = useRef(false);
+  const isUpdatingDomRef = useRef(false);
   const pinnedToTopRef = useRef(
     startsPinnedToTop(status, usePlayerStore.getState().positionMs),
   );
+
+  const applySubtitlesToDom = useCallback(() => {
+    if (isUpdatingDomRef.current) return;
+    const el = elementRef.current as
+      | (HTMLElement & { renderer?: { relayout?: (measureLines?: boolean) => void } })
+      | null;
+    if (!el) return;
+    if (!el.querySelector(".blyrics--line")) return;
+
+    isUpdatingDomRef.current = true;
+    try {
+      const changed = applyLyricsSubtitles(el, {
+        translations,
+        romanizations,
+        showTranslation,
+        showRomanization,
+      });
+
+      // The extra subtitle rows change every line's height. Braccato cached the
+      // old measurements, so without this the scroll targets drift.
+      if (changed) {
+        el.renderer?.relayout?.(true);
+      }
+    } finally {
+      isUpdatingDomRef.current = false;
+    }
+  }, [translations, romanizations, showTranslation, showRomanization]);
+
+  const applySubtitlesToDomRef = useRef(applySubtitlesToDom);
+  applySubtitlesToDomRef.current = applySubtitlesToDom;
+
+  useEffect(() => {
+    applySubtitlesToDom();
+  }, [applySubtitlesToDom, lyrics]);
 
   const scrollToActiveLine = useCallback(
     (behavior: ScrollBehavior = "smooth") => {
@@ -187,6 +235,10 @@ function BraccatoLyricsView({ lyrics }: BraccatoLyricsViewProps) {
       };
 
       const onLyricsLoaded = () => {
+        // Braccato rebuilds its line DOM on every lyrics/theme change, which
+        // discards our injected translation/romanization nodes. Re-apply them
+        // before measuring or scrolling.
+        applySubtitlesToDomRef.current();
         if (waitingForAudioAfterClickRef.current) return;
         requestAnimationFrame(() => {
           if (!waitingForAudioAfterClickRef.current) {
@@ -443,12 +495,60 @@ export function FullscreenPlayer({
   );
   const hasLyrics = isMatchingTrack && braccatoLyrics.length > 0;
   const showProviderIsland = hasLyrics && availableProviders.length > 0;
+  const activeProvider = useLyricsStore((s) => s.activeProvider);
+  const showTranslation = useAiTranslateStore((s) => s.showTranslation);
+  const showRomanization = useAiTranslateStore((s) => s.showRomanization);
+  const translationsByTrackId = useAiTranslateStore((s) => s.translationsByTrackId);
+  const romanizationsByTrackId = useAiTranslateStore((s) => s.romanizationsByTrackId);
+  const targetLang = useAiTranslateStore((s) => s.targetLang);
+  const singableMode = useAiTranslateStore((s) => s.singableMode);
+
+  const trackTranslations = useMemo(() => {
+    if (!currentTrackId) return undefined;
+    return translationsByTrackId[getTranslationCacheKey(currentTrackId, targetLang, singableMode)];
+  }, [currentTrackId, targetLang, singableMode, translationsByTrackId]);
+
+  const trackRomanizations = useMemo(() => {
+    if (!currentTrackId) return undefined;
+    return romanizationsByTrackId[currentTrackId];
+  }, [currentTrackId, romanizationsByTrackId]);
+
   const isInstrumental =
     isMatchingTrack &&
     !lyricsLoading &&
     !hasLyrics &&
     !lyricsError &&
     plainLyrics === "[INSTRUMENTAL]";
+
+  const showLyricsColumn = hasLyrics || (lyricsLoading && isMatchingTrack);
+
+  const [showNoLyricsNotice, setShowNoLyricsNotice] = useState(false);
+  const lastNotifiedTrackRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!currentTrackId) {
+      setShowNoLyricsNotice(false);
+      return;
+    }
+
+    if (lyricsLoading && isMatchingTrack) {
+      return;
+    }
+
+    if (!hasLyrics) {
+      if (lastNotifiedTrackRef.current !== currentTrackId) {
+        lastNotifiedTrackRef.current = currentTrackId;
+        setShowNoLyricsNotice(true);
+        const timer = setTimeout(() => {
+          setShowNoLyricsNotice(false);
+        }, 5000);
+        return () => clearTimeout(timer);
+      }
+    } else {
+      setShowNoLyricsNotice(false);
+      lastNotifiedTrackRef.current = currentTrackId;
+    }
+  }, [currentTrackId, lyricsLoading, isMatchingTrack, hasLyrics]);
 
   return (
     <div
@@ -486,112 +586,137 @@ export function FullscreenPlayer({
 
       <div className="absolute inset-0 z-[1] bg-black/40" />
 
-      <div className="absolute inset-0 z-10 flex">
-        <div className="flex-1 flex flex-col items-center justify-center gap-5">
-          <PlayerUiElements onClose={onClose} />
-        </div>
+      {/* Fullscreen Audio Spectrum Visualizer Backdrop */}
+      <div className="absolute inset-0 z-[2] pointer-events-none overflow-hidden select-none">
+        <SpectrumVisualizer className="w-full h-full" barCount={32} />
+      </div>
 
-        <div className="flex-1 h-full min-h-0 pl-2 pr-6 flex flex-col relative">
-          <div className="absolute top-[6px] left-1/2 -translate-x-1/2 z-30 pointer-events-none flex justify-center">
-            <div className="relative inline-flex">
-              <BetaVisualsWarning docked={showProviderIsland} />
-              {showProviderIsland && <LyricsProviderIsland />}
-            </div>
-          </div>
-
-          <div
-            className="flex-1 min-h-0 relative w-full h-full"
-            style={{
-              display: hasLyrics ? "flex" : "none",
-            }}
+      {/* Floating No-Lyrics Notification Pill */}
+      <AnimatePresence>
+        {showNoLyricsNotice && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -12, scale: 0.95 }}
+            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+            className="absolute top-12 left-1/2 -translate-x-1/2 z-40 pointer-events-auto cursor-pointer select-none"
+            onClick={() => setShowNoLyricsNotice(false)}
+            title="Click to dismiss"
           >
-            <AnimatePresence initial={false}>
-              {hasLyrics && (
-                <motion.div
-                  key={`lyrics-${currentTrackId}`}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0, pointerEvents: "none" }}
-                  transition={{ duration: 0.22, ease: "easeInOut" }}
-                  className="absolute inset-0 flex flex-col"
-                >
-                  <BraccatoLyricsView lyrics={braccatoLyrics} />
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+            <div className="flex items-center gap-2.5 px-4 py-2 rounded-full bg-black/60 backdrop-blur-2xl border border-white/15 text-sm font-medium text-white/90 shadow-2xl">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="text-white/60 shrink-0"
+              >
+                <path d="M9 18V5l12-2v13" />
+                <circle cx="6" cy="18" r="3" />
+                <circle cx="18" cy="16" r="3" />
+                <line x1="2" y1="2" x2="22" y2="22" />
+              </svg>
+              <span>{isInstrumental ? (t("player.instrumental") || "Instrumental track") : "This song doesn't have lyrics"}</span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-          <AnimatePresence mode="wait">
-            {!hasLyrics && lyricsLoading ? (
-              <motion.div
-                key="skeleton"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.15 }}
-                className="absolute inset-0 flex flex-col items-center justify-center"
-              >
-                <div className="flex flex-col gap-5 w-full max-w-[500px]">
-                  {[80, 65, 45, 70, 55, 85, 60, 50, 75, 40, 65, 55].map(
-                    (w, i) => (
-                      <div
-                        key={i}
-                        className="h-5 rounded animate-pulse bg-border-alpha-14"
-                        style={{ width: `${w}%` }}
-                      />
-                    ),
-                  )}
-                </div>
-              </motion.div>
-            ) : !hasLyrics && isInstrumental ? (
-              <motion.div
-                key="instrumental"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.15 }}
-                className="absolute inset-0 flex items-center justify-center text-text-tertiary text-lg"
-              >
-                <span>{t("player.instrumental")}</span>
-              </motion.div>
-            ) : !hasLyrics ? (
-              <motion.div
-                key="empty"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.15 }}
-                className="absolute inset-0 flex items-center justify-center text-text-tertiary"
-              >
-                <div className="flex flex-col items-center justify-center gap-3 opacity-80">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="48"
-                    height="48"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="opacity-40"
-                  >
-                    <path d="M9 18V5l12-2v13"></path>
-                    <circle cx="6" cy="18" r="3"></circle>
-                    <circle cx="18" cy="16" r="3"></circle>
-                    <line x1="2" y1="2" x2="22" y2="22"></line>
-                  </svg>
-                  <span
-                    className="text-[15px] font-[400] max-w-[250px] text-center"
-                    style={{ lineHeight: "1.4" }}
-                  >
-                    {lyricsError || t("player.no_lyrics_found")}
-                  </span>
-                </div>
-              </motion.div>
-            ) : null}
-          </AnimatePresence>
+      {!showLyricsColumn && (
+        <div className="absolute top-[6px] right-[136px] z-30 pointer-events-none flex">
+          <BetaVisualsWarning docked={false} />
         </div>
+      )}
+
+      <div className="absolute inset-0 z-10 flex">
+        <motion.div
+          layout
+          transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+          className={cn(
+            "flex flex-col items-center justify-center gap-5 transition-all duration-300",
+            showLyricsColumn ? "flex-1" : "w-full",
+          )}
+        >
+          <PlayerUiElements onClose={onClose} />
+        </motion.div>
+
+        <AnimatePresence>
+          {showLyricsColumn && (
+            <motion.div
+              key="lyrics-column"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
+              className="flex-1 h-full min-h-0 pl-2 pr-6 flex flex-col relative"
+            >
+              <div className="absolute top-[6px] left-2 right-[128px] z-30 pointer-events-none flex justify-center">
+                <div className="relative inline-flex">
+                  <BetaVisualsWarning docked={showProviderIsland} />
+                  {showProviderIsland && <LyricsProviderIsland />}
+                </div>
+              </div>
+
+              <div
+                className="flex-1 min-h-0 relative w-full h-full"
+                style={{
+                  display: hasLyrics ? "flex" : "none",
+                }}
+              >
+                <AnimatePresence initial={false}>
+                  {hasLyrics && (
+                    <motion.div
+                      key={`lyrics-${currentTrackId}-${activeProvider || "default"}`}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0, pointerEvents: "none" }}
+                      transition={{ duration: 0.22, ease: "easeInOut" }}
+                      className="absolute inset-0 flex flex-col"
+                    >
+                      <BraccatoLyricsView
+                        lyrics={braccatoLyrics}
+                        translations={trackTranslations}
+                        romanizations={trackRomanizations}
+                        showTranslation={showTranslation}
+                        showRomanization={showRomanization}
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              <AnimatePresence mode="wait">
+                {!hasLyrics && lyricsLoading ? (
+                  <motion.div
+                    key="skeleton"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute inset-0 flex flex-col items-center justify-center"
+                  >
+                    <div className="flex flex-col gap-5 w-full max-w-[500px]">
+                      {[80, 65, 45, 70, 55, 85, 60, 50, 75, 40, 65, 55].map(
+                        (w, i) => (
+                          <div
+                            key={i}
+                            className="h-5 rounded animate-pulse bg-border-alpha-14"
+                            style={{ width: `${w}%` }}
+                          />
+                        ),
+                      )}
+                    </div>
+                  </motion.div>
+                ) : null}
+              </AnimatePresence>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       <button

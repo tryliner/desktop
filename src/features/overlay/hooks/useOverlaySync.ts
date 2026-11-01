@@ -10,6 +10,7 @@ import { useCoverSrc } from "@/features/covers";
 import { getAuthSession } from "@/shared/api";
 import { useAuthStore } from "@/features/auth/store/authStore";
 import { showToast } from "@/shared/ui/Toast";
+import { useLyricsStore } from "@/features/lyrics";
 import type { OverlayAction, OverlayStatePayload } from "../contracts";
 import { useOverlaySettingsStore } from "../store/overlaySettingsStore";
 
@@ -32,6 +33,8 @@ export function useOverlaySync() {
   const durationMs = usePlayerStore((s) => s.durationMs);
   const volume = usePlayerStore((s) => s.volume);
   const playbackRate = usePlayerStore((s) => s.playbackRate);
+  const syncedLines = useLyricsStore((s) => s.syncedLines);
+  const currentLyricsTrackId = useLyricsStore((s) => s.currentLyricsTrackId);
   const effectiveCover = useCoverSrc(currentTrack?.coverUrl);
   const isLiked = useIsTrackLiked(currentTrack?.id);
   const likeMutation = useLikeTrack();
@@ -210,6 +213,19 @@ export function useOverlaySync() {
     const positionAt = Date.now();
     const rate = playbackRate > 0 ? playbackRate : 1;
 
+    const hasLyrics =
+      Boolean(currentTrack) &&
+      currentLyricsTrackId === currentTrack?.id &&
+      Array.isArray(syncedLines) &&
+      syncedLines.length > 0;
+
+    const lyricsPayload = hasLyrics
+      ? syncedLines.map((l) => ({
+          time: l.timeMs,
+          text: l.text,
+        }))
+      : undefined;
+
     const payload: OverlayStatePayload = {
       status,
       track: currentTrack
@@ -232,6 +248,7 @@ export function useOverlaySync() {
       durationMs,
       volume,
       isLiked,
+      lyrics: lyricsPayload,
     };
 
     sentPositionRef.current = {
@@ -251,5 +268,7 @@ export function useOverlaySync() {
     effectiveCover,
     isLiked,
     seekTick,
+    syncedLines,
+    currentLyricsTrackId,
   ]);
 }

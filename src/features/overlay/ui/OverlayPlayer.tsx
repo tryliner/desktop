@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { motion } from "framer-motion";
 import { SkipNext, SkipPrevious } from "@solar-icons/react";
 import {
@@ -13,6 +13,90 @@ import { useDisableButtonFocus } from "@/features/navigation/hooks/useDisableBut
 import type { OverlayAction, OverlayStatePayload } from "../contracts";
 import { useShortcutsStore, matchesShortcut } from "@/features/shortcuts";
 import { isLocalTrackId } from "@/shared/media/local/localTrackIds";
+
+export type OverlayDisplayMode = "track_info" | "lyrics" | "visualizer";
+
+function MiniOverlayVisualizer({
+  isPlaying,
+  volume,
+}: {
+  isPlaying: boolean;
+  volume: number;
+}) {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    let animId: number;
+    const barCount = 14;
+    const heights = new Array(barCount).fill(2);
+
+    const render = (time: number) => {
+      const width = canvas.width;
+      const height = canvas.height;
+      ctx.clearRect(0, 0, width, height);
+
+      const effectiveVolume = Math.max(0.35, Math.min(1, volume));
+      const gap = 3;
+      const totalGaps = (barCount - 1) * gap;
+      const barWidth = Math.max(2, (width - totalGaps) / barCount);
+
+      for (let i = 0; i < barCount; i++) {
+        let targetHeight = 2;
+        if (isPlaying) {
+          const t = time * 0.005;
+          const wave1 = Math.sin(t * 1.8 + i * 0.7);
+          const wave2 = Math.cos(t * 2.5 - i * 0.5);
+          const wave3 = Math.sin(t * 3.6 + i * 1.2);
+          const combined = (wave1 + wave2 * 0.7 + wave3 * 0.5 + 2.2) / 4.4;
+          const centerBoost = 1 - Math.abs((i - 6) / barCount) * 0.35;
+          targetHeight = Math.max(
+            2,
+            Math.min(height - 2, combined * height * effectiveVolume * centerBoost),
+          );
+        }
+
+        heights[i] += (targetHeight - heights[i]) * 0.3;
+        const barH = heights[i];
+        const x = i * (barWidth + gap);
+        const y = height - barH;
+
+        const gradient = ctx.createLinearGradient(0, height, 0, 0);
+        gradient.addColorStop(0, "rgba(255, 255, 255, 0.45)");
+        gradient.addColorStop(1, "rgba(255, 255, 255, 0.95)");
+
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        if (typeof ctx.roundRect === "function") {
+          ctx.roundRect(x, y, barWidth, barH, 2);
+        } else {
+          ctx.rect(x, y, barWidth, barH);
+        }
+        ctx.fill();
+      }
+
+      animId = requestAnimationFrame(render);
+    };
+
+    animId = requestAnimationFrame(render);
+    return () => cancelAnimationFrame(animId);
+  }, [isPlaying, volume]);
+
+  return (
+    <div className="flex items-center h-full w-full py-1">
+      <canvas
+        ref={canvasRef}
+        width={130}
+        height={22}
+        className="h-[22px] w-[130px] select-none"
+      />
+    </div>
+  );
+}
 
 function sampledPositionMs({
   status,
@@ -52,6 +136,43 @@ export function OverlayPlayer() {
   const [isShown, setIsShown] = useState(
     () => !window.linerElectron?.onOverlayVisibility,
   );
+  const [displayMode, setDisplayMode] = useState<OverlayDisplayMode>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("liner_overlay_display_mode");
+        if (
+          saved === "track_info" ||
+          saved === "lyrics" ||
+          saved === "visualizer"
+        ) {
+          return saved;
+        }
+      } catch {}
+    }
+    return "track_info";
+  });
+
+  const handleArtworkDoubleClick = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDisplayMode((prev) => {
+      const next: OverlayDisplayMode =
+        prev === "track_info"
+          ? "lyrics"
+          : prev === "lyrics"
+            ? "visualizer"
+            : "track_info";
+      try {
+        localStorage.setItem("liner_overlay_display_mode", next);
+      } catch {}
+      return next;
+    });
+  }, []);
+
+  useEffect(() => {
+    const targetWidth = displayMode === "lyrics" ? 600 : 320;
+    window.linerElectron?.setOverlayWidth?.(targetWidth);
+  }, [displayMode]);
 
   const anchorPosRef = useRef(state.positionMs);
   const anchorTimeRef = useRef(performance.now());
@@ -187,6 +308,20 @@ export function OverlayPlayer() {
   const currentPosMs = interpolatedPosMs;
   const progressRatio = Math.min(1, Math.max(0, currentPosMs / durationMs));
 
+  const currentLine = useMemo(() => {
+    const lines = state.lyrics;
+    if (!lines || lines.length === 0) return null;
+    let found = lines[0];
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i].time <= currentPosMs) {
+        found = lines[i];
+      } else {
+        break;
+      }
+    }
+    return found;
+  }, [state.lyrics, currentPosMs]);
+
   // Keyboard Shortcuts (Miniplayer mode)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -304,7 +439,12 @@ export function OverlayPlayer() {
             onMouseEnter={() => setIsInfoHovered(true)}
             onMouseLeave={() => setIsInfoHovered(false)}
           >
-            <div className="relative h-[32px] w-[32px] shrink-0 overflow-hidden rounded-[12px] bg-[#16161a]">
+            <div
+              className="relative h-[32px] w-[32px] shrink-0 overflow-hidden rounded-[12px] bg-[#16161a] cursor-pointer group/artwork ring-0 hover:ring-1 hover:ring-white/40 transition-all select-none"
+              style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
+              onDoubleClick={handleArtworkDoubleClick}
+              title="Double-click to cycle: Info → Lyrics → Visualizer"
+            >
               {state.track?.coverUrl || state.track?.cover ? (
                 <CoverImage
                   key={state.track.coverUrl || state.track.cover}
@@ -324,20 +464,50 @@ export function OverlayPlayer() {
               )}
             </div>
 
-            <div className="flex min-w-0 flex-1 flex-col justify-center overflow-hidden">
-              <ScrollableText
-                text={state.track?.title || "No track playing"}
-                isParentHovered={isInfoHovered}
-                className="text-[13px] font-normal leading-[16px] text-white tracking-tight"
-                style={{ fontFamily: "var(--font-inter), sans-serif" }}
-              />
-              <ScrollableText
-                text={state.track?.artist || ""}
-                isParentHovered={isInfoHovered}
-                className="mt-[1px] text-[11px] font-light leading-[14px] text-white/50"
-                style={{ fontFamily: "var(--font-inter), sans-serif" }}
-              />
-            </div>
+            {displayMode === "lyrics" ? (
+              <div className="flex min-w-0 flex-1 flex-col justify-center overflow-hidden pr-2">
+                <ScrollableText
+                  key={currentLine?.text || "no-lyric"}
+                  text={
+                    currentLine?.text ||
+                    (state.track?.title
+                      ? `♪ ${state.track.title}`
+                      : "No lyrics available")
+                  }
+                  isParentHovered={isInfoHovered}
+                  className="text-[13px] font-medium leading-[17px] text-white/95 select-none tracking-tight animate-fadeIn"
+                  style={{ fontFamily: "var(--font-inter), sans-serif" }}
+                />
+                <ScrollableText
+                  text={
+                    state.track?.artist ||
+                    (currentLine?.text ? state.track?.title || "" : "Lyrics")
+                  }
+                  isParentHovered={isInfoHovered}
+                  className="text-[11px] text-white/50 select-none leading-[14px] mt-[1px]"
+                  style={{ fontFamily: "var(--font-inter), sans-serif" }}
+                />
+              </div>
+            ) : displayMode === "visualizer" ? (
+              <div className="flex min-w-0 flex-1 items-center overflow-hidden">
+                <MiniOverlayVisualizer isPlaying={isPlaying} volume={state.volume} />
+              </div>
+            ) : (
+              <div className="flex min-w-0 flex-1 flex-col justify-center overflow-hidden">
+                <ScrollableText
+                  text={state.track?.title || "No track playing"}
+                  isParentHovered={isInfoHovered}
+                  className="text-[13px] font-normal leading-[16px] text-white tracking-tight"
+                  style={{ fontFamily: "var(--font-inter), sans-serif" }}
+                />
+                <ScrollableText
+                  text={state.track?.artist || ""}
+                  isParentHovered={isInfoHovered}
+                  className="mt-[1px] text-[11px] font-light leading-[14px] text-white/50"
+                  style={{ fontFamily: "var(--font-inter), sans-serif" }}
+                />
+              </div>
+            )}
           </div>
 
           {/* Right: Like Button + Playback Controls (Previous, Play/Pause, Next) */}

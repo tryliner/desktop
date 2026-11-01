@@ -406,3 +406,81 @@ describe("PlayerRuntime audio caching", () => {
     }
   }, 15_000);
 });
+
+describe("PlayerRuntime — crossfade", () => {
+  const getAudio = () =>
+    (playerRuntime as unknown as { audio: HTMLAudioElement }).audio;
+
+  beforeEach(() => {
+    usePlayerStore.setState({
+      status: "playing",
+      crossfadeMs: 3000,
+      volume: 1,
+      currentTrack: track,
+      error: null,
+    });
+    (playerRuntime as any).currentTrackId = track.id;
+    (playerRuntime as any).crossfadeArmed = false;
+    const audio = getAudio();
+    Object.defineProperty(audio, "paused", {
+      value: false,
+      configurable: true,
+    });
+    Object.defineProperty(audio, "duration", {
+      value: 100,
+      configurable: true,
+    });
+    Object.defineProperty(audio, "currentTime", {
+      value: 98,
+      configurable: true,
+    });
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    const audio = getAudio();
+    Reflect.deleteProperty(audio, "paused");
+    Reflect.deleteProperty(audio, "duration");
+    Reflect.deleteProperty(audio, "currentTime");
+  });
+
+  it("fades out over the remaining time once inside the crossfade window", () => {
+    const fadeSpy = vi
+      .spyOn(PlayerRuntime.prototype as any, "fadeVolume")
+      .mockImplementation(() => {});
+    const audio = getAudio();
+
+    audio.dispatchEvent(new Event("timeupdate"));
+    expect(fadeSpy).toHaveBeenCalledWith(0, 2000);
+
+    audio.dispatchEvent(new Event("timeupdate"));
+    expect(fadeSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it("leaves playback alone when crossfade is off", () => {
+    usePlayerStore.setState({ crossfadeMs: 0 });
+    const fadeSpy = vi
+      .spyOn(PlayerRuntime.prototype as any, "fadeVolume")
+      .mockImplementation(() => {});
+
+    getAudio().dispatchEvent(new Event("timeupdate"));
+    expect(fadeSpy).not.toHaveBeenCalled();
+  });
+
+  it("restores the volume when seeking back before the crossfade window", () => {
+    const fadeSpy = vi
+      .spyOn(PlayerRuntime.prototype as any, "fadeVolume")
+      .mockImplementation(() => {});
+    const audio = getAudio();
+
+    audio.dispatchEvent(new Event("timeupdate"));
+    Object.defineProperty(audio, "currentTime", {
+      value: 50,
+      configurable: true,
+    });
+    audio.dispatchEvent(new Event("seeked"));
+
+    expect((playerRuntime as any).crossfadeArmed).toBe(false);
+    expect(fadeSpy).toHaveBeenLastCalledWith(1, 180);
+  });
+});

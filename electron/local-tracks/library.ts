@@ -95,17 +95,30 @@ export class LocalTrackLibrary {
             force: true,
           });
         }
+        if (record.lrcFile) {
+          await fsp.rm(this.filePath("lyrics", record.lrcFile), {
+            force: true,
+          });
+        }
       }
     });
   }
 
-  async locate(kind: "audio" | "cover", id: string) {
+  async locate(kind: "audio" | "cover" | "lyrics", id: string) {
     if (!ID_PATTERN.test(id)) return null;
     const record = (await this.list()).find((entry) => entry.id === id);
-    const file = kind === "audio" ? record?.audioFile : record?.coverFile;
+    const file =
+      kind === "audio"
+        ? record?.audioFile
+        : kind === "cover"
+          ? record?.coverFile
+          : record?.lrcFile;
     if (!record || !file) return null;
     return {
-      path: this.filePath(kind === "audio" ? "audio" : "covers", file),
+      path: this.filePath(
+        kind === "audio" ? "audio" : kind === "cover" ? "covers" : "lyrics",
+        file,
+      ),
       record,
     };
   }

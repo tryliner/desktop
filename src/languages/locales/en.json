@@ -51,6 +51,7 @@
       "home": "Home",
       "search": "Search",
       "library": "Library",
+      "stats": "Stats",
       "settings": "Settings"
     },
     "minimize": "Minimize",
@@ -209,7 +210,9 @@
     "popularArtists": "Trending Artists",
     "popularPlaylists": "Popular Playlists",
     "dailyMixes": "Your Mixes",
-    "dailyMixesSubtitle": "Fresh playlists curated around your favorite artists and genres"
+    "dailyMixesSubtitle": "Fresh playlists curated around your favorite artists and genres",
+    "mysteryDice": "Mystery Dice",
+    "rollingDice": "Rolling Dice..."
   },
   "library": {
     "title": "Library",
@@ -260,8 +263,31 @@
       "import_failed_one": "Couldn't add {count} file",
       "import_failed_other": "Couldn't add {count} files",
       "unsupported": "These files aren't supported audio",
-      "remove": "Remove from device"
+      "remove": "Remove from device",
+      "find_duplicates": "Find duplicates",
+      "duplicates_description": "{count} duplicate copies can be removed. The newest copy of each song is kept.",
+      "duplicates_empty": "No duplicates found",
+      "duplicates_copies_one": "{count} copy",
+      "duplicates_copies_other": "{count} copies",
+      "duplicates_remove_one": "Remove {count} copy",
+      "duplicates_remove_other": "Remove {count} copies",
+      "duplicates_removed_one": "Removed {count} duplicate",
+      "duplicates_removed_other": "Removed {count} duplicates"
     }
+  },
+  "stats": {
+    "title": "Listening Stats",
+    "subtitle": "Time you've spent listening in Liner, stored only on this device.",
+    "total_time": "Listening time",
+    "total_plays": "Songs played",
+    "unique_tracks": "Songs tracked",
+    "top_tracks": "Most played",
+    "empty": "Nothing here yet",
+    "empty_hint": "Play a song for at least 30 seconds and it will show up here.",
+    "clear": "Clear stats",
+    "clear_confirm": "Clear all listening statistics? This cannot be undone.",
+    "plays_one": "{count} play",
+    "plays_other": "{count} plays"
   },
   "login": {
     "welcome_back": "Welcome back",
@@ -570,6 +596,7 @@
       "overlay": "Overlay",
       "discord": "Discord RPC",
       "youtube": "YouTube",
+      "listenbrainz": "ListenBrainz",
       "privacy": "Privacy"
     },
     "playback": {
@@ -681,6 +708,22 @@
       "sign_in": "Sign in",
       "signed_out_title": "Not signed in",
       "signed_out_description": "Sign in to keep YouTube playback working"
+    },
+    "listenbrainz": {
+      "title": "Scrobble to ListenBrainz",
+      "description": "Submit your listening history to ListenBrainz. One listen is sent after half of a track, or 4 minutes, has played.",
+      "account_title": "ListenBrainz account",
+      "account_description": "Paste your user token from listenbrainz.org/profile to connect. The token is stored only on this device.",
+      "connected_as": "Connected as {user}",
+      "token_placeholder": "User token",
+      "connect": "Connect",
+      "reconnect": "Reconnect",
+      "connecting": "Checking...",
+      "disconnect": "Disconnect",
+      "token_required": "Paste your ListenBrainz user token first",
+      "invalid_token": "That token is not valid",
+      "connected_toast": "Connected to ListenBrainz as {user}",
+      "disconnected_toast": "Disconnected from ListenBrainz"
     },
     "discord": {
       "description": "Show what you're listening to on Discord with album art, artist badge and progress bar.",
@@ -824,6 +867,19 @@
       "cleared_title": "Storage Cleared",
       "cleared_subtitle": "Your cache has been swept clean. New media will stream and cache automatically.",
       "done_button": "Done",
+      "backup_title": "Backup & Restore",
+      "backup_desc": "Save your settings to a JSON file or restore them on another computer. Tokens and account sessions are never included.",
+      "backup_export": "Export backup",
+      "backup_import": "Restore backup",
+      "backup_working": "Working...",
+      "backup_exported": "Backup exported",
+      "backup_imported": "Backup restored. Reloading...",
+      "backup_failed": "Could not export the backup",
+      "backup_invalid": "This file is not a valid Liner backup",
+      "backup_restore_confirm": "Restore this backup? It will replace your current settings. The app will reload.",
+      "portable_on": "Portable mode is active. Data is stored next to the app.",
+      "portable_off": "Portable mode is off. Data is stored in your system user folder.",
+      "data_path": "Data folder: {path}",
       "categories": {
         "covers": "Cover Artwork",
         "audio": "Audio Tracks",
@@ -863,6 +919,22 @@
       "download_current_song": {
         "title": "Download current song",
         "description": "Download the currently playing track as an MP3 file."
+      },
+      "normalizer": {
+        "title": "Loudness Normalization",
+        "description": "Equalize track volume using EBU R128 dynamic range compression."
+      },
+      "crossfeed": {
+        "title": "Spatial Audio (Dolby Atmos 3D)",
+        "description": "Simulate 3D immersive surround soundstage with height elevation, out-of-head acoustics, and Dolby Atmos cinema dimension on headphones."
+      },
+      "crossfade": {
+        "title": "Crossfade",
+        "description": "Fade the current track out and the next one in when a song ends."
+      },
+      "visualizer": {
+        "title": "Audio Spectrum Visualizer",
+        "description": "Display dynamic 60/120fps audio frequency spectrum visualizer in full player."
       }
     },
     "profile": {

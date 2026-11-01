@@ -19,3 +19,7 @@ export function localTrackAudioUrl(trackId: string): string {
 export function localTrackCoverUrl(fileId: string): string {
   return `liner-local://cover/${fileId}`;
 }
+
+export function localTrackLyricsUrl(trackId: string): string {
+  return `liner-local://lyrics/${localFileId(trackId)}`;
+}

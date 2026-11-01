@@ -13,6 +13,9 @@ import {
   User2Fill,
   AlbumFill,
   PlaylistFill,
+  YoutubeFill,
+  CloudFill,
+  DownLine,
 } from "@mingcute/react";
 import {
   useSearchTracks,
@@ -26,6 +29,8 @@ import SearchResultsList from "./SearchResultsList";
 import SearchHistoryList from "./SearchHistoryList";
 import { useSearchHistoryStore } from "../store/searchHistoryStore";
 import { useTranslation } from "@/languages";
+import { DropdownMenu } from "@/shared/ui";
+import type { SearchSource } from "@/shared/contracts";
 
 export interface SearchModalProps {
   isOpen: boolean;
@@ -55,6 +60,25 @@ export function SearchModal({
 
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<SearchFilterKey>("all");
+  const [searchSource, setSearchSource] = useState<SearchSource>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("liner_search_source_v1");
+        if (saved === "youtube" || saved === "soundcloud") {
+          return saved;
+        }
+      } catch {}
+    }
+    return "youtube";
+  });
+
+  const handleSelectSource = useCallback((source: SearchSource) => {
+    setSearchSource(source);
+    try {
+      localStorage.setItem("liner_search_source_v1", source);
+    } catch {}
+  }, []);
+
   const [searchScrollMask, setSearchScrollMask] = useState(
     "linear-gradient(to bottom, black 0%, black 100%)",
   );
@@ -113,56 +137,66 @@ export function SearchModal({
     items: allResults,
     loading: allLoading,
     hasLoaded: allHasLoaded,
+    error: allError,
     runNow: runAllSearchNow,
     partialWarning,
   } = useSearchAll(searchQuery, {
     enabled: isOpen && isAllSearchFilter,
     limit: 20,
     debounceMs: 320,
+    source: searchSource,
   });
 
   const {
     tracks: trackResults,
     loading: trackLoading,
     hasLoaded: trackHasLoaded,
+    error: trackError,
     runNow: runTrackSearchNow,
   } = useSearchTracks(searchQuery, {
     enabled: isOpen && isTrackSearchFilter,
     limit: 20,
     debounceMs: 320,
+    source: searchSource,
   });
 
   const {
     artists: artistResults,
     loading: artistLoading,
     hasLoaded: artistHasLoaded,
+    error: artistError,
     runNow: runArtistSearchNow,
   } = useSearchArtists(searchQuery, {
     enabled: isOpen && isArtistSearchFilter,
     limit: 20,
     debounceMs: 320,
+    source: searchSource,
   });
 
   const {
     albums: albumResults,
     loading: albumLoading,
     hasLoaded: albumHasLoaded,
+    error: albumError,
     runNow: runAlbumSearchNow,
   } = useSearchAlbums(searchQuery, {
     enabled: isOpen && isAlbumSearchFilter,
     limit: 20,
     debounceMs: 320,
+    source: searchSource,
   });
 
   const {
     playlists: playlistResults,
     loading: playlistLoading,
     hasLoaded: playlistHasLoaded,
+    error: playlistError,
     runNow: runPlaylistSearchNow,
   } = useSearchPlaylists(searchQuery, {
     enabled: isOpen && isPlaylistSearchFilter,
     limit: 20,
     debounceMs: 320,
+    source: searchSource,
   });
 
   const searchResults = useMemo(() => {
@@ -290,10 +324,23 @@ export function SearchModal({
           ? albumHasLoaded
           : playlistHasLoaded;
 
+  const activeError = isAllSearchFilter
+    ? allError
+    : isTrackSearchFilter
+      ? trackError
+      : isArtistSearchFilter
+        ? artistError
+        : isAlbumSearchFilter
+          ? albumError
+          : playlistError;
+
+  const visibleFilterKeys = filterKeys;
+
   const isSearchEmpty =
     searchQuery.trim().length >= 2 &&
     !searchLoading &&
     searchHasLoaded &&
+    !activeError &&
     searchResults.length === 0;
 
   const runSearchNow = () => {
@@ -451,6 +498,47 @@ export function SearchModal({
               </AnimatePresence>
             </span>
 
+            {/* Search Source Selector */}
+            <div style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}>
+              <DropdownMenu
+                trigger={
+                  <button
+                    type="button"
+                    title={`Source: ${searchSource === "youtube" ? "YouTube" : "SoundCloud"}. Click to switch.`}
+                    className="flex items-center gap-1.5 h-[30px] px-2.5 rounded-lg bg-black/5 dark:bg-white/[0.08] hover:bg-black/10 dark:hover:bg-white/[0.14] text-text-primary text-xs font-medium transition-all border border-black/5 dark:border-white/10 cursor-pointer shrink-0 select-none active:scale-95"
+                  >
+                    {searchSource === "youtube" ? (
+                      <YoutubeFill size={15} className="text-red-500 shrink-0" />
+                    ) : (
+                      <CloudFill size={15} className="text-amber-500 shrink-0" />
+                    )}
+                    <span className="hidden sm:inline">
+                      {searchSource === "youtube" ? "YouTube" : "SoundCloud"}
+                    </span>
+                    <DownLine size={12} className="text-text-tertiary" />
+                  </button>
+                }
+                items={[
+                  {
+                    id: "youtube",
+                    label: "YouTube",
+                    icon: <YoutubeFill size={16} className="text-red-500" />,
+                    active: searchSource === "youtube",
+                    onClick: () => handleSelectSource("youtube"),
+                  },
+                  {
+                    id: "soundcloud",
+                    label: "SoundCloud",
+                    icon: <CloudFill size={16} className="text-amber-500" />,
+                    active: searchSource === "soundcloud",
+                    onClick: () => handleSelectSource("soundcloud"),
+                  },
+                ]}
+                side="bottom"
+                align="start"
+              />
+            </div>
+
             <input
               ref={searchInputRef}
               type="text"
@@ -507,7 +595,7 @@ export function SearchModal({
                 className="w-[min(660px,calc(100vw-90px))] mt-[8px] max-h-[500px] h-[500px] rounded-[8px] bg-bg-panel/98 backdrop-blur-2xl flex flex-col overflow-hidden"
               >
                 <div className="flex items-center gap-[6px] px-[14px] pt-[12px] pb-[6px] shrink-0 overflow-x-auto">
-                  {filterKeys.map((key) => {
+                  {visibleFilterKeys.map((key) => {
                     const label = filterLabels[key];
                     const isActive = activeFilter === key;
                     let Icon = GridFill;
@@ -555,7 +643,23 @@ export function SearchModal({
 
                 <div className="relative flex-1 min-h-0 overflow-hidden">
                   <AnimatePresence mode="wait">
-                    {isSearchEmpty ? (
+                    {activeError && !searchLoading && searchResults.length === 0 ? (
+                      <motion.div
+                        key="search-modal-error"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.08 }}
+                        className="flex h-full flex-col items-center justify-center gap-[6px] px-[20px] text-center"
+                      >
+                        <p className="m-0 text-[14px] text-text-primary font-medium">
+                          Search request failed
+                        </p>
+                        <p className="m-0 text-[12px] text-text-tertiary max-w-[360px] line-clamp-2">
+                          {activeError.message || "Could not reach search provider. Please try again."}
+                        </p>
+                      </motion.div>
+                    ) : isSearchEmpty ? (
                       <motion.div
                         key="search-modal-empty"
                         initial={{ opacity: 0 }}

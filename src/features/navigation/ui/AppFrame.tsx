@@ -47,7 +47,12 @@ import {
   playerEngine,
   MiniPlayer,
   usePlayerStore,
+  useAbLoop,
+  useTraySync,
 } from "@/features/player";
+import { useLocalFileOpen } from "@/features/library";
+import { useListeningStats } from "@/features/stats";
+import { useListenBrainzSync } from "@/features/listenbrainz";
 import SearchResultsList from "@/features/search/ui/SearchResultsList";
 import { SearchHistoryList, useSearchHistoryStore } from "@/features/search";
 import { useTranslation } from "@/languages";
@@ -67,6 +72,8 @@ import {
   SettingsModal,
   useHasPageBackdrop,
   useClassicSurfaces,
+  useCustomizationStore,
+  getBlockStyle,
 } from "@/features/settings";
 import { UpdateModal, UpdateToastBridge } from "@/features/updater";
 import { YoutubeSignInNotice } from "@/features/youtube-auth";
@@ -297,6 +304,11 @@ export default function AppFrame({ children }: AppFrameProps) {
   ]);
 
   useDisableButtonFocus();
+  useTraySync();
+  useLocalFileOpen();
+  useListeningStats();
+  useListenBrainzSync();
+  useAbLoop();
 
   useGlobalShortcuts({
     searchOpen,
@@ -712,18 +724,62 @@ export default function AppFrame({ children }: AppFrameProps) {
   const hasPageBackdrop = useHasPageBackdrop();
   const classicSurfaces = useClassicSurfaces();
 
+  const wallpaperUrl = useCustomizationStore((s) => s.wallpaperUrl);
+  const wallpaperBlur = useCustomizationStore((s) => s.wallpaperBlur);
+  const wallpaperDim = useCustomizationStore((s) => s.wallpaperDim);
+  const glassmorphismEnabled = useCustomizationStore((s) => s.glassmorphismEnabled);
+  const sidebarBlock = useCustomizationStore((s) => s.sidebarBlock);
+  const contentBlock = useCustomizationStore((s) => s.contentBlock);
+  const playerBlock = useCustomizationStore((s) => s.playerBlock);
+
+  const hasCustomBg = Boolean(wallpaperUrl);
+  const sidebarStyle = useMemo(
+    () => getBlockStyle(sidebarBlock, Boolean(isDark), hasCustomBg, glassmorphismEnabled),
+    [sidebarBlock, isDark, hasCustomBg, glassmorphismEnabled],
+  );
+  const contentStyle = useMemo(
+    () => getBlockStyle(contentBlock, Boolean(isDark), hasCustomBg, glassmorphismEnabled),
+    [contentBlock, isDark, hasCustomBg, glassmorphismEnabled],
+  );
+  const playerStyle = useMemo(
+    () => getBlockStyle(playerBlock, Boolean(isDark), hasCustomBg, glassmorphismEnabled),
+    [playerBlock, isDark, hasCustomBg, glassmorphismEnabled],
+  );
+
   return (
     <div
       ref={appFrameRef}
       className={`app-shell-enter relative flex flex-col h-full w-full overflow-hidden p-1.5 gap-1.5 ${
-        isFullscreenPlayer ? "bg-black" : "bg-bg-canvas"
+        isFullscreenPlayer ? "bg-black" : hasCustomBg ? "bg-transparent" : "bg-bg-canvas"
       } ${isEdgeToEdge ? "rounded-none" : "rounded-[12px]"}`}
       onScroll={(e) => {
         if (e.currentTarget.scrollLeft !== 0) e.currentTarget.scrollLeft = 0;
         if (e.currentTarget.scrollTop !== 0) e.currentTarget.scrollTop = 0;
       }}
     >
-      {classicSurfaces ? (
+      {wallpaperUrl ? (
+        <div
+          className="pointer-events-none absolute inset-0 z-0 overflow-hidden select-none"
+          aria-hidden="true"
+        >
+          <img
+            src={wallpaperUrl}
+            alt=""
+            className="w-full h-full object-cover select-none will-change-transform"
+            style={{
+              filter: wallpaperBlur > 0 ? `blur(${wallpaperBlur}px)` : undefined,
+              transform: wallpaperBlur > 0 ? "scale(1.05)" : undefined,
+              transition: "filter 0.25s ease, transform 0.25s ease",
+            }}
+          />
+          {wallpaperDim > 0 && (
+            <div
+              className="absolute inset-0 bg-black transition-opacity duration-200"
+              style={{ opacity: wallpaperDim / 100 }}
+            />
+          )}
+        </div>
+      ) : classicSurfaces ? (
         isDark ? (
           <AmbientTopGlow />
         ) : null
@@ -752,19 +808,22 @@ export default function AppFrame({ children }: AppFrameProps) {
       <div className="flex-1 min-h-0 flex flex-row w-full gap-1.5 overflow-hidden relative z-10">
         <aside
           ref={sidebarRef}
-          className="w-[58px] mt-[56px] shrink-0 z-[45] relative flex flex-col"
+          style={sidebarStyle}
+          className="w-[58px] mt-[56px] shrink-0 z-[45] relative flex flex-col rounded-xl overflow-hidden border border-transparent transition-all duration-200"
         >
           <Sidebar
             searchOpen={searchOpen}
             onSearchToggle={handleSearchToggle}
+            className={hasCustomBg || glassmorphismEnabled ? "bg-transparent backdrop-blur-none" : undefined}
           />
         </aside>
 
         <div className="flex-1 flex flex-col min-w-0 h-full relative gap-1.5 overflow-hidden">
           <main
+            style={contentStyle}
             className={cn(
               "flex-1 min-w-0 flex flex-col relative h-full overflow-hidden [--page-inset-top:56px]",
-              "rounded-xl",
+              "rounded-xl border border-transparent transition-all duration-200",
               shouldShowMiniPlayer && hasPageBackdrop
                 ? "[--page-inset-bottom:64px] [--floating-inset-bottom:70px]"
                 : "[--page-inset-bottom:0px] [--floating-inset-bottom:0px]",
@@ -821,10 +880,14 @@ export default function AppFrame({ children }: AppFrameProps) {
               ref={miniPlayerContainerRef}
               // Above the right drawer (z-50) so the player's volume/speed/queue
               // popups, which live in this stacking context, aren't hidden by it.
-              className={`relative z-[55] w-full shrink-0 ${hasPageBackdrop ? "-mt-[70px]" : ""}`}
+              // The block surface style is passed into MiniPlayer instead of
+              // being applied here: a backdrop-filter on this wrapper would clip
+              // the popups that overflow above the 64px bar.
+              className={`relative z-[55] w-full shrink-0 rounded-xl border border-transparent transition-all duration-200 ${hasPageBackdrop ? "-mt-[70px]" : ""}`}
             >
               <MiniPlayer
                 embedded
+                surfaceStyle={playerStyle}
                 onQueueOpenChange={handleQueuePopupToggle}
                 onQueueToggle={handleQueuePopupToggleRequest}
                 onFullscreenOpen={openFullscreenPlayer}

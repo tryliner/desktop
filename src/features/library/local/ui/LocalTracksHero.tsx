@@ -14,6 +14,7 @@ import Button from "@/shared/ui/Button";
 import type { Track } from "@/shared/types";
 import { formatTotalDuration } from "../lib/formatLocalDurations";
 import LocalFilesCover from "./LocalFilesCover";
+import LocalDuplicatesButton from "./LocalDuplicatesButton";
 
 interface LocalTracksHeroProps {
   tracks: Track[];
@@ -89,6 +90,7 @@ export default function LocalTracksHero({
         <>
           {search}
           {sort}
+          <LocalDuplicatesButton />
           <Button
             variant="secondary"
             onClick={onAddFiles}

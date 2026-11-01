@@ -33,6 +33,9 @@ const EMPTY_STATE: PlayerState = {
   isEqEnabled: false,
   eqGains: FLAT_EQ,
   eqCustomPresets: [],
+  isNormalizerEnabled: false,
+  crossfeedMode: "off",
+  crossfadeMs: 3000,
 };
 
 export function usePlayerState(): PlayerState {

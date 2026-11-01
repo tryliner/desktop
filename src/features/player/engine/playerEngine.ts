@@ -35,7 +35,7 @@ import { debouncedStorage } from "@/shared/utils/storage";
 import { showToast } from "@/shared/ui";
 import { createTranslatorSync, getStoredLocale } from "@/languages";
 import type { Track } from "@/shared/types";
-import { isLocalTrackId } from "@/shared/media/local";
+import { isLocalTrackId, localTrackLyricsUrl } from "@/shared/media/local";
 import { loadAmbientScript } from "@/shared/media/ambient";
 import { STREAMS_REFUSED_MESSAGE } from "@/shared/youtube";
 
@@ -845,6 +845,10 @@ class PlayerEngine {
     usePlayerStore.getState().setEqGains(gains);
   }
 
+  public getAnalyserNode(): AnalyserNode | null {
+    return pitchShifter.getAnalyserNode();
+  }
+
   // saves the current curve under a name; same name overwrites, the list is capped
   public saveEqPreset(name: string): void {
     const store = usePlayerStore.getState();
@@ -1498,6 +1502,47 @@ class PlayerEngine {
         stored?.availableProviders || [],
       );
       if (!isProvisionalLyricsCandidate(storedCandidate)) return;
+    }
+
+    // Try local paired .lrc file first
+    try {
+      const lrcUrl = localTrackLyricsUrl(trackId);
+      const res = await fetch(lrcUrl, { signal });
+      if (res.ok) {
+        const content = await res.text();
+        if (content && content.trim().length > 0 && isCurrent()) {
+          const localCandidate: LyricsCandidate = {
+            provider: "local_lrc",
+            contentKind: "line_synced",
+            syncLevel: "line_level",
+            topPriority: true,
+            quality: {
+              total: 100,
+              match: 100,
+              content: 100,
+              sync: 100,
+              source: 100,
+              reasons: ["local_paired_lrc"],
+            },
+            lyrics: {
+              format: "lrc",
+              content,
+            },
+          };
+          this.showLyricsCandidate(trackId, localCandidate, [
+            {
+              provider: "local_lrc",
+              syncLevel: "line_level",
+              quality: 100,
+              candidate: localCandidate,
+            },
+          ]);
+          log("cyan", "lyrics", `loaded local paired .lrc for "${track.title}"`);
+          return;
+        }
+      }
+    } catch {
+      // Fallback to online lyrics search
     }
 
     const hint = lyricsHint(track);

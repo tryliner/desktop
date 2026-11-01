@@ -48,6 +48,28 @@ describe("LocalTrackLibrary", () => {
     expect(await new LocalTrackLibrary(root).list()).toEqual([record]);
   });
 
+  it("detects and imports paired .lrc file when available and removes it on track delete", async () => {
+    const library = new LocalTrackLibrary(root);
+    const audio = await source("test-song.mp3", "audio content");
+    await source("test-song.lrc", "[00:01.00]Line 1\n[00:05.00]Line 2");
+
+    const result = await library.importFiles([audio]);
+    expect(result.added).toHaveLength(1);
+    const [record] = result.added;
+    expect(record.lrcFile).toBeDefined();
+
+    const locatedLyrics = await library.locate("lyrics", record.id);
+    expect(locatedLyrics).not.toBeNull();
+    await expect(
+      fs.readFile(locatedLyrics!.path, "utf8"),
+    ).resolves.toContain("Line 1");
+
+    // Remove track and verify lyrics file is cleaned up
+    await library.remove([record.id]);
+    expect(await library.locate("lyrics", record.id)).toBeNull();
+    await expect(fs.access(locatedLyrics!.path)).rejects.toThrow();
+  });
+
   it("skips the same file twice and rejects files that are not audio", async () => {
     const library = new LocalTrackLibrary(root);
     const first = await source("a.flac", "same bytes");

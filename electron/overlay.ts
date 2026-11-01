@@ -489,7 +489,38 @@ export class OverlayManager {
     return 56;
   }
 
-  private getWindowBounds(width = 320, height?: number) {
+  private currentWidth = 320;
+
+  public setOverlayWidth(width: number) {
+    if (!this.overlayWindow || this.overlayWindow.isDestroyed()) return;
+    const targetWidth = Math.max(280, Math.min(800, width));
+    if (this.currentWidth === targetWidth) return;
+    this.currentWidth = targetWidth;
+
+    const currentBounds = this.overlayWindow.getBounds();
+    const delta = targetWidth - currentBounds.width;
+
+    let newX = currentBounds.x;
+    if (this.position === "top-center") {
+      newX = Math.round(currentBounds.x - delta / 2);
+    } else if (this.position === "top-right") {
+      newX = Math.round(currentBounds.x - delta);
+    }
+
+    const display = screen.getDisplayMatching(currentBounds);
+    const minX = display.workArea.x + 10;
+    const maxX = display.workArea.x + display.workArea.width - targetWidth - 10;
+    newX = Math.max(minX, Math.min(maxX, newX));
+
+    this.overlayWindow.setBounds({
+      x: newX,
+      y: currentBounds.y,
+      width: targetWidth,
+      height: currentBounds.height,
+    });
+  }
+
+  private getWindowBounds(width = this.currentWidth, height?: number) {
     let targetDisplay = screen.getPrimaryDisplay();
     try {
       if (this.overlayWindow && !this.overlayWindow.isDestroyed()) {
@@ -1186,6 +1217,12 @@ export class OverlayManager {
 
     ipcMain.on("overlay:close", () => {
       this.closeOverlay();
+    });
+
+    ipcMain.on("overlay:set-width", (_event, width: number) => {
+      if (typeof width === "number") {
+        this.setOverlayWidth(width);
+      }
     });
 
     ipcMain.on("overlay:pause-shortcuts", (_event, paused: boolean) => {

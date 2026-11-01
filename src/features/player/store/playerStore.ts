@@ -11,6 +11,7 @@ import {
   normalizeEqGains,
   type EqCustomPreset,
 } from "../engine/equalizer";
+import type { CrossfeedMode } from "../engine/dsp";
 
 export { debouncedStorage };
 
@@ -75,6 +76,9 @@ export interface SessionState {
   isEqEnabled: boolean;
   eqGains: number[];
   eqCustomPresets: EqCustomPreset[];
+  isNormalizerEnabled: boolean;
+  crossfeedMode: CrossfeedMode;
+  crossfadeMs: number;
 }
 
 export type PlayerState = TransportState &
@@ -132,6 +136,9 @@ export interface PlayerStore extends PlayerState {
   setIsEqEnabled: (enabled: boolean) => void;
   setEqGains: (gains: number[]) => void;
   setEqCustomPresets: (presets: EqCustomPreset[]) => void;
+  setIsNormalizerEnabled: (enabled: boolean) => void;
+  setCrossfeedMode: (mode: CrossfeedMode) => void;
+  setCrossfadeMs: (ms: number) => void;
   resetSpeedAndPitch: () => void;
   clearQueue: () => void;
   resetPlayback: () => void;
@@ -204,6 +211,9 @@ export const usePlayerStore = create<PlayerStore>()(
       isEqEnabled: false,
       eqGains: FLAT_EQ,
       eqCustomPresets: [],
+      isNormalizerEnabled: false,
+      crossfeedMode: "off",
+      crossfadeMs: 3000,
 
       dispatch: () => {
         // Implementation injected by PlayerEngine
@@ -262,6 +272,14 @@ export const usePlayerStore = create<PlayerStore>()(
         set({ eqGains: normalizeEqGains(eqGains) }),
       setEqCustomPresets: (eqCustomPresets: EqCustomPreset[]) =>
         set({ eqCustomPresets: normalizeEqCustomPresets(eqCustomPresets) }),
+      setIsNormalizerEnabled: (isNormalizerEnabled: boolean) =>
+        set({ isNormalizerEnabled }),
+      setCrossfeedMode: (crossfeedMode: CrossfeedMode) =>
+        set({ crossfeedMode }),
+      setCrossfadeMs: (crossfadeMs: number) =>
+        set({
+          crossfadeMs: Math.max(0, Math.min(15000, Math.round(crossfadeMs))),
+        }),
       resetSpeedAndPitch: () => set({ playbackRate: 1, pitchSemitones: 0 }),
       resetPlayback: () =>
         set({
@@ -368,6 +386,23 @@ export const usePlayerStore = create<PlayerStore>()(
           if (typeof state.isEqEnabled !== "boolean") {
             state.isEqEnabled = false;
           }
+          if (typeof state.isNormalizerEnabled !== "boolean") {
+            state.isNormalizerEnabled = false;
+          }
+          if (
+            typeof state.crossfeedMode !== "string" ||
+            !["off", "subtle", "standard", "wide"].includes(state.crossfeedMode)
+          ) {
+            state.crossfeedMode = "off";
+          }
+          if (
+            typeof state.crossfadeMs !== "number" ||
+            !Number.isFinite(state.crossfadeMs) ||
+            state.crossfadeMs < 0 ||
+            state.crossfadeMs > 15000
+          ) {
+            state.crossfadeMs = 3000;
+          }
           state.eqGains = normalizeEqGains(state.eqGains);
           state.eqCustomPresets = normalizeEqCustomPresets(
             state.eqCustomPresets,
@@ -405,6 +440,9 @@ export const usePlayerStore = create<PlayerStore>()(
         isEqEnabled: state.isEqEnabled,
         eqGains: state.eqGains,
         eqCustomPresets: state.eqCustomPresets,
+        isNormalizerEnabled: state.isNormalizerEnabled,
+        crossfeedMode: state.crossfeedMode,
+        crossfadeMs: state.crossfadeMs,
       }),
     },
   ),

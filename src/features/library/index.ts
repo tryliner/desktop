@@ -29,3 +29,4 @@ export * from "./store/modalStore";
 export * from "./store/importStore";
 
 export { LocalTracksPage, LocalFilesCard, LocalDropZone } from "./local";
+export { useLocalFileOpen } from "./local/hooks/useLocalFileOpen";

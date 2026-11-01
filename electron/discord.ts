@@ -444,7 +444,7 @@ export class DiscordRpcManager {
   private clearActivity(): void {
     if (this.isConnected && this.client?.user) {
       try {
-        void this.client.user.clearActivity();
+        this.client.user.clearActivity().catch(() => {});
       } catch {}
     }
   }
