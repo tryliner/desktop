@@ -10,10 +10,19 @@ export function getTranslationCacheKey(
   trackId: string,
   targetLang: string,
   singableMode = false,
+  provider?: string | null,
 ): string {
-  return singableMode
+  const base = singableMode
     ? `${trackId}:${targetLang}:singable`
     : `${trackId}:${targetLang}`;
+  return provider ? `${base}:${provider}` : base;
+}
+
+export function getRomanizationCacheKey(
+  trackId: string,
+  provider?: string | null,
+): string {
+  return provider ? `${trackId}:${provider}` : trackId;
 }
 
 export interface AiTranslateState {
@@ -47,11 +56,13 @@ export interface AiTranslateState {
   translateTrackLyrics: (
     trackId: string,
     lines: string[],
+    lyricsProvider?: string | null,
   ) => Promise<string[] | null>;
 
   romanizeTrackLyrics: (
     trackId: string,
     lines: string[],
+    lyricsProvider?: string | null,
   ) => Promise<string[] | null>;
 }
 
@@ -89,10 +100,19 @@ export const useAiTranslateStore = create<AiTranslateState>()(
       clearCache: () =>
         set({ translationsByTrackId: {}, romanizationsByTrackId: {} }),
 
-      translateTrackLyrics: async (trackId: string, lines: string[]) => {
+      translateTrackLyrics: async (
+        trackId: string,
+        lines: string[],
+        lyricsProvider?: string | null,
+      ) => {
         if (!trackId || lines.length === 0) return null;
         const { provider, apiKey, targetLang, model, baseUrl, singableMode } = get();
-        const cacheKey = getTranslationCacheKey(trackId, targetLang, singableMode);
+        const cacheKey = getTranslationCacheKey(
+          trackId,
+          targetLang,
+          singableMode,
+          lyricsProvider,
+        );
         const existing = get().translationsByTrackId[cacheKey];
         if (existing && existing.length === lines.length) {
           return existing;
@@ -127,9 +147,14 @@ export const useAiTranslateStore = create<AiTranslateState>()(
         }
       },
 
-      romanizeTrackLyrics: async (trackId: string, lines: string[]) => {
+      romanizeTrackLyrics: async (
+        trackId: string,
+        lines: string[],
+        lyricsProvider?: string | null,
+      ) => {
         if (!trackId || lines.length === 0) return null;
-        const existing = get().romanizationsByTrackId[trackId];
+        const cacheKey = getRomanizationCacheKey(trackId, lyricsProvider);
+        const existing = get().romanizationsByTrackId[cacheKey];
         if (existing && existing.length === lines.length) {
           return existing;
         }
@@ -149,7 +174,7 @@ export const useAiTranslateStore = create<AiTranslateState>()(
             isRomanizing: false,
             romanizationsByTrackId: {
               ...s.romanizationsByTrackId,
-              [trackId]: romanized,
+              [cacheKey]: romanized,
             },
           }));
           return romanized;

@@ -16,7 +16,11 @@ import { useLyricsStore } from "../store/lyricsStore";
 import { useTranslation } from "@/languages";
 import { cn } from "@/shared/lib";
 import { ISLAND_SURFACE, showToast } from "@/shared/ui";
-import { useAiTranslateStore, getTranslationCacheKey } from "@/features/ai-translate";
+import {
+  useAiTranslateStore,
+  getTranslationCacheKey,
+  getRomanizationCacheKey,
+} from "@/features/ai-translate";
 import { usePlayerStore } from "@/features/player/store/playerStore";
 
 function formatOffsetBadge(ms: number): string {
@@ -63,9 +67,19 @@ export function LyricsProviderIsland() {
   const targetLang = useAiTranslateStore((s) => s.targetLang);
   const singableMode = useAiTranslateStore((s) => s.singableMode);
 
-  const cacheKey = currentTrack ? getTranslationCacheKey(currentTrack.id, targetLang, singableMode) : "";
+  const cacheKey = currentTrack
+    ? getTranslationCacheKey(
+        currentTrack.id,
+        targetLang,
+        singableMode,
+        activeProvider,
+      )
+    : "";
+  const romKey = currentTrack
+    ? getRomanizationCacheKey(currentTrack.id, activeProvider)
+    : "";
   const hasTranslation = Boolean(cacheKey && translationsByTrackId[cacheKey]?.length);
-  const hasRomanization = Boolean(currentTrack && romanizationsByTrackId[currentTrack.id]?.length);
+  const hasRomanization = Boolean(romKey && romanizationsByTrackId[romKey]?.length);
   // Romaji/Pinyin only makes sense for CJK lyrics; on an English or Vietnamese
   // track the extra button would just burn requests and render nothing.
   const hasRomanizableLyrics = braccatoLyrics.some((lyric) =>
@@ -88,7 +102,11 @@ export function LyricsProviderIsland() {
     if (!currentTrack || braccatoLyrics.length === 0) return;
     const lines = getLyricsLines();
     if (lines.length === 0) return;
-    const result = await translateTrackLyrics(currentTrack.id, lines);
+    const result = await translateTrackLyrics(
+      currentTrack.id,
+      lines,
+      activeProvider,
+    );
     if (result) {
       useAiTranslateStore.getState().setShowTranslation(true);
     } else {
@@ -108,7 +126,11 @@ export function LyricsProviderIsland() {
     if (!currentTrack || braccatoLyrics.length === 0) return;
     const lines = getLyricsLines();
     if (lines.length === 0) return;
-    const result = await romanizeTrackLyrics(currentTrack.id, lines);
+    const result = await romanizeTrackLyrics(
+      currentTrack.id,
+      lines,
+      activeProvider,
+    );
     if (result) {
       useAiTranslateStore.getState().setShowRomanization(true);
     } else {

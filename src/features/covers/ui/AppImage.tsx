@@ -121,8 +121,10 @@ export default function AppImage({
   const handleError = (e: SyntheticEvent<HTMLImageElement, Event>) => {
     if (fallbackSrc && currentSrc !== fallbackSrc) {
       setCurrentSrc(fallbackSrc);
+      setIsLoaded(isCoverReady(fallbackSrc));
       return;
     }
+    setIsLoaded(false);
     setHasError(true);
     onError?.(e);
   };

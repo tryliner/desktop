@@ -49,6 +49,7 @@ import { noteYoutubeTrouble } from "@/features/connectivity/engine/offlineContro
 
 const MAX_CONSECUTIVE_AUTO_SKIPS = 3;
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+const LYRICS_STREAM_DEADLINE_MS = 30_000;
 
 export { usePlayerStore, type PlayerStatus, type RepeatMode, type PlayerState };
 
@@ -1652,6 +1653,10 @@ class PlayerEngine {
     this.lyricsAbort?.abort();
     const controller = new AbortController();
     this.lyricsAbort = controller;
+    const streamDeadline = setTimeout(
+      () => controller.abort(),
+      LYRICS_STREAM_DEADLINE_MS,
+    );
     let bestCandidate: LyricsCandidate | null = null;
 
     const memoryCached = lyricsCache.get(trackId);
@@ -1897,6 +1902,7 @@ class PlayerEngine {
         });
       }
     } finally {
+      clearTimeout(streamDeadline);
       if (token === this.lyricsLoadToken) {
         useLyricsStore.getState().setLyricsState({ lyricsLoading: false });
       }

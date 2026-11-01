@@ -133,13 +133,57 @@ export class LocalTrackLibrary {
 
   removeAll(): Promise<number> {
     return this.serialized(async () => {
-      const count = (await this.load()).length;
-      await this.save([]);
-      for (const folder of LIBRARY_FOLDERS) {
-        await fsp.rm(this.filePath(folder), { recursive: true, force: true });
+      const records = await this.load();
+      const count = records.length;
+      try {
+        for (const folder of LIBRARY_FOLDERS) {
+          await fsp.rm(this.filePath(folder), { recursive: true, force: true });
+        }
+        await this.save([]);
+        return count;
+      } catch (error) {
+        await this.reconcile();
+        throw error;
       }
-      return count;
     });
+  }
+
+  private async reconcile(): Promise<LocalTrackRecord[]> {
+    const records = await this.load();
+    const surviving: LocalTrackRecord[] = [];
+    for (const record of records) {
+      const audioExists = await fsp
+        .stat(this.filePath("audio", record.audioFile))
+        .then(() => true)
+        .catch(() => false);
+      if (!audioExists) continue;
+
+      let coverFile = record.coverFile;
+      if (coverFile) {
+        const coverExists = await fsp
+          .stat(this.filePath("covers", coverFile))
+          .then(() => true)
+          .catch(() => false);
+        if (!coverExists) coverFile = undefined;
+      }
+
+      let lrcFile = record.lrcFile;
+      if (lrcFile) {
+        const lrcExists = await fsp
+          .stat(this.filePath("lyrics", lrcFile))
+          .then(() => true)
+          .catch(() => false);
+        if (!lrcExists) lrcFile = undefined;
+      }
+
+      surviving.push({
+        ...record,
+        coverFile,
+        lrcFile,
+      });
+    }
+    await this.save(surviving);
+    return surviving;
   }
 
   usage(): Promise<LocalLibraryUsage> {
@@ -177,19 +221,43 @@ export class LocalTrackLibrary {
       const records = await this.load();
       const index = records.findIndex((record) => record.id === id);
       if (index === -1) return false;
+      if (state === "found" && (lyrics === undefined || lyrics === null)) {
+        return false;
+      }
+
+      const target = this.lyricsPath(id);
+      let previousContent: string | null = null;
+      try {
+        previousContent = await fsp.readFile(target, "utf8");
+      } catch {
+        previousContent = null;
+      }
+
       if (state === "found") {
-        if (lyrics === undefined || lyrics === null) return false;
         await fsp.mkdir(this.filePath("lyrics"), { recursive: true });
-        const target = this.lyricsPath(id);
         const temp = `${target}.tmp`;
         await fsp.writeFile(temp, JSON.stringify(lyrics));
         await fsp.rename(temp, target);
       } else {
-        await fsp.rm(this.lyricsPath(id), { force: true });
+        await fsp.rm(target, { force: true });
       }
+
       const next = [...records];
       next[index] = { ...records[index], lyrics: state };
-      await this.save(next);
+      try {
+        await this.save(next);
+      } catch (saveError) {
+        if (previousContent !== null) {
+          try {
+            await fsp.writeFile(target, previousContent, "utf8");
+          } catch {}
+        } else {
+          try {
+            await fsp.rm(target, { force: true });
+          } catch {}
+        }
+        throw saveError;
+      }
       return true;
     });
   }

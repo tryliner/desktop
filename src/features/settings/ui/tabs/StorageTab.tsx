@@ -188,6 +188,17 @@ export function StorageTab({ searchQuery }: { searchQuery?: string }) {
     setClearing(true);
     setClearingProgress(15);
 
+    const getTargetBytes = (data: StorageAnalytics | null) => {
+      if (!data) return 0;
+      if (kind === "cache") {
+        return data.categories
+          .filter((c) => !LIBRARY_CATEGORY_IDS.has(c.id))
+          .reduce((sum, c) => sum + c.bytes, 0);
+      }
+      return data.categories.find((c) => c.id === kind)?.bytes ?? 0;
+    };
+    const beforeBytes = getTargetBytes(analytics) || expected;
+
     try {
       setClearingProgress(40);
       await Promise.all([
@@ -200,9 +211,12 @@ export function StorageTab({ searchQuery }: { searchQuery?: string }) {
       setClearingProgress(100);
       await new Promise((resolve) => setTimeout(resolve, 140));
 
-      await refresh();
+      const updated = await refreshStorageAnalytics(true);
+      setAnalytics(updated);
       setClearing(false);
-      setFreedBytes(expected);
+      const afterBytes = getTargetBytes(updated);
+      const actuallyFreed = Math.max(0, beforeBytes - afterBytes);
+      setFreedBytes(actuallyFreed);
     } catch {
       setClearing(false);
       toast(

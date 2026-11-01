@@ -6,7 +6,11 @@ import {
   translateSongLyrics,
   romanizeSongLyrics,
 } from "./services/aiTranslateService";
-import { useAiTranslateStore, getTranslationCacheKey } from "./store/aiTranslateStore";
+import {
+  useAiTranslateStore,
+  getTranslationCacheKey,
+  getRomanizationCacheKey,
+} from "./store/aiTranslateStore";
 
 function mockGoogleTranslate(dictionary: Record<string, string>) {
   return vi.fn(async (input: RequestInfo | URL) => {
@@ -176,5 +180,19 @@ describe("AI Lyrics Translation Engine", () => {
     const singableKey = getTranslationCacheKey("track-abc", "vi", true);
     expect(standardKey).toBe("track-abc:vi");
     expect(singableKey).toBe("track-abc:vi:singable");
+  });
+
+  it("differentiates cache keys across lyric providers for translation and romanization", () => {
+    const keyDefault = getTranslationCacheKey("track-abc", "vi", false);
+    const keyGenius = getTranslationCacheKey("track-abc", "vi", false, "genius");
+    const keyMusix = getTranslationCacheKey("track-abc", "vi", false, "musixmatch");
+    expect(keyDefault).toBe("track-abc:vi");
+    expect(keyGenius).toBe("track-abc:vi:genius");
+    expect(keyMusix).toBe("track-abc:vi:musixmatch");
+
+    const romDefault = getRomanizationCacheKey("track-abc");
+    const romGenius = getRomanizationCacheKey("track-abc", "genius");
+    expect(romDefault).toBe("track-abc");
+    expect(romGenius).toBe("track-abc:genius");
   });
 });

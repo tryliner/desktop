@@ -21,7 +21,11 @@ import {
   LyricsProviderIsland,
   braccatoThemeCss,
 } from "@/features/lyrics";
-import { useAiTranslateStore, getTranslationCacheKey } from "@/features/ai-translate";
+import {
+  useAiTranslateStore,
+  getTranslationCacheKey,
+  getRomanizationCacheKey,
+} from "@/features/ai-translate";
 import { AnimatePresence, motion } from "framer-motion";
 import { PlayerUiElements } from "./PlayerUiElements";
 import { DownLine } from "@mingcute/react";
@@ -510,13 +514,22 @@ export function FullscreenPlayer({
 
   const trackTranslations = useMemo(() => {
     if (!currentTrackId) return undefined;
-    return translationsByTrackId[getTranslationCacheKey(currentTrackId, targetLang, singableMode)];
-  }, [currentTrackId, targetLang, singableMode, translationsByTrackId]);
+    return translationsByTrackId[
+      getTranslationCacheKey(
+        currentTrackId,
+        targetLang,
+        singableMode,
+        activeProvider,
+      )
+    ];
+  }, [currentTrackId, targetLang, singableMode, activeProvider, translationsByTrackId]);
 
   const trackRomanizations = useMemo(() => {
     if (!currentTrackId) return undefined;
-    return romanizationsByTrackId[currentTrackId];
-  }, [currentTrackId, romanizationsByTrackId]);
+    return romanizationsByTrackId[
+      getRomanizationCacheKey(currentTrackId, activeProvider)
+    ];
+  }, [currentTrackId, activeProvider, romanizationsByTrackId]);
 
   const isInstrumental =
     isMatchingTrack &&

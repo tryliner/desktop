@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { LocalTrackLibrary } from "./library";
 
 describe("LocalTrackLibrary", () => {
@@ -160,6 +160,66 @@ describe("LocalTrackLibrary", () => {
     await expect(fs.access(path.join(root, "audio"))).rejects.toThrow();
     await expect(fs.access(path.join(root, "lyrics"))).rejects.toThrow();
     expect(await library.usage()).toEqual({ count: 0, bytes: 0 });
+  });
+
+  it("reconciles the index and preserves remaining folders when folder removal fails", async () => {
+    const library = new LocalTrackLibrary(root);
+    const { added } = await library.importFiles([
+      await source("One - A.mp3", "aaaa"),
+    ]);
+    await library.setLyrics(added[0].id, "found", { line: "x" });
+
+    const originalRm = fs.rm;
+    vi.spyOn(fs, "rm").mockImplementation(async (targetPath, options) => {
+      if (String(targetPath).endsWith("lyrics")) {
+        throw new Error("Simulated rm failure on lyrics");
+      }
+      return originalRm(targetPath, options);
+    });
+
+    try {
+      await expect(library.removeAll()).rejects.toThrow(
+        "Simulated rm failure on lyrics",
+      );
+      // Index is empty because audio files were removed
+      expect(await library.list()).toEqual([]);
+      // Audio folder was removed
+      await expect(fs.access(path.join(root, "audio"))).rejects.toThrow();
+      // Lyrics folder remains reflecting partial removal state
+      await expect(
+        fs.access(path.join(root, "lyrics")),
+      ).resolves.toBeUndefined();
+    } finally {
+      vi.restoreAllMocks();
+    }
+  });
+
+  it("restores previous lyrics sidecar if saving index fails", async () => {
+    const library = new LocalTrackLibrary(root);
+    const { added } = await library.importFiles([
+      await source("One - A.mp3", "aaaa"),
+    ]);
+    await library.setLyrics(added[0].id, "found", { line: "original" });
+
+    const originalWriteFile = fs.writeFile;
+    vi.spyOn(fs, "writeFile").mockImplementation(async (file, data, options) => {
+      if (String(file).includes("library.json.tmp")) {
+        throw new Error("Disk write error");
+      }
+      return originalWriteFile(file, data, options);
+    });
+
+    try {
+      await expect(
+        library.setLyrics(added[0].id, "found", { line: "replacement" }),
+      ).rejects.toThrow("Disk write error");
+      // Sidecar was restored to original content
+      expect(await library.readLyrics(added[0].id)).toEqual({
+        line: "original",
+      });
+    } finally {
+      vi.restoreAllMocks();
+    }
   });
 
   it("refuses ids that could escape the library folder", async () => {
