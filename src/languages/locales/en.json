@@ -384,7 +384,9 @@
       "account_not_found": "Account not found or session expired. Try registering.",
       "failed_start_auth": "Failed to start Telegram auth",
       "registration_failed": "Registration failed: {status}",
-      "verification_canceled": "Verification canceled."
+      "verification_canceled": "Verification canceled.",
+      "human_check_cancelled": "Finish the human check to continue.",
+      "human_check_failed": "The human check didn't go through. Please try again."
     },
     "toasts": {
       "login_successful": "Login successful",
@@ -1204,6 +1206,16 @@
     "copy_code": "Copy code",
     "connected": "YouTube connected",
     "qr_label": "Sign-in QR code"
+  },
+  "human_check": {
+    "title": "Confirm you're not a bot",
+    "description": "A quick Cloudflare check keeps bots away from Liner accounts. It usually passes on its own in a second.",
+    "expired": "The check timed out and is starting again.",
+    "failed": "The check didn't load. Check your connection and try again.",
+    "waiting": "Checking…",
+    "retry": "Try again",
+    "cancel": "Cancel",
+    "skip": "Skip"
   },
   "offline": {
     "entered_auto_title": "Switched to offline mode",

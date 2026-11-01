@@ -816,7 +816,7 @@ function MiniPlayer({
                   <ArtistAvatar
                     artistId={player.currentTrack?.artistId}
                     artistList={player.currentTrack?.artistList}
-                    className="h-[15px] w-[15px]"
+                    size={15}
                   />
                 )}
                 <ArtistLink

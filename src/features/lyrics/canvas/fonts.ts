@@ -32,8 +32,6 @@ export function resolveFamily(element: Element): string {
   return family ? `${family}, system-ui, sans-serif` : LYRICS_TYPOGRAPHY.family;
 }
 
-// web fonts are split by unicode-range, so the text decides which files load:
-// without it only latin comes in and cyrillic gets measured with the fallback
 export async function loadLyricsFonts(
   type: LyricsTypography,
   text?: string,

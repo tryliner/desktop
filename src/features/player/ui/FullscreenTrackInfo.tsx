@@ -68,7 +68,7 @@ export function FullscreenTrackInfo({ onClose }: FullscreenTrackInfoProps) {
             <ArtistAvatar
               artistId={track?.artistId}
               artistList={track?.artistList}
-              className="h-[18px] w-[18px]"
+              size={18}
             />
           )}
           <ArtistLink

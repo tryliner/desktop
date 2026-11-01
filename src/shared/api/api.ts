@@ -57,6 +57,11 @@ function offlineModeAction() {
 }
 
 import { getApiBaseUrl } from "./baseUrl";
+import {
+  isHumanCheckMode,
+  runHumanCheck,
+  type HumanCheckAction,
+} from "./humanCheck";
 
 const CLIENT_VERSION =
   (import.meta.env.VITE_CLIENT_VERSION as string | undefined) ||
@@ -597,13 +602,40 @@ import type {
   MostSavedType,
 } from "../contracts";
 
+interface AuthChallenge {
+  turnstile?: { mode?: unknown };
+}
+
+async function humanCheckFor(
+  action: HumanCheckAction,
+  email: string,
+): Promise<string | undefined> {
+  let challenge: AuthChallenge;
+  try {
+    challenge = await request<AuthChallenge>(
+      "/v1/auth/challenge",
+      { method: "POST", body: JSON.stringify({ purpose: action, email }) },
+      false,
+    );
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return undefined;
+    throw error;
+  }
+  const mode = challenge.turnstile?.mode;
+  return runHumanCheck(action, isHumanCheckMode(mode) ? mode : "off");
+}
+
 // ---- Endpoints --------------------------------------------------------------
 
 export const api = {
   async login(email: string, password: string): Promise<AuthTokens> {
+    const turnstile = await humanCheckFor("login", email);
     const result = await request<AuthTokens>(
       "/v1/auth/login",
-      { method: "POST", body: JSON.stringify({ email, password }) },
+      {
+        method: "POST",
+        body: JSON.stringify({ email, password, turnstile }),
+      },
       false,
     );
     setAuthSession(result);
@@ -616,6 +648,7 @@ export const api = {
     username: string,
     displayName: string,
   ): Promise<AuthTokens> {
+    const turnstile = await humanCheckFor("register", email);
     const result = await request<AuthTokens>(
       "/v1/auth/register",
       {
@@ -623,6 +656,7 @@ export const api = {
         body: JSON.stringify({
           email,
           password,
+          turnstile,
           username: username.trim().toLowerCase(),
           displayName: displayName.trim(),
         }),

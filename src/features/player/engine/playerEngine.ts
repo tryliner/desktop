@@ -31,6 +31,7 @@ import {
   type CachedLyricsItem,
 } from "@/features/lyrics";
 import { preloadCoverArt } from "@/features/covers";
+import { preloadArtistAvatars } from "@/features/artist/lib/artistAvatar";
 import { linerDb, type CachedLyricsRecord } from "@/shared/storage";
 import { debouncedStorage } from "@/shared/utils/storage";
 import { showToast } from "@/shared/ui";
@@ -1381,6 +1382,9 @@ class PlayerEngine {
 
     if (nextTrack.coverUrl) {
       void preloadCoverArt(nextTrack.coverUrl);
+    }
+    if (!isLocalTrackId(nextTrack.id)) {
+      void preloadArtistAvatars(nextTrack.artistId, nextTrack.artistList);
     }
 
     if (!lyricsCache.has(nextTrack.id)) {
