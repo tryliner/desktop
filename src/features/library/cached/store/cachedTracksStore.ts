@@ -28,6 +28,12 @@ interface CachedTracksState {
   remove: (trackId: string) => Promise<void>;
 }
 
+function hasArtistIds(track: Track): boolean {
+  return Boolean(
+    track.artistId || track.artistList?.some((artist) => artist.id),
+  );
+}
+
 async function readCachedTracks(): Promise<CachedTrack[]> {
   const entries = await linerDb.listAudioEntries();
   const items = await Promise.all(
@@ -39,6 +45,8 @@ async function readCachedTracks(): Promise<CachedTrack[]> {
           id: record.id,
           title: record.title,
           artists: record.artists,
+          artistId: record.artistId,
+          artistList: record.artistList,
           coverUrl: record.coverUrl ?? "",
           durationMs: record.durationMs,
           playCount: 0,
@@ -52,8 +60,13 @@ async function readCachedTracks(): Promise<CachedTrack[]> {
       };
     }),
   );
-  return items
-    .filter((item): item is CachedTrack => item !== null)
+  const kept = items.filter((item): item is CachedTrack => item !== null);
+  const stale = kept.filter((item) => !hasArtistIds(item.track));
+  await Promise.all(
+    stale.map((item) => audioCache.deleteAudio(item.track.id).catch(() => {})),
+  );
+  return kept
+    .filter((item) => hasArtistIds(item.track))
     .sort((a, b) => b.lastPlayedAt - a.lastPlayedAt);
 }
 

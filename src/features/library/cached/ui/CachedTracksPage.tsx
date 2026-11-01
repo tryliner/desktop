@@ -12,7 +12,7 @@ import {
   HERO_CHIP_CLASS,
   HERO_GLASS_BUTTON_CLASS,
   HERO_GLASS_CLASS,
-  HERO_SUBTITLE_CLASS,
+  HeroSubtitle,
   HERO_TITLE_CLASS,
 } from "@/shared/ui";
 import Button from "@/shared/ui/Button";
@@ -107,11 +107,7 @@ export default function CachedTracksPage() {
             title={
               <h1 className={HERO_TITLE_CLASS}>{t("library.cached.title")}</h1>
             }
-            subtitle={
-              <p className={HERO_SUBTITLE_CLASS}>
-                {t("library.cached.subtitle")}
-              </p>
-            }
+            subtitle={<HeroSubtitle text={t("library.cached.subtitle")} />}
             meta={
               <div className={HERO_CHIP_CLASS}>
                 <span>{t("common.songs", { count: tracks.length })}</span>
