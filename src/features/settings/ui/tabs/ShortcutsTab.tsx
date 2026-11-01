@@ -26,6 +26,8 @@ import {
   useShortcutsStore,
   normalizeShortcutToEnglish,
   DEFAULT_SHORTCUTS,
+  OPTIONAL_GLOBAL_ACTIONS,
+  type OptionalGlobalAction,
   type GlobalShortcutsSettings,
   type MainAppShortcutsSettings,
   type MiniplayerShortcutsSettings,
@@ -34,6 +36,21 @@ import {
 import { ShortcutRecorder } from "@/features/shortcuts/ui/ShortcutRecorder";
 
 type ScopeFilter = "mainApp" | "miniplayer" | "global";
+
+const OPTIONAL_GLOBAL_ICONS: Record<
+  OptionalGlobalAction,
+  React.ComponentType<any>
+> = {
+  playPause: Play,
+  nextTrack: SkipNext,
+  prevTrack: SkipPrevious,
+  seekForward: FastForwardLine,
+  seekBackward: FastRewindLine,
+  volumeUp: VolumeLoud,
+  volumeDown: VolumeSmall,
+  toggleMute: VolumeCross,
+  showMainWindow: ExternalLinkLine,
+};
 
 export function ShortcutsTab({
   searchQuery: externalQuery,
@@ -104,6 +121,59 @@ export function ShortcutsTab({
         desc:
           t("settings.shortcuts.quick_like_song_desc") ||
           "Like or unlike current playing track system-wide without focusing the player.",
+      },
+      playPause: {
+        title: t("settings.shortcuts.play_pause") || "Play / Pause",
+        desc:
+          t("settings.shortcuts.play_pause_desc") || "Toggle audio playback.",
+      },
+      nextTrack: {
+        title: t("settings.shortcuts.next_track") || "Next track",
+        desc:
+          t("settings.shortcuts.next_track_desc") ||
+          "Skip to the next song in the queue.",
+      },
+      prevTrack: {
+        title: t("settings.shortcuts.prev_track") || "Previous track",
+        desc:
+          t("settings.shortcuts.prev_track_desc") ||
+          "Return to previous track or track start.",
+      },
+      seekForward: {
+        title: t("settings.shortcuts.seek_forward") || "Seek forward (+5s)",
+        desc:
+          t("settings.shortcuts.seek_forward_desc") ||
+          "Fast forward playback position by 5 seconds.",
+      },
+      seekBackward: {
+        title: t("settings.shortcuts.seek_backward") || "Seek backward (-5s)",
+        desc:
+          t("settings.shortcuts.seek_backward_desc") ||
+          "Rewind playback position by 5 seconds.",
+      },
+      volumeUp: {
+        title: t("settings.shortcuts.volume_up") || "Volume up",
+        desc:
+          t("settings.shortcuts.volume_up_desc") ||
+          "Increase playback volume by 5%.",
+      },
+      volumeDown: {
+        title: t("settings.shortcuts.volume_down") || "Volume down",
+        desc:
+          t("settings.shortcuts.volume_down_desc") ||
+          "Decrease playback volume by 5%.",
+      },
+      toggleMute: {
+        title: t("settings.shortcuts.toggle_mute") || "Mute / Unmute",
+        desc:
+          t("settings.shortcuts.toggle_mute_desc") ||
+          "Toggle audio mute state.",
+      },
+      showMainWindow: {
+        title: t("settings.shortcuts.show_main_window") || "Show Liner",
+        desc:
+          t("settings.shortcuts.show_main_window_desc") ||
+          "Bring the main Liner window to the front.",
       },
     }),
     [t],
@@ -330,6 +400,7 @@ export function ShortcutsTab({
     onChange: (val: string) => void;
     onReset: () => void;
     validateCandidate: (candidate: string) => { conflictWith: string } | null;
+    clearable?: boolean;
   }
 
   const allItems: ShortcutRowItem[] = useMemo(() => {
@@ -603,6 +674,19 @@ export function ShortcutsTab({
         onReset: () => resetShortcut("global", "quickLikeSong"),
         validateCandidate: validateGlobalCandidate("quickLikeSong"),
       },
+      ...OPTIONAL_GLOBAL_ACTIONS.map((action): ShortcutRowItem => ({
+        id: `global-${action}`,
+        scope: "global",
+        title: globalLabels[action].title,
+        desc: globalLabels[action].desc,
+        icon: OPTIONAL_GLOBAL_ICONS[action],
+        value: global[action],
+        defaultValue: DEFAULT_SHORTCUTS.global[action],
+        clearable: true,
+        onChange: (val) => setGlobalShortcut(action, val),
+        onReset: () => resetShortcut("global", action),
+        validateCandidate: validateGlobalCandidate(action),
+      })),
     ];
   }, [
     global,
@@ -824,6 +908,7 @@ export function ShortcutsTab({
                     }}
                     onReset={item.onReset}
                     isGlobal={item.scope === "global"}
+                    clearable={item.clearable}
                     validateCandidate={item.validateCandidate}
                     isRecording={isRowRecording}
                     onRecordingChange={(rec) =>

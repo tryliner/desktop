@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { playerEngine } from "@/features/player/engine/playerEngine";
 import { usePlayerStore } from "@/features/player/store/playerStore";
+import { toVolumeGain, toVolumeLevel } from "@/features/player/engine/volume";
 import {
   useIsTrackLiked,
   useLikeTrack,
@@ -15,6 +16,7 @@ import { useOverlaySettingsStore } from "../store/overlaySettingsStore";
 
 const PLAYING_RESYNC_DRIFT_MS = 1_500;
 const PAUSED_RESYNC_DRIFT_MS = 250;
+const DEFAULT_UNMUTE_LEVEL = 0.7;
 
 interface SentPosition {
   positionMs: number;
@@ -38,6 +40,7 @@ export function useOverlaySync() {
   const unlikeMutation = useUnlikeTrack();
   const isTogglingLikeRef = useRef(false);
   const sentPositionRef = useRef<SentPosition | null>(null);
+  const lastUnmutedLevelRef = useRef(DEFAULT_UNMUTE_LEVEL);
   const [seekTick, setSeekTick] = useState(0);
 
   // Sync auth status to Electron overlay manager
@@ -104,6 +107,31 @@ export function useOverlaySync() {
               playerEngine.seek(action.payload.positionMs);
             }
             break;
+          case "seekBy": {
+            const deltaMs = action.payload?.deltaMs;
+            if (typeof deltaMs !== "number") break;
+            const { positionMs, durationMs: total } = usePlayerStore.getState();
+            const upperBound =
+              total > 0 ? total : positionMs + Math.abs(deltaMs);
+            playerEngine.seek(
+              Math.min(upperBound, Math.max(0, positionMs + deltaMs)),
+            );
+            break;
+          }
+          case "toggleMute": {
+            const level = toVolumeLevel(usePlayerStore.getState().volume);
+            if (level > 0) {
+              lastUnmutedLevelRef.current = level;
+              playerEngine.setVolume(0);
+            } else {
+              playerEngine.setVolume(
+                toVolumeGain(
+                  lastUnmutedLevelRef.current || DEFAULT_UNMUTE_LEVEL,
+                ),
+              );
+            }
+            break;
+          }
           case "like":
             if (currentTrack && !isTogglingLikeRef.current) {
               isTogglingLikeRef.current = true;

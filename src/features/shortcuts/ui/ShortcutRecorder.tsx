@@ -18,6 +18,7 @@ export interface ShortcutRecorderProps {
   onChange: (newValue: string) => void;
   onReset: () => void;
   isGlobal?: boolean;
+  clearable?: boolean;
   validateCandidate?: (candidate: string) => { conflictWith: string } | null;
   disabled?: boolean;
   isRecording?: boolean;
@@ -28,6 +29,7 @@ export function ShortcutRecorder({
   value,
   onChange,
   isGlobal = false,
+  clearable = false,
   validateCandidate,
   disabled = false,
   isRecording: isRecordingProp,
@@ -104,6 +106,20 @@ export function ShortcutRecorder({
         setHeldModifiers([]);
         setErrorMessage(null);
         setIsRecording(false);
+        return;
+      }
+
+      const hasAnyModifier = e.ctrlKey || e.altKey || e.shiftKey || e.metaKey;
+      if (
+        clearable &&
+        !hasAnyModifier &&
+        (e.key === "Backspace" || e.key === "Delete")
+      ) {
+        if (errorTimeoutRef.current) clearTimeout(errorTimeoutRef.current);
+        setErrorMessage(null);
+        setHeldModifiers([]);
+        setIsRecording(false);
+        onChange("");
         return;
       }
 
@@ -202,6 +218,7 @@ export function ShortcutRecorder({
   }, [
     isRecording,
     isGlobal,
+    clearable,
     validateCandidate,
     onChange,
     t,
@@ -267,14 +284,20 @@ export function ShortcutRecorder({
               transition={{ duration: 0.1, ease: "easeOut" }}
               className="flex items-center gap-1 select-none"
             >
-              {getAcceleratorKeycaps(value).map((chip, idx) => (
-                <span
-                  key={idx}
-                  className="inline-flex items-center justify-center min-w-[30px] h-[30px] px-[10px] rounded-[8px] bg-black/[0.08] text-text-primary text-[13px] font-[500] leading-none transition-colors group-hover:bg-black/[0.12] dark:bg-black/40 dark:group-hover:bg-black/50"
-                >
-                  {chip}
+              {!value ? (
+                <span className="inline-flex items-center justify-center h-[30px] px-[10px] rounded-[8px] bg-black/[0.05] text-text-tertiary text-[13px] font-[500] leading-none dark:bg-black/25">
+                  {t("settings.shortcuts.not_set") || "Not set"}
                 </span>
-              ))}
+              ) : (
+                getAcceleratorKeycaps(value).map((chip, idx) => (
+                  <span
+                    key={idx}
+                    className="inline-flex items-center justify-center min-w-[30px] h-[30px] px-[10px] rounded-[8px] bg-black/[0.08] text-text-primary text-[13px] font-[500] leading-none transition-colors group-hover:bg-black/[0.12] dark:bg-black/40 dark:group-hover:bg-black/50"
+                  >
+                    {chip}
+                  </span>
+                ))
+              )}
             </motion.div>
           )}
         </AnimatePresence>

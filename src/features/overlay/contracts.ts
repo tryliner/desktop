@@ -37,6 +37,8 @@ export interface OverlayAction {
     | "next"
     | "prev"
     | "seek"
+    | "seekBy"
+    | "toggleMute"
     | "like"
     | "volumeUp"
     | "volumeDown"

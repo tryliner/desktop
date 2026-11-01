@@ -592,6 +592,7 @@ if (!gotTheLock) {
       return true;
     });
     overlayManager.registerShortcut();
+    overlayManager.registerMediaShortcuts();
 
     discordRpcManager = new DiscordRpcManager();
     poTokenService = new PoTokenService(path.join(__dirname, "preload.cjs"));
