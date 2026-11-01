@@ -227,20 +227,20 @@ export default function ArtistProfileModal({
       maxWidth={440}
     >
       <div className="flex flex-col gap-[14px] px-[20px] pb-[20px]">
-        <div className="flex items-center gap-[12px]">
+        <div className="flex items-center gap-[10px]">
           {avatarSrc ? (
-            <div className="relative h-[44px] w-[44px] shrink-0 overflow-hidden rounded-full bg-black/[0.05] dark:bg-white/[0.07]">
+            <div className="relative h-[36px] w-[36px] shrink-0 overflow-hidden rounded-full bg-black/[0.05] dark:bg-white/[0.07]">
               <CoverImage
                 src={avatarSrc}
                 alt={name}
                 fill
-                sizes="44px"
+                sizes="36px"
                 className="object-cover object-center"
                 draggable={false}
               />
             </div>
           ) : (
-            <div className="flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-full bg-black/[0.05] text-[17px] font-[600] text-text-tertiary dark:bg-white/[0.07]">
+            <div className="flex h-[36px] w-[36px] shrink-0 items-center justify-center rounded-full bg-black/[0.05] text-[15px] font-[600] text-text-tertiary dark:bg-white/[0.07]">
               {name.charAt(0).toUpperCase()}
             </div>
           )}
