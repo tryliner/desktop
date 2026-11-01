@@ -122,6 +122,7 @@ export function StorageTab({ searchQuery }: { searchQuery?: string }) {
   const [analytics, setAnalytics] = useState<StorageAnalytics | null>(() =>
     getCachedStorageAnalytics(),
   );
+  const [sizesOutdated, setSizesOutdated] = useState(false);
   const [clearing, setClearing] = useState(false);
   const [clearKind, setClearKind] = useState<ClearKind>("cache");
   const [clearingProgress, setClearingProgress] = useState(0);
@@ -138,7 +139,9 @@ export function StorageTab({ searchQuery }: { searchQuery?: string }) {
   );
 
   const refresh = async () => {
-    setAnalytics(await refreshStorageAnalytics(true));
+    const updated = await refreshStorageAnalytics(true);
+    setAnalytics(updated);
+    setSizesOutdated(false);
   };
 
   const handleLimitChange = async (newLimit: number) => {
@@ -206,14 +209,8 @@ export function StorageTab({ searchQuery }: { searchQuery?: string }) {
     setClearing(true);
     setClearingProgress(15);
 
-    let initialAnalytics: StorageAnalytics | null = null;
-    try {
-      initialAnalytics = await refreshStorageAnalytics(true);
-      setAnalytics(initialAnalytics);
-    } catch {}
-
-    const measuredBefore = getTargetCategoryBytes(initialAnalytics, kind);
-    const beforeBytes = measuredBefore > 0 ? measuredBefore : 0;
+    const measuredBefore = getTargetCategoryBytes(analytics, kind);
+    const beforeBytes = measuredBefore > 0 ? measuredBefore : expected;
 
     try {
       setClearingProgress(40);
@@ -243,11 +240,14 @@ export function StorageTab({ searchQuery }: { searchQuery?: string }) {
     try {
       const updated = await refreshStorageAnalytics(true);
       setAnalytics(updated);
+      setSizesOutdated(false);
       const afterBytes = getTargetCategoryBytes(updated, kind);
       const actuallyFreed = Math.max(0, beforeBytes - afterBytes);
       setFreedBytes(actuallyFreed);
     } catch {
+      setSizesOutdated(true);
       setFreedBytes(0);
+      toast(t("settings.storage.refresh_failed"), "info");
     }
   };
 
@@ -320,6 +320,16 @@ export function StorageTab({ searchQuery }: { searchQuery?: string }) {
             {...FADE}
             className="flex flex-col gap-[18px] pt-[8px] pb-[4px] w-full"
           >
+            {sizesOutdated ? (
+              <button
+                type="button"
+                onClick={() => void refresh()}
+                className="text-xs text-amber-400/90 bg-amber-400/10 hover:bg-amber-400/20 px-3 py-1.5 rounded-lg border border-amber-400/20 text-left transition-colors cursor-pointer"
+              >
+                {t("settings.storage.sizes_outdated")}
+              </button>
+            ) : null}
+
             {!searchQuery?.trim() ? (
               <StorageOverview
                 musicBytes={musicBytes}

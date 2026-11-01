@@ -1,19 +1,26 @@
-// @vitest-environment jsdom
-import React from "react";
+import React, { act } from "react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { createRoot, Root } from "react-dom/client";
-import { act } from "react";
 import { useSearchTracks } from "./useSearchTracks";
 import { api } from "@/shared/api";
 import type { SearchSource } from "@/shared/contracts";
 
-(globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
+(
+  globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }
+).IS_REACT_ACT_ENVIRONMENT = true;
+
+interface MockSearchTrack {
+  id: string;
+  title: string;
+  artists?: string[];
+  durationMs?: number;
+}
 
 vi.mock("@/shared/api", () => ({
   api: {
     search: vi.fn(),
   },
-  toClientTrack: (track: any) => ({
+  toClientTrack: (track: MockSearchTrack) => ({
     id: track.id,
     title: track.title,
     artists: track.artists ?? [],
@@ -48,19 +55,19 @@ describe("useSearchTracks source switching", () => {
   });
 
   it("refetches useSearchTracks when switching source with identical query", async () => {
-    (api.search as any)
+    vi.mocked(api.search)
       .mockResolvedValueOnce({
         items: [
           { type: "track", id: "yt_track", title: "YouTube Track", artists: [] },
         ],
-      })
+      } as unknown as Awaited<ReturnType<typeof api.search>>)
       .mockResolvedValueOnce({
         items: [
           { type: "track", id: "sc:track", title: "SoundCloud Track", artists: [] },
         ],
-      });
+      } as unknown as Awaited<ReturnType<typeof api.search>>);
 
-    let hookResult: any = null;
+    let hookResult!: ReturnType<typeof useSearchTracks>;
 
     function TestComponent({ source }: { source: SearchSource }) {
       hookResult = useSearchTracks("discovery", {

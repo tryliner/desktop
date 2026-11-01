@@ -898,6 +898,8 @@
       "removed_title": "Removed",
       "removed_liked_subtitle": "Your liked songs are still in your library. They'll download again while you're online if downloading is on.",
       "removed_local_subtitle": "Liner's copies are gone. The original files on your computer weren't touched.",
+      "refresh_failed": "Storage cleared, but sizes could not be refreshed.",
+      "sizes_outdated": "Displayed sizes may be outdated. Click to refresh.",
       "done_button": "Done",
       "backup_title": "Backup & Restore",
       "backup_desc": "Save your settings to a JSON file or restore them on another computer. Tokens and account sessions are never included.",

@@ -138,7 +138,12 @@ export class LocalTrackLibrary {
       } catch (error) {
         try {
           await this.reconcile(records);
-        } catch {}
+        } catch (reconcileError) {
+          console.error(
+            "[LocalTrackLibrary] Reconciliation failed after folder removal error:",
+            reconcileError,
+          );
+        }
         throw error;
       }
     });
