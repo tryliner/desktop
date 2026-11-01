@@ -43,4 +43,13 @@ describe("findDuplicateGroups", () => {
 
     expect(groups).toHaveLength(0);
   });
+
+  it("differentiates pairs with delimiters in titles and artists", () => {
+    const groups = findDuplicateGroups([
+      record("1", "a::b", "c", 200_000),
+      record("2", "a", "b::c", 200_000),
+    ]);
+
+    expect(groups).toHaveLength(0);
+  });
 });

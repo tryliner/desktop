@@ -129,23 +129,25 @@ export class LocalTrackLibrary {
     return this.serialized(async () => {
       const records = await this.load();
       const count = records.length;
+      await this.save([]);
       try {
         for (const folder of LIBRARY_FOLDERS) {
           await fsp.rm(this.filePath(folder), { recursive: true, force: true });
         }
-        await this.save([]);
         return count;
       } catch (error) {
         try {
-          await this.reconcile();
+          await this.reconcile(records);
         } catch {}
         throw error;
       }
     });
   }
 
-  private async reconcile(): Promise<LocalTrackRecord[]> {
-    const records = await this.load();
+  private async reconcile(
+    knownRecords?: LocalTrackRecord[],
+  ): Promise<LocalTrackRecord[]> {
+    const records = knownRecords ?? (await this.load());
     const surviving: LocalTrackRecord[] = [];
     for (const record of records) {
       let audioExists = true;

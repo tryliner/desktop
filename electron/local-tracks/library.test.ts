@@ -148,6 +148,30 @@ describe("LocalTrackLibrary", () => {
     expect(lrcContent).toContain("[00:01.00]Hello world");
   });
 
+  it("does not delete folders when saving the empty index fails during removeAll", async () => {
+    const library = new LocalTrackLibrary(root);
+    await library.importFiles([
+      await source("One - A.mp3", "aaaa"),
+    ]);
+
+    const originalWriteFile = fs.writeFile;
+    vi.spyOn(fs, "writeFile").mockImplementation(async (file, data, options) => {
+      if (String(file).includes("library.json.tmp")) {
+        throw new Error("Disk write failure");
+      }
+      return originalWriteFile(file, data, options);
+    });
+
+    try {
+      await expect(library.removeAll()).rejects.toThrow("Disk write failure");
+      await expect(fs.access(path.join(root, "audio"))).resolves.toBeUndefined();
+      const list = await library.list();
+      expect(list).toHaveLength(1);
+    } finally {
+      vi.restoreAllMocks();
+    }
+  });
+
   it("refuses ids that could escape the library folder", async () => {
     const library = new LocalTrackLibrary(root);
     expect(await library.locate("audio", "../../etc/passwd")).toBeNull();

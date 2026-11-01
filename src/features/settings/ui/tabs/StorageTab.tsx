@@ -206,12 +206,16 @@ export function StorageTab({ searchQuery }: { searchQuery?: string }) {
     setClearing(true);
     setClearingProgress(15);
 
+    let initialAnalytics: StorageAnalytics | null = null;
     try {
-      const initialAnalytics = await refreshStorageAnalytics(true);
+      initialAnalytics = await refreshStorageAnalytics(true);
       setAnalytics(initialAnalytics);
-      const beforeBytes =
-        getTargetCategoryBytes(initialAnalytics, kind) || expected;
+    } catch {}
 
+    const measuredBefore = getTargetCategoryBytes(initialAnalytics, kind);
+    const beforeBytes = measuredBefore > 0 ? measuredBefore : 0;
+
+    try {
       setClearingProgress(40);
       await Promise.all([
         work(),
@@ -222,13 +226,6 @@ export function StorageTab({ searchQuery }: { searchQuery?: string }) {
       await new Promise((resolve) => setTimeout(resolve, 260));
       setClearingProgress(100);
       await new Promise((resolve) => setTimeout(resolve, 140));
-
-      const updated = await refreshStorageAnalytics(true);
-      setAnalytics(updated);
-      setClearing(false);
-      const afterBytes = getTargetCategoryBytes(updated, kind);
-      const actuallyFreed = Math.max(0, beforeBytes - afterBytes);
-      setFreedBytes(actuallyFreed);
     } catch {
       setClearing(false);
       toast(
@@ -239,7 +236,18 @@ export function StorageTab({ searchQuery }: { searchQuery?: string }) {
         ),
         "error",
       );
-      void refresh();
+      return;
+    }
+
+    setClearing(false);
+    try {
+      const updated = await refreshStorageAnalytics(true);
+      setAnalytics(updated);
+      const afterBytes = getTargetCategoryBytes(updated, kind);
+      const actuallyFreed = Math.max(0, beforeBytes - afterBytes);
+      setFreedBytes(actuallyFreed);
+    } catch {
+      setFreedBytes(0);
     }
   };
 

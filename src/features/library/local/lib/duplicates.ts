@@ -24,7 +24,7 @@ export function findDuplicateGroups(
   for (const record of records) {
     const title = normalize(record.title);
     if (!title) continue;
-    const key = `${title}::${normalize(record.artist)}`;
+    const key = JSON.stringify([title, normalize(record.artist)]);
     const bucket = buckets.get(key);
     if (bucket) bucket.push(record);
     else buckets.set(key, [record]);

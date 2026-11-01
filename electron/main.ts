@@ -626,9 +626,11 @@ function createWindow() {
 
   mainWindow.on("close", (event) => {
     if (closeToTrayEnabled && !shutdown.isQuitting()) {
-      event.preventDefault();
-      mainWindow?.hide();
-      createOrUpdateTray();
+      const tray = createOrUpdateTray();
+      if (tray) {
+        event.preventDefault();
+        mainWindow?.hide();
+      }
     }
   });
 
