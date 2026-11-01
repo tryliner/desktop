@@ -11,6 +11,7 @@ export interface PowChallenge {
   parallelism: number;
   hashLength: number;
   expiresAt: string;
+  turnstile?: { mode: "off" | "optional" | "required"; siteKey?: string };
 }
 
 export interface PowSolution {

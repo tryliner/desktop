@@ -43,6 +43,7 @@ function translate(key: string, vars?: Record<string, string | number>) {
 import { getApiBaseUrl } from "./baseUrl";
 import { PowTimeoutError, SUPPORTED_POW_ALGORITHM, type PowChallenge, type PowSolution } from "./proofOfWork";
 import { solvePow } from "./proofOfWorkRunner";
+import { TurnstileCancelledError, requestTurnstileToken } from "./turnstileWindow";
 
 const CLIENT_VERSION =
   (import.meta.env.VITE_CLIENT_VERSION as string | undefined) || "1.0.4-desktop";
@@ -539,7 +540,23 @@ import type {
 
 const RETRYABLE_POW_CODES = new Set(["POW_EXPIRED", "POW_REUSED"]);
 
-async function proofOfWorkFor(purpose: "login" | "register", email: string): Promise<PowSolution | undefined> {
+interface AuthProof {
+  pow?: PowSolution;
+  turnstile?: string;
+}
+
+async function humanCheck(challenge: PowChallenge, purpose: "login" | "register"): Promise<string | undefined> {
+  const mode = challenge.turnstile?.mode ?? "off";
+  if (mode === "off") return undefined;
+  try {
+    return await requestTurnstileToken(getApiBaseUrl(), purpose);
+  } catch (error) {
+    if (mode === "optional" && error instanceof TurnstileCancelledError) return undefined;
+    throw error;
+  }
+}
+
+async function authProofFor(purpose: "login" | "register", email: string): Promise<AuthProof> {
   let challenge: PowChallenge;
   try {
     challenge = await request<PowChallenge>(
@@ -548,26 +565,29 @@ async function proofOfWorkFor(purpose: "login" | "register", email: string): Pro
       false,
     );
   } catch (error) {
-    if (error instanceof ApiError && error.status === 404) return undefined;
+    if (error instanceof ApiError && error.status === 404) return {};
     throw error;
   }
-  if (challenge.mode === "off" || challenge.algorithm !== SUPPORTED_POW_ALGORITHM) return undefined;
-  return solvePow(challenge);
+  const work =
+    challenge.mode === "off" || challenge.algorithm !== SUPPORTED_POW_ALGORITHM ? undefined : solvePow(challenge);
+  void work?.catch(() => undefined);
+  const turnstile = await humanCheck(challenge, purpose);
+  return { pow: await work, turnstile };
 }
 
-async function withProofOfWork<T>(
+async function withAuthProof<T>(
   purpose: "login" | "register",
   email: string,
-  send: (pow: PowSolution | undefined) => Promise<T>,
+  send: (proof: AuthProof) => Promise<T>,
 ): Promise<T> {
   try {
-    return await send(await proofOfWorkFor(purpose, email));
+    return await send(await authProofFor(purpose, email));
   } catch (error) {
     const retryable =
       error instanceof PowTimeoutError ||
       (error instanceof ApiError && !!error.code && RETRYABLE_POW_CODES.has(error.code));
     if (!retryable) throw error;
-    return send(await proofOfWorkFor(purpose, email));
+    return send(await authProofFor(purpose, email));
   }
 }
 
@@ -575,10 +595,10 @@ async function withProofOfWork<T>(
 
 export const api = {
   async login(email: string, password: string): Promise<AuthTokens> {
-    const result = await withProofOfWork("login", email, (pow) =>
+    const result = await withAuthProof("login", email, (proof) =>
       request<AuthTokens>(
         "/v1/auth/login",
-        { method: "POST", body: JSON.stringify({ email, password, pow }) },
+        { method: "POST", body: JSON.stringify({ email, password, ...proof }) },
         false,
       ),
     );
@@ -592,7 +612,7 @@ export const api = {
     username: string,
     displayName: string,
   ): Promise<AuthTokens> {
-    const result = await withProofOfWork("register", email, (pow) =>
+    const result = await withAuthProof("register", email, (proof) =>
       request<AuthTokens>(
         "/v1/auth/register",
         {
@@ -602,7 +622,7 @@ export const api = {
             password,
             username: username.trim().toLowerCase(),
             displayName: displayName.trim(),
-            pow,
+            ...proof,
           }),
         },
         false,
