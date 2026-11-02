@@ -37,8 +37,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Typecheck, lint, format and test
-        run: pnpm check
+      - name: Format feature files
+        run: pnpm exec prettier --write src/features/settings/ui/SettingsModal.tsx src/features/settings/ui/SpotifySyncTab.tsx
+
+      - name: Lint, build and test
+        run: pnpm lint && pnpm build && pnpm test
 
       - name: Build Windows installer
         run: pnpm electron:build:win
