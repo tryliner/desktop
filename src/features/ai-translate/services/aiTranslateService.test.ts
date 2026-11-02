@@ -10,9 +10,15 @@ function mockFetchJson(data: unknown): typeof fetch {
   );
 }
 
-function mockGoogleTranslate(dictionary: Record<string, string>): typeof fetch {
+function mockGoogleTranslate(
+  dictionary: Record<string, string>,
+  onQuery?: (q: string, tl: string | null) => void,
+): typeof fetch {
   return vi.fn<typeof fetch>(async (input: RequestInfo | URL) => {
-    const q = new URL(String(input)).searchParams.get("q") ?? "";
+    const url = new URL(String(input));
+    const q = url.searchParams.get("q") ?? "";
+    const tl = url.searchParams.get("tl");
+    onQuery?.(q, tl);
     const translated = dictionary[q] ?? q;
     return new Response(JSON.stringify([[[translated, q]]]), { status: 200 });
   });
@@ -24,10 +30,14 @@ describe("AI Lyrics Translation Service", () => {
   });
 
   it("uses free translator for google_translate provider", async () => {
-    const mockFetch = mockGoogleTranslate({
-      "Hello World": "Xin chào thế giới",
-      Peace: "Hòa bình",
-    });
+    const targetLangs: (string | null)[] = [];
+    const mockFetch = mockGoogleTranslate(
+      {
+        "Hello World": "Xin chào thế giới",
+        Peace: "Hòa bình",
+      },
+      (_q, tl) => targetLangs.push(tl),
+    );
     global.fetch = mockFetch;
 
     const result = await translateSongLyrics(["Hello World", "", "Peace"], {
@@ -37,6 +47,8 @@ describe("AI Lyrics Translation Service", () => {
 
     expect(result).toEqual(["Xin chào thế giới", "", "Hòa bình"]);
     expect(mockFetch).toHaveBeenCalledTimes(2);
+    expect(targetLangs.length).toBe(2);
+    expect(targetLangs.every((tl) => tl === "vi")).toBe(true);
   });
 
   it("throws when API key is missing for gemini, openai, or deepseek", async () => {
