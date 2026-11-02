@@ -598,7 +598,11 @@
       "overlay": "Overlay",
       "discord": "Discord RPC",
       "youtube": "YouTube",
+      "ai": "AI Lyrics",
       "privacy": "Privacy"
+    },
+    "ai": {
+      "description": "Bilingual lyrics translation, singable adaptation, and pronunciation guide."
     },
     "playback": {
       "description": "Queue behavior, click actions and audio output."

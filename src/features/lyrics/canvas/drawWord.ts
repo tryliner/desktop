@@ -51,10 +51,23 @@ export function drawToken(
   if (!highlight || highlight.opacity <= 0) return;
   if (highlight.clear <= 0) return;
   ctx.fillStyle = highlightStyle(paint, placed, highlight);
-  if (highlight.glowRem > 0) {
+  const hasScale = Boolean(
+    highlight.scale && Math.abs(highlight.scale - 1) > 0.003,
+  );
+  const hasGlow = highlight.glowRem > 0;
+  if (hasScale || hasGlow) {
     ctx.save();
-    ctx.shadowColor = white(1);
-    ctx.shadowBlur = highlight.glowRem * paint.remPx * paint.dpr;
+    if (hasScale && highlight.scale) {
+      const cx = placed.x + placed.width / 2;
+      const cy = y - placed.baseline / 3;
+      ctx.translate(cx, cy);
+      ctx.scale(highlight.scale, highlight.scale);
+      ctx.translate(-cx, -cy);
+    }
+    if (hasGlow) {
+      ctx.shadowColor = white(1);
+      ctx.shadowBlur = highlight.glowRem * paint.remPx * paint.dpr;
+    }
     ctx.fillText(text, placed.x, y);
     ctx.restore();
     return;

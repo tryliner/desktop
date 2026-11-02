@@ -13,6 +13,7 @@ import {
 import { useLyricsStore } from "../store/lyricsStore";
 import { useTranslation } from "@/languages";
 import { cn } from "@/shared/lib";
+import { LyricsTranslateIslandControls } from "./LyricsTranslateIslandControls";
 
 function formatOffsetBadge(ms: number): string {
   if (ms === 0) return "0.0s";
@@ -248,6 +249,8 @@ export function LyricsProviderIsland() {
             </button>
           </>
         )}
+
+        <LyricsTranslateIslandControls />
       </div>
 
       <AnimatePresence>

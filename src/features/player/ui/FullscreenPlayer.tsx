@@ -18,6 +18,7 @@ import { BetaVisualsWarning } from "./BetaVisualsWarning";
 import { CanvasLyricsView } from "./CanvasLyricsView";
 import { useTranslation } from "@/languages";
 import { useSettledLyricsLayout } from "../hooks/useSettledLyricsLayout";
+import { useEnrichedLyrics } from "@/features/lyrics/hooks/useEnrichedLyrics";
 
 const KAWARP_FADE_IN_MS = 600;
 
@@ -80,6 +81,7 @@ export function FullscreenPlayer({
     currentTrackId && currentLyricsTrackId === currentTrackId,
   );
   const hasLyrics = isMatchingTrack && braccatoLyrics.length > 0;
+  const enrichedLyrics = useEnrichedLyrics(currentTrackId, braccatoLyrics);
   const showProviderIsland = hasLyrics && availableProviders.length > 0;
   const isInstrumental =
     isMatchingTrack &&
@@ -163,7 +165,7 @@ export function FullscreenPlayer({
                   transition={{ duration: 0.22, ease: "easeInOut" }}
                   className="absolute inset-0 flex flex-col"
                 >
-                  <CanvasLyricsView lyrics={braccatoLyrics} />
+                  <CanvasLyricsView lyrics={enrichedLyrics} />
                 </motion.div>
               )}
             </AnimatePresence>

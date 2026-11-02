@@ -1,5 +1,6 @@
 import { clamp01, cssEase } from "./easing";
 import { exitFade, isExiting, lineExitMs } from "./exitClock";
+import { syllablePulse } from "./syllablePulse";
 import type { LyricLineModel, LyricToken } from "./types";
 
 const SWIPE_LEAD_RATIO = 0.1;
@@ -19,6 +20,7 @@ export interface TokenHighlight {
   solid: number;
   clear: number;
   glowRem: number;
+  scale?: number;
 }
 
 export function isLineSelected(line: LyricLineModel, timeMs: number) {
@@ -73,11 +75,14 @@ export function tokenHighlight(
     };
   }
   const solid = sweepAt(token, elapsed);
+  const pulse = syllablePulse(token, elapsed);
+  const baseGlow = glowAt(token, elapsed);
   return {
     opacity: 1,
     solid,
     clear: solid + SWIPE_WIDTH,
-    glowRem: glowAt(token, elapsed),
+    glowRem: Math.max(baseGlow, pulse.glowRem),
+    scale: pulse.scale,
   };
 }
 
