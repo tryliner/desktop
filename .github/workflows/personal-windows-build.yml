@@ -1,0 +1,53 @@
+name: Personal Windows build (Spotify sync)
+
+on:
+  push:
+    branches:
+      - feature/spotify-playlist-auto-sync
+    paths:
+      - "src/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "electron/**"
+      - "native/**"
+      - ".github/workflows/personal-windows-build.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out feature branch
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck, lint, format and test
+        run: pnpm check
+
+      - name: Build Windows installer
+        run: pnpm electron:build:win
+
+      - name: Upload private-use build artifact (not a public release)
+        uses: actions/upload-artifact@v4
+        with:
+          name: Liner-Spotify-Sync-Windows
+          path: release/*.exe
+          if-no-files-found: error
+          retention-days: 3
