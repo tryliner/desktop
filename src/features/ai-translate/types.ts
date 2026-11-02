@@ -4,6 +4,7 @@ export type AiProvider =
   | "openai"
   | "deepseek"
   | "openrouter"
+  | "ollama"
   | "openai_compatible"
   | "google_translate";
 

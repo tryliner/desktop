@@ -7,6 +7,7 @@ function getPlaceholder(p: AiProvider): string {
   if (p === "openai") return "Default: gpt-4o-mini (e.g. gpt-4o, o3-mini)";
   if (p === "deepseek") return "Default: deepseek-chat (e.g. deepseek-reasoner)";
   if (p === "openrouter") return "Default: google/gemini-2.0-flash-001 (e.g. anthropic/claude-3.5-haiku)";
+  if (p === "ollama") return "Default: llama3.2 (e.g. qwen2.5:7b, deepseek-r1:8b)";
   if (p === "openai_compatible") return "e.g. meta-llama/llama-3.3-70b-instruct, qwen-2.5-72b";
   return "Model name...";
 }
@@ -29,7 +30,7 @@ export function AiTabModelInputs({
 
   return (
     <div className="flex flex-col gap-3 pt-2 border-t border-white/10">
-      {provider === "openai_compatible" && (
+      {(provider === "openai_compatible" || provider === "ollama") && (
         <div className="flex flex-col gap-1.5">
           <label htmlFor="ai-settings-endpoint" className="text-xs font-medium text-white/80">
             Endpoint Base URL:
@@ -37,7 +38,11 @@ export function AiTabModelInputs({
           <input
             id="ai-settings-endpoint"
             type="text"
-            placeholder="https://api.openai.com/v1 (or OpenRouter, Groq, Ollama...)"
+            placeholder={
+              provider === "ollama"
+                ? "http://localhost:11434/v1 (default)"
+                : "https://api.openai.com/v1 (or Groq, vLLM...)"
+            }
             value={baseUrl}
             onChange={(e) => {
               onInvalidate();
@@ -55,7 +60,11 @@ export function AiTabModelInputs({
           <input
             id="ai-settings-api-key"
             type="password"
-            placeholder={`Enter ${provider.toUpperCase()} API key...`}
+            placeholder={
+              provider === "ollama"
+                ? "Optional for local Ollama..."
+                : `Enter ${provider.toUpperCase()} API key...`
+            }
             value={apiKey}
             onChange={(e) => {
               onInvalidate();

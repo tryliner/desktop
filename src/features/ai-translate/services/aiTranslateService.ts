@@ -19,6 +19,10 @@ import {
   romanizeWithOpenAiCompatible,
 } from "./openAiProvider";
 import {
+  translateWithOllama,
+  romanizeWithOllama,
+} from "./ollamaProvider";
+import {
   translateWithGoogleFree,
   romanizeWithGoogleFree,
 } from "./googleFreeProvider";
@@ -52,6 +56,9 @@ export async function translateSongLyrics(
   if (provider === "openrouter") {
     if (!apiKey?.trim()) throw new Error("API key is required for OpenRouter");
     return translateWithOpenRouter(lines, apiKey, targetLang, model, singableMode);
+  }
+  if (provider === "ollama") {
+    return translateWithOllama(lines, apiKey, targetLang, baseUrl, model, singableMode);
   }
   if (provider === "openai_compatible") {
     return translateWithOpenAiCompatible(
@@ -91,6 +98,8 @@ export async function romanizeSongLyrics(
   } else if (provider === "openrouter") {
     if (!apiKey?.trim()) throw new Error("API key is required for OpenRouter");
     result = await romanizeWithOpenRouter(lines, apiKey, model);
+  } else if (provider === "ollama") {
+    result = await romanizeWithOllama(lines, apiKey, baseUrl, model);
   } else if (provider === "openai_compatible") {
     result = await romanizeWithOpenAiCompatible(
       lines,

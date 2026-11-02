@@ -5,6 +5,7 @@ import {
   SiGoogletranslate,
   SiAnthropic,
   SiOpenrouter,
+  SiOllama,
 } from "react-icons/si";
 import { TbBrandOpenai } from "react-icons/tb";
 import { LuServer, LuCheck } from "react-icons/lu";
@@ -51,9 +52,15 @@ const PROVIDERS: ProviderItem[] = [
     icon: <SiOpenrouter className="w-5 h-5 text-[#818cf8]" />,
   },
   {
+    id: "ollama",
+    name: "Ollama",
+    subtitle: "Local & Offline AI",
+    icon: <SiOllama className="w-5 h-5 text-white" />,
+  },
+  {
     id: "openai_compatible",
     name: "Compatible",
-    subtitle: "Custom API / Ollama",
+    subtitle: "Custom API / Proxy",
     icon: <LuServer className="w-5 h-5 text-[#a78bfa]" />,
   },
   {
@@ -93,19 +100,19 @@ export function AiProviderCards({ value, onChange }: AiProviderCardsProps) {
               </div>
             )}
 
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-8 h-8 rounded-lg bg-black/40 border border-white/10 flex items-center justify-center shrink-0">
-                {item.icon}
-              </div>
-              {item.badge && (
-                <span className="text-[10px] font-medium text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded-full border border-emerald-500/20">
-                  {item.badge}
-                </span>
-              )}
+            <div className="w-8 h-8 rounded-lg bg-black/40 border border-white/10 flex items-center justify-center mb-2">
+              {item.icon}
             </div>
 
             <div className="flex flex-col mt-auto">
-              <span className="text-xs font-semibold text-white tracking-tight">{item.name}</span>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-xs font-semibold text-white tracking-tight">{item.name}</span>
+                {item.badge && (
+                  <span className="text-[9px] font-medium text-emerald-400 bg-emerald-500/15 px-1.5 py-0.5 rounded-full border border-emerald-500/25">
+                    {item.badge}
+                  </span>
+                )}
+              </div>
               <span className="text-[11px] text-white/50 group-hover:text-white/70 line-clamp-1 mt-0.5">
                 {item.subtitle}
               </span>
