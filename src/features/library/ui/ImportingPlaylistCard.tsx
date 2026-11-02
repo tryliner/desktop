@@ -1,5 +1,7 @@
 import { useTranslation } from "@/languages";
 import { PlaylistFill } from "@mingcute/react";
+import { useTweenedNumber } from "@/shared/hooks";
+import { SegmentBar } from "@/shared/ui";
 import type { ImportJob } from "@/shared/contracts/imports";
 import type { LibraryViewMode } from "../types";
 import { useModalStore } from "../store/modalStore";
@@ -21,18 +23,21 @@ export default function ImportingPlaylistCard({
   const isFinalizing = job.status === "finalizing";
 
   const displayTitle = job.title || t("import.active_import");
+  const total = job.result?.total ?? 0;
+  const imported = job.result?.imported ?? 0;
+  const skipped = job.result?.skipped ?? 0;
+  const processed = Math.round(useTweenedNumber(imported + skipped));
+  const showProgress = isRunning && total > 0;
 
   const getSubtitle = () => {
     if (isQueued) {
       return t("import.status_queued");
     }
     if (isRunning) {
-      if (job.result?.total) {
-        const processed =
-          (job.result.imported ?? 0) + (job.result.skipped ?? 0);
+      if (total) {
         return t("import.status_running_progress", {
           count: processed,
-          total: job.result.total,
+          total,
         });
       }
       return t("import.status_searching_sub");
@@ -63,12 +68,12 @@ export default function ImportingPlaylistCard({
         onClick={handleClick}
         className={`w-full flex items-center justify-between rounded-control p-[8px] select-none transition-all duration-150 ${
           isAwaiting
-            ? "cursor-pointer hover:bg-border-alpha-14 opacity-90"
+            ? "cursor-pointer hover:bg-fill opacity-90"
             : "cursor-default opacity-70"
         }`}
       >
         <div className="flex items-center gap-[16px] min-w-0 flex-1">
-          <div className="relative h-[48px] w-[48px] shrink-0 overflow-hidden rounded-control bg-bg-panel border border-border-primary/40 flex items-center justify-center">
+          <div className="relative h-[48px] w-[48px] shrink-0 overflow-hidden rounded-control bg-fill flex items-center justify-center">
             {isAwaiting ? (
               <PlaylistFill size={22} className="text-text-tertiary/60" />
             ) : (
@@ -102,7 +107,7 @@ export default function ImportingPlaylistCard({
         </div>
 
         {isAwaiting && (
-          <span className="shrink-0 text-[11px] px-[8px] py-[3px] rounded-[3px] bg-white/10 text-text-primary font-medium">
+          <span className="shrink-0 text-[11px] px-[8px] py-[3px] rounded-full bg-fill-hover text-text-primary font-[500]">
             {t("import.review_action")}
           </span>
         )}
@@ -120,36 +125,45 @@ export default function ImportingPlaylistCard({
       }`}
       draggable={false}
     >
-      <div className="relative aspect-square w-full overflow-hidden rounded-control flex flex-col items-center justify-center bg-bg-panel border border-border-primary/40">
+      <div className="relative aspect-square w-full overflow-hidden rounded-control flex flex-col items-center justify-center bg-fill">
         {isAwaiting ? (
           <PlaylistFill size={44} className="text-text-tertiary/50" />
-        ) : (
+        ) : showProgress ? null : (
           <div className="h-[28px] w-[28px] animate-spin rounded-full border-[2px] border-text-tertiary/20 border-t-text-primary" />
         )}
 
-        {isRunning && job.result?.total ? (
-          <div className="absolute bottom-[8px] left-[8px] right-[8px]">
-            <div className="h-[3px] w-full rounded-full bg-border-alpha-14 overflow-hidden">
-              <div
-                className="h-full bg-text-primary transition-all duration-300 rounded-full"
-                style={{
-                  width: `${Math.min(
-                    100,
-                    Math.round(
-                      (((job.result.imported ?? 0) +
-                        (job.result.skipped ?? 0)) /
-                        job.result.total) *
-                        100,
-                    ),
-                  )}%`,
-                }}
-              />
+        {showProgress ? (
+          // the storage overview in miniature: count, total and a share bar
+          <div className="absolute inset-x-[12px] bottom-[12px] flex flex-col gap-[10px]">
+            <div className="flex items-baseline gap-[5px]">
+              <span className="text-[28px] font-[600] leading-none tracking-[-0.02em] tabular-nums text-text-primary">
+                {processed}
+              </span>
+              <span className="text-title tabular-nums text-text-tertiary">
+                / {total}
+              </span>
             </div>
+            <SegmentBar
+              className="h-[6px]"
+              segments={[
+                { key: "imported", value: imported, swatch: "bg-text-primary" },
+                {
+                  key: "skipped",
+                  value: skipped,
+                  swatch: "bg-text-tertiary/60",
+                },
+                {
+                  key: "left",
+                  value: Math.max(0, total - imported - skipped),
+                  swatch: "bg-fill-hover",
+                },
+              ]}
+            />
           </div>
         ) : null}
 
         {isAwaiting && (
-          <span className="absolute top-[8px] right-[8px] text-[10px] px-[6px] py-[2px] rounded-[3px] bg-white/10 text-text-primary font-medium">
+          <span className="absolute top-[8px] right-[8px] text-[10px] px-[6px] py-[2px] rounded-full bg-fill-hover text-text-primary font-[500]">
             {t("import.status_awaiting_decision")}
           </span>
         )}

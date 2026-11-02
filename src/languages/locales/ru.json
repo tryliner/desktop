@@ -1153,7 +1153,15 @@
     "status_failed_sub": "Что-то пошло не так",
     "view_playlist": "Открыть плейлист",
     "no_candidate_found": "Трек не найден в каталоге",
-    "active_import": "Импорт плейлиста"
+    "active_import": "Импорт плейлиста",
+    "overview_unit_one": "трек добавится",
+    "overview_unit_few": "трека добавится",
+    "overview_unit_many": "треков добавится",
+    "overview_unit_other": "трека добавится",
+    "overview_review": "{count} на проверке",
+    "overview_matched": "Найдено {count}",
+    "overview_added": "Добавлено {count}",
+    "overview_skipped": "Пропущено {count}"
   },
   "error_screen": {
     "title": "Что-то пошло не так",

@@ -96,3 +96,9 @@ export {
   PANEL_FILL_CLASS,
   type PanelProps,
 } from "./Panel";
+export { default as ConfirmPill, type ConfirmPillProps } from "./ConfirmPill";
+export {
+  default as UsageOverview,
+  SegmentBar,
+  type UsageSegment,
+} from "./UsageOverview";

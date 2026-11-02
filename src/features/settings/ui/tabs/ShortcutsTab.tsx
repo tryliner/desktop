@@ -21,7 +21,7 @@ import {
   ExternalLinkLine,
 } from "@mingcute/react";
 import { useTranslation } from "@/languages";
-import { Dialog, Button, Tooltip, useToast } from "@/shared/ui";
+import { ConfirmPill, useToast } from "@/shared/ui";
 import {
   useShortcutsStore,
   normalizeShortcutToEnglish,
@@ -31,7 +31,6 @@ import {
   type GlobalShortcutsSettings,
   type MainAppShortcutsSettings,
   type MiniplayerShortcutsSettings,
-  ResetIcon,
 } from "@/features/shortcuts";
 import { ShortcutRecorder } from "@/features/shortcuts/ui/ShortcutRecorder";
 
@@ -63,7 +62,6 @@ export function ShortcutsTab({
   const [activeScope, setActiveScope] = useState<ScopeFilter>("mainApp");
   const [localSearchQuery, setLocalSearchQuery] = useState("");
   const [recordingId, setRecordingId] = useState<string | null>(null);
-  const [isResetModalOpen, setIsResetModalOpen] = useState(false);
 
   useEffect(() => {
     if (!recordingId) return;
@@ -95,7 +93,6 @@ export function ShortcutsTab({
 
   const handleConfirmResetAll = useCallback(() => {
     resetAll();
-    setIsResetModalOpen(false);
     toast(
       isRu ? "Все горячие клавиши сброшены" : "All shortcuts have been reset",
       "info",
@@ -829,26 +826,15 @@ export function ShortcutsTab({
             )}
           </div>
 
-          <Tooltip
-            content={t("settings.shortcuts.reset_all") || "Reset all shortcuts"}
-            side="bottom"
-            sideOffset={6}
-          >
-            <button
-              type="button"
-              onClick={() => setIsResetModalOpen(true)}
-              aria-label={
-                t("settings.shortcuts.reset_all") || "Reset all shortcuts"
-              }
-              className="h-[34px] w-[34px] rounded-[10px] bg-fill hover:bg-fill-hover flex items-center justify-center text-text-secondary hover:text-text-primary transition-colors cursor-pointer shrink-0 border-0 p-0 active:scale-[0.95]"
-            >
-              <ResetIcon
-                size={14.5}
-                className="-top-[1px]"
-                style={{ top: "-1px" }}
-              />
-            </button>
-          </Tooltip>
+          <ConfirmPill
+            className="h-[34px]"
+            label={t("settings.shortcuts.reset_all_button") || "Reset defaults"}
+            actionLabel={
+              t("settings.shortcuts.reset_all") || "Reset all shortcuts"
+            }
+            confirmLabel={t("common.confirm") || "Confirm"}
+            onConfirm={handleConfirmResetAll}
+          />
         </div>
       </div>
 
@@ -921,57 +907,6 @@ export function ShortcutsTab({
           )}
         </motion.div>
       </AnimatePresence>
-
-      {/* ── Global Reset Confirmation Modal ── */}
-      <Dialog
-        open={isResetModalOpen}
-        onOpenChange={setIsResetModalOpen}
-        maxWidth={310}
-        zIndex={250}
-        className="p-[16px]"
-      >
-        <div className="flex flex-col">
-          {/* Header */}
-          <div className="flex flex-col gap-[3px]">
-            <h3
-              className="text-title font-[600] text-text-primary m-0 leading-tight"
-              style={{
-                letterSpacing: "-0.01em",
-              }}
-            >
-              {isRu
-                ? "Все горячие клавиши будут сброшены"
-                : "All shortkeys will be reset"}
-            </h3>
-            <p className="text-caption text-text-tertiary m-0 mt-[4px] leading-snug">
-              {isRu
-                ? "Все комбинации клавиш вернутся к значениям по умолчанию. Это действие нельзя отменить."
-                : "All customized shortcut keys will be restored to their factory defaults. This action cannot be undone."}
-            </p>
-          </div>
-
-          {/* Actions: Cancel + Continue */}
-          <div className="flex items-center gap-[8px] mt-[16px]">
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => setIsResetModalOpen(false)}
-              className="flex-1 !h-[34px] text-body !rounded-item"
-            >
-              {t("common.cancel") || (isRu ? "Отмена" : "Cancel")}
-            </Button>
-
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={handleConfirmResetAll}
-              className="flex-1 !h-[34px] text-body !rounded-item !bg-accent-secondary !text-bg-primary hover:!opacity-90"
-            >
-              {isRu ? "Продолжить" : "Continue"}
-            </Button>
-          </div>
-        </div>
-      </Dialog>
     </div>
   );
 }
