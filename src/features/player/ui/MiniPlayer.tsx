@@ -646,7 +646,7 @@ function MiniPlayer({
             : embedded
               ? `rounded-item ${
                   hasPageBackdrop
-                    ? "bg-bg-glass dark:bg-black/20 backdrop-blur-[48px] backdrop-saturate-150"
+                    ? "bg-bg-glass backdrop-blur-[48px] backdrop-saturate-150"
                     : "bg-bg-primary"
                 }`
               : "rounded-3xl border-[0.5px] border-border-tertiary bg-bg-primary"
