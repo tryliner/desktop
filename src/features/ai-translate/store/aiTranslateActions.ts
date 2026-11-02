@@ -12,6 +12,11 @@ import type { AiTranslateState } from "./aiTranslateStore";
 let activeTranslationCount = 0;
 let activeRomanizationCount = 0;
 
+export function resetActiveRequestCounts(): void {
+  activeTranslationCount = 0;
+  activeRomanizationCount = 0;
+}
+
 export async function executeTrackTranslation(
   get: () => AiTranslateState,
   set: (fn: (s: AiTranslateState) => Partial<AiTranslateState>) => void,
@@ -46,13 +51,8 @@ export async function executeTrackTranslation(
       baseUrl: baseUrl.trim() || undefined,
       singableMode,
     });
+    if (currentGen() !== requestGen) return null;
     activeTranslationCount = Math.max(0, activeTranslationCount - 1);
-    if (currentGen() !== requestGen) {
-      if (activeTranslationCount === 0) {
-        set((s) => ({ ...s, isTranslating: false }));
-      }
-      return null;
-    }
     set((s) => ({
       isTranslating: activeTranslationCount > 0,
       translationsByTrackId: trimCache({ ...s.translationsByTrackId, [cacheKey]: translated }),
@@ -60,14 +60,9 @@ export async function executeTrackTranslation(
     }));
     return translated;
   } catch (err: unknown) {
+    if (currentGen() !== requestGen) return null;
     activeTranslationCount = Math.max(0, activeTranslationCount - 1);
     const errorMsg = err instanceof Error ? err.message : "Translation failed";
-    if (currentGen() !== requestGen) {
-      if (activeTranslationCount === 0) {
-        set((s) => ({ ...s, isTranslating: false }));
-      }
-      return null;
-    }
     set((s) => ({ ...s, isTranslating: activeTranslationCount > 0, error: errorMsg }));
     return null;
   }
@@ -106,28 +101,23 @@ export async function executeTrackRomanization(
       model: model.trim() || undefined,
       baseUrl: baseUrl.trim() || undefined,
     });
+    if (currentGen() !== requestGen) return null;
     activeRomanizationCount = Math.max(0, activeRomanizationCount - 1);
-    if (currentGen() !== requestGen) {
-      if (activeRomanizationCount === 0) {
-        set((s) => ({ ...s, isRomanizing: false }));
-      }
-      return null;
+    const hasNonEmpty = romanized.some((l) => l.trim().length > 0);
+    if (hasNonEmpty) {
+      set((s) => ({
+        isRomanizing: activeRomanizationCount > 0,
+        romanizationsByTrackId: trimCache({ ...s.romanizationsByTrackId, [cacheKey]: romanized }),
+        sourceRomLinesByCacheKey: trimCache({ ...s.sourceRomLinesByCacheKey, [cacheKey]: lines }),
+      }));
+    } else {
+      set((s) => ({ ...s, isRomanizing: activeRomanizationCount > 0 }));
     }
-    set((s) => ({
-      isRomanizing: activeRomanizationCount > 0,
-      romanizationsByTrackId: trimCache({ ...s.romanizationsByTrackId, [cacheKey]: romanized }),
-      sourceRomLinesByCacheKey: trimCache({ ...s.sourceRomLinesByCacheKey, [cacheKey]: lines }),
-    }));
     return romanized;
   } catch (err: unknown) {
+    if (currentGen() !== requestGen) return null;
     activeRomanizationCount = Math.max(0, activeRomanizationCount - 1);
     const errorMsg = err instanceof Error ? err.message : "Romanization failed";
-    if (currentGen() !== requestGen) {
-      if (activeRomanizationCount === 0) {
-        set((s) => ({ ...s, isRomanizing: false }));
-      }
-      return null;
-    }
     set((s) => ({ ...s, isRomanizing: activeRomanizationCount > 0, error: errorMsg }));
     return null;
   }

@@ -4,15 +4,17 @@ import {
   romanizeSongLyrics,
 } from "./aiTranslateService";
 
-function mockGoogleTranslate(dictionary: Record<string, string>) {
-  return vi.fn(async (input: RequestInfo | URL) => {
-    const url = String(input);
-    const q = decodeURIComponent(new URL(url).searchParams.get("q") ?? "");
+function mockFetchJson(data: unknown): typeof fetch {
+  return vi.fn<typeof fetch>(async () =>
+    new Response(JSON.stringify(data), { status: 200 }),
+  );
+}
+
+function mockGoogleTranslate(dictionary: Record<string, string>): typeof fetch {
+  return vi.fn<typeof fetch>(async (input: RequestInfo | URL) => {
+    const q = decodeURIComponent(new URL(String(input)).searchParams.get("q") ?? "");
     const translated = dictionary[q] ?? q;
-    return {
-      ok: true,
-      json: async () => [[[translated, q]]],
-    } as Response;
+    return new Response(JSON.stringify([[[translated, q]]]), { status: 200 });
   });
 }
 
@@ -26,7 +28,7 @@ describe("AI Lyrics Translation Service", () => {
       Hello: "Xin chào",
       World: "Thế giới",
     });
-    global.fetch = mockFetch as unknown as typeof fetch;
+    global.fetch = mockFetch;
 
     const result = await translateSongLyrics(["Hello", "", "World"], {
       provider: "google_translate",
@@ -38,61 +40,43 @@ describe("AI Lyrics Translation Service", () => {
   });
 
   it("throws when API key is missing for gemini, openai, or deepseek", async () => {
-    await expect(
-      translateSongLyrics(["Hello"], { provider: "gemini", targetLang: "vi" }),
-    ).rejects.toThrow("API key is required for Gemini");
-
-    await expect(
-      translateSongLyrics(["Hello"], { provider: "openai", targetLang: "vi" }),
-    ).rejects.toThrow("API key is required for OpenAI");
-
-    await expect(
-      translateSongLyrics(["Hello"], { provider: "deepseek", targetLang: "vi" }),
-    ).rejects.toThrow("API key is required for DeepSeek");
+    for (const provider of ["gemini", "openai", "deepseek"] as const) {
+      const name =
+        provider === "gemini" ? "Gemini" : provider === "openai" ? "OpenAI" : "DeepSeek";
+      await expect(
+        translateSongLyrics(["Hello"], { provider, targetLang: "vi" }),
+      ).rejects.toThrow(`API key is required for ${name}`);
+      await expect(
+        romanizeSongLyrics(["Hello"], { provider, targetLang: "vi" }),
+      ).rejects.toThrow(`API key is required for ${name}`);
+    }
   });
 
   it("keeps subtitle indices aligned when an LLM drops blank lines", async () => {
-    const mockFetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        candidates: [
-          { content: { parts: [{ text: "Dòng một\nDòng ba" }] } },
-        ],
-      }),
+    global.fetch = mockFetchJson({
+      candidates: [{ content: { parts: [{ text: "Dòng một\nDòng ba" }] } }],
     });
-    global.fetch = mockFetch as unknown as typeof fetch;
 
     const result = await translateSongLyrics(
       ["Line one", "", "Line three"],
-      {
-        provider: "gemini",
-        apiKey: "test-key",
-        targetLang: "vi",
-      },
+      { provider: "gemini", apiKey: "test-key", targetLang: "vi" },
     );
 
     expect(result).toEqual(["Dòng một", "", "Dòng ba"]);
   });
 
   it("romanizes Japanese lyrics and skips lines that are already Latin", async () => {
-    const mockFetch = vi.fn(async (input: RequestInfo | URL) => {
+    global.fetch = vi.fn<typeof fetch>(async (input: RequestInfo | URL) => {
       const q = decodeURIComponent(
         new URL(String(input)).searchParams.get("q") ?? "",
       );
       const result = q === "残酷な天使のテーゼ" ? "Zankoku na tenshi no tēze" : q;
-      return {
-        ok: true,
-        json: async () => [[[null, null, null, result]]],
-      } as Response;
+      return new Response(JSON.stringify([[[null, null, null, result]]]), { status: 200 });
     });
-    global.fetch = mockFetch as unknown as typeof fetch;
 
     const result = await romanizeSongLyrics(
       ["残酷な天使のテーゼ", "Hello world"],
-      {
-        provider: "google_translate",
-        targetLang: "vi",
-      },
+      { provider: "google_translate", targetLang: "vi" },
     );
 
     expect(result).toEqual(["Zankoku na tenshi no tēze", ""]);
@@ -100,26 +84,23 @@ describe("AI Lyrics Translation Service", () => {
 
   it("translates via OpenAI compatible provider with custom baseUrl and model", async () => {
     let capturedUrl = "";
-    let capturedBody: any = null;
-    let capturedHeaders: any = null;
+    interface ChatPayload {
+      model?: string;
+      messages?: Array<{ content?: string }>;
+    }
+    let capturedBody: ChatPayload = {};
+    let capturedHeaders: HeadersInit | undefined = undefined;
 
-    global.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+    global.fetch = vi.fn<typeof fetch>(async (input: RequestInfo | URL, init?: RequestInit) => {
       capturedUrl = String(input);
       capturedHeaders = init?.headers;
-      capturedBody = JSON.parse(String(init?.body ?? "{}"));
-      return {
-        ok: true,
-        json: async () => ({
-          choices: [
-            {
-              message: {
-                content: "Xin chào bầu trời xanh\nNắng chiếu lấp lánh quanh",
-              },
-            },
-          ],
-        }),
-      } as Response;
-    }) as unknown as typeof fetch;
+      capturedBody = JSON.parse(String(init?.body ?? "{}")) as ChatPayload;
+      return new Response(JSON.stringify({
+        choices: [
+          { message: { content: "Xin chào bầu trời xanh\nNắng chiếu lấp lánh quanh" } },
+        ],
+      }), { status: 200 });
+    });
 
     const result = await translateSongLyrics(["Blue sky", "Bright sun"], {
       provider: "openai_compatible",
@@ -131,9 +112,11 @@ describe("AI Lyrics Translation Service", () => {
     });
 
     expect(capturedUrl).toBe("https://api.groq.com/openai/v1/chat/completions");
-    expect(capturedHeaders["Authorization"]).toBe("Bearer custom-token-123");
+    const headers = new Headers(capturedHeaders);
+    expect(headers.get("Authorization")).toBe("Bearer custom-token-123");
     expect(capturedBody.model).toBe("llama-3.3-70b-versatile");
-    expect(capturedBody.messages[0].content).toContain("SYLLABLE COUNT");
+    const content = capturedBody.messages?.[0]?.content ?? "";
+    expect(content).toContain("SYLLABLE COUNT");
     expect(result).toEqual(["Xin chào bầu trời xanh", "Nắng chiếu lấp lánh quanh"]);
   });
 });

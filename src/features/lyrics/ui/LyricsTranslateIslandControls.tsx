@@ -27,6 +27,8 @@ export function LyricsTranslateIslandControls() {
     romanizeTrackLyrics,
     translationsByTrackId,
     romanizationsByTrackId,
+    sourceLinesByCacheKey,
+    sourceRomLinesByCacheKey,
     targetLang,
     singableMode,
   } = useAiTranslateStore();
@@ -36,8 +38,26 @@ export function LyricsTranslateIslandControls() {
     ? getTranslationCacheKey(id, targetLang, singableMode, activeProvider)
     : "";
   const romKey = id ? getRomanizationCacheKey(id, activeProvider) : "";
-  const hasTrans = Boolean(cacheKey && translationsByTrackId[cacheKey]?.length);
-  const hasRom = Boolean(romKey && romanizationsByTrackId[romKey]?.length);
+
+  const lines = braccatoLyrics.map(
+    (l) => l.words || l.parts?.map((p) => p.words).join("") || "",
+  );
+  const isMatch = (cached: string[] | undefined) =>
+    Boolean(
+      cached &&
+        cached.length === lines.length &&
+        cached.every((l, i) => l === lines[i]),
+    );
+  const hasTrans = Boolean(
+    cacheKey &&
+      translationsByTrackId[cacheKey]?.some((l) => l.trim().length > 0) &&
+      isMatch(sourceLinesByCacheKey[cacheKey]),
+  );
+  const hasRom = Boolean(
+    romKey &&
+      romanizationsByTrackId[romKey]?.some((l) => l.trim().length > 0) &&
+      isMatch(sourceRomLinesByCacheKey[romKey]),
+  );
 
   const hasRomanizableLyrics = braccatoLyrics.some((lyric) =>
     NON_LATIN_RE.test(
@@ -45,38 +65,25 @@ export function LyricsTranslateIslandControls() {
     ),
   );
 
-  const getLines = () =>
-    braccatoLyrics.map(
-      (l) => l.words || l.parts?.map((p) => p.words).join("") || "",
-    );
-
   const handleTrans = async () => {
     if (hasTrans) return toggleTranslation();
-    if (!currentTrack || braccatoLyrics.length === 0) return;
-    const lines = getLines();
-    if (lines.length === 0) return;
+    if (!currentTrack || lines.length === 0) return;
     const res = await translateTrackLyrics(currentTrack.id, lines, activeProvider);
     if (res) useAiTranslateStore.getState().setShowTranslation(true);
     else {
-      showToast.error("Could not translate lyrics", {
-        description:
-          useAiTranslateStore.getState().error ?? "Check API key in Settings.",
-      });
+      const err = useAiTranslateStore.getState().error;
+      if (err) showToast.error("Could not translate lyrics", { description: err });
     }
   };
 
   const handleRom = async () => {
     if (hasRom) return toggleRomanization();
-    if (!currentTrack || braccatoLyrics.length === 0) return;
-    const lines = getLines();
-    if (lines.length === 0) return;
+    if (!currentTrack || lines.length === 0) return;
     const res = await romanizeTrackLyrics(currentTrack.id, lines, activeProvider);
     if (res) useAiTranslateStore.getState().setShowRomanization(true);
     else {
-      showToast.error("Could not romanize lyrics", {
-        description:
-          useAiTranslateStore.getState().error ?? "Check API key in Settings.",
-      });
+      const err = useAiTranslateStore.getState().error;
+      if (err) showToast.error("Could not romanize lyrics", { description: err });
     }
   };
 

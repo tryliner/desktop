@@ -32,7 +32,12 @@ function hasTimedParts(lyrics: Lyric[]): boolean {
 }
 
 function subtitleOf(line: Lyric): string | null {
-  const text = line.translation?.text ?? line.romanization ?? null;
+  const trans = line.translation?.text?.trim();
+  const rom = line.romanization?.trim();
+  if (rom && trans && rom !== trans) {
+    return `${rom} • ${trans}`;
+  }
+  const text = trans ?? rom ?? null;
   return text && text.trim() ? text.trim() : null;
 }
 

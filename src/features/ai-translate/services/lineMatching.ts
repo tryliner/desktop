@@ -10,9 +10,14 @@ export function matchLineCount(
   }
 
   if (trimmed.length === original.length) {
-    return original.map((orig, index) =>
-      orig.trim().length === 0 ? "" : trimmed[index],
+    const hasMissingLine = original.some(
+      (orig, index) => orig.trim().length > 0 && trimmed[index].length === 0,
     );
+    if (!hasMissingLine) {
+      return original.map((orig, index) =>
+        orig.trim().length === 0 ? "" : trimmed[index],
+      );
+    }
   }
 
   const cleaned = trimmed.filter((line) => line.length > 0);

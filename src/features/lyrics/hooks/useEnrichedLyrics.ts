@@ -7,6 +7,23 @@ import {
 } from "@/features/ai-translate";
 import { useLyricsStore } from "../store/lyricsStore";
 
+function getLineTexts(lyrics: Lyric[]): string[] {
+  return lyrics.map(
+    (l) => l.words || l.parts?.map((p) => p.words).join("") || "",
+  );
+}
+
+function matchesSourceLines(
+  cached: string[] | undefined,
+  lines: string[],
+): boolean {
+  return Boolean(
+    cached &&
+      cached.length === lines.length &&
+      cached.every((line, idx) => line === lines[idx]),
+  );
+}
+
 export function enrichLyrics(
   braccatoLyrics: Lyric[],
   trackTranslations?: string[],
@@ -45,19 +62,28 @@ export function useEnrichedLyrics(
   const romanizationsByTrackId = useAiTranslateStore(
     (s) => s.romanizationsByTrackId,
   );
+  const sourceLinesByCacheKey = useAiTranslateStore(
+    (s) => s.sourceLinesByCacheKey,
+  );
+  const sourceRomLinesByCacheKey = useAiTranslateStore(
+    (s) => s.sourceRomLinesByCacheKey,
+  );
   const targetLang = useAiTranslateStore((s) => s.targetLang);
   const singableMode = useAiTranslateStore((s) => s.singableMode);
 
   const trackTranslations = useMemo(() => {
     if (!currentTrackId || !showTranslation) return undefined;
-    return translationsByTrackId[
-      getTranslationCacheKey(
-        currentTrackId,
-        targetLang,
-        singableMode,
-        activeProvider,
-      )
-    ];
+    const key = getTranslationCacheKey(
+      currentTrackId,
+      targetLang,
+      singableMode,
+      activeProvider,
+    );
+    const cached = translationsByTrackId[key];
+    if (!cached) return undefined;
+    return matchesSourceLines(sourceLinesByCacheKey[key], getLineTexts(braccatoLyrics))
+      ? cached
+      : undefined;
   }, [
     currentTrackId,
     showTranslation,
@@ -65,14 +91,26 @@ export function useEnrichedLyrics(
     singableMode,
     activeProvider,
     translationsByTrackId,
+    sourceLinesByCacheKey,
+    braccatoLyrics,
   ]);
 
   const trackRomanizations = useMemo(() => {
     if (!currentTrackId || !showRomanization) return undefined;
-    return romanizationsByTrackId[
-      getRomanizationCacheKey(currentTrackId, activeProvider)
-    ];
-  }, [currentTrackId, showRomanization, activeProvider, romanizationsByTrackId]);
+    const key = getRomanizationCacheKey(currentTrackId, activeProvider);
+    const cached = romanizationsByTrackId[key];
+    if (!cached) return undefined;
+    return matchesSourceLines(sourceRomLinesByCacheKey[key], getLineTexts(braccatoLyrics))
+      ? cached
+      : undefined;
+  }, [
+    currentTrackId,
+    showRomanization,
+    activeProvider,
+    romanizationsByTrackId,
+    sourceRomLinesByCacheKey,
+    braccatoLyrics,
+  ]);
 
   return useMemo(
     () =>

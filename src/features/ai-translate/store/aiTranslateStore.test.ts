@@ -6,15 +6,12 @@ import {
   sanitizeAiTranslateForExport,
 } from "./aiTranslateStore";
 
-function mockGoogleTranslate(dictionary: Record<string, string>) {
-  return vi.fn(async (input: RequestInfo | URL) => {
+function mockGoogleTranslate(dictionary: Record<string, string>): typeof fetch {
+  return vi.fn<typeof fetch>(async (input: RequestInfo | URL) => {
     const url = String(input);
     const q = decodeURIComponent(new URL(url).searchParams.get("q") ?? "");
     const translated = dictionary[q] ?? q;
-    return {
-      ok: true,
-      json: async () => [[[translated, q]]],
-    } as Response;
+    return new Response(JSON.stringify([[[translated, q]]]), { status: 200 });
   });
 }
 
@@ -31,7 +28,7 @@ describe("AI Lyrics Translation Store", () => {
       "Line 1": "Dòng 1",
       "Line 2": "Dòng 2",
     });
-    global.fetch = mockFetch as unknown as typeof fetch;
+    global.fetch = mockFetch;
 
     const store = useAiTranslateStore.getState();
     const res1 = await store.translateTrackLyrics("track-123", lines);
@@ -68,7 +65,7 @@ describe("AI Lyrics Translation Store", () => {
     const mockFetch = mockGoogleTranslate({
       Song: "Bài hát",
     });
-    global.fetch = mockFetch as unknown as typeof fetch;
+    global.fetch = mockFetch;
 
     const store = useAiTranslateStore.getState();
     await store.translateTrackLyrics("track-genius", ["Song"], "genius");
@@ -108,7 +105,7 @@ describe("AI Lyrics Translation Store", () => {
       "Line 1": "Dòng 1",
       "Different 1": "Khác 1",
     });
-    global.fetch = mockFetch as unknown as typeof fetch;
+    global.fetch = mockFetch;
 
     const store = useAiTranslateStore.getState();
     const res1 = await store.translateTrackLyrics("track-diff", ["Line 1"]);

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   useAiTranslateStore,
   translateSongLyrics,
@@ -27,28 +27,33 @@ export function AiTabModelConfig() {
   const { provider, setProvider, apiKey, setApiKey, baseUrl, setBaseUrl, model, setModel, singableMode, targetLang, clearCache } = useAiTranslateStore();
   const [testResult, setTestResult] = useState<string | null>(null);
   const [testing, setTesting] = useState(false);
+  const testIdRef = useRef(0);
+
+  const invalidateTest = () => {
+    testIdRef.current++;
+    setTesting(false);
+    setTestResult(null);
+  };
 
   const handleTest = async () => {
+    const currentId = ++testIdRef.current;
     setTesting(true);
     setTestResult(null);
     try {
       const res = await translateSongLyrics(
         ["I'm walking on sunshine, and don't it feel good!"],
-        {
-          provider,
-          apiKey: apiKey.trim() || undefined,
-          targetLang,
-          model: model.trim() || undefined,
-          baseUrl: baseUrl.trim() || undefined,
-          singableMode,
-        },
+        { provider, apiKey: apiKey.trim() || undefined, targetLang, model: model.trim() || undefined, baseUrl: baseUrl.trim() || undefined, singableMode },
       );
-      setTestResult(res?.[0] ?? "Translation error, please check your key.");
+      if (testIdRef.current === currentId) {
+        setTestResult(res?.[0] ?? "Translation error, please check your key.");
+      }
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err);
-      setTestResult(`Error: ${message}`);
+      if (testIdRef.current === currentId) {
+        const message = err instanceof Error ? err.message : String(err);
+        setTestResult(`Error: ${message}`);
+      }
     } finally {
-      setTesting(false);
+      if (testIdRef.current === currentId) setTesting(false);
     }
   };
 
@@ -58,7 +63,7 @@ export function AiTabModelConfig() {
         <SegmentedControl
           ariaLabel="AI Provider"
           value={provider}
-          onChange={(val) => setProvider(val as AiProvider)}
+          onChange={(val) => { invalidateTest(); setProvider(val as AiProvider); }}
           options={PROVIDER_OPTIONS}
         />
         {provider !== "google_translate" && (
@@ -71,7 +76,7 @@ export function AiTabModelConfig() {
                   type="text"
                   placeholder="https://api.openai.com/v1 (or OpenRouter, Groq, Ollama...)"
                   value={baseUrl}
-                  onChange={(e) => setBaseUrl(e.target.value)}
+                  onChange={(e) => { invalidateTest(); setBaseUrl(e.target.value); }}
                   className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/15 text-sm text-white focus:outline-none focus:border-white/30 font-mono placeholder:text-white/30"
                 />
               </div>
@@ -84,7 +89,7 @@ export function AiTabModelConfig() {
                   type="password"
                   placeholder={`Enter ${provider.toUpperCase()} API key...`}
                   value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
+                  onChange={(e) => { invalidateTest(); setApiKey(e.target.value); }}
                   className="flex-1 px-3 py-1.5 rounded-lg bg-white/5 border border-white/15 text-sm text-white focus:outline-none focus:border-white/30 placeholder:text-white/30"
                 />
                 <button
@@ -104,7 +109,7 @@ export function AiTabModelConfig() {
                 type="text"
                 placeholder={getPlaceholder(provider)}
                 value={model}
-                onChange={(e) => setModel(e.target.value)}
+                onChange={(e) => { invalidateTest(); setModel(e.target.value); }}
                 className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/15 text-sm text-white focus:outline-none focus:border-white/30 font-mono placeholder:text-white/30"
               />
             </div>

@@ -45,6 +45,10 @@ export async function romanizeWithGoogleFree(
         return String(item[3]).trim();
       }
     }
+    const isNonLatin = /[^\p{Script=Latin}\p{P}\p{Z}\p{N}\p{M}\p{S}]/u.test(trimmed);
+    if (isNonLatin) {
+      throw new Error(`Google romanization failed for: ${trimmed}`);
+    }
     return line;
   });
   return results;

@@ -4,6 +4,7 @@ import type { AiProvider } from "../types";
 import {
   executeTrackTranslation,
   executeTrackRomanization,
+  resetActiveRequestCounts,
 } from "./aiTranslateActions";
 
 export * from "./aiTranslateCache";
@@ -56,7 +57,7 @@ export const useAiTranslateStore = create<AiTranslateState>()(
     (set, get) => ({
       provider: "gemini",
       apiKey: "",
-      baseUrl: "https://api.openai.com/v1",
+      baseUrl: "",
       model: "",
       singableMode: false,
       targetLang: "en",
@@ -72,16 +73,19 @@ export const useAiTranslateStore = create<AiTranslateState>()(
 
       setProvider: (provider) => {
         configGeneration++;
-        set({ provider, error: null, translationsByTrackId: {}, romanizationsByTrackId: {}, sourceLinesByCacheKey: {}, sourceRomLinesByCacheKey: {} });
+        resetActiveRequestCounts();
+        set({ provider, error: null, isTranslating: false, isRomanizing: false, translationsByTrackId: {}, romanizationsByTrackId: {}, sourceLinesByCacheKey: {}, sourceRomLinesByCacheKey: {} });
       },
       setApiKey: (apiKey) => set({ apiKey, error: null }),
       setBaseUrl: (baseUrl) => {
         configGeneration++;
-        set({ baseUrl, error: null, translationsByTrackId: {}, romanizationsByTrackId: {}, sourceLinesByCacheKey: {}, sourceRomLinesByCacheKey: {} });
+        resetActiveRequestCounts();
+        set({ baseUrl, error: null, isTranslating: false, isRomanizing: false, translationsByTrackId: {}, romanizationsByTrackId: {}, sourceLinesByCacheKey: {}, sourceRomLinesByCacheKey: {} });
       },
       setModel: (model) => {
         configGeneration++;
-        set({ model, error: null, translationsByTrackId: {}, romanizationsByTrackId: {}, sourceLinesByCacheKey: {}, sourceRomLinesByCacheKey: {} });
+        resetActiveRequestCounts();
+        set({ model, error: null, isTranslating: false, isRomanizing: false, translationsByTrackId: {}, romanizationsByTrackId: {}, sourceLinesByCacheKey: {}, sourceRomLinesByCacheKey: {} });
       },
       setSingableMode: (singableMode) => set({ singableMode }),
       toggleSingableMode: () => set((s) => ({ singableMode: !s.singableMode })),
@@ -92,7 +96,8 @@ export const useAiTranslateStore = create<AiTranslateState>()(
       toggleRomanization: () => set((s) => ({ showRomanization: !s.showRomanization })),
       clearCache: () => {
         configGeneration++;
-        set({ translationsByTrackId: {}, romanizationsByTrackId: {}, sourceLinesByCacheKey: {}, sourceRomLinesByCacheKey: {} });
+        resetActiveRequestCounts();
+        set({ isTranslating: false, isRomanizing: false, translationsByTrackId: {}, romanizationsByTrackId: {}, sourceLinesByCacheKey: {}, sourceRomLinesByCacheKey: {} });
       },
 
       translateTrackLyrics: (trackId, lines, lyricsProvider) =>
@@ -103,12 +108,12 @@ export const useAiTranslateStore = create<AiTranslateState>()(
     }),
     {
       name: "liner_ai_translate_v1",
-      version: 2,
+      version: 3,
       storage: createJSONStorage(() => localStorage),
       migrate: (persisted: unknown, version: number) => {
         const state = (persisted ?? {}) as Partial<AiTranslateState>;
-        return version < 2
-          ? ({ ...state, translationsByTrackId: {}, romanizationsByTrackId: {}, sourceLinesByCacheKey: {}, sourceRomLinesByCacheKey: {} } as AiTranslateState)
+        return version < 3
+          ? ({ ...state, baseUrl: state.baseUrl === "https://api.openai.com/v1" ? "" : state.baseUrl, translationsByTrackId: {}, romanizationsByTrackId: {}, sourceLinesByCacheKey: {}, sourceRomLinesByCacheKey: {} } as AiTranslateState)
           : (state as AiTranslateState);
       },
       partialize: (state) => ({

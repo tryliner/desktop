@@ -17,9 +17,7 @@ async function callGeminiApi(
 ): Promise<string> {
   const cleanKey = apiKey.trim();
   const trimmedCustom = customModel?.trim();
-  const modelsToTry = trimmedCustom
-    ? [trimmedCustom, ...DEFAULT_GEMINI_MODELS.filter((m) => m !== trimmedCustom)]
-    : DEFAULT_GEMINI_MODELS;
+  const modelsToTry = trimmedCustom ? [trimmedCustom] : DEFAULT_GEMINI_MODELS;
 
   let lastError: Error | null = null;
   for (const model of modelsToTry) {
