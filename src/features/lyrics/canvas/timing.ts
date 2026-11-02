@@ -21,6 +21,7 @@ export interface TokenHighlight {
   clear: number;
   glowRem: number;
   scale?: number;
+  dy?: number;
 }
 
 export function isLineSelected(line: LyricLineModel, timeMs: number) {
@@ -83,6 +84,7 @@ export function tokenHighlight(
     clear: solid + SWIPE_WIDTH,
     glowRem: Math.max(baseGlow, pulse.glowRem),
     scale: pulse.scale,
+    dy: pulse.dy,
   };
 }
 
