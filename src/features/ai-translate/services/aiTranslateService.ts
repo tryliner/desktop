@@ -27,13 +27,16 @@ export async function translateSongLyrics(
 
   const { provider, apiKey, targetLang, model, baseUrl, singableMode } = config;
 
-  if (provider === "gemini" && apiKey) {
+  if (provider === "gemini") {
+    if (!apiKey?.trim()) throw new Error("API key is required for Gemini");
     return translateWithGemini(lines, apiKey, targetLang, model, singableMode);
   }
-  if (provider === "openai" && apiKey) {
+  if (provider === "openai") {
+    if (!apiKey?.trim()) throw new Error("API key is required for OpenAI");
     return translateWithOpenAI(lines, apiKey, targetLang, model, singableMode);
   }
-  if (provider === "deepseek" && apiKey) {
+  if (provider === "deepseek") {
+    if (!apiKey?.trim()) throw new Error("API key is required for DeepSeek");
     return translateWithDeepSeek(lines, apiKey, targetLang, model, singableMode);
   }
   if (provider === "openai_compatible") {
@@ -59,11 +62,14 @@ export async function romanizeSongLyrics(
   const { provider, apiKey, model, baseUrl } = config;
 
   let result: string[];
-  if (provider === "gemini" && apiKey) {
+  if (provider === "gemini") {
+    if (!apiKey?.trim()) throw new Error("API key is required for Gemini");
     result = await romanizeWithGemini(lines, apiKey, model);
-  } else if (provider === "openai" && apiKey) {
+  } else if (provider === "openai") {
+    if (!apiKey?.trim()) throw new Error("API key is required for OpenAI");
     result = await romanizeWithOpenAI(lines, apiKey, model);
-  } else if (provider === "deepseek" && apiKey) {
+  } else if (provider === "deepseek") {
+    if (!apiKey?.trim()) throw new Error("API key is required for DeepSeek");
     result = await romanizeWithDeepSeek(lines, apiKey, model);
   } else if (provider === "openai_compatible") {
     result = await romanizeWithOpenAiCompatible(

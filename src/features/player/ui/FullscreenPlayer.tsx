@@ -7,7 +7,11 @@ import { Notch } from "@/shared/ui";
 import { FullscreenTopNotch } from "./FullscreenTopNotch";
 import { LyricsNotchStatus } from "./LyricsNotchStatus";
 import { FullscreenFrameGlass } from "./FullscreenFrameGlass";
-import { useLyricsStore, LyricsProviderIsland } from "@/features/lyrics";
+import {
+  useLyricsStore,
+  LyricsProviderIsland,
+  useEnrichedLyrics,
+} from "@/features/lyrics";
 import { AnimatePresence, motion } from "framer-motion";
 import { PlayerUiElements } from "./PlayerUiElements";
 import { DownLine } from "@mingcute/react";
@@ -18,7 +22,6 @@ import { BetaVisualsWarning } from "./BetaVisualsWarning";
 import { CanvasLyricsView } from "./CanvasLyricsView";
 import { useTranslation } from "@/languages";
 import { useSettledLyricsLayout } from "../hooks/useSettledLyricsLayout";
-import { useEnrichedLyrics } from "@/features/lyrics/hooks/useEnrichedLyrics";
 
 const KAWARP_FADE_IN_MS = 600;
 

@@ -44,8 +44,9 @@ export function AiTabModelConfig() {
         },
       );
       setTestResult(res?.[0] ?? "Translation error, please check your key.");
-    } catch (err: any) {
-      setTestResult(`Error: ${err.message || String(err)}`);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      setTestResult(`Error: ${message}`);
     } finally {
       setTesting(false);
     }
@@ -64,8 +65,9 @@ export function AiTabModelConfig() {
           <div className="flex flex-col gap-3 pt-2 border-t border-white/10">
             {provider === "openai_compatible" && (
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-medium text-white/80">Endpoint Base URL:</label>
+                <label htmlFor="ai-settings-endpoint" className="text-xs font-medium text-white/80">Endpoint Base URL:</label>
                 <input
+                  id="ai-settings-endpoint"
                   type="text"
                   placeholder="https://api.openai.com/v1 (or OpenRouter, Groq, Ollama...)"
                   value={baseUrl}
@@ -75,9 +77,10 @@ export function AiTabModelConfig() {
               </div>
             )}
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-white/80">API Key ({provider.toUpperCase()}):</label>
+              <label htmlFor="ai-settings-api-key" className="text-xs font-medium text-white/80">API Key ({provider.toUpperCase()}):</label>
               <div className="flex items-center gap-2">
                 <input
+                  id="ai-settings-api-key"
                   type="password"
                   placeholder={`Enter ${provider.toUpperCase()} API key...`}
                   value={apiKey}
@@ -95,8 +98,9 @@ export function AiTabModelConfig() {
               </div>
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-white/80">Custom Model ID:</label>
+              <label htmlFor="ai-settings-model" className="text-xs font-medium text-white/80">Custom Model ID:</label>
               <input
+                id="ai-settings-model"
                 type="text"
                 placeholder={getPlaceholder(provider)}
                 value={model}

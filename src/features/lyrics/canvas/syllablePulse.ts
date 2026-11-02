@@ -16,7 +16,7 @@ export function syllablePulse(
   if (
     token.durationMs < MIN_SUSTAINED_MS ||
     elapsedMs < 0 ||
-    elapsedMs > token.durationMs + 60
+    elapsedMs >= token.durationMs
   ) {
     return { scale: 1, glowRem: 0 };
   }
@@ -35,9 +35,11 @@ export function syllablePulse(
       1 + (MAX_BOUNCE_SCALE - 1) * Math.cos(holdProgress * Math.PI * 0.5);
     const vibrato =
       token.durationMs >= 600
-        ? 0.015 * Math.sin((elapsedMs - BOUNCE_ATTACK_MS) * 0.015)
+        ? 0.015 *
+          Math.sin((elapsedMs - BOUNCE_ATTACK_MS) * 0.015) *
+          (1 - holdProgress)
         : 0;
-    scale = Math.max(1, settle * 0.5 + 0.5 + vibrato);
+    scale = Math.max(1, settle + vibrato);
   }
 
   const normProgress = Math.min(1, elapsedMs / token.durationMs);

@@ -37,6 +37,10 @@ describe("syllablePulse", () => {
   });
 
   it("returns neutral scale when elapsed is beyond token duration", () => {
+    const endEffect = syllablePulse(longToken, 1200);
+    expect(endEffect.scale).toBe(1);
+    expect(endEffect.glowRem).toBe(0);
+
     const pastEffect = syllablePulse(longToken, 1500);
     expect(pastEffect.scale).toBe(1);
     expect(pastEffect.glowRem).toBe(0);

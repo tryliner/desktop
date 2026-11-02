@@ -22,6 +22,7 @@ describe("AI Lyrics Translation Store", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     useAiTranslateStore.getState().clearCache();
+    useAiTranslateStore.setState({ provider: "google_translate" });
   });
 
   it("caches translations in store to prevent duplicate requests", async () => {
@@ -100,6 +101,22 @@ describe("AI Lyrics Translation Store", () => {
     store.setModel("gpt-4o");
     expect(useAiTranslateStore.getState().translationsByTrackId).toEqual({});
     expect(useAiTranslateStore.getState().romanizationsByTrackId).toEqual({});
+  });
+
+  it("does not reuse cached translations when source lines differ", async () => {
+    const mockFetch = mockGoogleTranslate({
+      "Line 1": "Dòng 1",
+      "Different 1": "Khác 1",
+    });
+    global.fetch = mockFetch as unknown as typeof fetch;
+
+    const store = useAiTranslateStore.getState();
+    const res1 = await store.translateTrackLyrics("track-diff", ["Line 1"]);
+    expect(res1).toEqual(["Dòng 1"]);
+
+    const res2 = await store.translateTrackLyrics("track-diff", ["Different 1"]);
+    expect(res2).toEqual(["Khác 1"]);
+    expect(mockFetch).toHaveBeenCalledTimes(2);
   });
 
   it("sanitizes apiKey before export to prevent credential leakage", () => {

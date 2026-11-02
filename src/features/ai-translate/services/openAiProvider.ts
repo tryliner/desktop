@@ -24,6 +24,7 @@ async function callOpenAiChat(
   const response = await fetch(url, {
     method: "POST",
     headers,
+    signal: AbortSignal.timeout(30_000),
     body: JSON.stringify({
       model,
       temperature: 0.3,
@@ -55,13 +56,17 @@ export async function translateWithOpenAiCompatible(
   model?: string,
   singable = false,
 ): Promise<string[]> {
+  const cleanBase = baseUrl?.trim();
+  if (!cleanBase) {
+    throw new Error("Base URL is required for OpenAI Compatible provider");
+  }
   const prompt = SONG_TRANSLATION_SYSTEM_PROMPT("auto", targetLang, singable);
   const text = await callOpenAiChat(
     prompt,
     lines.join("\n"),
     apiKey,
     model || "gpt-4o-mini",
-    baseUrl || "https://api.openai.com/v1",
+    cleanBase,
   );
   return matchLineCount(text.split("\n").map((l: string) => l.trim()), lines);
 }
@@ -72,72 +77,40 @@ export async function romanizeWithOpenAiCompatible(
   baseUrl?: string,
   model?: string,
 ): Promise<string[]> {
+  const cleanBase = baseUrl?.trim();
+  if (!cleanBase) {
+    throw new Error("Base URL is required for OpenAI Compatible provider");
+  }
   const text = await callOpenAiChat(
     SONG_ROMANIZATION_SYSTEM_PROMPT,
     lines.join("\n"),
     apiKey,
     model || "gpt-4o-mini",
-    baseUrl || "https://api.openai.com/v1",
+    cleanBase,
   );
   return matchLineCount(text.split("\n").map((l: string) => l.trim()), lines);
 }
 
-export async function translateWithOpenAI(
-  lines: string[],
-  apiKey: string,
-  targetLang: string,
-  model?: string,
-  singable = false,
+export function translateWithOpenAI(
+  lines: string[], apiKey: string, targetLang: string, model?: string, singable = false,
 ): Promise<string[]> {
-  return translateWithOpenAiCompatible(
-    lines,
-    apiKey,
-    targetLang,
-    "https://api.openai.com/v1",
-    model || "gpt-4o-mini",
-    singable,
-  );
+  return translateWithOpenAiCompatible(lines, apiKey, targetLang, "https://api.openai.com/v1", model || "gpt-4o-mini", singable);
 }
 
-export async function romanizeWithOpenAI(
-  lines: string[],
-  apiKey: string,
-  model?: string,
+export function romanizeWithOpenAI(
+  lines: string[], apiKey: string, model?: string,
 ): Promise<string[]> {
-  return romanizeWithOpenAiCompatible(
-    lines,
-    apiKey,
-    "https://api.openai.com/v1",
-    model || "gpt-4o-mini",
-  );
+  return romanizeWithOpenAiCompatible(lines, apiKey, "https://api.openai.com/v1", model || "gpt-4o-mini");
 }
 
-export async function translateWithDeepSeek(
-  lines: string[],
-  apiKey: string,
-  targetLang: string,
-  model?: string,
-  singable = false,
+export function translateWithDeepSeek(
+  lines: string[], apiKey: string, targetLang: string, model?: string, singable = false,
 ): Promise<string[]> {
-  return translateWithOpenAiCompatible(
-    lines,
-    apiKey,
-    targetLang,
-    "https://api.deepseek.com",
-    model || "deepseek-chat",
-    singable,
-  );
+  return translateWithOpenAiCompatible(lines, apiKey, targetLang, "https://api.deepseek.com", model || "deepseek-chat", singable);
 }
 
-export async function romanizeWithDeepSeek(
-  lines: string[],
-  apiKey: string,
-  model?: string,
+export function romanizeWithDeepSeek(
+  lines: string[], apiKey: string, model?: string,
 ): Promise<string[]> {
-  return romanizeWithOpenAiCompatible(
-    lines,
-    apiKey,
-    "https://api.deepseek.com",
-    model || "deepseek-chat",
-  );
+  return romanizeWithOpenAiCompatible(lines, apiKey, "https://api.deepseek.com", model || "deepseek-chat");
 }

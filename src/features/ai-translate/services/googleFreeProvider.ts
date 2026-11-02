@@ -16,8 +16,9 @@ export async function translateWithGoogleFree(
       throw new Error(`Google Translate error: ${response.status}`);
     }
     const data = await response.json();
-    return (data[0] || [])
-      .map((item: any) => item?.[0] ?? "")
+    type GoogleSegment = [string | null, ...unknown[]] | null;
+    return ((data?.[0] as GoogleSegment[]) || [])
+      .map((item) => item?.[0] ?? "")
       .join("")
       .trim();
   });
@@ -31,21 +32,20 @@ export async function romanizeWithGoogleFree(
   const results = await mapWithConcurrency(lines, 4, async (line) => {
     const trimmed = line.trim();
     if (!trimmed) return "";
-    try {
-      const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=rm&q=${encodeURIComponent(trimmed)}`;
-      const res = await fetch(url);
-      if (!res.ok) return line;
-      const data = await res.json();
-      const parts = data?.[0] || [];
-      for (const item of parts) {
-        if (item && item[3]) {
-          return String(item[3]).trim();
-        }
-      }
-      return line;
-    } catch {
-      return line;
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=rm&q=${encodeURIComponent(trimmed)}`;
+    const res = await fetch(url);
+    if (!res.ok) {
+      throw new Error(`Google romanization error: ${res.status}`);
     }
+    const data = await res.json();
+    type RomanizeSegment = [unknown, unknown, unknown, string | null] | null;
+    const parts = ((data?.[0] as RomanizeSegment[]) || []);
+    for (const item of parts) {
+      if (item && item[3]) {
+        return String(item[3]).trim();
+      }
+    }
+    return line;
   });
   return results;
 }

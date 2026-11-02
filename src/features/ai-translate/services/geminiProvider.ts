@@ -28,6 +28,7 @@ async function callGeminiApi(
       const response = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        signal: AbortSignal.timeout(30_000),
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
           generationConfig: {
@@ -49,10 +50,14 @@ async function callGeminiApi(
         throw new Error(`Empty response from Gemini model ${model}`);
       }
       return text;
-    } catch (err: any) {
-      lastError = err;
-      if (err.message?.includes("API_KEY_INVALID") || err.message?.includes("PERMISSION_DENIED")) {
-        throw err;
+    } catch (err: unknown) {
+      const error = err instanceof Error ? err : new Error(String(err));
+      lastError = error;
+      if (
+        error.message.includes("API_KEY_INVALID") ||
+        error.message.includes("PERMISSION_DENIED")
+      ) {
+        throw error;
       }
     }
   }

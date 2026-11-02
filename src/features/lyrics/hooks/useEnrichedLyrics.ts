@@ -17,8 +17,8 @@ export function enrichLyrics(
   if (!trackTranslations && !trackRomanizations) return braccatoLyrics;
 
   return braccatoLyrics.map((line, idx) => {
-    const translationText = trackTranslations?.[idx];
-    const romanizationText = trackRomanizations?.[idx];
+    const translationText = trackTranslations?.[idx]?.trim();
+    const romanizationText = trackRomanizations?.[idx]?.trim();
 
     if (!translationText && !romanizationText) return line;
 
@@ -27,7 +27,7 @@ export function enrichLyrics(
       translation: translationText
         ? { text: translationText, lang: targetLang }
         : line.translation,
-      romanization: romanizationText ?? line.romanization,
+      romanization: romanizationText || line.romanization,
     };
   });
 }

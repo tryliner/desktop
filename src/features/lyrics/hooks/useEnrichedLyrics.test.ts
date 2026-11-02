@@ -44,4 +44,25 @@ describe("enrichLyrics", () => {
     expect(result[0].romanization).toBe("Zankoku na tenshi");
     expect(result[1].romanization).toBe("Aoi sora");
   });
+
+  it("preserves native romanization when AI romanization entry is empty", () => {
+    const nativeLyrics: Lyric[] = [
+      {
+        words: "残酷な天使のテーゼ",
+        startTimeMs: 1000,
+        durationMs: 2000,
+        isInstrumental: false,
+        romanization: "Zankoku na tenshi no teeze (native)",
+      },
+    ];
+
+    const result = enrichLyrics(
+      nativeLyrics,
+      ["A Cruel Angel's Thesis"],
+      [""],
+      "en",
+    );
+    expect(result[0].translation?.text).toBe("A Cruel Angel's Thesis");
+    expect(result[0].romanization).toBe("Zankoku na tenshi no teeze (native)");
+  });
 });

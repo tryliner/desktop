@@ -27,6 +27,10 @@ export {
 } from "./hooks/useLyricsAnimator";
 export { LyricsProviderIsland } from "./ui/LyricsProviderIsland";
 export {
+  useEnrichedLyrics,
+  enrichLyrics,
+} from "./hooks/useEnrichedLyrics";
+export {
   LyricsCanvasRenderer,
   type LyricsClock,
   type EdgesListener,

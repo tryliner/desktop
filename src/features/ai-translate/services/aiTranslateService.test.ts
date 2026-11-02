@@ -21,7 +21,7 @@ describe("AI Lyrics Translation Service", () => {
     vi.restoreAllMocks();
   });
 
-  it("falls back to free translator when API key is omitted", async () => {
+  it("uses free translator for google_translate provider", async () => {
     const mockFetch = mockGoogleTranslate({
       Hello: "Xin chào",
       World: "Thế giới",
@@ -29,12 +29,26 @@ describe("AI Lyrics Translation Service", () => {
     global.fetch = mockFetch as unknown as typeof fetch;
 
     const result = await translateSongLyrics(["Hello", "", "World"], {
-      provider: "gemini",
+      provider: "google_translate",
       targetLang: "vi",
     });
 
     expect(result).toEqual(["Xin chào", "", "Thế giới"]);
     expect(mockFetch).toHaveBeenCalledTimes(2);
+  });
+
+  it("throws when API key is missing for gemini, openai, or deepseek", async () => {
+    await expect(
+      translateSongLyrics(["Hello"], { provider: "gemini", targetLang: "vi" }),
+    ).rejects.toThrow("API key is required for Gemini");
+
+    await expect(
+      translateSongLyrics(["Hello"], { provider: "openai", targetLang: "vi" }),
+    ).rejects.toThrow("API key is required for OpenAI");
+
+    await expect(
+      translateSongLyrics(["Hello"], { provider: "deepseek", targetLang: "vi" }),
+    ).rejects.toThrow("API key is required for DeepSeek");
   });
 
   it("keeps subtitle indices aligned when an LLM drops blank lines", async () => {

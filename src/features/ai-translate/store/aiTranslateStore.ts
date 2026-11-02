@@ -24,6 +24,8 @@ export interface AiTranslateState {
   error: string | null;
   translationsByTrackId: Record<string, string[]>;
   romanizationsByTrackId: Record<string, string[]>;
+  sourceLinesByCacheKey: Record<string, string[]>;
+  sourceRomLinesByCacheKey: Record<string, string[]>;
 
   setProvider: (provider: AiProvider) => void;
   setApiKey: (key: string) => void;
@@ -65,19 +67,21 @@ export const useAiTranslateStore = create<AiTranslateState>()(
       error: null,
       translationsByTrackId: {},
       romanizationsByTrackId: {},
+      sourceLinesByCacheKey: {},
+      sourceRomLinesByCacheKey: {},
 
       setProvider: (provider) => {
         configGeneration++;
-        set({ provider, error: null, translationsByTrackId: {}, romanizationsByTrackId: {} });
+        set({ provider, error: null, translationsByTrackId: {}, romanizationsByTrackId: {}, sourceLinesByCacheKey: {}, sourceRomLinesByCacheKey: {} });
       },
       setApiKey: (apiKey) => set({ apiKey, error: null }),
       setBaseUrl: (baseUrl) => {
         configGeneration++;
-        set({ baseUrl, error: null, translationsByTrackId: {}, romanizationsByTrackId: {} });
+        set({ baseUrl, error: null, translationsByTrackId: {}, romanizationsByTrackId: {}, sourceLinesByCacheKey: {}, sourceRomLinesByCacheKey: {} });
       },
       setModel: (model) => {
         configGeneration++;
-        set({ model, error: null, translationsByTrackId: {}, romanizationsByTrackId: {} });
+        set({ model, error: null, translationsByTrackId: {}, romanizationsByTrackId: {}, sourceLinesByCacheKey: {}, sourceRomLinesByCacheKey: {} });
       },
       setSingableMode: (singableMode) => set({ singableMode }),
       toggleSingableMode: () => set((s) => ({ singableMode: !s.singableMode })),
@@ -88,7 +92,7 @@ export const useAiTranslateStore = create<AiTranslateState>()(
       toggleRomanization: () => set((s) => ({ showRomanization: !s.showRomanization })),
       clearCache: () => {
         configGeneration++;
-        set({ translationsByTrackId: {}, romanizationsByTrackId: {} });
+        set({ translationsByTrackId: {}, romanizationsByTrackId: {}, sourceLinesByCacheKey: {}, sourceRomLinesByCacheKey: {} });
       },
 
       translateTrackLyrics: (trackId, lines, lyricsProvider) =>
@@ -104,7 +108,7 @@ export const useAiTranslateStore = create<AiTranslateState>()(
       migrate: (persisted: unknown, version: number) => {
         const state = (persisted ?? {}) as Partial<AiTranslateState>;
         return version < 2
-          ? ({ ...state, translationsByTrackId: {}, romanizationsByTrackId: {} } as AiTranslateState)
+          ? ({ ...state, translationsByTrackId: {}, romanizationsByTrackId: {}, sourceLinesByCacheKey: {}, sourceRomLinesByCacheKey: {} } as AiTranslateState)
           : (state as AiTranslateState);
       },
       partialize: (state) => ({
@@ -118,6 +122,8 @@ export const useAiTranslateStore = create<AiTranslateState>()(
         showRomanization: state.showRomanization,
         translationsByTrackId: state.translationsByTrackId,
         romanizationsByTrackId: state.romanizationsByTrackId,
+        sourceLinesByCacheKey: state.sourceLinesByCacheKey,
+        sourceRomLinesByCacheKey: state.sourceRomLinesByCacheKey,
       }),
     },
   ),

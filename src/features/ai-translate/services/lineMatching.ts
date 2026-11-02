@@ -16,11 +16,20 @@ export function matchLineCount(
   }
 
   const cleaned = trimmed.filter((line) => line.length > 0);
+  const originalCleaned = original.filter(
+    (line) => line && line.trim().length > 0,
+  );
+
+  if (cleaned.length !== originalCleaned.length) {
+    throw new Error(
+      `Line count mismatch: expected ${originalCleaned.length} non-empty lines, received ${cleaned.length}`,
+    );
+  }
+
   let cursor = 0;
   return original.map((orig) => {
     if (!orig || orig.trim().length === 0) return "";
-    const next = cleaned[cursor++];
-    return next !== undefined ? next : orig;
+    return cleaned[cursor++];
   });
 }
 

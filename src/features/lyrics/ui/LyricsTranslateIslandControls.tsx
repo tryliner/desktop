@@ -6,7 +6,10 @@ import {
   getRomanizationCacheKey,
 } from "@/features/ai-translate";
 import { usePlayerStore } from "@/features/player/store/playerStore";
+import { cn } from "@/shared/lib";
 import { showToast } from "@/shared/ui";
+
+const NON_LATIN_RE = /[^\p{Script=Latin}\p{P}\p{Z}\p{N}\p{M}\p{S}]/u;
 
 export function LyricsTranslateIslandControls() {
   const currentTrack = usePlayerStore((s) => s.currentTrack);
@@ -29,19 +32,23 @@ export function LyricsTranslateIslandControls() {
   } = useAiTranslateStore();
 
   const id = currentTrack?.id ?? "";
-  const cacheKey = id ? getTranslationCacheKey(id, targetLang, singableMode, activeProvider) : "";
+  const cacheKey = id
+    ? getTranslationCacheKey(id, targetLang, singableMode, activeProvider)
+    : "";
   const romKey = id ? getRomanizationCacheKey(id, activeProvider) : "";
   const hasTrans = Boolean(cacheKey && translationsByTrackId[cacheKey]?.length);
   const hasRom = Boolean(romKey && romanizationsByTrackId[romKey]?.length);
 
   const hasRomanizableLyrics = braccatoLyrics.some((lyric) =>
-    /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uac00-\ud7af]/.test(
+    NON_LATIN_RE.test(
       lyric.words || lyric.parts?.map((p) => p.words).join("") || "",
     ),
   );
 
   const getLines = () =>
-    braccatoLyrics.map((l) => l.words || l.parts?.map((p) => p.words).join("") || "");
+    braccatoLyrics.map(
+      (l) => l.words || l.parts?.map((p) => p.words).join("") || "",
+    );
 
   const handleTrans = async () => {
     if (hasTrans) return toggleTranslation();
@@ -50,9 +57,12 @@ export function LyricsTranslateIslandControls() {
     if (lines.length === 0) return;
     const res = await translateTrackLyrics(currentTrack.id, lines, activeProvider);
     if (res) useAiTranslateStore.getState().setShowTranslation(true);
-    else showToast.error("Could not translate lyrics", {
-      description: useAiTranslateStore.getState().error ?? "Check API key in Settings.",
-    });
+    else {
+      showToast.error("Could not translate lyrics", {
+        description:
+          useAiTranslateStore.getState().error ?? "Check API key in Settings.",
+      });
+    }
   };
 
   const handleRom = async () => {
@@ -62,9 +72,12 @@ export function LyricsTranslateIslandControls() {
     if (lines.length === 0) return;
     const res = await romanizeTrackLyrics(currentTrack.id, lines, activeProvider);
     if (res) useAiTranslateStore.getState().setShowRomanization(true);
-    else showToast.error("Could not romanize lyrics", {
-      description: useAiTranslateStore.getState().error ?? "Check API key in Settings.",
-    });
+    else {
+      showToast.error("Could not romanize lyrics", {
+        description:
+          useAiTranslateStore.getState().error ?? "Check API key in Settings.",
+      });
+    }
   };
 
   return (
@@ -75,10 +88,22 @@ export function LyricsTranslateIslandControls() {
         onClick={handleTrans}
         disabled={isTranslating}
         aria-label="Toggle Lyrics Translation"
-        title={hasTrans ? (showTranslation ? "Hide translation" : "Show translation") : singableMode ? "Singable translation" : "Translate lyrics"}
-        className={`w-[26px] h-[26px] min-w-[26px] min-h-[26px] max-h-[26px] rounded-control flex items-center justify-center transition-all border-none bg-transparent cursor-pointer ${
-          showTranslation && hasTrans ? "text-white bg-white/20 font-bold" : "text-white/70 hover:text-white hover:bg-white/10"
-        } ${isTranslating ? "animate-pulse opacity-60" : "active:scale-95"}`}
+        title={
+          hasTrans
+            ? showTranslation
+              ? "Hide translation"
+              : "Show translation"
+            : singableMode
+              ? "Singable translation"
+              : "Translate lyrics"
+        }
+        className={cn(
+          "w-[26px] h-[26px] min-w-[26px] min-h-[26px] max-h-[26px] rounded-control flex items-center justify-center transition-all border-none bg-transparent cursor-pointer",
+          showTranslation && hasTrans
+            ? "text-white bg-white/20 font-bold"
+            : "text-white/70 hover:text-white hover:bg-white/10",
+          isTranslating ? "animate-pulse opacity-60" : "active:scale-95",
+        )}
       >
         <TranslateLine size={13} />
       </button>
@@ -89,10 +114,20 @@ export function LyricsTranslateIslandControls() {
           onClick={handleRom}
           disabled={isRomanizing}
           aria-label="Toggle Pronunciation/Romaji"
-          title={hasRom ? (showRomanization ? "Hide pronunciation" : "Show pronunciation") : "Pronunciation / Romaji"}
-          className={`w-[26px] h-[26px] min-w-[26px] min-h-[26px] max-h-[26px] rounded-control flex items-center justify-center transition-all border-none bg-transparent cursor-pointer ${
-            showRomanization && hasRom ? "text-white bg-white/20 font-bold" : "text-white/70 hover:text-white hover:bg-white/10"
-          } ${isRomanizing ? "animate-pulse opacity-60" : "active:scale-95"}`}
+          title={
+            hasRom
+              ? showRomanization
+                ? "Hide pronunciation"
+                : "Show pronunciation"
+              : "Pronunciation / Romaji"
+          }
+          className={cn(
+            "w-[26px] h-[26px] min-w-[26px] min-h-[26px] max-h-[26px] rounded-control flex items-center justify-center transition-all border-none bg-transparent cursor-pointer",
+            showRomanization && hasRom
+              ? "text-white bg-white/20 font-bold"
+              : "text-white/70 hover:text-white hover:bg-white/10",
+            isRomanizing ? "animate-pulse opacity-60" : "active:scale-95",
+          )}
         >
           <FontLine size={13} />
         </button>
