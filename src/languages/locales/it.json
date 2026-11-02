@@ -253,6 +253,8 @@
     "btn_continue": "Continua",
     "btn_back": "Indietro",
     "username_hint": "3-30 caratteri tra lettere minuscole, numeri o trattini bassi.",
+    "username_checking": "Verifico se il nome utente è libero...",
+    "username_available": "Questo nome utente è libero.",
     "label_email": "Email",
     "label_username": "Nome utente (@handle)",
     "placeholder_username": "soundwave",
@@ -592,6 +594,10 @@
     "language": {
       "label": "Lingua",
       "description": "Seleziona la lingua dell'interfaccia"
+    },
+    "remember_window_bounds": {
+      "title": "Ricorda dimensione e posizione della finestra",
+      "description": "Riapri la finestra con le stesse dimensioni e nella stessa posizione in cui l'hai lasciata."
     },
     "autoplay_similar": {
       "title": "Riproduci automaticamente brani simili",

@@ -252,6 +252,8 @@
     "btn_continue": "Lanjutkan",
     "btn_back": "Kembali",
     "username_hint": "3-30 karakter huruf kecil, angka, atau garis bawah.",
+    "username_checking": "Memeriksa apakah nama pengguna tersedia...",
+    "username_available": "Nama pengguna ini tersedia.",
     "label_email": "Email",
     "label_username": "Nama pengguna (@handle)",
     "placeholder_username": "soundwave",
@@ -667,6 +669,10 @@
     "language": {
       "label": "Bahasa",
       "description": "Pilih bahasa antarmuka"
+    },
+    "remember_window_bounds": {
+      "title": "Ingat ukuran dan posisi jendela",
+      "description": "Buka kembali jendela dengan ukuran dan posisi terakhir."
     },
     "autoplay_similar": {
       "title": "Putar otomatis lagu serupa",

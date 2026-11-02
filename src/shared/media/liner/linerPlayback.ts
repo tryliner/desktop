@@ -45,7 +45,11 @@ export async function resolveLinerStream(
       `${getApiBaseUrl()}/v1/tracks/${encodeURIComponent(videoId)}/playback`,
       {
         method: "POST",
-        headers: { authorization: `Bearer ${token}` },
+        headers: {
+          authorization: `Bearer ${token}`,
+          "content-type": "application/json",
+        },
+        body: "{}",
         signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
       },
     );

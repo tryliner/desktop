@@ -181,6 +181,7 @@ export class OverlayManager {
   private readyWaiters: Array<() => void> = [];
   private warmTimer: NodeJS.Timeout | null = null;
   private idleTimer: NodeJS.Timeout | null = null;
+  private mainPresenceAt = Date.now();
   private readyFallbackTimer: NodeJS.Timeout | null = null;
   private revealFallbackTimer: NodeJS.Timeout | null = null;
   private crashTimes: number[] = [];
@@ -379,6 +380,11 @@ export class OverlayManager {
 
       this.mainWindow.on("closed", () => {
         this.destroy();
+      });
+
+      this.mainWindow.on("focus", () => this.noteMainPresence());
+      this.mainWindow.on("blur", () => {
+        this.mainPresenceAt = Date.now();
       });
 
       this.mainWindow.webContents.on("did-finish-load", () =>
@@ -680,7 +686,8 @@ export class OverlayManager {
       !this.disposed &&
       this.isAuthenticated &&
       this.enabled &&
-      this.autoShowOnMinimize
+      this.autoShowOnMinimize &&
+      !this.hasNothingToShow()
     );
   }
 
@@ -688,6 +695,7 @@ export class OverlayManager {
     beforeShow: (win: BrowserWindow) => void,
   ): Promise<BrowserWindow | null> {
     if (this.disposed || !this.isAuthenticated || !this.enabled) return null;
+    if (this.hasNothingToShow()) return null;
     this.cancelIdleDestroy();
     if (this.closeTimeout) {
       clearTimeout(this.closeTimeout);
@@ -714,6 +722,27 @@ export class OverlayManager {
 
   public enablePrewarm() {
     this.scheduleWarm();
+  }
+
+  public noteMainPresence() {
+    this.mainPresenceAt = Date.now();
+    if (this.overlayWindow && !this.overlayWindow.isDestroyed()) {
+      if (!this.idleTimer && !this.isOnScreen()) this.scheduleIdleDestroy();
+      return;
+    }
+    if (this.warmTimer) {
+      clearTimeout(this.warmTimer);
+      this.warmTimer = null;
+    }
+    this.scheduleWarm(0);
+  }
+
+  private isMainFocused(): boolean {
+    return Boolean(
+      this.mainWindow &&
+      !this.mainWindow.isDestroyed() &&
+      this.mainWindow.isFocused(),
+    );
   }
 
   public setIndexPathResolver(resolve: () => string) {
@@ -801,8 +830,16 @@ export class OverlayManager {
     this.restoreInterceptor = interceptor;
   }
 
+  private hasNothingToShow(): boolean {
+    return this.latestState !== null && !this.latestState?.track;
+  }
+
   public showOverlay() {
     if (this.disposed || !this.isAuthenticated || !this.enabled) return;
+    if (this.hasNothingToShow()) {
+      this.pendingShow = false;
+      return;
+    }
     this.cancelIdleDestroy();
 
     if (this.closeTimeout) {
@@ -868,7 +905,7 @@ export class OverlayManager {
       : null;
   }
 
-  private scheduleWarm() {
+  private scheduleWarm(delayMs = WARM_DELAY_MS) {
     if (
       this.disposed ||
       this.compositor ||
@@ -882,8 +919,8 @@ export class OverlayManager {
     this.warmTimer = setTimeout(() => {
       this.warmTimer = null;
       if (!this.autoShowOnMinimize) return;
-      this.ensureWindow();
-    }, WARM_DELAY_MS);
+      if (this.ensureWindow()) this.scheduleIdleDestroy();
+    }, delayMs);
   }
 
   private isOnScreen(): boolean {
@@ -901,31 +938,36 @@ export class OverlayManager {
     }
   }
 
-  private scheduleIdleDestroy() {
+  private scheduleIdleDestroy(delayMs = IDLE_DESTROY_MS) {
     this.cancelIdleDestroy();
-    if (
-      this.autoShowOnMinimize ||
-      !this.overlayWindow ||
-      this.overlayWindow.isDestroyed()
-    )
-      return;
+    if (!this.overlayWindow || this.overlayWindow.isDestroyed()) return;
+    if (this.autoShowOnMinimize && this.compositor) return;
     this.idleTimer = setTimeout(() => {
       this.idleTimer = null;
       const win = this.overlayWindow;
-      if (
-        !win ||
-        win.isDestroyed() ||
-        this.autoShowOnMinimize ||
-        this.wantVisible ||
-        this.pendingShow
-      )
+      if (!win || win.isDestroyed() || this.wantVisible || this.pendingShow)
         return;
+      if (this.priming) {
+        this.scheduleIdleDestroy();
+        return;
+      }
+      if (this.autoShowOnMinimize) {
+        if (this.isMainFocused()) {
+          this.scheduleIdleDestroy();
+          return;
+        }
+        const remaining = IDLE_DESTROY_MS - (Date.now() - this.mainPresenceAt);
+        if (remaining > 0) {
+          this.scheduleIdleDestroy(remaining);
+          return;
+        }
+      }
       this.overlayWindow = null;
       this.resetContentReady();
       try {
         win.destroy();
       } catch {}
-    }, IDLE_DESTROY_MS);
+    }, delayMs);
   }
 
   private markContentReady() {
@@ -1020,6 +1062,7 @@ export class OverlayManager {
       this.closeOverlay();
       return false;
     }
+    if (this.hasNothingToShow()) return false;
     this.showOverlay();
     return true;
   }
@@ -1206,6 +1249,10 @@ export class OverlayManager {
     onTrusted("overlay:update-state", (_event, state: any) => {
       if (!this.isAuthenticated) return;
       this.latestState = state;
+      if (this.hasNothingToShow()) {
+        if (this.pendingShow || this.isOnScreen()) this.closeOverlay();
+        return;
+      }
 
       if (this.isOnScreen()) {
         this.overlayWindow!.webContents.send("overlay:state", state);
@@ -1324,8 +1371,8 @@ export class OverlayManager {
         if (typeof settings.autoShowOnMinimize === "boolean") {
           this.autoShowOnMinimize = settings.autoShowOnMinimize;
           if (this.autoShowOnMinimize) {
-            this.cancelIdleDestroy();
             this.scheduleWarm();
+            if (!this.isOnScreen()) this.scheduleIdleDestroy();
           } else if (!this.isOnScreen()) {
             this.scheduleIdleDestroy();
           }

@@ -13,7 +13,7 @@ export interface TvSession {
   playerId: string;
 }
 
-interface CachedSession {
+export interface CachedSession {
   session: TvSession;
   expiresAt: number;
 }
@@ -98,8 +98,8 @@ async function createSession(): Promise<CachedSession> {
   return { session, expiresAt: entry.expiresAt };
 }
 
-export async function getTvSession(): Promise<TvSession> {
-  if (cached && Date.now() < cached.expiresAt) return cached.session;
+export async function getTvSession(): Promise<CachedSession> {
+  if (cached && Date.now() < cached.expiresAt) return cached;
   pending ??= createSession()
     .then((next) => {
       cached = next;
@@ -108,5 +108,5 @@ export async function getTvSession(): Promise<TvSession> {
     .finally(() => {
       pending = null;
     });
-  return (await pending).session;
+  return pending;
 }

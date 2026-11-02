@@ -253,6 +253,8 @@
     "btn_continue": "Devam",
     "btn_back": "Geri",
     "username_hint": "3-30 karakter: küçük harf, rakam veya alt çizgi.",
+    "username_checking": "Kullanıcı adının boş olup olmadığı kontrol ediliyor...",
+    "username_available": "Bu kullanıcı adı boş.",
     "label_email": "E-posta",
     "label_username": "Kullanıcı adı (@tanıtıcı)",
     "placeholder_username": "soundwave",
@@ -592,6 +594,10 @@
     "language": {
       "label": "Dil",
       "description": "Arayüz dilini seç"
+    },
+    "remember_window_bounds": {
+      "title": "Pencere boyutunu ve konumunu hatırla",
+      "description": "Pencereyi kapattığınız boyut ve konumda yeniden açın."
     },
     "autoplay_similar": {
       "title": "Benzer parçaları otomatik çal",

@@ -71,9 +71,12 @@ export interface LinerElectronApi {
   close: () => Promise<void>;
   isMaximized: () => Promise<boolean>;
   isFullScreen: () => Promise<boolean>;
+  getRememberWindowBounds: () => Promise<boolean>;
+  setRememberWindowBounds: (enabled: boolean) => Promise<boolean>;
   onWindowStateChange: (cb: (state: WindowState) => void) => () => void;
   onWindowRestored?: (cb: () => void) => () => void;
   onWindowMinimized?: (cb: () => void) => () => void;
+  notePresence?: () => void;
   dragStart: () => void;
   dragMove: (deltaX: number, deltaY: number) => void;
   dragEnd: () => void;
@@ -241,6 +244,10 @@ const api: LinerElectronApi = {
   close: () => ipcRenderer.invoke("window:close"),
   isMaximized: () => ipcRenderer.invoke("window:is-maximized"),
   isFullScreen: () => ipcRenderer.invoke("window:is-fullscreen"),
+  getRememberWindowBounds: () =>
+    ipcRenderer.invoke("window:get-remember-bounds"),
+  setRememberWindowBounds: (enabled) =>
+    ipcRenderer.invoke("window:set-remember-bounds", enabled),
   onWindowStateChange: (cb) => {
     const listener = (_event: unknown, state: WindowState) => cb(state);
     ipcRenderer.on("window:state-changed", listener);
@@ -262,6 +269,7 @@ const api: LinerElectronApi = {
       ipcRenderer.removeListener("window:minimized", listener);
     };
   },
+  notePresence: () => ipcRenderer.send("window:presence"),
   dragStart: () => {
     ipcRenderer.send("window:drag-start");
   },

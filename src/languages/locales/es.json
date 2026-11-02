@@ -255,6 +255,8 @@
     "btn_continue": "Continuar",
     "btn_back": "Atrás",
     "username_hint": "3-30 caracteres en minúsculas, números o guiones bajos.",
+    "username_checking": "Comprobando si el nombre de usuario está libre...",
+    "username_available": "Este nombre de usuario está libre.",
     "label_email": "Correo electrónico",
     "label_username": "Nombre de usuario (@handle)",
     "placeholder_username": "usuario",
@@ -590,6 +592,10 @@
     "language": {
       "label": "Idioma",
       "description": "Selecciona el idioma de la interfaz"
+    },
+    "remember_window_bounds": {
+      "title": "Recordar tamaño y posición de la ventana",
+      "description": "Abrir la ventana con el mismo tamaño y en el mismo lugar donde la dejaste."
     },
     "autoplay_similar": {
       "title": "Reproducir canciones similares automáticamente",

@@ -830,6 +830,7 @@ function MiniPlayer({
                     artistId={player.currentTrack?.artistId}
                     artistList={player.currentTrack?.artistList}
                     size={15}
+                    className="-translate-y-px"
                   />
                 )}
                 <ArtistLink

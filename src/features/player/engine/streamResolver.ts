@@ -61,6 +61,7 @@ async function resolveYoutubeAudio(
   progressive: boolean,
   signal?: AbortSignal,
 ): Promise<PlaybackStream> {
+  let accountFailure: string | null = null;
   if (
     isYoutubeSignedIn() &&
     prefersAccountPlayback() &&
@@ -72,12 +73,19 @@ async function resolveYoutubeAudio(
       return stream;
     } catch (error) {
       if (isAbortError(error, signal)) throw error;
+      accountFailure = error instanceof Error ? error.message : String(error);
       log("yellow", "playback", `youtube tv playback failed: ${String(error)}`);
     }
   }
-  return fromInnertubeStream(
-    await resolveDirectAudioStream(videoId, { signal }),
-  );
+  try {
+    return fromInnertubeStream(
+      await resolveDirectAudioStream(videoId, { signal }),
+    );
+  } catch (error) {
+    if (accountFailure && error instanceof Error)
+      error.message = `${error.message} Signed-in TV: ${accountFailure}`;
+    throw error;
+  }
 }
 
 async function resolveYoutubeStandIn(

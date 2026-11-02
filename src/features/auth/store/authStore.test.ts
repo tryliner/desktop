@@ -3,8 +3,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 // the player feature pulls lottie/canvas ui that jsdom cannot load; initialize() never touches it
 const player = vi.hoisted(() => ({ stopAndClear: vi.fn(async () => {}) }));
 vi.mock("@/features/player", () => ({ playerEngine: player }));
+const youtube = vi.hoisted(() => ({ signOut: vi.fn(async () => {}) }));
+vi.mock("@/shared/youtube", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/shared/youtube")>()),
+  signOutYoutube: youtube.signOut,
+}));
 
 import { useAuthStore } from "./authStore";
+import { useYoutubePreferences } from "@/shared/youtube";
 import {
   api,
   ApiError,
@@ -118,5 +124,38 @@ describe("signing out clears the player", () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+});
+
+describe("signing out of liner and the youtube account", () => {
+  beforeEach(() => {
+    setAuthSession(stored);
+    useAuthStore.setState({ status: "authenticated", user: stored.user });
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(null, { status: 204 }),
+    );
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    youtube.signOut.mockClear();
+    useYoutubePreferences.setState({ signOutWithLiner: false });
+    setAuthSession(null);
+  });
+
+  it("keeps the youtube account by default", async () => {
+    await useAuthStore.getState().logout();
+
+    expect(youtube.signOut).not.toHaveBeenCalled();
+    expect(useAuthStore.getState().status).toBe("anonymous");
+  });
+
+  it("signs out of youtube too when the setting asks for it", async () => {
+    useYoutubePreferences.setState({ signOutWithLiner: true });
+
+    await useAuthStore.getState().logout();
+
+    expect(youtube.signOut).toHaveBeenCalledTimes(1);
+    expect(useAuthStore.getState().status).toBe("anonymous");
   });
 });

@@ -18,6 +18,7 @@ import type {
   UserProfile,
   LeaderboardResponse,
   DailyMixesResponse,
+  UsernameAvailability,
 } from "@/shared/contracts";
 
 import { usePlayerStore } from "@/features/player/store/playerStore";
@@ -728,6 +729,20 @@ export const api = {
     );
     setAuthSession(result);
     return result;
+  },
+
+  checkUsername(
+    username: string,
+    signal?: AbortSignal,
+  ): Promise<UsernameAvailability> {
+    const params = new URLSearchParams({
+      username: username.trim().toLowerCase(),
+    });
+    return request<UsernameAvailability>(
+      `/v1/auth/username-available?${params}`,
+      { signal },
+      false,
+    );
   },
 
   getMe(): Promise<AuthUser> {

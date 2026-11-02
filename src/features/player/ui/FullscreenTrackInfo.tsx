@@ -69,6 +69,7 @@ export function FullscreenTrackInfo({ onClose }: FullscreenTrackInfoProps) {
               artistId={track?.artistId}
               artistList={track?.artistList}
               size={18}
+              className="-translate-y-px"
             />
           )}
           <ArtistLink

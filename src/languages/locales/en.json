@@ -298,6 +298,8 @@
     "btn_continue": "Continue",
     "btn_back": "Back",
     "username_hint": "3-30 lowercase characters, numbers or underscores.",
+    "username_checking": "Checking if this username is free...",
+    "username_available": "This username is free.",
     "label_email": "Email",
     "label_username": "Username (@handle)",
     "placeholder_username": "soundwave",
@@ -708,6 +710,10 @@
         "title": "Sync library",
         "description": "Show playlists from your YouTube account in the library next to Liner playlists."
       },
+      "sign_out_with_liner": {
+        "title": "Sign out with Liner",
+        "description": "Also sign out of YouTube when you sign out of your Liner account."
+      },
       "sign_out": "Sign out",
       "sign_in": "Sign in",
       "signed_out_title": "Not signed in",
@@ -783,6 +789,10 @@
     "language": {
       "label": "Language",
       "description": "Select the interface language"
+    },
+    "remember_window_bounds": {
+      "title": "Remember window size and position",
+      "description": "Reopen the window at the size and place you left it."
     },
     "autoplay_similar": {
       "title": "Autoplay similar tracks",

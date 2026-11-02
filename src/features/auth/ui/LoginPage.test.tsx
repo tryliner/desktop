@@ -7,6 +7,11 @@ import LoginPage from "./LoginPage";
 const mockNavigate = vi.fn();
 const mockLogin = vi.fn();
 const mockRegister = vi.fn();
+const mockUsernameStatus = vi.fn(() => "idle");
+
+vi.mock("../hooks/useUsernameAvailability", () => ({
+  useUsernameAvailability: () => mockUsernameStatus(),
+}));
 
 vi.mock("react-router-dom", () => ({
   useNavigate: () => mockNavigate,
@@ -86,6 +91,8 @@ vi.mock("@/languages", () => {
       "This username is already taken. Please choose another.",
     "login.errors.display_name_required": "Display name is required.",
     "login.username_hint": "3-30 lowercase characters, numbers or underscores.",
+    "login.username_checking": "Checking if this username is free...",
+    "login.username_available": "This username is free.",
   };
 
   return {
@@ -124,6 +131,7 @@ describe("LoginPage Multi-Step Registration Flow", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockUsernameStatus.mockReturnValue("idle");
     container = document.createElement("div");
     document.body.appendChild(container);
     root = createRoot(container);
@@ -494,5 +502,82 @@ describe("LoginPage Multi-Step Registration Flow", () => {
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
     expect(displayNameInput?.getAttribute("aria-invalid")).toBe("false");
+  });
+
+  async function openProfileStep() {
+    await act(async () => {
+      root.render(<LoginPage />);
+    });
+    const setValue = (selector: string, value: string) => {
+      const input = container.querySelector(selector) as HTMLInputElement;
+      Object.getOwnPropertyDescriptor(
+        window.HTMLInputElement.prototype,
+        "value",
+      )?.set?.call(input, value);
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    };
+    const createAccBtn = Array.from(container.querySelectorAll("button")).find(
+      (b) => b.textContent?.includes("Create account"),
+    );
+    await act(async () => {
+      createAccBtn?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+    await act(async () => {
+      setValue("#auth-email", "carol@example.com");
+      setValue("#auth-password", "password123");
+      setValue("#auth-confirm", "password123");
+    });
+    await act(async () => {
+      container
+        .querySelector("form")
+        ?.dispatchEvent(
+          new Event("submit", { bubbles: true, cancelable: true }),
+        );
+    });
+    return setValue;
+  }
+
+  it("says a username is taken while typing and blocks creating the account", async () => {
+    mockUsernameStatus.mockReturnValue("taken");
+    await openProfileStep();
+
+    const errorEl = container.querySelector("#auth-form-error");
+    expect(errorEl?.textContent).toBe(
+      "This username is already taken. Please choose another.",
+    );
+    expect(errorEl?.getAttribute("role")).toBe("alert");
+    expect(
+      container.querySelector("#auth-username")?.getAttribute("aria-invalid"),
+    ).toBe("true");
+
+    const submit = Array.from(
+      container.querySelectorAll('button[type="submit"]'),
+    ).at(-1) as HTMLButtonElement;
+    expect(submit.disabled).toBe(true);
+
+    await act(async () => {
+      container
+        .querySelector("form")
+        ?.dispatchEvent(
+          new Event("submit", { bubbles: true, cancelable: true }),
+        );
+    });
+    expect(mockRegister).not.toHaveBeenCalled();
+  });
+
+  it("tells the user while checking and when the username is free", async () => {
+    mockUsernameStatus.mockReturnValue("checking");
+    const setValue = await openProfileStep();
+    expect(container.querySelector("#auth-username-hint")?.textContent).toBe(
+      "Checking if this username is free...",
+    );
+
+    mockUsernameStatus.mockReturnValue("available");
+    await act(async () => {
+      setValue("#auth-username", "carol_free");
+    });
+    expect(container.querySelector("#auth-username-hint")?.textContent).toBe(
+      "This username is free.",
+    );
   });
 });

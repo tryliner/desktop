@@ -1,4 +1,5 @@
 import {
+  ExitFill,
   PlayCircleFill,
   Playlist2Fill,
   UserQuestionFill,
@@ -17,6 +18,10 @@ export function YoutubeTab({ searchQuery }: { searchQuery?: string }) {
   const setPromptSignIn = useYoutubePreferences((s) => s.setPromptSignIn);
   const syncLibrary = useYoutubePreferences((s) => s.syncLibrary);
   const setSyncLibrary = useYoutubePreferences((s) => s.setSyncLibrary);
+  const signOutWithLiner = useYoutubePreferences((s) => s.signOutWithLiner);
+  const setSignOutWithLiner = useYoutubePreferences(
+    (s) => s.setSignOutWithLiner,
+  );
 
   return (
     <div className="flex flex-col gap-[28px]">
@@ -72,6 +77,30 @@ export function YoutubeTab({ searchQuery }: { searchQuery?: string }) {
           searchQuery={searchQuery}
           control={
             <ToggleSwitch checked={syncLibrary} onChange={setSyncLibrary} />
+          }
+        />
+      </SettingSection>
+      <SettingSection
+        label={t("settings.youtube.section_account") || "Account"}
+      >
+        <SettingRow
+          title={
+            t("settings.youtube.sign_out_with_liner.title") ||
+            "Sign out with Liner"
+          }
+          description={
+            t("settings.youtube.sign_out_with_liner.description") ||
+            "Also sign out of YouTube when you sign out of your Liner account."
+          }
+          icon={<ExitFill size={20} />}
+          titleKey="settings.youtube.sign_out_with_liner.title"
+          descKey="settings.youtube.sign_out_with_liner.description"
+          searchQuery={searchQuery}
+          control={
+            <ToggleSwitch
+              checked={signOutWithLiner}
+              onChange={setSignOutWithLiner}
+            />
           }
         />
       </SettingSection>

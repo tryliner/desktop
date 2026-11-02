@@ -16,6 +16,7 @@ import {
 import { useTranslation } from "@/languages";
 import { HumanCheckNotice } from "@/features/human-check";
 import { cn } from "@/shared/lib";
+import { useUsernameAvailability } from "../hooks/useUsernameAvailability";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const USERNAME_RE = /^[a-z0-9_]{3,30}$/;
@@ -40,6 +41,17 @@ export default function LoginPage() {
   const [errorField, setErrorField] = useState<
     "username" | "displayName" | null
   >(null);
+  const usernameStatus = useUsernameAvailability(
+    username,
+    mode === "register" && registerStep === 2,
+  );
+  const usernameTaken = usernameStatus === "taken";
+  const usernameHasError =
+    usernameTaken || (Boolean(error) && errorField !== "displayName");
+  const usernameMessageId =
+    (error && errorField !== "displayName") || usernameTaken
+      ? "auth-form-error"
+      : "auth-username-hint";
 
   const selectMode = (next: "login" | "register") => {
     if (submitting || next === mode) return;
@@ -147,6 +159,11 @@ export default function LoginPage() {
     if (!USERNAME_RE.test(normalizedUsername)) {
       setErrorField("username");
       setError(t("login.errors.username_invalid"));
+      return;
+    }
+    if (usernameTaken) {
+      setErrorField("username");
+      setError(t("login.errors.username_taken"));
       return;
     }
     if (!cleanDisplayName) {
@@ -415,17 +432,9 @@ export default function LoginPage() {
                             @
                           </span>
                         }
-                        hasError={
-                          Boolean(error) && errorField !== "displayName"
-                        }
-                        aria-invalid={
-                          Boolean(error) && errorField !== "displayName"
-                        }
-                        aria-describedby={
-                          error && errorField !== "displayName"
-                            ? "auth-form-error"
-                            : "auth-username-hint"
-                        }
+                        hasError={usernameHasError}
+                        aria-invalid={usernameHasError}
+                        aria-describedby={usernameMessageId}
                         onChange={(event) => {
                           setUsername(
                             event.target.value
@@ -436,20 +445,27 @@ export default function LoginPage() {
                         }}
                         disabled={submitting}
                       />
-                      {error && errorField === "username" ? (
+                      {(error && errorField === "username") || usernameTaken ? (
                         <span
                           id="auth-form-error"
                           role="alert"
                           className="mt-1 text-[11px] font-[500] text-accent-primary"
                         >
-                          {error}
+                          {error && errorField === "username"
+                            ? error
+                            : t("login.errors.username_taken")}
                         </span>
                       ) : (
                         <span
                           id="auth-username-hint"
+                          aria-live="polite"
                           className="mt-1 text-[11px] text-text-tertiary"
                         >
-                          {t("login.username_hint")}
+                          {usernameStatus === "checking"
+                            ? t("login.username_checking")
+                            : usernameStatus === "available"
+                              ? t("login.username_available")
+                              : t("login.username_hint")}
                         </span>
                       )}
 
@@ -577,7 +593,7 @@ export default function LoginPage() {
                         </Button>
                         <Button
                           type="submit"
-                          disabled={submitting}
+                          disabled={submitting || usernameTaken}
                           className="flex-1"
                         >
                           {submitting ? (

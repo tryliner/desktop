@@ -306,6 +306,8 @@
     "btn_continue": "Продовжити",
     "btn_back": "Назад",
     "username_hint": "Від 3 до 30 малих літер, цифр або підкреслень.",
+    "username_checking": "Перевіряємо, чи вільне ім'я користувача...",
+    "username_available": "Це ім'я користувача вільне.",
     "label_email": "Електронна пошта",
     "label_username": "Юзернейм (@хендл)",
     "placeholder_username": "soundwave",
@@ -710,6 +712,10 @@
         "title": "Синхронізувати бібліотеку",
         "description": "Показувати плейлисти з акаунта YouTube у бібліотеці поруч із плейлистами Liner."
       },
+      "sign_out_with_liner": {
+        "title": "Виходити разом із Liner",
+        "description": "Виходити з YouTube, коли ви виходите з акаунта Liner."
+      },
       "sign_out": "Вийти з акаунта",
       "sign_in": "Увійти",
       "signed_out_title": "Вхід не виконано",
@@ -818,6 +824,10 @@
     "language": {
       "label": "Мова",
       "description": "Виберіть мову інтерфейсу"
+    },
+    "remember_window_bounds": {
+      "title": "Запам'ятовувати розмір і положення вікна",
+      "description": "Відкривати вікно з тим самим розміром і на тому самому місці, де його було закрито."
     },
     "autoplay_similar": {
       "title": "Автовідтворення схожих треків",

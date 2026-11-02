@@ -33,9 +33,10 @@ export function registerYoutubeWorkerIpc(service: PoTokenService): void {
     return service.mint(identifier);
   });
   handleTrusted("youtube:tv-session", () =>
-    service.request("tv-session", {}, TV_SESSION_TIMEOUT_MS),
+    service.getTvSession(TV_SESSION_TIMEOUT_MS),
   );
-  handleTrusted("youtube:solve-n", (_event, payload: unknown) =>
-    service.request("solve-n", readSolveRequest(payload), SOLVE_TIMEOUT_MS),
-  );
+  handleTrusted("youtube:solve-n", (_event, payload: unknown) => {
+    const { playerId, values } = readSolveRequest(payload);
+    return service.solveN(playerId, values, SOLVE_TIMEOUT_MS);
+  });
 }

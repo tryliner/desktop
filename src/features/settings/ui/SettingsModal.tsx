@@ -203,6 +203,11 @@ const SETTING_ITEMS: { tabId: TabId; titleKey: string; descKey?: string }[] = [
     titleKey: "settings.youtube.sync_library.title",
     descKey: "settings.youtube.sync_library.description",
   },
+  {
+    tabId: "Youtube",
+    titleKey: "settings.youtube.sign_out_with_liner.title",
+    descKey: "settings.youtube.sign_out_with_liner.description",
+  },
 
   // Appearance
   {

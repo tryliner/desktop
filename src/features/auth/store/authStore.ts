@@ -12,6 +12,7 @@ import {
 import { playerEngine } from "@/features/player";
 import { queryCache } from "@/shared/cache/queryCache";
 import { clearScreenCache } from "@/shared/cache/screenCache";
+import { prefersSignOutWithLiner, signOutYoutube } from "@/shared/youtube";
 
 export type AuthStatus = "initializing" | "authenticated" | "anonymous";
 export type AuthState = {
@@ -139,6 +140,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       window.location.hash = "#/";
     }
     await clearAuthSession();
+    if (prefersSignOutWithLiner()) void signOutYoutube().catch(() => {});
     queryCache.clear();
     clearScreenCache();
     set({ status: "anonymous", user: null });
