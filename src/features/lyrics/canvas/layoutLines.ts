@@ -1,3 +1,4 @@
+import { isRtl } from "./buildLines";
 import {
   backgroundFont,
   mainFont,
@@ -37,11 +38,12 @@ function layoutSubtitle(
   const placed = wrapRuns(runs, frame.width);
   const extents = rowExtents(runs, placed);
   const align = line.rtl && line.align === "start" ? "end" : line.align;
+  const subtitleRtl = isRtl(line.subtitle);
   const rowHeight = type.size * SUBTITLE_SCALE * 1.3;
   const items = placed.map((item): PlacedText => {
     const ink = runs[item.index].inkWidth;
     const rowWidth = extents[item.row];
-    const logical = line.rtl ? rowWidth - item.x - ink : item.x;
+    const logical = subtitleRtl ? rowWidth - item.x - ink : item.x;
     return {
       text: chunks[item.index].trimEnd(),
       x: frame.left + alignOffset(align, rowWidth, frame.width) + logical,

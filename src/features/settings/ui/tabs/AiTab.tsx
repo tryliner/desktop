@@ -1,17 +1,8 @@
 import { useAiTranslateStore } from "@/features/ai-translate";
-import { SettingRow, SettingSection, SegmentedControl } from "../controls";
+import { SettingRow, SettingSection } from "../controls";
 import { ToggleSwitch } from "@/shared/ui";
+import { AiLanguageSelect } from "./AiLanguageSelect";
 import { AiTabModelConfig } from "./AiTabModelConfig";
-
-const TARGET_LANG_OPTIONS = [
-  { value: "en", label: "English" },
-  { value: "vi", label: "Vietnamese" },
-  { value: "ja", label: "Japanese" },
-  { value: "ko", label: "Korean" },
-  { value: "zh", label: "Chinese" },
-  { value: "fr", label: "French" },
-  { value: "es", label: "Spanish" },
-];
 
 export function AiTab({ searchQuery }: { searchQuery?: string }) {
   const {
@@ -68,11 +59,9 @@ export function AiTab({ searchQuery }: { searchQuery?: string }) {
         description="Select the language for bilingual subtitles and singable adaptation"
         searchQuery={searchQuery}
         control={
-          <SegmentedControl
-            ariaLabel="Target Language"
+          <AiLanguageSelect
             value={targetLang}
             onChange={setTargetLang}
-            options={TARGET_LANG_OPTIONS}
           />
         }
       />

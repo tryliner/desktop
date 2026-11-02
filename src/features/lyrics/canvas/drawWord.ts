@@ -46,40 +46,18 @@ export function drawToken(
   const { ctx } = paint;
   const y = Math.round((paint.top + placed.baseline) * paint.dpr) / paint.dpr;
   const text = placed.token.text;
-
-  const scale = highlight?.scale ?? 1;
-  const dy = highlight?.dy ?? 0;
-  const hasTransform =
-    Boolean(highlight) &&
-    (Math.abs(scale - 1) > 0.003 || Math.abs(dy) > 0.1);
-
-  if (hasTransform) {
-    ctx.save();
-    const cx = placed.x + placed.width / 2;
-    const cy = y - paint.remPx * 0.6;
-    ctx.translate(cx, cy);
-    ctx.scale(scale, scale);
-    ctx.translate(0, dy);
-    ctx.translate(-cx, -cy);
-  }
-
   ctx.fillStyle = white(paint.base);
   ctx.fillText(text, placed.x, y);
-
-  if (highlight && highlight.opacity > 0 && highlight.clear > 0) {
-    ctx.fillStyle = highlightStyle(paint, placed, highlight);
-    if (highlight.glowRem > 0) {
-      ctx.save();
-      ctx.shadowColor = white(1);
-      ctx.shadowBlur = highlight.glowRem * paint.remPx * paint.dpr;
-      ctx.fillText(text, placed.x, y);
-      ctx.restore();
-    } else {
-      ctx.fillText(text, placed.x, y);
-    }
-  }
-
-  if (hasTransform) {
+  if (!highlight || highlight.opacity <= 0) return;
+  if (highlight.clear <= 0) return;
+  ctx.fillStyle = highlightStyle(paint, placed, highlight);
+  if (highlight.glowRem > 0) {
+    ctx.save();
+    ctx.shadowColor = white(1);
+    ctx.shadowBlur = highlight.glowRem * paint.remPx * paint.dpr;
+    ctx.fillText(text, placed.x, y);
     ctx.restore();
+    return;
   }
+  ctx.fillText(text, placed.x, y);
 }

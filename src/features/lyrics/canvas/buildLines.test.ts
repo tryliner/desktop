@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildLines } from "./buildLines";
+import { buildLines, isRtl } from "./buildLines";
 import type { Lyric } from "@braccato/parsers";
 
 describe("buildLines", () => {
@@ -65,5 +65,12 @@ describe("buildLines", () => {
 
     const model = buildLines(lyrics);
     expect(model.lines[0].subtitle).toBe("annyeong");
+  });
+
+  it("detects RTL scripts accurately with isRtl", () => {
+    expect(isRtl("مرحبا")).toBe(true);
+    expect(isRtl("שלום")).toBe(true);
+    expect(isRtl("Hello world")).toBe(false);
+    expect(isRtl("Xin chào")).toBe(false);
   });
 });

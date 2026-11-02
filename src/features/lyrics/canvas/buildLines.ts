@@ -15,7 +15,7 @@ function alignFor(agent: string | undefined): LineAlign {
   return "start";
 }
 
-function isRtl(text: string): boolean {
+export function isRtl(text: string): boolean {
   for (const char of text) {
     if (RTL.test(char)) return true;
     if (LTR.test(char)) return false;

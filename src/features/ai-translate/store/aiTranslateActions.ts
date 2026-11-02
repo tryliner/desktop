@@ -12,6 +12,20 @@ import type { AiTranslateState } from "./aiTranslateStore";
 let activeTranslationCount = 0;
 let activeRomanizationCount = 0;
 
+function formatErrorMessage(err: unknown, fallback: string): string {
+  if (err instanceof Error) {
+    if (
+      err.name === "TimeoutError" ||
+      err.message.toLowerCase().includes("timeout") ||
+      err.message.toLowerCase().includes("aborted")
+    ) {
+      return "Request timed out. The AI service took too long to respond. Please retry.";
+    }
+    return err.message;
+  }
+  return fallback;
+}
+
 export function resetActiveRequestCounts(): void {
   activeTranslationCount = 0;
   activeRomanizationCount = 0;
@@ -62,7 +76,7 @@ export async function executeTrackTranslation(
   } catch (err: unknown) {
     if (currentGen() !== requestGen) return null;
     activeTranslationCount = Math.max(0, activeTranslationCount - 1);
-    const errorMsg = err instanceof Error ? err.message : "Translation failed";
+    const errorMsg = formatErrorMessage(err, "Translation failed");
     set((s) => ({ ...s, isTranslating: activeTranslationCount > 0, error: errorMsg }));
     return null;
   }
@@ -117,7 +131,7 @@ export async function executeTrackRomanization(
   } catch (err: unknown) {
     if (currentGen() !== requestGen) return null;
     activeRomanizationCount = Math.max(0, activeRomanizationCount - 1);
-    const errorMsg = err instanceof Error ? err.message : "Romanization failed";
+    const errorMsg = formatErrorMessage(err, "Romanization failed");
     set((s) => ({ ...s, isRomanizing: activeRomanizationCount > 0, error: errorMsg }));
     return null;
   }

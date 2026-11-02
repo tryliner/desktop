@@ -1,3 +1,4 @@
+import { isRtl } from "./buildLines";
 import { drawToken, white } from "./drawWord";
 import { backgroundFont, mainFont, subtitleFont } from "./fonts";
 import { tokenHighlight } from "./timing";
@@ -41,6 +42,7 @@ export function drawLine(
     );
   }
   if (layout.subtitle.length === 0) return;
+  ctx.direction = isRtl(line.subtitle ?? "") ? "rtl" : "ltr";
   ctx.font = subtitleFont(type);
   ctx.fillStyle = white(SUBTITLE_ALPHA);
   for (const text of layout.subtitle) {

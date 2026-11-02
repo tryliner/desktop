@@ -4,6 +4,8 @@ import {
 } from "../prompts";
 import { matchLineCount } from "./lineMatching";
 
+const REQUEST_TIMEOUT_MS = 60_000;
+
 async function callOpenAiChat(
   systemPrompt: string,
   userText: string,
@@ -21,19 +23,30 @@ async function callOpenAiChat(
     headers["Authorization"] = `Bearer ${apiKey.trim()}`;
   }
 
-  const response = await fetch(url, {
-    method: "POST",
-    headers,
-    signal: AbortSignal.timeout(30_000),
-    body: JSON.stringify({
-      model,
-      temperature: 0.3,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userText },
-      ],
-    }),
-  });
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      method: "POST",
+      headers,
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+      body: JSON.stringify({
+        model,
+        temperature: 0.3,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userText },
+        ],
+      }),
+    });
+  } catch (err: unknown) {
+    if (
+      err instanceof Error &&
+      (err.name === "TimeoutError" || err.message.toLowerCase().includes("timeout"))
+    ) {
+      throw new Error(`AI request timed out (${REQUEST_TIMEOUT_MS / 1000}s). Please retry.`);
+    }
+    throw err;
+  }
 
   if (!response.ok) {
     const errorText = await response.text();

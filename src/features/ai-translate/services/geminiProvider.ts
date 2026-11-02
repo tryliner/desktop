@@ -5,10 +5,11 @@ import {
 import { matchLineCount } from "./lineMatching";
 
 const DEFAULT_GEMINI_MODELS = [
-  "gemini-2.5-flash",
   "gemini-2.0-flash",
   "gemini-1.5-flash",
 ];
+
+const REQUEST_TIMEOUT_MS = 60_000;
 
 async function callGeminiApi(
   prompt: string,
@@ -26,7 +27,7 @@ async function callGeminiApi(
       const response = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        signal: AbortSignal.timeout(30_000),
+        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
           generationConfig: {
@@ -50,12 +51,15 @@ async function callGeminiApi(
       return text;
     } catch (err: unknown) {
       const error = err instanceof Error ? err : new Error(String(err));
-      lastError = error;
+      lastError =
+        error.name === "TimeoutError" || error.message.toLowerCase().includes("timeout")
+          ? new Error(`Gemini request timed out (${REQUEST_TIMEOUT_MS / 1000}s). Please retry.`)
+          : error;
       if (
-        error.message.includes("API_KEY_INVALID") ||
-        error.message.includes("PERMISSION_DENIED")
+        lastError.message.includes("API_KEY_INVALID") ||
+        lastError.message.includes("PERMISSION_DENIED")
       ) {
-        throw error;
+        throw lastError;
       }
     }
   }
