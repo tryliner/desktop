@@ -3,8 +3,10 @@ import { showToast } from "@/shared/ui";
 
 function getPlaceholder(p: AiProvider): string {
   if (p === "gemini") return "Default: gemini-2.0-flash (e.g. gemini-1.5-flash, gemini-2.0-pro)";
+  if (p === "claude") return "Default: claude-3-5-haiku-20241022 (e.g. claude-3-5-sonnet-20241022)";
   if (p === "openai") return "Default: gpt-4o-mini (e.g. gpt-4o, o3-mini)";
   if (p === "deepseek") return "Default: deepseek-chat (e.g. deepseek-reasoner)";
+  if (p === "openrouter") return "Default: google/gemini-2.0-flash-001 (e.g. anthropic/claude-3.5-haiku)";
   if (p === "openai_compatible") return "e.g. meta-llama/llama-3.3-70b-instruct, qwen-2.5-72b";
   return "Model name...";
 }

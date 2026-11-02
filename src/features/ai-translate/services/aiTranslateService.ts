@@ -5,10 +5,16 @@ import {
   romanizeWithGemini,
 } from "./geminiProvider";
 import {
+  translateWithClaude,
+  romanizeWithClaude,
+} from "./claudeProvider";
+import {
   translateWithOpenAI,
   romanizeWithOpenAI,
   translateWithDeepSeek,
   romanizeWithDeepSeek,
+  translateWithOpenRouter,
+  romanizeWithOpenRouter,
   translateWithOpenAiCompatible,
   romanizeWithOpenAiCompatible,
 } from "./openAiProvider";
@@ -31,6 +37,10 @@ export async function translateSongLyrics(
     if (!apiKey?.trim()) throw new Error("API key is required for Gemini");
     return translateWithGemini(lines, apiKey, targetLang, model, singableMode);
   }
+  if (provider === "claude") {
+    if (!apiKey?.trim()) throw new Error("API key is required for Claude");
+    return translateWithClaude(lines, apiKey, targetLang, model, singableMode);
+  }
   if (provider === "openai") {
     if (!apiKey?.trim()) throw new Error("API key is required for OpenAI");
     return translateWithOpenAI(lines, apiKey, targetLang, model, singableMode);
@@ -38,6 +48,10 @@ export async function translateSongLyrics(
   if (provider === "deepseek") {
     if (!apiKey?.trim()) throw new Error("API key is required for DeepSeek");
     return translateWithDeepSeek(lines, apiKey, targetLang, model, singableMode);
+  }
+  if (provider === "openrouter") {
+    if (!apiKey?.trim()) throw new Error("API key is required for OpenRouter");
+    return translateWithOpenRouter(lines, apiKey, targetLang, model, singableMode);
   }
   if (provider === "openai_compatible") {
     return translateWithOpenAiCompatible(
@@ -65,12 +79,18 @@ export async function romanizeSongLyrics(
   if (provider === "gemini") {
     if (!apiKey?.trim()) throw new Error("API key is required for Gemini");
     result = await romanizeWithGemini(lines, apiKey, model);
+  } else if (provider === "claude") {
+    if (!apiKey?.trim()) throw new Error("API key is required for Claude");
+    result = await romanizeWithClaude(lines, apiKey, model);
   } else if (provider === "openai") {
     if (!apiKey?.trim()) throw new Error("API key is required for OpenAI");
     result = await romanizeWithOpenAI(lines, apiKey, model);
   } else if (provider === "deepseek") {
     if (!apiKey?.trim()) throw new Error("API key is required for DeepSeek");
     result = await romanizeWithDeepSeek(lines, apiKey, model);
+  } else if (provider === "openrouter") {
+    if (!apiKey?.trim()) throw new Error("API key is required for OpenRouter");
+    result = await romanizeWithOpenRouter(lines, apiKey, model);
   } else if (provider === "openai_compatible") {
     result = await romanizeWithOpenAiCompatible(
       lines,

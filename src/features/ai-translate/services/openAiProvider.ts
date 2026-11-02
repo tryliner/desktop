@@ -127,3 +127,19 @@ export function romanizeWithDeepSeek(
 ): Promise<string[]> {
   return romanizeWithOpenAiCompatible(lines, apiKey, "https://api.deepseek.com", model || "deepseek-chat");
 }
+
+export function translateWithOpenRouter(
+  lines: string[], apiKey: string, targetLang: string, model?: string, singable = false,
+): Promise<string[]> {
+  return translateWithOpenAiCompatible(
+    lines, apiKey, targetLang, "https://openrouter.ai/api/v1", model || "google/gemini-2.0-flash-001", singable,
+  );
+}
+
+export function romanizeWithOpenRouter(
+  lines: string[], apiKey: string, model?: string,
+): Promise<string[]> {
+  return romanizeWithOpenAiCompatible(
+    lines, apiKey, "https://openrouter.ai/api/v1", model || "google/gemini-2.0-flash-001",
+  );
+}

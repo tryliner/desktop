@@ -51,10 +51,18 @@ describe("AI Lyrics Translation Service", () => {
     expect(targetLangs.every((tl) => tl === "vi")).toBe(true);
   });
 
-  it("throws when API key is missing for gemini, openai, or deepseek", async () => {
-    for (const provider of ["gemini", "openai", "deepseek"] as const) {
+  it("throws when API key is missing for api key required providers", async () => {
+    for (const provider of ["gemini", "claude", "openai", "deepseek", "openrouter"] as const) {
       const name =
-        provider === "gemini" ? "Gemini" : provider === "openai" ? "OpenAI" : "DeepSeek";
+        provider === "gemini"
+          ? "Gemini"
+          : provider === "claude"
+            ? "Claude"
+            : provider === "openai"
+              ? "OpenAI"
+              : provider === "deepseek"
+                ? "DeepSeek"
+                : "OpenRouter";
       await expect(
         translateSongLyrics(["Hello"], { provider, targetLang: "vi" }),
       ).rejects.toThrow(`API key is required for ${name}`);

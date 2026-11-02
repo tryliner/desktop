@@ -1,7 +1,9 @@
 export type AiProvider =
   | "gemini"
+  | "claude"
   | "openai"
   | "deepseek"
+  | "openrouter"
   | "openai_compatible"
   | "google_translate";
 
