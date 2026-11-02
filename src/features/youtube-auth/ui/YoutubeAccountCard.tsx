@@ -39,7 +39,7 @@ export default function YoutubeAccountCard() {
           <AppImage src={account.photoUrl} alt="" fill />
         ) : undefined
       }
-      placeholderIcon={<YoutubeFill size={24} />}
+      placeholderIcon={<YoutubeFill size={18} />}
       title={title}
       titleAccessory={
         signedIn && accounts.length > 1 ? (
