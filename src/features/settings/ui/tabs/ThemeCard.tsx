@@ -55,7 +55,7 @@ export function ThemeCard({
           : "cursor-pointer",
       )}
     >
-      <span className="relative block h-[72px] w-full overflow-hidden rounded-control ring-1 ring-inset ring-black/[0.06] dark:ring-white/[0.06]">
+      <span className="relative block h-[72px] w-full overflow-hidden rounded-control">
         {mode === "system" ? (
           <>
             <Swatch mode="light" align="left" />
@@ -72,6 +72,12 @@ export function ThemeCard({
         ) : (
           <Swatch mode={mode} />
         )}
+        {/* hairline on top of the swatch: drawn underneath, it leaks through
+            the anti-aliased rounded corners */}
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-0 rounded-[inherit] ring-1 ring-inset ring-black/[0.06] dark:ring-white/[0.06]"
+        />
       </span>
       <span className="flex items-center gap-[8px] px-[3px]">
         <span
