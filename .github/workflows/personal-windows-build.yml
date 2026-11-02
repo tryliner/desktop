@@ -43,8 +43,8 @@ jobs:
       - name: Lint, build and test
         run: pnpm lint && pnpm build && pnpm test
 
-      - name: Build Windows installer
-        run: pnpm electron:build:win
+      - name: Build Windows installer without publishing a release
+        run: pnpm electron:build:win -- --publish never
 
       - name: Upload private-use build artifact (not a public release)
         uses: actions/upload-artifact@v4
