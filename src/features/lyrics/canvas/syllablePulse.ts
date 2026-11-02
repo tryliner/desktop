@@ -1,8 +1,9 @@
 import type { LyricToken } from "./types";
 
-const MIN_SUSTAINED_MS = 320;
-const BOUNCE_ATTACK_MS = 140;
-const MAX_BOUNCE_SCALE = 1.075;
+const MIN_PULSE_MS = 60;
+const ATTACK_MS = 100;
+const PEAK_GLOW_REM = 0.95;
+const SUSTAIN_GLOW_REM = 0.4;
 
 export interface SyllableEffect {
   scale: number;
@@ -14,39 +15,40 @@ export function syllablePulse(
   elapsedMs: number,
 ): SyllableEffect {
   if (
-    token.durationMs < MIN_SUSTAINED_MS ||
+    token.durationMs < MIN_PULSE_MS ||
     elapsedMs < 0 ||
     elapsedMs >= token.durationMs
   ) {
     return { scale: 1, glowRem: 0 };
   }
 
-  let scale = 1;
-  if (elapsedMs <= BOUNCE_ATTACK_MS) {
-    const p = elapsedMs / BOUNCE_ATTACK_MS;
-    scale = 1 + (MAX_BOUNCE_SCALE - 1) * Math.sin(p * Math.PI * 0.5);
+  const attackDuration = Math.min(ATTACK_MS, token.durationMs * 0.4);
+  let glowRem = 0;
+
+  if (elapsedMs <= attackDuration) {
+    const progress = elapsedMs / attackDuration;
+    glowRem = PEAK_GLOW_REM * Math.sin(progress * Math.PI * 0.5);
   } else {
-    const holdMs = token.durationMs - BOUNCE_ATTACK_MS;
-    const holdProgress = Math.min(
-      1,
-      (elapsedMs - BOUNCE_ATTACK_MS) / Math.max(1, holdMs),
-    );
-    const settle =
-      1 + (MAX_BOUNCE_SCALE - 1) * Math.cos(holdProgress * Math.PI * 0.5);
+    const sustainProgress =
+      (elapsedMs - attackDuration) /
+      Math.max(1, token.durationMs - attackDuration);
+    const decay =
+      SUSTAIN_GLOW_REM +
+      (PEAK_GLOW_REM - SUSTAIN_GLOW_REM) *
+        Math.cos(sustainProgress * Math.PI * 0.5);
+
     const vibrato =
-      token.durationMs >= 600
-        ? 0.015 *
-          Math.sin((elapsedMs - BOUNCE_ATTACK_MS) * 0.015) *
-          (1 - holdProgress)
+      token.durationMs >= 450
+        ? 0.12 *
+          Math.sin((elapsedMs - attackDuration) * 0.015) *
+          (1 - sustainProgress)
         : 0;
-    scale = Math.max(1, settle + vibrato);
+
+    glowRem = Math.max(0, decay + vibrato);
   }
 
-  const normProgress = Math.min(1, elapsedMs / token.durationMs);
-  const glowRem = 0.55 * Math.sin(normProgress * Math.PI);
-
   return {
-    scale: Math.min(scale, 1.1),
-    glowRem: Math.max(0, glowRem),
+    scale: 1,
+    glowRem: Math.max(0, Math.min(1.2, glowRem)),
   };
 }

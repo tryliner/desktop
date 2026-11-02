@@ -19,24 +19,24 @@ describe("syllablePulse", () => {
     space: false,
   };
 
-  it("does not apply bounce or pulse to short syllables (< 320ms)", () => {
-    const effect = syllablePulse(shortToken, 100);
+  it("applies dynamic glow pulse to all syllables including short ones", () => {
+    const effect = syllablePulse(shortToken, 60);
     expect(effect.scale).toBe(1);
-    expect(effect.glowRem).toBe(0);
+    expect(effect.glowRem).toBeGreaterThan(0.5);
   });
 
-  it("applies bounce scale on attack for sustained syllables", () => {
-    const attackEffect = syllablePulse(longToken, 140);
-    expect(attackEffect.scale).toBeGreaterThan(1.05);
-    expect(attackEffect.scale).toBeLessThanOrEqual(1.1);
+  it("applies peak luminous bloom on attack for sustained syllables", () => {
+    const attackEffect = syllablePulse(longToken, 80);
+    expect(attackEffect.scale).toBe(1);
+    expect(attackEffect.glowRem).toBeGreaterThan(0.7);
   });
 
   it("returns glowing highlight during mid-point of sustained singing", () => {
     const midEffect = syllablePulse(longToken, 600);
-    expect(midEffect.glowRem).toBeGreaterThan(0.4);
+    expect(midEffect.glowRem).toBeGreaterThan(0.3);
   });
 
-  it("returns neutral scale when elapsed is beyond token duration", () => {
+  it("returns 0 glow and neutral scale when elapsed is beyond token duration", () => {
     const endEffect = syllablePulse(longToken, 1200);
     expect(endEffect.scale).toBe(1);
     expect(endEffect.glowRem).toBe(0);
