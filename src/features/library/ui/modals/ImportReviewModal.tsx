@@ -77,15 +77,15 @@ function ImportReviewSkeletonRows() {
         >
           <div className="flex items-center justify-between">
             <div className="h-[13px] w-[58%] animate-pulse rounded bg-border-alpha-33" />
-            <div className="h-[19px] w-[68px] animate-pulse rounded-md bg-border-alpha-14" />
+            <div className="h-[19px] w-[68px] animate-pulse rounded-control bg-border-alpha-14" />
           </div>
-          <div className="flex items-center gap-[10px] p-[8px] rounded-md border border-border-primary/60 bg-bg-primary/80">
-            <div className="h-[38px] w-[38px] shrink-0 animate-pulse rounded-md bg-border-alpha-14" />
+          <div className="flex items-center gap-[10px] p-[8px] rounded-control border border-border-primary/60 bg-bg-primary/80">
+            <div className="h-[38px] w-[38px] shrink-0 animate-pulse rounded-control bg-border-alpha-14" />
             <div className="flex flex-col gap-[6px] flex-1 min-w-0">
               <div className="h-[12px] w-[46%] animate-pulse rounded bg-border-alpha-33" />
               <div className="h-[10px] w-[28%] animate-pulse rounded bg-border-alpha-14" />
             </div>
-            <div className="h-[27px] w-[118px] shrink-0 animate-pulse rounded-md bg-border-alpha-14" />
+            <div className="h-[27px] w-[118px] shrink-0 animate-pulse rounded-control bg-border-alpha-14" />
           </div>
         </div>
       ))}
@@ -374,7 +374,7 @@ export default function ImportReviewModal() {
               <button
                 type="button"
                 onClick={handleSelectAll}
-                className="text-caption font-[500] text-text-secondary hover:text-text-primary px-[8px] py-[4px] rounded-md hover:bg-border-alpha-14 transition-colors cursor-pointer border border-transparent hover:border-border-primary"
+                className="text-caption font-[500] text-text-secondary hover:text-text-primary px-[8px] py-[4px] rounded-control hover:bg-border-alpha-14 transition-colors cursor-pointer border border-transparent hover:border-border-primary"
               >
                 {t("import.select_all")}
               </button>
@@ -382,7 +382,7 @@ export default function ImportReviewModal() {
               <button
                 type="button"
                 onClick={handleDeselectAll}
-                className="text-caption font-[500] text-text-secondary hover:text-text-primary px-[8px] py-[4px] rounded-md hover:bg-border-alpha-14 transition-colors cursor-pointer border border-transparent hover:border-border-primary"
+                className="text-caption font-[500] text-text-secondary hover:text-text-primary px-[8px] py-[4px] rounded-control hover:bg-border-alpha-14 transition-colors cursor-pointer border border-transparent hover:border-border-primary"
               >
                 {t("import.deselect_all")}
               </button>
@@ -463,7 +463,7 @@ export default function ImportReviewModal() {
                       {/* Reason Badge */}
                       <div className="shrink-0">
                         <span
-                          className={`inline-flex items-center gap-[4px] text-[11px] px-[8px] py-[3px] rounded-md font-[450] ${
+                          className={`inline-flex items-center gap-[4px] text-[11px] px-[8px] py-[3px] rounded-control font-[450] ${
                             isAutoMatched
                               ? "bg-white/10 text-text-primary border border-white/10"
                               : "bg-border-alpha-14 text-text-secondary"
@@ -487,10 +487,10 @@ export default function ImportReviewModal() {
                         const isThisPlaying = isThisCurrent && isPlaying;
 
                         return (
-                          <div className="flex items-center justify-between gap-[12px] p-[8px] rounded-md bg-bg-primary/80 border border-border-primary/60">
+                          <div className="flex items-center justify-between gap-[12px] p-[8px] rounded-control bg-bg-primary/80 border border-border-primary/60">
                             <div className="flex items-center gap-[10px] min-w-0 flex-1">
                               <div
-                                className="relative h-[38px] w-[38px] rounded-md bg-border-alpha-14 overflow-hidden shrink-0 flex items-center justify-center group/cover cursor-pointer select-none"
+                                className="relative h-[38px] w-[38px] rounded-control bg-border-alpha-14 overflow-hidden shrink-0 flex items-center justify-center group/cover cursor-pointer select-none"
                                 onClick={() => handleTogglePlay(proposed)}
                                 title={isThisPlaying ? "Pause" : "Play"}
                               >
@@ -569,7 +569,7 @@ export default function ImportReviewModal() {
                                 onClick={() =>
                                   toggleDecision(item.id, "approve")
                                 }
-                                className={`inline-flex items-center justify-center gap-[4px] px-[10px] py-[5px] rounded-md text-caption font-[500] transition-all duration-150 cursor-pointer border active:scale-[0.96] ${
+                                className={`inline-flex items-center justify-center gap-[4px] px-[10px] py-[5px] rounded-control text-caption font-[500] transition-all duration-150 cursor-pointer border active:scale-[0.96] ${
                                   isApproved
                                     ? "bg-btn-primary-bg text-btn-primary-text border-transparent"
                                     : "bg-transparent text-text-secondary border-border-primary hover:bg-border-alpha-14 hover:text-text-primary"
@@ -581,7 +581,7 @@ export default function ImportReviewModal() {
                               <button
                                 type="button"
                                 onClick={() => toggleDecision(item.id, "deny")}
-                                className={`inline-flex items-center justify-center gap-[4px] px-[10px] py-[5px] rounded-md text-caption font-[500] transition-all duration-150 cursor-pointer border active:scale-[0.96] ${
+                                className={`inline-flex items-center justify-center gap-[4px] px-[10px] py-[5px] rounded-control text-caption font-[500] transition-all duration-150 cursor-pointer border active:scale-[0.96] ${
                                   !isApproved
                                     ? "bg-border-alpha-14 text-text-primary border-border-primary"
                                     : "bg-transparent text-text-tertiary border-transparent hover:text-text-secondary"
@@ -595,7 +595,7 @@ export default function ImportReviewModal() {
                         );
                       })()
                     ) : (
-                      <div className="flex items-center justify-between gap-[12px] p-[8px] rounded-md bg-bg-primary/40 border border-border-primary/40 text-text-tertiary text-caption">
+                      <div className="flex items-center justify-between gap-[12px] p-[8px] rounded-control bg-bg-primary/40 border border-border-primary/40 text-text-tertiary text-caption">
                         <span>{t("import.no_candidate_found")}</span>
                         <span className="text-[11px] px-[8px] py-[3px] rounded bg-border-alpha-14 text-text-tertiary font-medium">
                           {t("import.skipped")}

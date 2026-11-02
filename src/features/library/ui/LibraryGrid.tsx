@@ -49,7 +49,7 @@ function LoadingSkeletonGrid({ circle = false }: { circle?: boolean }) {
     <div className="flex flex-col gap-[8px]">
       <div
         className={`aspect-square w-full animate-pulse bg-border-alpha-14 ${
-          circle ? "rounded-full" : "rounded-md"
+          circle ? "rounded-full" : "rounded-control"
         }`}
       />
       <div className="h-[13px] w-[78%] animate-pulse rounded bg-border-alpha-33" />
@@ -61,7 +61,7 @@ function LoadingSkeletonGrid({ circle = false }: { circle?: boolean }) {
 function LoadingSkeletonList() {
   return (
     <div className="flex items-center gap-[14px] p-[8px] rounded-lg">
-      <div className="h-[48px] w-[48px] shrink-0 animate-pulse rounded-md bg-border-alpha-14" />
+      <div className="h-[48px] w-[48px] shrink-0 animate-pulse rounded-control bg-border-alpha-14" />
       <div className="flex flex-col gap-[6px] flex-1">
         <div className="h-[14px] w-[35%] animate-pulse rounded bg-border-alpha-33" />
         <div className="h-[12px] w-[20%] animate-pulse rounded bg-border-alpha-14" />
@@ -201,12 +201,12 @@ function LibraryItemRow({ item }: { item: LibraryItemViewModel }) {
       onContextMenu={handleContextMenu}
       onPointerDown={link.prefetch}
       onClick={() => navigate(item.href, link.state)}
-      className="w-full flex items-center justify-between rounded-md p-[8px] outline-none transition-colors duration-150 ease-out cursor-pointer hover:bg-border-alpha-14 select-none"
+      className="w-full flex items-center justify-between rounded-control p-[8px] outline-none transition-colors duration-150 ease-out cursor-pointer hover:bg-border-alpha-14 select-none"
     >
       <div className="flex items-center gap-[16px] min-w-0">
         <div
           className={`relative h-[48px] w-[48px] shrink-0 overflow-hidden bg-border-alpha-14 ${
-            item.kind === "artist" ? "rounded-full" : "rounded-md"
+            item.kind === "artist" ? "rounded-full" : "rounded-control"
           }`}
         >
           {item.imageUrl ? (
@@ -253,7 +253,7 @@ function LibraryItemRow({ item }: { item: LibraryItemViewModel }) {
       <div className="flex items-center shrink-0 ml-[16px] gap-[16px]">
         {item.trackCount !== undefined && (
           <span
-            className="text-[14px] text-text-tertiary"
+            className="text-label text-text-tertiary"
             style={{
               fontWeight: 400,
             }}
@@ -270,7 +270,7 @@ function LibraryItemRow({ item }: { item: LibraryItemViewModel }) {
               <button
                 type="button"
                 aria-label={t("common.more_options")}
-                className="rounded-md bg-transparent border-0 p-0 text-text-primary transition-all duration-200 active:scale-[0.96] flex items-center justify-center cursor-pointer opacity-70 hover:opacity-100"
+                className="rounded-control bg-transparent border-0 p-0 text-text-primary transition-all duration-200 active:scale-[0.96] flex items-center justify-center cursor-pointer opacity-70 hover:opacity-100"
                 onClick={(e) => {
                   e.stopPropagation();
                   setMenuOpen(!menuOpen);

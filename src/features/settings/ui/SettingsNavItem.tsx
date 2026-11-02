@@ -9,7 +9,7 @@ export interface SettingsNavIconProps {
 }
 
 const itemClass =
-  "group relative flex h-[32px] w-full cursor-pointer items-center gap-[10px] rounded-[9px] border-0 bg-transparent px-[9px] text-left text-body font-[500] leading-none transition-colors";
+  "group relative flex h-[32px] w-full cursor-pointer items-center gap-[10px] rounded-control border-0 bg-transparent px-[9px] text-left text-body font-[500] leading-none transition-colors";
 
 export function NavItem({
   icon: Icon,
@@ -41,7 +41,7 @@ export function NavItem({
         <motion.span
           layoutId="settings-nav-active"
           transition={{ type: "spring", stiffness: 520, damping: 40 }}
-          className="absolute inset-0 rounded-[9px] bg-fill-hover"
+          className="absolute inset-0 rounded-control bg-fill-hover"
         />
       ) : null}
       <Icon

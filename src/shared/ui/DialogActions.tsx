@@ -90,7 +90,7 @@ export function DialogButton({
       variant={variant === "primary" ? "primary" : "secondary"}
       disabled={disabled || loading}
       className={cn(
-        "flex-[1_1_0%] min-w-max !h-[44px] !rounded-item !border-0 px-[16px] !text-[14px] !font-[500]",
+        "flex-[1_1_0%] min-w-max !h-[44px] !rounded-item !border-0 px-[16px] !text-label !font-[500]",
         variantClass[variant],
         loading && "pointer-events-none",
         className,

@@ -191,7 +191,7 @@ export function FullscreenPlayer({
             aria-label={t("player.close_fullscreen")}
             onClick={onClose}
             data-no-window-drag
-            className="inline-flex h-[26px] w-[26px] cursor-pointer items-center justify-center rounded-md border-none bg-transparent text-white/70 transition-colors select-none hover:bg-white/10 hover:text-white active:scale-95"
+            className="inline-flex h-[26px] w-[26px] cursor-pointer items-center justify-center rounded-control border-none bg-transparent text-white/70 transition-colors select-none hover:bg-white/10 hover:text-white active:scale-95"
           >
             <DownLine size={16} />
           </button>

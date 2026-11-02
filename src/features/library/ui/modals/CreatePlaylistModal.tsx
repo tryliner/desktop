@@ -234,7 +234,7 @@ export default function CreatePlaylistModal() {
                 rows={2}
                 disabled={createPlaylist.isPending}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full resize-none rounded-item border-0 bg-fill px-[14px] py-[12px] text-[14px] font-[400] text-text-primary placeholder:text-text-tertiary outline-none transition-colors duration-150 focus:bg-fill-hover disabled:opacity-50"
+                className="w-full resize-none rounded-item border-0 bg-fill px-[14px] py-[12px] text-label font-[400] text-text-primary placeholder:text-text-tertiary outline-none transition-colors duration-150 focus:bg-fill-hover disabled:opacity-50"
               />
             ) : (
               <button

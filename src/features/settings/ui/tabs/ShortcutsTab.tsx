@@ -747,7 +747,7 @@ export function ShortcutsTab({
       {/* ── Top Bar: Scope Tabs (Left) + Tiny Search Field (Right) ── */}
       <div className="flex items-center justify-between gap-3 mt-[8px] mb-[6px] w-full min-w-0">
         <div
-          className="inline-flex items-center gap-[6px] select-none shrink-0"
+          className="inline-flex h-[34px] items-center rounded-item bg-fill p-[3px] select-none shrink-0"
           role="tablist"
           aria-label="Shortcut filter scopes"
         >
@@ -763,12 +763,12 @@ export function ShortcutsTab({
                   if (localSearchQuery) setLocalSearchQuery("");
                   setActiveScope(tab.value);
                 }}
-                className={`group relative inline-flex h-[34px] items-center justify-center rounded-[10px] ${
-                  isRu ? "px-[13px]" : "px-[14px]"
-                } text-body leading-none transition-colors duration-150 border-0 cursor-pointer select-none active:scale-[0.97] ${
+                className={`group relative inline-flex h-full items-center justify-center rounded-control ${
+                  isRu ? "px-[11px]" : "px-[12px]"
+                } text-body leading-none transition-colors duration-150 border-0 bg-transparent cursor-pointer select-none ${
                   isActive
-                    ? "bg-transparent text-bg-primary"
-                    : "bg-fill text-text-primary hover:bg-fill-hover"
+                    ? "text-text-primary"
+                    : "text-text-secondary hover:text-text-primary"
                 }`}
                 style={{
                   fontWeight: 500,
@@ -777,7 +777,7 @@ export function ShortcutsTab({
                 {isActive && (
                   <motion.div
                     layoutId="shortcutsScopeTab"
-                    className="absolute inset-0 rounded-[10px] bg-text-primary/70"
+                    className="absolute inset-0 rounded-control bg-fill-hover"
                     transition={{
                       type: "spring",
                       stiffness: 500,
@@ -791,7 +791,7 @@ export function ShortcutsTab({
                   <span
                     className={`text-caption font-normal tabular-nums leading-none transition-colors ${
                       isActive
-                        ? "text-bg-primary/60"
+                        ? "text-text-secondary"
                         : "text-text-tertiary group-hover:text-text-secondary"
                     }`}
                   >
@@ -887,7 +887,7 @@ export function ShortcutsTab({
                       <Icon size={20} weight="Bold" />
                     </span>
                     <div className="flex flex-col gap-[2px] min-w-0">
-                      <span className="text-[13.5px] font-[500] leading-tight text-text-primary truncate">
+                      <span className="text-label font-[500] leading-tight text-text-primary truncate">
                         {item.title}
                       </span>
                       <span
@@ -943,7 +943,7 @@ export function ShortcutsTab({
                 ? "Все горячие клавиши будут сброшены"
                 : "All shortkeys will be reset"}
             </h3>
-            <p className="text-[12.5px] text-text-tertiary m-0 mt-[4px] leading-snug">
+            <p className="text-caption text-text-tertiary m-0 mt-[4px] leading-snug">
               {isRu
                 ? "Все комбинации клавиш вернутся к значениям по умолчанию. Это действие нельзя отменить."
                 : "All customized shortcut keys will be restored to their factory defaults. This action cannot be undone."}
@@ -956,7 +956,7 @@ export function ShortcutsTab({
               variant="secondary"
               size="sm"
               onClick={() => setIsResetModalOpen(false)}
-              className="flex-1 !h-[34px] text-body !rounded-lg"
+              className="flex-1 !h-[34px] text-body !rounded-item"
             >
               {t("common.cancel") || (isRu ? "Отмена" : "Cancel")}
             </Button>
@@ -965,7 +965,7 @@ export function ShortcutsTab({
               variant="primary"
               size="sm"
               onClick={handleConfirmResetAll}
-              className="flex-1 !h-[34px] text-body !rounded-lg !bg-accent-secondary !text-bg-primary hover:!opacity-90"
+              className="flex-1 !h-[34px] text-body !rounded-item !bg-accent-secondary !text-bg-primary hover:!opacity-90"
             >
               {isRu ? "Продолжить" : "Continue"}
             </Button>

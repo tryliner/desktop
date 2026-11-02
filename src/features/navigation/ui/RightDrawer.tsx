@@ -434,7 +434,7 @@ function RightDrawer({ onClose }: RightDrawerProps) {
               scrollContainerRef={queueScrollRef}
             />
           ) : (
-            <div className="h-full flex items-center justify-center text-text-tertiary text-[14px]">
+            <div className="h-full flex items-center justify-center text-text-tertiary text-label">
               {t("player.queue_empty")}
             </div>
           )}

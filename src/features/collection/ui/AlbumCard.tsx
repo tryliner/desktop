@@ -76,7 +76,7 @@ function AlbumCard({
         onPointerDown={() => prefetchCollection("album", id)}
         className={`group flex flex-col gap-[8px] no-underline cursor-pointer ${className}`}
       >
-        <div className="relative aspect-square w-full overflow-hidden rounded-md bg-border-alpha-14">
+        <div className="relative aspect-square w-full overflow-hidden rounded-control bg-border-alpha-14">
           {coverUrl && (
             <CoverImage
               src={coverUrl}
@@ -88,7 +88,7 @@ function AlbumCard({
           )}
         </div>
         <div className="flex flex-col">
-          <span className="truncate text-[14px] font-[500] text-text-primary">
+          <span className="truncate text-label font-[500] text-text-primary">
             {title}
           </span>
           <span className="flex items-center gap-[5px] truncate text-body text-text-tertiary">

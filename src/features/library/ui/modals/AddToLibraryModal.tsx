@@ -75,7 +75,7 @@ export default function AddToLibraryModal() {
           <div className="flex items-center gap-[14px] p-[10px] rounded-[14px] bg-fill mb-[20px]">
             <div
               className={`relative h-[52px] w-[52px] shrink-0 overflow-hidden ${
-                item.type === "artist" ? "rounded-full" : "rounded-md"
+                item.type === "artist" ? "rounded-full" : "rounded-control"
               } bg-border-alpha-14`}
             >
               {item.coverUrl && (
@@ -90,7 +90,7 @@ export default function AddToLibraryModal() {
               )}
             </div>
             <div className="flex flex-col min-w-0 gap-[2px]">
-              <span className="text-[14px] font-[500] text-text-primary truncate">
+              <span className="text-label font-[500] text-text-primary truncate">
                 {item.title}
               </span>
               <span className="text-caption text-text-tertiary capitalize">

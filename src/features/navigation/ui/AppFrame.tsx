@@ -773,7 +773,7 @@ export default function AppFrame({ children }: AppFrameProps) {
           <main
             className={cn(
               "flex-1 min-w-0 flex flex-col relative h-full overflow-hidden [--page-inset-top:56px]",
-              "rounded-xl",
+              "rounded-item",
               shouldShowMiniPlayer && hasPageBackdrop
                 ? "[--page-inset-bottom:64px] [--floating-inset-bottom:70px]"
                 : "[--page-inset-bottom:0px] [--floating-inset-bottom:0px]",
@@ -1039,7 +1039,7 @@ export default function AppFrame({ children }: AppFrameProps) {
                           transition={{ duration: 0.08 }}
                           className="flex h-full flex-col items-center justify-center gap-[6px] px-[20px] text-center"
                         >
-                          <p className="m-0 text-[14px] text-text-primary font-medium">
+                          <p className="m-0 text-label text-text-primary font-medium">
                             {t("common.no_results")}
                           </p>
                           <p className="m-0 text-caption text-text-tertiary">

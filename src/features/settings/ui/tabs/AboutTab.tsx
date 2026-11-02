@@ -51,7 +51,7 @@ export function AboutTab({ searchQuery }: { searchQuery?: string }) {
             {t("settings.about.liner")}
           </span>
         </div>
-        <span className="inline-flex h-[34px] items-center gap-[8px] rounded-full bg-fill-hover px-[14px] text-[14px] font-[600] text-text-primary select-none">
+        <span className="inline-flex h-[34px] items-center gap-[8px] rounded-full bg-fill-hover px-[14px] text-label font-[600] text-text-primary select-none">
           <span className="size-[8px] rounded-full bg-emerald-400" />v
           {bundleInfo?.bundleVersion || appVersion}
         </span>

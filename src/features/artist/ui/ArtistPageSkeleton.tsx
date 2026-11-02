@@ -28,7 +28,7 @@ function CardRowSkeleton({ count = 6 }: { count?: number }) {
     <div className="flex gap-[16px] overflow-hidden pb-[10px]">
       {Array.from({ length: count }).map((_, i) => (
         <div key={i} className="w-[180px] shrink-0">
-          <div className="relative aspect-square w-full overflow-hidden rounded-md bg-border-alpha-14">
+          <div className="relative aspect-square w-full overflow-hidden rounded-control bg-border-alpha-14">
             <div className="skeleton-shimmer h-full w-full" />
           </div>
           <div className="mt-[8px] flex flex-col gap-1.5">
@@ -86,7 +86,7 @@ function ArtistPageSkeleton({ className = "" }: ArtistPageSkeletonProps) {
               {Array.from({ length: 5 }).map((_, i) => (
                 <div
                   key={i}
-                  className="h-[52px] rounded-md px-[12px] flex items-center gap-[14px]"
+                  className="h-[52px] rounded-control px-[12px] flex items-center gap-[14px]"
                 >
                   <div className="skeleton-shimmer h-[14px] w-[16px] rounded-[3px]" />
                   <div className="skeleton-shimmer h-[40px] w-[40px] rounded-item shrink-0" />

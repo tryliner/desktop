@@ -110,7 +110,7 @@ export default function Dialog({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
-          className="fixed inset-0 z-[199] bg-black/15 backdrop-blur-[2px] rounded-4xl overflow-hidden"
+          className="fixed inset-0 z-[199] bg-black/15 backdrop-blur-[2px] rounded-item overflow-hidden"
           style={zIndex ? { zIndex: zIndex - 1 } : undefined}
           onPointerDown={handlePointerDown}
           onClick={handleBackdropClick}

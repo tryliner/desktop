@@ -49,7 +49,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ) => (
     <button
       ref={ref}
-      className={`inline-flex items-center justify-center gap-[8px] rounded-md text-[13.5px] font-[400] transition-colors duration-150 active:scale-[0.96] disabled:pointer-events-none disabled:opacity-50 cursor-pointer ${
+      className={`inline-flex items-center justify-center gap-[8px] rounded-control text-[13.5px] font-[400] transition-colors duration-150 active:scale-[0.96] disabled:pointer-events-none disabled:opacity-50 cursor-pointer ${
         variantClasses[variant]
       } ${sizeClasses[size]} ${className}`.trim()}
       style={{

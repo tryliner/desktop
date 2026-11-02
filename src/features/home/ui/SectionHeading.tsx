@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from "react";
+import type { ReactNode } from "react";
 
 export interface SectionHeadingProps {
   title: string;
@@ -7,13 +7,6 @@ export interface SectionHeadingProps {
   badge?: ReactNode;
   marginTop?: string;
 }
-
-const headingStyle: CSSProperties = {
-  fontFamily: "var(--font-roboto-flex), sans-serif",
-  fontWeight: 564,
-  fontVariationSettings:
-    "'wght' 564, 'GRAD' 105, 'XOPQ' 100, 'wdth' 134, 'opsz' 144",
-};
 
 export function SectionHeading({
   title,
@@ -27,14 +20,11 @@ export function SectionHeading({
       <div className="flex flex-col gap-0.5">
         <div className="flex items-center gap-2.5">
           {icon && (
-            <div className="flex items-center justify-center shrink-0 w-6 h-6 [&>svg]:w-6 [&>svg]:h-6">
+            <div className="flex items-center justify-center shrink-0 w-5 h-5 text-text-tertiary [&>svg]:w-5 [&>svg]:h-5">
               {icon}
             </div>
           )}
-          <h2
-            className="font-roboto-flex-heading text-text-primary text-[24px] m-0 leading-none tracking-tight"
-            style={headingStyle}
-          >
+          <h2 className="font-roboto-flex-heading text-text-primary text-[22px] m-0 leading-none tracking-[-0.02em]">
             {title}
           </h2>
           {badge}

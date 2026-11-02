@@ -11,13 +11,6 @@ export interface DailyMixesSectionProps {
   accentCoverUrl?: string;
 }
 
-const headingStyle: React.CSSProperties = {
-  fontFamily: "var(--font-roboto-flex), sans-serif",
-  fontWeight: 564,
-  fontVariationSettings:
-    "'wght' 564, 'GRAD' 105, 'XOPQ' 100, 'wdth' 134, 'opsz' 144",
-};
-
 function DailyMixesSection({
   mixes,
   headingMarginTop = "mt-[22px]",
@@ -35,10 +28,7 @@ function DailyMixesSection({
       >
         <div className="group flex items-center gap-3">
           <MixFluidSquare coverUrl={firstCoverUrl} />
-          <h2
-            className="font-roboto-flex-heading text-text-primary text-[36px] m-0 leading-none tracking-tight"
-            style={headingStyle}
-          >
+          <h2 className="font-roboto-flex-heading text-text-primary text-[30px] m-0 leading-none tracking-[-0.02em]">
             {t("home.dailyMixes") || "Your Mixes"}
           </h2>
         </div>

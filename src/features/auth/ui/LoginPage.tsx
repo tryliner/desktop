@@ -200,7 +200,7 @@ export default function LoginPage() {
         "relative flex h-full w-full items-center justify-center overflow-hidden bg-bg-primary",
         isEdgeToEdge
           ? "rounded-none border-0"
-          : "rounded-5xl border border-border-primary",
+          : "rounded-item border border-border-primary",
       )}
     >
       <LoginBackdrop edgeToEdge={isEdgeToEdge} />
@@ -313,7 +313,7 @@ export default function LoginPage() {
                                 : t("login.show_password")
                             }
                             onClick={() => setShowPassword((v) => !v)}
-                            className="flex h-7 w-7 items-center justify-center rounded-xl text-text-tertiary transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-text-secondary cursor-pointer"
+                            className="flex h-7 w-7 items-center justify-center rounded-item text-text-tertiary transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-text-secondary cursor-pointer"
                           >
                             {showPassword ? (
                               <EyeCloseLine className="h-4 w-4" />
@@ -369,7 +369,7 @@ export default function LoginPage() {
                                   onClick={() =>
                                     setShowConfirmPassword((v) => !v)
                                   }
-                                  className="flex h-7 w-7 items-center justify-center rounded-xl text-text-tertiary transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-text-secondary cursor-pointer"
+                                  className="flex h-7 w-7 items-center justify-center rounded-item text-text-tertiary transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-text-secondary cursor-pointer"
                                 >
                                   {showConfirmPassword ? (
                                     <EyeCloseLine className="h-4 w-4" />
@@ -411,7 +411,7 @@ export default function LoginPage() {
                         placeholder={t("login.placeholder_username")}
                         value={username}
                         icon={
-                          <span className="text-[14px] font-medium text-text-tertiary select-none">
+                          <span className="text-label font-medium text-text-tertiary select-none">
                             @
                           </span>
                         }

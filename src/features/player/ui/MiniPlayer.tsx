@@ -404,7 +404,7 @@ function MiniPlayer({
     : "!bg-[#dfdfe1] dark:!bg-[#292929] !text-text-primary";
 
   const iconButtonClass =
-    "inline-flex h-[30px] w-[30px] items-center justify-center rounded-md text-text-secondary transition-colors duration-150 hover:bg-black/[0.05] dark:hover:bg-white/[0.09] hover:text-text-primary active:scale-[0.96] border-none bg-transparent cursor-pointer";
+    "inline-flex h-[30px] w-[30px] items-center justify-center rounded-control text-text-secondary transition-colors duration-150 hover:bg-black/[0.05] dark:hover:bg-white/[0.09] hover:text-text-primary active:scale-[0.96] border-none bg-transparent cursor-pointer";
 
   const clearVolumeHoverTimer = useCallback(() => {
     if (volumeHoverCloseTimerRef.current) {

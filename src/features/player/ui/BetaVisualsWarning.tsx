@@ -53,7 +53,7 @@ export function BetaVisualsWarning({ docked }: BetaVisualsWarningProps) {
         aria-expanded={open}
         aria-label={t("player.beta_visuals.label")}
         className={cn(
-          "group inline-flex h-[26px] min-w-[26px] cursor-pointer items-center justify-center rounded-md border-none bg-transparent px-[5px] transition-colors duration-300 hover:bg-white/10",
+          "group inline-flex h-[26px] min-w-[26px] cursor-pointer items-center justify-center rounded-control border-none bg-transparent px-[5px] transition-colors duration-300 hover:bg-white/10",
           warning ? "text-yellow-400" : "text-white/70 hover:text-white",
         )}
       >

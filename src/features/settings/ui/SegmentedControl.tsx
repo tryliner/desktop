@@ -22,7 +22,7 @@ export function SegmentedControl<T extends string>({
       role={ariaLabel ? "group" : undefined}
       aria-label={ariaLabel}
       className={cn(
-        "inline-flex h-[34px] w-fit shrink-0 items-center rounded-[11px] bg-fill p-[3px]",
+        "inline-flex h-[34px] w-fit shrink-0 items-center rounded-item bg-fill p-[3px]",
         disabled && "pointer-events-none cursor-not-allowed opacity-50",
       )}
     >

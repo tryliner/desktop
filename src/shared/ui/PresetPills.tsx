@@ -20,9 +20,16 @@ export interface PresetPillsProps<T> {
   className?: string;
 }
 
+// same look as the settings SegmentedControl: a fill track, the picked
+// option lifted onto fill-hover
+const TRACK_CLASSES = {
+  sm: "rounded-control p-[2px]",
+  md: "rounded-item p-[3px]",
+};
+
 const SIZE_CLASSES = {
-  sm: "h-[26px] rounded-[6px] text-[11px] font-[600]",
-  md: "h-[30px] rounded-control px-[12px] text-caption font-[600]",
+  sm: "h-[24px] rounded-[6px] text-[11px] font-[600]",
+  md: "h-[28px] rounded-control px-[12px] text-caption font-[600]",
 };
 
 export function PresetPills<T>({
@@ -44,7 +51,8 @@ export function PresetPills<T>({
       aria-label={ariaLabel}
       aria-disabled={disabled || undefined}
       className={cn(
-        "gap-[4px] transition-opacity",
+        "gap-[2px] bg-fill transition-opacity",
+        TRACK_CLASSES[size],
         fill ? "grid" : "grid w-fit",
         disabled && "pointer-events-none opacity-50",
         className,
@@ -67,15 +75,16 @@ export function PresetPills<T>({
             className={cn(
               "relative flex cursor-pointer items-center justify-center whitespace-nowrap border-0 transition-colors",
               SIZE_CLASSES[size],
+              "bg-transparent",
               active
-                ? "text-bg-primary"
-                : "bg-black/[0.06] text-text-secondary hover:text-text-primary dark:bg-white/[0.06]",
+                ? "text-text-primary"
+                : "text-text-secondary hover:text-text-primary",
             )}
           >
             {active && (
               <motion.span
                 layoutId={layoutId}
-                className="absolute inset-0 rounded-[inherit] bg-text-primary/80"
+                className="absolute inset-0 rounded-[inherit] bg-fill-hover"
                 transition={{ type: "spring", stiffness: 450, damping: 32 }}
               />
             )}

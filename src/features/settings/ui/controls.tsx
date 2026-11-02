@@ -32,7 +32,7 @@ function matchesSearch({
 function RowText({ title, description }: SearchableProps) {
   return (
     <div className="flex min-w-0 flex-1 flex-col gap-[3px]">
-      <span className="text-pretty text-text-primary text-[13.5px] font-[500] leading-[18px] tracking-[-0.005em]">
+      <span className="text-pretty text-text-primary text-label font-[500] leading-[18px] tracking-[-0.005em]">
         {title}
       </span>
       {description ? (
@@ -110,7 +110,7 @@ export function SettingSection({
     <section className="flex flex-col [&:has(>[data-settings-card]>div:empty)]:hidden">
       {label ? (
         <div className="flex items-center justify-between gap-[12px] px-[2px] pb-[8px]">
-          <h4 className="m-0 text-text-primary text-[14px] font-[600] leading-[20px] tracking-[-0.005em]">
+          <h4 className="m-0 text-text-primary text-label font-[600] leading-[20px] tracking-[-0.005em]">
             {label}
           </h4>
           {action ? (
@@ -118,11 +118,7 @@ export function SettingSection({
           ) : null}
         </div>
       ) : null}
-      {/* 14px until the settings pass moves it onto rounded-item */}
-      <div
-        data-settings-card
-        className={cn(PANEL_FILL_CLASS, "rounded-[14px] py-[4px]")}
-      >
+      <div data-settings-card className={cn(PANEL_FILL_CLASS, "py-[4px]")}>
         <div className="flex flex-col">{children}</div>
       </div>
     </section>

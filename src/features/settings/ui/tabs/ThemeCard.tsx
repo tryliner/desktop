@@ -70,7 +70,7 @@ export function ThemeCard({
       }`}
     >
       <span
-        className={`relative block h-[76px] w-full overflow-hidden rounded-lg border transition-colors ${
+        className={`relative block h-[76px] w-full overflow-hidden rounded-item border transition-colors ${
           disabled
             ? "border-border-primary"
             : active
@@ -111,7 +111,7 @@ export function ThemeCard({
         ) : null}
       </span>
       <span
-        className={`text-[12.5px] leading-none ${
+        className={`text-caption leading-none ${
           disabled
             ? "text-text-tertiary"
             : active

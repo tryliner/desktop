@@ -78,10 +78,10 @@ function LikesPlaylistCard({
     return (
       <div
         onClick={onClick}
-        className="w-full flex items-center justify-between rounded-md p-[8px] outline-none transition-colors duration-150 ease-out cursor-pointer hover:bg-border-alpha-14 select-none"
+        className="w-full flex items-center justify-between rounded-control p-[8px] outline-none transition-colors duration-150 ease-out cursor-pointer hover:bg-border-alpha-14 select-none"
       >
         <div className="flex items-center gap-[16px] min-w-0">
-          <div className="relative h-[48px] w-[48px] shrink-0 overflow-hidden rounded-md">
+          <div className="relative h-[48px] w-[48px] shrink-0 overflow-hidden rounded-control">
             <img
               src={likesCover}
               alt=""
@@ -123,7 +123,7 @@ function LikesPlaylistCard({
       className="group flex flex-col gap-[8px] cursor-pointer"
       draggable={false}
     >
-      <div className="relative aspect-square w-full overflow-hidden rounded-md">
+      <div className="relative aspect-square w-full overflow-hidden rounded-control">
         <img
           src={likesCover}
           alt=""
@@ -132,7 +132,7 @@ function LikesPlaylistCard({
         />
       </div>
       <div className="flex flex-col gap-[4px]">
-        <span className="truncate text-[14px] font-[500] text-text-primary">
+        <span className="truncate text-label font-[500] text-text-primary">
           {t("library.liked_songs")}
         </span>
         {isLoading || count === undefined ? (

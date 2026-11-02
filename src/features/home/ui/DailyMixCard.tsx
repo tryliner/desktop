@@ -46,7 +46,7 @@ function DailyMixCard({ mix, index }: DailyMixCardProps) {
       />
 
       <div className="flex flex-col mt-[8px]">
-        <span className="truncate text-[14px] font-[500] text-text-primary">
+        <span className="truncate text-label font-[500] text-text-primary">
           {mix.title}
         </span>
         <ScrollableText

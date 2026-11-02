@@ -23,9 +23,9 @@ export default function LocalFilesCard({
     return (
       <div
         onClick={open}
-        className="flex w-full cursor-pointer select-none items-center gap-[16px] rounded-md p-[8px] transition-colors duration-150 ease-out hover:bg-border-alpha-14"
+        className="flex w-full cursor-pointer select-none items-center gap-[16px] rounded-control p-[8px] transition-colors duration-150 ease-out hover:bg-border-alpha-14"
       >
-        <div className="relative h-[48px] w-[48px] shrink-0 overflow-hidden rounded-md">
+        <div className="relative h-[48px] w-[48px] shrink-0 overflow-hidden rounded-control">
           <LocalFilesCover />
         </div>
         <div className="flex min-w-0 flex-col gap-[2px]">
@@ -49,11 +49,11 @@ export default function LocalFilesCard({
       onClick={open}
       className="group flex cursor-pointer flex-col gap-[8px]"
     >
-      <div className="relative aspect-square w-full overflow-hidden rounded-md">
+      <div className="relative aspect-square w-full overflow-hidden rounded-control">
         <LocalFilesCover />
       </div>
       <div className="flex flex-col gap-[4px]">
-        <span className="truncate text-[14px] font-[500] text-text-primary">
+        <span className="truncate text-label font-[500] text-text-primary">
           {t("library.local.title")}
         </span>
         {count === null ? (

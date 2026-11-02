@@ -51,7 +51,7 @@ export default function OfflineMixCard() {
       onClick={playAll}
       className="group flex cursor-pointer flex-col gap-[8px]"
     >
-      <div className="relative aspect-square w-full overflow-hidden rounded-md">
+      <div className="relative aspect-square w-full overflow-hidden rounded-control">
         <img
           src={allOfflineCover}
           alt=""
@@ -73,7 +73,7 @@ export default function OfflineMixCard() {
         </button>
       </div>
       <div className="flex flex-col gap-[4px]">
-        <span className="truncate text-[14px] font-[500] text-text-primary">
+        <span className="truncate text-label font-[500] text-text-primary">
           {context}
         </span>
         {loading ? (

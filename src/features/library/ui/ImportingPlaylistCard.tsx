@@ -61,14 +61,14 @@ export default function ImportingPlaylistCard({
     return (
       <div
         onClick={handleClick}
-        className={`w-full flex items-center justify-between rounded-md p-[8px] select-none transition-all duration-150 ${
+        className={`w-full flex items-center justify-between rounded-control p-[8px] select-none transition-all duration-150 ${
           isAwaiting
             ? "cursor-pointer hover:bg-border-alpha-14 opacity-90"
             : "cursor-default opacity-70"
         }`}
       >
         <div className="flex items-center gap-[16px] min-w-0 flex-1">
-          <div className="relative h-[48px] w-[48px] shrink-0 overflow-hidden rounded-md bg-bg-panel border border-border-primary/40 flex items-center justify-center">
+          <div className="relative h-[48px] w-[48px] shrink-0 overflow-hidden rounded-control bg-bg-panel border border-border-primary/40 flex items-center justify-center">
             {isAwaiting ? (
               <PlaylistFill size={22} className="text-text-tertiary/60" />
             ) : (
@@ -86,7 +86,7 @@ export default function ImportingPlaylistCard({
               {displayTitle}
             </h3>
             <p
-              className="m-0 flex min-w-0 items-center gap-[6px] text-[14px] leading-[1.2] overflow-hidden text-text-secondary"
+              className="m-0 flex min-w-0 items-center gap-[6px] text-label leading-[1.2] overflow-hidden text-text-secondary"
               style={{
                 fontWeight: 350,
               }}
@@ -120,7 +120,7 @@ export default function ImportingPlaylistCard({
       }`}
       draggable={false}
     >
-      <div className="relative aspect-square w-full overflow-hidden rounded-md flex flex-col items-center justify-center bg-bg-panel border border-border-primary/40">
+      <div className="relative aspect-square w-full overflow-hidden rounded-control flex flex-col items-center justify-center bg-bg-panel border border-border-primary/40">
         {isAwaiting ? (
           <PlaylistFill size={44} className="text-text-tertiary/50" />
         ) : (
@@ -156,7 +156,7 @@ export default function ImportingPlaylistCard({
       </div>
 
       <div className="flex flex-col gap-[4px] min-w-0">
-        <span className="truncate text-[14px] font-[500] text-text-primary">
+        <span className="truncate text-label font-[500] text-text-primary">
           {displayTitle}
         </span>
         <span className="truncate text-body text-text-tertiary flex items-center gap-[5px]">

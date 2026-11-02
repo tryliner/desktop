@@ -25,7 +25,7 @@ export const HERO_CHIP_CLASS =
   "inline-flex h-[26px] items-center gap-[6px] rounded-[9px] px-[11px] text-caption font-[400] text-text-primary select-none bg-black/[0.05] dark:bg-white/[0.1]";
 
 export const HERO_BUTTON_CLASS =
-  "!h-[32px] !rounded-[9px] !border-0 !text-[14px] flex items-center justify-center gap-[7px] shrink-0";
+  "!h-[32px] !rounded-[9px] !border-0 !text-label flex items-center justify-center gap-[7px] shrink-0";
 
 export const HERO_GLASS_BUTTON_CLASS =
   "!border-transparent !bg-black/[0.05] dark:!bg-white/[0.1] hover:!bg-black/[0.09] dark:hover:!bg-white/[0.16]";

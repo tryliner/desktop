@@ -53,8 +53,12 @@ as one surface):
 ## Type
 
 - Inter everywhere (`font-family: var(--font-inter)`), Montserrat only in the player.
+  Roboto Flex (wide) only inside generated artwork such as the daily mix covers, never
+  for UI headings.
+- Section headings on feeds (home): Inter 700, 22px, with a neutral 20px icon; the page's
+  lead section (Your Mixes) uses the 30px hero size.
 - Hero title: `HERO_TITLE_CLASS` (30px heading font). Hero subtitle: `HERO_SUBTITLE_CLASS` (18px).
-- Type scale: `text-caption` 12px, `text-body` 13px, `text-title` 15px, `text-heading`
+- Type scale: `text-caption` 12px, `text-body` 13px, `text-label` 14px (row and card titles, labels), `text-title` 15px, `text-heading`
   18px. Prefer these over `text-[Npx]`.
 - Body and list rows: 14px / 500 for titles, `text-body` tertiary for the second line.
 - Toast: 13px / 600 message, 12.5px tertiary description after a `·`.
@@ -63,7 +67,7 @@ as one surface):
 
 - Radius scale: `rounded-control` 8px (small controls, chips), `rounded-item` 12px
   (fields, rows, cards, dialog buttons), `rounded-panel` 20px (dialogs, top-level
-  containers). Older code still has 4, 6, 9, 10, 14, 16, 18px; new code uses the scale.
+  containers). Older code still has `rounded-xs` 4, `rounded-lg` 10, `rounded-2xl` 14, `rounded-3xl` 16 and a few `rounded-[Npx]`; new code uses the scale.
 - The scales are registered with tailwind-merge in `src/shared/lib/utils.ts`. A new step
   has to be added there too, or `cn()` reads it as a colour and drops it.
 - Buttons and chips in a hero: 9px. Dropdown menu: 11px with 8px items. Toast: 12px.

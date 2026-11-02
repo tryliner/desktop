@@ -10,7 +10,7 @@ export function LoginBackdrop({ edgeToEdge = false }: LoginBackdropProps) {
     <div
       className={cn(
         "pointer-events-none absolute inset-0 z-0 select-none overflow-hidden bg-login-backdrop",
-        edgeToEdge ? "rounded-none" : "rounded-5xl",
+        edgeToEdge ? "rounded-none" : "rounded-item",
       )}
     >
       <div className="absolute -left-[15%] -top-[25%] h-[70%] w-[50%] rounded-full bg-login-glow opacity-[0.22] blur-[140px]" />

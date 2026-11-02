@@ -109,7 +109,7 @@ function PlaylistCard({
     <>
       <div
         className={`relative aspect-square w-full overflow-hidden bg-border-alpha-14 ${
-          variant === "artist" ? "rounded-full" : "rounded-md"
+          variant === "artist" ? "rounded-full" : "rounded-control"
         } flex items-center justify-center`}
       >
         {effectiveUrls.length > 0 ? (
@@ -141,7 +141,7 @@ function PlaylistCard({
           variant === "artist" ? "items-center text-center" : ""
         }`}
       >
-        <span className="truncate text-[14px] font-[500] text-text-primary">
+        <span className="truncate text-label font-[500] text-text-primary">
           {title}
         </span>
         <span className="flex min-w-0 items-center gap-[5px] text-body text-text-tertiary">

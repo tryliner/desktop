@@ -67,7 +67,7 @@ export default function LibraryControls({
               onQueryChange("");
             }
           }}
-          className="h-[32px] min-w-0 flex-1 border-none bg-transparent p-0 text-[14px] leading-[32px] font-[400] text-text-primary outline-none placeholder:text-text-secondary"
+          className="h-[32px] min-w-0 flex-1 border-none bg-transparent p-0 text-label leading-[32px] font-[400] text-text-primary outline-none placeholder:text-text-secondary"
         />
         {query.length > 0 && (
           <button
