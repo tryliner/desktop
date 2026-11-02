@@ -50,4 +50,20 @@ describe("buildLines", () => {
     const model = buildLines(lyrics);
     expect(model.lines[0].subtitle).toBe("annyeong");
   });
+
+  it("falls back to romanization when translation is whitespace-only", () => {
+    const lyrics: Lyric[] = [
+      {
+        words: "안녕",
+        startTimeMs: 1000,
+        durationMs: 2000,
+        isInstrumental: false,
+        translation: { text: "   ", lang: "en" },
+        romanization: "annyeong",
+      },
+    ];
+
+    const model = buildLines(lyrics);
+    expect(model.lines[0].subtitle).toBe("annyeong");
+  });
 });

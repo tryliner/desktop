@@ -34,20 +34,14 @@ export function LyricsTranslateIslandControls() {
   } = useAiTranslateStore();
 
   const id = currentTrack?.id ?? "";
-  const cacheKey = id
-    ? getTranslationCacheKey(id, targetLang, singableMode, activeProvider)
-    : "";
+  const cacheKey = id ? getTranslationCacheKey(id, targetLang, singableMode, activeProvider) : "";
   const romKey = id ? getRomanizationCacheKey(id, activeProvider) : "";
 
   const lines = braccatoLyrics.map(
     (l) => l.words || l.parts?.map((p) => p.words).join("") || "",
   );
   const isMatch = (cached: string[] | undefined) =>
-    Boolean(
-      cached &&
-        cached.length === lines.length &&
-        cached.every((l, i) => l === lines[i]),
-    );
+    Boolean(cached && cached.length === lines.length && cached.every((l, i) => l === lines[i]));
   const hasTrans = Boolean(
     cacheKey &&
       translationsByTrackId[cacheKey]?.some((l) => l.trim().length > 0) &&
@@ -68,9 +62,11 @@ export function LyricsTranslateIslandControls() {
   const handleTrans = async () => {
     if (hasTrans) return toggleTranslation();
     if (!currentTrack || lines.length === 0) return;
+    const prevShow = useAiTranslateStore.getState().showTranslation;
     const res = await translateTrackLyrics(currentTrack.id, lines, activeProvider);
-    if (res) useAiTranslateStore.getState().setShowTranslation(true);
-    else {
+    if (res && useAiTranslateStore.getState().showTranslation === prevShow) {
+      useAiTranslateStore.getState().setShowTranslation(true);
+    } else if (!res) {
       const err = useAiTranslateStore.getState().error;
       if (err) showToast.error("Could not translate lyrics", { description: err });
     }
@@ -79,9 +75,11 @@ export function LyricsTranslateIslandControls() {
   const handleRom = async () => {
     if (hasRom) return toggleRomanization();
     if (!currentTrack || lines.length === 0) return;
+    const prevShow = useAiTranslateStore.getState().showRomanization;
     const res = await romanizeTrackLyrics(currentTrack.id, lines, activeProvider);
-    if (res) useAiTranslateStore.getState().setShowRomanization(true);
-    else {
+    if (res && useAiTranslateStore.getState().showRomanization === prevShow) {
+      useAiTranslateStore.getState().setShowRomanization(true);
+    } else if (!res) {
       const err = useAiTranslateStore.getState().error;
       if (err) showToast.error("Could not romanize lyrics", { description: err });
     }

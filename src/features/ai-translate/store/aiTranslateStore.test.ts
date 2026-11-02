@@ -9,7 +9,7 @@ import {
 function mockGoogleTranslate(dictionary: Record<string, string>): typeof fetch {
   return vi.fn<typeof fetch>(async (input: RequestInfo | URL) => {
     const url = String(input);
-    const q = decodeURIComponent(new URL(url).searchParams.get("q") ?? "");
+    const q = new URL(url).searchParams.get("q") ?? "";
     const translated = dictionary[q] ?? q;
     return new Response(JSON.stringify([[[translated, q]]]), { status: 200 });
   });

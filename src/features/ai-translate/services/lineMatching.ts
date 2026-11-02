@@ -13,7 +13,10 @@ export function matchLineCount(
     const hasMissingLine = original.some(
       (orig, index) => orig.trim().length > 0 && trimmed[index].length === 0,
     );
-    if (!hasMissingLine) {
+    const hasMisplacedLine = original.some(
+      (orig, index) => orig.trim().length === 0 && trimmed[index].length > 0,
+    );
+    if (!hasMissingLine && !hasMisplacedLine) {
       return original.map((orig, index) =>
         orig.trim().length === 0 ? "" : trimmed[index],
       );

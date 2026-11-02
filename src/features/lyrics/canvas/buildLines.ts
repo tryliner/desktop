@@ -37,7 +37,7 @@ function subtitleOf(line: Lyric): string | null {
   if (rom && trans && rom !== trans) {
     return `${rom} • ${trans}`;
   }
-  const text = trans ?? rom ?? null;
+  const text = trans || rom || null;
   return text && text.trim() ? text.trim() : null;
 }
 

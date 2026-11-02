@@ -12,7 +12,7 @@ function mockFetchJson(data: unknown): typeof fetch {
 
 function mockGoogleTranslate(dictionary: Record<string, string>): typeof fetch {
   return vi.fn<typeof fetch>(async (input: RequestInfo | URL) => {
-    const q = decodeURIComponent(new URL(String(input)).searchParams.get("q") ?? "");
+    const q = new URL(String(input)).searchParams.get("q") ?? "";
     const translated = dictionary[q] ?? q;
     return new Response(JSON.stringify([[[translated, q]]]), { status: 200 });
   });
@@ -25,17 +25,17 @@ describe("AI Lyrics Translation Service", () => {
 
   it("uses free translator for google_translate provider", async () => {
     const mockFetch = mockGoogleTranslate({
-      Hello: "Xin chào",
-      World: "Thế giới",
+      "Hello World": "Xin chào thế giới",
+      Peace: "Hòa bình",
     });
     global.fetch = mockFetch;
 
-    const result = await translateSongLyrics(["Hello", "", "World"], {
+    const result = await translateSongLyrics(["Hello World", "", "Peace"], {
       provider: "google_translate",
       targetLang: "vi",
     });
 
-    expect(result).toEqual(["Xin chào", "", "Thế giới"]);
+    expect(result).toEqual(["Xin chào thế giới", "", "Hòa bình"]);
     expect(mockFetch).toHaveBeenCalledTimes(2);
   });
 
