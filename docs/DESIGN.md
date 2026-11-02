@@ -53,10 +53,9 @@ as one surface):
 ## Type
 
 - Inter everywhere (`font-family: var(--font-inter)`), Montserrat only in the player.
-  Roboto Flex (wide) only inside generated artwork such as the daily mix covers, never
-  for UI headings.
-- Section headings on feeds (home): Inter 700, 22px, with a neutral 20px icon; the page's
-  lead section (Your Mixes) uses the 30px hero size.
+  Roboto Flex (wide) for the home feed's section headings (24px, Your Mixes 36px) and
+  the generated daily mix covers.
+- Section heading icons on home are neutral (`text-text-tertiary`, 20px).
 - Hero title: `HERO_TITLE_CLASS` (30px heading font). Hero subtitle: `HERO_SUBTITLE_CLASS` (18px).
 - Type scale: `text-caption` 12px, `text-body` 13px, `text-label` 14px (row and card titles, labels), `text-title` 15px, `text-heading`
   18px. Prefer these over `text-[Npx]`.
