@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
+import { debouncedStorage } from "@/shared/utils/storage";
 import type { AiProvider } from "../types";
 import {
   executeTrackTranslation,
@@ -74,18 +75,18 @@ export const useAiTranslateStore = create<AiTranslateState>()(
       setProvider: (provider) => {
         configGeneration++;
         resetActiveRequestCounts();
-        set({ provider, error: null, isTranslating: false, isRomanizing: false, translationsByTrackId: {}, romanizationsByTrackId: {}, sourceLinesByCacheKey: {}, sourceRomLinesByCacheKey: {} });
+        set({ provider, error: null, isTranslating: false, isRomanizing: false });
       },
       setApiKey: (apiKey) => set({ apiKey, error: null }),
       setBaseUrl: (baseUrl) => {
         configGeneration++;
         resetActiveRequestCounts();
-        set({ baseUrl, error: null, isTranslating: false, isRomanizing: false, translationsByTrackId: {}, romanizationsByTrackId: {}, sourceLinesByCacheKey: {}, sourceRomLinesByCacheKey: {} });
+        set({ baseUrl, error: null, isTranslating: false, isRomanizing: false });
       },
       setModel: (model) => {
         configGeneration++;
         resetActiveRequestCounts();
-        set({ model, error: null, isTranslating: false, isRomanizing: false, translationsByTrackId: {}, romanizationsByTrackId: {}, sourceLinesByCacheKey: {}, sourceRomLinesByCacheKey: {} });
+        set({ model, error: null, isTranslating: false, isRomanizing: false });
       },
       setSingableMode: (singableMode) => set({ singableMode }),
       toggleSingableMode: () => set((s) => ({ singableMode: !s.singableMode })),
@@ -98,6 +99,7 @@ export const useAiTranslateStore = create<AiTranslateState>()(
         configGeneration++;
         resetActiveRequestCounts();
         set({ isTranslating: false, isRomanizing: false, translationsByTrackId: {}, romanizationsByTrackId: {}, sourceLinesByCacheKey: {}, sourceRomLinesByCacheKey: {} });
+        debouncedStorage.flush();
       },
 
       translateTrackLyrics: (trackId, lines, lyricsProvider) =>
@@ -108,13 +110,17 @@ export const useAiTranslateStore = create<AiTranslateState>()(
     }),
     {
       name: "liner_ai_translate_v1",
-      version: 3,
-      storage: createJSONStorage(() => localStorage),
-      migrate: (persisted: unknown, version: number) => {
+      version: 4,
+      storage: createJSONStorage(() => debouncedStorage),
+      migrate: (persisted: unknown) => {
         const state = (persisted ?? {}) as Partial<AiTranslateState>;
-        return version < 3
-          ? ({ ...state, baseUrl: state.baseUrl === "https://api.openai.com/v1" ? "" : state.baseUrl, translationsByTrackId: {}, romanizationsByTrackId: {}, sourceLinesByCacheKey: {}, sourceRomLinesByCacheKey: {} } as AiTranslateState)
-          : (state as AiTranslateState);
+        return {
+          ...state,
+          translationsByTrackId: state.translationsByTrackId ?? {},
+          romanizationsByTrackId: state.romanizationsByTrackId ?? {},
+          sourceLinesByCacheKey: state.sourceLinesByCacheKey ?? {},
+          sourceRomLinesByCacheKey: state.sourceRomLinesByCacheKey ?? {},
+        } as AiTranslateState;
       },
       partialize: (state) => ({
         provider: state.provider,

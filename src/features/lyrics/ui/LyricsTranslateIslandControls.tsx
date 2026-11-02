@@ -35,22 +35,28 @@ export function LyricsTranslateIslandControls() {
 
   const id = currentTrack?.id ?? "";
   const cacheKey = id ? getTranslationCacheKey(id, targetLang, singableMode, activeProvider) : "";
+  const fallbackKey = id ? getTranslationCacheKey(id, targetLang, singableMode) : "";
   const romKey = id ? getRomanizationCacheKey(id, activeProvider) : "";
+  const fallbackRomKey = id ? getRomanizationCacheKey(id) : "";
 
   const lines = braccatoLyrics.map(
     (l) => l.words || l.parts?.map((p) => p.words).join("") || "",
   );
-  const isMatch = (cached: string[] | undefined) =>
-    Boolean(cached && cached.length === lines.length && cached.every((l, i) => l === lines[i]));
+  const isMatch = (cached: string[] | undefined, list?: string[]) =>
+    Boolean(list && list.length === lines.length && (!cached || cached.every((l, i) => l.trim() === lines[i]?.trim())));
+
+  const cachedTrans = (cacheKey ? translationsByTrackId[cacheKey] : undefined) ?? (fallbackKey ? translationsByTrackId[fallbackKey] : undefined);
+  const cachedSource = (cacheKey ? sourceLinesByCacheKey[cacheKey] : undefined) ?? (fallbackKey ? sourceLinesByCacheKey[fallbackKey] : undefined);
   const hasTrans = Boolean(
-    cacheKey &&
-      translationsByTrackId[cacheKey]?.some((l) => l.trim().length > 0) &&
-      isMatch(sourceLinesByCacheKey[cacheKey]),
+    cachedTrans?.some((l) => l.trim().length > 0) &&
+    isMatch(cachedSource, cachedTrans),
   );
+
+  const cachedRom = (romKey ? romanizationsByTrackId[romKey] : undefined) ?? (fallbackRomKey ? romanizationsByTrackId[fallbackRomKey] : undefined);
+  const cachedRomSource = (romKey ? sourceRomLinesByCacheKey[romKey] : undefined) ?? (fallbackRomKey ? sourceRomLinesByCacheKey[fallbackRomKey] : undefined);
   const hasRom = Boolean(
-    romKey &&
-      romanizationsByTrackId[romKey]?.some((l) => l.trim().length > 0) &&
-      isMatch(sourceRomLinesByCacheKey[romKey]),
+    cachedRom?.some((l) => l.trim().length > 0) &&
+    isMatch(cachedRomSource, cachedRom),
   );
 
   const hasRomanizableLyrics = braccatoLyrics.some((lyric) =>

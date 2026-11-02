@@ -17,11 +17,9 @@ function matchesSourceLines(
   cached: string[] | undefined,
   lines: string[],
 ): boolean {
-  return Boolean(
-    cached &&
-      cached.length === lines.length &&
-      cached.every((line, idx) => line === lines[idx]),
-  );
+  if (!cached) return true;
+  if (cached.length !== lines.length) return false;
+  return cached.every((line, idx) => line.trim() === lines[idx]?.trim());
 }
 
 export function enrichLyrics(
@@ -73,17 +71,12 @@ export function useEnrichedLyrics(
 
   const trackTranslations = useMemo(() => {
     if (!currentTrackId || !showTranslation) return undefined;
-    const key = getTranslationCacheKey(
-      currentTrackId,
-      targetLang,
-      singableMode,
-      activeProvider,
-    );
-    const cached = translationsByTrackId[key];
+    const key = getTranslationCacheKey(currentTrackId, targetLang, singableMode, activeProvider);
+    const fallbackKey = getTranslationCacheKey(currentTrackId, targetLang, singableMode);
+    const cached = translationsByTrackId[key] || translationsByTrackId[fallbackKey];
     if (!cached) return undefined;
-    return matchesSourceLines(sourceLinesByCacheKey[key], getLineTexts(braccatoLyrics))
-      ? cached
-      : undefined;
+    const sources = sourceLinesByCacheKey[key] || sourceLinesByCacheKey[fallbackKey];
+    return matchesSourceLines(sources, getLineTexts(braccatoLyrics)) ? cached : undefined;
   }, [
     currentTrackId,
     showTranslation,
@@ -98,11 +91,11 @@ export function useEnrichedLyrics(
   const trackRomanizations = useMemo(() => {
     if (!currentTrackId || !showRomanization) return undefined;
     const key = getRomanizationCacheKey(currentTrackId, activeProvider);
-    const cached = romanizationsByTrackId[key];
+    const fallbackKey = getRomanizationCacheKey(currentTrackId);
+    const cached = romanizationsByTrackId[key] || romanizationsByTrackId[fallbackKey];
     if (!cached) return undefined;
-    return matchesSourceLines(sourceRomLinesByCacheKey[key], getLineTexts(braccatoLyrics))
-      ? cached
-      : undefined;
+    const sources = sourceRomLinesByCacheKey[key] || sourceRomLinesByCacheKey[fallbackKey];
+    return matchesSourceLines(sources, getLineTexts(braccatoLyrics)) ? cached : undefined;
   }, [
     currentTrackId,
     showRomanization,

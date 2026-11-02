@@ -2,6 +2,7 @@ import {
   translateSongLyrics,
   romanizeSongLyrics,
 } from "../services/aiTranslateService";
+import { debouncedStorage } from "@/shared/utils/storage";
 import {
   trimCache,
   getTranslationCacheKey,
@@ -26,6 +27,17 @@ function formatErrorMessage(err: unknown, fallback: string): string {
   return fallback;
 }
 
+function isCachedMatch(existing?: string[], sources?: string[], lines?: string[]): boolean {
+  if (!existing || !lines || existing.length !== lines.length) return false;
+  return !sources || sources.every((l, i) => l.trim() === lines[i]?.trim());
+}
+
+function saveDualCache(
+  cache: Record<string, string[]>, k1: string, k2: string, val: string[],
+): Record<string, string[]> {
+  return trimCache({ ...cache, [k1]: val, [k2]: val });
+}
+
 export function resetActiveRequestCounts(): void {
   activeTranslationCount = 0;
   activeRomanizationCount = 0;
@@ -43,16 +55,10 @@ export async function executeTrackTranslation(
   const requestGen = currentGen();
   const { provider, apiKey, targetLang, model, baseUrl, singableMode } = get();
   const cacheKey = getTranslationCacheKey(trackId, targetLang, singableMode, lyricsProvider);
-  const existing = get().translationsByTrackId[cacheKey];
-  const storedSources = get().sourceLinesByCacheKey?.[cacheKey];
-  if (
-    existing &&
-    storedSources &&
-    storedSources.length === lines.length &&
-    storedSources.every((line, idx) => line === lines[idx])
-  ) {
-    return existing;
-  }
+  const fallbackKey = getTranslationCacheKey(trackId, targetLang, singableMode);
+  const existing = get().translationsByTrackId[cacheKey] || get().translationsByTrackId[fallbackKey];
+  const sources = get().sourceLinesByCacheKey?.[cacheKey] || get().sourceLinesByCacheKey?.[fallbackKey];
+  if (isCachedMatch(existing, sources, lines)) return existing;
 
   activeTranslationCount++;
   set((s) => ({ ...s, isTranslating: true, error: null }));
@@ -69,9 +75,10 @@ export async function executeTrackTranslation(
     activeTranslationCount = Math.max(0, activeTranslationCount - 1);
     set((s) => ({
       isTranslating: activeTranslationCount > 0,
-      translationsByTrackId: trimCache({ ...s.translationsByTrackId, [cacheKey]: translated }),
-      sourceLinesByCacheKey: trimCache({ ...s.sourceLinesByCacheKey, [cacheKey]: lines }),
+      translationsByTrackId: saveDualCache(s.translationsByTrackId, cacheKey, fallbackKey, translated),
+      sourceLinesByCacheKey: saveDualCache(s.sourceLinesByCacheKey, cacheKey, fallbackKey, lines),
     }));
+    debouncedStorage.flush();
     return translated;
   } catch (err: unknown) {
     if (currentGen() !== requestGen) return null;
@@ -93,16 +100,10 @@ export async function executeTrackRomanization(
   if (!trackId || lines.length === 0) return null;
   const requestGen = currentGen();
   const cacheKey = getRomanizationCacheKey(trackId, lyricsProvider);
-  const existing = get().romanizationsByTrackId[cacheKey];
-  const storedSources = get().sourceRomLinesByCacheKey?.[cacheKey];
-  if (
-    existing &&
-    storedSources &&
-    storedSources.length === lines.length &&
-    storedSources.every((line, idx) => line === lines[idx])
-  ) {
-    return existing;
-  }
+  const fallbackKey = getRomanizationCacheKey(trackId);
+  const existing = get().romanizationsByTrackId[cacheKey] || get().romanizationsByTrackId[fallbackKey];
+  const sources = get().sourceRomLinesByCacheKey?.[cacheKey] || get().sourceRomLinesByCacheKey?.[fallbackKey];
+  if (isCachedMatch(existing, sources, lines)) return existing;
 
   activeRomanizationCount++;
   set((s) => ({ ...s, isRomanizing: true, error: null }));
@@ -121,9 +122,10 @@ export async function executeTrackRomanization(
     if (hasNonEmpty) {
       set((s) => ({
         isRomanizing: activeRomanizationCount > 0,
-        romanizationsByTrackId: trimCache({ ...s.romanizationsByTrackId, [cacheKey]: romanized }),
-        sourceRomLinesByCacheKey: trimCache({ ...s.sourceRomLinesByCacheKey, [cacheKey]: lines }),
+        romanizationsByTrackId: saveDualCache(s.romanizationsByTrackId, cacheKey, fallbackKey, romanized),
+        sourceRomLinesByCacheKey: saveDualCache(s.sourceRomLinesByCacheKey, cacheKey, fallbackKey, lines),
       }));
+      debouncedStorage.flush();
     } else {
       set((s) => ({ ...s, isRomanizing: activeRomanizationCount > 0 }));
     }

@@ -80,7 +80,7 @@ describe("AI Lyrics Translation Store", () => {
     expect(state.translationsByTrackId[expectedKey]).toEqual(["Bài hát"]);
   });
 
-  it("clears translations and romanizations when configuration changes", () => {
+  it("preserves translations and romanizations across provider/model changes and clears on clearCache", () => {
     const store = useAiTranslateStore.getState();
     useAiTranslateStore.setState({
       translationsByTrackId: { "track-1": ["line 1"] },
@@ -88,14 +88,12 @@ describe("AI Lyrics Translation Store", () => {
     });
 
     store.setProvider("openai");
-    expect(useAiTranslateStore.getState().translationsByTrackId).toEqual({});
-    expect(useAiTranslateStore.getState().romanizationsByTrackId).toEqual({});
+    expect(useAiTranslateStore.getState().translationsByTrackId["track-1"]).toEqual(["line 1"]);
 
-    useAiTranslateStore.setState({
-      translationsByTrackId: { "track-2": ["line 2"] },
-      romanizationsByTrackId: { "track-2": ["line 2"] },
-    });
     store.setModel("gpt-4o");
+    expect(useAiTranslateStore.getState().translationsByTrackId["track-1"]).toEqual(["line 1"]);
+
+    store.clearCache();
     expect(useAiTranslateStore.getState().translationsByTrackId).toEqual({});
     expect(useAiTranslateStore.getState().romanizationsByTrackId).toEqual({});
   });
