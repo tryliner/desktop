@@ -22,7 +22,7 @@ export default function KeepAlivePage({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <div ref={rootRef} data-keep-alive className="h-full w-full">
+    <div ref={rootRef} data-keep-alive className="page-transition-kept">
       {children}
     </div>
   );
