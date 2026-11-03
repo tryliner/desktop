@@ -253,7 +253,11 @@ function createWindow() {
     height: DEFAULT_WINDOW_HEIGHT,
     minWidth: MIN_WINDOW_WIDTH,
     minHeight: MIN_WINDOW_HEIGHT,
-    frame: false,
+    // macos only reveals the menu bar on hover in native fullscreen for titled windows,
+    // so keep the native frame there with its title bar and traffic lights hidden
+    ...(process.platform === "darwin"
+      ? { titleBarStyle: "hidden" as const }
+      : { frame: false }),
     transparent: true,
     backgroundColor: "#00000000",
     hasShadow: false,
@@ -268,6 +272,9 @@ function createWindow() {
       webSecurity: true,
     },
   });
+
+  // the custom window controls replace the native traffic lights
+  if (process.platform === "darwin") mainWindow.setWindowButtonVisibility(false);
 
   // sync window state changes to renderer
   const broadcastWindowState = () => {
