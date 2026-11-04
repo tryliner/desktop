@@ -889,24 +889,14 @@ if (!gotTheLock) {
       });
     });
 
-    const openFolderOrItem = async (customPath?: string) => {
+    const revealExportOrDownloads = async () => {
       try {
-        const targetPath = customPath || lastSavedExportPath;
-        if (targetPath && fs.existsSync(targetPath)) {
-          // opens explorer/finder highlighting the exported file
-          shell.showItemInFolder(targetPath);
+        if (lastSavedExportPath && fs.existsSync(lastSavedExportPath)) {
+          shell.showItemInFolder(lastSavedExportPath);
           return true;
         }
-        if (targetPath) {
-          const dir = path.dirname(targetPath);
-          if (fs.existsSync(dir)) {
-            await shell.openPath(dir);
-            return true;
-          }
-        }
-        const downloadsPath = app.getPath("downloads");
-        await shell.openPath(downloadsPath);
-        return true;
+        const error = await shell.openPath(app.getPath("downloads"));
+        return error === "";
       } catch (err) {
         console.error(
           "\x1b[41;37m shell \x1b[0m open-export-folder error:",
@@ -916,19 +906,9 @@ if (!gotTheLock) {
       }
     };
 
-    ipcMain.handle(
-      "shell:open-downloads",
-      async (_event, customPath?: string) => {
-        return openFolderOrItem(customPath);
-      },
-    );
+    ipcMain.handle("shell:open-downloads", () => revealExportOrDownloads());
 
-    ipcMain.handle(
-      "shell:open-export-folder",
-      async (_event, customPath?: string) => {
-        return openFolderOrItem(customPath);
-      },
-    );
+    ipcMain.handle("shell:open-export-folder", () => revealExportOrDownloads());
 
     // locates provider path where cache is collected
     const getCacheDirectory = () => {
