@@ -51,6 +51,7 @@ import {
 import { TouchBarManager } from "./touchbar.js";
 import { registerAuthSessionIpc } from "./auth-session-ipc.js";
 import { ThumbarController } from "./thumbar.js";
+import { TrayController } from "./tray.js";
 import { OverlayManager } from "./overlay.js";
 import { detectCompositor } from "./compositor/index.js";
 import { BundleManager } from "./bundle-manager.js";
@@ -125,6 +126,7 @@ let mainWindow: BrowserWindow | null = null;
 let touchBarManager: TouchBarManager | null = null;
 let overlayManager: OverlayManager | null = null;
 let thumbar: ThumbarController | null = null;
+let tray: TrayController | null = null;
 let bundleManager: BundleManager | null = null;
 let discordRpcManager: DiscordRpcManager | null = null;
 let poTokenService: PoTokenService | null = null;
@@ -180,6 +182,10 @@ function unmaximizeWindow() {
 const shutdown = createShutdown({
   cleanup: [
     () => touchBarManager?.unregisterShortcut(),
+    () => {
+      tray?.destroy();
+      tray = null;
+    },
     () => overlayManager?.dispose(),
     () => {
       // drop the discord ipc socket so presence clears and nothing keeps the process alive
@@ -274,7 +280,8 @@ function createWindow() {
   });
 
   // the custom window controls replace the native traffic lights
-  if (process.platform === "darwin") mainWindow.setWindowButtonVisibility(false);
+  if (process.platform === "darwin")
+    mainWindow.setWindowButtonVisibility(false);
 
   // sync window state changes to renderer
   const broadcastWindowState = () => {
@@ -485,6 +492,16 @@ function createWindow() {
   mainWindow.on("restore", () => thumbar?.refresh());
 }
 
+function revealMainWindow() {
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    createWindow();
+  } else {
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.show();
+    mainWindow.focus();
+  }
+}
+
 // Single instance lock
 const gotTheLock = app.requestSingleInstanceLock();
 if (!gotTheLock) {
@@ -506,13 +523,7 @@ if (!gotTheLock) {
       app.exit(0);
       return;
     }
-    if (!mainWindow || mainWindow.isDestroyed()) {
-      createWindow();
-    } else {
-      if (mainWindow.isMinimized()) mainWindow.restore();
-      mainWindow.show();
-      mainWindow.focus();
-    }
+    revealMainWindow();
     if (raw) deliverDeeplink(parseDeeplink(raw));
   });
 
@@ -558,11 +569,22 @@ if (!gotTheLock) {
           mainWindow.webContents.send("overlay:action", { type });
       },
     );
+    tray = new TrayController({
+      iconPath: path.join(process.env.VITE_PUBLIC!, "icon.png"),
+      showWindow: revealMainWindow,
+      send: (type) => {
+        if (mainWindow && !mainWindow.isDestroyed())
+          mainWindow.webContents.send("overlay:action", { type });
+      },
+      quit: () => shutdown.quit(),
+    });
+    tray.create();
     ipcMain.on(
       "touchbar:update-state",
       (_event, state: { status: string; track?: unknown }) => {
         updateSleepBlocker(state.status);
         thumbar?.update(state);
+        tray?.update(state);
       },
     );
 

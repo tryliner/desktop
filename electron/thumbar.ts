@@ -102,7 +102,7 @@ function glyphImage(glyph: ThumbarGlyph): NativeImage {
 export type ThumbarPlayerState =
   { status?: string; track?: unknown } | null | undefined;
 
-const PLAYING_STATUSES = new Set(["playing", "loading", "buffering"]);
+export const PLAYING_STATUSES = new Set(["playing", "loading", "buffering"]);
 
 export class ThumbarController {
   private icons: Record<ThumbarGlyph, NativeImage> | null = null;
