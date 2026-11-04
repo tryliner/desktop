@@ -6,6 +6,7 @@ export {
 } from "./engine/playerEngine";
 export { toVolumeGain, toVolumeLevel } from "./engine/volume";
 export { isRadioContext, nextRepeatMode } from "./engine/radioMode";
+export { MAX_CROSSFADE_SECONDS } from "./engine/crossfade";
 export {
   usePlayerStore,
   type AccentVariant,
