@@ -1,6 +1,7 @@
 import { mkdir } from "node:fs/promises";
 import path from "node:path";
-import { app, ipcMain, shell } from "electron";
+import { app, shell } from "electron";
+import { handleTrusted } from "../ipc-guard.js";
 import { SavedTrackLibrary } from "./library.js";
 import type {
   SavedLyricsState,
@@ -102,22 +103,22 @@ export function createSavedTrackLibrary() {
 }
 
 export function setupSavedTracks(library: SavedTrackLibrary) {
-  ipcMain.handle("saved-tracks:list", () => library.list());
+  handleTrusted("saved-tracks:list", () => library.list());
 
-  ipcMain.handle("saved-tracks:save", (_event, input: unknown) => {
+  handleTrusted("saved-tracks:save", (_event, input: unknown) => {
     const parsed = toInput(input);
     return parsed ? library.saveTrack(parsed) : null;
   });
 
-  ipcMain.handle("saved-tracks:remove", (_event, trackIds: unknown) =>
+  handleTrusted("saved-tracks:remove", (_event, trackIds: unknown) =>
     library.remove(stringList(trackIds)),
   );
 
-  ipcMain.handle("saved-tracks:remove-all", () => library.removeAll());
+  handleTrusted("saved-tracks:remove-all", () => library.removeAll());
 
-  ipcMain.handle("saved-tracks:usage", () => library.usage());
+  handleTrusted("saved-tracks:usage", () => library.usage());
 
-  ipcMain.handle("saved-tracks:open-folder", async () => {
+  handleTrusted("saved-tracks:open-folder", async () => {
     try {
       const root = savedTracksRoot();
       await mkdir(root, { recursive: true });
@@ -127,11 +128,11 @@ export function setupSavedTracks(library: SavedTrackLibrary) {
     }
   });
 
-  ipcMain.handle("saved-tracks:lyrics-get", (_event, trackId: unknown) =>
+  handleTrusted("saved-tracks:lyrics-get", (_event, trackId: unknown) =>
     typeof trackId === "string" ? library.readLyrics(trackId) : null,
   );
 
-  ipcMain.handle(
+  handleTrusted(
     "saved-tracks:lyrics-set",
     (_event, trackId: unknown, state: unknown, lyrics: unknown) => {
       if (typeof trackId !== "string") return false;

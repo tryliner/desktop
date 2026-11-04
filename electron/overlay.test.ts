@@ -101,6 +101,11 @@ const electron = vi.hoisted(() => {
 });
 
 vi.mock("electron", () => electron.module);
+vi.mock("./ipc-guard.js", () => ({
+  confineToApp: () => {},
+  handleTrusted: electron.module.ipcMain.handle,
+  onTrusted: electron.module.ipcMain.on,
+}));
 vi.mock("./compositor/index.js", () => ({
   createCompositorBridge: () => null,
 }));

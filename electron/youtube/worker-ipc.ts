@@ -1,4 +1,4 @@
-import { ipcMain } from "electron";
+import { handleTrusted } from "../ipc-guard.js";
 import type { PoTokenService } from "./potoken.js";
 
 const IDENTIFIER = /^[\w=-]{1,128}$/;
@@ -27,15 +27,15 @@ function readSolveRequest(payload: unknown): {
 }
 
 export function registerYoutubeWorkerIpc(service: PoTokenService): void {
-  ipcMain.handle("potoken:mint", (_event, identifier: unknown) => {
+  handleTrusted("potoken:mint", (_event, identifier: unknown) => {
     if (typeof identifier !== "string" || !IDENTIFIER.test(identifier))
       throw new Error("invalid identifier");
     return service.mint(identifier);
   });
-  ipcMain.handle("youtube:tv-session", () =>
+  handleTrusted("youtube:tv-session", () =>
     service.request("tv-session", {}, TV_SESSION_TIMEOUT_MS),
   );
-  ipcMain.handle("youtube:solve-n", (_event, payload: unknown) =>
+  handleTrusted("youtube:solve-n", (_event, payload: unknown) =>
     service.request("solve-n", readSolveRequest(payload), SOLVE_TIMEOUT_MS),
   );
 }

@@ -1,4 +1,5 @@
-import { BrowserWindow, ipcMain, TouchBar } from "electron";
+import { BrowserWindow, TouchBar } from "electron";
+import { handleTrusted, onTrusted } from "./ipc-guard.js";
 
 export interface TouchBarTrackInfo {
   id?: string;
@@ -125,7 +126,7 @@ export class TouchBarManager {
   }
 
   private registerIpcHandlers() {
-    ipcMain.on(
+    onTrusted(
       "touchbar:update-state",
       (_event, state: TouchBarStatePayload) => {
         this.latestState = state;
@@ -146,7 +147,7 @@ export class TouchBarManager {
       },
     );
 
-    ipcMain.on("touchbar:send-action", (_event, action: TouchBarAction) => {
+    onTrusted("touchbar:send-action", (_event, action: TouchBarAction) => {
       if (action.type === "restoreMainWindow") {
         if (this.mainWindow && !this.mainWindow.isDestroyed()) {
           if (this.mainWindow.isMinimized()) {
@@ -160,20 +161,20 @@ export class TouchBarManager {
       this.forwardAction(action);
     });
 
-    ipcMain.handle("touchbar:get-initial-state", () => {
+    handleTrusted("touchbar:get-initial-state", () => {
       return this.latestState;
     });
 
-    ipcMain.handle("touchbar:toggle-simulator", () => {
+    handleTrusted("touchbar:toggle-simulator", () => {
       return false;
     });
 
-    ipcMain.handle("touchbar:is-simulator-open", () => {
+    handleTrusted("touchbar:is-simulator-open", () => {
       return false;
     });
 
-    ipcMain.on("touchbar:close-simulator", () => {});
-    ipcMain.on("touchbar:update-settings", () => {});
+    onTrusted("touchbar:close-simulator", () => {});
+    onTrusted("touchbar:update-settings", () => {});
   }
 
   public registerShortcut() {
