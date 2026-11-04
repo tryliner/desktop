@@ -50,8 +50,8 @@ import {
 } from "./netdiag.js";
 import { TouchBarManager } from "./touchbar.js";
 import { registerAuthSessionIpc } from "./auth-session-ipc.js";
-import { ThumbarController } from "./thumbar.js";
-import { TrayController } from "./tray.js";
+import { ThumbarController, type ThumbarAction } from "./thumbar.js";
+import { createTray, type TrayController } from "./tray.js";
 import { OverlayManager } from "./overlay.js";
 import { detectCompositor } from "./compositor/index.js";
 import { BundleManager } from "./bundle-manager.js";
@@ -480,6 +480,7 @@ function createWindow() {
     if (process.platform === "darwin") {
       // macOS keeps the app alive without windows; the overlay can be rebuilt on activate
       overlayManager?.destroy();
+      tray?.update(null);
     } else {
       // closing the main window (title bar button, taskbar, alt+f4) ends the whole app
       shutdown.quit();
@@ -562,23 +563,17 @@ if (!gotTheLock) {
     touchBarManager.registerShortcut();
 
     const updateSleepBlocker = createSleepBlocker(powerSaveBlocker);
-    thumbar = new ThumbarController(
-      () => mainWindow,
-      (type) => {
-        if (mainWindow && !mainWindow.isDestroyed())
-          mainWindow.webContents.send("overlay:action", { type });
-      },
-    );
-    tray = new TrayController({
+    const sendPlayerAction = (type: ThumbarAction) => {
+      if (mainWindow && !mainWindow.isDestroyed())
+        mainWindow.webContents.send("overlay:action", { type });
+    };
+    thumbar = new ThumbarController(() => mainWindow, sendPlayerAction);
+    tray = createTray({
       iconPath: path.join(process.env.VITE_PUBLIC!, "icon.png"),
       showWindow: revealMainWindow,
-      send: (type) => {
-        if (mainWindow && !mainWindow.isDestroyed())
-          mainWindow.webContents.send("overlay:action", { type });
-      },
+      send: sendPlayerAction,
       quit: () => shutdown.quit(),
     });
-    tray.create();
     ipcMain.on(
       "touchbar:update-state",
       (_event, state: { status: string; track?: unknown }) => {

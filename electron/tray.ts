@@ -10,9 +10,11 @@ import {
   type ThumbarPlayerState,
 } from "./thumbar.js";
 
+const MACOS_ICON_SIZE = 16;
+const ICON_SIZE = 32;
+
 export interface TrayDeps {
   iconPath: string;
-  /** bring the main window back, creating it if it was closed */
   showWindow: () => void;
   send: (action: ThumbarAction) => void;
   quit: () => void;
@@ -57,9 +59,9 @@ export class TrayController {
   create() {
     if (this.tray) return;
     const platform = this.deps.platform ?? process.platform;
+    const opensMenuOnClick = platform === "darwin";
     try {
-      // the macos menu bar fits a 16pt glyph; windows and linux scale down from 32
-      const size = platform === "darwin" ? 16 : 32;
+      const size = opensMenuOnClick ? MACOS_ICON_SIZE : ICON_SIZE;
       const icon = nativeImage
         .createFromPath(this.deps.iconPath)
         .resize({ width: size, height: size });
@@ -69,8 +71,7 @@ export class TrayController {
       return;
     }
     this.tray.setToolTip("Liner");
-    // on macos a click opens the context menu, elsewhere it brings the window back
-    if (platform !== "darwin") {
+    if (!opensMenuOnClick) {
       this.tray.on("click", () => this.deps.showWindow());
     }
     this.apply(true);
@@ -102,4 +103,10 @@ export class TrayController {
     );
     this.appliedKey = key;
   }
+}
+
+export function createTray(deps: TrayDeps): TrayController {
+  const tray = new TrayController(deps);
+  tray.create();
+  return tray;
 }

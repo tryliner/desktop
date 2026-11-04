@@ -40,7 +40,7 @@ vi.mock("electron", () => ({
   },
 }));
 
-import { TrayController } from "./tray";
+import { createTray } from "./tray";
 import type { ThumbarAction } from "./thumbar";
 
 describe("TrayController", () => {
@@ -52,14 +52,13 @@ describe("TrayController", () => {
     const sent: ThumbarAction[] = [];
     const showWindow = vi.fn();
     const quit = vi.fn();
-    const controller = new TrayController({
+    const controller = createTray({
       iconPath: "icon.png",
       showWindow,
       send: (action) => sent.push(action),
       quit,
       platform,
     });
-    controller.create();
     const tray = trays[0]!;
     const lastMenu = () => tray.setContextMenu.mock.calls.at(-1)?.[0] ?? [];
     const item = (label: string) => lastMenu().find((i) => i.label === label);
@@ -93,6 +92,15 @@ describe("TrayController", () => {
     expect(tray.setContextMenu).toHaveBeenCalledTimes(3);
   });
 
+  it("disables playback items when the track is removed", () => {
+    const { controller, item } = setup();
+    controller.update({ status: "playing", track: { id: "a" } });
+    controller.update({ status: "idle", track: null });
+    expect(item("Previous")?.enabled).toBe(false);
+    expect(item("Play")?.enabled).toBe(false);
+    expect(item("Next")?.enabled).toBe(false);
+  });
+
   it("shows the window and quits from the menu", () => {
     const { showWindow, quit, item } = setup();
     item("Show Liner")?.click?.();
@@ -108,8 +116,9 @@ describe("TrayController", () => {
   });
 
   it("leaves the click to the menu on macos", () => {
-    const { tray } = setup("darwin");
+    const { tray, item } = setup("darwin");
     expect(tray.listeners.has("click")).toBe(false);
+    expect(item("Show Liner")).toBeDefined();
   });
 
   it("stops touching the tray once destroyed", () => {
