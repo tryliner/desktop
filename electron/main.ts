@@ -274,7 +274,8 @@ function createWindow() {
   });
 
   // the custom window controls replace the native traffic lights
-  if (process.platform === "darwin") mainWindow.setWindowButtonVisibility(false);
+  if (process.platform === "darwin")
+    mainWindow.setWindowButtonVisibility(false);
 
   // sync window state changes to renderer
   const broadcastWindowState = () => {

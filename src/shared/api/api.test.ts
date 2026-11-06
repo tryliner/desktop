@@ -39,7 +39,6 @@ const playlist = {
   ownerId: "7a1f0e7e-3b7c-4c55-9a43-1f1c4ab8e0df",
   title: "Mine",
   description: null,
-  isPublic: false,
   revision: 2,
   trackCount: 1,
   durationMs: 0,

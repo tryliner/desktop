@@ -39,3 +39,43 @@ jobs:
 
       - name: Check
         run: pnpm check
+
+  # the client ships before the api, so main may be ahead of the api's main: pull requests only
+  contract:
+    name: Contract matches the api
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          path: desktop
+
+      # the api branch with the same name ships with this pull request, otherwise main
+      - name: Pick the api branch
+        id: api
+        env:
+          TOKEN: ${{ secrets.API_READ_TOKEN || github.token }}
+          BRANCH: ${{ github.head_ref }}
+        run: |
+          if git ls-remote --exit-code --heads "https://x-access-token:${TOKEN}@github.com/tryliner/api.git" "$BRANCH" >/dev/null; then
+            echo "ref=$BRANCH" >> "$GITHUB_OUTPUT"
+          else
+            echo "ref=main" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout the api contract
+        uses: actions/checkout@v4
+        with:
+          repository: tryliner/api
+          ref: ${{ steps.api.outputs.ref }}
+          token: ${{ secrets.API_READ_TOKEN || github.token }}
+          path: api
+          sparse-checkout: contract
+
+      - name: Compare
+        working-directory: desktop
+        env:
+          LINER_API_DIR: ../api
+        run: node scripts/check-api-contract.mjs

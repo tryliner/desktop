@@ -18,9 +18,7 @@ async function loadRecentlyPlayed(limit: number): Promise<PopularItem[]> {
   );
   const seen = new Set<string>();
   const items: PopularItem[] = [];
-  for (const entry of res.items || []) {
-    if (!entry.track?.id) continue;
-
+  for (const entry of res.items) {
     const isAlbum = entry.context?.type === "album";
     const albumId = isAlbum
       ? entry.context?.id || entry.track.album?.id

@@ -30,6 +30,8 @@ describe("PresenceClient", () => {
         bannerUrl: null,
         avatarFrame: null,
         hiddenMedia: [],
+        isPublic: false,
+        showActivity: false,
       },
     });
   });

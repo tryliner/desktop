@@ -31,7 +31,6 @@ const playlist = {
   ownerId: "u1",
   title: "Big",
   description: null,
-  isPublic: false,
   revision: 3,
   trackCount: 300,
   durationMs: 300000,

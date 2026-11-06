@@ -1,6 +1,6 @@
 import { getApiBaseUrl } from "./baseUrl";
 
-export type HumanCheckAction = "login" | "register";
+export type HumanCheckAction = "login" | "register" | "reset";
 export type HumanCheckMode = "off" | "optional" | "required";
 
 export interface HumanCheckRequest {

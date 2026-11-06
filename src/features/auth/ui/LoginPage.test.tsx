@@ -7,6 +7,12 @@ import LoginPage from "./LoginPage";
 const mockNavigate = vi.fn();
 const mockLogin = vi.fn();
 const mockRegister = vi.fn();
+const mockRequestResetLink = vi.fn();
+
+vi.mock("../lib/passwordReset", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../lib/passwordReset")>()),
+  requestResetLink: (...args: unknown[]) => mockRequestResetLink(...args),
+}));
 
 vi.mock("react-router-dom", () => ({
   useNavigate: () => mockNavigate,
@@ -86,6 +92,14 @@ vi.mock("@/languages", () => {
       "This username is already taken. Please choose another.",
     "login.errors.display_name_required": "Display name is required.",
     "login.username_hint": "3-30 lowercase characters, numbers or underscores.",
+    "login.forgot_password": "Forgot password?",
+    "login.reset_title": "Reset your password",
+    "login.btn_send_link": "Send link",
+    "login.reset_sent_title": "Check your inbox",
+    "login.reset_sent_subtitle":
+      "If an account with this email exists, we sent a link. Check your inbox, it expires in {minutes} minutes.",
+    "login.btn_back_to_sign_in": "Back to sign in",
+    "common.error_too_many": "Too many requests. Wait a bit and try again.",
   };
 
   return {
@@ -494,5 +508,125 @@ describe("LoginPage Multi-Step Registration Flow", () => {
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
     expect(displayNameInput?.getAttribute("aria-invalid")).toBe("false");
+  });
+
+  describe("forgot password", () => {
+    const button = (label: string) =>
+      Array.from(container.querySelectorAll("button")).find(
+        (b) => b.textContent?.trim() === label,
+      );
+    const click = async (label: string) => {
+      await act(async () => {
+        button(label)?.dispatchEvent(
+          new MouseEvent("click", { bubbles: true }),
+        );
+      });
+    };
+    const typeEmail = async (value: string) => {
+      const input = container.querySelector("#auth-email") as HTMLInputElement;
+      await act(async () => {
+        Object.getOwnPropertyDescriptor(
+          window.HTMLInputElement.prototype,
+          "value",
+        )?.set?.call(input, value);
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+      });
+    };
+    const submitForm = async () => {
+      await act(async () => {
+        container
+          .querySelector("form")
+          ?.dispatchEvent(
+            new Event("submit", { bubbles: true, cancelable: true }),
+          );
+      });
+    };
+
+    it("opens the request form from sign-in with only the email field", async () => {
+      await act(async () => {
+        root.render(<LoginPage />);
+      });
+      await click("Forgot password?");
+
+      expect(container.textContent).toContain("Reset your password");
+      expect(container.querySelector("#auth-email")).not.toBeNull();
+      expect(container.querySelector("#auth-password")).toBeNull();
+      expect(button("Send link")).toBeDefined();
+      expect(button("Forgot password?")).toBeUndefined();
+    });
+
+    it("validates the email before asking the api", async () => {
+      await act(async () => {
+        root.render(<LoginPage />);
+      });
+      await click("Forgot password?");
+      await typeEmail("nope");
+      await submitForm();
+
+      expect(
+        container.querySelector("#auth-form-error")?.textContent,
+      ).toContain("Enter a valid email address");
+      expect(mockRequestResetLink).not.toHaveBeenCalled();
+    });
+
+    it("shows the neutral confirmation and goes back to sign-in with the email kept", async () => {
+      mockRequestResetLink.mockResolvedValueOnce({
+        kind: "sent",
+        expiresInMinutes: 30,
+      });
+      await act(async () => {
+        root.render(<LoginPage />);
+      });
+      await click("Forgot password?");
+      await typeEmail("alice@example.com");
+      await submitForm();
+
+      expect(mockRequestResetLink).toHaveBeenCalledWith("alice@example.com");
+      expect(container.textContent).toContain("Check your inbox");
+      expect(container.textContent).toContain(
+        "If an account with this email exists, we sent a link. Check your inbox, it expires in 30 minutes.",
+      );
+      expect(
+        (container.querySelector("#auth-email") as HTMLInputElement).disabled,
+      ).toBe(true);
+      // a second submit sends nothing
+      await submitForm();
+      expect(mockRequestResetLink).toHaveBeenCalledTimes(1);
+
+      await click("Back to sign in");
+      expect(container.querySelector("#auth-password")).not.toBeNull();
+      expect(
+        (container.querySelector("#auth-email") as HTMLInputElement).value,
+      ).toBe("alice@example.com");
+    });
+
+    it("shows the rate limit message on 429 and stays on the form", async () => {
+      mockRequestResetLink.mockResolvedValueOnce({
+        kind: "error",
+        code: "rate_limited",
+        error: new Error("429"),
+      });
+      await act(async () => {
+        root.render(<LoginPage />);
+      });
+      await click("Forgot password?");
+      await typeEmail("alice@example.com");
+      await submitForm();
+
+      expect(container.querySelector("#auth-form-error")?.textContent).toBe(
+        "Too many requests. Wait a bit and try again.",
+      );
+      expect(button("Send link")).toBeDefined();
+    });
+
+    it("goes back to sign-in with Back", async () => {
+      await act(async () => {
+        root.render(<LoginPage />);
+      });
+      await click("Forgot password?");
+      await click("Back");
+      expect(container.querySelector("#auth-password")).not.toBeNull();
+      expect(container.textContent).toContain("Your music, your way");
+    });
   });
 });

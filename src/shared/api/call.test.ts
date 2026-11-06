@@ -62,15 +62,15 @@ describe("call", () => {
   it("sends params and a json body, a 204 answers undefined", async () => {
     reply(204);
     await expect(
-      call("POST /v1/auth/recovery-links/:token", {
-        params: { token: "lrst_x" },
-        body: { password: "password1" },
+      call("PUT /v1/me/likes/:trackId", {
+        params: { trackId: "sc:42" },
+        body: {},
       }),
     ).resolves.toBeUndefined();
-    expect(sent().url).toBe("https://api.test/v1/auth/recovery-links/lrst_x");
+    expect(sent().url).toBe("https://api.test/v1/me/likes/sc%3A42");
     expect(sent().init).toMatchObject({
-      method: "POST",
-      body: '{"password":"password1"}',
+      method: "PUT",
+      body: "{}",
       headers: { "Content-Type": "application/json" },
     });
   });

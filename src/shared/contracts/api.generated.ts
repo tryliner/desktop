@@ -45,6 +45,8 @@ export type AuthUser = {
   bannerUrl: string | null;
   avatarFrame: string | null;
   hiddenMedia: ("avatar" | "banner" | "avatar_frame")[];
+  isPublic: boolean;
+  showActivity: boolean;
 };
 
 export type AvatarFrame = {
@@ -89,6 +91,11 @@ export type CatalogArtistDetails = {
   name: string;
   cover?: Cover;
   monthlyListeners?: string;
+  followers?: number;
+  bio?: string;
+  geniusImageUrl?: string;
+  geniusAka?: string[];
+  geniusUsername?: string;
   verified: boolean;
   tracks: Track[];
   albums: {
@@ -97,6 +104,7 @@ export type CatalogArtistDetails = {
     year?: number;
     cover?: Cover;
     explicit?: boolean;
+    trackCount?: number;
   }[];
   singles: {
     id: string;
@@ -104,6 +112,7 @@ export type CatalogArtistDetails = {
     year?: number;
     cover?: Cover;
     explicit?: boolean;
+    trackCount?: number;
     releaseType: "single" | "ep";
   }[];
 };
@@ -136,6 +145,7 @@ export type CatalogSearchItem = {
   };
   cover?: Cover;
   explicit?: boolean;
+  audioVariant?: "music-video" | "premium-only";
 } | {
   type: "artist";
   id: string;
@@ -178,8 +188,28 @@ export type CatalogTrackDetails = {
   };
   cover?: Cover;
   explicit?: boolean;
+  audioVariant?: "music-video" | "premium-only";
   /** release year, e.g. 2021 */
   releaseDate?: string;
+};
+
+export type Challenge = {
+  mode: "off" | "optional" | "required";
+  algorithm: "argon2id-v1";
+  token: string;
+  salt: string;
+  difficulty: number;
+  memoryKiB: number;
+  iterations: number;
+  parallelism: 1;
+  hashLength: 32;
+  /** ISO 8601 time */
+  expiresAt: string;
+  turnstile: {
+    mode: "off" | "optional" | "required";
+    siteKey?: string;
+    edge: boolean;
+  };
 };
 
 export type ClientPlan = {
@@ -197,6 +227,10 @@ export type CollectionSnapshot = {
   title: string;
   author?: string;
   cover?: Cover;
+  artists?: {
+    id: string;
+    name: string;
+  }[];
   trackCount?: number;
 };
 
@@ -208,6 +242,10 @@ export type CollectionSnapshotInput = {
     width?: number | null;
     height?: number | null;
   };
+  artists?: {
+    id: string;
+    name: string;
+  }[];
   trackCount?: number;
 };
 
@@ -341,15 +379,6 @@ export type LayoutModule = {
   };
 } | {
   id: string;
-  type: "playlists";
-  size: ModuleSize;
-  visibility: Visibility;
-  hidden: boolean;
-  settings: {
-    limit: number;
-  };
-} | {
-  id: string;
   type: "liked_tracks";
   size: ModuleSize;
   visibility: Visibility;
@@ -407,15 +436,6 @@ export type LayoutModuleInput = {
 } | {
   id?: string;
   type: "recent_tracks";
-  size?: ModuleSize;
-  visibility?: Visibility;
-  hidden?: boolean;
-  settings?: {
-    limit?: number;
-  };
-} | {
-  id?: string;
-  type: "playlists";
   size?: ModuleSize;
   visibility?: Visibility;
   hidden?: boolean;
@@ -495,7 +515,7 @@ export type ModuleSetting = {
 
 export type ModuleSize = "small" | "wide";
 
-export type ModuleType = "now_playing" | "top_artists" | "top_tracks" | "listening_stats" | "recent_tracks" | "playlists" | "liked_tracks" | "pinned_track";
+export type ModuleType = "now_playing" | "top_artists" | "top_tracks" | "listening_stats" | "recent_tracks" | "liked_tracks" | "pinned_track";
 
 export type MostSaved = {
   items: MostSavedItem[];
@@ -506,6 +526,10 @@ export type MostSavedItem = {
   id: string;
   title: string;
   subtitle: string;
+  artists?: {
+    id: string;
+    name: string;
+  }[];
   coverUrl: string;
   saves: number;
 };
@@ -573,7 +597,6 @@ export type Playlist = {
   ownerId: string;
   title: string;
   description: string | null;
-  isPublic: boolean;
   revision: number;
   trackCount: number;
   durationMs: number;
@@ -617,6 +640,10 @@ export type PopularAlbum = {
   id: string;
   title: string;
   artist: string;
+  artists?: {
+    id: string;
+    name: string;
+  }[];
   coverUrl: string | null;
   year?: number;
   playCount: number;
@@ -643,6 +670,11 @@ export type PopularTracks = {
 };
 
 export type PopularWindow = "12h" | "24h" | "7d" | "30d" | "all";
+
+export type PowSolution = {
+  token: string;
+  nonce: string;
+};
 
 export type ProfileModule = {
   id: string;
@@ -704,12 +736,6 @@ export type ProfileModule = {
       playedAt: string;
     }[];
   };
-} | {
-  id: string;
-  type: "playlists";
-  size: ModuleSize;
-  visibility?: Visibility;
-  data: PlaylistList;
 } | {
   id: string;
   type: "liked_tracks";
@@ -778,6 +804,10 @@ export type RecoveryLink = {
   expiresAt: string;
 };
 
+export type RecoveryRequestAccepted = {
+  expiresInMinutes: number;
+};
+
 export type Release = {
   bundleVersion: string;
   minAppVersion: string;
@@ -841,6 +871,7 @@ export type SavedType = "all" | "album" | "playlist";
 export type Sticker = {
   id: string;
   name: string;
+  tier: PlanName;
   answers: StickerAnswer | null;
   animationUrl: string;
   previewUrl: string;
@@ -848,15 +879,16 @@ export type Sticker = {
 
 export type StickerAnswer = "accept" | "decline";
 
+export type StickerCatalog = {
+  version: string;
+  packs: StickerPack[];
+};
+
 export type StickerPack = {
   id: string;
   name: string;
-  plan: PlanName;
+  tier: PlanName;
   stickers: Sticker[];
-};
-
-export type StickerPacks = {
-  items: StickerPack[];
 };
 
 export type Subscription = {
@@ -896,6 +928,7 @@ export type Track = {
   };
   cover?: Cover;
   explicit?: boolean;
+  audioVariant?: "music-video" | "premium-only";
 };
 
 export type UpdaterHealth = {
@@ -921,6 +954,33 @@ export interface ApiRoutes {
       500: ErrorResponse;
     };
   };
+  "POST /v1/auth/challenge": {
+    params: never;
+    query: never;
+    body: {
+      purpose: "login" | "register" | "reset";
+      email: string;
+    };
+    responses: {
+      200: Challenge;
+      400: ErrorResponse;
+      429: ErrorResponse;
+      500: ErrorResponse;
+    };
+  };
+  "GET /v1/auth/verify": {
+    params: never;
+    query: {
+      action?: string;
+    };
+    body: never;
+    responses: {
+      200: string;
+      400: ErrorResponse;
+      404: ErrorResponse;
+      500: ErrorResponse;
+    };
+  };
   "POST /v1/auth/register": {
     params: never;
     query: never;
@@ -929,6 +989,8 @@ export interface ApiRoutes {
       password: string;
       username: string;
       displayName: string;
+      pow?: PowSolution;
+      turnstile?: string;
     };
     responses: {
       201: AuthTokens;
@@ -937,6 +999,7 @@ export interface ApiRoutes {
       409: ErrorResponse;
       429: ErrorResponse;
       500: ErrorResponse;
+      503: ErrorResponse;
     };
   };
   "POST /v1/auth/login": {
@@ -945,13 +1008,17 @@ export interface ApiRoutes {
     body: {
       email: string;
       password: string;
+      pow?: PowSolution;
+      turnstile?: string;
     };
     responses: {
       200: AuthTokens;
       400: ErrorResponse;
       401: ErrorResponse;
+      403: ErrorResponse;
       429: ErrorResponse;
       500: ErrorResponse;
+      503: ErrorResponse;
     };
   };
   "POST /v1/auth/refresh": {
@@ -964,6 +1031,7 @@ export interface ApiRoutes {
       200: AuthTokens;
       400: ErrorResponse;
       401: ErrorResponse;
+      403: ErrorResponse;
       500: ErrorResponse;
     };
   };
@@ -986,6 +1054,8 @@ export interface ApiRoutes {
     responses: {
       200: AuthUser;
       401: ErrorResponse;
+      403: ErrorResponse;
+      429: ErrorResponse;
       500: ErrorResponse;
     };
   };
@@ -1047,23 +1117,37 @@ export interface ApiRoutes {
       503: ErrorResponse;
     };
   };
-  "GET /v1/auth/recovery-links/:token": {
-    params: {
-      token: string;
+  "POST /v1/auth/recovery-link": {
+    params: never;
+    query: never;
+    body: {
+      email: string;
+      pow?: PowSolution;
+      turnstile?: string;
     };
+    responses: {
+      202: RecoveryRequestAccepted;
+      400: ErrorResponse;
+      403: ErrorResponse;
+      429: ErrorResponse;
+      500: ErrorResponse;
+      503: ErrorResponse;
+    };
+  };
+  "GET /v1/auth/recovery-link": {
+    params: never;
     query: never;
     body: never;
     responses: {
       200: RecoveryLink;
       400: ErrorResponse;
       410: ErrorResponse;
+      429: ErrorResponse;
       500: ErrorResponse;
     };
   };
-  "POST /v1/auth/recovery-links/:token": {
-    params: {
-      token: string;
-    };
+  "PUT /v1/auth/recovery-link/password": {
+    params: never;
     query: never;
     body: {
       password: string;
@@ -1153,7 +1237,8 @@ export interface ApiRoutes {
     query: never;
     body: never;
     responses: {
-      200: StickerPacks;
+      200: StickerCatalog;
+      304: null;
       500: ErrorResponse;
     };
   };
@@ -1173,7 +1258,6 @@ export interface ApiRoutes {
     body: {
       title: string;
       description?: string | null;
-      isPublic?: boolean;
     };
     responses: {
       201: Playlist;
@@ -1210,7 +1294,6 @@ export interface ApiRoutes {
     body: {
       title?: string;
       description?: string | null;
-      isPublic?: boolean;
     };
     responses: {
       200: Playlist;
@@ -1616,6 +1699,7 @@ export interface ApiRoutes {
   };
   "GET /v1/catalog/tracks/:id": {
     params: {
+      /** youtube video id or sc:<soundcloud id> */
       id: string;
     };
     query: never;
@@ -1944,6 +2028,33 @@ export interface ApiRoutes {
     body: never;
     responses: Record<number, unknown>;
   };
+  "GET /account/password-reset": {
+    params: never;
+    query: never;
+    body: never;
+    responses: {
+      200: string;
+      500: ErrorResponse;
+    };
+  };
+  "GET /account/health": {
+    params: never;
+    query: never;
+    body: never;
+    responses: {
+      200: UpdaterHealth;
+      500: ErrorResponse;
+    };
+  };
+  "GET /account/assets/mail-logo.png": {
+    params: never;
+    query: never;
+    body: never;
+    responses: {
+      200: string;
+      500: ErrorResponse;
+    };
+  };
   "GET /link": {
     params: never;
     query: never;
@@ -2017,30 +2128,6 @@ export interface ApiRoutes {
       200: string;
       400: string;
       404: string;
-      414: string;
-      500: string;
-    };
-  };
-  "GET /link/recovery/:token": {
-    params: {
-      token: string;
-    };
-    query: never;
-    body: never;
-    responses: {
-      200: string;
-      400: string;
-      410: string;
-      414: string;
-      500: string;
-    };
-  };
-  "GET /link/assets/mail-logo.png": {
-    params: never;
-    query: never;
-    body: never;
-    responses: {
-      200: string;
       414: string;
       500: string;
     };

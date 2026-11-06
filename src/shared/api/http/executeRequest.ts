@@ -26,6 +26,8 @@ export interface RequestInput {
   signal?: AbortSignal;
   allowRefresh?: boolean;
   timeoutMs?: number;
+  /** "include" sends the cloudflare edge cookie on auth calls */
+  credentials?: RequestCredentials;
   onResponse?: (res: Response) => void;
 }
 
@@ -90,6 +92,7 @@ async function send(
         method: input.method,
         body: input.body,
         signal: input.signal,
+        ...(input.credentials ? { credentials: input.credentials } : {}),
         headers: {
           ...(input.body != null ? { "Content-Type": "application/json" } : {}),
           ...extra,

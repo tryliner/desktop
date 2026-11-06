@@ -142,7 +142,7 @@ describe("finalizeImportedPlaylist", () => {
     artists: [{ id: "UC1", name: "Rick Astley" }],
     durationMs: 213_000,
   };
-  const playlist = { id: "pl_1", title: "Mine", isPublic: false } as Awaited<
+  const playlist = { id: "pl_1", title: "Mine" } as Awaited<
     ReturnType<typeof api.createPlaylist>
   >;
 

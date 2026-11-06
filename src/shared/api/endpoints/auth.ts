@@ -1,13 +1,20 @@
 import { setAuthSession } from "../auth-session";
 import { call } from "../call";
-import type { AuthTokens, AuthUser, RecoveryLink } from "@/shared/contracts";
+import { proofBody, proofCredentials, withAuthProof } from "./authProof";
+import type {
+  AuthTokens,
+  AuthUser,
+  RecoveryRequestAccepted,
+} from "@/shared/contracts";
 
 export const authApi = {
   async login(email: string, password: string): Promise<AuthTokens> {
-    const result = await call(
-      "POST /v1/auth/login",
-      { body: { email, password } },
-      { allowRefresh: false },
+    const result = await withAuthProof("login", email, (proof) =>
+      call(
+        "POST /v1/auth/login",
+        { body: { email, password, ...proofBody(proof) } },
+        { allowRefresh: false, credentials: proofCredentials(proof) },
+      ),
     );
     setAuthSession(result);
     return result;
@@ -19,35 +26,36 @@ export const authApi = {
     username: string,
     displayName: string,
   ): Promise<AuthTokens> {
-    const result = await call(
-      "POST /v1/auth/register",
-      {
-        body: {
-          email,
-          password,
-          username: username.trim().toLowerCase(),
-          displayName: displayName.trim(),
+    const result = await withAuthProof("register", email, (proof) =>
+      call(
+        "POST /v1/auth/register",
+        {
+          body: {
+            email,
+            password,
+            username: username.trim().toLowerCase(),
+            displayName: displayName.trim(),
+            ...proofBody(proof),
+          },
         },
-      },
-      { allowRefresh: false },
+        { allowRefresh: false, credentials: proofCredentials(proof) },
+      ),
     );
     setAuthSession(result);
     return result;
   },
 
-  getPasswordReset(token: string): Promise<RecoveryLink> {
-    return call(
-      "GET /v1/auth/recovery-links/:token",
-      { params: { token } },
-      { allowRefresh: false },
-    );
-  },
-
-  async completePasswordReset(token: string, password: string): Promise<void> {
-    await call(
-      "POST /v1/auth/recovery-links/:token",
-      { params: { token }, body: { password } },
-      { allowRefresh: false },
+  /**
+   * Asks for a password reset link to the email. The api answers the same whether or not the
+   * email has an account, so this never tells which.
+   */
+  requestPasswordReset(email: string): Promise<RecoveryRequestAccepted> {
+    return withAuthProof("reset", email, (proof) =>
+      call(
+        "POST /v1/auth/recovery-link",
+        { body: { email, ...proofBody(proof) } },
+        { allowRefresh: false, credentials: proofCredentials(proof) },
+      ),
     );
   },
 

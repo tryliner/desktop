@@ -16,8 +16,7 @@ import {
 import { useTranslation } from "@/languages";
 import { HumanCheckNotice } from "@/features/human-check";
 import { cn } from "@/shared/lib";
-
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+import { EMAIL_RE, requestResetLink } from "../lib/passwordReset";
 const USERNAME_RE = /^[a-z0-9_]{3,30}$/;
 
 export default function LoginPage() {
@@ -26,7 +25,9 @@ export default function LoginPage() {
   const login = useAuthStore((state) => state.login);
   const register = useAuthStore((state) => state.register);
   const { t } = useTranslation();
-  const [mode, setMode] = useState<"login" | "register">("login");
+  const [mode, setMode] = useState<"login" | "register" | "forgot">("login");
+  // minutes the link stays open, once the reset request was taken
+  const [resetSentMinutes, setResetSentMinutes] = useState<number | null>(null);
   const [registerStep, setRegisterStep] = useState<1 | 2>(1);
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
@@ -41,16 +42,19 @@ export default function LoginPage() {
     "username" | "displayName" | null
   >(null);
 
-  const selectMode = (next: "login" | "register") => {
+  const selectMode = (next: "login" | "register" | "forgot") => {
     if (submitting || next === mode) return;
     setMode(next);
     setRegisterStep(1);
+    setResetSentMinutes(null);
     setError("");
     setConfirmPassword("");
   };
 
-  const resolveErrorMessage = (nextError: unknown): string => {
-    const code = getAuthErrorCode(nextError);
+  const resolveErrorMessage = (nextError: unknown): string =>
+    resolveErrorCode(getAuthErrorCode(nextError), nextError);
+
+  const resolveErrorCode = (code: string, nextError: unknown): string => {
     if (code === "server_unavailable")
       return t("login.errors.server_unavailable");
     if (code === "server_error") return t("login.errors.server_error");
@@ -66,6 +70,7 @@ export default function LoginPage() {
       return t("login.errors.human_check_cancelled");
     if (code === "human_check_failed")
       return t("login.errors.human_check_failed");
+    if (code === "rate_limited") return t("common.error_too_many");
     return authErrorMessage(nextError);
   };
 
@@ -109,6 +114,27 @@ export default function LoginPage() {
     event.preventDefault();
     if (submitting) return;
     setErrorField(null);
+
+    if (mode === "forgot") {
+      if (resetSentMinutes !== null) return;
+      if (!EMAIL_RE.test(email.trim().toLowerCase())) {
+        setError(t("login.errors.email_invalid"));
+        return;
+      }
+      setSubmitting(true);
+      setError("");
+      try {
+        const outcome = await requestResetLink(email);
+        if (outcome.kind === "sent")
+          setResetSentMinutes(outcome.expiresInMinutes);
+        else if (outcome.kind === "invalid_email")
+          setError(t("login.errors.email_invalid"));
+        else setError(resolveErrorCode(outcome.code, outcome.error));
+      } finally {
+        setSubmitting(false);
+      }
+      return;
+    }
 
     if (mode === "login") {
       const normalizedEmail = email.trim().toLowerCase();
@@ -182,17 +208,25 @@ export default function LoginPage() {
   };
 
   const heading =
-    mode === "login"
-      ? t("login.auth_title_login")
-      : registerStep === 1
-        ? t("login.auth_title_register")
-        : t("login.profile_setup_title");
+    mode === "forgot"
+      ? resetSentMinutes !== null
+        ? t("login.reset_sent_title")
+        : t("login.reset_title")
+      : mode === "login"
+        ? t("login.auth_title_login")
+        : registerStep === 1
+          ? t("login.auth_title_register")
+          : t("login.profile_setup_title");
   const subheading =
-    mode === "login"
-      ? t("login.auth_subtitle_login")
-      : registerStep === 1
-        ? t("login.auth_subtitle_register")
-        : t("login.profile_setup_subtitle");
+    mode === "forgot"
+      ? resetSentMinutes !== null
+        ? t("login.reset_sent_subtitle", { minutes: resetSentMinutes })
+        : t("login.reset_subtitle")
+      : mode === "login"
+        ? t("login.auth_subtitle_login")
+        : registerStep === 1
+          ? t("login.auth_subtitle_register")
+          : t("login.profile_setup_subtitle");
 
   return (
     <main
@@ -225,7 +259,8 @@ export default function LoginPage() {
                     type="button"
                     onClick={() => selectMode(item.id)}
                     className={`h-[38px] flex-1 cursor-pointer rounded-[10px] border-none text-[13.5px] font-[500] transition-colors duration-150 ${
-                      mode === item.id
+                      mode === item.id ||
+                      (item.id === "login" && mode === "forgot")
                         ? "bg-btn-primary-bg text-btn-primary-text"
                         : "bg-bg-elevated text-text-secondary hover:text-text-primary"
                     }`}
@@ -240,7 +275,7 @@ export default function LoginPage() {
                 className="mt-[22px] flex flex-col"
               >
                 <AnimatePresence initial={false}>
-                  {mode === "login" || registerStep === 1 ? (
+                  {mode !== "register" || registerStep === 1 ? (
                     <motion.div
                       key="step-credentials"
                       initial={{ height: 0, opacity: 0 }}
@@ -275,54 +310,86 @@ export default function LoginPage() {
                           setEmail(event.target.value);
                           if (error) setError("");
                         }}
-                        disabled={submitting}
+                        disabled={submitting || resetSentMinutes !== null}
                       />
 
-                      <label
-                        className="mb-[7px] mt-[15px] text-caption font-[500] text-text-secondary"
-                        htmlFor="auth-password"
-                      >
-                        {t("login.label_password")}
-                      </label>
-                      <TextInput
-                        id="auth-password"
-                        type={showPassword ? "text" : "password"}
-                        autoComplete={
-                          mode === "login" ? "current-password" : "new-password"
-                        }
-                        placeholder={
-                          mode === "login"
-                            ? t("login.placeholder_password")
-                            : t("login.placeholder_password_new")
-                        }
-                        value={password}
-                        hasError={Boolean(error)}
-                        aria-invalid={Boolean(error)}
-                        aria-describedby={error ? "auth-form-error" : undefined}
-                        onChange={(event) => {
-                          setPassword(event.target.value);
-                          if (error) setError("");
-                        }}
-                        disabled={submitting}
-                        rightSlot={
-                          <button
-                            type="button"
-                            aria-label={
-                              showPassword
-                                ? t("login.hide_password")
-                                : t("login.show_password")
-                            }
-                            onClick={() => setShowPassword((v) => !v)}
-                            className="flex h-7 w-7 items-center justify-center rounded-item text-text-tertiary transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-text-secondary cursor-pointer"
+                      <AnimatePresence initial={false}>
+                        {mode !== "forgot" && (
+                          <motion.div
+                            key="password"
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{
+                              duration: 0.18,
+                              ease: [0.22, 1, 0.36, 1],
+                            }}
+                            className="overflow-hidden flex flex-col"
                           >
-                            {showPassword ? (
-                              <EyeCloseLine className="h-4 w-4" />
-                            ) : (
-                              <EyeLine className="h-4 w-4" />
-                            )}
-                          </button>
-                        }
-                      />
+                            <div className="mb-[7px] mt-[15px] flex items-center justify-between">
+                              <label
+                                className="text-caption font-[500] text-text-secondary"
+                                htmlFor="auth-password"
+                              >
+                                {t("login.label_password")}
+                              </label>
+                              {mode === "login" && (
+                                <button
+                                  type="button"
+                                  onClick={() => selectMode("forgot")}
+                                  disabled={submitting}
+                                  className="cursor-pointer rounded-xs border-none bg-transparent p-0 text-caption font-[500] text-text-tertiary transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-text-primary"
+                                >
+                                  {t("login.forgot_password")}
+                                </button>
+                              )}
+                            </div>
+                            <TextInput
+                              id="auth-password"
+                              type={showPassword ? "text" : "password"}
+                              autoComplete={
+                                mode === "login"
+                                  ? "current-password"
+                                  : "new-password"
+                              }
+                              placeholder={
+                                mode === "login"
+                                  ? t("login.placeholder_password")
+                                  : t("login.placeholder_password_new")
+                              }
+                              value={password}
+                              hasError={Boolean(error)}
+                              aria-invalid={Boolean(error)}
+                              aria-describedby={
+                                error ? "auth-form-error" : undefined
+                              }
+                              onChange={(event) => {
+                                setPassword(event.target.value);
+                                if (error) setError("");
+                              }}
+                              disabled={submitting}
+                              rightSlot={
+                                <button
+                                  type="button"
+                                  aria-label={
+                                    showPassword
+                                      ? t("login.hide_password")
+                                      : t("login.show_password")
+                                  }
+                                  onClick={() => setShowPassword((v) => !v)}
+                                  className="flex h-7 w-7 items-center justify-center rounded-item text-text-tertiary transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-text-secondary cursor-pointer"
+                                >
+                                  {showPassword ? (
+                                    <EyeCloseLine className="h-4 w-4" />
+                                  ) : (
+                                    <EyeLine className="h-4 w-4" />
+                                  )}
+                                </button>
+                              }
+                            />
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
 
                       <AnimatePresence initial={false}>
                         {mode === "register" && (
@@ -483,6 +550,11 @@ export default function LoginPage() {
                 </AnimatePresence>
 
                 <div className="min-h-[22px] py-[6px]">
+                  {mode === "forgot" && resetSentMinutes !== null && (
+                    <p role="status" className="sr-only">
+                      {subheading}
+                    </p>
+                  )}
                   <AnimatePresence mode="wait" initial={false}>
                     {error && errorField !== "username" && (
                       <motion.p
@@ -502,7 +574,70 @@ export default function LoginPage() {
 
                 {/* Submit / Action buttons */}
                 <AnimatePresence initial={false}>
-                  {mode === "login" ? (
+                  {mode === "forgot" ? (
+                    resetSentMinutes !== null ? (
+                      <motion.div
+                        key="reset-sent-footer"
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{
+                          duration: 0.18,
+                          ease: [0.22, 1, 0.36, 1],
+                        }}
+                        className="overflow-hidden"
+                      >
+                        <Button
+                          type="button"
+                          onClick={() => selectMode("login")}
+                          className="mt-[2px] w-full"
+                        >
+                          {t("login.btn_back_to_sign_in")}
+                        </Button>
+                      </motion.div>
+                    ) : (
+                      <motion.div
+                        key="reset-footer"
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{
+                          duration: 0.18,
+                          ease: [0.22, 1, 0.36, 1],
+                        }}
+                        className="overflow-hidden"
+                      >
+                        <div className="mt-[2px] flex items-center gap-[10px]">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            disabled={submitting}
+                            onClick={() => selectMode("login")}
+                            className="w-[110px] shrink-0"
+                          >
+                            <ArrowLeftLine className="h-4 w-4" />
+                            <span className="relative -left-[1.5px] top-[1px]">
+                              {t("login.btn_back")}
+                            </span>
+                          </Button>
+                          <Button
+                            type="submit"
+                            disabled={submitting}
+                            className="flex-1"
+                          >
+                            {submitting ? (
+                              <>
+                                <span className="h-[14px] w-[14px] animate-spin rounded-full border-2 border-current border-t-transparent" />
+                                <span>{t("login.btn_sending_link")}</span>
+                              </>
+                            ) : (
+                              t("login.btn_send_link")
+                            )}
+                          </Button>
+                        </div>
+                      </motion.div>
+                    )
+                  ) : mode === "login" ? (
                     <motion.div
                       key="login-footer"
                       initial={{ opacity: 0, height: 0 }}

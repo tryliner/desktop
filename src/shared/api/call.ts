@@ -7,6 +7,7 @@ export interface CallOptions {
   timeoutMs?: number;
   allowRefresh?: boolean;
   headers?: Record<string, string>;
+  credentials?: RequestCredentials;
   onResponse?: (res: Response) => void;
 }
 

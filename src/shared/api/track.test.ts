@@ -112,7 +112,8 @@ describe("toClientTrack", () => {
       root.unmount();
     });
     document.body.removeChild(container);
-  });
+    // the first test pays for the cold import of the artist link graph
+  }, 20_000);
 
   async function renderArtistLink(name: string) {
     const { createRoot } = await import("react-dom/client");
@@ -181,9 +182,7 @@ describe("toClientTrack", () => {
 
   it("falls back to plain text when no artist matches the name", async () => {
     const { api } = await import("./api");
-    const search = vi
-      .spyOn(api, "search")
-      .mockResolvedValue({ items: [] });
+    const search = vi.spyOn(api, "search").mockResolvedValue({ items: [] });
 
     const view = await renderArtistLink("Nobody Known");
     await view.click();

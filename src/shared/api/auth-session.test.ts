@@ -61,6 +61,8 @@ describe("auth-session token system", () => {
         bannerUrl: null,
         avatarFrame: null,
         hiddenMedia: [],
+        isPublic: false,
+        showActivity: false,
       },
     };
     expect(getSessionExpiryMs(session1)).toBe(
@@ -86,6 +88,8 @@ describe("auth-session token system", () => {
         bannerUrl: null,
         avatarFrame: null,
         hiddenMedia: [],
+        isPublic: false,
+        showActivity: false,
       },
     };
     setAuthSession(initialSession);
@@ -147,6 +151,8 @@ describe("auth-session token system", () => {
         bannerUrl: null,
         avatarFrame: null,
         hiddenMedia: [],
+        isPublic: false,
+        showActivity: false,
       },
     };
     setAuthSession(expiringSession);
@@ -180,6 +186,8 @@ describe("auth-session token system", () => {
         bannerUrl: null,
         avatarFrame: null,
         hiddenMedia: [],
+        isPublic: false,
+        showActivity: false,
       },
     };
     setAuthSession(validSession);
@@ -206,6 +214,8 @@ describe("auth-session token system", () => {
         bannerUrl: null,
         avatarFrame: null,
         hiddenMedia: [],
+        isPublic: false,
+        showActivity: false,
       },
     };
     setAuthSession(session);
@@ -253,6 +263,8 @@ describe("auth-session token system", () => {
         bannerUrl: null,
         avatarFrame: null,
         hiddenMedia: [],
+        isPublic: false,
+        showActivity: false,
       },
     };
     setAuthSession(expiringSession);
@@ -284,6 +296,8 @@ describe("auth-session token system", () => {
         bannerUrl: null,
         avatarFrame: null,
         hiddenMedia: [],
+        isPublic: false,
+        showActivity: false,
       },
     };
     setAuthSession(session);
@@ -334,6 +348,8 @@ describe("auth-session token system", () => {
         bannerUrl: null,
         avatarFrame: null,
         hiddenMedia: [],
+        isPublic: false,
+        showActivity: false,
       },
     });
     const reject = (status = 401, code = "INVALID_SIGNATURE") => ({

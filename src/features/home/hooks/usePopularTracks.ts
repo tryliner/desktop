@@ -45,7 +45,7 @@ function usePopularTracks(range: "7d" | "all", limit: number) {
     `home:popular-tracks:${range}:${limit}`,
     () =>
       api.getPopularTracks(range, limit).then((res) =>
-        (res.items || []).map((entry): PopularItem => ({
+        res.items.map((entry): PopularItem => ({
           type: "track",
           item: toClientTrack(entry.track),
           playCount: entry.playCount,

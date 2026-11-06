@@ -27,7 +27,7 @@ export function useListeningNow() {
       api
         .getPopularTracks("12h", LISTENING_NOW_LIMIT)
         .then((response) =>
-          (response.items ?? []).map((entry) => toClientTrack(entry.track)),
+          response.items.map((entry) => toClientTrack(entry.track)),
         ),
     LISTENING_NOW_POLICY,
   );

@@ -205,7 +205,6 @@ export default function ArtistProfileModal({
     };
   }, [open, bio, updateScrollMask]);
 
-
   return (
     <Dialog
       open={open}

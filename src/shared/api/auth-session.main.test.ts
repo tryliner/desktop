@@ -19,6 +19,8 @@ const session = (
     bannerUrl: null,
     avatarFrame: null,
     hiddenMedia: [],
+    isPublic: false,
+    showActivity: false,
   },
 });
 
