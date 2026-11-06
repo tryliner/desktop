@@ -13,7 +13,7 @@ export interface StepperRowProps {
 }
 
 const stepButton =
-  "flex h-[28px] w-[36px] items-center justify-center rounded-[6px] border-0 text-text-primary transition-colors bg-black/[0.06] hover:bg-black/[0.1] dark:bg-white/[0.1] dark:hover:bg-white/[0.16] disabled:cursor-default disabled:opacity-40";
+  "flex h-[28px] w-[36px] items-center justify-center rounded-[6px] border-0 text-text-primary transition-colors bg-fill-hover hover:bg-black/[0.1] dark:hover:bg-white/[0.16] disabled:cursor-default disabled:opacity-40";
 
 export function StepperRow({
   valueText,
@@ -41,8 +41,8 @@ export function StepperRow({
         onClick={onReset}
         disabled={!onReset}
         className={cn(
-          "flex h-[28px] min-w-[64px] items-center justify-center rounded-[6px] border-0 px-[10px] text-[13px] font-[600] tabular-nums text-text-primary",
-          "bg-black/[0.06] dark:bg-white/[0.1]",
+          "flex h-[28px] min-w-[64px] items-center justify-center rounded-[6px] border-0 px-[10px] text-body font-[600] tabular-nums text-text-primary",
+          "bg-fill-hover",
           onReset ? "cursor-pointer" : "cursor-default",
         )}
       >

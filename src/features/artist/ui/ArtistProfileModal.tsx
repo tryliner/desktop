@@ -1,8 +1,8 @@
 import { useRef, useState, useCallback, useEffect } from "react";
 import { useTranslation } from "@/languages";
 import { CloseLine } from "@mingcute/react";
-import Dialog from "../../../shared/ui/Dialog";
-import { ScrollableText } from "../../../shared/ui";
+import Dialog from "@/shared/ui/Dialog";
+import { DialogHeader, Panel, ScrollableText } from "@/shared/ui";
 import CoverImage from "../../covers/ui/CoverImage";
 import { toMaxQualityAvatarUrl } from "@/shared/api";
 
@@ -39,7 +39,7 @@ function renderInlineText(text: string): React.ReactNode {
           href={url}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-[#5491f5] hover:underline cursor-pointer transition-colors"
+          className="text-text-primary underline decoration-text-tertiary/60 underline-offset-[3px] hover:decoration-text-primary cursor-pointer transition-colors"
           onClick={(e) => e.stopPropagation()}
         >
           {label}
@@ -62,7 +62,7 @@ function renderInlineText(text: string): React.ReactNode {
           href={url}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-[#5491f5] hover:underline cursor-pointer transition-colors"
+          className="text-text-primary underline decoration-text-tertiary/60 underline-offset-[3px] hover:decoration-text-primary cursor-pointer transition-colors"
           onClick={(e) => e.stopPropagation()}
         >
           {url}
@@ -122,7 +122,7 @@ function BioContent({ bio }: { bio: string }) {
           return (
             <div
               key={idx}
-              className="font-[600] text-text-primary text-[13px] pt-[8px] pb-[2px]"
+              className="font-[600] text-text-primary text-body pt-[10px] pb-[2px] first:pt-0"
             >
               {renderInlineText(headingText)}
             </div>
@@ -137,7 +137,7 @@ function BioContent({ bio }: { bio: string }) {
               key={idx}
               className="flex items-start gap-[6px] pl-[4px] py-[1px]"
             >
-              <span className="text-text-tertiary select-none text-[12px] leading-[1.6]">
+              <span className="text-text-tertiary select-none text-caption leading-[1.6]">
                 •
               </span>
               <span className="flex-1 min-w-0">
@@ -205,88 +205,87 @@ export default function ArtistProfileModal({
     };
   }, [open, bio, updateScrollMask]);
 
+
   return (
     <Dialog
       open={open}
       onOpenChange={(next) => (!next ? onClose() : undefined)}
       maxWidth={440}
-      className="p-[18px] relative"
     >
-      {/* subtle close button */}
-      <button
-        type="button"
-        onClick={onClose}
-        className="absolute top-[14px] right-[14px] inline-flex h-[24px] w-[24px] items-center justify-center rounded-md text-text-tertiary hover:text-text-primary hover:bg-bg-panel transition-colors cursor-pointer border-0 bg-transparent"
-        title={t("common.close")}
-      >
-        <CloseLine size={16} />
-      </button>
+      <div className="flex flex-col gap-[14px] px-[20px] pb-[20px]">
+        <div className="flex items-center gap-[10px]">
+          {avatarSrc ? (
+            <div className="relative h-[36px] w-[36px] shrink-0 overflow-hidden rounded-full bg-fill">
+              <CoverImage
+                src={avatarSrc}
+                alt={name}
+                fill
+                sizes="36px"
+                className="object-cover object-center"
+                draggable={false}
+              />
+            </div>
+          ) : (
+            <div className="flex h-[36px] w-[36px] shrink-0 items-center justify-center rounded-full bg-fill text-title font-[600] text-text-tertiary">
+              {name.charAt(0).toUpperCase()}
+            </div>
+          )}
 
-      {/* artist header */}
-      <div className="flex items-center gap-[12px] pr-[28px]">
-        {avatarSrc ? (
-          <div className="relative h-[48px] w-[48px] shrink-0 overflow-hidden rounded-full bg-bg-panel">
-            <CoverImage
-              src={avatarSrc}
-              alt={name}
-              fill
-              sizes="48px"
-              className="object-cover object-center"
-              draggable={false}
-            />
-          </div>
-        ) : (
-          <div className="h-[48px] w-[48px] shrink-0 rounded-full bg-bg-panel flex items-center justify-center text-text-tertiary text-[18px] font-[600]">
-            {name.charAt(0).toUpperCase()}
-          </div>
-        )}
-
-        <div className="flex flex-col min-w-0 flex-1">
-          <div className="flex items-center gap-[6px] min-w-0">
-            <ScrollableText
-              text={name}
-              className="shrink min-w-0 text-[16px] font-[600] tracking-[-0.01em] text-text-primary"
-              fadeColorClass="from-bg-primary"
-            />
-            {/* twitter / md3 wavy verified badge */}
-            {verified ? (
-              <svg
-                viewBox="0 0 24 24"
-                // nudged down: flex centers on the line box, caps sit a touch lower
-                className="h-[18px] w-[18px] shrink-0 translate-y-[1px] text-[#1d9bf0]"
-                fill="currentColor"
-                aria-label="Verified"
+          <DialogHeader
+            className="min-w-0 flex-1 items-center"
+            title={
+              <span className="flex min-w-0 items-center gap-[6px]">
+                <ScrollableText text={name} className="shrink min-w-0" />
+                {/* twitter / md3 wavy verified badge */}
+                {verified ? (
+                  <svg
+                    viewBox="0 0 24 24"
+                    // nudged down: flex centers on the line box, caps sit a touch lower
+                    className="h-[18px] w-[18px] shrink-0 translate-y-[1px] text-[#1d9bf0]"
+                    fill="currentColor"
+                    aria-label="Verified"
+                  >
+                    <path d="M10.007 2.10377C8.60544 1.65006 7.08181 2.28116 6.41156 3.59306L5.60578 5.17023C5.51004 5.35763 5.35763 5.51004 5.17023 5.60578L3.59306 6.41156C2.28116 7.08181 1.65006 8.60544 2.10377 10.007L2.64923 11.692C2.71404 11.8922 2.71404 12.1078 2.64923 12.308L2.10377 13.993C1.65006 15.3946 2.28116 16.9182 3.59306 17.5885L5.17023 18.3942C5.35763 18.49 5.51004 18.6424 5.60578 18.8298L6.41156 20.407C7.08181 21.7189 8.60544 22.35 10.007 21.8963L11.692 21.3508C11.8922 21.286 12.1078 21.286 12.308 21.3508L13.993 21.8963C15.3946 22.35 16.9182 21.7189 17.5885 20.407L18.3942 18.8298C18.49 18.6424 18.6424 18.49 18.8298 18.3942L20.407 17.5885C21.7189 16.9182 22.35 15.3946 21.8963 13.993L21.3508 12.308C21.286 12.1078 21.286 11.8922 21.3508 11.692L21.8963 10.007C22.35 8.60544 21.7189 7.08181 20.407 6.41156L18.8298 5.60578C18.6424 5.51004 18.49 5.35763 18.3942 5.17023L17.5885 3.59306C16.9182 2.28116 15.3946 1.65006 13.993 2.10377L12.308 2.64923C12.1078 2.71403 11.8922 2.71404 11.692 2.64923L10.007 2.10377Z" />
+                    <path
+                      d="M6.75977 11.7573L8.17399 10.343L11.0024 13.1715L16.6593 7.51465L18.0735 8.92886L11.0024 15.9999L6.75977 11.7573Z"
+                      fill="#ffffff"
+                      transform="translate(-0.42 0.24)"
+                    />
+                  </svg>
+                ) : null}
+              </span>
+            }
+            trailing={
+              <button
+                type="button"
+                aria-label={t("common.close")}
+                onClick={onClose}
+                className="-mr-[6px] inline-flex h-[30px] w-[30px] cursor-pointer items-center justify-center rounded-[9px] border-0 bg-transparent p-0 text-text-tertiary transition-colors hover:bg-fill hover:text-text-primary"
               >
-                <path d="M10.007 2.10377C8.60544 1.65006 7.08181 2.28116 6.41156 3.59306L5.60578 5.17023C5.51004 5.35763 5.35763 5.51004 5.17023 5.60578L3.59306 6.41156C2.28116 7.08181 1.65006 8.60544 2.10377 10.007L2.64923 11.692C2.71404 11.8922 2.71404 12.1078 2.64923 12.308L2.10377 13.993C1.65006 15.3946 2.28116 16.9182 3.59306 17.5885L5.17023 18.3942C5.35763 18.49 5.51004 18.6424 5.60578 18.8298L6.41156 20.407C7.08181 21.7189 8.60544 22.35 10.007 21.8963L11.692 21.3508C11.8922 21.286 12.1078 21.286 12.308 21.3508L13.993 21.8963C15.3946 22.35 16.9182 21.7189 17.5885 20.407L18.3942 18.8298C18.49 18.6424 18.6424 18.49 18.8298 18.3942L20.407 17.5885C21.7189 16.9182 22.35 15.3946 21.8963 13.993L21.3508 12.308C21.286 12.1078 21.286 11.8922 21.3508 11.692L21.8963 10.007C22.35 8.60544 21.7189 7.08181 20.407 6.41156L18.8298 5.60578C18.6424 5.51004 18.49 5.35763 18.3942 5.17023L17.5885 3.59306C16.9182 2.28116 15.3946 1.65006 13.993 2.10377L12.308 2.64923C12.1078 2.71403 11.8922 2.71404 11.692 2.64923L10.007 2.10377Z" />
-                <path
-                  d="M6.75977 11.7573L8.17399 10.343L11.0024 13.1715L16.6593 7.51465L18.0735 8.92886L11.0024 15.9999L6.75977 11.7573Z"
-                  fill="#ffffff"
-                  transform="translate(-0.42 0.24)"
-                />
-              </svg>
-            ) : null}
-          </div>
+                <CloseLine size={17} />
+              </button>
+            }
+          />
         </div>
-      </div>
 
-      {/* biography */}
-      <div className="mt-[14px]">
         {bio ? (
-          <div
-            ref={bioScrollRef}
-            onScroll={updateScrollMask}
-            className="m-0 text-[13px] leading-[1.6] text-text-secondary font-[400] select-text max-h-[340px] overflow-y-auto pr-[4px]"
-            style={{
-              WebkitMaskImage: bioScrollMask,
-              maskImage: bioScrollMask,
-            }}
-          >
-            <BioContent bio={bio} />
-          </div>
+          <Panel className="overflow-hidden">
+            <div
+              ref={bioScrollRef}
+              onScroll={updateScrollMask}
+              className="max-h-[320px] overflow-y-auto px-[14px] py-[12px] text-body font-[400] leading-[1.6] text-text-secondary select-text"
+              style={{
+                WebkitMaskImage: bioScrollMask,
+                maskImage: bioScrollMask,
+              }}
+            >
+              <BioContent bio={bio} />
+            </div>
+          </Panel>
         ) : (
-          <p className="m-0 text-[13px] text-text-tertiary italic">
+          <Panel className="flex h-[88px] items-center justify-center px-[14px] text-center text-body text-text-tertiary">
             {t("artist.no_biography")}
-          </p>
+          </Panel>
         )}
       </div>
     </Dialog>

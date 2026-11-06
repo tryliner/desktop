@@ -31,7 +31,7 @@ export default function DiscordAccountCard() {
           <AppImage src={status.avatarUrl} alt="" fill />
         ) : undefined
       }
-      placeholderIcon={<DiscordFill size={24} />}
+      placeholderIcon={<DiscordFill size={18} />}
       title={title}
       subtitle={subtitle}
       loading={loading}

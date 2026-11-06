@@ -49,7 +49,7 @@ function LoadingSkeletonGrid({ circle = false }: { circle?: boolean }) {
     <div className="flex flex-col gap-[8px]">
       <div
         className={`aspect-square w-full animate-pulse bg-border-alpha-14 ${
-          circle ? "rounded-full" : "rounded-md"
+          circle ? "rounded-full" : "rounded-control"
         }`}
       />
       <div className="h-[13px] w-[78%] animate-pulse rounded bg-border-alpha-33" />
@@ -61,7 +61,7 @@ function LoadingSkeletonGrid({ circle = false }: { circle?: boolean }) {
 function LoadingSkeletonList() {
   return (
     <div className="flex items-center gap-[14px] p-[8px] rounded-lg">
-      <div className="h-[48px] w-[48px] shrink-0 animate-pulse rounded-md bg-border-alpha-14" />
+      <div className="h-[48px] w-[48px] shrink-0 animate-pulse rounded-control bg-border-alpha-14" />
       <div className="flex flex-col gap-[6px] flex-1">
         <div className="h-[14px] w-[35%] animate-pulse rounded bg-border-alpha-33" />
         <div className="h-[12px] w-[20%] animate-pulse rounded bg-border-alpha-14" />
@@ -201,12 +201,12 @@ function LibraryItemRow({ item }: { item: LibraryItemViewModel }) {
       onContextMenu={handleContextMenu}
       onPointerDown={link.prefetch}
       onClick={() => navigate(item.href, link.state)}
-      className="w-full flex items-center justify-between rounded-md p-[8px] outline-none transition-colors duration-150 ease-out cursor-pointer hover:bg-border-alpha-14 select-none"
+      className="w-full flex items-center justify-between rounded-control p-[8px] outline-none transition-colors duration-150 ease-out cursor-pointer hover:bg-border-alpha-14 select-none"
     >
       <div className="flex items-center gap-[16px] min-w-0">
         <div
           className={`relative h-[48px] w-[48px] shrink-0 overflow-hidden bg-border-alpha-14 ${
-            item.kind === "artist" ? "rounded-full" : "rounded-md"
+            item.kind === "artist" ? "rounded-full" : "rounded-control"
           }`}
         >
           {item.imageUrl ? (
@@ -237,7 +237,7 @@ function LibraryItemRow({ item }: { item: LibraryItemViewModel }) {
             {item.title}
           </h3>
           <p
-            className="m-0 flex min-w-0 items-center text-[15px] leading-[1.2] overflow-hidden text-text-secondary"
+            className="m-0 flex min-w-0 items-center text-title leading-[1.2] overflow-hidden text-text-secondary"
             style={{
               fontWeight: 350,
             }}
@@ -253,7 +253,7 @@ function LibraryItemRow({ item }: { item: LibraryItemViewModel }) {
       <div className="flex items-center shrink-0 ml-[16px] gap-[16px]">
         {item.trackCount !== undefined && (
           <span
-            className="text-[14px] text-text-tertiary"
+            className="text-label text-text-tertiary"
             style={{
               fontWeight: 400,
             }}
@@ -270,7 +270,7 @@ function LibraryItemRow({ item }: { item: LibraryItemViewModel }) {
               <button
                 type="button"
                 aria-label={t("common.more_options")}
-                className="rounded-md bg-transparent border-0 p-0 text-text-primary transition-all duration-200 active:scale-[0.96] flex items-center justify-center cursor-pointer opacity-70 hover:opacity-100"
+                className="rounded-control bg-transparent border-0 p-0 text-text-primary transition-all duration-200 active:scale-[0.96] flex items-center justify-center cursor-pointer opacity-70 hover:opacity-100"
                 onClick={(e) => {
                   e.stopPropagation();
                   setMenuOpen(!menuOpen);
@@ -305,7 +305,7 @@ function EmptyLibraryState({
         <h3 className="m-0 text-[17px] font-[500] text-text-primary">
           {t("common.no_results")}
         </h3>
-        <p className="m-0 text-[13px] text-text-tertiary max-w-[320px]">
+        <p className="m-0 text-body text-text-tertiary max-w-[320px]">
           {t("common.try_another_search_clear")}
         </p>
       </div>
@@ -316,17 +316,17 @@ function EmptyLibraryState({
     return (
       <div className="flex min-h-[320px] flex-col items-center justify-center gap-[14px] text-center px-[20px]">
         <div className="flex flex-col gap-[6px] max-w-[360px]">
-          <h3 className="m-0 text-[18px] font-[500] text-text-primary">
+          <h3 className="m-0 text-heading font-[500] text-text-primary">
             {t("library.no_playlists_title")}
           </h3>
-          <p className="m-0 text-[13px] text-text-tertiary leading-relaxed">
+          <p className="m-0 text-body text-text-tertiary leading-relaxed">
             {t("library.no_playlists_desc")}
           </p>
         </div>
         <button
           type="button"
           onClick={() => useModalStore.getState().openCreatePlaylist()}
-          className="inline-flex items-center gap-[6px] !h-[36px] rounded-lg px-[16px] text-[13px] font-[500] bg-btn-primary-bg text-btn-primary-text hover:opacity-90 active:scale-[0.96] transition-all border-0 cursor-pointer mt-[2px]"
+          className="inline-flex items-center gap-[6px] !h-[36px] rounded-lg px-[16px] text-body font-[500] bg-btn-primary-bg text-btn-primary-text hover:opacity-90 active:scale-[0.96] transition-all border-0 cursor-pointer mt-[2px]"
         >
           <AddLine size={16} />
           <span>{t("library.create_playlist")}</span>
@@ -339,17 +339,17 @@ function EmptyLibraryState({
     return (
       <div className="flex min-h-[320px] flex-col items-center justify-center gap-[14px] text-center px-[20px]">
         <div className="flex flex-col gap-[6px] max-w-[360px]">
-          <h3 className="m-0 text-[18px] font-[500] text-text-primary">
+          <h3 className="m-0 text-heading font-[500] text-text-primary">
             {t("library.no_albums_title")}
           </h3>
-          <p className="m-0 text-[13px] text-text-tertiary leading-relaxed">
+          <p className="m-0 text-body text-text-tertiary leading-relaxed">
             {t("library.no_albums_desc")}
           </p>
         </div>
         <button
           type="button"
           onClick={() => useModalStore.getState().openSearch()}
-          className="inline-flex items-center gap-[6px] !h-[36px] rounded-lg px-[16px] text-[13px] font-[500] bg-bg-elevated border border-border-primary text-text-primary hover:bg-border-alpha-14 active:scale-[0.96] transition-all cursor-pointer mt-[2px]"
+          className="inline-flex items-center gap-[6px] !h-[36px] rounded-lg px-[16px] text-body font-[500] bg-bg-elevated border border-border-primary text-text-primary hover:bg-border-alpha-14 active:scale-[0.96] transition-all cursor-pointer mt-[2px]"
         >
           <Search3Fill size={15} />
           <span>{t("library.search_music")}</span>
@@ -361,17 +361,17 @@ function EmptyLibraryState({
   return (
     <div className="flex min-h-[320px] flex-col items-center justify-center gap-[14px] text-center px-[20px]">
       <div className="flex flex-col gap-[6px] max-w-[360px]">
-        <h3 className="m-0 text-[18px] font-[500] text-text-primary">
+        <h3 className="m-0 text-heading font-[500] text-text-primary">
           {t("library.no_artists_title")}
         </h3>
-        <p className="m-0 text-[13px] text-text-tertiary leading-relaxed">
+        <p className="m-0 text-body text-text-tertiary leading-relaxed">
           {t("library.no_artists_desc")}
         </p>
       </div>
       <button
         type="button"
         onClick={() => useModalStore.getState().openSearch()}
-        className="inline-flex items-center gap-[6px] !h-[36px] rounded-lg px-[16px] text-[13px] font-[500] bg-bg-elevated border border-border-primary text-text-primary hover:bg-border-alpha-14 active:scale-[0.96] transition-all cursor-pointer mt-[2px]"
+        className="inline-flex items-center gap-[6px] !h-[36px] rounded-lg px-[16px] text-body font-[500] bg-bg-elevated border border-border-primary text-text-primary hover:bg-border-alpha-14 active:scale-[0.96] transition-all cursor-pointer mt-[2px]"
       >
         <Search3Fill size={15} />
         <span>{t("library.search_music")}</span>

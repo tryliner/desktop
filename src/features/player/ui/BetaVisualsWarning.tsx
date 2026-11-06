@@ -43,8 +43,8 @@ export function BetaVisualsWarning({ docked }: BetaVisualsWarningProps) {
     <div
       ref={containerRef}
       className={cn(
-        "flex pointer-events-auto select-none",
-        docked ? "absolute right-full top-0 mr-[6px]" : "relative ml-[4px]",
+        "pointer-events-auto flex select-none",
+        docked ? "absolute right-full top-0 mr-[6px]" : "relative",
       )}
     >
       <button
@@ -53,14 +53,14 @@ export function BetaVisualsWarning({ docked }: BetaVisualsWarningProps) {
         aria-expanded={open}
         aria-label={t("player.beta_visuals.label")}
         className={cn(
-          "group inline-flex h-[26px] min-w-[26px] cursor-pointer items-center justify-center rounded-md border-none bg-transparent px-[5px] transition-colors duration-300 hover:bg-white/10",
+          "group inline-flex h-[26px] min-w-[26px] cursor-pointer items-center justify-center rounded-control border-none bg-transparent px-[5px] transition-colors duration-300 hover:bg-white/10",
           warning ? "text-yellow-400" : "text-white/70 hover:text-white",
         )}
       >
         {warning && (
           <span className="grid grid-cols-[0fr] transition-[grid-template-columns] duration-[420ms] ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:grid-cols-[1fr]">
             <span className="min-w-0 overflow-hidden">
-              <span className="block whitespace-nowrap pr-[6px] text-[12px] font-[600] opacity-0 transition-opacity duration-200 ease-out group-hover:opacity-100 group-hover:delay-[120ms] group-hover:duration-300">
+              <span className="block whitespace-nowrap pr-[6px] text-caption font-[600] opacity-0 transition-opacity duration-200 ease-out group-hover:opacity-100 group-hover:delay-[120ms] group-hover:duration-300">
                 {t("player.beta_visuals.label")}
               </span>
             </span>
@@ -92,7 +92,7 @@ export function BetaVisualsWarning({ docked }: BetaVisualsWarningProps) {
               "backdrop-blur-[40px] backdrop-saturate-150",
             )}
           >
-            <div className="flex items-center gap-[6px] text-[13px] font-[600] leading-[1.25] tracking-[-0.01em] text-text-primary">
+            <div className="flex items-center gap-[6px] text-body font-[600] leading-[1.25] tracking-[-0.01em] text-text-primary">
               <Icon
                 size={14}
                 className={cn("shrink-0", warning && "text-yellow-400")}
@@ -114,7 +114,7 @@ export function BetaVisualsWarning({ docked }: BetaVisualsWarningProps) {
                       "flex w-full cursor-pointer items-center gap-[8px] rounded-[10px] border-none px-[10px] py-[6px] text-left transition-colors",
                       active
                         ? "bg-text-primary/75 text-bg-primary/90"
-                        : "bg-black/[0.06] text-text-primary hover:bg-black/[0.1] dark:bg-white/[0.1] dark:hover:bg-white/[0.15]",
+                        : "bg-fill-hover text-text-primary hover:bg-black/[0.1] dark:hover:bg-white/[0.15]",
                     )}
                   >
                     <span className="flex min-w-0 flex-1 flex-col">

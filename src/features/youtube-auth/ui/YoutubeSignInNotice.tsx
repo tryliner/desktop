@@ -9,7 +9,7 @@ import TrackBadge from "./TrackBadge";
 import LogoPattern from "./LogoPattern";
 
 const buttonBase =
-  "h-[40px] shrink-0 rounded-[12px] px-[18px] text-[14.5px] font-[500] transition-colors";
+  "h-[40px] shrink-0 rounded-item px-[18px] text-[14.5px] font-[500] transition-colors";
 
 export default function YoutubeSignInNotice() {
   useYoutubeSignInPrompt();
@@ -44,11 +44,11 @@ export default function YoutubeSignInNotice() {
           <LogoPattern />
           <div className="relative flex min-w-0 flex-1 flex-col">
             <TrackBadge />
-            <h2 className="mt-[14px] text-[18px] font-[600] leading-[1.25] tracking-[-0.01em] text-text-primary">
+            <h2 className="mt-[14px] text-heading font-[600] leading-[1.25] tracking-[-0.01em] text-text-primary">
               {t("youtube_auth.title") ||
                 "Sign in to YouTube to keep listening"}
             </h2>
-            <p className="mt-[8px] text-[14px] leading-[1.45] text-text-secondary">
+            <p className="mt-[8px] text-label leading-[1.45] text-text-secondary">
               {t("youtube_auth.description") ||
                 "YouTube blocks audio streams without sign-in (BotGuard check). Signing in with your Google/YouTube account confirms you are a real listener and lifts the limits."}
             </p>

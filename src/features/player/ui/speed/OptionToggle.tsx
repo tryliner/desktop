@@ -19,7 +19,7 @@ export function OptionToggle({
   return (
     <div className="flex items-center justify-between gap-[12px]">
       <div className="flex min-w-0 flex-col gap-[2px]">
-        <span className="flex items-center gap-[6px] text-[13px] font-[500] text-text-primary">
+        <span className="flex items-center gap-[6px] text-body font-[500] text-text-primary">
           {title}
         </span>
         <span className="text-[11px] leading-[1.35] text-text-tertiary">

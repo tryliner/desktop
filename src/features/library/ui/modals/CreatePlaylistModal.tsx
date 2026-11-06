@@ -183,7 +183,7 @@ export default function CreatePlaylistModal() {
           }
         />
 
-        <div className="flex p-[4px] rounded-[12px] bg-black/[0.05] dark:bg-white/[0.07]">
+        <div className="flex p-[4px] rounded-item bg-fill">
           {(
             [
               { id: "create", label: t("common.from_scratch") },
@@ -194,9 +194,9 @@ export default function CreatePlaylistModal() {
               key={item.id}
               type="button"
               onClick={() => setTab(item.id)}
-              className={`flex-1 h-[34px] rounded-[9px] text-[13px] font-[500] transition-all cursor-pointer border-none ${
+              className={`flex-1 h-[34px] rounded-[9px] text-body font-[500] transition-all cursor-pointer border-none ${
                 tab === item.id
-                  ? "bg-black/[0.07] dark:bg-white/[0.12] text-text-primary"
+                  ? "bg-fill-hover text-text-primary"
                   : "bg-transparent text-text-secondary hover:text-text-primary"
               }`}
             >
@@ -214,7 +214,7 @@ export default function CreatePlaylistModal() {
             className="flex flex-col gap-[10px]"
           >
             <TextInput
-              className="!rounded-[12px] !border-transparent !bg-black/[0.05] dark:!bg-white/[0.07]"
+              className="!rounded-item !border-transparent !bg-fill"
               ref={titleRef}
               placeholder={t("common.playlist_name")}
               value={title}
@@ -240,19 +240,19 @@ export default function CreatePlaylistModal() {
                 rows={2}
                 disabled={createPlaylist.isPending}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full resize-none rounded-[12px] border-0 bg-black/[0.05] dark:bg-white/[0.07] px-[14px] py-[12px] text-[14px] font-[400] text-text-primary placeholder:text-text-tertiary outline-none transition-colors duration-150 focus:bg-black/[0.07] dark:focus:bg-white/[0.1] disabled:opacity-50"
+                className="w-full resize-none rounded-item border-0 bg-fill px-[14px] py-[12px] text-label font-[400] text-text-primary placeholder:text-text-tertiary outline-none transition-colors duration-150 focus:bg-fill-hover disabled:opacity-50"
               />
             ) : (
               <button
                 type="button"
                 onClick={() => setShowDescription(true)}
-                className="self-start bg-transparent border-none p-0 text-[12px] text-text-tertiary hover:text-text-primary transition-colors cursor-pointer"
+                className="self-start bg-transparent border-none p-0 text-caption text-text-tertiary hover:text-text-primary transition-colors cursor-pointer"
               >
                 + {t("common.description_placeholder")}
               </button>
             )}
             {createError && (
-              <span className="text-[12px] text-accent-primary">
+              <span className="text-caption text-accent-primary">
                 {createError}
               </span>
             )}
@@ -280,7 +280,7 @@ export default function CreatePlaylistModal() {
             className="flex flex-col gap-[10px]"
           >
             <TextInput
-              className="!rounded-[12px] !border-transparent !bg-black/[0.05] dark:!bg-white/[0.07]"
+              className="!rounded-item !border-transparent !bg-fill"
               ref={linkRef}
               icon={<LinkLine size={16} />}
               placeholder={t("common.paste_link_placeholder")}
@@ -312,7 +312,7 @@ export default function CreatePlaylistModal() {
               }
             />
             {importError && (
-              <span className="text-[12px] text-accent-primary">
+              <span className="text-caption text-accent-primary">
                 {importError}
               </span>
             )}

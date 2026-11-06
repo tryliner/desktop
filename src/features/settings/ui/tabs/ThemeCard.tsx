@@ -1,42 +1,26 @@
-function ThemeMock({ mode }: { mode: "light" | "dark" }) {
+import { cn } from "@/shared/lib";
+
+// a plain swatch of the theme: its background with "Aa" in its text colour
+function Swatch({
+  mode,
+  align = "center",
+}: {
+  mode: "light" | "dark";
+  align?: "left" | "center" | "right";
+}) {
   const dark = mode === "dark";
   return (
-    <div
-      className={`flex h-full w-full ${dark ? "bg-[#101012]" : "bg-[#ececee]"}`}
+    <span
+      className={cn(
+        "flex h-full w-full items-center px-[18px] text-[22px] font-[600] tracking-[-0.02em]",
+        dark ? "bg-[#0a0a0a] text-white" : "bg-[#f5f5f7] text-[#18181b]",
+        align === "left" && "justify-start",
+        align === "center" && "justify-center",
+        align === "right" && "justify-end",
+      )}
     >
-      <div
-        className={`flex w-[36%] flex-col gap-[4px] p-[8px] ${dark ? "bg-[#1c1c1e]" : "bg-white"}`}
-      >
-        <div className="flex gap-[3px] px-[1px] pb-[3px]">
-          <span className="h-[4px] w-[4px] rounded-full bg-[#ff5f57]" />
-          <span className="h-[4px] w-[4px] rounded-full bg-[#febc2e]" />
-          <span className="h-[4px] w-[4px] rounded-full bg-[#28c840]" />
-        </div>
-        {[22, 16, 20].map((w, i) => (
-          <span
-            key={i}
-            className={`h-[5px] rounded-full ${dark ? "bg-white/15" : "bg-black/10"}`}
-            style={{ width: w }}
-          />
-        ))}
-        <span
-          className={`mt-auto h-[12px] rounded-[3px] ${dark ? "bg-white/20" : "bg-black/15"}`}
-        />
-      </div>
-      <div className="flex flex-1 flex-col gap-[4px] p-[8px]">
-        <span
-          className={`h-[6px] w-[46px] rounded-full ${dark ? "bg-white/25" : "bg-black/20"}`}
-        />
-        <div className="grid grid-cols-2 gap-[4px]">
-          {[0, 1, 2, 3].map((i) => (
-            <span
-              key={i}
-              className={`h-[14px] rounded-[3px] ${dark ? "bg-white/10" : "bg-black/[0.07]"}`}
-            />
-          ))}
-        </div>
-      </div>
-    </div>
+      Aa
+    </span>
   );
 }
 
@@ -63,64 +47,61 @@ export function ThemeCard({
       aria-pressed={active}
       aria-disabled={disabled}
       title={disabled ? disabledReason : undefined}
-      className={`group flex flex-col gap-[6px] border-0 bg-transparent p-0 text-left ${
+      className={cn(
+        "group flex flex-col gap-[8px] rounded-item border-0 p-[6px] pb-[9px] text-left transition-colors",
+        active ? "bg-fill-hover" : "bg-fill hover:bg-fill-hover",
         disabled
           ? "cursor-not-allowed opacity-40 select-none"
-          : "cursor-pointer"
-      }`}
+          : "cursor-pointer",
+      )}
     >
-      <span
-        className={`relative block h-[76px] w-full overflow-hidden rounded-lg border transition-colors ${
-          disabled
-            ? "border-border-primary"
-            : active
-              ? "border-text-primary ring-1 ring-text-primary"
-              : "border-border-primary group-hover:border-text-tertiary"
-        }`}
-      >
+      <span className="relative block h-[72px] w-full overflow-hidden rounded-control">
         {mode === "system" ? (
-          <span className="flex h-full w-full">
-            <span className="h-full w-1/2 overflow-hidden">
-              <ThemeMock mode="light" />
-            </span>
-            <span className="h-full w-1/2 overflow-hidden">
-              <ThemeMock mode="dark" />
-            </span>
-          </span>
-        ) : (
-          <ThemeMock mode={mode} />
-        )}
-        {active ? (
-          <span className="absolute right-[6px] top-[6px] flex h-[18px] w-[18px] items-center justify-center rounded-full bg-text-primary">
-            <svg
-              width="10"
-              height="10"
-              viewBox="0 0 12 12"
-              fill="none"
-              aria-hidden="true"
+          <>
+            <Swatch mode="light" align="left" />
+            {/* the dark half cuts in on a diagonal */}
+            <span
+              className="absolute inset-0"
+              style={{
+                clipPath: "polygon(58% 0, 100% 0, 100% 100%, 42% 100%)",
+              }}
             >
-              <path
-                d="M2 6.5L4.5 9L10 3"
-                stroke="var(--color-bg-primary)"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </span>
-        ) : null}
+              <Swatch mode="dark" align="right" />
+            </span>
+          </>
+        ) : (
+          <Swatch mode={mode} />
+        )}
+        {/* hairline on top of the swatch: drawn underneath, it leaks through
+            the anti-aliased rounded corners */}
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-0 rounded-[inherit] ring-1 ring-inset ring-black/[0.06] dark:ring-white/[0.06]"
+        />
       </span>
-      <span
-        className={`text-[12.5px] leading-none ${
-          disabled
-            ? "text-text-tertiary"
-            : active
-              ? "text-text-primary"
-              : "text-text-secondary"
-        }`}
-        style={{ fontWeight: active ? 500 : 400 }}
-      >
-        {label}
+      <span className="flex items-center gap-[8px] px-[3px]">
+        <span
+          aria-hidden
+          className={cn(
+            "flex h-[14px] w-[14px] shrink-0 items-center justify-center rounded-full border-[1.5px] transition-colors",
+            active
+              ? "border-text-primary"
+              : "border-text-tertiary group-hover:border-text-secondary",
+          )}
+        >
+          {active ? (
+            <span className="h-[6px] w-[6px] rounded-full bg-text-primary" />
+          ) : null}
+        </span>
+        <span
+          className={cn(
+            "text-body leading-none",
+            active ? "text-text-primary" : "text-text-secondary",
+          )}
+          style={{ fontWeight: active ? 500 : 400 }}
+        >
+          {label}
+        </span>
       </span>
     </button>
   );

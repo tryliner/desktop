@@ -54,7 +54,7 @@ export function StickyHeader({
               aria-label={t("common.back")}
               data-no-tooltip="true"
               data-no-window-drag
-              className={`group inline-flex h-[32px] shrink-0 items-center gap-[6px] rounded-md px-[10px] active:scale-[0.94] transition-all cursor-pointer select-none pointer-events-auto text-[13px] font-[500] border-0 !border-none bg-bg-panel/85 backdrop-blur-xl text-text-primary hover:bg-bg-panel`}
+              className={`group inline-flex h-[32px] shrink-0 items-center gap-[6px] rounded-control px-[10px] active:scale-[0.94] transition-all cursor-pointer select-none pointer-events-auto text-body font-[500] border-0 !border-none bg-bg-panel/85 backdrop-blur-xl text-text-primary hover:bg-bg-panel`}
             >
               <ArrowLeftLine
                 size={16}
@@ -69,7 +69,7 @@ export function StickyHeader({
           {hasMetadata && (
             <div
               data-no-window-drag
-              className={`inline-flex items-center gap-[8px] h-[32px] pl-[4px] pr-[12px] rounded-md min-w-0 max-w-[calc(100vw-360px)] select-none transition-all duration-200 ease-out bg-bg-panel/85 backdrop-blur-xl text-text-primary ${
+              className={`inline-flex items-center gap-[8px] h-[32px] pl-[4px] pr-[12px] rounded-control min-w-0 max-w-[calc(100vw-360px)] select-none transition-all duration-200 ease-out bg-bg-panel/85 backdrop-blur-xl text-text-primary ${
                 isScrolled
                   ? "opacity-100 translate-x-0 scale-100 pointer-events-auto"
                   : "opacity-0 -translate-x-2.5 scale-95 pointer-events-none"
@@ -78,7 +78,7 @@ export function StickyHeader({
               {thumbnail}
 
               {title && (
-                <span className="text-[13px] font-[600] tracking-[-0.01em] text-text-primary truncate">
+                <span className="text-body font-[600] tracking-[-0.01em] text-text-primary truncate">
                   {title}
                 </span>
               )}

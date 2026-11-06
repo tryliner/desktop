@@ -1,7 +1,30 @@
 export interface GlobalShortcutsSettings {
   toggleOverlay: string; // e.g. "Alt+Shift+O"
   quickLikeSong: string; // e.g. "Alt+Shift+L"
+  playPause: string;
+  nextTrack: string;
+  prevTrack: string;
+  seekForward: string;
+  seekBackward: string;
+  volumeUp: string;
+  volumeDown: string;
+  toggleMute: string;
+  showMainWindow: string;
 }
+
+export const OPTIONAL_GLOBAL_ACTIONS = [
+  "playPause",
+  "nextTrack",
+  "prevTrack",
+  "seekForward",
+  "seekBackward",
+  "volumeUp",
+  "volumeDown",
+  "toggleMute",
+  "showMainWindow",
+] as const satisfies readonly (keyof GlobalShortcutsSettings)[];
+
+export type OptionalGlobalAction = (typeof OPTIONAL_GLOBAL_ACTIONS)[number];
 
 export interface MainAppShortcutsSettings {
   playPause: string; // e.g. "Space" (1 button)
@@ -39,6 +62,15 @@ export const DEFAULT_SHORTCUTS: ShortcutsSettings = {
   global: {
     toggleOverlay: "Alt+Shift+O",
     quickLikeSong: "Alt+Shift+L",
+    playPause: "",
+    nextTrack: "",
+    prevTrack: "",
+    seekForward: "",
+    seekBackward: "",
+    volumeUp: "",
+    volumeDown: "",
+    toggleMute: "",
+    showMainWindow: "",
   },
   mainApp: {
     playPause: "Space",

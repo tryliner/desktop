@@ -299,7 +299,7 @@ export default function CircleDitherCanvas({
   return (
     <div
       ref={containerRef}
-      className={`relative h-full w-full overflow-hidden rounded-[12px] select-none ${className}`}
+      className={`relative h-full w-full overflow-hidden rounded-item select-none ${className}`}
       style={style}
       aria-label={alt}
     >

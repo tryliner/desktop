@@ -30,6 +30,13 @@ export const WEB_REMIX_PROFILE: InnertubeProfile = {
   origin: "https://music.youtube.com",
 };
 
+export const WEB_PROFILE: InnertubeProfile = {
+  clientName: "WEB",
+  clientVersion: "2.20260910.00.00",
+  clientIdHeader: "1",
+  origin: "https://www.youtube.com",
+};
+
 export { USER_AGENT_HEADER_OVERRIDE };
 
 const SESSION_REJECTED = new Set([401, 403]);

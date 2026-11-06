@@ -152,7 +152,7 @@ export default function DropdownMenu({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.96, y: side === "top" ? 2 : -2 }}
           transition={{ duration: 0.1, ease: "easeOut" }}
-          className={`overflow-y-auto overscroll-contain rounded-[11px] p-[4px] min-w-[160px] border-0 bg-black/[0.05] dark:bg-white/[0.07] backdrop-blur-2xl backdrop-saturate-150 ${
+          className={`overflow-y-auto overscroll-contain rounded-[11px] p-[4px] min-w-[160px] border-0 bg-fill backdrop-blur-2xl backdrop-saturate-150 ${
             isFixed
               ? "fixed z-[99999]"
               : side === "top"
@@ -173,18 +173,18 @@ export default function DropdownMenu({
                   setOpen(false);
                   await item.onClick();
                 }}
-                className={`group flex w-full h-[30px] items-center gap-[8px] rounded-[8px] px-[9px] text-[13px] font-normal transition-colors border-none bg-transparent text-left cursor-pointer select-none outline-none ${
+                className={`group flex w-full h-[30px] items-center gap-[8px] rounded-control px-[9px] text-body font-normal transition-colors border-none bg-transparent text-left cursor-pointer select-none outline-none ${
                   item.danger
                     ? "text-red-400 hover:bg-red-500/10 hover:text-red-400"
-                    : "text-text-primary hover:bg-black/[0.05] dark:hover:bg-white/[0.08]"
+                    : "text-text-primary hover:bg-fill"
                 } ${
-                  item.active ? "bg-black/[0.05] dark:bg-white/[0.08]" : ""
+                  item.active ? "bg-fill" : ""
                 } disabled:pointer-events-none disabled:opacity-40`}
                 aria-current={item.active ? "true" : undefined}
               >
                 {item.icon && (
                   <span
-                    className={`shrink-0 flex items-center justify-center text-[15px] ${
+                    className={`shrink-0 flex items-center justify-center text-title ${
                       item.danger
                         ? "text-red-400"
                         : "text-text-secondary group-hover:text-text-primary"

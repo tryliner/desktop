@@ -51,7 +51,7 @@ export default function OfflineMixCard() {
       onClick={playAll}
       className="group flex cursor-pointer flex-col gap-[8px]"
     >
-      <div className="relative aspect-square w-full overflow-hidden rounded-md">
+      <div className="relative aspect-square w-full overflow-hidden rounded-control">
         <img
           src={allOfflineCover}
           alt=""
@@ -73,13 +73,13 @@ export default function OfflineMixCard() {
         </button>
       </div>
       <div className="flex flex-col gap-[4px]">
-        <span className="truncate text-[14px] font-[500] text-text-primary">
+        <span className="truncate text-label font-[500] text-text-primary">
           {context}
         </span>
         {loading ? (
           <div className="h-[13px] w-[56%] animate-pulse rounded bg-border-alpha-14" />
         ) : (
-          <span className="truncate text-[13px] text-text-tertiary">
+          <span className="truncate text-body text-text-tertiary">
             {t("common.songs", { count: tracks.length })}
           </span>
         )}

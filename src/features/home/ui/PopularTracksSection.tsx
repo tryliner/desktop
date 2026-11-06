@@ -130,7 +130,7 @@ function TrackCard({
       onClick={handleClick}
       onContextMenu={handleContextMenu}
     >
-      <div className="relative aspect-square w-full overflow-hidden rounded-md bg-border-alpha-14">
+      <div className="relative aspect-square w-full overflow-hidden rounded-control bg-border-alpha-14">
         {showRanks && (
           <div
             className={`absolute top-2 left-2 z-10 flex items-center justify-center min-w-[22px] h-[20px] px-1 rounded-[3px] text-[10px] font-bold tracking-tight ${
@@ -162,10 +162,10 @@ function TrackCard({
       </div>
 
       <div className="flex flex-col mt-[8px]">
-        <span className="truncate text-[14px] font-[500] text-text-primary">
+        <span className="truncate text-label font-[500] text-text-primary">
           {item.item.title}
         </span>
-        <div className="flex min-w-0 items-center overflow-hidden text-[13px] text-text-tertiary">
+        <div className="flex min-w-0 items-center overflow-hidden text-body text-text-tertiary">
           {item.item.explicit && (
             <ExplicitBadge size="md" className="mr-[6px] shrink-0" />
           )}
@@ -173,7 +173,7 @@ function TrackCard({
             name={item.item.artists}
             artistId={item.item.artistId}
             artistList={item.item.artistList}
-            className="text-[13px] text-text-tertiary"
+            className="text-body text-text-tertiary"
           />
         </div>
       </div>
@@ -251,7 +251,7 @@ function AlbumCard({
       onClick={handleClick}
       onContextMenu={handleContextMenu}
     >
-      <div className="relative aspect-square w-full overflow-hidden rounded-md bg-border-alpha-14">
+      <div className="relative aspect-square w-full overflow-hidden rounded-control bg-border-alpha-14">
         {showRanks && (
           <div className="absolute top-2 left-2 z-10 flex items-center justify-center min-w-[22px] h-[20px] px-1 rounded-[3px] text-[10px] font-bold tracking-tight bg-bg-panel text-text-secondary">
             #{index + 1}
@@ -271,16 +271,17 @@ function AlbumCard({
         )}
       </div>
       <div className="flex flex-col mt-[8px]">
-        <span className="truncate text-[14px] font-[500] text-text-primary">
+        <span className="truncate text-label font-[500] text-text-primary">
           {item.item.title}
         </span>
-        <div className="flex min-w-0 items-center overflow-hidden text-[13px] text-text-tertiary">
+        <div className="flex min-w-0 items-center overflow-hidden text-body text-text-tertiary">
           {item.item.explicit && (
             <ExplicitBadge size="md" className="mr-[6px] shrink-0" />
           )}
           <ArtistLink
             name={item.item.artist}
-            className="text-[13px] text-text-tertiary"
+            artistList={item.item.artistList}
+            className="text-body text-text-tertiary"
           />
         </div>
       </div>
@@ -358,7 +359,7 @@ function PlaylistCard({
       onClick={handleClick}
       onContextMenu={handleContextMenu}
     >
-      <div className="relative aspect-square w-full overflow-hidden rounded-md bg-border-alpha-14">
+      <div className="relative aspect-square w-full overflow-hidden rounded-control bg-border-alpha-14">
         {showRanks && (
           <div className="absolute top-2 left-2 z-10 flex items-center justify-center min-w-[22px] h-[20px] px-1 rounded-[3px] text-[10px] font-bold tracking-tight bg-bg-panel text-text-secondary">
             #{index + 1}
@@ -378,10 +379,10 @@ function PlaylistCard({
         )}
       </div>
       <div className="flex flex-col mt-[8px]">
-        <span className="truncate text-[14px] font-[500] text-text-primary">
+        <span className="truncate text-label font-[500] text-text-primary">
           {item.item.title}
         </span>
-        <span className="truncate text-[13px] text-text-tertiary">
+        <span className="truncate text-body text-text-tertiary">
           {item.item.owner}
         </span>
       </div>

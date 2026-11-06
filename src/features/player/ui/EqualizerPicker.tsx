@@ -191,7 +191,7 @@ export const EqualizerPicker = memo(function EqualizerPicker({
       />
 
       <div className="flex flex-col gap-[8px]">
-        <div className="grid grid-cols-4 gap-[2px] rounded-[8px] bg-black/[0.04] p-[2px] dark:bg-white/[0.04]">
+        <div className="grid grid-cols-4 gap-[2px] rounded-control bg-black/[0.04] p-[2px] dark:bg-white/[0.04]">
           {EQ_TABS.map((id) => (
             <button
               key={id}
@@ -207,7 +207,7 @@ export const EqualizerPicker = memo(function EqualizerPicker({
               {tab === id && (
                 <motion.span
                   layoutId="active-eq-tab"
-                  className="absolute inset-0 rounded-[6px] bg-black/[0.07] dark:bg-white/[0.1]"
+                  className="absolute inset-0 rounded-[6px] bg-fill-hover"
                   transition={{ type: "spring", stiffness: 450, damping: 32 }}
                 />
               )}

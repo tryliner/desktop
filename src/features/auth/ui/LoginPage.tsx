@@ -14,6 +14,7 @@ import {
   useAuthStore,
 } from "../store/authStore";
 import { useTranslation } from "@/languages";
+import { HumanCheckNotice } from "@/features/human-check";
 import { cn } from "@/shared/lib";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -61,6 +62,10 @@ export default function LoginPage() {
     if (code === "invalid_username") return t("login.errors.username_invalid");
     if (code === "invalid_input")
       return t("login.errors.display_name_required");
+    if (code === "human_check_cancelled")
+      return t("login.errors.human_check_cancelled");
+    if (code === "human_check_failed")
+      return t("login.errors.human_check_failed");
     return authErrorMessage(nextError);
   };
 
@@ -195,14 +200,14 @@ export default function LoginPage() {
         "relative flex h-full w-full items-center justify-center overflow-hidden bg-bg-primary",
         isEdgeToEdge
           ? "rounded-none border-0"
-          : "rounded-5xl border border-border-primary",
+          : "rounded-item border border-border-primary",
       )}
     >
       <LoginBackdrop edgeToEdge={isEdgeToEdge} />
 
       <WindowControls variant="glass" isFullscreen />
 
-      <section className="relative z-10 mx-4 my-auto grid max-h-[calc(100%-48px)] w-full max-w-[780px] grid-cols-[300px_1fr] gap-[8px] overflow-y-auto rounded-[20px] border border-border-primary bg-bg-panel p-[8px]">
+      <section className="relative z-10 mx-4 my-auto grid max-h-[calc(100%-48px)] w-full max-w-[780px] grid-cols-[300px_1fr] gap-[8px] overflow-y-auto rounded-panel border border-border-primary bg-bg-panel p-[8px]">
         <LoginBrandPanel title={heading} subtitle={subheading} />
 
         <div className="flex w-full flex-col px-[28px] pb-[22px] pt-[26px]">
@@ -248,7 +253,7 @@ export default function LoginPage() {
                       className="overflow-hidden flex flex-col"
                     >
                       <label
-                        className="mb-[7px] text-[12px] font-[500] text-text-secondary"
+                        className="mb-[7px] text-caption font-[500] text-text-secondary"
                         htmlFor="auth-email"
                       >
                         {t("login.label_email")}
@@ -274,7 +279,7 @@ export default function LoginPage() {
                       />
 
                       <label
-                        className="mb-[7px] mt-[15px] text-[12px] font-[500] text-text-secondary"
+                        className="mb-[7px] mt-[15px] text-caption font-[500] text-text-secondary"
                         htmlFor="auth-password"
                       >
                         {t("login.label_password")}
@@ -308,7 +313,7 @@ export default function LoginPage() {
                                 : t("login.show_password")
                             }
                             onClick={() => setShowPassword((v) => !v)}
-                            className="flex h-7 w-7 items-center justify-center rounded-xl text-text-tertiary transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-text-secondary cursor-pointer"
+                            className="flex h-7 w-7 items-center justify-center rounded-item text-text-tertiary transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-text-secondary cursor-pointer"
                           >
                             {showPassword ? (
                               <EyeCloseLine className="h-4 w-4" />
@@ -332,7 +337,7 @@ export default function LoginPage() {
                             className="overflow-hidden"
                           >
                             <label
-                              className="mb-[7px] mt-[15px] block text-[12px] font-[500] text-text-secondary"
+                              className="mb-[7px] mt-[15px] block text-caption font-[500] text-text-secondary"
                               htmlFor="auth-confirm"
                             >
                               {t("login.label_confirm_password")}
@@ -364,7 +369,7 @@ export default function LoginPage() {
                                   onClick={() =>
                                     setShowConfirmPassword((v) => !v)
                                   }
-                                  className="flex h-7 w-7 items-center justify-center rounded-xl text-text-tertiary transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-text-secondary cursor-pointer"
+                                  className="flex h-7 w-7 items-center justify-center rounded-item text-text-tertiary transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-text-secondary cursor-pointer"
                                 >
                                   {showConfirmPassword ? (
                                     <EyeCloseLine className="h-4 w-4" />
@@ -391,7 +396,7 @@ export default function LoginPage() {
                       className="overflow-hidden flex flex-col"
                     >
                       <label
-                        className="mb-[7px] block text-[12px] font-[500] text-text-secondary"
+                        className="mb-[7px] block text-caption font-[500] text-text-secondary"
                         htmlFor="auth-username"
                       >
                         {t("login.label_username")}
@@ -406,7 +411,7 @@ export default function LoginPage() {
                         placeholder={t("login.placeholder_username")}
                         value={username}
                         icon={
-                          <span className="text-[14px] font-medium text-text-tertiary select-none">
+                          <span className="text-label font-medium text-text-tertiary select-none">
                             @
                           </span>
                         }
@@ -449,7 +454,7 @@ export default function LoginPage() {
                       )}
 
                       <label
-                        className="mb-[7px] mt-[14px] block text-[12px] font-[500] text-text-secondary"
+                        className="mb-[7px] mt-[14px] block text-caption font-[500] text-text-secondary"
                         htmlFor="auth-display-name"
                       >
                         {t("login.label_display_name")}
@@ -487,7 +492,7 @@ export default function LoginPage() {
                         initial={{ opacity: 0, y: -3 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0 }}
-                        className="m-0 text-[12px] font-[500] leading-[1.4] text-accent-primary"
+                        className="m-0 text-caption font-[500] leading-[1.4] text-accent-primary"
                       >
                         {error}
                       </motion.p>
@@ -618,6 +623,7 @@ export default function LoginPage() {
           </p>
         </div>
       </section>
+      <HumanCheckNotice />
     </main>
   );
 }

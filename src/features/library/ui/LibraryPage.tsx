@@ -78,10 +78,10 @@ function LikesPlaylistCard({
     return (
       <div
         onClick={onClick}
-        className="w-full flex items-center justify-between rounded-md p-[8px] outline-none transition-colors duration-150 ease-out cursor-pointer hover:bg-border-alpha-14 select-none"
+        className="w-full flex items-center justify-between rounded-control p-[8px] outline-none transition-colors duration-150 ease-out cursor-pointer hover:bg-border-alpha-14 select-none"
       >
         <div className="flex items-center gap-[16px] min-w-0">
-          <div className="relative h-[48px] w-[48px] shrink-0 overflow-hidden rounded-md">
+          <div className="relative h-[48px] w-[48px] shrink-0 overflow-hidden rounded-control">
             <img
               src={likesCover}
               alt=""
@@ -100,7 +100,7 @@ function LikesPlaylistCard({
               {t("library.liked_songs")}
             </h3>
             <p
-              className="m-0 flex min-w-0 items-center text-[15px] leading-[1.2] overflow-hidden text-text-secondary"
+              className="m-0 flex min-w-0 items-center text-title leading-[1.2] overflow-hidden text-text-secondary"
               style={{
                 fontWeight: 350,
               }}
@@ -123,7 +123,7 @@ function LikesPlaylistCard({
       className="group flex flex-col gap-[8px] cursor-pointer"
       draggable={false}
     >
-      <div className="relative aspect-square w-full overflow-hidden rounded-md">
+      <div className="relative aspect-square w-full overflow-hidden rounded-control">
         <img
           src={likesCover}
           alt=""
@@ -132,13 +132,13 @@ function LikesPlaylistCard({
         />
       </div>
       <div className="flex flex-col gap-[4px]">
-        <span className="truncate text-[14px] font-[500] text-text-primary">
+        <span className="truncate text-label font-[500] text-text-primary">
           {t("library.liked_songs")}
         </span>
         {isLoading || count === undefined ? (
           <div className="h-[13px] w-[56%] animate-pulse rounded bg-border-alpha-14" />
         ) : (
-          <span className="truncate text-[13px] text-text-tertiary">
+          <span className="truncate text-body text-text-tertiary">
             {t("common.songs", { count })}
           </span>
         )}
@@ -424,7 +424,7 @@ function OnlineLibraryPage() {
 
         <div className="px-[12px] pt-[4px] pb-[20px]">
           {activeTab === "playlists" && playlistsError ? (
-            <div className="mb-[10px] text-[12px] text-accent-secondary">
+            <div className="mb-[10px] text-caption text-accent-secondary">
               {t("playlist.error_loading")}
             </div>
           ) : null}
@@ -513,7 +513,7 @@ function OfflineLibraryPage() {
             {t("library.title")}
           </h1>
           <div
-            className="mt-[10px] flex flex-wrap items-center gap-[10px] text-[13px] text-text-secondary"
+            className="mt-[10px] flex flex-wrap items-center gap-[10px] text-body text-text-secondary"
             style={{ fontFamily: "var(--font-inter), sans-serif" }}
           >
             <span className="flex items-center gap-[8px]">
@@ -528,7 +528,7 @@ function OfflineLibraryPage() {
               type="button"
               disabled={checking}
               onClick={() => void goOnline()}
-              className="h-[28px] rounded-[9px] border-0 bg-black/[0.06] px-[12px] text-[12.5px] font-[500] text-text-primary transition-colors hover:bg-black/[0.1] disabled:cursor-default disabled:opacity-60 dark:bg-white/[0.1] dark:hover:bg-white/[0.15] cursor-pointer"
+              className="h-[28px] rounded-[9px] border-0 bg-fill-hover px-[12px] text-[12.5px] font-[500] text-text-primary transition-colors hover:bg-black/[0.1] disabled:cursor-default disabled:opacity-60 dark:hover:bg-white/[0.15] cursor-pointer"
             >
               {checking
                 ? t("connectivity.retrying")

@@ -56,7 +56,7 @@ import { detectCompositor } from "./compositor/index.js";
 import { BundleManager } from "./bundle-manager.js";
 import { createBundleErrorStamp } from "./bundle-stamp.js";
 import { createSleepBlocker } from "./sleep-blocker.js";
-import { needsOpenCors, withOpenCors } from "./cors.js";
+import { keepsOwnCors, needsOpenCors, withOpenCors } from "./cors.js";
 import { createShutdown } from "./shutdown.js";
 import {
   clampResizeToArea,
@@ -253,7 +253,11 @@ function createWindow() {
     height: DEFAULT_WINDOW_HEIGHT,
     minWidth: MIN_WINDOW_WIDTH,
     minHeight: MIN_WINDOW_HEIGHT,
-    frame: false,
+    // macos only reveals the menu bar on hover in native fullscreen for titled windows,
+    // so keep the native frame there with its title bar and traffic lights hidden
+    ...(process.platform === "darwin"
+      ? { titleBarStyle: "hidden" as const }
+      : { frame: false }),
     transparent: true,
     backgroundColor: "#00000000",
     hasShadow: false,
@@ -268,6 +272,9 @@ function createWindow() {
       webSecurity: true,
     },
   });
+
+  // the custom window controls replace the native traffic lights
+  if (process.platform === "darwin") mainWindow.setWindowButtonVisibility(false);
 
   // sync window state changes to renderer
   const broadcastWindowState = () => {
@@ -592,6 +599,7 @@ if (!gotTheLock) {
       return true;
     });
     overlayManager.registerShortcut();
+    overlayManager.registerMediaShortcuts();
 
     discordRpcManager = new DiscordRpcManager();
     poTokenService = new PoTokenService(path.join(__dirname, "preload.cjs"));
@@ -853,7 +861,11 @@ if (!gotTheLock) {
     // local api (see .env.example)
     session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
       const cors = needsOpenCors(details.url, !app.isPackaged)
-        ? withOpenCors(details.responseHeaders, details.method)
+        ? withOpenCors(
+            details.responseHeaders,
+            details.method,
+            keepsOwnCors(details.url, !app.isPackaged),
+          )
         : {};
       const statusLine = simulatedResponseStatus(details.url, details.method);
       callback(

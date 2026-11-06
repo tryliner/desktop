@@ -65,7 +65,7 @@ function CollectionPageSkeletonComponent({
             {Array.from({ length: 10 }).map((_, i) => (
               <div
                 key={i}
-                className="flex items-center justify-between rounded-md p-[8px] h-[64px]"
+                className="flex items-center justify-between rounded-control p-[8px] h-[64px]"
               >
                 <div className="flex items-center gap-[16px] min-w-0 flex-1">
                   {isAlbum ? (
@@ -73,7 +73,7 @@ function CollectionPageSkeletonComponent({
                       <div className="skeleton-shimmer h-[14px] w-[18px] rounded-[3px]" />
                     </div>
                   ) : (
-                    <div className="skeleton-shimmer h-[48px] w-[48px] shrink-0 rounded-md" />
+                    <div className="skeleton-shimmer h-[48px] w-[48px] shrink-0 rounded-control" />
                   )}
 
                   <div className="min-w-0 flex flex-col gap-[6px] flex-1">
@@ -88,7 +88,7 @@ function CollectionPageSkeletonComponent({
 
                 <div className="flex items-center gap-[16px] pr-[8px]">
                   <div className="skeleton-shimmer h-[13px] w-[36px] rounded-[4px]" />
-                  <div className="skeleton-shimmer h-[32px] w-[32px] rounded-md" />
+                  <div className="skeleton-shimmer h-[32px] w-[32px] rounded-control" />
                 </div>
               </div>
             ))}

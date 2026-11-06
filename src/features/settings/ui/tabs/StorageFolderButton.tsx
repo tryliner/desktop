@@ -42,9 +42,9 @@ export function StorageFolderButton({
       animate={{ width }}
       transition={{ duration: 0.4, ease: SMOOTH_EASE }}
       className={cn(
-        "relative flex h-[28px] shrink-0 cursor-pointer items-center justify-end overflow-hidden rounded-full border-0 text-[12px] font-[500] transition-colors duration-300",
+        "relative flex h-[28px] shrink-0 cursor-pointer items-center justify-end overflow-hidden rounded-full border-0 text-caption font-[500] transition-colors duration-300",
         hovered
-          ? "bg-black/[0.05] text-text-primary dark:bg-white/[0.07]"
+          ? "bg-fill text-text-primary"
           : "bg-transparent text-text-tertiary",
       )}
       style={{

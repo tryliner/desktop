@@ -12,9 +12,8 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { HeartLine, PlayFill } from "@mingcute/react";
 import { LuShuffle } from "react-icons/lu";
 import { playerEngine, SongCardWithMenu } from "@/features/player";
-import { useClassicSurfaces } from "@/features/settings/store/customizationStore";
 import { useTranslation } from "@/languages";
-import { cn, usePageBackdrop } from "@/shared/lib";
+import { usePageBackdrop } from "@/shared/lib";
 import type { Track } from "@/shared/types";
 import {
   EntityHero,
@@ -22,8 +21,9 @@ import {
   HERO_CHIP_CLASS,
   HERO_GLASS_BUTTON_CLASS,
   HERO_GLASS_CLASS,
-  HERO_SUBTITLE_CLASS,
+  HeroSubtitle,
   HERO_TITLE_CLASS,
+  ListPanel,
 } from "@/shared/ui";
 import Button from "@/shared/ui/Button";
 import {
@@ -66,6 +66,8 @@ const SavedTrackRow = memo(function SavedTrackRow({
         id={track.id}
         title={track.title}
         artists={track.artists}
+        artistId={track.artistId}
+        artistList={track.artistList}
         coverUrl={track.coverUrl}
         duration={formatTrackDuration(track.durationMs)}
         durationMs={track.durationMs}
@@ -152,7 +154,6 @@ export function SavedTracksView({
 }: SavedTracksViewProps) {
   const { t } = useTranslation();
   const scrollRef = useRef<HTMLDivElement>(null);
-  const classicSurfaces = useClassicSurfaces();
   usePageBackdrop(cover || undefined, { blur: 56, dim: 0.22 });
 
   const sort = useTrackSort(tracks, pageKey);
@@ -204,7 +205,7 @@ export function SavedTracksView({
               />
             }
             title={<h1 className={HERO_TITLE_CLASS}>{title}</h1>}
-            subtitle={<p className={HERO_SUBTITLE_CLASS}>{subtitle}</p>}
+            subtitle={<HeroSubtitle text={subtitle} />}
             meta={
               <div className={HERO_CHIP_CLASS}>
                 <span>{t("common.songs", { count: tracks.length })}</span>
@@ -247,16 +248,7 @@ export function SavedTracksView({
           />
         </div>
 
-        <div
-          className={cn(
-            "mx-[4px] mt-[20px] shrink-0 grow overflow-hidden rounded-t-[14px] bg-black/[0.03] px-[8px] pt-[8px] dark:bg-white/[0.04]",
-            !classicSurfaces && "backdrop-blur-xl",
-          )}
-          style={{
-            marginBottom: "calc(var(--page-inset-bottom) * -1)",
-            paddingBottom: "calc(var(--page-inset-bottom) + 16px)",
-          }}
-        >
+        <ListPanel>
           {isLoading ? null : empty ? (
             <div
               className="flex min-h-[50vh] flex-col items-center justify-center gap-[14px] text-center"
@@ -264,10 +256,10 @@ export function SavedTracksView({
             >
               <HeartLine size={40} className="text-border-alpha-33" />
               <div className="flex flex-col gap-[4px]">
-                <p className="m-0 text-[15px] font-[500] text-text-primary">
+                <p className="m-0 text-title font-[500] text-text-primary">
                   {emptyTitle}
                 </p>
-                <p className="m-0 max-w-[360px] text-[13px] text-text-tertiary">
+                <p className="m-0 max-w-[360px] text-body text-text-tertiary">
                   {emptySubtitle}
                 </p>
               </div>
@@ -286,7 +278,7 @@ export function SavedTracksView({
               scrollRef={scrollRef}
             />
           )}
-        </div>
+        </ListPanel>
       </div>
     </div>
   );

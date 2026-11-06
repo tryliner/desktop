@@ -37,15 +37,17 @@
   --btn-primary-bg: #18181b;
   --btn-primary-text: #ffffff;
 
+  /* design tokens, see docs/DESIGN.md */
+  --fill-subtle: rgba(0, 0, 0, 0.03);
+  --fill: rgba(0, 0, 0, 0.05);
+  --fill-hover: rgba(0, 0, 0, 0.08);
+  --fill-strong: rgba(0, 0, 0, 0.1);
+  --surface-glass: rgba(245, 245, 247, 0.92);
+
   --radius-xs: 4px;
-  --radius-sm: 12px;
-  --radius-md: 8px;
   --radius-lg: 10px;
-  --radius-xl: 12px;
   --radius-2xl: 14px;
   --radius-3xl: 16px;
-  --radius-4xl: 12px;
-  --radius-5xl: 12px;
 }
 
 :root[data-theme="light"],
@@ -78,6 +80,13 @@
 
   --btn-primary-bg: #18181b;
   --btn-primary-text: #ffffff;
+
+  /* design tokens, see docs/DESIGN.md */
+  --fill-subtle: rgba(0, 0, 0, 0.03);
+  --fill: rgba(0, 0, 0, 0.05);
+  --fill-hover: rgba(0, 0, 0, 0.08);
+  --fill-strong: rgba(0, 0, 0, 0.1);
+  --surface-glass: rgba(245, 245, 247, 0.92);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -115,6 +124,12 @@
 
     --btn-primary-bg: #d9d9dd;
     --btn-primary-text: #000000;
+
+    --fill-subtle: rgba(255, 255, 255, 0.04);
+    --fill: rgba(255, 255, 255, 0.07);
+    --fill-hover: rgba(255, 255, 255, 0.1);
+    --fill-strong: rgba(255, 255, 255, 0.14);
+    --surface-glass: rgba(22, 22, 24, 0.9);
   }
 }
 
@@ -150,6 +165,12 @@
 
   --btn-primary-bg: #d9d9dd;
   --btn-primary-text: #000000;
+
+  --fill-subtle: rgba(255, 255, 255, 0.04);
+  --fill: rgba(255, 255, 255, 0.07);
+  --fill-hover: rgba(255, 255, 255, 0.1);
+  --fill-strong: rgba(255, 255, 255, 0.14);
+  --surface-glass: rgba(22, 22, 24, 0.9);
 }
 
 @theme inline {
@@ -182,19 +203,30 @@
   --color-btn-primary-bg: var(--btn-primary-bg);
   --color-btn-primary-text: var(--btn-primary-text);
 
+  --color-fill-subtle: var(--fill-subtle);
+  --color-fill: var(--fill);
+  --color-fill-hover: var(--fill-hover);
+  --color-fill-strong: var(--fill-strong);
+  --color-surface-glass: var(--surface-glass);
+
   --color-login-backdrop: var(--login-backdrop);
   --color-login-glow: var(--login-glow);
   --color-login-glow-secondary: var(--login-glow-secondary);
 
+  /* legacy steps still in use; new code takes control / item / panel */
   --radius-xs: var(--radius-xs);
-  --radius-sm: var(--radius-sm);
-  --radius-md: var(--radius-md);
   --radius-lg: var(--radius-lg);
-  --radius-xl: var(--radius-xl);
   --radius-2xl: var(--radius-2xl);
   --radius-3xl: var(--radius-3xl);
-  --radius-4xl: var(--radius-4xl);
-  --radius-5xl: var(--radius-5xl);
+  --radius-control: 8px;
+  --radius-item: 12px;
+  --radius-panel: 20px;
+
+  --text-caption: 12px;
+  --text-body: 13px;
+  --text-label: 14px;
+  --text-title: 15px;
+  --text-heading: 18px;
 
   --font-sans: var(--font-inter);
   --font-mono: var(--font-geist-mono);
@@ -286,8 +318,12 @@ img {
   -webkit-app-region: no-drag;
 }
 
+/* route change: a short rise and fade on the standard curve (docs/DESIGN.md).
+   No blur: a filter on the page would switch off the glass inside it while
+   the animation runs. Kept pages replay it when Activity shows them again,
+   since leaving display: none restarts CSS animations. */
 .page-transition {
-  animation: page-enter 140ms ease-out;
+  animation: page-enter 200ms cubic-bezier(0.22, 1, 0.36, 1);
   transform-origin: top center;
   transform: translateZ(0);
   backface-visibility: hidden;
@@ -297,12 +333,29 @@ img {
   width: 100%;
 }
 
+/* kept pages (home, library) get only the animation, no lasting transform,
+   so nothing inside them changes containing block */
+.page-transition-kept {
+  animation: page-enter 200ms cubic-bezier(0.22, 1, 0.36, 1);
+  height: 100%;
+  width: 100%;
+}
+
 @keyframes page-enter {
   from {
     opacity: 0;
+    transform: translate3d(0, 6px, 0);
   }
   to {
     opacity: 1;
+    transform: translateZ(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-transition,
+  .page-transition-kept {
+    animation-duration: 1ms;
   }
 }
 

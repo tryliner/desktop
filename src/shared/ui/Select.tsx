@@ -221,7 +221,7 @@ export function Select<T extends string = string>({
         aria-haspopup="listbox"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
-        className={`inline-flex h-[36px] items-center justify-between gap-[8px] rounded-md border ${borderClass} ${bgClass} px-[12px] text-[13px] font-[400] text-text-primary transition-colors ${hoverClass} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-text-primary/70 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary disabled:pointer-events-none disabled:opacity-50 cursor-pointer ${className}`.trim()}
+        className={`inline-flex h-[36px] items-center justify-between gap-[8px] rounded-control border ${borderClass} ${bgClass} px-[12px] text-body font-[400] text-text-primary transition-colors ${hoverClass} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-text-primary/70 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary disabled:pointer-events-none disabled:opacity-50 cursor-pointer ${className}`.trim()}
       >
         <span className="inline-flex items-center gap-[7px] truncate min-w-0">
           {selected?.icon && (
@@ -243,7 +243,7 @@ export function Select<T extends string = string>({
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.96, y: -4 }}
               transition={{ duration: 0.13, ease: "easeOut" }}
-              className="fixed z-[9999] overflow-hidden rounded-md border border-border-primary bg-bg-primary p-[6px]"
+              className="fixed z-[9999] overflow-hidden rounded-control border border-border-primary bg-bg-primary p-[6px]"
               style={menuStyle}
             >
               <div className="flex flex-col gap-[2px]">
@@ -259,7 +259,7 @@ export function Select<T extends string = string>({
                         onChange(option.value);
                         setOpen(false);
                       }}
-                      className={`flex w-full items-center justify-between gap-[8px] rounded-md px-[10px] py-[7px] text-[13px] transition-colors ${
+                      className={`flex w-full items-center justify-between gap-[8px] rounded-control px-[10px] py-[7px] text-body transition-colors ${
                         isActive
                           ? "bg-border-alpha-14 text-text-primary"
                           : "bg-transparent text-text-secondary hover:bg-border-alpha-14 hover:text-text-primary"

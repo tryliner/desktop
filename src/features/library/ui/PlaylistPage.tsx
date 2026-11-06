@@ -23,9 +23,9 @@ import {
   HERO_BUTTON_CLASS,
   HERO_GLASS_BUTTON_CLASS,
   HERO_GLASS_CLASS,
+  ListPanel,
 } from "@/shared/ui";
 import { usePageBackdrop } from "@/shared/lib";
-import { useClassicSurfaces } from "@/features/settings/store/customizationStore";
 import { useLikesCover } from "../hooks/useLikesCover";
 import { useSavedTracksStore } from "../saved";
 import { isSavedTrack } from "@/shared/media/saved";
@@ -259,7 +259,6 @@ function LibraryPlaylistContent() {
     };
   })();
   const likesCover = useLikesCover();
-  const classicSurfaces = useClassicSurfaces();
   const { data: playlistList } = usePlaylistsList();
   const summary = isLikesMode
     ? undefined
@@ -288,7 +287,6 @@ function LibraryPlaylistContent() {
       : (viewData?.coverUrls?.[0] ??
           (viewData?.coverUrl || undefined) ??
           preview?.coverUrls[0]),
-    { dim: 0.05 },
   );
 
   useEffect(() => {
@@ -552,12 +550,12 @@ function LibraryPlaylistContent() {
   if (!isLoading && loadFailed) {
     return (
       <div className="h-full w-full bg-transparent flex flex-col items-center justify-center gap-[6px] px-[24px] text-center">
-        <span className="text-[15px] font-[600] text-text-primary">
+        <span className="text-title font-[600] text-text-primary">
           {t(
             isLikesMode ? "playlist.likes_load_failed" : "playlist.load_failed",
           )}
         </span>
-        <span className="text-[13px] text-text-secondary">
+        <span className="text-body text-text-secondary">
           {t("playlist.load_failed_desc")}
         </span>
         {isLikesMode ? (
@@ -712,7 +710,7 @@ function LibraryPlaylistContent() {
                       <button
                         type="button"
                         onClick={() => setIsEditingDescription(true)}
-                        className="cursor-pointer border-0 bg-transparent p-0 text-left text-[13px] font-[400] text-text-tertiary transition-colors hover:text-text-primary"
+                        className="cursor-pointer border-0 bg-transparent p-0 text-left text-body font-[400] text-text-tertiary transition-colors hover:text-text-primary"
                       >
                         {t("common.add_description")}
                       </button>
@@ -897,23 +895,15 @@ function LibraryPlaylistContent() {
                 />
               </div>
 
-              <div
-                className={`grow shrink-0 mt-[20px] mx-[4px] rounded-t-[14px] bg-black/[0.03] dark:bg-white/[0.04] overflow-hidden px-[8px] pt-[8px] ${
-                  classicSurfaces ? "" : "backdrop-blur-xl"
-                }`}
-                style={{
-                  marginBottom: "calc(var(--page-inset-bottom) * -1)",
-                  paddingBottom: "calc(var(--page-inset-bottom) + 16px)",
-                }}
-              >
+              <ListPanel>
                 {currentTracks.length === 0 ? (
                   <div className="flex min-h-[50vh] flex-col items-center justify-center gap-[12px] text-center">
                     <PlaylistFill size={40} className="text-border-alpha-33" />
                     <div className="flex flex-col gap-[4px]">
-                      <p className="m-0 text-[15px] font-[500] text-text-primary">
+                      <p className="m-0 text-title font-[500] text-text-primary">
                         {t("playlist.empty_title")}
                       </p>
-                      <p className="m-0 text-[13px] text-text-tertiary">
+                      <p className="m-0 text-body text-text-tertiary">
                         {t("playlist.empty_subtitle")}
                       </p>
                     </div>
@@ -1055,7 +1045,7 @@ function LibraryPlaylistContent() {
                     />
                   </FloatingDragCard>
                 )}
-              </div>
+              </ListPanel>
             </div>
           </div>
         )}

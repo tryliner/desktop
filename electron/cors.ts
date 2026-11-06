@@ -58,6 +58,17 @@ export function needsOpenCors(url: string, allowLoopback = false): boolean {
   );
 }
 
+export function keepsOwnCors(url: string, allowLoopback = false): boolean {
+  let host: string;
+  try {
+    host = new URL(url).hostname;
+  } catch {
+    return false;
+  }
+  if (allowLoopback && LOOPBACK_HOSTS.has(host)) return true;
+  return host === "tryliner.fun" || host.endsWith(".tryliner.fun");
+}
+
 export type ResponseHeaders = Record<string, string[]>;
 
 export interface CorsResponse {
@@ -65,10 +76,21 @@ export interface CorsResponse {
   statusLine?: string;
 }
 
+function allowsCredentials(headers: ResponseHeaders | undefined): boolean {
+  return Object.entries(headers ?? {}).some(
+    ([name, value]) =>
+      name.toLowerCase() === "access-control-allow-credentials" &&
+      value.some((entry) => entry.trim().toLowerCase() === "true"),
+  );
+}
+
 export function withOpenCors(
   headers: ResponseHeaders | undefined,
   method: string,
+  ownCors = false,
 ): CorsResponse {
+  if (ownCors && headers && allowsCredentials(headers))
+    return { responseHeaders: headers };
   const responseHeaders: ResponseHeaders = {};
   for (const [name, value] of Object.entries(headers ?? {})) {
     if (!CORS_HEADERS.has(name.toLowerCase())) responseHeaders[name] = value;

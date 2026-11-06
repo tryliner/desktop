@@ -1,7 +1,5 @@
-import { forwardRef, memo, useCallback } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { ArrowLeftLine } from "@mingcute/react";
-import { useTranslation } from "@/languages";
+import { forwardRef, memo } from "react";
+import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import WindowControls, {
   WINDOW_CONTROLS_LAYOUT_ID,
@@ -9,47 +7,7 @@ import WindowControls, {
 } from "@/features/navigation/ui/WindowControls";
 import logo from "@/assets/logo.svg";
 import { cn } from "@/shared/lib";
-
-const BACK_BUTTON_ROUTES = [
-  "/library/playlist",
-  "/library/local",
-  "/library/cached",
-  "/library/saved",
-  "/artist",
-  "/collection",
-];
-
-function BackButton() {
-  const navigate = useNavigate();
-  const { t } = useTranslation();
-
-  const handleBack = useCallback(() => {
-    if (window.history.length > 1) {
-      navigate(-1);
-    } else {
-      navigate("/library");
-    }
-  }, [navigate]);
-
-  return (
-    <button
-      type="button"
-      onClick={handleBack}
-      aria-label={t("common.back")}
-      data-no-tooltip="true"
-      data-no-window-drag
-      className="group relative inline-flex h-[38px] shrink-0 items-center gap-[6px] rounded-[10px] px-[12px] active:scale-[0.96] transition-transform cursor-pointer select-none text-[13px] font-[500] border-0 !border-none bg-bg-glass backdrop-blur-[20px] text-text-primary after:pointer-events-none after:absolute after:inset-0 after:rounded-[10px] after:transition-colors after:duration-150 hover:after:bg-black/[0.05] dark:hover:after:bg-white/[0.08]"
-    >
-      <ArrowLeftLine
-        size={16}
-        className="transition-transform duration-150 group-hover:-translate-x-0.5"
-      />
-      <span className="relative -left-[1.5px] top-[1px]">
-        {t("common.back")}
-      </span>
-    </button>
-  );
-}
+import { HistoryNavIsland } from "./HistoryNavIsland";
 
 export interface HeaderProps {
   searchOpen?: boolean;
@@ -61,9 +19,6 @@ export const Header = forwardRef<HTMLElement, HeaderProps>(function Header(
   { className },
   ref,
 ) {
-  const { pathname } = useLocation();
-  const showBack = BACK_BUTTON_ROUTES.includes(pathname);
-
   return (
     <header
       ref={ref}
@@ -91,13 +46,8 @@ export const Header = forwardRef<HTMLElement, HeaderProps>(function Header(
         </Link>
       </div>
 
-      {showBack && (
-        <div className="flex-1 min-w-0 flex items-center pl-[22px]">
-          <BackButton />
-        </div>
-      )}
-
       <div className="flex items-center gap-[8px] mr-[6px] shrink-0">
+        <HistoryNavIsland />
         <motion.div
           layoutId={WINDOW_CONTROLS_LAYOUT_ID}
           transition={WINDOW_CONTROLS_MORPH}

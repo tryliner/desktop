@@ -31,8 +31,8 @@ const variantClasses: Record<NonNullable<ButtonProps["variant"]>, string> = {
 
 const sizeClasses: Record<NonNullable<ButtonProps["size"]>, string> = {
   default: "h-[44px] px-[18px] py-[8px]",
-  sm: "h-[36px] px-[14px] text-[13px]",
-  lg: "h-[52px] px-[24px] text-[15px]",
+  sm: "h-[36px] px-[14px] text-body",
+  lg: "h-[52px] px-[24px] text-title",
   icon: "h-[44px] w-[44px]",
 };
 
@@ -49,7 +49,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ) => (
     <button
       ref={ref}
-      className={`inline-flex items-center justify-center gap-[8px] rounded-md text-[13.5px] font-[400] transition-colors duration-150 active:scale-[0.96] disabled:pointer-events-none disabled:opacity-50 cursor-pointer ${
+      className={`inline-flex items-center justify-center gap-[8px] rounded-control text-[13.5px] font-[400] transition-colors duration-150 active:scale-[0.96] disabled:pointer-events-none disabled:opacity-50 cursor-pointer ${
         variantClasses[variant]
       } ${sizeClasses[size]} ${className}`.trim()}
       style={{

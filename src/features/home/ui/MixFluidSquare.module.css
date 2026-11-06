@@ -24,7 +24,7 @@
   filter: blur(5px);
   opacity: 0.95;
   animation: fluidSwirl 4.5s ease-in-out infinite alternate;
-  will-change: transform;
+  animation-play-state: paused;
   transition: background-color 0.8s ease;
 }
 
@@ -38,7 +38,7 @@
   filter: blur(4px);
   opacity: 0.8;
   animation: fluidCenterSpin 6.5s cubic-bezier(0.42, 0, 0.58, 1) infinite;
-  will-change: transform;
+  animation-play-state: paused;
   transition: background-color 0.8s ease;
 }
 
@@ -52,8 +52,14 @@
   filter: blur(4px);
   opacity: 0.85;
   animation: fluidDrift 5.5s ease-in-out infinite alternate;
-  will-change: transform;
+  animation-play-state: paused;
   transition: background-color 0.8s ease;
+}
+
+:global(.group):hover > .container > .blobBottomRight,
+:global(.group):hover > .container > .blobCenterSwirl,
+:global(.group):hover > .container > .blobTopLeft {
+  animation-play-state: running;
 }
 
 @keyframes fluidSwirl {

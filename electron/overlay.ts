@@ -5,6 +5,13 @@ import {
   createCompositorBridge,
   type CompositorBridge,
 } from "./compositor/index.js";
+import {
+  MediaShortcuts,
+  mediaActionFromCompositor,
+  sanitizeMediaBindings,
+  type MediaShortcutAction,
+  type MediaShortcutBindings,
+} from "./mediaShortcuts.js";
 
 export type OverlayPosition = "top-left" | "top-center" | "top-right";
 
@@ -13,12 +20,28 @@ const OVERLAY_MARGIN = 20;
 const TOGGLE_ACTION = "toggle-overlay";
 const LIKE_ACTION = "like-track";
 const COMPOSITOR_SETTLE_MS = 300;
+const SEEK_STEP_MS = 5_000;
+
+const MEDIA_OVERLAY_ACTIONS: Record<
+  Exclude<MediaShortcutAction, "showMainWindow">,
+  { type: string; payload?: Record<string, unknown> }
+> = {
+  playPause: { type: "togglePlay" },
+  nextTrack: { type: "next" },
+  prevTrack: { type: "prev" },
+  seekForward: { type: "seekBy", payload: { deltaMs: SEEK_STEP_MS } },
+  seekBackward: { type: "seekBy", payload: { deltaMs: -SEEK_STEP_MS } },
+  volumeUp: { type: "volumeUp" },
+  volumeDown: { type: "volumeDown" },
+  toggleMute: { type: "toggleMute" },
+};
 
 export interface OverlaySettings {
   enabled: boolean;
   position: OverlayPosition;
   shortcut: string;
   likeShortcut?: string;
+  mediaShortcuts?: MediaShortcutBindings;
   autoShowOnMinimize: boolean;
   alwaysOnTop: boolean;
 }
@@ -135,6 +158,10 @@ export class OverlayManager {
   private shortcutsPaused = false;
   private currentRegisteredShortcut: string | null = null;
   private currentRegisteredLikeShortcut: string | null = null;
+  private readonly mediaShortcuts = new MediaShortcuts(
+    () => this.compositor,
+    (action) => this.handleMediaShortcut(action),
+  );
   private autoShowOnMinimize = true;
   private alwaysOnTop = true;
   private wasAutoOpened = false;
@@ -178,7 +205,41 @@ export class OverlayManager {
       if (this.isAuthenticated && this.enabled) this.toggleOverlay();
       return;
     }
-    if (action === LIKE_ACTION) this.triggerLike();
+    if (action === LIKE_ACTION) {
+      this.triggerLike();
+      return;
+    }
+    const media = mediaActionFromCompositor(action);
+    if (media) this.handleMediaShortcut(media);
+  }
+
+  private handleMediaShortcut(action: MediaShortcutAction) {
+    if (!this.isAuthenticated) return;
+    if (action === "showMainWindow") {
+      this.focusMainWindow();
+      return;
+    }
+    if (!this.mainWindow || this.mainWindow.isDestroyed()) return;
+    this.mainWindow.webContents.send(
+      "overlay:action",
+      MEDIA_OVERLAY_ACTIONS[action],
+    );
+  }
+
+  private focusMainWindow() {
+    if (!this.mainWindow || this.mainWindow.isDestroyed()) return;
+    const win = this.mainWindow;
+    const restore = () => {
+      if (win.isDestroyed()) return;
+      if (win.isMinimized()) {
+        win.restore();
+      }
+      win.show();
+      win.focus();
+    };
+    if (this.focusMainHandler && win.isMinimized())
+      this.focusMainHandler(restore);
+    else restore();
   }
 
   private triggerLike() {
@@ -255,6 +316,9 @@ export class OverlayManager {
         if (typeof data.likeShortcut === "string" && data.likeShortcut.trim()) {
           this.likeShortcut = data.likeShortcut.trim();
         }
+        this.mediaShortcuts.setBindings(
+          sanitizeMediaBindings(data.mediaShortcuts, normalizeShortcut),
+        );
         if (typeof data.autoShowOnMinimize === "boolean") {
           this.autoShowOnMinimize = data.autoShowOnMinimize;
         }
@@ -276,6 +340,7 @@ export class OverlayManager {
         position: this.position,
         shortcut: this.shortcut,
         likeShortcut: this.likeShortcut,
+        mediaShortcuts: this.mediaShortcuts.getBindings(),
         autoShowOnMinimize: this.autoShowOnMinimize,
         alwaysOnTop: this.alwaysOnTop,
       };
@@ -332,6 +397,7 @@ export class OverlayManager {
     this.resetContentReady();
     this.unregisterShortcut();
     this.unregisterLikeShortcut();
+    this.mediaShortcuts.unregister();
     if (this.overlayWindow && !this.overlayWindow.isDestroyed()) {
       try {
         this.overlayWindow.destroy();
@@ -350,17 +416,25 @@ export class OverlayManager {
   }
 
   public pauseShortcuts(paused: boolean) {
+    if (this.shortcutsPaused === paused) return;
     this.shortcutsPaused = paused;
     if (paused) {
       this.unregisterShortcut();
       this.unregisterLikeShortcut();
+      this.mediaShortcuts.unregister();
     } else {
       if (this.enabled) {
         this.registerShortcut();
       } else {
         this.registerLikeShortcut();
       }
+      this.registerMediaShortcuts();
     }
+  }
+
+  public registerMediaShortcuts() {
+    if (this.disposed || this.shortcutsPaused) return;
+    this.mediaShortcuts.register();
   }
 
   public registerShortcut(newShortcut?: string) {
@@ -796,6 +870,7 @@ export class OverlayManager {
   private scheduleWarm() {
     if (
       this.disposed ||
+      this.compositor ||
       !this.isAuthenticated ||
       !this.enabled ||
       !this.autoShowOnMinimize
@@ -1144,21 +1219,7 @@ export class OverlayManager {
         return;
       }
       if (action.type === "focusMainWindow") {
-        if (this.mainWindow && !this.mainWindow.isDestroyed()) {
-          const win = this.mainWindow;
-          const restore = () => {
-            if (win.isDestroyed()) return;
-            if (win.isMinimized()) {
-              win.restore();
-            }
-            win.show();
-            win.focus();
-          };
-          // animated (windows 11 add-on) only when coming back from minimized
-          if (this.focusMainHandler && win.isMinimized())
-            this.focusMainHandler(restore);
-          else restore();
-        }
+        this.focusMainWindow();
         return;
       }
       if (this.mainWindow && !this.mainWindow.isDestroyed()) {
@@ -1244,6 +1305,20 @@ export class OverlayManager {
           if (nextLikeShortcut !== this.likeShortcut) {
             this.likeShortcut = nextLikeShortcut;
             this.registerLikeShortcut();
+          }
+        }
+
+        if (
+          settings.mediaShortcuts &&
+          typeof settings.mediaShortcuts === "object"
+        ) {
+          const nextMedia = sanitizeMediaBindings(
+            settings.mediaShortcuts,
+            normalizeShortcut,
+          );
+          if (!this.mediaShortcuts.matches(nextMedia)) {
+            this.mediaShortcuts.setBindings(nextMedia);
+            this.registerMediaShortcuts();
           }
         }
 

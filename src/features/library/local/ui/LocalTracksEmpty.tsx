@@ -17,10 +17,10 @@ export default function LocalTracksEmpty({
     <div className="flex min-h-[50vh] flex-col items-center justify-center gap-[14px] text-center">
       <FileMusicLine size={40} className="text-border-alpha-33" />
       <div className="flex flex-col gap-[4px]">
-        <p className="m-0 text-[15px] font-[500] text-text-primary">
+        <p className="m-0 text-title font-[500] text-text-primary">
           {t("library.local.empty_title")}
         </p>
-        <p className="m-0 max-w-[360px] text-[13px] text-text-tertiary">
+        <p className="m-0 max-w-[360px] text-body text-text-tertiary">
           {t("library.local.empty_subtitle")}
         </p>
       </div>

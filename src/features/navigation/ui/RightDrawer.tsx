@@ -262,10 +262,8 @@ const QueueList = memo(function QueueList({
                   ? (e) => handleCardGrab(index, item, e)
                   : undefined
               }
-              className={`p-[8px] rounded-[12px] transition-colors duration-150 ${
-                isCurrent
-                  ? "bg-black/[0.065] dark:bg-white/[0.08]"
-                  : "bg-transparent hover:bg-black/[0.035] dark:hover:bg-white/[0.04]"
+              className={`p-[8px] rounded-item transition-colors duration-150 ${
+                isCurrent ? "bg-fill" : "bg-transparent hover:bg-fill-subtle"
               }`}
               imageShape="square"
               onPlay={() => {
@@ -436,7 +434,7 @@ function RightDrawer({ onClose }: RightDrawerProps) {
               scrollContainerRef={queueScrollRef}
             />
           ) : (
-            <div className="h-full flex items-center justify-center text-text-tertiary text-[14px]">
+            <div className="h-full flex items-center justify-center text-text-tertiary text-label">
               {t("player.queue_empty")}
             </div>
           )}

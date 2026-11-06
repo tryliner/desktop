@@ -13,6 +13,10 @@ import {
 } from "./innertubeArtistMapper";
 import { mapInnertubeBrowseTracks } from "./innertubeCollectionMapper";
 import {
+  channelIdOfArtist,
+  fetchChannelUploads,
+} from "./innertubeChannelUploads";
+import {
   getQueueItems,
   getTrackItem,
   mapInnertubeRadioTrack,
@@ -101,16 +105,21 @@ async function loadArtist(
   const body = await browse(artistId, undefined, signal);
   const artist = mapInnertubeArtistDetails(artistId, body);
   if (!artist) return null;
+  const artistRef = { id: artist.id, name: artist.name };
   const topSongs = getArtistTopSongsBrowse(body);
-  if (!topSongs) return artist;
-  const allTracks = await browse(topSongs.browseId, topSongs.params, signal)
-    .then((tracksBody) =>
-      mapInnertubeBrowseTracks(tracksBody, [
-        { id: artist.id, name: artist.name },
-      ]),
-    )
-    .catch(() => []);
-  return allTracks.length > 0 ? { ...artist, tracks: allTracks } : artist;
+  const allTracks = topSongs
+    ? await browse(topSongs.browseId, topSongs.params, signal)
+        .then((tracksBody) => mapInnertubeBrowseTracks(tracksBody, [artistRef]))
+        .catch(() => [])
+    : [];
+  if (allTracks.length > 0) return { ...artist, tracks: allTracks };
+  if (artist.tracks.length > 0) return artist;
+  const channelId = channelIdOfArtist(artistId, body);
+  if (!channelId) return artist;
+  const uploads = await fetchChannelUploads(channelId, artistRef, signal).catch(
+    () => [],
+  );
+  return uploads.length > 0 ? { ...artist, tracks: uploads } : artist;
 }
 
 async function getArtistImage(

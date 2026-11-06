@@ -12,8 +12,8 @@ export interface TextInputProps extends Omit<
 }
 
 const sizeClasses: Record<NonNullable<TextInputProps["size"]>, string> = {
-  default: "h-[44px] px-[14px] text-[14px]",
-  sm: "h-[36px] px-[12px] text-[13px]",
+  default: "h-[44px] px-[14px] text-label",
+  sm: "h-[36px] px-[12px] text-body",
 };
 
 const TextInput = forwardRef<HTMLInputElement, TextInputProps>(
@@ -45,7 +45,7 @@ const TextInput = forwardRef<HTMLInputElement, TextInputProps>(
 
     return (
       <div
-        className={`group flex items-center gap-[10px] rounded-md border ${bgClass} ${borderClass} transition-[border-color,box-shadow] duration-150 ${disabled ? "opacity-50 pointer-events-none" : ""} ${sizeClasses[size]} ${className}`.trim()}
+        className={`group flex items-center gap-[10px] rounded-control border ${bgClass} ${borderClass} transition-[border-color,box-shadow] duration-150 ${disabled ? "opacity-50 pointer-events-none" : ""} ${sizeClasses[size]} ${className}`.trim()}
       >
         {icon && <span className="shrink-0 text-text-secondary">{icon}</span>}
         <input

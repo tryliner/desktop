@@ -25,7 +25,7 @@ export function LyricsNotchStatus({ kind }: LyricsNotchStatusProps) {
       <span className="flex h-[26px] w-[26px] items-center justify-center">
         <MusicFill size={16} />
       </span>
-      <span className="text-[12px] leading-[26px] font-[500]">
+      <span className="text-caption leading-[26px] font-[500]">
         {kind === "missing"
           ? t("player.no_lyrics")
           : t("player.instrumental").replace(/^♪\s*/, "")}

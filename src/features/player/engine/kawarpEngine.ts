@@ -6,7 +6,7 @@ import {
 
 const BLUR_SIZE = 160;
 const WARP_SCALE = 0.25;
-const MAX_FPS = 60;
+const MAX_FPS = 30;
 const FRAME_MS = 1000 / MAX_FPS;
 const FRAME_SLACK_MS = 2;
 

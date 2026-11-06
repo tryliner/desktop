@@ -304,7 +304,7 @@ export function OverlayPlayer() {
             onMouseEnter={() => setIsInfoHovered(true)}
             onMouseLeave={() => setIsInfoHovered(false)}
           >
-            <div className="relative h-[32px] w-[32px] shrink-0 overflow-hidden rounded-[12px] bg-[#16161a]">
+            <div className="relative h-[32px] w-[32px] shrink-0 overflow-hidden rounded-item bg-[#16161a]">
               {state.track?.coverUrl || state.track?.cover ? (
                 <CoverImage
                   key={state.track.coverUrl || state.track.cover}
@@ -315,7 +315,7 @@ export function OverlayPlayer() {
                   priority
                   unoptimized
                   draggable={false}
-                  className="rounded-[12px] object-cover pointer-events-none select-none"
+                  className="rounded-item object-cover pointer-events-none select-none"
                 />
               ) : (
                 <div className="flex h-full w-full items-center justify-center text-[11px] text-white/30 select-none">
@@ -328,7 +328,7 @@ export function OverlayPlayer() {
               <ScrollableText
                 text={state.track?.title || "No track playing"}
                 isParentHovered={isInfoHovered}
-                className="text-[13px] font-normal leading-[16px] text-white tracking-tight"
+                className="text-body font-normal leading-[16px] text-white tracking-tight"
               />
               <ScrollableText
                 text={state.track?.artist || ""}

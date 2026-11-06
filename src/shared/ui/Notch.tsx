@@ -9,6 +9,7 @@ import { cn } from "@/shared/lib/utils";
 
 const R = 8;
 const H = 30;
+const B = 15;
 const PAD_BOTTOM = 4;
 const MASK_BLEED = 4;
 
@@ -16,13 +17,14 @@ type NotchAlign = "start" | "center" | "end";
 
 function notchShape(align: NotchAlign, contentWidth: number) {
   const r = R;
+  const b = B;
   if (align === "center") {
     const w = contentWidth + 2 * r;
     return {
       w,
       h: H,
       left: r,
-      d: `M0 0H${w}A${r} ${r} 0 0 0 ${w - r} ${r}V${H - r}A${r} ${r} 0 0 1 ${w - 2 * r} ${H}H${2 * r}A${r} ${r} 0 0 1 ${r} ${H - r}V${r}A${r} ${r} 0 0 0 0 0Z`,
+      d: `M0 0H${w}A${r} ${r} 0 0 0 ${w - r} ${r}V${H - b}A${b} ${b} 0 0 1 ${w - r - b} ${H}H${r + b}A${b} ${b} 0 0 1 ${r} ${H - b}V${r}A${r} ${r} 0 0 0 0 0Z`,
     };
   }
   const w = contentWidth + r;
@@ -31,14 +33,14 @@ function notchShape(align: NotchAlign, contentWidth: number) {
       w,
       h: H + r,
       left: r,
-      d: `M0 0H${w}V${H + r}A${r} ${r} 0 0 0 ${w - r} ${H}H${2 * r}A${r} ${r} 0 0 1 ${r} ${H - r}V${r}A${r} ${r} 0 0 0 0 0Z`,
+      d: `M0 0H${w}V${H + r}A${r} ${r} 0 0 0 ${w - r} ${H}H${r + b}A${b} ${b} 0 0 1 ${r} ${H - b}V${r}A${r} ${r} 0 0 0 0 0Z`,
     };
   }
   return {
     w,
     h: H + r,
     left: 0,
-    d: `M${w} 0H0V${H + r}A${r} ${r} 0 0 1 ${r} ${H}H${w - 2 * r}A${r} ${r} 0 0 0 ${w - r} ${H - r}V${r}A${r} ${r} 0 0 1 ${w} 0Z`,
+    d: `M${w} 0H0V${H + r}A${r} ${r} 0 0 1 ${r} ${H}H${w - r - b}A${b} ${b} 0 0 0 ${w - r} ${H - b}V${r}A${r} ${r} 0 0 1 ${w} 0Z`,
   };
 }
 
@@ -48,6 +50,7 @@ export interface NotchProps {
   blur?: boolean;
   children: ReactNode;
   className?: string;
+  contentClassName?: string;
 }
 
 export function Notch({
@@ -56,6 +59,7 @@ export function Notch({
   blur = true,
   children,
   className,
+  contentClassName,
 }: NotchProps) {
   const contentRef = useRef<HTMLDivElement>(null);
   const [contentWidth, setContentWidth] = useState(0);
@@ -119,8 +123,11 @@ export function Notch({
         className={cn(
           "absolute top-0 flex items-center gap-[2px] text-text-primary",
           align === "center" && "px-[4px]",
-          align === "end" && "pr-[2px] pl-[6px]",
-          align === "start" && "pr-[6px] pl-[2px]",
+          align === "end" &&
+            "pr-[2px] pl-[6px] [&>button:first-child]:rounded-bl-[10px]",
+          align === "start" &&
+            "pr-[6px] pl-[2px] [&>button:last-child]:rounded-br-[10px]",
+          contentClassName,
         )}
         style={{ height: H - PAD_BOTTOM, left }}
       >

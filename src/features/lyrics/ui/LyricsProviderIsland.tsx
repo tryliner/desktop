@@ -150,7 +150,7 @@ export function LyricsProviderIsland() {
             type="button"
             onClick={handlePrev}
             aria-label="Previous provider"
-            className="w-[26px] h-[26px] min-w-[26px] min-h-[26px] max-h-[26px] rounded-md flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 active:scale-95 transition-all border-none bg-transparent cursor-pointer"
+            className="w-[26px] h-[26px] min-w-[26px] min-h-[26px] max-h-[26px] rounded-control flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 active:scale-95 transition-all border-none bg-transparent cursor-pointer"
           >
             <LeftLine size={14} />
           </button>
@@ -164,7 +164,7 @@ export function LyricsProviderIsland() {
               setDropdownOpen((v) => !v);
             }
           }}
-          className={`flex items-center gap-[6px] h-[26px] min-h-[26px] max-h-[26px] px-[8px] rounded-md text-[12px] font-[500] text-white transition-all border-none bg-transparent ${
+          className={`flex items-center gap-[6px] h-[26px] min-h-[26px] max-h-[26px] px-[8px] rounded-control text-caption font-[500] text-white transition-all border-none bg-transparent ${
             hasMultiple ? "hover:bg-white/10 cursor-pointer" : "cursor-default"
           }`}
         >
@@ -191,7 +191,7 @@ export function LyricsProviderIsland() {
             type="button"
             onClick={handleNext}
             aria-label="Next provider"
-            className="w-[26px] h-[26px] min-w-[26px] min-h-[26px] max-h-[26px] rounded-md flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 active:scale-95 transition-all border-none bg-transparent cursor-pointer"
+            className="w-[26px] h-[26px] min-w-[26px] min-h-[26px] max-h-[26px] rounded-control flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 active:scale-95 transition-all border-none bg-transparent cursor-pointer"
           >
             <RightLine size={14} />
           </button>
@@ -209,7 +209,7 @@ export function LyricsProviderIsland() {
               }}
               aria-label={`${t("player.earlier")} (-0.1s)`}
               title={`${t("player.earlier")} (-0.1s)`}
-              className="w-[26px] h-[26px] min-w-[26px] min-h-[26px] max-h-[26px] rounded-md flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 active:scale-95 transition-all border-none bg-transparent cursor-pointer"
+              className="w-[26px] h-[26px] min-w-[26px] min-h-[26px] max-h-[26px] rounded-control flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 active:scale-95 transition-all border-none bg-transparent cursor-pointer"
             >
               <MinimizeLine size={12} />
             </button>
@@ -220,7 +220,7 @@ export function LyricsProviderIsland() {
                 setDropdownOpen(false);
                 setOffsetOpen((v) => !v);
               }}
-              className={`flex items-center gap-[4px] h-[26px] min-h-[26px] max-h-[26px] px-[6px] rounded-md text-[12px] font-mono transition-all border-none bg-transparent hover:bg-white/10 cursor-pointer ${
+              className={`flex items-center gap-[4px] h-[26px] min-h-[26px] max-h-[26px] px-[6px] rounded-control text-caption font-mono transition-all border-none bg-transparent hover:bg-white/10 cursor-pointer ${
                 offsetMs !== 0
                   ? "text-white font-[600]"
                   : "text-white/80 font-[500]"
@@ -242,7 +242,7 @@ export function LyricsProviderIsland() {
               }}
               aria-label={`${t("player.later")} (+0.1s)`}
               title={`${t("player.later")} (+0.1s)`}
-              className="w-[26px] h-[26px] min-w-[26px] min-h-[26px] max-h-[26px] rounded-md flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 active:scale-95 transition-all border-none bg-transparent cursor-pointer"
+              className="w-[26px] h-[26px] min-w-[26px] min-h-[26px] max-h-[26px] rounded-control flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 active:scale-95 transition-all border-none bg-transparent cursor-pointer"
             >
               <AddLine size={12} />
             </button>
@@ -269,7 +269,7 @@ export function LyricsProviderIsland() {
                     selectProvider(option.provider);
                     setDropdownOpen(false);
                   }}
-                  className={`flex items-center justify-between gap-[8px] w-full px-[8px] py-[6px] rounded-md text-[12px] transition-colors border-none cursor-pointer text-left ${
+                  className={`flex items-center justify-between gap-[8px] w-full px-[8px] py-[6px] rounded-control text-caption transition-colors border-none cursor-pointer text-left ${
                     isActive
                       ? "bg-white/15 text-white font-[500]"
                       : "bg-transparent text-white/70 hover:bg-white/10 hover:text-white font-[400]"
@@ -295,12 +295,12 @@ export function LyricsProviderIsland() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -4 }}
             transition={{ duration: 0.12, ease: "easeOut" }}
-            className="absolute top-full right-0 mt-[6px] w-[260px] rounded-xl bg-black/80 backdrop-blur-2xl p-[12px] z-50 flex flex-col gap-[10px] text-white"
+            className="absolute top-full right-0 mt-[6px] w-[260px] rounded-item bg-black/80 backdrop-blur-2xl p-[12px] z-50 flex flex-col gap-[10px] text-white"
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-[6px]">
                 <TimeLine size={14} className="text-white" />
-                <span className="text-[12px] font-[600] text-white">
+                <span className="text-caption font-[600] text-white">
                   {t("player.lyrics_offset")}
                 </span>
               </div>
@@ -308,7 +308,7 @@ export function LyricsProviderIsland() {
                 <button
                   type="button"
                   onClick={resetOffset}
-                  className="inline-flex items-center gap-[4px] px-[6px] py-[2px] rounded-md text-[11px] font-[500] text-white/70 hover:text-white hover:bg-white/10 border-none bg-transparent cursor-pointer transition-colors"
+                  className="inline-flex items-center gap-[4px] px-[6px] py-[2px] rounded-control text-[11px] font-[500] text-white/70 hover:text-white hover:bg-white/10 border-none bg-transparent cursor-pointer transition-colors"
                 >
                   <Refresh1Line size={11} />
                   <span>{t("player.reset")}</span>
@@ -321,7 +321,7 @@ export function LyricsProviderIsland() {
                 type="button"
                 onClick={() => adjustOffset(unit === "ms" ? -50 : -100)}
                 aria-label="Decrease offset"
-                className="w-[26px] h-[26px] rounded-md flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 active:scale-95 transition-all border-none bg-transparent cursor-pointer shrink-0"
+                className="w-[26px] h-[26px] rounded-control flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 active:scale-95 transition-all border-none bg-transparent cursor-pointer shrink-0"
               >
                 <MinimizeLine size={12} />
               </button>
@@ -354,7 +354,7 @@ export function LyricsProviderIsland() {
                     }
                   }}
                   placeholder="0"
-                  className="w-full text-center text-[13px] font-mono font-[600] text-white bg-transparent border-none outline-none p-0"
+                  className="w-full text-center text-body font-mono font-[600] text-white bg-transparent border-none outline-none p-0"
                 />
               </div>
 
@@ -362,12 +362,12 @@ export function LyricsProviderIsland() {
                 type="button"
                 onClick={() => adjustOffset(unit === "ms" ? 50 : 100)}
                 aria-label="Increase offset"
-                className="w-[26px] h-[26px] rounded-md flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 active:scale-95 transition-all border-none bg-transparent cursor-pointer shrink-0"
+                className="w-[26px] h-[26px] rounded-control flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 active:scale-95 transition-all border-none bg-transparent cursor-pointer shrink-0"
               >
                 <AddLine size={12} />
               </button>
 
-              <div className="flex items-center bg-white/10 rounded-md p-[2px] shrink-0">
+              <div className="flex items-center bg-white/10 rounded-control p-[2px] shrink-0">
                 <button
                   type="button"
                   onClick={() => setUnit("ms")}
@@ -404,7 +404,7 @@ export function LyricsProviderIsland() {
                     key={delta}
                     type="button"
                     onClick={() => adjustOffset(delta)}
-                    className="py-[4px] text-[11px] font-mono rounded-md bg-white/[0.08] hover:bg-white/15 text-white/70 hover:text-white transition-all active:scale-95 text-center border-none cursor-pointer"
+                    className="py-[4px] text-[11px] font-mono rounded-control bg-white/[0.08] hover:bg-white/15 text-white/70 hover:text-white transition-all active:scale-95 text-center border-none cursor-pointer"
                   >
                     {delta / 1000}s
                   </button>
@@ -414,7 +414,7 @@ export function LyricsProviderIsland() {
                     key={delta}
                     type="button"
                     onClick={() => adjustOffset(delta)}
-                    className="py-[4px] text-[11px] font-mono rounded-md bg-white/[0.08] hover:bg-white/15 text-white/70 hover:text-white transition-all active:scale-95 text-center border-none cursor-pointer"
+                    className="py-[4px] text-[11px] font-mono rounded-control bg-white/[0.08] hover:bg-white/15 text-white/70 hover:text-white transition-all active:scale-95 text-center border-none cursor-pointer"
                   >
                     +{delta / 1000}s
                   </button>

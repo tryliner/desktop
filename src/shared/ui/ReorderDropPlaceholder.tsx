@@ -12,7 +12,7 @@ function ReorderDropPlaceholder({
   return (
     <div
       style={style}
-      className={`w-full h-full rounded-md bg-border-alpha-14 pointer-events-none select-none transition-opacity duration-150 ${className}`}
+      className={`w-full h-full rounded-control bg-border-alpha-14 pointer-events-none select-none transition-opacity duration-150 ${className}`}
     />
   );
 }

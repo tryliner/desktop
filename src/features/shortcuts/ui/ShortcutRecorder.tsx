@@ -18,6 +18,7 @@ export interface ShortcutRecorderProps {
   onChange: (newValue: string) => void;
   onReset: () => void;
   isGlobal?: boolean;
+  clearable?: boolean;
   validateCandidate?: (candidate: string) => { conflictWith: string } | null;
   disabled?: boolean;
   isRecording?: boolean;
@@ -28,6 +29,7 @@ export function ShortcutRecorder({
   value,
   onChange,
   isGlobal = false,
+  clearable = false,
   validateCandidate,
   disabled = false,
   isRecording: isRecordingProp,
@@ -104,6 +106,20 @@ export function ShortcutRecorder({
         setHeldModifiers([]);
         setErrorMessage(null);
         setIsRecording(false);
+        return;
+      }
+
+      const hasAnyModifier = e.ctrlKey || e.altKey || e.shiftKey || e.metaKey;
+      if (
+        clearable &&
+        !hasAnyModifier &&
+        (e.key === "Backspace" || e.key === "Delete")
+      ) {
+        if (errorTimeoutRef.current) clearTimeout(errorTimeoutRef.current);
+        setErrorMessage(null);
+        setHeldModifiers([]);
+        setIsRecording(false);
+        onChange("");
         return;
       }
 
@@ -202,6 +218,7 @@ export function ShortcutRecorder({
   }, [
     isRecording,
     isGlobal,
+    clearable,
     validateCandidate,
     onChange,
     t,
@@ -228,10 +245,10 @@ export function ShortcutRecorder({
             ? "opacity-50 cursor-not-allowed bg-transparent"
             : isRecording
               ? errorMessage
-                ? "h-[30px] px-[12px] rounded-[8px] bg-rose-700/90 text-white"
+                ? "h-[30px] px-[12px] rounded-control bg-rose-700/90 text-white"
                 : heldModifiers.length > 0
-                  ? "h-[30px] px-[12px] rounded-[8px] bg-black/[0.12] text-text-primary dark:bg-black/50"
-                  : "h-[30px] px-[12px] rounded-[8px] bg-black/[0.08] text-text-secondary dark:bg-black/40"
+                  ? "h-[30px] px-[12px] rounded-control bg-black/[0.12] text-text-primary dark:bg-black/50"
+                  : "h-[30px] px-[12px] rounded-control bg-black/[0.08] text-text-secondary dark:bg-black/40"
               : "bg-transparent p-0"
         }`}
       >
@@ -249,7 +266,7 @@ export function ShortcutRecorder({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 2 }}
               transition={{ duration: 0.08, ease: "easeOut" }}
-              className="flex items-center gap-[8px] leading-none text-[13px] font-medium"
+              className="flex items-center gap-[8px] leading-none text-body font-medium"
             >
               {heldModifiers.length > 0
                 ? `${heldModifiers.join(" + ")} + ...`
@@ -267,14 +284,20 @@ export function ShortcutRecorder({
               transition={{ duration: 0.1, ease: "easeOut" }}
               className="flex items-center gap-1 select-none"
             >
-              {getAcceleratorKeycaps(value).map((chip, idx) => (
-                <span
-                  key={idx}
-                  className="inline-flex items-center justify-center min-w-[30px] h-[30px] px-[10px] rounded-[8px] bg-black/[0.08] text-text-primary text-[13px] font-[500] leading-none transition-colors group-hover:bg-black/[0.12] dark:bg-black/40 dark:group-hover:bg-black/50"
-                >
-                  {chip}
+              {!value ? (
+                <span className="inline-flex items-center justify-center h-[30px] px-[10px] rounded-control bg-black/[0.05] text-text-tertiary text-body font-[500] leading-none dark:bg-black/25">
+                  {t("settings.shortcuts.not_set") || "Not set"}
                 </span>
-              ))}
+              ) : (
+                getAcceleratorKeycaps(value).map((chip, idx) => (
+                  <span
+                    key={idx}
+                    className="inline-flex items-center justify-center min-w-[30px] h-[30px] px-[10px] rounded-control bg-black/[0.08] text-text-primary text-body font-[500] leading-none transition-colors group-hover:bg-black/[0.12] dark:bg-black/40 dark:group-hover:bg-black/50"
+                  >
+                    {chip}
+                  </span>
+                ))
+              )}
             </motion.div>
           )}
         </AnimatePresence>
@@ -288,7 +311,7 @@ export function ShortcutRecorder({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 4, scale: 0.95 }}
             transition={{ duration: 0.12, ease: "easeOut" }}
-            className="absolute left-0 top-full mt-[6px] z-40 pointer-events-none whitespace-nowrap px-[10px] py-[6px] rounded-[8px] bg-rose-600 shadow-xl flex items-center gap-1.5 text-[12px] font-[500] text-white select-none border-0"
+            className="absolute left-0 top-full mt-[6px] z-40 pointer-events-none whitespace-nowrap px-[10px] py-[6px] rounded-control bg-rose-600 shadow-xl flex items-center gap-1.5 text-caption font-[500] text-white select-none border-0"
           >
             <span>{errorMessage}</span>
           </motion.div>

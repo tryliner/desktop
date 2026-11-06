@@ -79,6 +79,7 @@ async function getArtist(
   if (!artist) throw new SoundCloudCatalogError("Artist was not found.", 404);
   const cover = soundCloudCover(user.avatar_url);
   const bio = trimmedString(user.description);
+  const followers = numberValue(user.followers_count);
   const { albums, singles } = splitReleases(releases);
   return {
     type: "artist",
@@ -86,6 +87,7 @@ async function getArtist(
     name: trimmedString(user.full_name) ?? artist.name,
     ...(bio ? { bio } : {}),
     ...(cover ? { cover } : {}),
+    ...(followers !== undefined ? { followers } : {}),
     verified: user.verified === true,
     tracks: uniqueTracks([
       ...mapSoundCloudTracks(topTracks),

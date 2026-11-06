@@ -37,23 +37,10 @@ import { useTranslation } from "@/languages";
 import { useModalStore } from "@/features/library";
 import { buildShareUrl } from "@/shared/utils/share";
 import { useExternalItems } from "@/features/library/hooks";
+import ArtistAboutText from "./ArtistAboutText";
 import ArtistProfileModal from "./ArtistProfileModal";
 import ArtistPageSkeleton from "./ArtistPageSkeleton";
 import { useArtist } from "../hooks/useArtist";
-
-function stripMarkdown(text: string): string {
-  return text
-    .replace(/(Дискография)(Официальный)/g, "$1\n\n$2")
-    .replace(
-      /(сайт|ВКонтакте|канал|#\d|TikTok)(Официальный|Сообщество|Страница|Телеграм|YouTube|TikTok|Twitch)/g,
-      "$1, $2",
-    )
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
-    .replace(/\*\*([^*]+)\*\*/g, "$1")
-    .replace(/\*([^*]+)\*/g, "$1")
-    .replace(/^•\s*/gm, "")
-    .trim();
-}
 
 function VerifiedBadge() {
   return (
@@ -270,8 +257,8 @@ function ArtistContent() {
             >
               <div className="pl-[16px] pr-[12px] pt-[8px]" data-no-window-drag>
                 <EntityHero
-                  contentClassName="self-stretch justify-center pt-0"
-                  actionsClassName="mt-[20px]"
+                  contentClassName="self-stretch justify-center pt-0 pb-[8px]"
+                  actionsClassName="mt-[14px]"
                   coverClassName="h-[144px] w-[144px] rounded-full bg-border-alpha-14"
                   cover={
                     data.coverUrl ? (
@@ -296,8 +283,18 @@ function ArtistContent() {
                     </div>
                   }
                   subtitle={
-                    audienceLabel ? (
-                      <p className={HERO_SUBTITLE_CLASS}>{audienceLabel}</p>
+                    audienceLabel || data.description ? (
+                      <>
+                        {audienceLabel && (
+                          <p className={HERO_SUBTITLE_CLASS}>{audienceLabel}</p>
+                        )}
+                        {data.description && (
+                          <ArtistAboutText
+                            description={data.description}
+                            onShowAll={() => setIsProfileModalOpen(true)}
+                          />
+                        )}
+                      </>
                     ) : undefined
                   }
                   actions={
@@ -380,7 +377,7 @@ function ArtistContent() {
                         <button
                           type="button"
                           onClick={() => setShowAllTracks((prev) => !prev)}
-                          className="text-[13px] font-[500] text-text-secondary hover:text-text-primary transition-colors cursor-pointer bg-transparent border-0 p-0"
+                          className="text-body font-[500] text-text-secondary hover:text-text-primary transition-colors cursor-pointer bg-transparent border-0 p-0"
                         >
                           {showAllTracks
                             ? t("artist.show_less")
@@ -464,30 +461,6 @@ function ArtistContent() {
                           />
                         ))}
                       </ScrollableRow>
-                    </section>
-                  )}
-
-                  {data.description && (
-                    <section>
-                      <h2 className={`${sectionTitleClass} mb-[16px]`}>
-                        {t("artist.about_artist")}
-                      </h2>
-                      <div
-                        className={`max-w-[720px] rounded-[14px] p-[16px] flex flex-col gap-[6px] text-text-primary bg-black/[0.03] dark:bg-white/[0.04] backdrop-blur-xl`}
-                      >
-                        <p className="m-0 text-[13px] leading-[1.5] text-text-secondary font-[400] select-text line-clamp-3">
-                          {stripMarkdown(data.description)}
-                        </p>
-                        {data.description.length > 120 && (
-                          <button
-                            type="button"
-                            onClick={() => setIsProfileModalOpen(true)}
-                            className="mt-[2px] self-start text-[12px] font-[500] text-text-tertiary hover:text-text-primary cursor-pointer bg-transparent border-0 p-0 transition-colors"
-                          >
-                            {t("artist.show_all")}
-                          </button>
-                        )}
-                      </div>
                     </section>
                   )}
                 </div>

@@ -367,7 +367,7 @@ export default function SettingsModal() {
       open={open}
       onOpenChange={(next) => (!next ? handleClose() : undefined)}
       maxWidth={940}
-      className="p-0 h-[720px] !max-h-[90vh] !flex-row overflow-hidden !bg-bg-canvas !backdrop-blur-none !backdrop-saturate-100"
+      className="p-0 h-[720px] !max-h-[90vh] !flex-row overflow-hidden"
     >
       <SettingsSidebar
         groups={filteredGroups}
@@ -380,7 +380,7 @@ export default function SettingsModal() {
         onClose={handleClose}
       />
 
-      <div className="relative my-[8px] mr-[8px] flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-[14px] rounded-l-[8px] bg-bg-surface dark:bg-bg-elevated">
+      <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         <DialogHeader
           className="shrink-0 px-[20px] pt-[20px] pb-[16px]"
           title={tabLabels[activeTab]}
@@ -390,7 +390,7 @@ export default function SettingsModal() {
               type="button"
               aria-label={t("common.close") || "Close"}
               onClick={handleClose}
-              className="-mt-[2px] -mr-[6px] inline-flex h-[30px] w-[30px] cursor-pointer items-center justify-center rounded-[9px] border-0 bg-transparent p-0 text-text-tertiary transition-colors hover:bg-black/[0.05] hover:text-text-primary dark:hover:bg-white/[0.07]"
+              className="-mt-[2px] -mr-[6px] inline-flex h-[30px] w-[30px] cursor-pointer items-center justify-center rounded-control border-0 bg-transparent p-0 text-text-tertiary transition-colors hover:bg-fill hover:text-text-primary"
             >
               <CloseLine size={17} />
             </button>

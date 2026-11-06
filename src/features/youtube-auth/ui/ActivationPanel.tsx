@@ -22,7 +22,7 @@ export default function ActivationPanel({ code }: ActivationPanelProps) {
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <QrTile value={code?.activationUrl ?? null} />
         <div className="mt-[14px] flex flex-col items-center gap-[7px]">
-          <span className="text-[12px] leading-none text-text-tertiary">
+          <span className="text-caption leading-none text-text-tertiary">
             {t("youtube_auth.or_enter_code") || "or enter the code at"}
           </span>
           <a
@@ -31,7 +31,7 @@ export default function ActivationPanel({ code }: ActivationPanelProps) {
               event.preventDefault();
               openExternal(ACTIVATE_URL);
             }}
-            className="text-[13px] font-[500] leading-none text-text-primary underline decoration-text-tertiary underline-offset-[3px] hover:decoration-text-primary"
+            className="text-body font-[500] leading-none text-text-primary underline decoration-text-tertiary underline-offset-[3px] hover:decoration-text-primary"
           >
             {ACTIVATE_LABEL}
           </a>

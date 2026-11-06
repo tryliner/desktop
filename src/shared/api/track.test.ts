@@ -114,7 +114,7 @@ describe("toClientTrack", () => {
     document.body.removeChild(container);
   });
 
-  it("shows the name as plain text when artistId is absent", async () => {
+  async function renderArtistLink(name: string) {
     const { createRoot } = await import("react-dom/client");
     const { default: ArtistLink } =
       await import("../../features/artist/ui/ArtistLink");
@@ -124,11 +124,10 @@ describe("toClientTrack", () => {
     const container = document.createElement("div");
     document.body.appendChild(container);
     const root = createRoot(container);
-
-    let currentLocation = "";
+    const location = { current: "" };
     function LocationProbe() {
-      const location = (require("react-router-dom") as any).useLocation();
-      currentLocation = location.pathname + location.search;
+      const current = (require("react-router-dom") as any).useLocation();
+      location.current = current.pathname + current.search;
       return null;
     }
 
@@ -138,26 +137,61 @@ describe("toClientTrack", () => {
           MemoryRouter,
           { initialEntries: ["/"] },
           React.createElement(LocationProbe, null),
-          React.createElement(ArtistLink, {
-            name: "The Beatles",
-          }),
+          React.createElement(ArtistLink, { name }),
         ),
       );
     });
 
-    expect(container.querySelector("[role='button']")).toBeNull();
-    expect(container.textContent).toBe("The Beatles");
+    const click = async () => {
+      const button = container.querySelector("[role='button']") as HTMLElement;
+      await act(async () => {
+        button.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      });
+    };
+    const cleanup = async () => {
+      await act(async () => {
+        root.unmount();
+      });
+      document.body.removeChild(container);
+    };
+    return { container, location, click, cleanup };
+  }
 
-    const text = container.querySelector("span span span") as HTMLElement;
-    await act(async () => {
-      text.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+  it("resolves the artist by name when artistId is absent", async () => {
+    const { api } = await import("./api");
+    const search = vi.spyOn(api, "search").mockResolvedValue({
+      items: [
+        { type: "artist", id: "UCtribute", name: "The Beatles Tribute" },
+        { type: "artist", id: "UCbeatles", name: "the beatles" },
+      ],
     });
 
-    expect(currentLocation).toBe("/");
+    const view = await renderArtistLink("The Beatles");
+    expect(view.container.querySelector("[role='button']")?.textContent).toBe(
+      "The Beatles",
+    );
 
-    await act(async () => {
-      root.unmount();
-    });
-    document.body.removeChild(container);
+    await view.click();
+
+    expect(search).toHaveBeenCalledWith("The Beatles", "artist");
+    expect(view.location.current).toBe("/artist?id=UCbeatles");
+    await view.cleanup();
+    search.mockRestore();
+  });
+
+  it("falls back to plain text when no artist matches the name", async () => {
+    const { api } = await import("./api");
+    const search = vi
+      .spyOn(api, "search")
+      .mockResolvedValue({ items: [] });
+
+    const view = await renderArtistLink("Nobody Known");
+    await view.click();
+
+    expect(view.location.current).toBe("/");
+    expect(view.container.querySelector("[role='button']")).toBeNull();
+    expect(view.container.textContent).toBe("Nobody Known");
+    await view.cleanup();
+    search.mockRestore();
   });
 });

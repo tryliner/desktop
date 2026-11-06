@@ -28,9 +28,9 @@ export default function CachedSongsCard({
     return (
       <div
         onClick={open}
-        className="flex w-full cursor-pointer select-none items-center gap-[16px] rounded-md p-[8px] transition-colors duration-150 ease-out hover:bg-border-alpha-14"
+        className="flex w-full cursor-pointer select-none items-center gap-[16px] rounded-control p-[8px] transition-colors duration-150 ease-out hover:bg-border-alpha-14"
       >
-        <div className="relative h-[48px] w-[48px] shrink-0 overflow-hidden rounded-md">
+        <div className="relative h-[48px] w-[48px] shrink-0 overflow-hidden rounded-control">
           <CachedSongsCover />
         </div>
         <div className="flex min-w-0 flex-col gap-[2px]" style={INTER}>
@@ -40,7 +40,7 @@ export default function CachedSongsCard({
           {label === null ? (
             <span className="h-[12px] w-[60px] animate-pulse rounded bg-border-alpha-14" />
           ) : (
-            <p className="m-0 truncate text-[15px] leading-[1.2] font-[350] text-text-secondary">
+            <p className="m-0 truncate text-title leading-[1.2] font-[350] text-text-secondary">
               {label}
             </p>
           )}
@@ -54,19 +54,17 @@ export default function CachedSongsCard({
       onClick={open}
       className="group flex cursor-pointer flex-col gap-[8px]"
     >
-      <div className="relative aspect-square w-full overflow-hidden rounded-md">
+      <div className="relative aspect-square w-full overflow-hidden rounded-control">
         <CachedSongsCover />
       </div>
       <div className="flex flex-col gap-[4px]">
-        <span className="truncate text-[14px] font-[500] text-text-primary">
+        <span className="truncate text-label font-[500] text-text-primary">
           {t("library.cached.title")}
         </span>
         {label === null ? (
           <div className="h-[13px] w-[56%] animate-pulse rounded bg-border-alpha-14" />
         ) : (
-          <span className="truncate text-[13px] text-text-tertiary">
-            {label}
-          </span>
+          <span className="truncate text-body text-text-tertiary">{label}</span>
         )}
       </div>
     </div>

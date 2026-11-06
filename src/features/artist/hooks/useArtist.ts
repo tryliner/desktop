@@ -43,6 +43,7 @@ async function loadArtistPage(artistId: string): Promise<ArtistPageData> {
   const formatted: ArtistPageData = {
     title: artist.name,
     monthlyListeners: artist.monthlyListeners,
+    followers: artist.followers,
     verified: Boolean(artist.verified),
     description: artist.bio?.trim() || "",
     coverUrl: artist.cover

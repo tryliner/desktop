@@ -126,12 +126,12 @@ export default function AddToPlaylistModal() {
           cover art sits at the same 20px inset as the header text */}
       <div className="flex flex-col gap-[12px] px-[12px] pb-[12px]">
         <div className="px-[8px] pt-[4px]">
-          <h2 className="m-0 text-[18px] font-[600] tracking-[-0.01em] text-text-primary">
+          <h2 className="m-0 text-heading font-[600] tracking-[-0.01em] text-text-primary">
             {t("common.add_to_playlist")}
           </h2>
           {track && (
-            <div className="mt-[10px] flex items-center gap-[10px] rounded-md bg-bg-elevated/60 px-[10px] py-[8px]">
-              <div className="relative h-[40px] w-[40px] shrink-0 overflow-hidden rounded-md bg-bg-elevated flex items-center justify-center">
+            <div className="mt-[10px] flex items-center gap-[10px] rounded-control bg-bg-elevated/60 px-[10px] py-[8px]">
+              <div className="relative h-[40px] w-[40px] shrink-0 overflow-hidden rounded-control bg-bg-elevated flex items-center justify-center">
                 {track.coverUrl ? (
                   <CoverImage
                     src={track.coverUrl}
@@ -141,16 +141,16 @@ export default function AddToPlaylistModal() {
                     className="object-cover"
                   />
                 ) : (
-                  <span className="text-[15px] font-[600] text-text-tertiary">
+                  <span className="text-title font-[600] text-text-tertiary">
                     {track.title.charAt(0).toUpperCase()}
                   </span>
                 )}
               </div>
               <div className="flex min-w-0 flex-1 flex-col gap-[1px]">
-                <span className="truncate text-[13px] font-[500] text-text-primary">
+                <span className="truncate text-body font-[500] text-text-primary">
                   {track.title}
                 </span>
-                <span className="truncate text-[12px] text-text-tertiary">
+                <span className="truncate text-caption text-text-tertiary">
                   {track.artists}
                 </span>
               </div>
@@ -177,7 +177,7 @@ export default function AddToPlaylistModal() {
                   </button>
                 ) : null
               }
-              className="!h-[36px] w-full rounded-md !border-transparent bg-bg-elevated text-[13px]"
+              className="!h-[36px] w-full rounded-control !border-transparent bg-bg-elevated text-body"
             />
           </div>
         )}
@@ -202,7 +202,7 @@ export default function AddToPlaylistModal() {
                 type="button"
                 disabled={addingTo !== null}
                 onClick={() => handleAddToPlaylist(playlist.id)}
-                className="flex items-center gap-[12px] p-[8px] rounded-md transition-colors hover:bg-bg-elevated active:bg-border-alpha-14 text-left group w-full border-none bg-transparent cursor-pointer disabled:opacity-50"
+                className="flex items-center gap-[12px] p-[8px] rounded-control transition-colors hover:bg-bg-elevated active:bg-border-alpha-14 text-left group w-full border-none bg-transparent cursor-pointer disabled:opacity-50"
               >
                 <div className="relative h-[44px] w-[44px] rounded-lg bg-bg-elevated overflow-hidden shrink-0 flex items-center justify-center">
                   {playlist.coverUrl ? (
@@ -219,10 +219,10 @@ export default function AddToPlaylistModal() {
                 </div>
 
                 <div className="flex flex-col gap-[1px] min-w-0 flex-1">
-                  <span className="text-[13px] font-[500] text-text-primary truncate">
+                  <span className="text-body font-[500] text-text-primary truncate">
                     {playlist.title}
                   </span>
-                  <span className="text-[12px] text-text-tertiary tabular-nums">
+                  <span className="text-caption text-text-tertiary tabular-nums">
                     {t("common.tracks", { count: playlist.trackCount })}
                   </span>
                 </div>
@@ -237,11 +237,11 @@ export default function AddToPlaylistModal() {
               </button>
             ))
           ) : (
-            <div className="mx-[8px] flex flex-col items-center gap-[8px] rounded-md bg-bg-elevated/60 px-[12px] py-[24px] text-center">
+            <div className="mx-[8px] flex flex-col items-center gap-[8px] rounded-control bg-bg-elevated/60 px-[12px] py-[24px] text-center">
               <span className="flex h-[36px] w-[36px] items-center justify-center rounded-full bg-bg-elevated text-text-tertiary">
                 <PlaylistFill size={18} />
               </span>
-              <p className="m-0 text-[13px] text-text-secondary">
+              <p className="m-0 text-body text-text-secondary">
                 {searchQuery
                   ? t("common.try_another_search_clear")
                   : t("common.no_playlists_yet")}

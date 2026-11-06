@@ -17,12 +17,10 @@ const DEEP_LINK_IDS: Record<string, RegExp> = {
   // the track ids liner stores (the link server's TrackId): an 11 char youtube
   // video id or sc:<soundcloud track id>
   track: /^(?:[A-Za-z0-9_-]{11}|sc:[1-9][0-9]{0,19})$/,
-  // one-time recovery links from link.tryliner.fun/recovery/<token>
-  "reset-password": /^lrst_[A-Za-z0-9_-]{43}$/,
 };
 
 export interface DeeplinkTarget {
-  type: "artist" | "album" | "playlist" | "track" | "reset-password";
+  type: "artist" | "album" | "playlist" | "track";
   id: string;
 }
 

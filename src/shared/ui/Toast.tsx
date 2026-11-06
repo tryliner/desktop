@@ -823,7 +823,7 @@ function NotificationCard({
       onMouseEnter={() => onDeckHover?.(true)}
       onMouseLeave={() => onDeckHover?.(false)}
       data-no-window-drag
-      className={`relative flex items-center gap-[8px] rounded-[12px] bg-bg-elevated pl-[12px] ${
+      className={`relative flex items-center gap-[8px] rounded-item bg-bg-elevated pl-[12px] ${
         resolvedAction ? "pr-[5px]" : "pr-[12px]"
       } py-[5px] min-h-[38px] box-border ${
         index === 0
@@ -850,7 +850,7 @@ function NotificationCard({
       </span>
       <div className="flex min-w-0 flex-1 flex-col justify-center overflow-hidden">
         <div className="flex min-w-0 items-center gap-[6px]">
-          <span className="block min-w-0 max-w-[220px] shrink-0 truncate text-text-primary text-[13px] font-[600] leading-tight">
+          <span className="block min-w-0 max-w-[220px] shrink-0 truncate text-text-primary text-body font-[600] leading-tight">
             {item.message}
           </span>
           {item.description && (

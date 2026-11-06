@@ -29,23 +29,46 @@ Use the theme tokens from `src/app/globals.css`. They switch with the theme.
 | Hairlines and quiet fills          | `border-alpha-14`, `border-alpha-33` (as `bg-`, `text-` or `border-`) |
 | Accent                             | `accent-primary` (liked heart, active state)                          |
 
-Glass tints (the same everywhere, so chips and buttons read as one surface):
+Quiet fills for things sitting inside a surface (inputs, rows, segmented controls,
+secondary buttons, panels). One class covers both themes:
+
+| Class            | Light     | Dark      | Use                        |
+| ---------------- | --------- | --------- | -------------------------- |
+| `bg-fill-subtle` | black 3%  | white 4%  | barely-there backgrounds   |
+| `bg-fill`        | black 5%  | white 7%  | default field, panel, chip |
+| `bg-fill-hover`  | black 8%  | white 10% | hover, selected tab        |
+| `bg-fill-strong` | black 10% | white 14% | pressed, active            |
+
+`bg-surface-glass` is the dialog glass, used with `backdrop-blur-2xl`. Use these instead
+of writing `bg-black/[0.05] dark:bg-white/[0.07]` by hand.
+
+Glass tints on top of the cover backdrop (the same everywhere, so chips and buttons read
+as one surface):
 
 - Glass fill: `bg-black/[0.05] dark:bg-white/[0.09]` (`HERO_GLASS_CLASS`)
 - Glass button: `HERO_GLASS_BUTTON_CLASS`, hover goes to `0.09` / `0.16`
-- List panel under a hero: `bg-black/[0.03] dark:bg-white/[0.04]` with `backdrop-blur-xl`,
-  dropped when `useClassicSurfaces()` is on
+- List panel under a hero: `ListPanel` from `@/shared/ui` (`bg-fill-subtle`, blurred only in
+  the dark theme where the cover backdrop is on)
 
 ## Type
 
 - Inter everywhere (`font-family: var(--font-inter)`), Montserrat only in the player.
+  Roboto Flex (wide) for the home feed's section headings (24px, Your Mixes 36px) and
+  the generated daily mix covers.
+- Section heading icons on home are neutral (`text-text-tertiary`, 20px).
 - Hero title: `HERO_TITLE_CLASS` (30px heading font). Hero subtitle: `HERO_SUBTITLE_CLASS` (18px).
-- Body and list rows: 14px / 500 for titles, 13px tertiary for the second line.
+- Type scale: `text-caption` 12px, `text-body` 13px, `text-label` 14px (row and card titles, labels), `text-title` 15px, `text-heading`
+  18px. Prefer these over `text-[Npx]`.
+- Body and list rows: 14px / 500 for titles, `text-body` tertiary for the second line.
 - Toast: 13px / 600 message, 12.5px tertiary description after a `·`.
 
 ## Shape
 
-- Radii in use: 4, 6, 8, 9, 10, 12, 14, 16, 18, 20px. Pick the one the neighbours use.
+- Radius scale: `rounded-control` 8px (small controls, chips), `rounded-item` 12px
+  (fields, rows, cards, dialog buttons), `rounded-panel` 20px (dialogs, top-level
+  containers). Older code still has `rounded-xs` 4, `rounded-lg` 10, `rounded-2xl` 14, `rounded-3xl` 16 and a few `rounded-[Npx]`; new code uses the scale.
+- The scales are registered with tailwind-merge in `src/shared/lib/utils.ts`. A new step
+  has to be added there too, or `cn()` reads it as a colour and drops it.
 - Buttons and chips in a hero: 9px. Dropdown menu: 11px with 8px items. Toast: 12px.
   Cover in a hero: 10px. Library tiles: `rounded-md`. Big floating art: 16px.
 - The app window itself is rounded 12px and goes square when maximised
@@ -63,6 +86,14 @@ Glass tints (the same everywhere, so chips and buttons read as one surface):
   the fullscreen background at 60 fps or less.
 
 ## Building blocks
+
+- **Surfaces**: `Panel` from `@/shared/ui`. `variant="glass"` is a top-level container
+  (dialogs, popovers, floating sheets), `variant="fill"` (default) is a quiet block inside
+  one. Where a component can't be a plain `div` (a `motion.div`), use
+  `PANEL_GLASS_CLASS` / `PANEL_FILL_CLASS`. Glass only on the outer container; never
+  nest glass in glass.
+- **Settings**: `SettingSection`, `SettingRow` and `SettingBlock` from
+  `src/features/settings/ui/controls.tsx`. A section is a fill panel of rows.
 
 - **Entity page** (playlist, album, local files): `EntityHero` with a 168px cover, title,
   subtitle, a meta chip (`HERO_CHIP_CLASS`: count · duration), primary "Play all", a

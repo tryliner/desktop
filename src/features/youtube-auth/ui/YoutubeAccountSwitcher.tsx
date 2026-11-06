@@ -16,7 +16,7 @@ interface AccountAvatarProps {
 
 function AccountAvatar({ photoUrl }: AccountAvatarProps) {
   return (
-    <span className="relative flex size-[20px] items-center justify-center overflow-hidden rounded-full bg-black/[0.06] dark:bg-white/[0.08]">
+    <span className="relative flex size-[20px] items-center justify-center overflow-hidden rounded-full bg-fill">
       {photoUrl ? (
         <AppImage src={photoUrl} alt="" fill />
       ) : (
@@ -54,7 +54,7 @@ export default function YoutubeAccountSwitcher({
           type="button"
           aria-label={t("settings.youtube.section_account") || "Account"}
           aria-expanded={open}
-          className="flex size-[22px] shrink-0 cursor-pointer items-center justify-center rounded-full border-0 bg-transparent text-text-secondary transition-colors hover:bg-black/[0.06] hover:text-text-primary dark:hover:bg-white/[0.08]"
+          className="flex size-[22px] shrink-0 cursor-pointer items-center justify-center rounded-full border-0 bg-transparent text-text-secondary transition-colors hover:bg-fill hover:text-text-primary"
         >
           <DownLine
             size={16}

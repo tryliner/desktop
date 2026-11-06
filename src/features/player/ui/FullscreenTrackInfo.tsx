@@ -5,7 +5,7 @@ import {
   useLikeTrack,
   useUnlikeTrack,
 } from "@/features/library/hooks";
-import { ArtistLink } from "@/features/artist";
+import { ArtistAvatar, ArtistLink } from "@/features/artist";
 import { isLocalTrackId } from "@/shared/media/local";
 import { useTranslation } from "@/languages";
 import { ScrollableText } from "@/shared/ui";
@@ -50,7 +50,7 @@ export function FullscreenTrackInfo({ onClose }: FullscreenTrackInfoProps) {
           text={track?.title || ""}
           className="font-montserrat m-0 text-[20px] font-[600] leading-[1.2] tracking-[-0.01em] text-white"
         />
-        <p className="font-montserrat m-0 flex min-w-0 items-center gap-[6px] text-[14px] font-[500] text-white/70 leading-snug">
+        <p className="font-montserrat m-0 flex min-w-0 items-center gap-[6px] text-label font-[500] text-white/70 leading-snug">
           {track?.explicit && (
             <span
               aria-label="Explicit"
@@ -63,6 +63,13 @@ export function FullscreenTrackInfo({ onClose }: FullscreenTrackInfoProps) {
                 />
               </svg>
             </span>
+          )}
+          {!isLocal && (
+            <ArtistAvatar
+              artistId={track?.artistId}
+              artistList={track?.artistList}
+              size={18}
+            />
           )}
           <ArtistLink
             name={track?.artists || ""}

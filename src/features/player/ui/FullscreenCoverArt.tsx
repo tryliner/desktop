@@ -42,7 +42,7 @@ export function FullscreenCoverArt({ sizes }: FullscreenCoverArtProps) {
               sizes={sizes}
               priority
               unoptimized
-              className="rounded-xl object-cover"
+              className="rounded-item object-cover"
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-white/5 text-white/40">

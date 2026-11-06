@@ -1,7 +1,9 @@
+import { untilAborted } from "@/shared/utils/abort";
 import { TV_PROFILE } from "../innertube/playbackProfiles";
 import { USER_AGENT_HEADER_OVERRIDE } from "../innertube/userAgentOverride";
 
 const TV_PAGE_URL = "https://www.youtube.com/tv";
+const LOAD_TIMEOUT_MS = 30_000;
 const BASE_SCRIPT_PATTERN = /\/s\/_\/kabuki\/_\/js\/[^'"\\]+?m=base/;
 const CREDENTIALS_PATTERN =
   /clientId:"(?<clientId>[^"]+)",[^"]*?:"(?<clientSecret>[^"]+)"/;
@@ -46,9 +48,11 @@ async function loadTvOauthClient(signal?: AbortSignal): Promise<TvOauthClient> {
 }
 
 export function getTvOauthClient(signal?: AbortSignal): Promise<TvOauthClient> {
-  cachedClient ??= loadTvOauthClient(signal).catch((error: unknown) => {
+  cachedClient ??= loadTvOauthClient(
+    AbortSignal.timeout(LOAD_TIMEOUT_MS),
+  ).catch((error: unknown) => {
     cachedClient = null;
     throw error;
   });
-  return cachedClient;
+  return untilAborted(cachedClient, signal);
 }

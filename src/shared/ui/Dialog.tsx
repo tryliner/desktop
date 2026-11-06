@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { isWindowDraggingActive } from "@/shared/hooks";
 import { isEscapeGuarded } from "@/shared/utils/escapeGuard";
+import { PANEL_GLASS_CLASS } from "./Panel";
 
 export interface DialogProps {
   open: boolean;
@@ -109,7 +110,7 @@ export default function Dialog({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
-          className="fixed inset-0 z-[199] bg-black/15 backdrop-blur-[2px] rounded-4xl overflow-hidden"
+          className="fixed inset-0 z-[199] bg-black/15 backdrop-blur-[2px] rounded-item overflow-hidden"
           style={zIndex ? { zIndex: zIndex - 1 } : undefined}
           onPointerDown={handlePointerDown}
           onClick={handleBackdropClick}
@@ -127,7 +128,7 @@ export default function Dialog({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.97, y: 10 }}
             transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-            className={`pointer-events-auto w-full mx-[16px] max-h-[85vh] flex flex-col rounded-[20px] border-0 bg-[#f5f5f7]/92 dark:bg-[#161618]/90 backdrop-blur-2xl backdrop-saturate-150 shadow-[0_24px_80px_rgba(0,0,0,0.35)] overflow-hidden relative ${
+            className={`pointer-events-auto w-full mx-[16px] max-h-[85vh] flex flex-col ${PANEL_GLASS_CLASS} border-0 shadow-[0_24px_80px_rgba(0,0,0,0.35)] overflow-hidden relative ${
               className || "pt-[20px]"
             }`}
             style={{ maxWidth, minHeight, ...(maxHeight ? { maxHeight } : {}) }}

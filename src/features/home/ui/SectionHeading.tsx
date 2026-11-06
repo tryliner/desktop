@@ -27,7 +27,7 @@ export function SectionHeading({
       <div className="flex flex-col gap-0.5">
         <div className="flex items-center gap-2.5">
           {icon && (
-            <div className="flex items-center justify-center shrink-0 w-6 h-6 [&>svg]:w-6 [&>svg]:h-6">
+            <div className="flex items-center justify-center shrink-0 w-5 h-5 text-text-tertiary [&>svg]:w-5 [&>svg]:h-5">
               {icon}
             </div>
           )}
@@ -40,7 +40,7 @@ export function SectionHeading({
           {badge}
         </div>
         {subtitle && (
-          <p className="text-[13px] text-text-tertiary m-0 mt-0.5 font-normal">
+          <p className="text-body text-text-tertiary m-0 mt-0.5 font-normal">
             {subtitle}
           </p>
         )}

@@ -148,13 +148,13 @@ export function RootErrorFallback({
   return (
     <div
       role="alert"
-      className="relative flex flex-col h-screen w-screen overflow-hidden rounded-[12px] bg-bg-canvas p-1.5 select-none"
+      className="relative flex flex-col h-screen w-screen overflow-hidden rounded-item bg-bg-canvas p-1.5 select-none"
     >
       {/* Window Controls */}
       <WindowControls />
 
       {/* Main Container */}
-      <div className="flex-1 flex flex-col items-center justify-center min-h-0 w-full bg-bg-primary rounded-xl border border-border-primary/40 p-6 md:p-10 overflow-y-auto">
+      <div className="flex-1 flex flex-col items-center justify-center min-h-0 w-full bg-bg-primary rounded-item border border-border-primary/40 p-6 md:p-10 overflow-y-auto">
         <div className="flex flex-col items-center max-w-[560px] w-full text-center my-auto">
           {/* Error Icon Badge */}
           <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-accent-primary/10 text-accent-primary border border-accent-primary/20 mb-5">
@@ -165,7 +165,7 @@ export function RootErrorFallback({
           <h1 className="text-[22px] md:text-[24px] font-[600] text-text-primary tracking-tight m-0 mb-2">
             {titleText}
           </h1>
-          <p className="text-[14px] text-text-secondary leading-relaxed m-0 mb-6 max-w-[460px]">
+          <p className="text-label text-text-secondary leading-relaxed m-0 mb-6 max-w-[460px]">
             {subtitleText}
           </p>
 
@@ -209,7 +209,7 @@ export function RootErrorFallback({
             <button
               type="button"
               onClick={() => setShowDetails((prev) => !prev)}
-              className="inline-flex items-center gap-1.5 text-[13px] text-text-tertiary hover:text-text-primary transition-colors border-none bg-transparent cursor-pointer py-1 px-2 rounded-xs"
+              className="inline-flex items-center gap-1.5 text-body text-text-tertiary hover:text-text-primary transition-colors border-none bg-transparent cursor-pointer py-1 px-2 rounded-xs"
             >
               <span>{showDetails ? hideDetailsText : showDetailsText}</span>
               {showDetails ? (
@@ -222,7 +222,7 @@ export function RootErrorFallback({
             <button
               type="button"
               onClick={handleCopy}
-              className="inline-flex items-center gap-1.5 text-[13px] text-text-tertiary hover:text-text-primary transition-colors border-none bg-transparent cursor-pointer py-1 px-2 rounded-xs"
+              className="inline-flex items-center gap-1.5 text-body text-text-tertiary hover:text-text-primary transition-colors border-none bg-transparent cursor-pointer py-1 px-2 rounded-xs"
             >
               {isCopied ? (
                 <>
@@ -240,7 +240,7 @@ export function RootErrorFallback({
 
           {/* Collapsible Error Details Box */}
           {showDetails && (
-            <div className="mt-4 w-full text-left rounded-md border border-border-primary bg-bg-canvas/50 p-4 max-h-[260px] overflow-y-auto">
+            <div className="mt-4 w-full text-left rounded-control border border-border-primary bg-bg-canvas/50 p-4 max-h-[260px] overflow-y-auto">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-[11px] font-semibold uppercase tracking-wider text-text-tertiary">
                   {errorDetailsLabel}
@@ -249,7 +249,7 @@ export function RootErrorFallback({
                   {error?.name || "Error"}
                 </span>
               </div>
-              <pre className="text-[12px] font-mono text-text-secondary whitespace-pre-wrap break-all leading-relaxed m-0 select-text">
+              <pre className="text-caption font-mono text-text-secondary whitespace-pre-wrap break-all leading-relaxed m-0 select-text">
                 {errorDetailsString}
               </pre>
             </div>

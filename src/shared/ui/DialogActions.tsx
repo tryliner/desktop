@@ -21,11 +21,11 @@ export function DialogHeader({
       className={cn("flex items-start justify-between gap-[12px]", className)}
     >
       <div className="flex min-w-0 flex-1 flex-col gap-[4px]">
-        <h2 className="m-0 text-[18px] font-[600] leading-[1.2] tracking-[-0.01em] text-text-primary">
+        <h2 className="m-0 text-heading font-[600] leading-[1.2] tracking-[-0.01em] text-text-primary">
           {title}
         </h2>
         {description && (
-          <p className="m-0 text-[13px] leading-[1.45] text-text-tertiary">
+          <p className="m-0 text-body leading-[1.45] text-text-tertiary">
             {description}
           </p>
         )}
@@ -68,8 +68,7 @@ const variantClass: Record<
   string
 > = {
   primary: "",
-  secondary:
-    "!bg-black/[0.05] dark:!bg-white/[0.08] hover:!bg-black/[0.08] dark:hover:!bg-white/[0.12] !text-text-primary",
+  secondary: "!bg-fill hover:!bg-fill-hover !text-text-primary",
   danger: "!bg-accent-secondary !text-white hover:!opacity-90",
 };
 
@@ -91,7 +90,7 @@ export function DialogButton({
       variant={variant === "primary" ? "primary" : "secondary"}
       disabled={disabled || loading}
       className={cn(
-        "flex-[1_1_0%] min-w-max !h-[44px] !rounded-[12px] !border-0 px-[16px] !text-[14px] !font-[500]",
+        "flex-[1_1_0%] min-w-max !h-[44px] !rounded-item !border-0 px-[16px] !text-label !font-[500]",
         variantClass[variant],
         loading && "pointer-events-none",
         className,

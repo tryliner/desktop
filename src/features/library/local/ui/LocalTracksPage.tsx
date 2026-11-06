@@ -6,10 +6,8 @@ import {
   useTrackSearch,
 } from "../../ui/TrackSearch";
 import { TrackSortMenu, useTrackSort } from "../../ui/TrackSort";
-import { useClassicSurfaces } from "@/features/settings/store/customizationStore";
 import { useTranslation } from "@/languages";
-import { cn } from "@/shared/lib";
-import { HERO_GLASS_CLASS } from "@/shared/ui";
+import { HERO_GLASS_CLASS, ListPanel } from "@/shared/ui";
 import { useLocalImport } from "../hooks/useLocalImport";
 import { useLocalTracks } from "../hooks/useLocalTracks";
 import LocalTrackList from "./LocalTrackList";
@@ -22,7 +20,6 @@ const PAGE_KEY = "local";
 export default function LocalTracksPage() {
   const { t } = useTranslation();
   const scrollRef = useRef<HTMLDivElement>(null);
-  const classicSurfaces = useClassicSurfaces();
   const { tracks, isLoading } = useLocalTracks();
   const { chooseFiles, importing } = useLocalImport();
   const [removeAllOpen, setRemoveAllOpen] = useState(false);
@@ -85,16 +82,7 @@ export default function LocalTracksPage() {
           />
         </div>
 
-        <div
-          className={cn(
-            "mx-[4px] mt-[20px] shrink-0 grow overflow-hidden rounded-t-[14px] bg-black/[0.03] px-[8px] pt-[8px] dark:bg-white/[0.04]",
-            !classicSurfaces && "backdrop-blur-xl",
-          )}
-          style={{
-            marginBottom: "calc(var(--page-inset-bottom) * -1)",
-            paddingBottom: "calc(var(--page-inset-bottom) + 16px)",
-          }}
-        >
+        <ListPanel>
           {isLoading ? null : tracks.length === 0 ? (
             <LocalTracksEmpty
               importing={importing}
@@ -113,7 +101,7 @@ export default function LocalTracksPage() {
               scrollRef={scrollRef}
             />
           )}
-        </div>
+        </ListPanel>
       </div>
       <RemoveAllLocalDialog
         open={removeAllOpen}

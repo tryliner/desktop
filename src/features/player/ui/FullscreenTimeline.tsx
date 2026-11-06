@@ -20,7 +20,7 @@ export function FullscreenTimeline() {
         size="md"
         className="w-full"
       />
-      <div className="flex items-center justify-between font-montserrat text-[12px] font-[500] tabular-nums text-white/70">
+      <div className="flex items-center justify-between font-montserrat text-caption font-[500] tabular-nums text-white/70">
         <span>{formatPlaybackTime(scrubMs ?? player.positionMs)}</span>
         <span>{formatPlaybackTime(player.durationMs)}</span>
       </div>

@@ -268,7 +268,7 @@ export function OverlayTab({ searchQuery }: { searchQuery?: string }) {
                           .getState()
                           .setGlobalShortcut("toggleOverlay", DEFAULT_SHORTCUT);
                       }}
-                      className="h-[28px] w-[28px] rounded-lg border-0 outline-none flex items-center justify-center bg-border-alpha-14 hover:bg-border-alpha-20 text-text-secondary hover:text-text-primary transition-colors cursor-pointer select-none active:scale-[0.95]"
+                      className="h-[28px] w-[28px] rounded-control border-0 outline-none flex items-center justify-center bg-border-alpha-14 hover:bg-border-alpha-20 text-text-secondary hover:text-text-primary transition-colors cursor-pointer select-none active:scale-[0.95]"
                     >
                       <Refresh1Line size={15} />
                     </motion.button>
@@ -286,7 +286,7 @@ export function OverlayTab({ searchQuery }: { searchQuery?: string }) {
                     setIsRecording((prev) => !prev);
                   }
                 }}
-                className={`h-[28px] px-3 rounded-lg text-[12.5px] font-medium transition-colors flex items-center justify-center border-0 outline-none select-none ${
+                className={`h-[28px] px-3 rounded-control text-caption font-medium transition-colors flex items-center justify-center border-0 outline-none select-none ${
                   !enabled
                     ? "bg-border-alpha-10 text-text-tertiary cursor-not-allowed opacity-50"
                     : isRecording

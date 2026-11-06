@@ -85,8 +85,8 @@ function SongCard({
     : hideArtists
       ? "h-[36px] w-[48px]"
       : "h-[48px] w-[48px]";
-  const titleSizeClass = compact ? "text-[14px]" : "text-[16px]";
-  const artistSizeClass = compact ? "text-[12px]" : "text-[15px]";
+  const titleSizeClass = compact ? "text-label" : "text-[16px]";
+  const artistSizeClass = compact ? "text-caption" : "text-title";
   const gapClass = compact ? "gap-[12px]" : "gap-[16px]";
   const paddingClass = compact
     ? "p-[6px]"
@@ -125,7 +125,7 @@ function SongCard({
 
   return (
     <div
-      className={`group w-full flex items-center justify-between rounded-md ${paddingClass} outline-none transition-colors duration-150 ease-out ${
+      className={`group w-full flex items-center justify-between rounded-control ${paddingClass} outline-none transition-colors duration-150 ease-out ${
         className ?? ""
       } ${onPlay ? "cursor-pointer" : ""} ${onPlay && !className?.includes("hover:bg-") ? "hover:bg-border-alpha-14" : ""}`}
       onClick={handleClick}
@@ -171,7 +171,7 @@ function SongCard({
         ) : (
           <div
             className={`relative ${imageSizeClass} shrink-0 overflow-hidden bg-bg-panel flex items-center justify-center ${
-              imageShape === "circle" ? "rounded-full" : "rounded-md"
+              imageShape === "circle" ? "rounded-full" : "rounded-control"
             }`}
           >
             {icon ? (
@@ -214,7 +214,7 @@ function SongCard({
             </h3>
             {repostedBy && (
               <div
-                className="flex items-center gap-[4px] text-text-tertiary text-[13px]"
+                className="flex items-center gap-[4px] text-text-tertiary text-body"
                 title={t("common.reposted_by", { name: repostedBy })}
               >
                 <RepeatFill size={14} />
@@ -251,7 +251,7 @@ function SongCard({
       <div className="flex items-center shrink-0 ml-[16px] gap-[16px]">
         {releaseDate && (
           <span
-            className="text-[14px] text-text-tertiary"
+            className="text-label text-text-tertiary"
             style={{
               fontWeight: 400,
             }}
@@ -261,7 +261,7 @@ function SongCard({
         )}
         {duration && (
           <span
-            className="text-[14px] text-text-tertiary"
+            className="text-label text-text-tertiary"
             style={{
               fontWeight: 400,
             }}
@@ -275,7 +275,7 @@ function SongCard({
               <button
                 type="button"
                 aria-label={t("common.more_options")}
-                className="rounded-md bg-transparent border-0 p-0 text-text-primary transition-all duration-200 active:scale-[0.96] flex items-center justify-center cursor-pointer"
+                className="rounded-control bg-transparent border-0 p-0 text-text-primary transition-all duration-200 active:scale-[0.96] flex items-center justify-center cursor-pointer"
               >
                 <More2Fill size={22} />
               </button>

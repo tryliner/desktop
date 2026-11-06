@@ -58,6 +58,8 @@ export type ArtistDetails = Omit<
 > & {
   /** soundcloud profiles carry a description */
   bio?: string;
+  /** youtube subscribers or soundcloud followers, read on the client */
+  followers?: number;
   tracks: ApiTrack[];
   albums: ArtistAlbum[];
   singles: ArtistRelease[];
