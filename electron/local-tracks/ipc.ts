@@ -1,5 +1,6 @@
 import path from "node:path";
-import { BrowserWindow, app, dialog, ipcMain } from "electron";
+import { BrowserWindow, app, dialog } from "electron";
+import { handleTrusted } from "../ipc-guard.js";
 import { LocalTrackLibrary } from "./library.js";
 import { handleLocalTrackScheme } from "./protocol.js";
 import type { SavedTrackLibrary } from "../saved-tracks/library.js";
@@ -18,13 +19,13 @@ export function setupLocalTracks(saved: SavedTrackLibrary) {
   );
   handleLocalTrackScheme(library, saved);
 
-  ipcMain.handle("local-tracks:list", () => library.list());
+  handleTrusted("local-tracks:list", () => library.list());
 
-  ipcMain.handle("local-tracks:import", (_event, paths: unknown) =>
+  handleTrusted("local-tracks:import", (_event, paths: unknown) =>
     library.importFiles(stringList(paths)),
   );
 
-  ipcMain.handle("local-tracks:pick", async (event) => {
+  handleTrusted("local-tracks:pick", async (event) => {
     const owner = BrowserWindow.fromWebContents(event.sender);
     const options: Electron.OpenDialogOptions = {
       properties: ["openFile", "multiSelections"],
@@ -37,11 +38,11 @@ export function setupLocalTracks(saved: SavedTrackLibrary) {
     return library.importFiles(picked.filePaths);
   });
 
-  ipcMain.handle("local-tracks:remove", (_event, ids: unknown) =>
+  handleTrusted("local-tracks:remove", (_event, ids: unknown) =>
     library.remove(stringList(ids)),
   );
 
-  ipcMain.handle("local-tracks:remove-all", () => library.removeAll());
+  handleTrusted("local-tracks:remove-all", () => library.removeAll());
 
-  ipcMain.handle("local-tracks:usage", () => library.usage());
+  handleTrusted("local-tracks:usage", () => library.usage());
 }

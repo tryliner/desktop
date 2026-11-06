@@ -1,12 +1,4 @@
-import {
-  app,
-  BrowserWindow,
-  ipcMain,
-  net,
-  safeStorage,
-  type IpcMainEvent,
-  type IpcMainInvokeEvent,
-} from "electron";
+import { app, BrowserWindow, ipcMain, net, safeStorage } from "electron";
 import path from "node:path";
 import {
   AuthSessionStore,
@@ -14,6 +6,7 @@ import {
   type SessionCipher,
 } from "./auth-session-store.js";
 import { signRequest, syncServerTime } from "./crypto.js";
+import { isAppUrl, isTrustedSender as fromApp } from "./ipc-guard.js";
 
 function signedRequestHeaders(
   method: string,
@@ -34,22 +27,6 @@ function signedRequestHeaders(
     );
     return {};
   }
-}
-
-function isAppUrl(url: string | undefined): boolean {
-  if (!url) return false;
-  if (url.startsWith("file:")) return true;
-  const devServer = process.env.VITE_DEV_SERVER_URL;
-  if (!devServer) return false;
-  try {
-    return new URL(url).origin === new URL(devServer).origin;
-  } catch {
-    return false;
-  }
-}
-
-function fromApp(event: IpcMainEvent | IpcMainInvokeEvent): boolean {
-  return isAppUrl(event.senderFrame?.url);
 }
 
 export function registerAuthSessionIpc(): AuthSessionStore {

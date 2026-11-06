@@ -1,4 +1,5 @@
-import { ipcMain, net } from "electron";
+import { net } from "electron";
+import { handleTrusted } from "../ipc-guard.js";
 import type { NetProbeResult } from "./types";
 import { youtubeFailureOf, type ProbeOutcome } from "./outcome.js";
 import { activeNetSimulation } from "../netsim/install.js";
@@ -48,5 +49,5 @@ export async function probeNetwork(): Promise<NetProbeResult> {
 }
 
 export function setupNetProbe(): void {
-  ipcMain.handle("net:probe", () => probeNetwork());
+  handleTrusted("net:probe", () => probeNetwork());
 }

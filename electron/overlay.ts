@@ -1,4 +1,5 @@
-import { BrowserWindow, ipcMain, screen, globalShortcut, app } from "electron";
+import { BrowserWindow, screen, globalShortcut, app } from "electron";
+import { confineToApp, handleTrusted, onTrusted } from "./ipc-guard.js";
 import path from "node:path";
 import fs from "node:fs";
 import {
@@ -1144,6 +1145,7 @@ export class OverlayManager {
     });
 
     const win = this.overlayWindow;
+    confineToApp(win.webContents);
     this.resetContentReady();
     win.webContents.on("render-process-gone", (_event, details) =>
       this.handleRendererGone(win, details.reason),
@@ -1187,14 +1189,11 @@ export class OverlayManager {
   }
 
   private registerIpcHandlers() {
-    ipcMain.on(
-      "overlay:set-authenticated",
-      (_event, authenticated: boolean) => {
-        this.setAuthenticated(authenticated);
-      },
-    );
+    onTrusted("overlay:set-authenticated", (_event, authenticated: boolean) => {
+      this.setAuthenticated(authenticated);
+    });
 
-    ipcMain.on("overlay:ready", (event) => {
+    onTrusted("overlay:ready", (event) => {
       if (
         this.overlayWindow &&
         !this.overlayWindow.isDestroyed() &&
@@ -1204,7 +1203,7 @@ export class OverlayManager {
       }
     });
 
-    ipcMain.on("overlay:update-state", (_event, state: any) => {
+    onTrusted("overlay:update-state", (_event, state: any) => {
       if (!this.isAuthenticated) return;
       this.latestState = state;
 
@@ -1213,7 +1212,7 @@ export class OverlayManager {
       }
     });
 
-    ipcMain.on("overlay:send-action", (_event, action: any) => {
+    onTrusted("overlay:send-action", (_event, action: any) => {
       if (action.type === "closeOverlay") {
         this.closeOverlay();
         return;
@@ -1227,17 +1226,17 @@ export class OverlayManager {
       }
     });
 
-    ipcMain.handle("overlay:get-initial-state", () => {
+    handleTrusted("overlay:get-initial-state", () => {
       if (!this.isAuthenticated) return null;
       return this.latestState;
     });
 
-    ipcMain.handle("overlay:toggle", () => {
+    handleTrusted("overlay:toggle", () => {
       if (!this.isAuthenticated) return false;
       return this.toggleOverlay();
     });
 
-    ipcMain.handle("overlay:is-open", () => {
+    handleTrusted("overlay:is-open", () => {
       return Boolean(
         this.overlayWindow &&
         !this.overlayWindow.isDestroyed() &&
@@ -1245,15 +1244,15 @@ export class OverlayManager {
       );
     });
 
-    ipcMain.on("overlay:close", () => {
+    onTrusted("overlay:close", () => {
       this.closeOverlay();
     });
 
-    ipcMain.on("overlay:pause-shortcuts", (_event, paused: boolean) => {
+    onTrusted("overlay:pause-shortcuts", (_event, paused: boolean) => {
       this.pauseShortcuts(Boolean(paused));
     });
 
-    ipcMain.on(
+    onTrusted(
       "overlay:update-settings",
       (_event, settings: Partial<OverlaySettings>) => {
         if (!settings || typeof settings !== "object") return;

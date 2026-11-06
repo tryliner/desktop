@@ -3,7 +3,7 @@ import {
   StatusDisplayType,
   type SetActivity,
 } from "@xhayper/discord-rpc";
-import { ipcMain } from "electron";
+import { handleTrusted, onTrusted } from "./ipc-guard.js";
 
 const ARRPC_USERNAME = "arrpc";
 
@@ -101,21 +101,21 @@ export class DiscordRpcManager {
   }
 
   private registerIpcHandlers(): void {
-    ipcMain.on(
+    onTrusted(
       "discord:update-state",
       (_event, payload: DiscordRpcStatePayload) => {
         this.updateState(payload);
       },
     );
 
-    ipcMain.on(
+    onTrusted(
       "discord:update-settings",
       (_event, patch: Partial<DiscordRpcSettings>) => {
         this.updateSettings(patch);
       },
     );
 
-    ipcMain.handle("discord:get-status", () => {
+    handleTrusted("discord:get-status", () => {
       const user = this.client?.user;
       if (user?.username === ARRPC_USERNAME) {
         return { connected: this.isConnected, viaArrpc: true };

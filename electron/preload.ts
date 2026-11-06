@@ -300,10 +300,8 @@ const api: LinerElectronApi = {
   },
   diagnoseNetwork: (hosts) => ipcRenderer.invoke("net:diagnose", hosts),
   probeNetwork: () => ipcRenderer.invoke("net:probe"),
-  openDownloads: (customPath) =>
-    ipcRenderer.invoke("shell:open-downloads", customPath),
-  openExportFolder: (customPath) =>
-    ipcRenderer.invoke("shell:open-export-folder", customPath),
+  openDownloads: () => ipcRenderer.invoke("shell:open-downloads"),
+  openExportFolder: () => ipcRenderer.invoke("shell:open-export-folder"),
   setAppIcon: (dataUrl, options) =>
     ipcRenderer.invoke("app:set-icon", dataUrl, options),
   getAppVersion: () => ipcRenderer.invoke("app:get-version"),
