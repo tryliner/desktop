@@ -14,7 +14,8 @@ import type {
 } from "../types";
 import { useTranslation } from "@/languages";
 import { useModalStore } from "../store/modalStore";
-import { LuTrash2 } from "react-icons/lu";
+import { LuGlobe, LuLock, LuTrash2 } from "react-icons/lu";
+import { usePlaylistVisibility } from "../hooks/usePlaylistVisibility";
 import { More2Fill, PlaylistFill, AddLine, Search3Fill } from "@mingcute/react";
 
 interface LibraryGridProps {
@@ -97,6 +98,7 @@ export function LibraryGridSkeleton({
 
 function useItemMenuItems(item: LibraryItemViewModel): DropdownMenuItem[] {
   const { t } = useTranslation();
+  const { changeVisibility } = usePlaylistVisibility();
   return useMemo(() => {
     if (item.source) return [];
     const entityType =
@@ -105,7 +107,28 @@ function useItemMenuItems(item: LibraryItemViewModel): DropdownMenuItem[] {
         : item.kind === "album"
           ? "album"
           : "playlist";
+    // only the user's own playlists carry a visibility (LibraryPage sets it)
+    const visibility: DropdownMenuItem[] =
+      item.kind === "playlist" && item.isPublic !== undefined
+        ? [
+            {
+              id: "visibility",
+              label: t(
+                item.isPublic
+                  ? "playlist.make_private"
+                  : "playlist.make_public",
+              ),
+              icon: item.isPublic ? (
+                <LuLock size={15} />
+              ) : (
+                <LuGlobe size={15} />
+              ),
+              onClick: () => void changeVisibility(item.id, !item.isPublic),
+            },
+          ]
+        : [];
     return [
+      ...visibility,
       {
         id: "remove-from-library",
         label: t("common.remove_from_library"),
@@ -136,6 +159,8 @@ function useItemMenuItems(item: LibraryItemViewModel): DropdownMenuItem[] {
     item.isOwned,
     item.source,
     item.href,
+    item.isPublic,
+    changeVisibility,
     t,
   ]);
 }

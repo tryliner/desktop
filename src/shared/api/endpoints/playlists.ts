@@ -82,6 +82,14 @@ export const playlistsApi = {
     });
   },
 
+  // public: anyone signed in can open it and its share link; private: owner only
+  setPlaylistVisibility(id: string, isPublic: boolean): Promise<UserPlaylist> {
+    return call("PUT /v1/playlists/:playlistId/visibility", {
+      params: { playlistId: id },
+      body: { public: isPublic },
+    });
+  },
+
   async deletePlaylist(id: string): Promise<void> {
     await call("DELETE /v1/playlists/:playlistId", {
       params: { playlistId: id },

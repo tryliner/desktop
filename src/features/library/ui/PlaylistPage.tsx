@@ -42,8 +42,14 @@ import {
   DownloadLine,
 } from "@mingcute/react";
 import { AnimatePresence, motion } from "framer-motion";
-import { LuPencil, LuTrash2, LuText, LuShuffle } from "react-icons/lu";
-import { buildShareUrl } from "@/shared/utils/share";
+import {
+  LuPencil,
+  LuTrash2,
+  LuText,
+  LuShuffle,
+  LuGlobe,
+  LuLock,
+} from "react-icons/lu";
 import Button from "@/shared/ui/Button";
 import DropdownMenu from "@/shared/ui/DropdownMenu";
 import SongCardWithMenu from "@/features/player/ui/SongCardWithMenu";
@@ -55,6 +61,7 @@ import {
   useLikedTracks,
   useReorderPlaylistTracks,
   reloadLikedTracks,
+  usePlaylistVisibility,
 } from "../hooks";
 import { statusOf } from "@/features/connectivity";
 import { useListReorder } from "@/shared/hooks";
@@ -392,14 +399,13 @@ function LibraryPlaylistContent() {
     return () => clearTimeout(timer);
   }, [sortedTracks, viewData, toast, t]);
 
+  // the list store answers a visibility change at once, the details only after a reload
+  const isPublic = summary?.isPublic ?? playlistDetail?.isPublic ?? false;
+  const { changeVisibility, sharePlaylist } = usePlaylistVisibility();
+
   const handleShare = useCallback(() => {
-    if (typeof navigator !== "undefined" && navigator.clipboard && decodedId) {
-      navigator.clipboard.writeText(buildShareUrl("playlist", decodedId));
-      toast(t("common.link_copied"), "checkmark", {
-        description: viewData?.title || undefined,
-      });
-    }
-  }, [decodedId, viewData?.title, toast, t]);
+    if (decodedId) sharePlaylist(decodedId, isPublic, viewData?.title);
+  }, [decodedId, isPublic, sharePlaylist, viewData?.title]);
 
   const handleReorderCommit = useCallback(
     (fromIndex: number, toIndex: number, movingTrack: Track) => {
@@ -863,6 +869,23 @@ function LibraryPlaylistContent() {
                               icon: <LuText size={15} />,
                               label: t("common.edit_description"),
                               onClick: () => setIsEditingDescription(true),
+                            },
+                            {
+                              id: "visibility",
+                              icon: isPublic ? (
+                                <LuLock size={15} />
+                              ) : (
+                                <LuGlobe size={15} />
+                              ),
+                              label: t(
+                                isPublic
+                                  ? "playlist.make_private"
+                                  : "playlist.make_public",
+                              ),
+                              onClick: () => {
+                                if (decodedId)
+                                  void changeVisibility(decodedId, !isPublic);
+                              },
                             },
                             {
                               id: "share",

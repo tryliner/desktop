@@ -435,6 +435,12 @@
     }
   },
   "playlist": {
+    "make_public": "Herkese açık yap",
+    "make_private": "Gizli yap",
+    "made_public": "Çalma listesi artık herkese açık",
+    "made_private": "Çalma listesi artık gizli",
+    "visibility_failed": "Çalma listesinin görünürlüğü değiştirilemedi",
+    "share_private": "Paylaşmak için çalma listesini herkese açık yap",
     "playlist": "Çalma listesi",
     "liked_songs": "Beğenilen şarkılar",
     "untitled_playlist": "Adsız Çalma Listesi",

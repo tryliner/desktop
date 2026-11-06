@@ -16,6 +16,8 @@ export interface LibraryItemViewModel {
   addedAt: string;
   trackCount?: number;
   isOwned?: boolean;
+  /** the user's own playlists: whether others can open it and its share link */
+  isPublic?: boolean;
   source?: LibraryItemSource;
 }
 export type LibrarySortOption = "recent" | "title" | "creator";

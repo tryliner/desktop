@@ -16,6 +16,8 @@ export interface CollectionPageData {
   coverUrl: string;
   tracks: Track[];
   isDailyMix?: boolean;
+  /** user playlists only: someone else's is always public, the user's own may be private */
+  isPublic?: boolean;
 }
 
 const COLLECTION_STALE_MS = 5 * 60 * 1000;
@@ -62,6 +64,7 @@ async function loadCollection(
       description: shared.playlist.description || undefined,
       coverUrl: coverUrl ? mediaUrl(coverUrl) : "",
       tracks: shared.items.map((item) => toClientTrack(item.track)),
+      isPublic: shared.playlist.isPublic,
     };
     return formatted;
   }

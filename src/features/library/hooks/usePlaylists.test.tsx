@@ -3,7 +3,11 @@ import React from "react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { createRoot, Root } from "react-dom/client";
 import { act } from "react";
-import { usePlaylist, usePlaylistsList } from "./usePlaylists";
+import {
+  applyPlaylistVisibility,
+  usePlaylist,
+  usePlaylistsList,
+} from "./usePlaylists";
 import { api } from "@/shared/api";
 import { queryCache } from "@/shared/cache/queryCache";
 
@@ -31,6 +35,7 @@ const playlist = {
   ownerId: "u1",
   title: "Big",
   description: null,
+  isPublic: false,
   revision: 3,
   trackCount: 300,
   durationMs: 300000,
@@ -206,7 +211,29 @@ describe("usePlaylistsList", () => {
       trackCount: 42,
       coverUrl: "https://img/a",
       coverUrls: ["https://img/a", "https://img/b"],
+      isPublic: false,
     });
     act(() => root.unmount());
+  });
+
+  it("shows a visibility change in the list and the cached details at once", async () => {
+    (api.listPlaylists as any).mockResolvedValue({ items: [playlist] });
+    queryCache.set("playlist:detail:pl1", { id: "pl1", isPublic: false });
+    const container = document.createElement("div");
+    const root = createRoot(container);
+    let state: ReturnType<typeof usePlaylistsList> | undefined;
+    function Probe() {
+      state = usePlaylistsList();
+      return null;
+    }
+
+    act(() => root.render(<Probe />));
+    await flush();
+    act(() => applyPlaylistVisibility("pl1", true));
+
+    expect(state?.data.playlists[0]?.isPublic).toBe(true);
+    expect(queryCache.get<any>("playlist:detail:pl1")?.isPublic).toBe(true);
+    act(() => root.unmount());
+    queryCache.delete("playlist:detail:pl1");
   });
 });

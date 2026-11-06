@@ -20,6 +20,7 @@ export interface LibraryPlaylistSummary {
   updatedAt: string;
   createdAt: string;
   revision: number;
+  isPublic: boolean;
 }
 
 export interface LibraryPlaylistDetail {
@@ -30,6 +31,7 @@ export interface LibraryPlaylistDetail {
   coverUrl: string;
   coverUrls: string[];
   revision: number;
+  isPublic: boolean;
   tracks: Track[];
   durationMs?: number;
   partial?: boolean;
@@ -67,6 +69,20 @@ export function evictPlaylistFromCache(id: string) {
   queryCache.delete(`playlist:detail:${id}`);
   queryCache.delete(`playlist:etag:${id}`);
   emit();
+}
+
+// the visibility shown in the list and the cached details before the server answers (or after it refused)
+export function applyPlaylistVisibility(id: string, isPublic: boolean) {
+  cache = {
+    ...cache,
+    playlists: cache.playlists.map((p) =>
+      p.id === id ? { ...p, isPublic } : p,
+    ),
+  };
+  const detailKey = `playlist:detail:${id}`;
+  const detail = queryCache.get<LibraryPlaylistDetail>(detailKey);
+  if (detail) queryCache.set(detailKey, { ...detail, isPublic });
+  emit(view.error);
 }
 
 function emit(error?: unknown, isLoading = false) {
@@ -178,6 +194,7 @@ function toDetail({
     coverUrl: covers[0] ?? "",
     coverUrls: covers,
     revision: playlist.revision,
+    isPublic: playlist.isPublic,
     tracks: items.map(toTrack),
     durationMs: playlist.durationMs,
     ...(nextCursor !== null ? { partial: true } : {}),

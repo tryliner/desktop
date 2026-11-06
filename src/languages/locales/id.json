@@ -437,6 +437,12 @@
     }
   },
   "playlist": {
+    "make_public": "Jadikan publik",
+    "make_private": "Jadikan pribadi",
+    "made_public": "Playlist kini publik",
+    "made_private": "Playlist kini pribadi",
+    "visibility_failed": "Gagal mengubah visibilitas playlist",
+    "share_private": "Jadikan playlist publik untuk membagikannya",
     "playlist": "Playlist",
     "liked_songs": "Lagu yang disukai",
     "untitled_playlist": "Playlist Tanpa Judul",

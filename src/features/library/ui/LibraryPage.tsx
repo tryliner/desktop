@@ -219,6 +219,7 @@ function OnlineLibraryPage() {
       coverUrls: playlist.coverUrls,
       kind: "playlist" as const,
       isOwned: true,
+      isPublic: playlist.isPublic,
       href: `/library/playlist?id=${encodeURIComponent(playlist.id)}`,
       addedAt:
         playlist.updatedAt || playlist.createdAt || new Date().toISOString(),

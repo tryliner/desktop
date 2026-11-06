@@ -547,6 +547,12 @@
     }
   },
   "playlist": {
+    "make_public": "Make public",
+    "make_private": "Make private",
+    "made_public": "Playlist is public",
+    "made_private": "Playlist is private",
+    "visibility_failed": "Couldn't change who can see the playlist",
+    "share_private": "Make the playlist public to share it",
     "playlist": "Playlist",
     "liked_songs": "Liked songs",
     "untitled_playlist": "Untitled Playlist",

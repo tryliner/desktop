@@ -45,7 +45,11 @@ import type { Track } from "@/shared/types";
 import { useTranslation } from "@/languages";
 import { useModalStore } from "@/features/library";
 import { buildShareUrl } from "@/shared/utils/share";
-import { useExternalItems } from "@/features/library/hooks";
+import {
+  useExternalItems,
+  usePlaylistsList,
+  usePlaylistVisibility,
+} from "@/features/library/hooks";
 import { useCollection } from "../hooks/useCollection";
 import { readCollectionPreview } from "../lib/collectionPreview";
 import {
@@ -244,7 +248,20 @@ function CollectionContent() {
     }
   };
 
+  // the user's own playlist opened from a link: the list store has its current visibility
+  const { data: ownPlaylists } = usePlaylistsList();
+  const { sharePlaylist } = usePlaylistVisibility();
+  const userPlaylistPublic =
+    data?.isPublic === undefined
+      ? undefined
+      : (ownPlaylists.playlists.find((p) => p.id === decodedId)?.isPublic ??
+        data.isPublic);
+
   const handleShare = () => {
+    if (userPlaylistPublic !== undefined && decodedId) {
+      sharePlaylist(decodedId, userPlaylistPublic, data?.title);
+      return;
+    }
     if (typeof navigator !== "undefined" && navigator.clipboard && decodedId) {
       navigator.clipboard.writeText(buildShareUrl(entityType, decodedId));
       toast(t("common.link_copied"), "checkmark", {

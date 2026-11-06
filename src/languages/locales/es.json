@@ -437,6 +437,12 @@
     }
   },
   "playlist": {
+    "make_public": "Hacer pública",
+    "make_private": "Hacer privada",
+    "made_public": "La lista ahora es pública",
+    "made_private": "La lista ahora es privada",
+    "visibility_failed": "No se pudo cambiar la visibilidad de la lista",
+    "share_private": "Haz pública la lista para compartirla",
     "playlist": "Lista de reproducción",
     "liked_songs": "Canciones que te gustan",
     "untitled_playlist": "Lista sin título",

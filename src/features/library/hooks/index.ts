@@ -4,6 +4,7 @@ export {
   type LibraryPlaylistSummary,
   type LibraryPlaylistDetail,
 } from "./usePlaylists";
+export { usePlaylistVisibility } from "./usePlaylistVisibility";
 export { useExternalItems, type EntityType } from "./useExternalItems";
 export {
   useLikedTracks,

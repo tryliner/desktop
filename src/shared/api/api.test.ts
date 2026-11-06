@@ -39,6 +39,7 @@ const playlist = {
   ownerId: "7a1f0e7e-3b7c-4c55-9a43-1f1c4ab8e0df",
   title: "Mine",
   description: null,
+  isPublic: false,
   revision: 2,
   trackCount: 1,
   durationMs: 0,
@@ -214,6 +215,19 @@ describe("api", () => {
     expect(sent(1)).toMatchObject({
       url: `https://api.test/v1/playlists/${playlist.id}`,
       authorization: "Bearer fresh",
+    });
+  });
+
+  it("changes a playlist's visibility with { public } and answers the playlist", async () => {
+    reply(200, { ...playlist, isPublic: true, revision: 3 });
+    expect(await api.setPlaylistVisibility(playlist.id, true)).toMatchObject({
+      isPublic: true,
+      revision: 3,
+    });
+    expect(sent()).toMatchObject({
+      url: `https://api.test/v1/playlists/${playlist.id}/visibility`,
+      method: "PUT",
+      body: { public: true },
     });
   });
 

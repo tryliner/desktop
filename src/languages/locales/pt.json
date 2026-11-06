@@ -446,6 +446,12 @@
     }
   },
   "playlist": {
+    "make_public": "Tornar pública",
+    "make_private": "Tornar privada",
+    "made_public": "A playlist agora é pública",
+    "made_private": "A playlist agora é privada",
+    "visibility_failed": "Não foi possível alterar a visibilidade da playlist",
+    "share_private": "Torne a playlist pública para compartilhá-la",
     "playlist": "Playlist",
     "liked_songs": "Curtidas",
     "untitled_playlist": "Playlist sem título",
