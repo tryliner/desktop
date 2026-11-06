@@ -597,6 +597,7 @@ export type Playlist = {
   ownerId: string;
   title: string;
   description: string | null;
+  isPublic: boolean;
   revision: number;
   trackCount: number;
   durationMs: number;
@@ -796,12 +797,6 @@ export type R2Plan = {
   mimeType: string;
   codec: string | null;
   size: number;
-};
-
-export type RecoveryLink = {
-  maskedEmail: string;
-  /** ISO 8601 time */
-  expiresAt: string;
 };
 
 export type RecoveryRequestAccepted = {
@@ -1134,29 +1129,46 @@ export interface ApiRoutes {
       503: ErrorResponse;
     };
   };
-  "GET /v1/auth/recovery-link": {
+  "GET /reset": {
     params: never;
-    query: never;
+    query: {
+      token?: string;
+    };
     body: never;
     responses: {
-      200: RecoveryLink;
+      200: string;
       400: ErrorResponse;
-      410: ErrorResponse;
-      429: ErrorResponse;
+      410: string;
       500: ErrorResponse;
     };
   };
-  "PUT /v1/auth/recovery-link/password": {
+  "POST /reset": {
     params: never;
     query: never;
     body: {
+      token: string;
       password: string;
+      confirm: string;
     };
     responses: {
-      204: null;
+      200: string;
       400: ErrorResponse;
-      410: ErrorResponse;
-      429: ErrorResponse;
+      410: string;
+      422: string;
+      429: string;
+      500: ErrorResponse;
+    };
+  };
+  "GET /reset/assets/:name": {
+    params: {
+      name: string;
+    };
+    query: never;
+    body: never;
+    responses: {
+      200: unknown;
+      400: ErrorResponse;
+      404: ErrorResponse;
       500: ErrorResponse;
     };
   };
@@ -1294,6 +1306,22 @@ export interface ApiRoutes {
     body: {
       title?: string;
       description?: string | null;
+    };
+    responses: {
+      200: Playlist;
+      400: ErrorResponse;
+      401: ErrorResponse;
+      404: ErrorResponse;
+      500: ErrorResponse;
+    };
+  };
+  "PUT /v1/playlists/:playlistId/visibility": {
+    params: {
+      playlistId: string;
+    };
+    query: never;
+    body: {
+      public: boolean;
     };
     responses: {
       200: Playlist;
@@ -2028,31 +2056,18 @@ export interface ApiRoutes {
     body: never;
     responses: Record<number, unknown>;
   };
-  "GET /account/password-reset": {
-    params: never;
-    query: never;
-    body: never;
-    responses: {
-      200: string;
-      500: ErrorResponse;
+  "GET /link/assets/:name": {
+    params: {
+      name: string;
     };
-  };
-  "GET /account/health": {
-    params: never;
     query: never;
     body: never;
     responses: {
-      200: UpdaterHealth;
-      500: ErrorResponse;
-    };
-  };
-  "GET /account/assets/mail-logo.png": {
-    params: never;
-    query: never;
-    body: never;
-    responses: {
-      200: string;
-      500: ErrorResponse;
+      200: unknown;
+      400: string;
+      404: string;
+      414: string;
+      500: string;
     };
   };
   "GET /link": {
