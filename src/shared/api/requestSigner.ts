@@ -78,23 +78,29 @@ interface WasmSignerExports {
 }
 
 let wasmExportsInstance: WasmSignerExports | null = null;
+let wasmExportsPromise: Promise<WasmSignerExports | null> | null = null;
 
-function getWasmExports(): WasmSignerExports | null {
+async function getWasmExports(): Promise<WasmSignerExports | null> {
   if (wasmExportsInstance) return wasmExportsInstance;
-  try {
-    const binary = atob(SIGNER_WASM_BASE64);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) {
-      bytes[i] = binary.charCodeAt(i);
+  if (wasmExportsPromise) return wasmExportsPromise;
+
+  wasmExportsPromise = (async () => {
+    try {
+      const binary = atob(SIGNER_WASM_BASE64);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+      const wasmResult = await WebAssembly.instantiate(bytes, {});
+      wasmExportsInstance = wasmResult.instance.exports as unknown as WasmSignerExports;
+      return wasmExportsInstance;
+    } catch (err) {
+      console.error("[Signer] Failed to initialize in-browser WASM signer:", err);
+      return null;
     }
-    const wasmModule = new WebAssembly.Module(bytes);
-    const wasmInstance = new WebAssembly.Instance(wasmModule, {});
-    wasmExportsInstance = wasmInstance.exports as unknown as WasmSignerExports;
-    return wasmExportsInstance;
-  } catch (err) {
-    console.error("[Signer] Failed to initialize in-browser WASM signer:", err);
-    return null;
-  }
+  })();
+
+  return wasmExportsPromise;
 }
 
 function passStringToWasm(
@@ -133,13 +139,13 @@ function generateRandomHex(byteCount = 8): string {
   return s;
 }
 
-function signInBrowserWasm(
+async function signInBrowserWasm(
   method: string,
   path: string,
   body?: string | null,
   timestamp?: number,
-): SignedHeaders {
-  const wasm = getWasmExports();
+): Promise<SignedHeaders> {
+  const wasm = await getWasmExports();
   if (!wasm) return {};
 
   const ts = timestamp ?? getAdjustedTimestamp();
@@ -202,7 +208,7 @@ export async function signApiRequest(
 
       if (res && res.error) {
         console.error("[Signer] Native signer error, falling back to WASM:", res.error);
-        return signInBrowserWasm(method, cleanPath, body, timestamp);
+        return await signInBrowserWasm(method, cleanPath, body, timestamp);
       } else if (res && res.signature) {
         return {
           "x-liner-signature": res.signature,
@@ -212,10 +218,10 @@ export async function signApiRequest(
       }
     } catch (err) {
       console.error("[Signer] IPC signRequest call failed, falling back to WASM:", err);
-      return signInBrowserWasm(method, cleanPath, body, timestamp);
+      return await signInBrowserWasm(method, cleanPath, body, timestamp);
     }
   }
 
   // Running in browser, mobile web, or Capacitor native without Electron
-  return signInBrowserWasm(method, cleanPath, body, timestamp);
+  return await signInBrowserWasm(method, cleanPath, body, timestamp);
 }
