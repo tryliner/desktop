@@ -1,5 +1,6 @@
 import { memo, useEffect, useRef, useState } from "react";
 import { More2Fill, RepeatFill } from "@mingcute/react";
+import { LuMusic } from "react-icons/lu";
 import DropdownMenu from "@/shared/ui/DropdownMenu";
 import type { DropdownMenuItem } from "@/shared/ui/DropdownMenu";
 import { useTranslation } from "@/languages";
@@ -176,21 +177,32 @@ function SongCard({
           >
             {icon ? (
               icon
+            ) : coverUrl ? (
+              <>
+                <CoverImage
+                  key={coverUrl}
+                  src={coverUrl}
+                  alt={title}
+                  fill
+                  sizes={compact ? "40px" : "48px"}
+                  placeholder="empty"
+                  onLoadStart={() => setImageLoaded(isCoverReady(coverUrl))}
+                  onLoad={() => setImageLoaded(true)}
+                  className={`object-cover pointer-events-none transition-opacity duration-300 ${
+                    imageLoaded ? "opacity-100" : "opacity-0"
+                  }`}
+                  draggable={false}
+                />
+                {!imageLoaded && (
+                  <div className="absolute inset-0 flex items-center justify-center text-text-tertiary">
+                    <LuMusic size={compact ? 16 : 20} />
+                  </div>
+                )}
+              </>
             ) : (
-              <CoverImage
-                key={coverUrl}
-                src={coverUrl}
-                alt={title}
-                fill
-                sizes={compact ? "40px" : "48px"}
-                placeholder="empty"
-                onLoadStart={() => setImageLoaded(isCoverReady(coverUrl))}
-                onLoad={() => setImageLoaded(true)}
-                className={`object-cover pointer-events-none transition-opacity duration-300 ${
-                  imageLoaded ? "opacity-100" : "opacity-0"
-                }`}
-                draggable={false}
-              />
+              <div className="flex items-center justify-center text-text-tertiary">
+                <LuMusic size={compact ? 16 : 20} />
+              </div>
             )}
           </div>
         )}

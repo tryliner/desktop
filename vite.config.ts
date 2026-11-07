@@ -7,6 +7,12 @@ import pkg from "./package.json" with { type: "json" };
 import { contentSecurityPolicyPlugin } from "./vite.csp.ts";
 
 export default defineConfig(({ command, mode }) => {
+  const isWeb =
+    mode === "web" ||
+    process.env.VITE_WEB === "true" ||
+    process.env.TARGET === "web" ||
+    Boolean(process.env.ELECTRON_STARTUP_PREVENT);
+
   if (command === "serve") {
     const devEnv = loadEnv(mode, process.cwd(), ["LINER_", "VITE_API_URL"]);
     for (const name of [
@@ -27,25 +33,26 @@ export default defineConfig(({ command, mode }) => {
       react(),
       tailwindcss(),
       contentSecurityPolicyPlugin(),
-      electron({
-        main: {
-          entry: "electron/main.ts",
-        },
-        preload: {
-          input: "electron/preload.ts",
-          vite: {
-            build: {
-              rollupOptions: {
-                output: {
-                  format: "cjs",
-                  entryFileNames: "preload.cjs",
+      !isWeb &&
+        electron({
+          main: {
+            entry: "electron/main.ts",
+          },
+          preload: {
+            input: "electron/preload.ts",
+            vite: {
+              build: {
+                rollupOptions: {
+                  output: {
+                    format: "cjs",
+                    entryFileNames: "preload.cjs",
+                  },
                 },
               },
             },
           },
-        },
-      }),
-    ],
+        }),
+    ].filter(Boolean),
     clearScreen: false,
     resolve: {
       alias: {
@@ -67,6 +74,36 @@ export default defineConfig(({ command, mode }) => {
     server: {
       port: 5173,
       strictPort: true,
+      proxy: {
+        "/v1": {
+          target: "https://api.tryliner.fun",
+          changeOrigin: true,
+          secure: false,
+          headers: {
+            // Cloudflare blocks node-proxy requests if user-agent or headers look like an automated proxy
+            "User-Agent":
+              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36",
+            Accept: "application/json, text/plain, */*",
+            "Accept-Language": "en-US,en;q=0.9",
+          },
+          configure: (proxy) => {
+            proxy.on("proxyReq", (proxyReq, req) => {
+              proxyReq.removeHeader("origin");
+              proxyReq.removeHeader("referer");
+              proxyReq.removeHeader("x-forwarded-for");
+              proxyReq.removeHeader("x-forwarded-host");
+              proxyReq.removeHeader("x-forwarded-proto");
+              proxyReq.setHeader(
+                "user-agent",
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36",
+              );
+            });
+            proxy.on("proxyRes", (proxyRes, req) => {
+              console.log("[Vite Proxy <- tryliner.fun]", proxyRes.statusCode, req.method, req.url);
+            });
+          },
+        },
+      },
     },
     build: {
       outDir: "dist",

@@ -1,3 +1,5 @@
+import { SIGNER_WASM_BASE64 } from "../../../electron/signer";
+
 // signs outgoing api requests with canonical headers: x-liner-signature, timestamp, nonce
 export interface SignedHeaders {
   "x-liner-signature"?: string;
@@ -42,44 +44,184 @@ function isElectron(): boolean {
   );
 }
 
+// ---- In-Browser / Mobile WebAssembly Signer ----
+interface WasmSignerExports {
+  liner_alloc: (len: number) => number;
+  liner_dealloc: (ptr: number, len: number) => void;
+  liner_get_result_ptr: () => number;
+  liner_get_result_len: () => number;
+  liner_sign_cover_url: (ptr: number, len: number) => number;
+  liner_sign_request: (
+    method_ptr: number,
+    method_len: number,
+    path_ptr: number,
+    path_len: number,
+    body_ptr: number,
+    body_len: number,
+    timestamp: bigint,
+    nonce_ptr: number,
+    nonce_len: number,
+  ) => number;
+  liner_sign_monitor_request: (
+    method_ptr: number,
+    method_len: number,
+    path_ptr: number,
+    path_len: number,
+    body_ptr: number,
+    body_len: number,
+    timestamp: bigint,
+    nonce_ptr: number,
+    nonce_len: number,
+  ) => number;
+  liner_sign_raw_payload: (ptr: number, len: number) => number;
+  memory: WebAssembly.Memory;
+}
+
+let wasmExportsInstance: WasmSignerExports | null = null;
+let wasmExportsPromise: Promise<WasmSignerExports | null> | null = null;
+
+async function getWasmExports(): Promise<WasmSignerExports | null> {
+  if (wasmExportsInstance) return wasmExportsInstance;
+  if (wasmExportsPromise) return wasmExportsPromise;
+
+  wasmExportsPromise = (async () => {
+    try {
+      const binary = atob(SIGNER_WASM_BASE64);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+      const wasmResult = await WebAssembly.instantiate(bytes, {});
+      wasmExportsInstance = wasmResult.instance.exports as unknown as WasmSignerExports;
+      return wasmExportsInstance;
+    } catch (err) {
+      console.error("[Signer] Failed to initialize in-browser WASM signer:", err);
+      return null;
+    }
+  })();
+
+  return wasmExportsPromise;
+}
+
+function passStringToWasm(
+  exports: WasmSignerExports,
+  str: string,
+): { ptr: number; len: number; free: () => void } {
+  const enc = new TextEncoder().encode(str);
+  const ptr = exports.liner_alloc(enc.length);
+  const mem = new Uint8Array(exports.memory.buffer, ptr, enc.length);
+  mem.set(enc);
+  return {
+    ptr,
+    len: enc.length,
+    free: () => exports.liner_dealloc(ptr, enc.length),
+  };
+}
+
+function readResultFromWasm(exports: WasmSignerExports): string {
+  const ptr = exports.liner_get_result_ptr();
+  const len = exports.liner_get_result_len();
+  if (!ptr || len === 0) return "";
+  const mem = new Uint8Array(exports.memory.buffer, ptr, len);
+  return new TextDecoder().decode(mem);
+}
+
+function generateRandomHex(byteCount = 8): string {
+  if (typeof crypto !== "undefined" && crypto.getRandomValues) {
+    const arr = new Uint8Array(byteCount);
+    crypto.getRandomValues(arr);
+    return Array.from(arr, (b) => b.toString(16).padStart(2, "0")).join("");
+  }
+  let s = "";
+  for (let i = 0; i < byteCount * 2; i++) {
+    s += Math.floor(Math.random() * 16).toString(16);
+  }
+  return s;
+}
+
+async function signInBrowserWasm(
+  method: string,
+  path: string,
+  body?: string | null,
+  timestamp?: number,
+): Promise<SignedHeaders> {
+  const wasm = await getWasmExports();
+  if (!wasm) return {};
+
+  const ts = timestamp ?? getAdjustedTimestamp();
+  const nonce = generateRandomHex(8);
+
+  const methodBuf = passStringToWasm(wasm, method.toUpperCase().trim());
+  const pathBuf = passStringToWasm(wasm, path);
+  const bodyBuf = passStringToWasm(wasm, body ?? "");
+  const nonceBuf = passStringToWasm(wasm, nonce);
+
+  try {
+    const code = wasm.liner_sign_request(
+      methodBuf.ptr,
+      methodBuf.len,
+      pathBuf.ptr,
+      pathBuf.len,
+      bodyBuf.ptr,
+      bodyBuf.len,
+      BigInt(ts),
+      nonceBuf.ptr,
+      nonceBuf.len,
+    );
+
+    if (code !== 0) {
+      console.error(`[Signer] WASM sign_request failed with code ${code}`);
+      return {};
+    }
+
+    const signature = readResultFromWasm(wasm);
+    return {
+      "x-liner-signature": signature,
+      "x-liner-timestamp": String(ts),
+      "x-liner-nonce": nonce,
+    };
+  } finally {
+    methodBuf.free();
+    pathBuf.free();
+    bodyBuf.free();
+    nonceBuf.free();
+  }
+}
+
 export async function signApiRequest(
   method: string,
   path: string,
   body?: string | null,
   customTimestamp?: number,
 ): Promise<SignedHeaders> {
-  if (!isElectron()) {
-    if (import.meta.env.DEV) {
-      console.warn(
-        "[Signer] Not running in Electron environment (window.linerElectron is undefined). Outgoing requests will NOT have HMAC headers.",
-      );
-    }
-    return {};
-  }
-
   const cleanPath = path.split("?")[0].trim();
   const timestamp = customTimestamp ?? getAdjustedTimestamp();
 
-  try {
-    const res = await window.linerElectron!.signRequest({
-      method: method.toUpperCase().trim(),
-      path: cleanPath,
-      body: body ?? undefined,
-      timestamp,
-    });
+  if (isElectron()) {
+    try {
+      const res = await window.linerElectron!.signRequest({
+        method: method.toUpperCase().trim(),
+        path: cleanPath,
+        body: body ?? undefined,
+        timestamp,
+      });
 
-    if (res && res.error) {
-      console.error("[Signer] Native signer error:", res.error);
-    } else if (res && res.signature) {
-      return {
-        "x-liner-signature": res.signature,
-        "x-liner-timestamp": String(res.timestamp ?? timestamp),
-        "x-liner-nonce": res.nonce,
-      };
+      if (res && res.error) {
+        console.error("[Signer] Native signer error, falling back to WASM:", res.error);
+        return await signInBrowserWasm(method, cleanPath, body, timestamp);
+      } else if (res && res.signature) {
+        return {
+          "x-liner-signature": res.signature,
+          "x-liner-timestamp": String(res.timestamp ?? timestamp),
+          "x-liner-nonce": res.nonce,
+        };
+      }
+    } catch (err) {
+      console.error("[Signer] IPC signRequest call failed, falling back to WASM:", err);
+      return await signInBrowserWasm(method, cleanPath, body, timestamp);
     }
-  } catch (err) {
-    console.error("[Signer] IPC signRequest call failed:", err);
   }
 
-  return {};
+  // Running in browser, mobile web, or Capacitor native without Electron
+  return await signInBrowserWasm(method, cleanPath, body, timestamp);
 }

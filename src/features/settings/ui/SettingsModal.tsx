@@ -5,6 +5,7 @@ import {
   DiscordFill,
   KeyboardFill,
   YoutubeFill,
+  LeftLine,
 } from "@mingcute/react";
 import {
   Play,
@@ -18,6 +19,7 @@ import { DialogHeader } from "@/shared/ui";
 import { useScrollFade } from "@/shared/hooks";
 import { useTranslation, getTranslationsForAllLocales } from "@/languages";
 import { useModalStore } from "@/features/library";
+import { cn } from "@/shared/lib";
 import {
   PlaybackTab,
   ShortcutsTab,
@@ -245,8 +247,39 @@ export default function SettingsModal() {
 
   const [activeTab, setActiveTab] = useState<TabId>("Playback");
   const [searchQuery, setSearchQuery] = useState("");
+  const [mobileSubpage, setMobileSubpage] = useState(false);
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== "undefined" ? window.innerWidth < 768 : false,
+  );
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mql = window.matchMedia("(max-width: 767px)");
+    const onChange = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    setIsMobile(mql.matches);
+    mql.addEventListener("change", onChange);
+    return () => mql.removeEventListener("change", onChange);
+  }, []);
+
+  const DESKTOP_ONLY_TABS = useMemo(
+    () => new Set<TabId>(["Shortcuts", "Overlay", "Discord"]),
+    [],
+  );
+
+  useEffect(() => {
+    if (isMobile && DESKTOP_ONLY_TABS.has(activeTab)) {
+      setActiveTab("Playback");
+    }
+  }, [isMobile, activeTab, DESKTOP_ONLY_TABS]);
+
+  useEffect(() => {
+    if (!open) {
+      setMobileSubpage(false);
+    }
+  }, [open]);
 
   const handleClose = () => {
+    setMobileSubpage(false);
     setSearchQuery("");
     close();
   };
@@ -332,13 +365,22 @@ export default function SettingsModal() {
   }, [searchQuery]);
 
   const filteredGroups = useMemo(() => {
-    if (!matchingTabIds) return TAB_GROUPS;
+    const baseGroups = isMobile
+      ? TAB_GROUPS.map((g) => ({
+          ...g,
+          ids: g.ids.filter((id) => !DESKTOP_ONLY_TABS.has(id)),
+        })).filter((g) => g.ids.length > 0)
+      : TAB_GROUPS;
 
-    return TAB_GROUPS.map((group) => {
-      const ids = group.ids.filter((id) => matchingTabIds.has(id));
-      return { ...group, ids };
-    }).filter((group) => group.ids.length > 0);
-  }, [matchingTabIds]);
+    if (!matchingTabIds) return baseGroups;
+
+    return baseGroups
+      .map((group) => {
+        const ids = group.ids.filter((id) => matchingTabIds.has(id));
+        return { ...group, ids };
+      })
+      .filter((group) => group.ids.length > 0);
+  }, [matchingTabIds, isMobile, DESKTOP_ONLY_TABS]);
 
   useEffect(() => {
     if (!searchQuery.trim()) return;
@@ -367,23 +409,44 @@ export default function SettingsModal() {
       open={open}
       onOpenChange={(next) => (!next ? handleClose() : undefined)}
       maxWidth={940}
-      className="p-0 h-[720px] !max-h-[90vh] !flex-row overflow-hidden"
+      className="p-0 h-[88vh] md:h-[720px] !max-h-[95vh] flex-col md:!flex-row overflow-hidden"
     >
       <SettingsSidebar
         groups={filteredGroups}
         activeTab={activeTab}
-        onSelect={setActiveTab}
+        onSelect={(tab) => {
+          setActiveTab(tab);
+          setMobileSubpage(true);
+        }}
         labels={tabLabels}
         icons={TAB_ICONS}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         onClose={handleClose}
+        className={mobileSubpage ? "hidden md:flex" : "flex"}
       />
 
-      <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+      <div
+        className={cn(
+          "relative min-h-0 min-w-0 flex-1 flex-col overflow-hidden",
+          mobileSubpage ? "flex" : "hidden md:flex",
+        )}
+      >
         <DialogHeader
-          className="shrink-0 px-[20px] pt-[20px] pb-[16px]"
-          title={tabLabels[activeTab]}
+          className="shrink-0 px-[16px] md:px-[20px] pt-[16px] md:pt-[20px] pb-[14px] md:pb-[16px]"
+          title={
+            <div className="flex items-center gap-[8px]">
+              <button
+                type="button"
+                onClick={() => setMobileSubpage(false)}
+                className="md:hidden -ml-[4px] inline-flex h-[28px] w-[28px] items-center justify-center rounded-control bg-fill text-text-secondary hover:text-text-primary"
+                aria-label="Back"
+              >
+                <LeftLine size={18} />
+              </button>
+              <span>{tabLabels[activeTab]}</span>
+            </div>
+          }
           description={tabDescriptions[activeTab]}
           trailing={
             <button

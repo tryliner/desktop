@@ -30,7 +30,13 @@ export function humanCheckPageUrl(action: HumanCheckAction): string {
 }
 
 export function humanCheckOrigin(): string {
-  return new URL(getApiBaseUrl()).origin;
+  const base = getApiBaseUrl();
+  if (!base) {
+    return typeof window !== "undefined"
+      ? window.location.origin
+      : "https://api.tryliner.fun";
+  }
+  return new URL(base).origin;
 }
 
 export function isHumanCheckMode(value: unknown): value is HumanCheckMode {

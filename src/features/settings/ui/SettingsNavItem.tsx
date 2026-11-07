@@ -1,5 +1,6 @@
 import type { ComponentType, ReactNode } from "react";
 import { motion } from "framer-motion";
+import { RightLine } from "@mingcute/react";
 import { cn } from "@/shared/lib/utils";
 
 export interface SettingsNavIconProps {
@@ -55,6 +56,7 @@ export function NavItem({
         )}
       />
       <span className="relative truncate">{label}</span>
+      <RightLine size={15} className="relative ml-auto text-text-tertiary/60 md:hidden shrink-0" />
     </button>
   );
 }

@@ -27,7 +27,7 @@ import { CachedSongsCard, useCachedTracksStore } from "../cached";
 import { WifiOffLine } from "@mingcute/react";
 import { useOfflineModeStore } from "@/features/connectivity";
 import { goOnline } from "@/features/connectivity/engine/offlineController";
-import { useSavedTracks } from "../saved/hooks/useSavedTracks";
+import { SavedTracksCard, useSavedTracks } from "../saved";
 
 const PAGE_SIZE = 24;
 
@@ -458,6 +458,10 @@ function OnlineLibraryPage() {
                             onClick={() =>
                               navigate("/library/playlist?id=likes")
                             }
+                          />,
+                          <SavedTracksCard
+                            key="saved-tracks-card"
+                            viewMode={viewMode}
                           />,
                           ...(showCachedSongs
                             ? [

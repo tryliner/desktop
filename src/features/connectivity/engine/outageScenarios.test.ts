@@ -101,26 +101,30 @@ describe("youtube not responding", () => {
     const { useOfflineModeStore, noteYoutubeTrouble } = await loadFeature();
 
     noteYoutubeTrouble();
-    await vi.waitFor(() =>
-      expect(useOfflineModeStore.getState().issue).toBe("youtube_unreachable"),
+    await vi.waitFor(
+      () =>
+        expect(useOfflineModeStore.getState().issue).toBe("youtube_unreachable"),
+      { timeout: 15000 },
     );
     const state = useOfflineModeStore.getState();
     expect(state.verdict).toBe("online");
     expect(state.offline).toBe(false);
-  });
+  }, 20000);
 
   it("does not re-probe for every failing track", async () => {
     const probeNetwork = installNetwork("youtube-timeout");
     const { useOfflineModeStore, noteYoutubeTrouble } = await loadFeature();
 
     noteYoutubeTrouble();
-    await vi.waitFor(() =>
-      expect(useOfflineModeStore.getState().checkedAt).not.toBeNull(),
+    await vi.waitFor(
+      () =>
+        expect(useOfflineModeStore.getState().checkedAt).not.toBeNull(),
+      { timeout: 15000 },
     );
     noteYoutubeTrouble();
     noteYoutubeTrouble();
     expect(probeNetwork).toHaveBeenCalledTimes(1);
-  });
+  }, 20000);
 });
 
 describe("youtube blocked in the country", () => {

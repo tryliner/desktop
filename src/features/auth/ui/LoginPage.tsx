@@ -15,6 +15,7 @@ import {
 } from "../store/authStore";
 import { useTranslation } from "@/languages";
 import { HumanCheckNotice } from "@/features/human-check";
+import { useOfflineModeStore } from "@/features/connectivity";
 import { cn } from "@/shared/lib";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -207,10 +208,10 @@ export default function LoginPage() {
 
       <WindowControls variant="glass" isFullscreen />
 
-      <section className="relative z-10 mx-4 my-auto grid max-h-[calc(100%-48px)] w-full max-w-[780px] grid-cols-[300px_1fr] gap-[8px] overflow-y-auto rounded-panel border border-border-primary bg-bg-panel p-[8px]">
+      <section className="relative z-10 mx-2 md:mx-4 my-auto flex flex-col md:grid max-h-[calc(100%-24px)] md:max-h-[calc(100%-48px)] w-full max-w-[780px] md:grid-cols-[300px_1fr] gap-[8px] overflow-y-auto rounded-panel border border-border-primary bg-bg-panel p-[6px] md:p-[8px]">
         <LoginBrandPanel title={heading} subtitle={subheading} />
 
-        <div className="flex w-full flex-col px-[28px] pb-[22px] pt-[26px]">
+        <div className="flex w-full flex-col px-[14px] md:px-[28px] pb-[20px] md:pb-[22px] pt-[14px] md:pt-[26px]">
           <div className="flex flex-col pb-6">
             <div className="w-full">
               <div className="flex gap-[8px]">
@@ -594,6 +595,19 @@ export default function LoginPage() {
                   )}
                 </AnimatePresence>
               </form>
+
+              <div className="mt-4 pt-3 border-t border-border-primary/60 flex flex-col items-center">
+                <button
+                  type="button"
+                  onClick={() => {
+                    useOfflineModeStore.getState().enter("manual");
+                    navigate("/library");
+                  }}
+                  className="w-full h-[38px] rounded-[10px] bg-fill hover:bg-fill-hover text-text-secondary hover:text-text-primary text-[13px] font-[500] transition-colors border-none cursor-pointer flex items-center justify-center gap-2"
+                >
+                  <span>🎵 เข้าสู่คลังเพลง (Offline & Local Library)</span>
+                </button>
+              </div>
             </div>
           </div>
 

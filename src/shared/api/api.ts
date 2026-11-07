@@ -400,10 +400,14 @@ async function executeRequest<T>(
   if (res.status === 304) return undefined as unknown as T;
 
   if (!res.ok) {
-    const body = (await res.json().catch(() => ({}))) as Record<
-      string,
-      unknown
-    >;
+    const rawText = await res.text().catch(() => "");
+    let body: Record<string, unknown> = {};
+    try {
+      body = JSON.parse(rawText);
+    } catch {
+      // not json (e.g. Cloudflare HTML error page)
+    }
+    console.error("[API Error Response]", res.status, method, path, body.message || body.error || rawText || res.statusText);
     const resRequestId =
       res.headers?.get?.("x-request-id") ||
       (typeof body.reqId === "string"

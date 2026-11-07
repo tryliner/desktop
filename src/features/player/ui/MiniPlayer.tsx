@@ -16,6 +16,7 @@ import {
   Shuffle,
 } from "@solar-icons/react";
 import { HeartFill, HeartLine } from "@mingcute/react";
+import { LuMusic } from "react-icons/lu";
 
 import { PlayerMorphIcon, ICON_PLAY, ICON_PAUSE } from "./morphPlayerIcons";
 
@@ -740,14 +741,14 @@ function MiniPlayer({
           </div>
         )}
         <div
-          className={`relative grid h-full pointer-events-none ${
+          className={`relative flex md:grid h-full pointer-events-none items-center justify-between ${
             embedded
-              ? "grid-cols-[280px_minmax(0,1fr)_260px]"
-              : "grid-cols-[286px_minmax(0,1fr)]"
+              ? "md:grid-cols-[280px_minmax(0,1fr)_260px]"
+              : "md:grid-cols-[286px_minmax(0,1fr)]"
           } ${!usesRoundedStyle && !embedded ? "pb-[4px]" : ""}`}
         >
           <div
-            className="flex h-full items-center gap-[16px] px-[18px] pt-[1px] pointer-events-none cursor-default"
+            className="flex h-full items-center gap-[12px] md:gap-[16px] px-[12px] md:px-[18px] pt-[1px] pointer-events-none cursor-default min-w-0 flex-1"
             onContextMenu={handleTrackContextMenu}
           >
             {trackMenuPosition && (
@@ -767,25 +768,36 @@ function MiniPlayer({
               role="button"
               tabIndex={0}
               aria-label="Open player"
-              className={`relative h-[38px] w-[38px] shrink-0 overflow-hidden rounded-control bg-bg-elevated cursor-pointer pointer-events-auto prevent-seek ${
+              className={`relative h-[38px] w-[38px] shrink-0 overflow-hidden rounded-control bg-bg-elevated cursor-pointer pointer-events-auto prevent-seek flex items-center justify-center ${
                 coverUrl && !isCoverLoaded ? "animate-pulse" : ""
               }`}
               onClick={onFullscreenOpen}
               onPointerDown={(e) => e.stopPropagation()}
             >
-              <CoverImage
-                key={coverUrl}
-                src={coverUrl}
-                alt="Track artwork"
-                width={38}
-                height={38}
-                priority
-                draggable={false}
-                onLoad={(e) => {
-                  extractAccentColor(e.currentTarget as HTMLImageElement);
-                }}
-                className="h-[38px] w-[38px] object-cover rounded-control"
-              />
+              {coverUrl ? (
+                <>
+                  <CoverImage
+                    key={coverUrl}
+                    src={coverUrl}
+                    alt="Track artwork"
+                    width={38}
+                    height={38}
+                    priority
+                    draggable={false}
+                    onLoad={(e) => {
+                      extractAccentColor(e.currentTarget as HTMLImageElement);
+                    }}
+                    className="h-[38px] w-[38px] object-cover rounded-control"
+                  />
+                  {!isCoverLoaded && (
+                    <div className="absolute inset-0 flex items-center justify-center text-text-tertiary">
+                      <LuMusic size={18} />
+                    </div>
+                  )}
+                </>
+              ) : (
+                <LuMusic size={18} className="text-text-tertiary" />
+              )}
             </div>
             <div className="flex min-w-0 flex-col pointer-events-none">
               <p
@@ -860,7 +872,7 @@ function MiniPlayer({
           </div>
 
           <div
-            className={`flex h-full items-center pl-[10px] pr-[18px] pointer-events-none ${
+            className={`hidden md:flex h-full items-center pl-[10px] pr-[18px] pointer-events-none ${
               embedded ? "col-start-3" : ""
             }`}
           >
@@ -1053,15 +1065,15 @@ function MiniPlayer({
           </div>
         </div>
 
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+        <div className="pointer-events-none md:absolute md:inset-0 flex items-center justify-end md:justify-center pr-[14px] md:pr-0 shrink-0">
           <div
-            className="pointer-events-auto flex items-center gap-[8px] prevent-seek cursor-default"
+            className="pointer-events-auto flex items-center gap-[6px] md:gap-[8px] prevent-seek cursor-default"
             onPointerDown={(e) => e.stopPropagation()}
           >
             <button
               type="button"
               aria-label="Previous track"
-              className={`${iconButtonClass} text-text-secondary hover:text-text-primary`}
+              className={`hidden sm:inline-flex ${iconButtonClass} text-text-secondary hover:text-text-primary`}
               onPointerDown={(e) => e.stopPropagation()}
               onClick={() => {
                 void playerEngine.skipPrevious();
@@ -1108,7 +1120,7 @@ function MiniPlayer({
             <button
               type="button"
               aria-label="Next track"
-              className={`${iconButtonClass} text-text-secondary hover:text-text-primary`}
+              className={`hidden sm:inline-flex ${iconButtonClass} text-text-secondary hover:text-text-primary`}
               onPointerDown={(e) => e.stopPropagation()}
               onClick={() => {
                 void playerEngine.skipNext();

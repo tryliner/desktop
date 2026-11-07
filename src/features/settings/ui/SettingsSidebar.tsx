@@ -1,9 +1,10 @@
 import type { ComponentType } from "react";
-import { Search2Line, CloseCircleFill } from "@mingcute/react";
+import { Search2Line, CloseCircleFill, CloseLine } from "@mingcute/react";
 import { Book2, QuestionCircle } from "@solar-icons/react";
 import { useScrollFade } from "@/shared/hooks";
 import TextInput from "@/shared/ui/TextInput";
 import { useTranslation } from "@/languages";
+import { cn } from "@/shared/lib";
 import { SettingsUserFooter } from "./SettingsUserFooter";
 import {
   NavItem,
@@ -22,6 +23,7 @@ interface SettingsSidebarProps<T extends string> {
   searchQuery: string;
   onSearchChange: (query: string) => void;
   onClose: () => void;
+  className?: string;
 }
 
 export function SettingsSidebar<T extends string>({
@@ -33,6 +35,7 @@ export function SettingsSidebar<T extends string>({
   searchQuery,
   onSearchChange,
   onClose,
+  className,
 }: SettingsSidebarProps<T>) {
   const { t } = useTranslation();
   const { attach, onScroll, style } = useScrollFade<HTMLElement>();
@@ -40,7 +43,20 @@ export function SettingsSidebar<T extends string>({
     window.open(url, "_blank", "noopener,noreferrer");
 
   return (
-    <aside className="flex min-h-0 w-[240px] shrink-0 flex-col font-sans">
+    <aside className={cn("min-h-0 w-full md:w-[240px] shrink-0 flex-col font-sans", className)}>
+      <div className="flex items-center justify-between px-[16px] pt-[16px] pb-[4px] md:hidden">
+        <h2 className="text-heading font-[600] text-text-primary m-0">
+          {t("settings.title") || "Settings"}
+        </h2>
+        <button
+          type="button"
+          aria-label={t("common.close") || "Close"}
+          onClick={onClose}
+          className="inline-flex h-[32px] w-[32px] items-center justify-center rounded-control bg-fill text-text-tertiary hover:text-text-primary"
+        >
+          <CloseLine size={18} />
+        </button>
+      </div>
       <div className="px-[12px] pt-[12px] pb-[12px]">
         <TextInput
           size="sm"

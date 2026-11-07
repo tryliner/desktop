@@ -742,9 +742,9 @@ export function ShortcutsTab({
   return (
     <div className="flex flex-col">
       {/* ── Top Bar: Scope Tabs (Left) + Tiny Search Field (Right) ── */}
-      <div className="flex items-center justify-between gap-3 mt-[8px] mb-[6px] w-full min-w-0">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 mt-[8px] mb-[6px] w-full min-w-0">
         <div
-          className="inline-flex h-[34px] items-center rounded-item bg-fill p-[3px] select-none shrink-0"
+          className="inline-flex h-[34px] items-center rounded-item bg-fill p-[3px] select-none shrink-0 overflow-x-auto max-w-full"
           role="tablist"
           aria-label="Shortcut filter scopes"
         >
@@ -801,8 +801,8 @@ export function ShortcutsTab({
         </div>
 
         {/* Right Tools: Search Field + Small Reset Button */}
-        <div className="relative flex items-center justify-end flex-1 min-w-0 gap-2">
-          <div className="h-[34px] px-3 rounded-[10px] bg-fill flex items-center gap-2 transition-colors w-full max-w-[220px] min-w-[130px] border-none outline-none ring-0">
+        <div className="relative flex items-center justify-between sm:justify-end flex-wrap sm:flex-nowrap min-w-0 gap-2">
+          <div className="h-[34px] px-3 rounded-[10px] bg-fill flex items-center gap-2 transition-colors flex-1 sm:flex-initial sm:w-[220px] min-w-[120px] border-none outline-none ring-0">
             <Search2Line size={15} className="text-text-tertiary shrink-0" />
             <input
               type="text"
@@ -827,7 +827,7 @@ export function ShortcutsTab({
           </div>
 
           <ConfirmPill
-            className="h-[34px]"
+            className="h-[34px] shrink-0"
             label={t("settings.shortcuts.reset_all_button") || "Reset defaults"}
             actionLabel={
               t("settings.shortcuts.reset_all") || "Reset all shortcuts"

@@ -7,6 +7,7 @@ import {
   LuPlus,
   LuTrash2,
   LuFolderPlus,
+  LuDownload,
 } from "react-icons/lu";
 import { ShareForwardLine } from "@mingcute/react";
 import type { DropdownMenuItem } from "@/shared/ui/DropdownMenu";
@@ -18,6 +19,7 @@ import {
   useIsTrackLiked,
   useModalStore,
 } from "@/features/library";
+import { useSavedTracksStore } from "@/features/library/saved/store/savedTracksStore";
 import { useTranslation } from "@/languages";
 import { showToast } from "@/shared/ui";
 import { buildShareUrl } from "@/shared/utils/share";
@@ -73,6 +75,50 @@ export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
   const unlikeMutation = useUnlikeTrack();
 
   const liked = useIsTrackLiked(id);
+  const isSaved = useSavedTracksStore((s) =>
+    Boolean(id && s.records.some((r) => r.trackId === id)),
+  );
+
+  const handleDownloadToggle = useCallback(async () => {
+    if (!id) return;
+    if (isSaved) {
+      const ok = await useSavedTracksStore.getState().removeSingleTrack(id);
+      if (ok) {
+        showToast(
+          t("library.local.remove") || "Removed from device",
+          "checkmark",
+          {
+            description: artists ? `${title} — ${artists}` : title,
+          },
+        );
+      }
+    } else {
+      showToast(t("common.loading") || "Downloading...", "loading", {
+        description: artists ? `${title} — ${artists}` : title,
+      });
+      const ok = await useSavedTracksStore.getState().saveSingleTrack({
+        id,
+        title,
+        artists,
+        coverUrl,
+        durationMs: durationMs ?? 0,
+        playCount: 0,
+      });
+      if (ok) {
+        showToast(
+          t("settings.device.downloaded_title") || "Downloaded",
+          "checkmark",
+          {
+            description: artists ? `${title} — ${artists}` : title,
+          },
+        );
+      } else {
+        showToast("Download failed", "error", {
+          description: "Could not download this track",
+        });
+      }
+    }
+  }, [id, isSaved, title, artists, coverUrl, durationMs, t]);
 
   const handleLike = useCallback(async () => {
     if (!id) return;
@@ -97,6 +143,19 @@ export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
 
   const buildMenu = useCallback((): DropdownMenuItem[] => {
     const isTrack = searchType === "track" || !searchType;
+
+    const downloadItem: DropdownMenuItem | null =
+      !id || isLocalTrackId(id)
+        ? null
+        : {
+            id: isSaved ? "remove-from-device" : "download-to-device",
+            label: isSaved
+              ? t("library.local.remove") || "Remove from device"
+              : t("common.download") || "Download",
+            icon: isSaved ? <LuTrash2 size={15} /> : <LuDownload size={15} />,
+            danger: isSaved,
+            onClick: handleDownloadToggle,
+          };
 
     if (isTrack) {
       if (playlistId) {
@@ -165,6 +224,7 @@ export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
             ),
             onClick: handleLike,
           },
+          ...(downloadItem ? [downloadItem] : []),
           {
             id: "share",
             label: t("common.share"),
@@ -273,6 +333,7 @@ export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
             });
           },
         },
+        ...(downloadItem ? [downloadItem] : []),
         {
           id: "share",
           label: t("common.share"),
@@ -331,8 +392,10 @@ export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
     playlistTitle,
     onRemoveFromQueue,
     liked,
+    isSaved,
     handleLike,
     handleShare,
+    handleDownloadToggle,
     playlistsData,
     t,
   ]);
