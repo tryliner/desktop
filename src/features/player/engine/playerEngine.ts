@@ -676,6 +676,7 @@ class PlayerEngine {
 
   public resume(): void {
     const store = usePlayerStore.getState();
+    if (!store.currentTrack) return;
     if (playerRuntime) {
       if (
         store.currentTrack &&
