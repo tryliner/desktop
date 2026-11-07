@@ -7,6 +7,12 @@ import pkg from "./package.json" with { type: "json" };
 import { contentSecurityPolicyPlugin } from "./vite.csp.ts";
 
 export default defineConfig(({ command, mode }) => {
+  const isWeb =
+    mode === "web" ||
+    process.env.VITE_WEB === "true" ||
+    process.env.TARGET === "web" ||
+    Boolean(process.env.ELECTRON_STARTUP_PREVENT);
+
   if (command === "serve") {
     const devEnv = loadEnv(mode, process.cwd(), ["LINER_", "VITE_API_URL"]);
     for (const name of [
@@ -27,25 +33,26 @@ export default defineConfig(({ command, mode }) => {
       react(),
       tailwindcss(),
       contentSecurityPolicyPlugin(),
-      electron({
-        main: {
-          entry: "electron/main.ts",
-        },
-        preload: {
-          input: "electron/preload.ts",
-          vite: {
-            build: {
-              rollupOptions: {
-                output: {
-                  format: "cjs",
-                  entryFileNames: "preload.cjs",
+      !isWeb &&
+        electron({
+          main: {
+            entry: "electron/main.ts",
+          },
+          preload: {
+            input: "electron/preload.ts",
+            vite: {
+              build: {
+                rollupOptions: {
+                  output: {
+                    format: "cjs",
+                    entryFileNames: "preload.cjs",
+                  },
                 },
               },
             },
           },
-        },
-      }),
-    ],
+        }),
+    ].filter(Boolean),
     clearScreen: false,
     resolve: {
       alias: {
