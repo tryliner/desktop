@@ -248,6 +248,29 @@ export default function SettingsModal() {
   const [activeTab, setActiveTab] = useState<TabId>("Playback");
   const [searchQuery, setSearchQuery] = useState("");
   const [mobileSubpage, setMobileSubpage] = useState(false);
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== "undefined" ? window.innerWidth < 768 : false,
+  );
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mql = window.matchMedia("(max-width: 767px)");
+    const onChange = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    setIsMobile(mql.matches);
+    mql.addEventListener("change", onChange);
+    return () => mql.removeEventListener("change", onChange);
+  }, []);
+
+  const DESKTOP_ONLY_TABS = useMemo(
+    () => new Set<TabId>(["Shortcuts", "Overlay", "Discord"]),
+    [],
+  );
+
+  useEffect(() => {
+    if (isMobile && DESKTOP_ONLY_TABS.has(activeTab)) {
+      setActiveTab("Playback");
+    }
+  }, [isMobile, activeTab, DESKTOP_ONLY_TABS]);
 
   useEffect(() => {
     if (!open) {
@@ -342,13 +365,22 @@ export default function SettingsModal() {
   }, [searchQuery]);
 
   const filteredGroups = useMemo(() => {
-    if (!matchingTabIds) return TAB_GROUPS;
+    const baseGroups = isMobile
+      ? TAB_GROUPS.map((g) => ({
+          ...g,
+          ids: g.ids.filter((id) => !DESKTOP_ONLY_TABS.has(id)),
+        })).filter((g) => g.ids.length > 0)
+      : TAB_GROUPS;
 
-    return TAB_GROUPS.map((group) => {
-      const ids = group.ids.filter((id) => matchingTabIds.has(id));
-      return { ...group, ids };
-    }).filter((group) => group.ids.length > 0);
-  }, [matchingTabIds]);
+    if (!matchingTabIds) return baseGroups;
+
+    return baseGroups
+      .map((group) => {
+        const ids = group.ids.filter((id) => matchingTabIds.has(id));
+        return { ...group, ids };
+      })
+      .filter((group) => group.ids.length > 0);
+  }, [matchingTabIds, isMobile, DESKTOP_ONLY_TABS]);
 
   useEffect(() => {
     if (!searchQuery.trim()) return;
