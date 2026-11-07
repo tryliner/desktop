@@ -13,7 +13,7 @@ function Swatch({
     <span
       className={cn(
         "flex h-full w-full items-center px-[18px] text-[22px] font-[600] tracking-[-0.02em]",
-        dark ? "bg-[#0a0a0a] text-white" : "bg-[#f5f5f7] text-[#18181b]",
+        dark ? "bg-[#0a0f1d] text-[#f0f6fc]" : "bg-[#f4f7fb] text-[#0f172a]",
         align === "left" && "justify-start",
         align === "center" && "justify-center",
         align === "right" && "justify-end",
