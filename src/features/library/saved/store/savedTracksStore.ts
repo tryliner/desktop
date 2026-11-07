@@ -48,6 +48,8 @@ interface SavedTracksState {
   setEnabled: (enabled: boolean) => void;
   setLimitBytes: (bytes: number) => void;
   removeAll: () => Promise<number>;
+  saveSingleTrack: (track: Track) => Promise<boolean>;
+  removeSingleTrack: (trackId: string) => Promise<boolean>;
 }
 
 function readStorage(key: string): string | null {
@@ -192,6 +194,49 @@ export const useSavedTracksStore = create<SavedTracksState>((set, get) => ({
       await playerEngine.stopAndClear().catch(() => {});
     if (removing.length === 0) return 0;
     return bridge.savedTracksRemove(removing);
+  },
+
+  saveSingleTrack: async (track: Track): Promise<boolean> => {
+    const bridge = window.linerElectron;
+    if (!bridge) return false;
+    try {
+      const res = await saveTrackToDevice(
+        track,
+        AbortSignal.timeout(5 * 60_000),
+      );
+      if (res?.record) {
+        const records = [
+          res.record,
+          ...get().records.filter((r) => r.trackId !== track.id),
+        ];
+        set(withTracks(records));
+        sync.setRecords(records);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      log("red", "saved", `Failed to save track manually: ${String(error)}`);
+      return false;
+    }
+  },
+
+  removeSingleTrack: async (trackId: string): Promise<boolean> => {
+    const bridge = window.linerElectron;
+    if (!bridge) return false;
+    try {
+      const current = usePlayerStore.getState().currentTrack?.id;
+      await bridge.savedTracksRemove([trackId]);
+      const records = get().records.filter((record) => record.trackId !== trackId);
+      set(withTracks(records));
+      sync.setRecords(records);
+      if (current === trackId) {
+        await playerEngine.stopAndClear().catch(() => {});
+      }
+      return true;
+    } catch (error) {
+      log("red", "saved", `Failed to remove track manually: ${String(error)}`);
+      return false;
+    }
   },
 }));
 

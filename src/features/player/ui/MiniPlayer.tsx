@@ -16,6 +16,7 @@ import {
   Shuffle,
 } from "@solar-icons/react";
 import { HeartFill, HeartLine } from "@mingcute/react";
+import { LuMusic } from "react-icons/lu";
 
 import { PlayerMorphIcon, ICON_PLAY, ICON_PAUSE } from "./morphPlayerIcons";
 
@@ -767,25 +768,36 @@ function MiniPlayer({
               role="button"
               tabIndex={0}
               aria-label="Open player"
-              className={`relative h-[38px] w-[38px] shrink-0 overflow-hidden rounded-control bg-bg-elevated cursor-pointer pointer-events-auto prevent-seek ${
+              className={`relative h-[38px] w-[38px] shrink-0 overflow-hidden rounded-control bg-bg-elevated cursor-pointer pointer-events-auto prevent-seek flex items-center justify-center ${
                 coverUrl && !isCoverLoaded ? "animate-pulse" : ""
               }`}
               onClick={onFullscreenOpen}
               onPointerDown={(e) => e.stopPropagation()}
             >
-              <CoverImage
-                key={coverUrl}
-                src={coverUrl}
-                alt="Track artwork"
-                width={38}
-                height={38}
-                priority
-                draggable={false}
-                onLoad={(e) => {
-                  extractAccentColor(e.currentTarget as HTMLImageElement);
-                }}
-                className="h-[38px] w-[38px] object-cover rounded-control"
-              />
+              {coverUrl ? (
+                <>
+                  <CoverImage
+                    key={coverUrl}
+                    src={coverUrl}
+                    alt="Track artwork"
+                    width={38}
+                    height={38}
+                    priority
+                    draggable={false}
+                    onLoad={(e) => {
+                      extractAccentColor(e.currentTarget as HTMLImageElement);
+                    }}
+                    className="h-[38px] w-[38px] object-cover rounded-control"
+                  />
+                  {!isCoverLoaded && (
+                    <div className="absolute inset-0 flex items-center justify-center text-text-tertiary">
+                      <LuMusic size={18} />
+                    </div>
+                  )}
+                </>
+              ) : (
+                <LuMusic size={18} className="text-text-tertiary" />
+              )}
             </div>
             <div className="flex min-w-0 flex-col pointer-events-none">
               <p

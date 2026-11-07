@@ -27,7 +27,26 @@ const EXTENSION_BY_IMAGE_MIME: Record<string, string> = {
   "image/png": "png",
   "image/webp": "webp",
   "image/gif": "gif",
+  "image/jfif": "jpg",
+  jpeg: "jpg",
+  jpg: "jpg",
+  png: "png",
+  webp: "webp",
+  gif: "gif",
 };
+
+export function imageExtensionFor(
+  format: string | undefined,
+): string | undefined {
+  if (!format) return undefined;
+  const f = format.toLowerCase().trim();
+  if (EXTENSION_BY_IMAGE_MIME[f]) return EXTENSION_BY_IMAGE_MIME[f];
+  if (f.includes("jpeg") || f.includes("jpg")) return "jpg";
+  if (f.includes("png")) return "png";
+  if (f.includes("webp")) return "webp";
+  if (f.includes("gif")) return "gif";
+  return undefined;
+}
 
 export function audioExtension(filePath: string): string {
   return path.extname(filePath).slice(1).toLowerCase();
@@ -63,9 +82,7 @@ export async function readLocalTrackTags(
   try {
     const { common, format } = await parseFile(filePath, { duration: true });
     const picture = common.picture?.[0];
-    const coverExtension = picture
-      ? EXTENSION_BY_IMAGE_MIME[picture.format.toLowerCase()]
-      : undefined;
+    const coverExtension = imageExtensionFor(picture?.format);
     return {
       title: common.title?.trim() || fallback.title,
       artist:
