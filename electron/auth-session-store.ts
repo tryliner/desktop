@@ -111,6 +111,12 @@ export class AuthSessionStore {
     return session;
   }
 
+  persist(next: unknown): boolean {
+    const session = isStoredAuthSession(next) ? next : null;
+    if (next !== null && !session) return false;
+    return this.commit(session);
+  }
+
   onChange(listener: AuthSessionListener): () => void {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);
@@ -232,10 +238,10 @@ export class AuthSessionStore {
     });
   }
 
-  private commit(next: StoredAuthSession | null, origin?: number): void {
+  private commit(next: StoredAuthSession | null, origin?: number): boolean {
     this.session = next;
     this.loaded = true;
-    this.write(next);
+    const written = this.write(next);
     for (const listener of this.listeners) {
       try {
         listener(next, origin);
@@ -243,6 +249,7 @@ export class AuthSessionStore {
         console.error("[auth] session listener failed:", err);
       }
     }
+    return written;
   }
 
   private read(): StoredAuthSession | null {
@@ -271,11 +278,11 @@ export class AuthSessionStore {
     }
   }
 
-  private write(next: StoredAuthSession | null): void {
+  private write(next: StoredAuthSession | null): boolean {
     try {
       if (!next) {
         fs.rmSync(this.filePath, { force: true });
-        return;
+        return true;
       }
       const json = JSON.stringify(next);
       const encrypted = this.cipher.available();
@@ -298,8 +305,10 @@ export class AuthSessionStore {
         fs.writeFileSync(this.filePath, contents, { mode: 0o600 });
         fs.rmSync(tempPath, { force: true });
       }
+      return true;
     } catch (err) {
       console.error("[auth] failed to persist session:", describeError(err));
+      return false;
     }
   }
 }

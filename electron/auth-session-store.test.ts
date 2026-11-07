@@ -86,6 +86,15 @@ describe("AuthSessionStore", () => {
     expect(fs.existsSync(file)).toBe(false);
   });
 
+  it("says whether a session reached the disk", () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    expect(createStore().persist(session("rt_1"))).toBe(true);
+    expect(createStore().persist({ accessToken: "a" })).toBe(false);
+    fs.rmSync(file, { force: true });
+    fs.mkdirSync(file, { recursive: true });
+    expect(createStore().persist(session("rt_2"))).toBe(false);
+  });
+
   it("rejects malformed sessions instead of storing them", () => {
     const store = createStore();
     expect(store.set({ accessToken: "a" })).toBeNull();
