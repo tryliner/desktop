@@ -80,6 +80,10 @@ export class PoTokenService {
       },
     });
     win.webContents.setAudioMuted(true);
+    // the page runs YouTube's scripts; off www.youtube.com the shared preload would expose linerElectron
+    win.webContents.on("will-navigate", (event) => event.preventDefault());
+    win.webContents.on("will-redirect", (event) => event.preventDefault());
+    win.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
     this.window = win;
     const ready = new Promise<void>((resolve, reject) => {
       const timer = setTimeout(
