@@ -79,6 +79,11 @@ export default defineConfig(({ command, mode }) => {
           target: "https://api.tryliner.fun",
           changeOrigin: true,
           secure: false,
+          configure: (proxy) => {
+            proxy.on("proxyReq", (proxyReq) => {
+              proxyReq.setHeader("origin", "https://api.tryliner.fun");
+            });
+          },
         },
       },
     },

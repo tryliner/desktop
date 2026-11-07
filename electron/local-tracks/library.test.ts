@@ -78,6 +78,12 @@ describe("LocalTrackLibrary", () => {
   });
 
   it("refuses an audio-named link that points at a non-audio file", async () => {
+    // Windows requires Developer Mode or elevated privileges to create symlinks.
+    // Skip this test on Windows to avoid EPERM errors in CI and local environments.
+    if (process.platform === "win32") {
+      console.warn("Skipping symlink test on Windows (requires elevated privileges).");
+      return;
+    }
     const library = new LocalTrackLibrary(root);
     const secret = await source("id_rsa", "private key");
     const disguised = path.join(sources, "song.mp3");
