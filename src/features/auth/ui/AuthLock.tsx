@@ -4,12 +4,14 @@ import { useAuthStore } from "../store/authStore";
 import { getAuthSession } from "@/shared/api";
 import AppFrame from "@/features/navigation/ui/AppFrame";
 import { useWindowState } from "@/features/navigation/hooks/useWindowState";
+import { useOfflineModeStore } from "@/features/connectivity";
 
 export function AuthLock({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const status = useAuthStore((state) => state.status);
   const initialize = useAuthStore((state) => state.initialize);
+  const offline = useOfflineModeStore((state) => state.offline);
   // keeps the body's outer padding in step with maximize / fullscreen on every screen,
   // including login and the startup spinner (the app frame mounts its own copy too)
   const { isEdgeToEdge } = useWindowState();
@@ -27,17 +29,17 @@ export function AuthLock({ children }: { children: React.ReactNode }) {
   }, [initialize]);
 
   useEffect(() => {
-    if (status === "anonymous" && pathname !== "/login") {
+    if (status === "anonymous" && pathname !== "/login" && !offline) {
       navigate("/login", { replace: true });
     }
     if (status === "authenticated" && pathname === "/login") {
       navigate("/", { replace: true });
     }
-  }, [pathname, navigate, status]);
+  }, [pathname, navigate, status, offline]);
 
   if (
     status === "initializing" ||
-    (status === "anonymous" && pathname !== "/login") ||
+    (status === "anonymous" && pathname !== "/login" && !offline) ||
     (status === "authenticated" && pathname === "/login")
   ) {
     return (

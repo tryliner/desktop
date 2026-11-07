@@ -25,6 +25,7 @@ import {
 } from "@mingcute/react";
 import Header from "./Header";
 import Sidebar from "./Sidebar";
+import BottomNavBar from "./BottomNavBar";
 import { cn } from "@/shared/lib";
 import WindowControlsNotch from "./WindowControlsNotch";
 import RightDrawer from "./RightDrawer";
@@ -724,9 +725,9 @@ export default function AppFrame({ children }: AppFrameProps) {
   return (
     <div
       ref={appFrameRef}
-      className={`app-shell-enter relative flex flex-col h-full w-full overflow-hidden p-1.5 gap-1.5 ${
+      className={`app-shell-enter relative flex flex-col h-full w-full overflow-hidden p-0 md:p-1.5 gap-0 md:gap-1.5 ${
         isFullscreenPlayer ? "bg-black" : "bg-bg-canvas"
-      } ${isEdgeToEdge ? "rounded-none" : "rounded-item"}`}
+      } ${isEdgeToEdge ? "rounded-none" : "rounded-none md:rounded-item"}`}
       style={isEdgeToEdge ? undefined : { clipPath: "inset(0 round 12px)" }}
       onScroll={(e) => {
         if (e.currentTarget.scrollLeft !== 0) e.currentTarget.scrollLeft = 0;
@@ -761,7 +762,7 @@ export default function AppFrame({ children }: AppFrameProps) {
       >
         <aside
           ref={sidebarRef}
-          className="w-[58px] mt-[56px] shrink-0 z-[45] relative flex flex-col"
+          className="hidden md:flex w-[58px] mt-[56px] shrink-0 z-[45] relative flex-col"
         >
           <Sidebar
             searchOpen={searchOpen}
@@ -836,6 +837,13 @@ export default function AppFrame({ children }: AppFrameProps) {
           )}
         </div>
       </div>
+
+      {!isFullscreenPlayer && (
+        <BottomNavBar
+          searchOpen={searchOpen}
+          onSearchToggle={handleSearchToggle}
+        />
+      )}
 
       <AnimatePresence initial={false}>
         {fullscreenPlayerOpen ? (
