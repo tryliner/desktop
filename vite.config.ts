@@ -80,8 +80,13 @@ export default defineConfig(({ command, mode }) => {
           changeOrigin: true,
           secure: false,
           configure: (proxy) => {
-            proxy.on("proxyReq", (proxyReq) => {
-              proxyReq.setHeader("origin", "https://api.tryliner.fun");
+            proxy.on("proxyReq", (proxyReq, req) => {
+              proxyReq.removeHeader("origin");
+              proxyReq.removeHeader("referer");
+              console.log("[Vite Proxy -> tryliner.fun]", req.method, req.url);
+            });
+            proxy.on("proxyRes", (proxyRes, req) => {
+              console.log("[Vite Proxy <- tryliner.fun]", proxyRes.statusCode, req.method, req.url);
             });
           },
         },
