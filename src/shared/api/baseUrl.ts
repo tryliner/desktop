@@ -24,5 +24,17 @@ const baseUrl = resolveApiBaseUrl(
 );
 
 export function getApiBaseUrl(): string {
+  // When testing in browser dev mode (e.g. localhost:5173 without Electron or Capacitor native),
+  // route through Vite's local proxy to avoid browser CORS restrictions
+  if (
+    typeof window !== "undefined" &&
+    !window.linerElectron &&
+    !(window as any).Capacitor?.isNativePlatform?.() &&
+    (window.location.hostname === "localhost" ||
+      window.location.hostname === "127.0.0.1") &&
+    window.location.port === "5173"
+  ) {
+    return "";
+  }
   return baseUrl;
 }

@@ -67,6 +67,13 @@ export default defineConfig(({ command, mode }) => {
     server: {
       port: 5173,
       strictPort: true,
+      proxy: {
+        "/v1": {
+          target: "https://api.tryliner.fun",
+          changeOrigin: true,
+          secure: false,
+        },
+      },
     },
     build: {
       outDir: "dist",

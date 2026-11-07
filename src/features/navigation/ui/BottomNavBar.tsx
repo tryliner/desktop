@@ -24,9 +24,10 @@ export function BottomNavBar({
   const { pathname } = useLocation();
   const { t } = useTranslation();
   const openSettings = useModalStore((state) => state.openSettings);
+  const isSettingsOpen = useModalStore((state) => state.settingsOpen);
 
-  const isHomeActive = !searchOpen && (pathname === "/" || pathname === "/home");
-  const isLibraryActive = !searchOpen && pathname.startsWith("/library");
+  const isHomeActive = !searchOpen && !isSettingsOpen && (pathname === "/" || pathname === "/home");
+  const isLibraryActive = !searchOpen && !isSettingsOpen && pathname.startsWith("/library");
 
   return (
     <nav
@@ -90,7 +91,12 @@ export function BottomNavBar({
       <button
         type="button"
         onClick={openSettings}
-        className="flex flex-col items-center justify-center flex-1 h-full gap-1 transition-all duration-150 active:scale-95 text-text-tertiary hover:text-text-secondary bg-transparent border-0 cursor-pointer p-0"
+        className={cn(
+          "flex flex-col items-center justify-center flex-1 h-full gap-1 transition-all duration-150 active:scale-95 bg-transparent border-0 cursor-pointer p-0",
+          isSettingsOpen
+            ? "text-accent-primary drop-shadow-[0_0_10px_rgba(56,189,248,0.5)]"
+            : "text-text-tertiary hover:text-text-secondary",
+        )}
       >
         <Settings4Fill size={22} />
         <span className="text-[10px] font-medium tracking-tight">
