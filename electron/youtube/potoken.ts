@@ -4,6 +4,9 @@ import { registerYoutubeWorkerIpc } from "./worker-ipc.js";
 const BOTGUARD_PAGE = "https://www.youtube.com/robots.txt";
 const START_TIMEOUT_MS = 20_000;
 const DEFAULT_REQUEST_TIMEOUT_MS = 20_000;
+// the hidden window costs ~200 MB of RAM: close it when no stream needed it for a while, request() reopens it.
+// the next track is prepared as soon as one starts, so 10 min keeps it open through long tracks
+const IDLE_CLOSE_MS = 10 * 60_000;
 const INTERPRETER_HOSTS = new Set(["www.google.com", "www.gstatic.com"]);
 
 export type WorkerMethod = "mint" | "tv-session" | "solve-n";
@@ -25,6 +28,7 @@ export class PoTokenService {
   private ready: Promise<void> | null = null;
   private markReady: (() => void) | null = null;
   private nextId = 1;
+  private idleTimer: NodeJS.Timeout | null = null;
   private readonly pending = new Map<number, PendingRequest>();
 
   constructor(private readonly preloadPath: string) {
@@ -114,12 +118,23 @@ export class PoTokenService {
     }
   }
 
+  private armIdleClose(): void {
+    if (this.idleTimer) clearTimeout(this.idleTimer);
+    this.idleTimer = setTimeout(() => {
+      this.idleTimer = null;
+      if (this.pending.size > 0) this.armIdleClose();
+      else this.destroy();
+    }, IDLE_CLOSE_MS);
+    this.idleTimer.unref?.();
+  }
+
   async request(
     method: WorkerMethod,
     payload: unknown,
     timeoutMs = DEFAULT_REQUEST_TIMEOUT_MS,
   ): Promise<unknown> {
     await this.start();
+    this.armIdleClose();
     const win = this.window;
     if (!win || win.isDestroyed())
       throw new Error("PO token window is not available");
@@ -141,6 +156,8 @@ export class PoTokenService {
   }
 
   destroy(): void {
+    if (this.idleTimer) clearTimeout(this.idleTimer);
+    this.idleTimer = null;
     const win = this.window;
     if (win && !win.isDestroyed()) win.destroy();
     if (win) this.reset(win);
