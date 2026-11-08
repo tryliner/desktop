@@ -196,6 +196,10 @@ export interface LinerElectronApi {
   getOverlayInitialState: () => Promise<any>;
   updateOverlaySettings: (settings: any) => void;
   pauseOverlayShortcuts: (paused: boolean) => void;
+  getShortcutStatus?: () => Promise<Record<string, string>>;
+  onShortcutStatus?: (
+    cb: (status: Record<string, string>) => void,
+  ) => () => void;
   onOverlaySettingsChanged: (cb: (settings: any) => void) => () => void;
   onOverlayVisibility: (cb: (visible: boolean) => void) => () => void;
   setOverlayAuthenticated?: (authenticated: boolean) => void;
@@ -449,6 +453,15 @@ const api: LinerElectronApi = {
   },
   pauseOverlayShortcuts: (paused) => {
     ipcRenderer.send("overlay:pause-shortcuts", paused);
+  },
+  getShortcutStatus: () => ipcRenderer.invoke("shortcuts:get-status"),
+  onShortcutStatus: (cb) => {
+    const listener = (_event: unknown, status: Record<string, string>) =>
+      cb(status);
+    ipcRenderer.on("shortcuts:status", listener);
+    return () => {
+      ipcRenderer.removeListener("shortcuts:status", listener);
+    };
   },
   onOverlaySettingsChanged: (cb) => {
     const listener = (_event: unknown, settings: any) => cb(settings);

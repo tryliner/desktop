@@ -1,4 +1,10 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import {
+  useState,
+  useRef,
+  useEffect,
+  useLayoutEffect,
+  useCallback,
+} from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { CloseCircleFill } from "@mingcute/react";
 
@@ -11,6 +17,47 @@ import {
 } from "../utils/shortcutMatching";
 import { useShortcutsStore } from "../store/shortcutsStore";
 import { acquireEscapeGuard } from "@/shared/utils/escapeGuard";
+import { useElementSize } from "@/shared/hooks/useElementSize";
+
+const TOOLTIP_EDGE_GAP = 8;
+const RECORDER_EASE = [0.32, 0.72, 0, 1] as const;
+const RECORDER_TRANSITION =
+  "width 220ms cubic-bezier(0.32, 0.72, 0, 1), background-color 200ms ease-out, color 200ms ease-out";
+const RECORDER_FADE_IN = { duration: 0.16, ease: RECORDER_EASE, delay: 0.04 };
+const RECORDER_FADE_OUT = { duration: 0.1, ease: "easeOut" } as const;
+
+interface TooltipPlacement {
+  left: number;
+  maxWidth?: number;
+}
+
+function findClippingRect(from: HTMLElement): DOMRect {
+  let node = from.parentElement;
+  while (node && node !== document.body) {
+    const style = getComputedStyle(node);
+    if (style.overflowX !== "visible" || style.overflow !== "visible") {
+      return node.getBoundingClientRect();
+    }
+    node = node.parentElement;
+  }
+  return new DOMRect(0, 0, window.innerWidth, window.innerHeight);
+}
+
+export function placeTooltipInside(
+  anchorLeft: number,
+  tooltipWidth: number,
+  bounds: { left: number; right: number },
+): TooltipPlacement {
+  const minLeft = bounds.left + TOOLTIP_EDGE_GAP;
+  const maxRight = bounds.right - TOOLTIP_EDGE_GAP;
+  const room = Math.max(0, maxRight - minLeft);
+  const width = Math.min(tooltipWidth, room);
+  const left = Math.max(minLeft, Math.min(anchorLeft, maxRight - width));
+  return {
+    left: Math.round(left - anchorLeft),
+    maxWidth: tooltipWidth > room ? room : undefined,
+  };
+}
 
 export interface ShortcutRecorderProps {
   value: string;
@@ -55,6 +102,12 @@ export function ShortcutRecorder({
   const [heldModifiers, setHeldModifiers] = useState<string[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const recordButtonRef = useRef<HTMLButtonElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const tooltipRef = useRef<HTMLDivElement>(null);
+  const content = useElementSize<HTMLSpanElement>();
+  const [tooltipPlacement, setTooltipPlacement] = useState<TooltipPlacement>({
+    left: 0,
+  });
   const errorTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Sync global shortcut suspension in Electron and main player engine
@@ -80,6 +133,9 @@ export function ShortcutRecorder({
     }
 
     const isMac = isMacPlatform();
+    const keysSeenDown = new Set<string>();
+    const isModifierKey = (key: string) =>
+      ["Control", "Shift", "Alt", "Meta"].includes(key);
 
     const triggerError = (msg: string) => {
       setErrorMessage(msg);
@@ -125,9 +181,10 @@ export function ShortcutRecorder({
 
       updateModifiers(e);
 
-      if (["Control", "Shift", "Alt", "Meta"].includes(e.key)) {
+      if (isModifierKey(e.key)) {
         return;
       }
+      keysSeenDown.add(e.code || e.key);
 
       const englishKey = getEnglishKeyFromEvent(e);
       if (!englishKey) {
@@ -184,6 +241,17 @@ export function ShortcutRecorder({
       e.preventDefault();
       e.stopPropagation();
       updateModifiers(e);
+      const hasMod = e.ctrlKey || e.altKey || e.shiftKey || e.metaKey;
+      if (
+        hasMod &&
+        !isModifierKey(e.key) &&
+        !keysSeenDown.has(e.code || e.key)
+      ) {
+        triggerError(
+          t("settings.shortcuts.taken_by_other_app") ||
+            "Taken by the system or another app",
+        );
+      }
     };
 
     const handleMouseDown = (e: MouseEvent) => {
@@ -226,8 +294,33 @@ export function ShortcutRecorder({
     setIsRecording,
   ]);
 
+  useLayoutEffect(() => {
+    const root = rootRef.current;
+    const tooltip = tooltipRef.current;
+    if (!isRecording || !errorMessage || !root || !tooltip) {
+      setTooltipPlacement({ left: 0 });
+      return;
+    }
+    const { maxWidth, whiteSpace } = tooltip.style;
+    tooltip.style.maxWidth = "none";
+    tooltip.style.whiteSpace = "nowrap";
+    const naturalWidth = tooltip.scrollWidth;
+    tooltip.style.maxWidth = maxWidth;
+    tooltip.style.whiteSpace = whiteSpace;
+    setTooltipPlacement(
+      placeTooltipInside(
+        root.getBoundingClientRect().left,
+        naturalWidth,
+        findClippingRect(root),
+      ),
+    );
+  }, [isRecording, errorMessage]);
+
   return (
-    <div className="relative flex items-center gap-1.5 shrink-0 h-[30px]">
+    <div
+      ref={rootRef}
+      className="relative flex items-center gap-1.5 shrink-0 h-[30px]"
+    >
       <button
         ref={recordButtonRef}
         type="button"
@@ -240,78 +333,94 @@ export function ShortcutRecorder({
             setIsRecording((prev) => !prev);
           }
         }}
-        className={`transition-all flex items-center justify-center border-0 outline-none select-none cursor-pointer ${
+        style={{
+          width: content.size?.width,
+          transition: RECORDER_TRANSITION,
+        }}
+        className={`relative flex h-[30px] items-center justify-start overflow-hidden rounded-control p-0 border-0 outline-none select-none cursor-pointer ${
           disabled
             ? "opacity-50 cursor-not-allowed bg-transparent"
             : isRecording
               ? errorMessage
-                ? "h-[30px] px-[12px] rounded-control bg-rose-700/90 text-white"
+                ? "bg-rose-700/90 text-white"
                 : heldModifiers.length > 0
-                  ? "h-[30px] px-[12px] rounded-control bg-black/[0.12] text-text-primary dark:bg-black/50"
-                  : "h-[30px] px-[12px] rounded-control bg-black/[0.08] text-text-secondary dark:bg-black/40"
-              : "bg-transparent p-0"
+                  ? "bg-black/[0.12] text-text-primary dark:bg-black/50"
+                  : "bg-black/[0.08] text-text-secondary dark:bg-black/40"
+              : "bg-transparent"
         }`}
       >
-        <AnimatePresence mode="wait" initial={false}>
-          {isRecording ? (
-            <motion.span
-              key={
-                errorMessage
-                  ? "error"
-                  : heldModifiers.length > 0
-                    ? heldModifiers.join("+")
-                    : "waiting"
-              }
-              initial={{ opacity: 0, y: -2 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 2 }}
-              transition={{ duration: 0.08, ease: "easeOut" }}
-              className="flex items-center gap-[8px] leading-none text-body font-medium"
-            >
-              {heldModifiers.length > 0
-                ? `${heldModifiers.join(" + ")} + ...`
-                : t("settings.shortcuts.press_keys") || "···"}
-              {errorMessage && (
-                <CloseCircleFill size={15} className="shrink-0 opacity-80" />
-              )}
-            </motion.span>
-          ) : (
-            <motion.div
-              key="display"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.1, ease: "easeOut" }}
-              className="flex items-center gap-1 select-none"
-            >
-              {!value ? (
-                <span className="inline-flex items-center justify-center h-[30px] px-[10px] rounded-control bg-black/[0.05] text-text-tertiary text-body font-[500] leading-none dark:bg-black/25">
-                  {t("settings.shortcuts.not_set") || "Not set"}
-                </span>
-              ) : (
-                getAcceleratorKeycaps(value).map((chip, idx) => (
-                  <span
-                    key={idx}
-                    className="inline-flex items-center justify-center min-w-[30px] h-[30px] px-[10px] rounded-control bg-black/[0.08] text-text-primary text-body font-[500] leading-none transition-colors group-hover:bg-black/[0.12] dark:bg-black/40 dark:group-hover:bg-black/50"
-                  >
-                    {chip}
+        <span
+          ref={content.attach}
+          className="inline-flex h-full shrink-0 items-center whitespace-nowrap"
+        >
+          <AnimatePresence mode="popLayout" initial={false}>
+            {isRecording ? (
+              <motion.span
+                key={
+                  errorMessage
+                    ? "error"
+                    : heldModifiers.length > 0
+                      ? heldModifiers.join("+")
+                      : "waiting"
+                }
+                initial={{ opacity: 0, y: -3 }}
+                animate={{ opacity: 1, y: 0, transition: RECORDER_FADE_IN }}
+                exit={{ opacity: 0, y: 3, transition: RECORDER_FADE_OUT }}
+                className="flex h-[30px] items-center gap-[8px] px-[12px] leading-none text-body font-medium"
+              >
+                {heldModifiers.length > 0
+                  ? `${heldModifiers.join(" + ")} + ...`
+                  : t("settings.shortcuts.press_keys") || "···"}
+                {errorMessage && (
+                  <CloseCircleFill size={15} className="shrink-0 opacity-80" />
+                )}
+              </motion.span>
+            ) : (
+              <motion.span
+                key="display"
+                initial={{ opacity: 0, y: -3 }}
+                animate={{ opacity: 1, y: 0, transition: RECORDER_FADE_IN }}
+                exit={{ opacity: 0, y: 3, transition: RECORDER_FADE_OUT }}
+                className="flex items-center gap-1 select-none"
+              >
+                {!value ? (
+                  <span className="inline-flex items-center justify-center h-[30px] px-[10px] rounded-control bg-black/[0.05] text-text-tertiary text-body font-[500] leading-none dark:bg-black/25">
+                    {t("settings.shortcuts.not_set") || "Not set"}
                   </span>
-                ))
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
+                ) : (
+                  getAcceleratorKeycaps(value).map((chip, idx) => (
+                    <span
+                      key={idx}
+                      className="inline-flex items-center justify-center min-w-[30px] h-[30px] px-[10px] rounded-control bg-black/[0.08] text-text-primary text-body font-[500] leading-none transition-colors group-hover:bg-black/[0.12] dark:bg-black/40 dark:group-hover:bg-black/50"
+                    >
+                      {chip}
+                    </span>
+                  ))
+                )}
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </span>
       </button>
 
       {/* Floating Conflict Tooltip - Zero layout shift & completely borderless */}
       <AnimatePresence>
         {isRecording && errorMessage && (
           <motion.div
+            ref={tooltipRef}
             initial={{ opacity: 0, y: 4, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 4, scale: 0.95 }}
             transition={{ duration: 0.12, ease: "easeOut" }}
-            className="absolute left-0 top-full mt-[6px] z-40 pointer-events-none whitespace-nowrap px-[10px] py-[6px] rounded-control bg-rose-600 shadow-xl flex items-center gap-1.5 text-caption font-[500] text-white select-none border-0"
+            style={{
+              left: tooltipPlacement.left,
+              maxWidth: tooltipPlacement.maxWidth,
+            }}
+            className={`absolute top-full mt-[6px] z-40 pointer-events-none px-[10px] py-[6px] rounded-control bg-rose-600 shadow-xl flex items-center gap-1.5 text-caption font-[500] text-white select-none border-0 ${
+              tooltipPlacement.maxWidth
+                ? "whitespace-normal"
+                : "whitespace-nowrap"
+            }`}
           >
             <span>{errorMessage}</span>
           </motion.div>

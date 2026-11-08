@@ -1,7 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { playerEngine } from "@/features/player/engine/playerEngine";
 import { usePlayerStore } from "@/features/player/store/playerStore";
-import { toVolumeGain, toVolumeLevel } from "@/features/player/engine/volume";
+import {
+  stepVolumeGain,
+  toVolumeGain,
+  toVolumeLevel,
+} from "@/features/player/engine/volume";
 import {
   useIsTrackLiked,
   useLikeTrack,
@@ -13,6 +17,7 @@ import { useAuthStore } from "@/features/auth/store/authStore";
 import { showToast } from "@/shared/ui/Toast";
 import type { OverlayAction, OverlayStatePayload } from "../contracts";
 import { useOverlaySettingsStore } from "../store/overlaySettingsStore";
+import { useShortcutsStore } from "@/features/shortcuts/store/shortcutsStore";
 
 const PLAYING_RESYNC_DRIFT_MS = 1_500;
 const PAUSED_RESYNC_DRIFT_MS = 250;
@@ -167,16 +172,14 @@ export function useOverlaySync() {
               }
             }
             break;
-          case "volumeUp": {
-            const current = usePlayerStore.getState().volume;
-            const next = Math.min(1, Math.round((current + 0.05) * 100) / 100);
-            playerEngine.setVolume(next);
-            break;
-          }
+          case "volumeUp":
           case "volumeDown": {
             const current = usePlayerStore.getState().volume;
-            const next = Math.max(0, Math.round((current - 0.05) * 100) / 100);
-            playerEngine.setVolume(next);
+            const { volumeStep } = useShortcutsStore.getState();
+            const direction = action.type === "volumeUp" ? 1 : -1;
+            playerEngine.setVolume(
+              stepVolumeGain(current, direction, volumeStep),
+            );
             break;
           }
           case "setVolume": {

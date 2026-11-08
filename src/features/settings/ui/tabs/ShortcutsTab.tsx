@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Play,
@@ -31,10 +31,33 @@ import {
   type GlobalShortcutsSettings,
   type MainAppShortcutsSettings,
   type MiniplayerShortcutsSettings,
+  type GlobalShortcutState,
+  type VolumeStep,
+  VOLUME_STEP_OPTIONS,
+  formatAcceleratorForDisplay,
+  subscribeToGlobalShortcutStatus,
 } from "@/features/shortcuts";
 import { ShortcutRecorder } from "@/features/shortcuts/ui/ShortcutRecorder";
+import { SegmentedControl, SettingRow, SettingSection } from "../controls";
+import { useElementSize } from "@/shared/hooks/useElementSize";
+
+type VolumeStepOption = `${number}`;
+
+function toStepOption(step: VolumeStep): VolumeStepOption {
+  return String(Math.round(step * 100)) as VolumeStepOption;
+}
+
+function fromStepOption(option: VolumeStepOption): VolumeStep {
+  const step = Number(option) / 100;
+  return (
+    VOLUME_STEP_OPTIONS.find((candidate) => candidate === step) ??
+    VOLUME_STEP_OPTIONS[2]
+  );
+}
 
 type ScopeFilter = "mainApp" | "miniplayer" | "global";
+
+const LIST_RESIZE_TRANSITION = "height 260ms cubic-bezier(0.32, 0.72, 0, 1)";
 
 const OPTIONAL_GLOBAL_ICONS: Record<
   OptionalGlobalAction,
@@ -62,6 +85,22 @@ export function ShortcutsTab({
   const [activeScope, setActiveScope] = useState<ScopeFilter>("mainApp");
   const [localSearchQuery, setLocalSearchQuery] = useState("");
   const [recordingId, setRecordingId] = useState<string | null>(null);
+  const listSize = useElementSize<HTMLDivElement>();
+  const listHeight = listSize.size?.height;
+  const [listResizing, setListResizing] = useState(false);
+  const previousListHeight = useRef(listHeight);
+
+  useEffect(() => {
+    const previous = previousListHeight.current;
+    previousListHeight.current = listHeight;
+    if (
+      previous !== undefined &&
+      listHeight !== undefined &&
+      previous !== listHeight
+    ) {
+      setListResizing(true);
+    }
+  }, [listHeight]);
 
   useEffect(() => {
     if (!recordingId) return;
@@ -79,9 +118,6 @@ export function ShortcutsTab({
   const mainApp = useShortcutsStore((state) => state.mainApp);
   const miniplayer = useShortcutsStore((state) => state.miniplayer);
 
-  const setGlobalShortcut = useShortcutsStore(
-    (state) => state.setGlobalShortcut,
-  );
   const setMainAppShortcut = useShortcutsStore(
     (state) => state.setMainAppShortcut,
   );
@@ -90,6 +126,37 @@ export function ShortcutsTab({
   );
   const resetShortcut = useShortcutsStore((state) => state.resetShortcut);
   const resetAll = useShortcutsStore((state) => state.resetAll);
+  const commitGlobalShortcut = useShortcutsStore(
+    (state) => state.commitGlobalShortcut,
+  );
+  const globalStatus = useShortcutsStore((state) => state.globalStatus);
+  const rejectedGlobal = useShortcutsStore((state) => state.rejectedGlobal);
+  const clearRejectedGlobal = useShortcutsStore(
+    (state) => state.clearRejectedGlobal,
+  );
+  const volumeStep = useShortcutsStore((state) => state.volumeStep);
+  const setVolumeStep = useShortcutsStore((state) => state.setVolumeStep);
+  const volumeHoldRepeats = useShortcutsStore(
+    (state) => state.volumeHoldRepeats,
+  );
+  const setVolumeHoldRepeats = useShortcutsStore(
+    (state) => state.setVolumeHoldRepeats,
+  );
+
+  useEffect(() => subscribeToGlobalShortcutStatus(), []);
+
+  useEffect(() => {
+    if (!rejectedGlobal) return;
+    const keys = formatAcceleratorForDisplay(rejectedGlobal.shortcut);
+    const message =
+      rejectedGlobal.reason === "taken"
+        ? t("settings.shortcuts.taken_not_saved", { shortcut: keys }) ||
+          `${keys} is taken by the system or another app. Pick another one.`
+        : t("settings.shortcuts.invalid_not_saved", { shortcut: keys }) ||
+          `${keys} can't be used as a global shortcut. Pick another one.`;
+    toast(message, "error");
+    clearRejectedGlobal();
+  }, [rejectedGlobal, clearRejectedGlobal, t, toast]);
 
   const handleConfirmResetAll = useCallback(() => {
     resetAll();
@@ -398,6 +465,7 @@ export function ShortcutsTab({
     onReset: () => void;
     validateCandidate: (candidate: string) => { conflictWith: string } | null;
     clearable?: boolean;
+    status?: GlobalShortcutState;
   }
 
   const allItems: ShortcutRowItem[] = useMemo(() => {
@@ -655,7 +723,8 @@ export function ShortcutsTab({
         icon: Widget5,
         value: global.toggleOverlay,
         defaultValue: DEFAULT_SHORTCUTS.global.toggleOverlay,
-        onChange: (val) => setGlobalShortcut("toggleOverlay", val),
+        status: globalStatus.toggleOverlay,
+        onChange: (val) => commitGlobalShortcut("toggleOverlay", val),
         onReset: () => resetShortcut("global", "toggleOverlay"),
         validateCandidate: validateGlobalCandidate("toggleOverlay"),
       },
@@ -667,7 +736,8 @@ export function ShortcutsTab({
         icon: HeartFill,
         value: global.quickLikeSong,
         defaultValue: DEFAULT_SHORTCUTS.global.quickLikeSong,
-        onChange: (val) => setGlobalShortcut("quickLikeSong", val),
+        status: globalStatus.quickLikeSong,
+        onChange: (val) => commitGlobalShortcut("quickLikeSong", val),
         onReset: () => resetShortcut("global", "quickLikeSong"),
         validateCandidate: validateGlobalCandidate("quickLikeSong"),
       },
@@ -680,7 +750,8 @@ export function ShortcutsTab({
         value: global[action],
         defaultValue: DEFAULT_SHORTCUTS.global[action],
         clearable: true,
-        onChange: (val) => setGlobalShortcut(action, val),
+        status: global[action] ? globalStatus[action] : undefined,
+        onChange: (val) => commitGlobalShortcut(action, val),
         onReset: () => resetShortcut("global", action),
         validateCandidate: validateGlobalCandidate(action),
       })),
@@ -692,7 +763,8 @@ export function ShortcutsTab({
     globalLabels,
     mainAppLabels,
     miniplayerLabels,
-    setGlobalShortcut,
+    globalStatus,
+    commitGlobalShortcut,
     setMainAppShortcut,
     setMiniplayerShortcut,
     resetShortcut,
@@ -839,74 +911,170 @@ export function ShortcutsTab({
       </div>
 
       {/* ── Action Rows List with Slide-Up Animation ── */}
-      <AnimatePresence mode="wait" initial={false}>
-        <motion.div
-          key={isSearching ? `search:${effectiveQuery}` : activeScope}
-          initial={{ opacity: 0, y: 7 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -4 }}
-          transition={{ duration: 0.12, ease: "easeOut" }}
-          className="flex flex-wrap gap-[8px] pt-[10px]"
-        >
-          {filteredItems.length === 0 ? (
-            <div className="w-full py-8 text-center text-text-tertiary text-body">
-              {t("search.no_results") || "No matching shortcuts found"}
-            </div>
-          ) : (
-            filteredItems.map((item) => {
-              const Icon = item.icon;
-              const isRowRecording = recordingId === item.id;
-              return (
-                <div
-                  key={item.id}
-                  data-shortcut-row={item.id}
-                  onClick={() => {
-                    setRecordingId((prev) =>
-                      prev === item.id ? null : item.id,
-                    );
-                  }}
-                  className="inline-flex min-h-[50px] items-center gap-[14px] rounded-[14px] bg-fill py-[8px] pl-[12px] pr-[8px] transition-colors group select-none cursor-pointer hover:bg-fill-hover"
-                >
-                  {/* Left: Icon + Title + Scope Badge */}
-                  <div className="flex items-center gap-[10px] min-w-0 pointer-events-none">
-                    <span className="text-text-primary shrink-0 flex items-center justify-center w-[22px] h-[22px]">
-                      <Icon size={20} weight="Bold" />
-                    </span>
-                    <div className="flex flex-col gap-[2px] min-w-0">
-                      <span className="text-label font-[500] leading-tight text-text-primary truncate">
-                        {item.title}
-                      </span>
-                      <span
-                        className={`text-[11px] font-[500] leading-none ${scopeTagStyles[item.scope]}`}
-                      >
-                        {scopeTagLabels[item.scope]}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Right: Shortcut Recorder */}
-                  <ShortcutRecorder
-                    value={item.value}
-                    defaultValue={item.defaultValue}
-                    onChange={(val) => {
-                      item.onChange(val);
-                      setRecordingId(null);
-                    }}
-                    onReset={item.onReset}
-                    isGlobal={item.scope === "global"}
-                    clearable={item.clearable}
-                    validateCandidate={item.validateCandidate}
-                    isRecording={isRowRecording}
-                    onRecordingChange={(rec) =>
-                      setRecordingId(rec ? item.id : null)
-                    }
-                  />
+      <div
+        onTransitionEnd={(e) => {
+          if (e.target === e.currentTarget && e.propertyName === "height") {
+            setListResizing(false);
+          }
+        }}
+        style={{
+          height: listHeight,
+          transition: LIST_RESIZE_TRANSITION,
+          overflow: listResizing ? "hidden" : "visible",
+        }}
+      >
+        <div ref={listSize.attach} className="relative">
+          <AnimatePresence mode="popLayout" initial={false}>
+            <motion.div
+              key={isSearching ? `search:${effectiveQuery}` : activeScope}
+              initial={{ opacity: 0, y: 7 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.12, ease: "easeOut" }}
+              className="flex flex-wrap gap-[8px] pt-[10px]"
+            >
+              {filteredItems.length === 0 ? (
+                <div className="w-full py-8 text-center text-text-tertiary text-body">
+                  {t("search.no_results") || "No matching shortcuts found"}
                 </div>
-              );
-            })
-          )}
-        </motion.div>
-      </AnimatePresence>
+              ) : (
+                filteredItems.map((item) => {
+                  const Icon = item.icon;
+                  const isRowRecording = recordingId === item.id;
+                  return (
+                    <div
+                      key={item.id}
+                      data-shortcut-row={item.id}
+                      onClick={() => {
+                        setRecordingId((prev) =>
+                          prev === item.id ? null : item.id,
+                        );
+                      }}
+                      className="inline-flex min-h-[50px] items-center gap-[14px] rounded-[14px] bg-fill py-[8px] pl-[12px] pr-[8px] transition-colors group select-none cursor-pointer hover:bg-fill-hover"
+                    >
+                      {/* Left: Icon + Title + Scope Badge */}
+                      <div className="flex items-center gap-[10px] min-w-0 pointer-events-none">
+                        <span className="text-text-primary shrink-0 flex items-center justify-center w-[22px] h-[22px]">
+                          <Icon size={20} weight="Bold" />
+                        </span>
+                        <div className="flex flex-col gap-[2px] min-w-0">
+                          <span className="text-label font-[500] leading-tight text-text-primary truncate">
+                            {item.title}
+                          </span>
+                          {item.status === "taken" ||
+                          item.status === "invalid" ? (
+                            <span
+                              data-shortcut-status={item.status}
+                              className="text-[11px] font-[500] leading-none text-rose-500 dark:text-rose-400"
+                            >
+                              {item.status === "taken"
+                                ? t("settings.shortcuts.taken_by_other_app") ||
+                                  "Taken by the system or another app"
+                                : t("settings.shortcuts.invalid_global") ||
+                                  "Can't be used as a global shortcut"}
+                            </span>
+                          ) : (
+                            <span
+                              className={`text-[11px] font-[500] leading-none ${scopeTagStyles[item.scope]}`}
+                            >
+                              {scopeTagLabels[item.scope]}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Right: Shortcut Recorder */}
+                      <ShortcutRecorder
+                        value={item.value}
+                        defaultValue={item.defaultValue}
+                        onChange={(val) => {
+                          item.onChange(val);
+                          setRecordingId(null);
+                        }}
+                        onReset={item.onReset}
+                        isGlobal={item.scope === "global"}
+                        clearable={item.clearable}
+                        validateCandidate={item.validateCandidate}
+                        isRecording={isRowRecording}
+                        onRecordingChange={(rec) =>
+                          setRecordingId(rec ? item.id : null)
+                        }
+                      />
+                    </div>
+                  );
+                })
+              )}
+            </motion.div>
+          </AnimatePresence>
+        </div>
+      </div>
+
+      {isSearching ? null : (
+        <div className="mt-[18px]">
+          <SettingSection
+            label={t("settings.shortcuts.volume_section") || "Volume hotkeys"}
+          >
+            <SettingRow
+              title={
+                t("settings.shortcuts.volume_hold.title") ||
+                "When the key is held"
+              }
+              description={
+                t("settings.shortcuts.volume_hold.description") ||
+                "Keep changing the volume while a volume key is held, or change it once per press."
+              }
+              titleKey="settings.shortcuts.volume_hold.title"
+              descKey="settings.shortcuts.volume_hold.description"
+              control={
+                <SegmentedControl
+                  ariaLabel={
+                    t("settings.shortcuts.volume_hold.title") ||
+                    "When the key is held"
+                  }
+                  value={volumeHoldRepeats ? "hold" : "press"}
+                  onChange={(next) => setVolumeHoldRepeats(next === "hold")}
+                  options={[
+                    {
+                      value: "hold",
+                      label:
+                        t("settings.shortcuts.volume_hold.hold") ||
+                        "Keep changing",
+                    },
+                    {
+                      value: "press",
+                      label:
+                        t("settings.shortcuts.volume_hold.press") ||
+                        "Once per press",
+                    },
+                  ]}
+                />
+              }
+            />
+            <SettingRow
+              title={t("settings.shortcuts.volume_step.title") || "Volume step"}
+              description={
+                t("settings.shortcuts.volume_step.description") ||
+                "How much one press of a volume key changes the volume."
+              }
+              titleKey="settings.shortcuts.volume_step.title"
+              descKey="settings.shortcuts.volume_step.description"
+              control={
+                <SegmentedControl
+                  ariaLabel={
+                    t("settings.shortcuts.volume_step.title") || "Volume step"
+                  }
+                  value={toStepOption(volumeStep)}
+                  onChange={(next) => setVolumeStep(fromStepOption(next))}
+                  options={VOLUME_STEP_OPTIONS.map((step) => ({
+                    value: toStepOption(step),
+                    label: `${Math.round(step * 100)}%`,
+                  }))}
+                />
+              }
+            />
+          </SettingSection>
+        </div>
+      )}
     </div>
   );
 }

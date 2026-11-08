@@ -5,20 +5,19 @@ import {
   toVolumeGain,
   toVolumeLevel,
 } from "@/features/player";
-import { useShortcutsStore, matchesShortcut } from "@/features/shortcuts";
+import {
+  useShortcutsStore,
+  matchesShortcut,
+  stepVolumeLevel,
+} from "@/features/shortcuts";
 import {
   isBlockingOverlayOpen,
   isKeyHandledByFocusedControl,
   isTypingTarget,
 } from "../utils/shortcutGuards";
 
-const VOLUME_STEP = 0.05;
 const SEEK_STEP_MS = 5_000;
 const DEFAULT_UNMUTE_LEVEL = 0.7;
-
-function roundToPercent(level: number): number {
-  return Math.round(level * 100) / 100;
-}
 
 const REPEATABLE_CODES = new Set([
   "ArrowUp",
@@ -174,19 +173,17 @@ export function useGlobalShortcuts(options: GlobalShortcutsOptions): void {
         return;
       }
 
-      if (matchesShortcut(event, mainApp.volumeUp)) {
+      const volumeDirection = matchesShortcut(event, mainApp.volumeUp)
+        ? 1
+        : matchesShortcut(event, mainApp.volumeDown)
+          ? -1
+          : 0;
+      if (volumeDirection !== 0) {
         event.preventDefault();
+        const { volumeStep, volumeHoldRepeats } = useShortcutsStore.getState();
+        if (event.repeat && !volumeHoldRepeats) return;
         const level = toVolumeLevel(usePlayerStore.getState().volume);
-        const nextLevel = roundToPercent(Math.min(1, level + VOLUME_STEP));
-        playerEngine.setVolume(toVolumeGain(nextLevel));
-        if (nextLevel > 0) lastUnmutedLevelRef.current = nextLevel;
-        return;
-      }
-
-      if (matchesShortcut(event, mainApp.volumeDown)) {
-        event.preventDefault();
-        const level = toVolumeLevel(usePlayerStore.getState().volume);
-        const nextLevel = roundToPercent(Math.max(0, level - VOLUME_STEP));
+        const nextLevel = stepVolumeLevel(level, volumeDirection, volumeStep);
         playerEngine.setVolume(toVolumeGain(nextLevel));
         if (nextLevel > 0) lastUnmutedLevelRef.current = nextLevel;
         return;

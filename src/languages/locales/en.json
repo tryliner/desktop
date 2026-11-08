@@ -662,7 +662,22 @@
       "scope_global": "Global",
       "scope_main_app": "Main App",
       "scope_overlay": "Overlay",
-      "reset_section": "Reset section"
+      "reset_section": "Reset section",
+      "taken_by_other_app": "Taken by the system or another app",
+      "invalid_global": "Can't be used as a global shortcut",
+      "taken_not_saved": "{shortcut} is taken by the system or another app. Pick another one.",
+      "invalid_not_saved": "{shortcut} can't be used as a global shortcut. Pick another one.",
+      "volume_section": "Volume hotkeys",
+      "volume_hold": {
+        "title": "When the key is held",
+        "description": "Keep changing the volume while a volume key is held, or change it once per press.",
+        "hold": "Keep changing",
+        "press": "Once per press"
+      },
+      "volume_step": {
+        "title": "Volume step",
+        "description": "How much one press of a volume key changes the volume."
+      }
     },
     "overlay": {
       "description": "Desktop overlay behavior, global shortcut and position settings.",

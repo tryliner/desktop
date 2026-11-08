@@ -17,6 +17,26 @@ export type MediaShortcutAction = (typeof MEDIA_SHORTCUT_ACTIONS)[number];
 export type MediaShortcutBindings = Partial<
   Record<MediaShortcutAction, string>
 >;
+export type ShortcutRegistrationState = "ok" | "taken" | "invalid";
+export type ShortcutStatusListener = (
+  action: MediaShortcutAction,
+  state: ShortcutRegistrationState | null,
+) => void;
+
+export const REPEATABLE_MEDIA_ACTIONS: readonly MediaShortcutAction[] = [
+  "volumeUp",
+  "volumeDown",
+];
+export const HELD_KEY_COOLDOWN_MS = 600;
+
+export function createRepeatGate(cooldownMs = HELD_KEY_COOLDOWN_MS) {
+  const lastSeen = new Map<string, number>();
+  return (key: string, now: number): boolean => {
+    const previous = lastSeen.get(key);
+    lastSeen.set(key, now);
+    return previous === undefined || now - previous >= cooldownMs;
+  };
+}
 
 const COMPOSITOR_PREFIX = "media-";
 
@@ -55,6 +75,7 @@ export class MediaShortcuts {
   constructor(
     private readonly compositor: () => CompositorBridge | null,
     private readonly onAction: (action: MediaShortcutAction) => void,
+    private readonly onStatus: ShortcutStatusListener = () => {},
   ) {}
 
   getBindings(): MediaShortcutBindings {
@@ -77,7 +98,10 @@ export class MediaShortcuts {
     const compositor = this.compositor();
     for (const action of MEDIA_SHORTCUT_ACTIONS) {
       const accelerator = this.bindings[action];
-      if (!accelerator) continue;
+      if (!accelerator) {
+        this.onStatus(action, null);
+        continue;
+      }
       if (!compositor) {
         this.registerGlobal(action, accelerator);
         continue;
@@ -85,9 +109,9 @@ export class MediaShortcuts {
       void compositor
         .bindShortcut(`${COMPOSITOR_PREFIX}${action}`, accelerator)
         .then((ok) => {
-          if (!ok && generation === this.generation) {
-            this.registerGlobal(action, accelerator);
-          }
+          if (generation !== this.generation) return;
+          if (ok) this.onStatus(action, "ok");
+          else this.registerGlobal(action, accelerator);
         });
     }
   }
@@ -120,8 +144,10 @@ export class MediaShortcuts {
           action,
           accelerator,
         );
+      this.onStatus(action, ok ? "ok" : "taken");
     } catch (e) {
       console.error("[shortcuts] Error registering global shortcut:", e);
+      this.onStatus(action, "invalid");
     }
   }
 }
