@@ -11,6 +11,9 @@ export {
   applyOptimisticLike,
   applyOptimisticUnlike,
   reloadLikedTracks,
+  isTrackLikedNow,
+  setTrackLiked,
+  toggleTrackLike,
 } from "./useLikedTracks";
 export { useYoutubeLibraryItems } from "./useYoutubeLibraryItems";
 export { useIsTrackLiked } from "./useIsTrackLiked";
@@ -24,4 +27,5 @@ export {
   useRemoveExternalItem,
   useLikeTrack,
   useUnlikeTrack,
+  useToggleTrackLike,
 } from "./useLibraryMutations";

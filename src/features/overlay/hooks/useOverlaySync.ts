@@ -6,11 +6,7 @@ import {
   toVolumeGain,
   toVolumeLevel,
 } from "@/features/player/engine/volume";
-import {
-  useIsTrackLiked,
-  useLikeTrack,
-  useUnlikeTrack,
-} from "@/features/library/hooks";
+import { useIsTrackLiked, useToggleTrackLike } from "@/features/library/hooks";
 import { useCoverSrc } from "@/features/covers";
 import { getAuthSession } from "@/shared/api";
 import { useAuthStore } from "@/features/auth/store/authStore";
@@ -41,9 +37,7 @@ export function useOverlaySync() {
   const playbackRate = usePlayerStore((s) => s.playbackRate);
   const effectiveCover = useCoverSrc(currentTrack?.coverUrl);
   const isLiked = useIsTrackLiked(currentTrack?.id);
-  const likeMutation = useLikeTrack();
-  const unlikeMutation = useUnlikeTrack();
-  const isTogglingLikeRef = useRef(false);
+  const toggleLike = useToggleTrackLike();
   const sentPositionRef = useRef<SentPosition | null>(null);
   const lastUnmutedLevelRef = useRef(DEFAULT_UNMUTE_LEVEL);
   const [seekTick, setSeekTick] = useState(0);
@@ -138,38 +132,26 @@ export function useOverlaySync() {
             break;
           }
           case "like":
-            if (currentTrack && !isTogglingLikeRef.current) {
-              isTogglingLikeRef.current = true;
+            if (currentTrack) {
               const fromGlobal = Boolean(
                 (action.payload as any)?.fromGlobalShortcut ||
                 (action as any).fromGlobalShortcut,
               );
-              const onSettled = () => {
-                isTogglingLikeRef.current = false;
-              };
-              if (isLiked) {
-                unlikeMutation.mutate(currentTrack.id, {
-                  onSuccess: () => {
-                    if (fromGlobal) {
-                      showToast(currentTrack.title || "Song", "info", {
-                        description: "Removed from favorites",
-                      });
-                    }
-                  },
-                  onSettled,
-                });
-              } else {
-                likeMutation.mutate(currentTrack.id, {
-                  onSuccess: () => {
-                    if (fromGlobal) {
-                      showToast(currentTrack.title || "Song", "checkmark", {
-                        description: "Added to favorites",
-                      });
-                    }
-                  },
-                  onSettled,
-                });
-              }
+              toggleLike(currentTrack.id, {
+                onSuccess: (liked) => {
+                  if (!fromGlobal) return;
+                  showToast(
+                    currentTrack.title || "Song",
+                    liked ? "checkmark" : "info",
+                    {
+                      id: `like-toast-${currentTrack.id}`,
+                      description: liked
+                        ? "Added to favorites"
+                        : "Removed from favorites",
+                    },
+                  );
+                },
+              });
             }
             break;
           case "volumeUp":
@@ -196,7 +178,7 @@ export function useOverlaySync() {
     );
 
     return cleanup;
-  }, [currentTrack, isLiked, likeMutation, unlikeMutation]);
+  }, [currentTrack, toggleLike]);
 
   useEffect(() => {
     return usePlayerStore.subscribe((state, prev) => {

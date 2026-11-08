@@ -1,10 +1,6 @@
-import { useCallback, useRef } from "react";
+import { useCallback } from "react";
 import { useLocation } from "react-router-dom";
-import {
-  useIsTrackLiked,
-  useLikeTrack,
-  useUnlikeTrack,
-} from "@/features/library/hooks";
+import { useIsTrackLiked, useToggleTrackLike } from "@/features/library/hooks";
 import { ArtistAvatar, ArtistLink } from "@/features/artist";
 import { isLocalTrackId } from "@/shared/media/local";
 import { useTranslation } from "@/languages";
@@ -26,22 +22,12 @@ export function FullscreenTrackInfo({ onClose }: FullscreenTrackInfoProps) {
 
   const isLocal = isLocalTrackId(track?.id);
   const isLiked = useIsTrackLiked(track?.id);
-  const likeMutation = useLikeTrack();
-  const unlikeMutation = useUnlikeTrack();
-  const togglingRef = useRef(false);
+  const toggleLike = useToggleTrackLike();
 
   const handleLikeToggle = useCallback(() => {
-    if (!track || togglingRef.current) return;
-    togglingRef.current = true;
-    const onSettled = () => {
-      togglingRef.current = false;
-    };
-    if (isLiked) {
-      unlikeMutation.mutate(track.id, { onSettled });
-    } else {
-      likeMutation.mutate(track.id, { onSettled });
-    }
-  }, [track, isLiked, likeMutation, unlikeMutation]);
+    if (!track) return;
+    toggleLike(track.id);
+  }, [track, toggleLike]);
 
   return (
     <div className="flex w-full items-center gap-[12px]">

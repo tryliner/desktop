@@ -11,8 +11,7 @@ import type { DropdownMenuItem } from "@/shared/ui/DropdownMenu";
 
 vi.mock("@/features/library", () => ({
   usePlaylistsList: () => ({ data: { playlists: [] } }),
-  useLikeTrack: () => ({ mutate: vi.fn() }),
-  useUnlikeTrack: () => ({ mutate: vi.fn() }),
+  useToggleTrackLike: () => vi.fn(),
   useIsTrackLiked: () => false,
   useModalStore: {
     getState: () => ({
