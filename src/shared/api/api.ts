@@ -1,6 +1,8 @@
 import { authApi } from "./endpoints/auth";
 import { catalogApi } from "./endpoints/catalog";
 import { historyApi } from "./endpoints/history";
+import { request } from "./http/request";
+import type { EdgeKeyAnswer } from "./edgeKey";
 import { importsApi } from "./endpoints/imports";
 import { libraryApi } from "./endpoints/library";
 import { lyricsApi } from "./endpoints/lyrics";
@@ -60,6 +62,9 @@ export type {
 } from "../contracts";
 
 export const api = {
+  fetchEdgeKey(): Promise<EdgeKeyAnswer> {
+    return request({ method: "GET", path: "/v1/edge/key" }) as Promise<EdgeKeyAnswer>;
+  },
   ...authApi,
   ...catalogApi,
   ...libraryApi,

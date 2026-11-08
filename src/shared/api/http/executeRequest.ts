@@ -8,6 +8,8 @@ import { getApiBaseUrl } from "../baseUrl";
 import { signApiRequest, syncServerTime } from "../requestSigner";
 import { telemetry } from "@/shared/telemetry";
 import { ApiError } from "../apiError";
+import { refreshEdgeKey } from "../edgeKey";
+import { runHumanCheck } from "../humanCheck";
 import { DEFAULT_TIMEOUT_MS, fetchWithTimeout } from "./fetchWithTimeout";
 import {
   errorFromResponse,
@@ -29,6 +31,32 @@ export interface RequestInput {
   /** "include" sends the cloudflare edge cookie on auth calls */
   credentials?: RequestCredentials;
   onResponse?: (res: Response) => void;
+  edgeRetry?: boolean;
+}
+
+type EdgeRefusal = "challenge" | "blocked";
+
+function edgeRefusal(res: Response): EdgeRefusal | null {
+  if (res.status !== 403) return null;
+  if (res.headers?.get?.("cf-mitigated") === "challenge") return "challenge";
+  return res.headers?.get?.("x-instance") ? null : "blocked";
+}
+
+let edgeRecovery: Promise<boolean> | null = null;
+
+function recoverFromEdge(refusal: EdgeRefusal): Promise<boolean> {
+  if (!edgeRecovery) {
+    const attempt =
+      refusal === "challenge"
+        ? runHumanCheck("login", "required").then(() => true)
+        : refreshEdgeKey();
+    edgeRecovery = attempt
+      .catch(() => false)
+      .finally(() => {
+        edgeRecovery = null;
+      });
+  }
+  return edgeRecovery;
 }
 
 function isAuthPath(path: string): boolean {
@@ -128,6 +156,11 @@ export async function executeRequest(input: RequestInput): Promise<unknown> {
   ) {
     const next = await retryToken(token);
     if (next) res = await send(input, trace, next);
+  }
+
+  const refusal = input.edgeRetry === false ? null : edgeRefusal(res);
+  if (refusal && (await recoverFromEdge(refusal))) {
+    return executeRequest({ ...input, edgeRetry: false });
   }
 
   const requestId = requestIdOf(res);

@@ -4,6 +4,7 @@ import { initClientVisitorSession } from "@/shared/youtube";
 import { initBundleStampLog } from "@/shared/utils/bundleStampLog";
 import { initSavedTracks } from "@/features/library/saved";
 import { initOfflineMode } from "@/features/connectivity/engine/offlineController";
+import { api, initEdgeKey } from "@/shared/api";
 
 export function initMainWindowServices() {
   initTelemetry();
@@ -12,4 +13,5 @@ export function initMainWindowServices() {
   initBundleStampLog();
   initOfflineMode();
   initSavedTracks();
+  initEdgeKey(() => api.fetchEdgeKey());
 }

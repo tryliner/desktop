@@ -57,6 +57,13 @@ import { BundleManager } from "./bundle-manager.js";
 import { createBundleErrorStamp } from "./bundle-stamp.js";
 import { createSleepBlocker } from "./sleep-blocker.js";
 import { keepsOwnCors, needsOpenCors, withOpenCors } from "./cors.js";
+import {
+  EDGE_REQUEST_URLS,
+  isEdgeUrl,
+  setEdgeKey,
+  watchClearance,
+  withEdgeHeaders,
+} from "./edge-headers.js";
 import { createShutdown } from "./shutdown.js";
 import {
   clampResizeToArea,
@@ -819,15 +826,21 @@ if (!gotTheLock) {
       },
     );
 
+    watchClearance(session.defaultSession);
     session.defaultSession.webRequest.onBeforeSendHeaders(
       {
         urls: [
           ...YOUTUBE_REQUEST_URLS,
           "*://api.music.apple.com/*",
           "*://amp-api.music.apple.com/*",
+          ...EDGE_REQUEST_URLS,
         ],
       },
       (details, callback) => {
+        if (isEdgeUrl(details.url)) {
+          callback({ requestHeaders: withEdgeHeaders(details.requestHeaders) });
+          return;
+        }
         const requestHeaders: Record<string, string> = {};
         let userAgentOverride: string | undefined;
         for (const [name, value] of Object.entries(details.requestHeaders)) {
@@ -1448,6 +1461,8 @@ if (!gotTheLock) {
         return payload;
       }
     });
+
+    onTrusted("edge:set-key", (_event, key: unknown) => setEdgeKey(key));
 
     handleTrusted(
       "signer:sign-request",
