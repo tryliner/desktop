@@ -90,4 +90,5 @@ export {
   fetchYoutubeAccountPlaylists,
   type YoutubeAccountPlaylist,
 } from "./account/accountPlaylists";
+export { subscribePlaylistProgress } from "./account/playlistProgress";
 export { isAlbumPlaylistId } from "./innertube/innertubeCollections";
