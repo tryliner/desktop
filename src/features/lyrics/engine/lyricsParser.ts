@@ -119,6 +119,49 @@ function tryParseMxmSubtitles(raw: string): Lyric[] | null {
   }
 }
 
+const TTML_ROOT = /<tt\b[^>]*>/i;
+const TTML_BODY = /<body\b[^>]*>([\s\S]*)<\/body>/i;
+const TTML_PARAGRAPH = /<p\b[^>]*>([\s\S]*?)<\/p>/gi;
+
+const NAMED_ENTITIES: Record<string, string> = {
+  amp: "&",
+  lt: "<",
+  gt: ">",
+  quot: '"',
+  apos: "'",
+  nbsp: " ",
+};
+
+function decodeXmlEntities(text: string): string {
+  return text.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (match, entity) => {
+    const lower = String(entity).toLowerCase();
+    if (lower.startsWith("#x")) {
+      return String.fromCodePoint(parseInt(lower.slice(2), 16));
+    }
+    if (lower.startsWith("#")) {
+      return String.fromCodePoint(parseInt(lower.slice(1), 10));
+    }
+    return NAMED_ENTITIES[lower] ?? match;
+  });
+}
+
+function tryParseUntimedTtml(raw: string): Lyric[] | null {
+  if (!TTML_ROOT.test(raw)) return null;
+  const body = TTML_BODY.exec(raw)?.[1] ?? raw;
+  const lines: Lyric[] = [];
+  for (const match of body.matchAll(TTML_PARAGRAPH)) {
+    const paragraph = match[1]
+      .replace(/\s+/g, " ")
+      .replace(/<br\s*\/?>/gi, "\n")
+      .replace(/<[^>]*>/g, "");
+    for (const line of decodeXmlEntities(paragraph).split("\n")) {
+      const text = line.trim();
+      if (text) lines.push({ startTimeMs: 0, durationMs: 0, words: text });
+    }
+  }
+  return lines.length > 0 ? lines : null;
+}
+
 export function parseRawLyrics(
   raw: string,
   _format?: string,
@@ -133,10 +176,14 @@ export function parseRawLyrics(
   try {
     const richsyncLyrics = tryParseRichsync(trimmed);
     const mxmSubtitles = richsyncLyrics ? null : tryParseMxmSubtitles(trimmed);
-    const braccatoLyrics: Lyric[] =
+    const detectedLyrics: Lyric[] =
       richsyncLyrics ??
       mxmSubtitles ??
       detectParser(trimmed).parse(trimmed, songDurationMs);
+    const braccatoLyrics: Lyric[] =
+      detectedLyrics && detectedLyrics.length > 0
+        ? detectedLyrics
+        : (tryParseUntimedTtml(trimmed) ?? []);
 
     if (!braccatoLyrics || braccatoLyrics.length === 0) {
       return {
