@@ -30,6 +30,13 @@ export default defineConfig(({ command, mode }) => {
       electron({
         main: {
           entry: "electron/main.ts",
+          vite: {
+            define: {
+              __LINER_CHANNEL__: JSON.stringify(
+                process.env.LINER_CHANNEL ?? "production",
+              ),
+            },
+          },
         },
         preload: {
           input: "electron/preload.ts",

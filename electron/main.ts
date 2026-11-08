@@ -57,6 +57,7 @@ import { BundleManager } from "./bundle-manager.js";
 import { createBundleErrorStamp } from "./bundle-stamp.js";
 import { createSleepBlocker } from "./sleep-blocker.js";
 import { keepsOwnCors, needsOpenCors, withOpenCors } from "./cors.js";
+import { IS_STAGING, useChannelData } from "./channel.js";
 import {
   EDGE_REQUEST_URLS,
   isEdgeUrl,
@@ -491,7 +492,7 @@ function createWindow() {
     const manager = bundleManager;
     const win = mainWindow;
     void (async () => {
-      if (app.isPackaged)
+      if (app.isPackaged && !IS_STAGING)
         await manager.updateBeforeLaunch().catch(() => undefined);
       if (!win.isDestroyed()) win.loadFile(manager.getEffectiveIndexPath());
     })();
@@ -529,6 +530,8 @@ function createWindow() {
   mainWindow.on("show", () => thumbar?.refresh());
   mainWindow.on("restore", () => thumbar?.refresh());
 }
+
+useChannelData(app);
 
 // Single instance lock
 const gotTheLock = app.requestSingleInstanceLock();
@@ -1961,6 +1964,9 @@ if (!gotTheLock) {
       if (!app.isPackaged) {
         return { available: false, error: "Updater is disabled in dev mode" };
       }
+      if (IS_STAGING) {
+        return { available: false, error: "Updates are off in staging builds" };
+      }
       try {
         const result = await autoUpdater.checkForUpdates();
         return {
@@ -2046,7 +2052,7 @@ if (!gotTheLock) {
     });
 
     // automatic update check after window initialization (packaged app only)
-    if (app.isPackaged) {
+    if (app.isPackaged && !IS_STAGING) {
       setTimeout(() => {
         autoUpdater.checkForUpdates().catch((err) => {
           console.error(
