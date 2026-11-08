@@ -36,6 +36,10 @@ function subtitleOf(line: Lyric): string | null {
   return text && text.trim() ? text.trim() : null;
 }
 
+function hasTiming(lyrics: Lyric[]): boolean {
+  return lyrics.some((line) => line.startTimeMs !== 0 || line.durationMs !== 0);
+}
+
 export function buildLines(lyrics: Lyric[]): LyricsModel {
   const lines = lyrics.map((line, index): LyricLineModel => {
     const words = line.words ?? "";
@@ -58,5 +62,6 @@ export function buildLines(lyrics: Lyric[]): LyricsModel {
   return {
     lines,
     shiftMs: hasTimedParts(lyrics) ? RICHSYNC_SHIFT_MS : LINE_SYNC_SHIFT_MS,
+    timed: hasTiming(lyrics),
   };
 }
