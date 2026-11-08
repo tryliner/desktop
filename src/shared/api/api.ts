@@ -65,6 +65,7 @@ import {
   type PowSolution,
 } from "./proofOfWork";
 import { solvePow } from "./proofOfWorkRunner";
+import { refreshEdgeKey, type EdgeKeyAnswer } from "./edgeKey";
 import {
   isHumanCheckMode,
   runHumanCheck,
@@ -213,12 +214,38 @@ export function toMaxQualityAvatarUrl(url: string | undefined): string {
 
 const inFlightGetRequests = new Map<string, Promise<unknown>>();
 
+type EdgeRefusal = "challenge" | "blocked";
+
+function edgeRefusal(res: Response): EdgeRefusal | null {
+  if (res.status !== 403) return null;
+  if (res.headers?.get?.("cf-mitigated") === "challenge") return "challenge";
+  return res.headers?.get?.("x-instance") ? null : "blocked";
+}
+
+let edgeRecovery: Promise<boolean> | null = null;
+
+function recoverFromEdge(refusal: EdgeRefusal): Promise<boolean> {
+  if (!edgeRecovery) {
+    const attempt =
+      refusal === "challenge"
+        ? runHumanCheck("login", "required").then(() => true)
+        : refreshEdgeKey();
+    edgeRecovery = attempt
+      .catch(() => false)
+      .finally(() => {
+        edgeRecovery = null;
+      });
+  }
+  return edgeRecovery;
+}
+
 async function executeRequest<T>(
   path: string,
   init?: RequestInit,
   allowRefresh = true,
   timeoutMs = DEFAULT_TIMEOUT_MS,
   onResponse?: (res: Response) => void,
+  edgeRetry = true,
 ): Promise<T> {
   const startTime = performance.now();
   const method = (init?.method ?? "GET").toUpperCase();
@@ -393,6 +420,18 @@ async function executeRequest<T>(
       }
       throw err;
     }
+  }
+
+  const refusal = edgeRetry ? edgeRefusal(res) : null;
+  if (refusal && (await recoverFromEdge(refusal))) {
+    return executeRequest<T>(
+      path,
+      init,
+      allowRefresh,
+      timeoutMs,
+      onResponse,
+      false,
+    );
   }
 
   const durationMs = Math.round(performance.now() - startTime);
@@ -696,6 +735,10 @@ async function withAuthProof<T>(
 // ---- Endpoints --------------------------------------------------------------
 
 export const api = {
+  fetchEdgeKey(): Promise<EdgeKeyAnswer> {
+    return request<EdgeKeyAnswer>("/v1/edge/key");
+  },
+
   async login(email: string, password: string): Promise<AuthTokens> {
     const result = await withAuthProof("login", email, (proof) =>
       request<AuthTokens>(

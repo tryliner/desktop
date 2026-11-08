@@ -3,7 +3,7 @@ import {
   forgetStorageAnalytics,
   initBackgroundStorageAnalytics,
 } from "@/shared/utils/cacheManager";
-import { registerSignOutTask } from "@/shared/api";
+import { api, initEdgeKey, registerSignOutTask } from "@/shared/api";
 import { initClientVisitorSession } from "@/shared/youtube";
 import { initBundleStampLog } from "@/shared/utils/bundleStampLog";
 import { initSavedTracks } from "@/features/library/saved";
@@ -16,5 +16,6 @@ export function initMainWindowServices() {
   initBundleStampLog();
   initOfflineMode();
   initSavedTracks();
+  initEdgeKey(() => api.fetchEdgeKey());
   registerSignOutTask(forgetStorageAnalytics);
 }

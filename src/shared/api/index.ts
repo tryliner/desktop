@@ -6,6 +6,7 @@ export {
   resolveApiErrorMessage,
 } from "./api";
 export { DEFAULT_PRIMARY_API, getApiBaseUrl } from "./baseUrl";
+export { initEdgeKey } from "./edgeKey";
 export {
   HumanCheckCancelledError,
   humanCheckOrigin,
