@@ -1,5 +1,9 @@
 import { initTelemetry } from "@/shared/telemetry";
-import { initBackgroundStorageAnalytics } from "@/shared/utils/cacheManager";
+import {
+  forgetStorageAnalytics,
+  initBackgroundStorageAnalytics,
+} from "@/shared/utils/cacheManager";
+import { registerSignOutTask } from "@/shared/api";
 import { initClientVisitorSession } from "@/shared/youtube";
 import { initBundleStampLog } from "@/shared/utils/bundleStampLog";
 import { initSavedTracks } from "@/features/library/saved";
@@ -12,4 +16,5 @@ export function initMainWindowServices() {
   initBundleStampLog();
   initOfflineMode();
   initSavedTracks();
+  registerSignOutTask(forgetStorageAnalytics);
 }

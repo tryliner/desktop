@@ -18,6 +18,7 @@ import type {
   SavedLyricsState,
   SavedTrackInput,
   SavedTrackRecord,
+  SavedTracksPartUsage,
 } from "./saved-tracks/types";
 
 export interface DiscordStatus {
@@ -223,6 +224,7 @@ export interface LinerElectronApi {
   savedTracksRemove: (trackIds: string[]) => Promise<number>;
   savedTracksRemoveAll: () => Promise<number>;
   savedTracksUsage: () => Promise<SavedLibraryUsage>;
+  savedTracksUsageOf: (trackIds: string[]) => Promise<SavedTracksPartUsage>;
   savedTracksOpenFolder: () => Promise<boolean>;
   savedTracksGetLyrics: (trackId: string) => Promise<unknown | null>;
   savedTracksSetLyrics: (
@@ -504,6 +506,8 @@ const api: LinerElectronApi = {
     ipcRenderer.invoke("saved-tracks:remove", trackIds),
   savedTracksRemoveAll: () => ipcRenderer.invoke("saved-tracks:remove-all"),
   savedTracksUsage: () => ipcRenderer.invoke("saved-tracks:usage"),
+  savedTracksUsageOf: (trackIds) =>
+    ipcRenderer.invoke("saved-tracks:usage-of", trackIds),
   savedTracksOpenFolder: () => ipcRenderer.invoke("saved-tracks:open-folder"),
   savedTracksGetLyrics: (trackId) =>
     ipcRenderer.invoke("saved-tracks:lyrics-get", trackId),

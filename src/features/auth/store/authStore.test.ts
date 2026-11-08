@@ -15,6 +15,7 @@ import {
   api,
   ApiError,
   getAuthSession,
+  registerSignOutTask,
   setAuthSession,
   type AuthTokens,
 } from "@/shared/api";
@@ -124,6 +125,54 @@ describe("signing out clears the player", () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+});
+
+describe("signing out runs the device cleanup", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    setAuthSession(null);
+  });
+
+  it("runs sign-out tasks once the session is gone and before going anonymous", async () => {
+    setAuthSession(stored);
+    useAuthStore.setState({ status: "authenticated", user: stored.user });
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(null, { status: 204 }),
+    );
+    const seen: Array<{ session: unknown; status: string }> = [];
+    const unregister = registerSignOutTask(async () => {
+      seen.push({
+        session: getAuthSession(),
+        status: useAuthStore.getState().status,
+      });
+    });
+    try {
+      await useAuthStore.getState().logout();
+    } finally {
+      unregister();
+    }
+
+    expect(seen).toEqual([{ session: null, status: "authenticated" }]);
+    expect(useAuthStore.getState().status).toBe("anonymous");
+  });
+
+  it("finishes signing out when a cleanup task fails", async () => {
+    setAuthSession(stored);
+    useAuthStore.setState({ status: "authenticated", user: stored.user });
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(null, { status: 204 }),
+    );
+    const unregister = registerSignOutTask(async () => {
+      throw new Error("disk busy");
+    });
+    try {
+      await useAuthStore.getState().logout();
+    } finally {
+      unregister();
+    }
+
+    expect(useAuthStore.getState().status).toBe("anonymous");
   });
 });
 

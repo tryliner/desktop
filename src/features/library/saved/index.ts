@@ -3,5 +3,10 @@ export {
   initSavedTracks,
   DEFAULT_SAVED_LIMIT_BYTES,
 } from "./store/savedTracksStore";
+export {
+  SIGN_OUT_CHOICES,
+  shouldAskBeforeSignOut,
+  type SignOutChoice,
+} from "./engine/signOutChoice";
 export { useSavedTracks } from "./hooks/useSavedTracks";
 export { default as SavedLikesPage } from "./ui/SavedLikesPage";

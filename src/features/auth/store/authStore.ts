@@ -5,13 +5,18 @@ import {
   getAuthSession,
   setAuthSession,
   refreshAuthSession,
+  runSignOutTasks,
   type AuthUser,
   type PublicUser,
   type UpdateProfileInput,
 } from "@/shared/api";
 import { playerEngine } from "@/features/player";
 import { queryCache } from "@/shared/cache/queryCache";
-import { clearScreenCache } from "@/shared/cache/screenCache";
+import {
+  clearPersistedScreenCache,
+  clearScreenCache,
+} from "@/shared/cache/screenCache";
+import { useSearchHistoryStore } from "@/features/search/store/searchHistoryStore";
 import { prefersSignOutWithLiner, signOutYoutube } from "@/shared/youtube";
 
 export type AuthStatus = "initializing" | "authenticated" | "anonymous";
@@ -143,6 +148,9 @@ export const useAuthStore = create<AuthState>((set) => ({
     if (prefersSignOutWithLiner()) void signOutYoutube().catch(() => {});
     queryCache.clear();
     clearScreenCache();
+    clearPersistedScreenCache();
+    useSearchHistoryStore.getState().clearHistory();
+    await runSignOutTasks(SIGN_OUT_TASKS_TIMEOUT_MS);
     set({ status: "anonymous", user: null });
     if (typeof window !== "undefined") {
       window.dispatchEvent(new Event("library:changed"));
@@ -151,6 +159,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 }));
 
 const PLAYBACK_CLEAR_TIMEOUT_MS = 3_000;
+const SIGN_OUT_TASKS_TIMEOUT_MS = 10_000;
 
 async function clearPlayback(): Promise<void> {
   let timer: ReturnType<typeof setTimeout> | undefined;

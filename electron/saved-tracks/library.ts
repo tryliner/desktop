@@ -6,6 +6,7 @@ import type {
   SavedLyricsState,
   SavedTrackInput,
   SavedTrackRecord,
+  SavedTracksPartUsage,
 } from "./types.js";
 
 const KEY_PATTERN = /^[a-f0-9]{20}$/;
@@ -214,6 +215,31 @@ export class SavedTrackLibrary {
         freeBytes = Number(stats.bavail) * Number(stats.bsize);
       } catch {}
       return { count: records.length, bytes, freeBytes };
+    });
+  }
+
+  usageOf(trackIds: string[]): Promise<SavedTracksPartUsage> {
+    return this.serialized(async () => {
+      const wanted = new Set(trackIds);
+      const records = (await this.load()).filter((record) =>
+        wanted.has(record.trackId),
+      );
+      let bytes = 0;
+      for (const record of records) {
+        const files = [
+          this.filePath("audio", record.audioFile),
+          this.lyricsPath(record.key),
+          ...(record.coverFile
+            ? [this.filePath("covers", record.coverFile)]
+            : []),
+        ];
+        for (const file of files) {
+          try {
+            bytes += (await fsp.stat(file)).size;
+          } catch {}
+        }
+      }
+      return { count: records.length, bytes };
     });
   }
 

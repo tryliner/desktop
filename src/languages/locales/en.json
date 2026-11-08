@@ -892,7 +892,8 @@
         "lyrics": "Lyrics",
         "metadata": "Catalog & Search",
         "local": "Imported files",
-        "liked": "Liked songs"
+        "liked": "Liked songs",
+        "shared": "Kept from earlier sign-ins"
       },
       "local_confirm_title": "Remove imported files?",
       "local_confirm_desc": "{tracks} ({size}) will be deleted from Liner, together with their covers. Your original files stay where they are.",
@@ -939,7 +940,23 @@
       "open_folder_short": "Open folder",
       "cached_in_library": "Show cached songs in library",
       "cached_in_library_desc": "When off, they appear only in offline mode.",
-      "remove_failed": "Couldn't remove these files. Try again."
+      "remove_failed": "Couldn't remove these files. Try again.",
+      "shared_desc": "{songs} · reused when an account likes them",
+      "removing_shared_title": "Removing kept songs...",
+      "removed_shared_subtitle": "Songs you've liked on this account weren't touched.",
+      "sign_out_choice": "Downloads when you sign out",
+      "sign_out_choice_ask": "Liner asks each time you sign out.",
+      "sign_out_choice_remove": "Downloaded songs are removed when you sign out.",
+      "sign_out_choice_keep": "Songs stay for the next sign-in. Any account reuses the ones it likes.",
+      "sign_out_option_ask": "Ask",
+      "sign_out_option_remove": "Remove",
+      "sign_out_option_keep": "Keep",
+      "sign_out_title": "Sign out of Liner?",
+      "sign_out_desc_remove": "The {songs} you downloaded ({size}) will be removed from this device.",
+      "sign_out_desc_keep": "The {songs} you downloaded ({size}) will stay on this device for the next sign-in.",
+      "sign_out_keep_toggle": "Keep downloads",
+      "sign_out_confirm": "Sign out",
+      "sign_out_dont_ask": "Don't ask again"
     },
     "theme": {
       "title": "Theme",

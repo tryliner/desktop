@@ -47,6 +47,8 @@ export interface SavedSyncMemory {
   networkCount: number;
 }
 
+export type StoredClaims = string[] | "all";
+
 export interface SavedTrackSyncDeps {
   now: () => number;
   sleep: (ms: number) => Promise<void>;
@@ -64,11 +66,15 @@ export interface SavedTrackSyncDeps {
   } | null>;
   saveLyrics: (record: SavedTrackRecord) => Promise<SavedLyricsState | "later">;
   remove: (trackIds: string[]) => Promise<void>;
+  removeAll: () => Promise<void>;
+  accountId: () => string | null;
+  readClaims: (accountId: string | null) => StoredClaims;
+  writeClaims: (accountId: string | null, trackIds: string[]) => void;
   classify: (error: unknown) => FailureKind;
   readMemory: () => SavedSyncMemory;
   writeMemory: (memory: SavedSyncMemory) => void;
   onStatus: (status: SyncStatus) => void;
-  onRecords: (records: SavedTrackRecord[]) => void;
+  onRecords: (claimed: SavedTrackRecord[], all: SavedTrackRecord[]) => void;
   log: (message: string) => void;
 }
 
@@ -101,6 +107,9 @@ export function createSavedTrackSync(deps: SavedTrackSyncDeps) {
   let running: Promise<void> | null = null;
   let wake = false;
   let memory = deps.readMemory();
+  let claimOwner: string | null | undefined;
+  let claimed = new Set<string>();
+  let generation = 0;
 
   const status = (phase: SyncPhase, resumeAt?: number) =>
     deps.onStatus({
@@ -126,9 +135,56 @@ export function createSavedTrackSync(deps: SavedTrackSyncDeps) {
     return memory.networkCount;
   };
 
+  const claimedRecords = () =>
+    records.filter((record) => claimed.has(record.trackId));
+
+  const sharedRecords = () =>
+    records.filter((record) => !claimed.has(record.trackId));
+
+  const publish = () => deps.onRecords(claimedRecords(), records);
+
   const setRecords = (next: SavedTrackRecord[]) => {
     records = next;
-    deps.onRecords(records);
+    publish();
+  };
+
+  const persistClaims = () => {
+    if (claimOwner === undefined) return;
+    deps.writeClaims(claimOwner, [...claimed]);
+  };
+
+  const syncClaims = () => {
+    const owner = deps.accountId();
+    if (owner === claimOwner) return;
+    claimOwner = owner;
+    const stored = deps.readClaims(owner);
+    claimed = new Set(
+      stored === "all" ? records.map((record) => record.trackId) : stored,
+    );
+    persistClaims();
+    publish();
+  };
+
+  const claimWanted = () => {
+    const wanted = new Set(wantedForSaving(liked).map((track) => track.id));
+    let changed = false;
+    for (const record of records) {
+      if (!wanted.has(record.trackId) || claimed.has(record.trackId)) continue;
+      claimed.add(record.trackId);
+      changed = true;
+    }
+    if (!changed) return;
+    persistClaims();
+    publish();
+  };
+
+  const evictShared = async (): Promise<boolean> => {
+    const oldest = sharedRecords().sort((a, b) => a.savedAt - b.savedAt)[0];
+    if (!oldest) return false;
+    setRecords(records.filter((record) => record.trackId !== oldest.trackId));
+    await deps.remove([oldest.trackId]);
+    deps.log("freed space by removing a song kept from an earlier sign-in");
+    return true;
   };
 
   const rebuildQueue = () => {
@@ -142,16 +198,15 @@ export function createSavedTrackSync(deps: SavedTrackSyncDeps) {
     if (!authoritative || records.length === 0) return;
     const wanted = new Set(wantedForSaving(liked).map((track) => track.id));
     const playing = deps.currentTrackId();
-    const removing = records
+    const stale = claimedRecords()
       .map((record) => record.trackId)
-      .filter((trackId) => !wanted.has(trackId) && trackId !== playing);
-    pendingRemovals = new Set(
-      records
-        .map((record) => record.trackId)
-        .filter((trackId) => !wanted.has(trackId) && trackId === playing),
-    );
+      .filter((trackId) => !wanted.has(trackId));
+    const removing = stale.filter((trackId) => trackId !== playing);
+    pendingRemovals = new Set(stale.filter((trackId) => trackId === playing));
     if (removing.length === 0) return;
     const gone = new Set(removing);
+    for (const trackId of removing) claimed.delete(trackId);
+    persistClaims();
     setRecords(records.filter((record) => !gone.has(record.trackId)));
     await deps.remove(removing);
     deps.log(
@@ -217,19 +272,24 @@ export function createSavedTrackSync(deps: SavedTrackSyncDeps) {
       }
       const usage = await deps.usage().catch(() => null);
       const limit = deps.limitBytes();
-      if (usage && limit > 0 && usage.bytes >= limit) {
-        status("limit");
-        return;
-      }
-      if (usage?.freeBytes != null && usage.freeBytes < MIN_FREE_BYTES) {
-        status("disk");
+      const overLimit = Boolean(usage && limit > 0 && usage.bytes >= limit);
+      const lowDisk =
+        usage?.freeBytes != null && usage.freeBytes < MIN_FREE_BYTES;
+      if (overLimit || lowDisk) {
+        if (await evictShared()) continue;
+        status(overLimit ? "limit" : "disk");
         return;
       }
 
       const track = queue[0];
+      const startedIn = generation;
       status("saving");
       try {
         const saved = await deps.saveTrack(track);
+        if (startedIn !== generation) {
+          if (saved) await deps.remove([saved.record.trackId]);
+          continue;
+        }
         queue = queue.filter((entry) => entry.id !== track.id);
         const { [track.id]: _dropped, ...attempts } = memory.attempts;
         memory = { ...memory, attempts };
@@ -241,6 +301,8 @@ export function createSavedTrackSync(deps: SavedTrackSyncDeps) {
           remember();
           continue;
         }
+        claimed.add(track.id);
+        persistClaims();
         setRecords([
           ...records.filter((record) => record.trackId !== track.id),
           saved.record,
@@ -258,6 +320,7 @@ export function createSavedTrackSync(deps: SavedTrackSyncDeps) {
           await deps.sleep(LINER_GAP_MS);
         }
       } catch (error) {
+        if (startedIn !== generation) continue;
         const failure = deps.classify(error);
         if (failure.kind === "offline") continue;
         if (failure.kind === "rate_limited") {
@@ -312,14 +375,31 @@ export function createSavedTrackSync(deps: SavedTrackSyncDeps) {
     return running;
   };
 
+  const removeOwned = async (pick: () => SavedTrackRecord[]) => {
+    const removing = pick().map((record) => record.trackId);
+    if (removing.length === 0) return 0;
+    const gone = new Set(removing);
+    for (const trackId of removing) claimed.delete(trackId);
+    persistClaims();
+    setRecords(records.filter((record) => !gone.has(record.trackId)));
+    await deps.remove(removing);
+    return removing.length;
+  };
+
   return {
     setRecords(next: SavedTrackRecord[]) {
       records = next;
+      claimOwner = undefined;
+      syncClaims();
     },
     records: () => records,
+    claimedRecords,
+    sharedRecords,
     async reconcile(nextLiked: Track[], isAuthoritative: boolean) {
+      syncClaims();
       liked = nextLiked;
       authoritative = isAuthoritative;
+      if (authoritative) claimWanted();
       await applyRemovals();
       rebuildQueue();
       if (!deps.isEnabled()) {
@@ -336,6 +416,28 @@ export function createSavedTrackSync(deps: SavedTrackSyncDeps) {
       startAt = Math.min(startAt, deps.now());
       rebuildQueue();
       return run();
+    },
+    removeClaimed: () => removeOwned(claimedRecords),
+    removeShared: () => removeOwned(sharedRecords),
+    async signOut(keepFiles: boolean) {
+      generation += 1;
+      queue = [];
+      liked = [];
+      authoritative = false;
+      pendingRemovals = new Set();
+      memory = { ...memory, attempts: {}, givenUp: {} };
+      remember();
+      if (claimOwner !== undefined) deps.writeClaims(claimOwner, []);
+      claimed = new Set();
+      claimOwner = undefined;
+      const removed = keepFiles ? 0 : records.length;
+      if (!keepFiles) {
+        records = [];
+        await deps.removeAll();
+      }
+      syncClaims();
+      status(deps.isEnabled() ? "idle" : "disabled");
+      return removed;
     },
     forgetFailures() {
       memory = { ...memory, attempts: {}, givenUp: {} };

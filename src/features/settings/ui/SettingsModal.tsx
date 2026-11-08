@@ -233,6 +233,27 @@ const SETTING_ITEMS: { tabId: TabId; titleKey: string; descKey?: string }[] = [
     titleKey: "settings.storage.open_folder",
     descKey: "settings.storage.open_folder_description",
   },
+  {
+    tabId: "Storage",
+    titleKey: "settings.storage.sign_out_choice",
+    descKey: "settings.storage.sign_out_choice_ask",
+  },
+  { tabId: "Storage", titleKey: "settings.storage.downloads_title" },
+  { tabId: "Storage", titleKey: "settings.storage.categories.liked" },
+  { tabId: "Storage", titleKey: "settings.storage.categories.local" },
+  { tabId: "Storage", titleKey: "settings.storage.categories.shared" },
+  { tabId: "Storage", titleKey: "settings.storage.downloads_limit" },
+  {
+    tabId: "Storage",
+    titleKey: "settings.storage.cache_row_title",
+    descKey: "settings.storage.cache_row_desc",
+  },
+  { tabId: "Storage", titleKey: "settings.storage.cache_limit" },
+  {
+    tabId: "Storage",
+    titleKey: "settings.storage.cached_in_library",
+    descKey: "settings.storage.cached_in_library_desc",
+  },
 
   // About
   {

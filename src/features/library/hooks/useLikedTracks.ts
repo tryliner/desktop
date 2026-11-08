@@ -88,6 +88,7 @@ function load(force = false): Promise<void> {
   if (!loaded) emit(true);
 
   const startEpoch = likeEpoch;
+  const owner = session.user?.id ?? null;
   request = (async () => {
     const tracks: Track[] = [];
     let cursor: string | undefined;
@@ -101,6 +102,7 @@ function load(force = false): Promise<void> {
       );
       cursor = page.nextCursor ?? undefined;
     } while (cursor);
+    if ((getAuthSession()?.user?.id ?? null) !== owner) return;
     cache = { tracks, total: tracks.length };
     loaded = true;
     fetchedFromServer = true;
@@ -108,6 +110,7 @@ function load(force = false): Promise<void> {
     dropConfirmedOverrides(startEpoch);
   })()
     .catch(() => {
+      if ((getAuthSession()?.user?.id ?? null) !== owner) return;
       if (!fetchedFromServer) cache = EMPTY;
       loaded = fetchedFromServer;
       loadFailed = true;
