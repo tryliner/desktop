@@ -7,6 +7,17 @@ import {
 } from "../store/playerStore";
 import { playerRuntime } from "./playerRuntime";
 import { isRadioContext, shouldRefillRadio } from "./radioMode";
+import {
+  LazyShuffle,
+  SHUFFLE_REFILL_AT,
+  SHUFFLE_REFILL_CHUNK,
+  SHUFFLE_WINDOW,
+  drawShuffled,
+  isPlaylistContext,
+  mergeLoadedTracks,
+  sourceIndexOf,
+  type PlaylistSource,
+} from "./playlistShuffle";
 import { pitchShifter } from "./pitchShifter";
 import { EQ_MAX_CUSTOM_PRESETS, EQ_PRESET_NAME_MAX } from "./equalizer";
 import {
@@ -324,6 +335,7 @@ class PlayerEngine {
   private currentLyricsTrackId: string | null = null;
   private masterPlaylist: Track[] = [];
   private originalUpcomingQueue: Track[] = [];
+  private playlistSource: PlaylistSource | null = null;
   private telemetry = new PlaybackTelemetryTracker();
   private radioAppendTimeout: ReturnType<typeof setTimeout> | null = null;
   private radioWaveId: string | null = null;
@@ -511,9 +523,30 @@ class PlayerEngine {
 
     if (!isSelectingFromCurrentQueue) {
       this.masterPlaylist = [...nextQueue];
+      this.playlistSource = isPlaylistContext(context)
+        ? { context, tracks: nextQueue, shuffle: null }
+        : null;
     }
 
-    if (!isSelectingFromCurrentQueue && store.shuffle && nextQueue.length > 1) {
+    const source = this.playlistSource;
+    if (
+      !isSelectingFromCurrentQueue &&
+      store.shuffle &&
+      source &&
+      nextQueue.length > 1
+    ) {
+      source.shuffle = new LazyShuffle(nextQueue.length, nextIndex);
+      finalQueue = [
+        nextQueue[nextIndex] ?? track,
+        ...drawShuffled(source, SHUFFLE_WINDOW),
+      ];
+      finalIndex = 0;
+      this.originalUpcomingQueue = [];
+    } else if (
+      !isSelectingFromCurrentQueue &&
+      store.shuffle &&
+      nextQueue.length > 1
+    ) {
       const played = nextQueue.slice(0, nextIndex);
       const selectedTrackItem = nextQueue[nextIndex] ?? track;
       const upcoming = nextQueue.slice(nextIndex + 1);
@@ -560,15 +593,27 @@ class PlayerEngine {
         ? startIndex
         : Math.floor(Math.random() * tracks.length);
     const seedTrack = tracks[seedIndex];
-    const remaining = [
-      ...tracks.slice(0, seedIndex),
-      ...tracks.slice(seedIndex + 1),
-    ];
-    const shuffledRemaining = shuffleArray(remaining);
-    const finalQueue = [seedTrack, ...shuffledRemaining];
+    let finalQueue: Track[];
 
     this.masterPlaylist = [...tracks];
-    this.originalUpcomingQueue = [...remaining];
+    if (isPlaylistContext(context)) {
+      const source: PlaylistSource = {
+        context,
+        tracks: [...tracks],
+        shuffle: new LazyShuffle(tracks.length, seedIndex),
+      };
+      this.playlistSource = source;
+      this.originalUpcomingQueue = [];
+      finalQueue = [seedTrack, ...drawShuffled(source, SHUFFLE_WINDOW)];
+    } else {
+      const remaining = [
+        ...tracks.slice(0, seedIndex),
+        ...tracks.slice(seedIndex + 1),
+      ];
+      this.playlistSource = null;
+      this.originalUpcomingQueue = [...remaining];
+      finalQueue = [seedTrack, ...shuffleArray(remaining)];
+    }
 
     store.setShuffle(true);
     if (context !== undefined) {
@@ -610,6 +655,7 @@ class PlayerEngine {
     store.setPlaybackContextCover(track.coverUrl ?? null);
     store.setQueue([track]);
     this.originalUpcomingQueue = [];
+    this.playlistSource = null;
 
     store.setCurrentTrack(track, 0);
     store.setPosition(0);
@@ -897,6 +943,7 @@ class PlayerEngine {
     const store = usePlayerStore.getState();
     if (store.shuffle === enabled) return;
     store.setShuffle(enabled);
+    if (this.reshufflePlaylist(enabled)) return;
 
     const { queue, currentIndex } = store;
     if (queue.length > 0 && currentIndex >= 0) {
@@ -965,6 +1012,7 @@ class PlayerEngine {
   }
 
   public addToQueue(track: Track): void {
+    this.drawRestOfShuffle();
     const store = usePlayerStore.getState();
     const newQueue = [...store.queue, track];
     store.setQueue(newQueue);
@@ -1024,6 +1072,7 @@ class PlayerEngine {
     this.currentLyricsTrackId = null;
     this.masterPlaylist = [];
     this.originalUpcomingQueue = [];
+    this.playlistSource = null;
     this.lastPreloadKey = null;
     this.consecutiveAutoSkips = 0;
     this.consecutiveOfflineSkips = 0;
@@ -1038,6 +1087,89 @@ class PlayerEngine {
     usePlayerStore.getState().clearQueue();
     this.masterPlaylist = [];
     this.originalUpcomingQueue = [];
+    this.playlistSource = null;
+  }
+
+  public syncPlaylistTracks(context: string, tracks: Track[]): void {
+    const source = this.playlistSource;
+    if (!source || source.context !== context) return;
+    const lastBefore = source.tracks[source.tracks.length - 1];
+    const added = mergeLoadedTracks(source, tracks);
+    if (added.length === 0) return;
+    if (source.shuffle) {
+      this.refillShuffleWindow();
+      return;
+    }
+    const store = usePlayerStore.getState();
+    if (store.queue[store.queue.length - 1] !== lastBefore) return;
+    store.setQueue([...store.queue, ...added]);
+    this.preloadNextTrack(usePlayerStore.getState());
+  }
+
+  private reshufflePlaylist(enabled: boolean): boolean {
+    const source = this.playlistSource;
+    const store = usePlayerStore.getState();
+    const current = store.currentTrack;
+    if (!source || !current || store.currentIndex < 0) return false;
+    const at = sourceIndexOf(source, current);
+    if (at < 0) return false;
+
+    const sourceIds = new Set(source.tracks.map((track) => track.id));
+    const extras = store.queue
+      .slice(store.currentIndex + 1)
+      .filter((track) => !sourceIds.has(track.id));
+
+    this.originalUpcomingQueue = [];
+    if (enabled) {
+      source.shuffle = new LazyShuffle(source.tracks.length, at);
+      usePlayerStore.setState({
+        queue: [current, ...extras, ...drawShuffled(source, SHUFFLE_WINDOW)],
+        currentIndex: 0,
+      });
+    } else {
+      source.shuffle = null;
+      usePlayerStore.setState({
+        queue: [
+          ...source.tracks.slice(0, at),
+          current,
+          ...extras,
+          ...source.tracks.slice(at + 1),
+        ],
+        currentIndex: at,
+      });
+    }
+    const after = usePlayerStore.getState();
+    this.preloadNextTrack(after);
+    this.maybeExtendQueue(
+      this.sessionId,
+      current.id,
+      after.currentIndex,
+      after.queue.length,
+    );
+    return true;
+  }
+
+  private refillShuffleWindow(): void {
+    const source = this.playlistSource;
+    if (!source?.shuffle || source.shuffle.remaining === 0) return;
+    const store = usePlayerStore.getState();
+    if (store.currentIndex < 0) return;
+    const ahead = store.queue.length - 1 - store.currentIndex;
+    if (ahead > SHUFFLE_REFILL_AT) return;
+    store.setQueue([
+      ...store.queue,
+      ...drawShuffled(source, SHUFFLE_REFILL_CHUNK),
+    ]);
+  }
+
+  private drawRestOfShuffle(): void {
+    const source = this.playlistSource;
+    if (!source?.shuffle || source.shuffle.remaining === 0) return;
+    const store = usePlayerStore.getState();
+    store.setQueue([
+      ...store.queue,
+      ...drawShuffled(source, source.shuffle.remaining),
+    ]);
   }
 
   public reorderQueue(fromIndex: number, toIndex: number): void {
@@ -1249,10 +1381,13 @@ class PlayerEngine {
     index: number,
     queueLength: number,
   ): void {
+    this.refillShuffleWindow();
+    const length = Math.max(
+      queueLength,
+      usePlayerStore.getState().queue.length,
+    );
     const radio = isRadioContext(usePlayerStore.getState().playbackContext);
-    const due = radio
-      ? shouldRefillRadio(queueLength, index)
-      : index === queueLength - 1;
+    const due = radio ? shouldRefillRadio(length, index) : index === length - 1;
     if (due) this.scheduleAppendSimilarTracks(session, seedTrackId);
   }
 
