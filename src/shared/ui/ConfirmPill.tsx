@@ -4,8 +4,8 @@ import { cn } from "@/shared/lib";
 import { SMOOTH_EASE as EASE } from "@/shared/hooks/useTweenedNumber";
 
 const DISARM_AFTER_MS = 3000;
-const HOVER_INTENT_MS = 140;
-const HOVER_INTENT_DRIFT_PX = 3;
+const SETTLED_SPEED_PX_PER_MS = 0.25;
+const STOPPED_AFTER_MS = 50;
 
 type Mode = "idle" | "hover" | "armed";
 
@@ -43,21 +43,23 @@ export default function ConfirmPill({
   const [hovered, setHovered] = useState(false);
   const [armed, setArmed] = useState(false);
 
-  const intentTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const lastPoint = useRef({ x: 0, y: 0 });
+  const stopTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastMove = useRef({ x: 0, y: 0, t: 0 });
 
   const cancelIntent = () => {
-    if (intentTimer.current) clearTimeout(intentTimer.current);
-    intentTimer.current = null;
+    if (stopTimer.current) clearTimeout(stopTimer.current);
+    stopTimer.current = null;
   };
 
-  const awaitIntent = (x: number, y: number) => {
-    lastPoint.current = { x, y };
+  const settle = () => {
     cancelIntent();
-    intentTimer.current = setTimeout(() => {
-      intentTimer.current = null;
-      setHovered(true);
-    }, HOVER_INTENT_MS);
+    setHovered(true);
+  };
+
+  const track = (x: number, y: number, t: number) => {
+    lastMove.current = { x, y, t };
+    cancelIntent();
+    stopTimer.current = setTimeout(settle, STOPPED_AFTER_MS);
   };
 
   useEffect(() => cancelIntent, []);
@@ -86,16 +88,20 @@ export default function ConfirmPill({
       type="button"
       disabled={disabled}
       aria-label={disabled ? label : armed ? confirmLabel : actionLabel}
-      onPointerEnter={(event) => awaitIntent(event.clientX, event.clientY)}
+      onPointerEnter={(event) =>
+        track(event.clientX, event.clientY, event.timeStamp)
+      }
       onPointerMove={(event) => {
         if (hovered) return;
-        const drift = Math.hypot(
-          event.clientX - lastPoint.current.x,
-          event.clientY - lastPoint.current.y,
-        );
-        if (drift > HOVER_INTENT_DRIFT_PX) {
-          awaitIntent(event.clientX, event.clientY);
+        const last = lastMove.current;
+        const speed =
+          Math.hypot(event.clientX - last.x, event.clientY - last.y) /
+          Math.max(event.timeStamp - last.t, 1);
+        if (speed < SETTLED_SPEED_PX_PER_MS) {
+          settle();
+          return;
         }
+        track(event.clientX, event.clientY, event.timeStamp);
       }}
       onPointerLeave={() => {
         cancelIntent();
