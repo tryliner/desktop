@@ -63,5 +63,10 @@ describe("edge headers", () => {
     expect(takeOrigin(7)).toBe("http://localhost:5173");
     expect(takeOrigin(7)).toBeUndefined();
     expect(takeOrigin(8)).toBeUndefined();
+    expect(takeOrigin(9, "http://localhost:5173/#/home")).toBe(
+      "http://localhost:5173",
+    );
+    expect(takeOrigin(10, "file:///C:/app/index.html")).toBe("file://");
+    expect(takeOrigin(11, "")).toBeUndefined();
   });
 });

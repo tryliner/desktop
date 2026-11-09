@@ -881,7 +881,9 @@ if (!gotTheLock) {
             details.responseHeaders,
             details.method,
             keepsOwnCors(details.url, !app.isPackaged),
-            isEdgeUrl(details.url) ? takeOrigin(details.id) : undefined,
+            isEdgeUrl(details.url)
+              ? takeOrigin(details.id, details.referrer)
+              : undefined,
           )
         : {};
       const statusLine = simulatedResponseStatus(details.url, details.method);

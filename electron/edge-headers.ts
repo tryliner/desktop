@@ -36,10 +36,24 @@ export function rememberOrigin(
   requestOrigins.set(id, headers[name]);
 }
 
-export function takeOrigin(id: number): string | undefined {
+export function takeOrigin(
+  id: number,
+  referrer?: string,
+): string | undefined {
   const origin = requestOrigins.get(id);
   requestOrigins.delete(id);
-  return origin;
+  return origin ?? originOfPage(referrer);
+}
+
+function originOfPage(referrer: string | undefined): string | undefined {
+  if (!referrer) return undefined;
+  try {
+    const url = new URL(referrer);
+    if (url.protocol === "file:") return "file://";
+    return url.origin === "null" ? undefined : url.origin;
+  } catch {
+    return undefined;
+  }
 }
 
 export function isEdgeUrl(url: string): boolean {
