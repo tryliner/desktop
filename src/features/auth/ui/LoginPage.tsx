@@ -14,7 +14,6 @@ import {
   useAuthStore,
 } from "../store/authStore";
 import { useTranslation } from "@/languages";
-import { HumanCheckNotice } from "@/features/human-check";
 import { cn } from "@/shared/lib";
 import { EMAIL_RE, requestResetLink } from "../lib/passwordReset";
 const USERNAME_RE = /^[a-z0-9_]{3,30}$/;
@@ -758,7 +757,6 @@ export default function LoginPage() {
           </p>
         </div>
       </section>
-      <HumanCheckNotice />
     </main>
   );
 }

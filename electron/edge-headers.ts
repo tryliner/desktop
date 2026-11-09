@@ -55,15 +55,13 @@ export function withEdgeHeaders(
   }
   if (current.clearance) {
     const cookieName = headerName(next, "cookie");
-    const existing = cookieName ? next[cookieName] : "";
-    const hasClearance = existing
+    const pair = `${CLEARANCE_COOKIE}=${current.clearance}`;
+    const others = (cookieName ? next[cookieName] : "")
       .split(";")
-      .some((part) => part.trim().startsWith(`${CLEARANCE_COOKIE}=`));
-    if (!hasClearance) {
-      const pair = `${CLEARANCE_COOKIE}=${current.clearance}`;
-      if (cookieName) delete next[cookieName];
-      next.Cookie = existing ? `${existing}; ${pair}` : pair;
-    }
+      .map((part) => part.trim())
+      .filter((part) => part && part !== pair);
+    if (cookieName) delete next[cookieName];
+    next.Cookie = [pair, ...others].join("; ");
   }
   return next;
 }
@@ -90,9 +88,9 @@ export function watchClearance(session: Session): void {
       })
       .catch(() => setClearance(null));
   void load();
-  session.cookies.on("changed", (_event, cookie) => {
-    if (cookie.name === CLEARANCE_COOKIE && isZoneCookie(cookie.domain)) {
-      void load();
-    }
+  session.cookies.on("changed", (_event, cookie, _cause, removed) => {
+    if (cookie.name !== CLEARANCE_COOKIE || !isZoneCookie(cookie.domain)) return;
+    if (removed) void load();
+    else setClearance(cookie.value);
   });
 }

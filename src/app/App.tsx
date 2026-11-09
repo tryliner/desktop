@@ -20,6 +20,7 @@ import { AppRoutes } from "./routes";
 import DeeplinkHandler from "./DeeplinkHandler";
 import EnvironmentWarning from "./EnvironmentWarning";
 import { ConnectionIssueModal } from "@/features/connectivity";
+import { HumanCheckNotice } from "@/features/human-check";
 import { useThemeCustomizationSync } from "@/features/settings";
 import "./globals.css";
 
@@ -80,6 +81,7 @@ export default function App() {
                   <DeeplinkHandler />
                   <EnvironmentWarning />
                   <ConnectionIssueModal />
+                  <HumanCheckNotice />
                   <AuthLock>
                     <AppRoutes />
                   </AuthLock>

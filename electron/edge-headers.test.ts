@@ -14,7 +14,7 @@ describe("edge headers", () => {
     expect(isEdgeUrl("not a url")).toBe(false);
   });
 
-  it("adds the edge key and the clearance cookie, keeping what the request already sends", () => {
+  it("adds the edge key and the clearance cookie, putting the newest clearance before an older one the request carries", () => {
     const state = { key: KEY, clearance: "abc.def-123_456789" };
     expect(withEdgeHeaders({ Accept: "*/*" }, state)).toEqual({
       Accept: "*/*",
@@ -25,11 +25,14 @@ describe("edge headers", () => {
       withEdgeHeaders({ cookie: "a=1", "X-Liner-Edge": "own" }, state),
     ).toEqual({
       "X-Liner-Edge": "own",
-      Cookie: "a=1; cf_clearance=abc.def-123_456789",
+      Cookie: "cf_clearance=abc.def-123_456789; a=1",
     });
     expect(
-      withEdgeHeaders({ Cookie: "cf_clearance=already; b=2" }, state),
-    ).toEqual({ Cookie: "cf_clearance=already; b=2", "x-liner-edge": KEY });
+      withEdgeHeaders({ Cookie: "cf_clearance=stale; b=2" }, state),
+    ).toEqual({
+      Cookie: "cf_clearance=abc.def-123_456789; cf_clearance=stale; b=2",
+      "x-liner-edge": KEY,
+    });
   });
 
   it("sends nothing it does not hold", () => {
