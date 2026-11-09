@@ -85,15 +85,17 @@ export default function ConfirmPill({
         className,
       )}
     >
-      {[label, actionLabel, confirmLabel].map((text, index) => (
-        <span
-          key={index}
-          aria-hidden
-          className="invisible col-start-1 row-start-1"
-        >
-          {text}
-        </span>
-      ))}
+      {[label, actionLabel, ...(armed ? [confirmLabel] : [])].map(
+        (text, index) => (
+          <span
+            key={index}
+            aria-hidden
+            className="invisible col-start-1 row-start-1"
+          >
+            {text}
+          </span>
+        ),
+      )}
       <AnimatePresence initial={false}>
         <motion.span
           key={swap.key}
