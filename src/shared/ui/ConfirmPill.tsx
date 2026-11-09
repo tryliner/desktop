@@ -1,10 +1,9 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/shared/lib";
 import { SMOOTH_EASE as EASE } from "@/shared/hooks/useTweenedNumber";
 
 const DISARM_AFTER_MS = 3000;
-const PADDING_X = 24;
 
 type Mode = "idle" | "hover" | "armed";
 
@@ -61,26 +60,8 @@ export default function ConfirmPill({
   const [swap, setSwap] = useState({ mode, key: 0 });
   if (swap.mode !== mode) setSwap({ mode, key: swap.key + 1 });
 
-  const labelRef = useRef<HTMLSpanElement>(null);
-  const actionRef = useRef<HTMLSpanElement>(null);
-  const confirmRef = useRef<HTMLSpanElement>(null);
-  const [width, setWidth] = useState<number | null>(null);
-
-  useLayoutEffect(() => {
-    const measure = (node: HTMLSpanElement | null) =>
-      node ? Math.ceil(node.offsetWidth) : 0;
-    const rest = Math.max(
-      measure(labelRef.current),
-      measure(actionRef.current),
-    );
-    const next =
-      (mode === "armed" ? Math.max(rest, measure(confirmRef.current)) : rest) +
-      PADDING_X;
-    setWidth((current) => (current === next ? current : next));
-  }, [label, actionLabel, confirmLabel, mode]);
-
   return (
-    <motion.button
+    <button
       type="button"
       disabled={disabled}
       aria-label={disabled ? label : armed ? confirmLabel : actionLabel}
@@ -97,36 +78,26 @@ export default function ConfirmPill({
         setArmed(false);
         onConfirm();
       }}
-      initial={false}
-      animate={width === null ? undefined : { width }}
-      transition={{ duration: 0.35, ease: EASE }}
       className={cn(
-        "relative flex h-[30px] shrink-0 items-center justify-center overflow-hidden rounded-full border-0 px-[12px] text-body font-[500] tabular-nums whitespace-nowrap transition-colors duration-300",
+        "grid h-[30px] shrink-0 place-items-center overflow-hidden rounded-full border-0 px-[12px] text-body font-[500] tabular-nums whitespace-nowrap transition-colors duration-300",
         disabled ? "cursor-default" : "cursor-pointer",
         MODE_CLASSES[mode],
         className,
       )}
     >
-      {(
-        [
-          [labelRef, label],
-          [actionRef, actionLabel],
-          [confirmRef, confirmLabel],
-        ] as const
-      ).map(([ref, text], index) => (
+      {[label, actionLabel, confirmLabel].map((text, index) => (
         <span
           key={index}
-          ref={ref}
           aria-hidden
-          className="pointer-events-none invisible absolute whitespace-nowrap"
+          className="invisible col-start-1 row-start-1"
         >
           {text}
         </span>
       ))}
-      <AnimatePresence mode="popLayout" initial={false}>
+      <AnimatePresence initial={false}>
         <motion.span
           key={swap.key}
-          className="whitespace-nowrap"
+          className="col-start-1 row-start-1"
           initial={{ y: "100%", opacity: 0 }}
           animate={{ y: "0%", opacity: 1 }}
           exit={{
@@ -143,6 +114,6 @@ export default function ConfirmPill({
           {shown}
         </motion.span>
       </AnimatePresence>
-    </motion.button>
+    </button>
   );
 }
