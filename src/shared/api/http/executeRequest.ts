@@ -120,7 +120,7 @@ async function send(
         method: input.method,
         body: input.body,
         signal: input.signal,
-        ...(input.credentials ? { credentials: input.credentials } : {}),
+        credentials: input.credentials ?? "include",
         headers: {
           ...(input.body != null ? { "Content-Type": "application/json" } : {}),
           ...extra,
