@@ -349,6 +349,11 @@ function LibraryPlaylistContent() {
     scrollRef.current?.scrollTo({ top: 0 });
   }, [search.activeQuery, sort.option]);
 
+  useEffect(() => {
+    if (!decodedId || sortedTracks.length === 0) return;
+    playerEngine.syncPlaylistTracks(`playlist:${decodedId}`, sortedTracks);
+  }, [decodedId, sortedTracks]);
+
   const handleSearchSubmit = useCallback(() => {
     const first = search.matches?.[0];
     if (!first || !viewData) return;

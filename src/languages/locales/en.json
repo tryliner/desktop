@@ -69,6 +69,8 @@
     "play_all": "Play all",
     "add_to_queue": "Add to queue",
     "remove_from_queue": "Remove from queue",
+    "remove_from_cache": "Remove from cache",
+    "removed_from_cache": "Removed from cache",
     "removed_from_queue": "Removed from queue",
     "undo": "Undo",
     "shuffle": "Shuffle",

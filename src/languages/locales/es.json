@@ -65,6 +65,8 @@
     "play_all": "Reproducir todo",
     "add_to_queue": "Añadir a la cola",
     "remove_from_queue": "Quitar de la cola",
+    "remove_from_cache": "Quitar de la caché",
+    "removed_from_cache": "Quitado de la caché",
     "removed_from_queue": "Quitado de la cola",
     "undo": "Deshacer",
     "shuffle": "Aleatorio",

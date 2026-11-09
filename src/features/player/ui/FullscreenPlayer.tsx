@@ -80,7 +80,8 @@ export function FullscreenPlayer({
     currentTrackId && currentLyricsTrackId === currentTrackId,
   );
   const hasLyrics = isMatchingTrack && braccatoLyrics.length > 0;
-  const showProviderIsland = hasLyrics && availableProviders.length > 0;
+  const showProviderIsland =
+    isMatchingTrack && availableProviders.length > (hasLyrics ? 0 : 1);
   const isInstrumental =
     isMatchingTrack &&
     !lyricsLoading &&

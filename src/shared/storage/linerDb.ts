@@ -455,6 +455,30 @@ class LinerDb {
     });
   }
 
+  async listAudioIds(): Promise<string[]> {
+    const result = await this.runTransaction("audio", "readonly", (store) => {
+      return new Promise<string[]>((resolve) => {
+        const req = store.getAllKeys();
+        req.onsuccess = () => resolve(req.result.map((key) => String(key)));
+        req.onerror = () => resolve([]);
+      });
+    });
+
+    return result ?? Array.from(this.memAudio.keys());
+  }
+
+  async deleteLyrics(trackId: string): Promise<void> {
+    this.memLyrics.delete(trackId);
+
+    await this.runTransaction("lyrics", "readwrite", (store) => {
+      return new Promise<void>((resolve) => {
+        const req = store.delete(trackId);
+        req.onsuccess = () => resolve();
+        req.onerror = () => resolve();
+      });
+    });
+  }
+
   async getTotalAudioBytes(): Promise<number> {
     const result = await this.runTransaction("audio", "readonly", (store) => {
       return new Promise<number>((resolve) => {

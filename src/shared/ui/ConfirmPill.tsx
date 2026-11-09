@@ -1,10 +1,11 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/shared/lib";
 import { SMOOTH_EASE as EASE } from "@/shared/hooks/useTweenedNumber";
 
 const DISARM_AFTER_MS = 3000;
-const PADDING_X = 24;
+const SETTLED_SPEED_PX_PER_MS = 0.25;
+const STOPPED_AFTER_MS = 50;
 
 type Mode = "idle" | "hover" | "armed";
 
@@ -29,7 +30,7 @@ export interface ConfirmPillProps {
 /**
  * Two-step destructive action in one pill: hover names the action, the first
  * click arms it, the second confirms. Disarms by itself after 3s or when the
- * pointer leaves. The width and the label morph between steps.
+ * pointer leaves.
  */
 export default function ConfirmPill({
   label,
@@ -41,6 +42,27 @@ export default function ConfirmPill({
 }: ConfirmPillProps) {
   const [hovered, setHovered] = useState(false);
   const [armed, setArmed] = useState(false);
+
+  const stopTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastMove = useRef({ x: 0, y: 0, t: 0 });
+
+  const cancelIntent = () => {
+    if (stopTimer.current) clearTimeout(stopTimer.current);
+    stopTimer.current = null;
+  };
+
+  const settle = () => {
+    cancelIntent();
+    setHovered(true);
+  };
+
+  const track = (x: number, y: number, t: number) => {
+    lastMove.current = { x, y, t };
+    cancelIntent();
+    stopTimer.current = setTimeout(settle, STOPPED_AFTER_MS);
+  };
+
+  useEffect(() => cancelIntent, []);
 
   useEffect(() => {
     if (!armed) return;
@@ -58,33 +80,37 @@ export default function ConfirmPill({
   const shown =
     mode === "armed" ? confirmLabel : mode === "hover" ? actionLabel : label;
 
-  const measureRef = useRef<HTMLSpanElement>(null);
-  const [width, setWidth] = useState<number | null>(null);
-
-  useLayoutEffect(() => {
-    if (measureRef.current) {
-      setWidth(Math.ceil(measureRef.current.offsetWidth) + PADDING_X);
-    }
-  }, [shown]);
+  const [swap, setSwap] = useState({ mode, key: 0 });
+  if (swap.mode !== mode) setSwap({ mode, key: swap.key + 1 });
 
   return (
-    <motion.button
+    <button
       type="button"
       disabled={disabled}
       aria-label={disabled ? label : armed ? confirmLabel : actionLabel}
-      onPointerEnter={() => setHovered(true)}
-      onPointerLeave={(event) => {
-        const rect = event.currentTarget.getBoundingClientRect();
-        const stillInside =
-          event.clientX >= rect.left &&
-          event.clientX <= rect.right &&
-          event.clientY >= rect.top &&
-          event.clientY <= rect.bottom;
-        if (stillInside) return;
+      onPointerEnter={(event) =>
+        track(event.clientX, event.clientY, event.timeStamp)
+      }
+      onPointerMove={(event) => {
+        if (hovered) return;
+        const last = lastMove.current;
+        const speed =
+          Math.hypot(event.clientX - last.x, event.clientY - last.y) /
+          Math.max(event.timeStamp - last.t, 1);
+        if (speed < SETTLED_SPEED_PX_PER_MS) {
+          settle();
+          return;
+        }
+        track(event.clientX, event.clientY, event.timeStamp);
+      }}
+      onPointerLeave={() => {
+        cancelIntent();
         setHovered(false);
         setArmed(false);
       }}
       onClick={() => {
+        cancelIntent();
+        setHovered(true);
         if (!armed) {
           setArmed(true);
           return;
@@ -92,35 +118,44 @@ export default function ConfirmPill({
         setArmed(false);
         onConfirm();
       }}
-      initial={false}
-      animate={width === null ? undefined : { width }}
-      transition={{ duration: 0.35, ease: EASE }}
       className={cn(
-        "relative flex h-[30px] shrink-0 items-center justify-center overflow-hidden rounded-full border-0 px-[12px] text-body font-[500] tabular-nums whitespace-nowrap transition-colors duration-300",
+        "grid h-[30px] shrink-0 place-items-center overflow-hidden rounded-full border-0 px-[12px] text-body font-[500] tabular-nums whitespace-nowrap transition-colors duration-300",
         disabled ? "cursor-default" : "cursor-pointer",
         MODE_CLASSES[mode],
         className,
       )}
     >
-      <span
-        ref={measureRef}
-        aria-hidden
-        className="pointer-events-none invisible absolute whitespace-nowrap"
-      >
-        {shown}
-      </span>
-      <AnimatePresence mode="popLayout" initial={false}>
+      {[label, actionLabel, ...(armed ? [confirmLabel] : [])].map(
+        (text, index) => (
+          <span
+            key={index}
+            aria-hidden
+            className="invisible col-start-1 row-start-1"
+          >
+            {text}
+          </span>
+        ),
+      )}
+      <AnimatePresence initial={false}>
         <motion.span
-          key={mode}
-          className="whitespace-nowrap"
-          initial={{ y: 12, opacity: 0, filter: "blur(2px)" }}
-          animate={{ y: 0, opacity: 1, filter: "blur(0px)" }}
-          exit={{ y: -12, opacity: 0, filter: "blur(2px)" }}
+          key={swap.key}
+          className="col-start-1 row-start-1"
+          initial={{ y: "100%", opacity: 0 }}
+          animate={{ y: "0%", opacity: 1 }}
+          exit={{
+            y: "-100%",
+            opacity: 0,
+            transition: {
+              duration: 0.28,
+              ease: EASE,
+              opacity: { duration: 0.12 },
+            },
+          }}
           transition={{ duration: 0.28, ease: EASE }}
         >
           {shown}
         </motion.span>
       </AnimatePresence>
-    </motion.button>
+    </button>
   );
 }

@@ -7,6 +7,7 @@ import {
   LuPlus,
   LuTrash2,
   LuFolderPlus,
+  LuEraser,
 } from "react-icons/lu";
 import { ShareForwardLine } from "@mingcute/react";
 import type { DropdownMenuItem } from "@/shared/ui/DropdownMenu";
@@ -21,6 +22,8 @@ import { useTranslation } from "@/languages";
 import { showToast } from "@/shared/ui";
 import { buildShareUrl } from "@/shared/utils/share";
 import { isLocalTrackId } from "@/shared/media/local";
+import { useIsTrackCached } from "@/features/library/cached/hooks/useIsTrackCached";
+import { removeTrackFromCache } from "@/shared/utils/cacheManager";
 
 const CLOUD_ONLY_ITEMS = new Set([
   "start-radio",
@@ -71,6 +74,18 @@ export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
   const toggleLike = useToggleTrackLike();
 
   const liked = useIsTrackLiked(id);
+
+  const isTrack = searchType === "track" || !searchType;
+  const cached = useIsTrackCached(isTrack ? id : undefined);
+
+  const handleRemoveFromCache = useCallback(() => {
+    if (!id) return;
+    void removeTrackFromCache(id).then(() => {
+      showToast(t("common.removed_from_cache"), "checkmark", {
+        description: artists ? `${title} — ${artists}` : title,
+      });
+    });
+  }, [id, title, artists, t]);
 
   const handleLike = useCallback(() => {
     if (!id) return;
@@ -332,7 +347,22 @@ export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
   ]);
 
   const items = buildMenu();
-  if (!isLocalTrackId(id)) return items;
+  if (!isLocalTrackId(id)) {
+    if (!cached) return items;
+    const removeFromCacheItem: DropdownMenuItem = {
+      id: "remove-from-cache",
+      label: t("common.remove_from_cache"),
+      icon: <LuEraser size={15} />,
+      onClick: handleRemoveFromCache,
+    };
+    const firstDanger = items.findIndex((item) => item.danger);
+    if (firstDanger === -1) return [...items, removeFromCacheItem];
+    return [
+      ...items.slice(0, firstDanger),
+      removeFromCacheItem,
+      ...items.slice(firstDanger),
+    ];
+  }
   const deviceItems = items.filter((item) => !CLOUD_ONLY_ITEMS.has(item.id));
   if (!onRemoveFromDevice) return deviceItems;
   return [

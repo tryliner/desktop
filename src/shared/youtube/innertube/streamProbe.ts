@@ -2,14 +2,13 @@ import { InnertubeError } from "./innertubeClient";
 
 const PROBE_OFFSET = 1_048_576 + 4096;
 const REJECTED_PREFIX = "stream url rejected with";
+const UNREACHABLE_PREFIX = "stream url unreachable:";
 
 /** googlevideo answered 403 to a stream url it handed out: the network is refused, not the track */
 export function isStreamRefused(error: unknown): boolean {
-  return (
-    error instanceof InnertubeError &&
-    error.status === 403 &&
-    error.message.startsWith(REJECTED_PREFIX)
-  );
+  if (!(error instanceof InnertubeError)) return false;
+  if (error.message.startsWith(UNREACHABLE_PREFIX)) return true;
+  return error.status === 403 && error.message.startsWith(REJECTED_PREFIX);
 }
 
 export async function assertStreamReachable(
@@ -21,7 +20,16 @@ export async function assertStreamReachable(
   const offset =
     contentLength && contentLength > PROBE_OFFSET ? PROBE_OFFSET : 0;
   probe.searchParams.set("range", `${offset}-${offset}`);
-  const response = await fetch(probe.toString(), { signal });
+  let response: Response;
+  try {
+    response = await fetch(probe.toString(), { signal });
+  } catch (error) {
+    if (signal?.aborted) throw error;
+    throw new InnertubeError(
+      `${UNREACHABLE_PREFIX} ${error instanceof Error ? error.message : String(error)}`,
+      0,
+    );
+  }
   await response.body?.cancel().catch(() => undefined);
   if (!response.ok)
     throw new InnertubeError(

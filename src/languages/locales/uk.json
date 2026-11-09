@@ -65,6 +65,8 @@
     "play_all": "Слухати все",
     "add_to_queue": "Додати в чергу",
     "remove_from_queue": "Видалити з черги",
+    "remove_from_cache": "Видалити з кешу",
+    "removed_from_cache": "Видалено з кешу",
     "removed_from_queue": "Видалено з черги",
     "undo": "Скасувати",
     "shuffle": "Перемішати",

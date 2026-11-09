@@ -7,6 +7,7 @@ import {
   type SyncedLine,
 } from "../engine/lyricsParser";
 import type { Lyric } from "@braccato/parsers";
+import { hasUsableLyrics } from "./lyricsCache";
 import type {
   LyricsCandidate,
   LyricsSyncLevel,
@@ -48,6 +49,12 @@ export function hasSyncedLyricsSources(
     return true;
   }
   return false;
+}
+
+export function withUsableLyrics(
+  providers: LyricsProviderOption[],
+): LyricsProviderOption[] {
+  return providers.filter((p) => hasUsableLyrics(p.candidate));
 }
 
 export interface LyricsState {
@@ -155,6 +162,9 @@ export const useLyricsStore = create<LyricsState>()(
 
         set({
           ...state,
+          ...(state.availableProviders
+            ? { availableProviders: withUsableLyrics(state.availableProviders) }
+            : {}),
           // a new track or any words clear an instrumental answer unless it is set again
           instrumental:
             state.instrumental ??
@@ -165,6 +175,18 @@ export const useLyricsStore = create<LyricsState>()(
           braccatoLyrics: adjusted.braccatoLyrics,
           syncedLines: adjusted.syncedLines,
         });
+
+        const next = get();
+        const activeIsListed = next.availableProviders.some(
+          (p) => p.provider === next.activeProvider,
+        );
+        if (
+          next.braccatoLyrics.length === 0 &&
+          next.availableProviders.length > 0 &&
+          !activeIsListed
+        ) {
+          next.selectProvider(next.availableProviders[0].provider);
+        }
       },
 
       selectProvider: (providerName: string) => {
@@ -172,7 +194,7 @@ export const useLyricsStore = create<LyricsState>()(
         const option = availableProviders.find(
           (p) => p.provider === providerName,
         );
-        if (!option) return;
+        if (!option || !hasUsableLyrics(option.candidate)) return;
 
         try {
           const parsed = parseRawLyrics(

@@ -65,6 +65,8 @@
     "play_all": "Odtwórz wszystko",
     "add_to_queue": "Dodaj do kolejki",
     "remove_from_queue": "Usuń z kolejki",
+    "remove_from_cache": "Usuń z pamięci podręcznej",
+    "removed_from_cache": "Usunięto z pamięci podręcznej",
     "removed_from_queue": "Usunięto z kolejki",
     "undo": "Cofnij",
     "shuffle": "Losowo",
