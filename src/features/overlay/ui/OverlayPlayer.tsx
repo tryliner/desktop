@@ -192,17 +192,19 @@ export function OverlayPlayer() {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.defaultPrevented) return;
 
-      const { miniplayer } = useShortcutsStore.getState();
+      const { miniplayer, volumeHoldRepeats } = useShortcutsStore.getState();
 
       // Sound up / down shortcuts
       if (matchesShortcut(e, miniplayer.volumeUp)) {
         e.preventDefault();
+        if (e.repeat && !volumeHoldRepeats) return;
         sendAction({ type: "volumeUp" });
         return;
       }
 
       if (matchesShortcut(e, miniplayer.volumeDown)) {
         e.preventDefault();
+        if (e.repeat && !volumeHoldRepeats) return;
         sendAction({ type: "volumeDown" });
         return;
       }

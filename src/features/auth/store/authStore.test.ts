@@ -3,12 +3,19 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 // the player feature pulls lottie/canvas ui that jsdom cannot load; initialize() never touches it
 const player = vi.hoisted(() => ({ stopAndClear: vi.fn(async () => {}) }));
 vi.mock("@/features/player", () => ({ playerEngine: player }));
+const youtube = vi.hoisted(() => ({ signOut: vi.fn(async () => {}) }));
+vi.mock("@/shared/youtube", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/shared/youtube")>()),
+  signOutYoutube: youtube.signOut,
+}));
 
 import { useAuthStore } from "./authStore";
+import { useYoutubePreferences } from "@/shared/youtube";
 import {
   api,
   ApiError,
   getAuthSession,
+  registerSignOutTask,
   setAuthSession,
   type AuthTokens,
 } from "@/shared/api";
@@ -118,5 +125,86 @@ describe("signing out clears the player", () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+});
+
+describe("signing out runs the device cleanup", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    setAuthSession(null);
+  });
+
+  it("runs sign-out tasks once the session is gone and before going anonymous", async () => {
+    setAuthSession(stored);
+    useAuthStore.setState({ status: "authenticated", user: stored.user });
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(null, { status: 204 }),
+    );
+    const seen: Array<{ session: unknown; status: string }> = [];
+    const unregister = registerSignOutTask(async () => {
+      seen.push({
+        session: getAuthSession(),
+        status: useAuthStore.getState().status,
+      });
+    });
+    try {
+      await useAuthStore.getState().logout();
+    } finally {
+      unregister();
+    }
+
+    expect(seen).toEqual([{ session: null, status: "authenticated" }]);
+    expect(useAuthStore.getState().status).toBe("anonymous");
+  });
+
+  it("finishes signing out when a cleanup task fails", async () => {
+    setAuthSession(stored);
+    useAuthStore.setState({ status: "authenticated", user: stored.user });
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(null, { status: 204 }),
+    );
+    const unregister = registerSignOutTask(async () => {
+      throw new Error("disk busy");
+    });
+    try {
+      await useAuthStore.getState().logout();
+    } finally {
+      unregister();
+    }
+
+    expect(useAuthStore.getState().status).toBe("anonymous");
+  });
+});
+
+describe("signing out of liner and the youtube account", () => {
+  beforeEach(() => {
+    setAuthSession(stored);
+    useAuthStore.setState({ status: "authenticated", user: stored.user });
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(null, { status: 204 }),
+    );
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    youtube.signOut.mockClear();
+    useYoutubePreferences.setState({ signOutWithLiner: false });
+    setAuthSession(null);
+  });
+
+  it("keeps the youtube account by default", async () => {
+    await useAuthStore.getState().logout();
+
+    expect(youtube.signOut).not.toHaveBeenCalled();
+    expect(useAuthStore.getState().status).toBe("anonymous");
+  });
+
+  it("signs out of youtube too when the setting asks for it", async () => {
+    useYoutubePreferences.setState({ signOutWithLiner: true });
+
+    await useAuthStore.getState().logout();
+
+    expect(youtube.signOut).toHaveBeenCalledTimes(1);
+    expect(useAuthStore.getState().status).toBe("anonymous");
   });
 });

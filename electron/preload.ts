@@ -18,6 +18,7 @@ import type {
   SavedLyricsState,
   SavedTrackInput,
   SavedTrackRecord,
+  SavedTracksPartUsage,
 } from "./saved-tracks/types";
 
 export interface DiscordStatus {
@@ -71,9 +72,12 @@ export interface LinerElectronApi {
   close: () => Promise<void>;
   isMaximized: () => Promise<boolean>;
   isFullScreen: () => Promise<boolean>;
+  getRememberWindowBounds: () => Promise<boolean>;
+  setRememberWindowBounds: (enabled: boolean) => Promise<boolean>;
   onWindowStateChange: (cb: (state: WindowState) => void) => () => void;
   onWindowRestored?: (cb: () => void) => () => void;
   onWindowMinimized?: (cb: () => void) => () => void;
+  notePresence?: () => void;
   dragStart: () => void;
   dragMove: (deltaX: number, deltaY: number) => void;
   dragEnd: () => void;
@@ -194,6 +198,10 @@ export interface LinerElectronApi {
   getOverlayInitialState: () => Promise<any>;
   updateOverlaySettings: (settings: any) => void;
   pauseOverlayShortcuts: (paused: boolean) => void;
+  getShortcutStatus?: () => Promise<Record<string, string>>;
+  onShortcutStatus?: (
+    cb: (status: Record<string, string>) => void,
+  ) => () => void;
   onOverlaySettingsChanged: (cb: (settings: any) => void) => () => void;
   onOverlayVisibility: (cb: (visible: boolean) => void) => () => void;
   setOverlayAuthenticated?: (authenticated: boolean) => void;
@@ -217,6 +225,7 @@ export interface LinerElectronApi {
   savedTracksRemove: (trackIds: string[]) => Promise<number>;
   savedTracksRemoveAll: () => Promise<number>;
   savedTracksUsage: () => Promise<SavedLibraryUsage>;
+  savedTracksUsageOf: (trackIds: string[]) => Promise<SavedTracksPartUsage>;
   savedTracksOpenFolder: () => Promise<boolean>;
   savedTracksGetLyrics: (trackId: string) => Promise<unknown | null>;
   savedTracksSetLyrics: (
@@ -242,6 +251,10 @@ const api: LinerElectronApi = {
   close: () => ipcRenderer.invoke("window:close"),
   isMaximized: () => ipcRenderer.invoke("window:is-maximized"),
   isFullScreen: () => ipcRenderer.invoke("window:is-fullscreen"),
+  getRememberWindowBounds: () =>
+    ipcRenderer.invoke("window:get-remember-bounds"),
+  setRememberWindowBounds: (enabled) =>
+    ipcRenderer.invoke("window:set-remember-bounds", enabled),
   onWindowStateChange: (cb) => {
     const listener = (_event: unknown, state: WindowState) => cb(state);
     ipcRenderer.on("window:state-changed", listener);
@@ -263,6 +276,7 @@ const api: LinerElectronApi = {
       ipcRenderer.removeListener("window:minimized", listener);
     };
   },
+  notePresence: () => ipcRenderer.send("window:presence"),
   dragStart: () => {
     ipcRenderer.send("window:drag-start");
   },
@@ -446,6 +460,15 @@ const api: LinerElectronApi = {
   pauseOverlayShortcuts: (paused) => {
     ipcRenderer.send("overlay:pause-shortcuts", paused);
   },
+  getShortcutStatus: () => ipcRenderer.invoke("shortcuts:get-status"),
+  onShortcutStatus: (cb) => {
+    const listener = (_event: unknown, status: Record<string, string>) =>
+      cb(status);
+    ipcRenderer.on("shortcuts:status", listener);
+    return () => {
+      ipcRenderer.removeListener("shortcuts:status", listener);
+    };
+  },
   onOverlaySettingsChanged: (cb) => {
     const listener = (_event: unknown, settings: any) => cb(settings);
     ipcRenderer.on("overlay:settings-changed", listener);
@@ -487,6 +510,8 @@ const api: LinerElectronApi = {
     ipcRenderer.invoke("saved-tracks:remove", trackIds),
   savedTracksRemoveAll: () => ipcRenderer.invoke("saved-tracks:remove-all"),
   savedTracksUsage: () => ipcRenderer.invoke("saved-tracks:usage"),
+  savedTracksUsageOf: (trackIds) =>
+    ipcRenderer.invoke("saved-tracks:usage-of", trackIds),
   savedTracksOpenFolder: () => ipcRenderer.invoke("saved-tracks:open-folder"),
   savedTracksGetLyrics: (trackId) =>
     ipcRenderer.invoke("saved-tracks:lyrics-get", trackId),

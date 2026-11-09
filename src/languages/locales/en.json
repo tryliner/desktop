@@ -299,6 +299,8 @@
     "btn_continue": "Continue",
     "btn_back": "Back",
     "username_hint": "3-30 lowercase characters, numbers or underscores.",
+    "username_checking": "Checking if this username is free...",
+    "username_available": "This username is free.",
     "label_email": "Email",
     "label_username": "Username (@handle)",
     "placeholder_username": "soundwave",
@@ -675,7 +677,22 @@
       "scope_global": "Global",
       "scope_main_app": "Main App",
       "scope_overlay": "Overlay",
-      "reset_section": "Reset section"
+      "reset_section": "Reset section",
+      "taken_by_other_app": "Taken by the system or another app",
+      "invalid_global": "Can't be used as a global shortcut",
+      "taken_not_saved": "{shortcut} is taken by the system or another app. Pick another one.",
+      "invalid_not_saved": "{shortcut} can't be used as a global shortcut. Pick another one.",
+      "volume_section": "Volume hotkeys",
+      "volume_hold": {
+        "title": "When the key is held",
+        "description": "Keep changing the volume while a volume key is held, or change it once per press.",
+        "hold": "Keep changing",
+        "press": "Once per press"
+      },
+      "volume_step": {
+        "title": "Volume step",
+        "description": "How much one press of a volume key changes the volume."
+      }
     },
     "overlay": {
       "description": "Desktop overlay behavior, global shortcut and position settings.",
@@ -722,6 +739,10 @@
       "sync_library": {
         "title": "Sync library",
         "description": "Show playlists from your YouTube account in the library next to Liner playlists."
+      },
+      "sign_out_with_liner": {
+        "title": "Sign out with Liner",
+        "description": "Also sign out of YouTube when you sign out of your Liner account."
       },
       "sign_out": "Sign out",
       "sign_in": "Sign in",
@@ -798,6 +819,10 @@
     "language": {
       "label": "Language",
       "description": "Select the interface language"
+    },
+    "remember_window_bounds": {
+      "title": "Remember window size and position",
+      "description": "Reopen the window at the size and place you left it."
     },
     "autoplay_similar": {
       "title": "Autoplay similar tracks",
@@ -882,7 +907,8 @@
         "lyrics": "Lyrics",
         "metadata": "Catalog & Search",
         "local": "Imported files",
-        "liked": "Liked songs"
+        "liked": "Liked songs",
+        "shared": "Kept from earlier sign-ins"
       },
       "local_confirm_title": "Remove imported files?",
       "local_confirm_desc": "{tracks} ({size}) will be deleted from Liner, together with their covers. Your original files stay where they are.",
@@ -929,7 +955,23 @@
       "open_folder_short": "Open folder",
       "cached_in_library": "Show cached songs in library",
       "cached_in_library_desc": "When off, they appear only in offline mode.",
-      "remove_failed": "Couldn't remove these files. Try again."
+      "remove_failed": "Couldn't remove these files. Try again.",
+      "shared_desc": "{songs} · reused when an account likes them",
+      "removing_shared_title": "Removing kept songs...",
+      "removed_shared_subtitle": "Songs you've liked on this account weren't touched.",
+      "sign_out_choice": "Downloads when you sign out",
+      "sign_out_choice_ask": "Liner asks each time you sign out.",
+      "sign_out_choice_remove": "Downloaded songs are removed when you sign out.",
+      "sign_out_choice_keep": "Songs stay for the next sign-in. Any account reuses the ones it likes.",
+      "sign_out_option_ask": "Ask",
+      "sign_out_option_remove": "Remove",
+      "sign_out_option_keep": "Keep",
+      "sign_out_title": "Sign out of Liner?",
+      "sign_out_desc_remove": "The {songs} you downloaded ({size}) will be removed from this device.",
+      "sign_out_desc_keep": "The {songs} you downloaded ({size}) will stay on this device for the next sign-in.",
+      "sign_out_keep_toggle": "Keep downloads",
+      "sign_out_confirm": "Sign out",
+      "sign_out_dont_ask": "Don't ask again"
     },
     "theme": {
       "title": "Theme",

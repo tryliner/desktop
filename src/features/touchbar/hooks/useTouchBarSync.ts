@@ -3,11 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { playerEngine } from "@/features/player/engine/playerEngine";
 import { usePlayerStore } from "@/features/player/store/playerStore";
 import { useLyricsStore } from "@/features/lyrics";
-import {
-  useIsTrackLiked,
-  useLikeTrack,
-  useUnlikeTrack,
-} from "@/features/library/hooks";
+import { useIsTrackLiked, useToggleTrackLike } from "@/features/library/hooks";
 import {
   isWindowVisible,
   onWindowVisibilityChange,
@@ -146,9 +142,7 @@ export function useTouchBarSync() {
   const syncedLines = useLyricsStore((s) => s.syncedLines);
   const offsetMs = useLyricsStore((s) => s.offsetMs);
   const isLiked = useIsTrackLiked(currentTrack?.id);
-  const likeMutation = useLikeTrack();
-  const unlikeMutation = useUnlikeTrack();
-  const isTogglingLikeRef = useRef(false);
+  const toggleLike = useToggleTrackLike();
   const lastStateSentRef = useRef<string>("");
   const lastLinesSentRef = useRef<LyricLine[] | null>(null);
   const [syncRequestTick, setSyncRequestTick] = useState(0);
@@ -228,17 +222,7 @@ export function useTouchBarSync() {
             }
             break;
           case "like":
-            if (currentTrack && !isTogglingLikeRef.current) {
-              isTogglingLikeRef.current = true;
-              const onSettled = () => {
-                isTogglingLikeRef.current = false;
-              };
-              if (isLiked) {
-                unlikeMutation.mutate(currentTrack.id, { onSettled });
-              } else {
-                likeMutation.mutate(currentTrack.id, { onSettled });
-              }
-            }
+            if (currentTrack) toggleLike(currentTrack.id);
             break;
           case "navigate":
             if (action.payload?.route) {
@@ -250,14 +234,7 @@ export function useTouchBarSync() {
     );
 
     return cleanup;
-  }, [
-    currentTrack,
-    isLiked,
-    likeMutation,
-    unlikeMutation,
-    navigate,
-    location.pathname,
-  ]);
+  }, [currentTrack, toggleLike, navigate, location.pathname]);
 
   useEffect(() => {
     if (!isMac || syncedLines.length === 0) {

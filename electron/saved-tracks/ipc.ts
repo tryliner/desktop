@@ -118,6 +118,10 @@ export function setupSavedTracks(library: SavedTrackLibrary) {
 
   handleTrusted("saved-tracks:usage", () => library.usage());
 
+  handleTrusted("saved-tracks:usage-of", (_event, trackIds: unknown) =>
+    library.usageOf(stringList(trackIds)),
+  );
+
   handleTrusted("saved-tracks:open-folder", async () => {
     try {
       const root = savedTracksRoot();

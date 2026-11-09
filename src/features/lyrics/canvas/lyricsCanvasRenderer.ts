@@ -45,6 +45,7 @@ export class LyricsCanvasRenderer {
 
   setLyrics(lyrics: Lyric[]) {
     this.scene.setLyrics(lyrics);
+    this.motion.jumpTo(0);
     this.snap();
   }
 
@@ -81,6 +82,7 @@ export class LyricsCanvasRenderer {
   }
 
   lineStartAt(y: number): number | null {
+    if (!this.scene.timed) return null;
     const index = this.scene.lineAt(y, this.motion.position);
     return index === null ? null : this.scene.lines[index].startMs;
   }
@@ -100,6 +102,7 @@ export class LyricsCanvasRenderer {
   }
 
   private followScroll(now: number | null) {
+    if (!this.scene.timed) return;
     const { layouts, height } = this.scene;
     this.follower.apply(
       this.motion,

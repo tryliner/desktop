@@ -7,11 +7,15 @@ import {
   type CompositorBridge,
 } from "./compositor/index.js";
 import {
+  MEDIA_SHORTCUT_ACTIONS,
   MediaShortcuts,
+  REPEATABLE_MEDIA_ACTIONS,
+  createRepeatGate,
   mediaActionFromCompositor,
   sanitizeMediaBindings,
   type MediaShortcutAction,
   type MediaShortcutBindings,
+  type ShortcutRegistrationState,
 } from "./mediaShortcuts.js";
 
 export type OverlayPosition = "top-left" | "top-center" | "top-right";
@@ -22,6 +26,14 @@ const TOGGLE_ACTION = "toggle-overlay";
 const LIKE_ACTION = "like-track";
 const COMPOSITOR_SETTLE_MS = 300;
 const SEEK_STEP_MS = 5_000;
+const SHORTCUT_STATUS_CHANNEL = "shortcuts:status";
+
+export type GlobalShortcutStatus = Partial<
+  Record<
+    MediaShortcutAction | "toggleOverlay" | "quickLikeSong",
+    ShortcutRegistrationState
+  >
+>;
 
 const MEDIA_OVERLAY_ACTIONS: Record<
   Exclude<MediaShortcutAction, "showMainWindow">,
@@ -43,6 +55,7 @@ export interface OverlaySettings {
   shortcut: string;
   likeShortcut?: string;
   mediaShortcuts?: MediaShortcutBindings;
+  volumeHoldRepeats?: boolean;
   autoShowOnMinimize: boolean;
   alwaysOnTop: boolean;
 }
@@ -162,7 +175,11 @@ export class OverlayManager {
   private readonly mediaShortcuts = new MediaShortcuts(
     () => this.compositor,
     (action) => this.handleMediaShortcut(action),
+    (action, state) => this.setShortcutStatus(action, state),
   );
+  private shortcutStatus: GlobalShortcutStatus = {};
+  private volumeHoldRepeats = true;
+  private readonly allowHeldKey = createRepeatGate();
   private autoShowOnMinimize = true;
   private alwaysOnTop = true;
   private wasAutoOpened = false;
@@ -181,6 +198,7 @@ export class OverlayManager {
   private readyWaiters: Array<() => void> = [];
   private warmTimer: NodeJS.Timeout | null = null;
   private idleTimer: NodeJS.Timeout | null = null;
+  private mainPresenceAt = Date.now();
   private readyFallbackTimer: NodeJS.Timeout | null = null;
   private revealFallbackTimer: NodeJS.Timeout | null = null;
   private crashTimes: number[] = [];
@@ -216,6 +234,13 @@ export class OverlayManager {
 
   private handleMediaShortcut(action: MediaShortcutAction) {
     if (!this.isAuthenticated) return;
+    if (
+      !this.volumeHoldRepeats &&
+      REPEATABLE_MEDIA_ACTIONS.includes(action) &&
+      !this.allowHeldKey(action, Date.now())
+    ) {
+      return;
+    }
     if (action === "showMainWindow") {
       this.focusMainWindow();
       return;
@@ -225,6 +250,24 @@ export class OverlayManager {
       "overlay:action",
       MEDIA_OVERLAY_ACTIONS[action],
     );
+  }
+
+  public getShortcutStatus(): GlobalShortcutStatus {
+    return { ...this.shortcutStatus };
+  }
+
+  private setShortcutStatus(
+    key: keyof GlobalShortcutStatus,
+    state: ShortcutRegistrationState | null,
+  ) {
+    if ((this.shortcutStatus[key] ?? null) === state) return;
+    const next = { ...this.shortcutStatus };
+    if (state) next[key] = state;
+    else delete next[key];
+    this.shortcutStatus = next;
+    if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+      this.mainWindow.webContents.send(SHORTCUT_STATUS_CHANNEL, next);
+    }
   }
 
   private focusMainWindow() {
@@ -320,6 +363,9 @@ export class OverlayManager {
         this.mediaShortcuts.setBindings(
           sanitizeMediaBindings(data.mediaShortcuts, normalizeShortcut),
         );
+        if (typeof data.volumeHoldRepeats === "boolean") {
+          this.volumeHoldRepeats = data.volumeHoldRepeats;
+        }
         if (typeof data.autoShowOnMinimize === "boolean") {
           this.autoShowOnMinimize = data.autoShowOnMinimize;
         }
@@ -342,6 +388,7 @@ export class OverlayManager {
         shortcut: this.shortcut,
         likeShortcut: this.likeShortcut,
         mediaShortcuts: this.mediaShortcuts.getBindings(),
+        volumeHoldRepeats: this.volumeHoldRepeats,
         autoShowOnMinimize: this.autoShowOnMinimize,
         alwaysOnTop: this.alwaysOnTop,
       };
@@ -379,6 +426,11 @@ export class OverlayManager {
 
       this.mainWindow.on("closed", () => {
         this.destroy();
+      });
+
+      this.mainWindow.on("focus", () => this.noteMainPresence());
+      this.mainWindow.on("blur", () => {
+        this.mainPresenceAt = Date.now();
       });
 
       this.mainWindow.webContents.on("did-finish-load", () =>
@@ -448,14 +500,18 @@ export class OverlayManager {
 
     this.unregisterShortcut();
 
-    if (this.shortcutsPaused || !this.enabled || !this.shortcut) return;
+    if (this.shortcutsPaused) return;
+    if (!this.enabled || !this.shortcut) {
+      this.setShortcutStatus("toggleOverlay", null);
+      return;
+    }
 
     const shortcut = this.shortcut;
     if (this.compositor) {
       void this.compositor.bindShortcut(TOGGLE_ACTION, shortcut).then((ok) => {
-        if (!ok && !this.disposed && this.shortcut === shortcut) {
-          this.registerGlobalToggle();
-        }
+        if (this.disposed || this.shortcut !== shortcut) return;
+        if (ok) this.setShortcutStatus("toggleOverlay", "ok");
+        else this.registerGlobalToggle();
       });
     } else {
       this.registerGlobalToggle();
@@ -479,8 +535,10 @@ export class OverlayManager {
           this.shortcut,
         );
       }
+      this.setShortcutStatus("toggleOverlay", ok ? "ok" : "taken");
     } catch (e) {
       console.error("[overlay] Error registering global shortcut:", e);
+      this.setShortcutStatus("toggleOverlay", "invalid");
     }
   }
 
@@ -509,16 +567,20 @@ export class OverlayManager {
 
     this.unregisterLikeShortcut();
 
-    if (this.shortcutsPaused || !this.likeShortcut) return;
+    if (this.shortcutsPaused) return;
+    if (!this.likeShortcut) {
+      this.setShortcutStatus("quickLikeSong", null);
+      return;
+    }
 
     if (this.compositor) {
       const likeShortcut = this.likeShortcut;
       void this.compositor
         .bindShortcut(LIKE_ACTION, likeShortcut)
         .then((ok) => {
-          if (!ok && !this.disposed && this.likeShortcut === likeShortcut) {
-            this.registerGlobalLike();
-          }
+          if (this.disposed || this.likeShortcut !== likeShortcut) return;
+          if (ok) this.setShortcutStatus("quickLikeSong", "ok");
+          else this.registerGlobalLike();
         });
       return;
     }
@@ -540,8 +602,10 @@ export class OverlayManager {
           this.likeShortcut,
         );
       }
+      this.setShortcutStatus("quickLikeSong", ok ? "ok" : "taken");
     } catch (e) {
       console.error("[overlay] Error registering global like shortcut:", e);
+      this.setShortcutStatus("quickLikeSong", "invalid");
     }
   }
 
@@ -680,7 +744,8 @@ export class OverlayManager {
       !this.disposed &&
       this.isAuthenticated &&
       this.enabled &&
-      this.autoShowOnMinimize
+      this.autoShowOnMinimize &&
+      !this.hasNothingToShow()
     );
   }
 
@@ -688,6 +753,7 @@ export class OverlayManager {
     beforeShow: (win: BrowserWindow) => void,
   ): Promise<BrowserWindow | null> {
     if (this.disposed || !this.isAuthenticated || !this.enabled) return null;
+    if (this.hasNothingToShow()) return null;
     this.cancelIdleDestroy();
     if (this.closeTimeout) {
       clearTimeout(this.closeTimeout);
@@ -714,6 +780,27 @@ export class OverlayManager {
 
   public enablePrewarm() {
     this.scheduleWarm();
+  }
+
+  public noteMainPresence() {
+    this.mainPresenceAt = Date.now();
+    if (this.overlayWindow && !this.overlayWindow.isDestroyed()) {
+      if (!this.idleTimer && !this.isOnScreen()) this.scheduleIdleDestroy();
+      return;
+    }
+    if (this.warmTimer) {
+      clearTimeout(this.warmTimer);
+      this.warmTimer = null;
+    }
+    this.scheduleWarm(0);
+  }
+
+  private isMainFocused(): boolean {
+    return Boolean(
+      this.mainWindow &&
+      !this.mainWindow.isDestroyed() &&
+      this.mainWindow.isFocused(),
+    );
   }
 
   public setIndexPathResolver(resolve: () => string) {
@@ -801,8 +888,16 @@ export class OverlayManager {
     this.restoreInterceptor = interceptor;
   }
 
+  private hasNothingToShow(): boolean {
+    return this.latestState !== null && !this.latestState?.track;
+  }
+
   public showOverlay() {
     if (this.disposed || !this.isAuthenticated || !this.enabled) return;
+    if (this.hasNothingToShow()) {
+      this.pendingShow = false;
+      return;
+    }
     this.cancelIdleDestroy();
 
     if (this.closeTimeout) {
@@ -868,7 +963,7 @@ export class OverlayManager {
       : null;
   }
 
-  private scheduleWarm() {
+  private scheduleWarm(delayMs = WARM_DELAY_MS) {
     if (
       this.disposed ||
       this.compositor ||
@@ -882,8 +977,8 @@ export class OverlayManager {
     this.warmTimer = setTimeout(() => {
       this.warmTimer = null;
       if (!this.autoShowOnMinimize) return;
-      this.ensureWindow();
-    }, WARM_DELAY_MS);
+      if (this.ensureWindow()) this.scheduleIdleDestroy();
+    }, delayMs);
   }
 
   private isOnScreen(): boolean {
@@ -901,31 +996,36 @@ export class OverlayManager {
     }
   }
 
-  private scheduleIdleDestroy() {
+  private scheduleIdleDestroy(delayMs = IDLE_DESTROY_MS) {
     this.cancelIdleDestroy();
-    if (
-      this.autoShowOnMinimize ||
-      !this.overlayWindow ||
-      this.overlayWindow.isDestroyed()
-    )
-      return;
+    if (!this.overlayWindow || this.overlayWindow.isDestroyed()) return;
+    if (this.autoShowOnMinimize && this.compositor) return;
     this.idleTimer = setTimeout(() => {
       this.idleTimer = null;
       const win = this.overlayWindow;
-      if (
-        !win ||
-        win.isDestroyed() ||
-        this.autoShowOnMinimize ||
-        this.wantVisible ||
-        this.pendingShow
-      )
+      if (!win || win.isDestroyed() || this.wantVisible || this.pendingShow)
         return;
+      if (this.priming) {
+        this.scheduleIdleDestroy();
+        return;
+      }
+      if (this.autoShowOnMinimize) {
+        if (this.isMainFocused()) {
+          this.scheduleIdleDestroy();
+          return;
+        }
+        const remaining = IDLE_DESTROY_MS - (Date.now() - this.mainPresenceAt);
+        if (remaining > 0) {
+          this.scheduleIdleDestroy(remaining);
+          return;
+        }
+      }
       this.overlayWindow = null;
       this.resetContentReady();
       try {
         win.destroy();
       } catch {}
-    }, IDLE_DESTROY_MS);
+    }, delayMs);
   }
 
   private markContentReady() {
@@ -1020,6 +1120,7 @@ export class OverlayManager {
       this.closeOverlay();
       return false;
     }
+    if (this.hasNothingToShow()) return false;
     this.showOverlay();
     return true;
   }
@@ -1206,6 +1307,10 @@ export class OverlayManager {
     onTrusted("overlay:update-state", (_event, state: any) => {
       if (!this.isAuthenticated) return;
       this.latestState = state;
+      if (this.hasNothingToShow()) {
+        if (this.pendingShow || this.isOnScreen()) this.closeOverlay();
+        return;
+      }
 
       if (this.isOnScreen()) {
         this.overlayWindow!.webContents.send("overlay:state", state);
@@ -1252,6 +1357,8 @@ export class OverlayManager {
       this.pauseShortcuts(Boolean(paused));
     });
 
+    handleTrusted("shortcuts:get-status", () => this.getShortcutStatus());
+
     onTrusted(
       "overlay:update-settings",
       (_event, settings: Partial<OverlaySettings>) => {
@@ -1289,6 +1396,7 @@ export class OverlayManager {
         if (typeof settings.shortcut === "string" && settings.shortcut.trim()) {
           const nextShortcut = settings.shortcut.trim();
           if (nextShortcut !== this.shortcut) {
+            this.setShortcutStatus("toggleOverlay", null);
             this.shortcut = nextShortcut;
             if (this.enabled) {
               this.registerShortcut();
@@ -1302,6 +1410,7 @@ export class OverlayManager {
         ) {
           const nextLikeShortcut = settings.likeShortcut.trim();
           if (nextLikeShortcut !== this.likeShortcut) {
+            this.setShortcutStatus("quickLikeSong", null);
             this.likeShortcut = nextLikeShortcut;
             this.registerLikeShortcut();
           }
@@ -1316,16 +1425,26 @@ export class OverlayManager {
             normalizeShortcut,
           );
           if (!this.mediaShortcuts.matches(nextMedia)) {
+            const current = this.mediaShortcuts.getBindings();
+            for (const action of MEDIA_SHORTCUT_ACTIONS) {
+              if ((current[action] ?? "") !== (nextMedia[action] ?? "")) {
+                this.setShortcutStatus(action, null);
+              }
+            }
             this.mediaShortcuts.setBindings(nextMedia);
             this.registerMediaShortcuts();
           }
         }
 
+        if (typeof settings.volumeHoldRepeats === "boolean") {
+          this.volumeHoldRepeats = settings.volumeHoldRepeats;
+        }
+
         if (typeof settings.autoShowOnMinimize === "boolean") {
           this.autoShowOnMinimize = settings.autoShowOnMinimize;
           if (this.autoShowOnMinimize) {
-            this.cancelIdleDestroy();
             this.scheduleWarm();
+            if (!this.isOnScreen()) this.scheduleIdleDestroy();
           } else if (!this.isOnScreen()) {
             this.scheduleIdleDestroy();
           }

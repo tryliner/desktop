@@ -23,11 +23,7 @@ import { usePlayerState } from "../hooks/usePlayerState";
 import { playerEngine } from "../engine/playerEngine";
 import { isRadioContext, nextRepeatMode } from "../engine/radioMode";
 import { useTranslation } from "@/languages";
-import {
-  useIsTrackLiked,
-  useLikeTrack,
-  useUnlikeTrack,
-} from "@/features/library/hooks";
+import { useIsTrackLiked, useToggleTrackLike } from "@/features/library/hooks";
 import { usePlayerStore } from "../store/playerStore";
 import { toVolumeGain, toVolumeLevel } from "../engine/volume";
 import { VolumeColumn } from "./VolumeColumn";
@@ -318,22 +314,12 @@ function MiniPlayer({
   const isLocal = isLocalTrackId(currentTrack?.id);
   const isLiked = useIsTrackLiked(currentTrack?.id);
   const eqActive = isEqActive(player.isEqEnabled, player.eqGains);
-  const likeMutation = useLikeTrack();
-  const unlikeMutation = useUnlikeTrack();
-  const togglingRef = useRef(false);
+  const toggleLike = useToggleTrackLike();
 
   const handleLikeToggle = useCallback(() => {
-    if (!currentTrack || togglingRef.current) return;
-    togglingRef.current = true;
-    const onSettled = () => {
-      togglingRef.current = false;
-    };
-    if (isLiked) {
-      unlikeMutation.mutate(currentTrack.id, { onSettled });
-    } else {
-      likeMutation.mutate(currentTrack.id, { onSettled });
-    }
-  }, [currentTrack, isLiked, likeMutation, unlikeMutation]);
+    if (!currentTrack) return;
+    toggleLike(currentTrack.id);
+  }, [currentTrack, toggleLike]);
 
   const durationMs =
     player.durationMs > 0
@@ -830,6 +816,7 @@ function MiniPlayer({
                     artistId={player.currentTrack?.artistId}
                     artistList={player.currentTrack?.artistList}
                     size={15}
+                    className="-translate-y-px"
                   />
                 )}
                 <ArtistLink

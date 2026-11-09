@@ -1,5 +1,6 @@
 import { linerDb } from "@/shared/storage/linerDb";
 import { useLocalLibraryStore } from "@/features/library/local/store/localLibraryStore";
+import { useSavedTracksStore } from "@/features/library/saved/store/savedTracksStore";
 import {
   audioCache,
   DEFAULT_AUDIO_CACHE_LIMIT_BYTES,
@@ -34,13 +35,14 @@ const PRESERVED_STORAGE_KEYS = new Set([
 ]);
 
 export type StorageCategoryId =
-  "covers" | "audio" | "lyrics" | "metadata" | "local" | "liked";
+  "covers" | "audio" | "lyrics" | "metadata" | "local" | "liked" | "shared";
 
 export type StorageCategoryGroup = "music" | "cache";
 
 export const LIBRARY_CATEGORY_IDS: ReadonlySet<StorageCategoryId> = new Set([
   "local",
   "liked",
+  "shared",
 ]);
 
 export interface StorageCategoryItem {
@@ -336,12 +338,24 @@ export async function getStorageAnalytics(): Promise<StorageAnalytics> {
 
   let likedBytes = 0;
   let likedCount = 0;
+  let sharedBytes = 0;
+  let sharedCount = 0;
   let freeBytes: number | undefined;
   if (typeof window !== "undefined" && window.linerElectron?.savedTracksUsage) {
     try {
-      const usage = await window.linerElectron.savedTracksUsage();
-      likedBytes = usage.bytes;
-      likedCount = usage.count;
+      const claimedIds = useSavedTracksStore
+        .getState()
+        .records.map((record) => record.trackId);
+      const [usage, claimed] = await Promise.all([
+        window.linerElectron.savedTracksUsage(),
+        claimedIds.length > 0 && window.linerElectron.savedTracksUsageOf
+          ? window.linerElectron.savedTracksUsageOf(claimedIds)
+          : Promise.resolve({ count: 0, bytes: 0 }),
+      ]);
+      likedBytes = claimed.bytes;
+      likedCount = claimed.count;
+      sharedCount = Math.max(0, usage.count - claimed.count);
+      sharedBytes = sharedCount > 0 ? Math.max(0, usage.bytes - likedBytes) : 0;
       if (usage.freeBytes !== null) freeBytes = usage.freeBytes;
     } catch {}
   }
@@ -413,6 +427,14 @@ export async function getStorageAnalytics(): Promise<StorageAnalytics> {
       bytes: likedBytes,
       count: likedCount,
       color: "#34D399",
+      group: "music",
+    },
+    {
+      id: "shared",
+      labelKey: "settings.storage.categories.shared",
+      bytes: sharedBytes,
+      count: sharedCount,
+      color: "#6EE7B7",
       group: "music",
     },
   ];
@@ -574,6 +596,14 @@ function writePersistedAnalytics(data: StorageAnalytics): void {
 
 let cachedStorageAnalytics: StorageAnalytics | null = readPersistedAnalytics();
 let inflightAnalytics: Promise<StorageAnalytics> | null = null;
+
+export function forgetStorageAnalytics(): void {
+  cachedStorageAnalytics = null;
+  if (typeof window === "undefined" || !window.sessionStorage) return;
+  try {
+    sessionStorage.removeItem(CACHE_ANALYTICS_STORAGE_KEY);
+  } catch {}
+}
 
 // returns cached analytics synchronously if available
 export function getCachedStorageAnalytics(): StorageAnalytics | null {

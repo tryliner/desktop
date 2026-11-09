@@ -23,6 +23,7 @@ export interface LyricLineModel {
 export interface LyricsModel {
   lines: LyricLineModel[];
   shiftMs: number;
+  timed: boolean;
 }
 
 export interface PlacedToken {

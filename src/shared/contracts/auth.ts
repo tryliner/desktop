@@ -11,3 +11,9 @@ export type PublicUser = AuthUser;
 
 export type RegisterInput = ApiBody<"POST /v1/auth/register">;
 export type LoginInput = ApiBody<"POST /v1/auth/login">;
+
+export interface UsernameAvailability {
+  username: string;
+  valid: boolean;
+  available: boolean;
+}

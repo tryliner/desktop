@@ -49,6 +49,22 @@ export const CYRILLIC_TO_QWERTY_MAP: Record<string, string> = {
  * Uses event.code first to ensure layout-independent physical key detection,
  * with fallbacks for non-standard environments.
  */
+const NAMED_KEY_FALLBACK: Record<string, string> = {
+  ArrowUp: "Up",
+  ArrowDown: "Down",
+  ArrowLeft: "Left",
+  ArrowRight: "Right",
+  Enter: "Return",
+  Tab: "Tab",
+  Backspace: "Backspace",
+  Delete: "Delete",
+  Insert: "Insert",
+  Home: "Home",
+  End: "End",
+  PageUp: "PageUp",
+  PageDown: "PageDown",
+};
+
 export function getEnglishKeyFromEvent(e: KeyboardEvent): string | null {
   const code = e.code;
 
@@ -128,6 +144,8 @@ export function getEnglishKeyFromEvent(e: KeyboardEvent): string | null {
     default:
       break;
   }
+
+  if (NAMED_KEY_FALLBACK[e.key]) return NAMED_KEY_FALLBACK[e.key];
 
   // 2. Fallback: check Cyrillic characters to map them to QWERTY
   const lowerKey = e.key.toLowerCase();

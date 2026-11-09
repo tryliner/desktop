@@ -5,6 +5,7 @@ import {
   type SavedTrackRecord,
 } from "@/shared/media/saved";
 import type { Track } from "@/shared/types";
+import { getAuthSession, registerSignOutTask } from "@/shared/api";
 import { log } from "@/shared/utils/logger";
 import {
   isOfflineMode,
@@ -21,6 +22,7 @@ import {
   createSavedTrackSync,
   emptySyncMemory,
   type SavedSyncMemory,
+  type StoredClaims,
   type SyncStatus,
 } from "../engine/savedTrackSync";
 import {
@@ -28,10 +30,18 @@ import {
   saveLyricsToDevice,
   saveTrackToDevice,
 } from "../engine/savedTrackFetcher";
+import {
+  parseSignOutChoice,
+  resolveKeepOnSignOut,
+  type SignOutChoice,
+} from "../engine/signOutChoice";
 
 export const SAVE_LIKED_ENABLED_KEY = "liner_save_liked_enabled";
 export const SAVED_LIMIT_KEY = "liner_saved_limit_bytes";
 export const SAVED_SYNC_MEMORY_KEY = "liner_saved_sync_v1";
+export const SAVED_CLAIMS_KEY = "liner_saved_claims_v1";
+export const SIGN_OUT_CHOICE_KEY = "liner_saved_sign_out_choice";
+
 export const DEFAULT_SAVED_LIMIT_BYTES = 5 * 1024 * 1024 * 1024;
 const RECONCILE_DEBOUNCE_MS = 4_000;
 
@@ -40,14 +50,20 @@ type LoadState = "idle" | "loading" | "ready" | "unavailable";
 interface SavedTracksState {
   records: SavedTrackRecord[];
   tracks: Track[];
+  sharedCount: number;
   loadState: LoadState;
   enabled: boolean;
+  signOutChoice: SignOutChoice;
+  signOutAnswer: boolean | null;
   limitBytes: number;
   status: SyncStatus;
   load: () => Promise<void>;
   setEnabled: (enabled: boolean) => void;
+  setSignOutChoice: (choice: SignOutChoice) => void;
+  answerSignOut: (keep: boolean, remember: boolean) => void;
   setLimitBytes: (bytes: number) => void;
   removeAll: () => Promise<number>;
+  removeShared: () => Promise<number>;
 }
 
 function readStorage(key: string): string | null {
@@ -66,6 +82,33 @@ function writeStorage(key: string, value: string) {
 
 function readEnabled(): boolean {
   return readStorage(SAVE_LIKED_ENABLED_KEY) !== "0";
+}
+
+function readSignOutChoice(): SignOutChoice {
+  return parseSignOutChoice(readStorage(SIGN_OUT_CHOICE_KEY));
+}
+
+export function readClaims(accountId: string | null): StoredClaims {
+  const raw = readStorage(SAVED_CLAIMS_KEY);
+  if (raw === null) return accountId ? "all" : [];
+  try {
+    const parsed = JSON.parse(raw) as {
+      accountId?: unknown;
+      trackIds?: unknown;
+    } | null;
+    if (!parsed || parsed.accountId !== accountId) return [];
+    return Array.isArray(parsed.trackIds)
+      ? parsed.trackIds.filter(
+          (id): id is string => typeof id === "string" && id.length > 0,
+        )
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+export function writeClaims(accountId: string | null, trackIds: string[]) {
+  writeStorage(SAVED_CLAIMS_KEY, JSON.stringify({ accountId, trackIds }));
 }
 
 function readLimit(): number {
@@ -89,10 +132,14 @@ function readMemory(): SavedSyncMemory {
 const newestFirst = (records: SavedTrackRecord[]) =>
   [...records].sort((a, b) => b.savedAt - a.savedAt);
 
-const withTracks = (records: SavedTrackRecord[]) => {
+const withTracks = (records: SavedTrackRecord[], sharedCount = 0) => {
   const sorted = newestFirst(records);
   setSavedTrackIndex(sorted);
-  return { records: sorted, tracks: sorted.map(savedRecordToTrack) };
+  return {
+    records: sorted,
+    tracks: sorted.map(savedRecordToTrack),
+    sharedCount,
+  };
 };
 
 const canDownload = () => navigator.onLine && !isOfflineMode();
@@ -133,20 +180,32 @@ const sync = createSavedTrackSync({
   remove: async (trackIds) => {
     await window.linerElectron?.savedTracksRemove(trackIds);
   },
+  removeAll: async () => {
+    await window.linerElectron?.savedTracksRemoveAll();
+  },
+  accountId: () => getAuthSession()?.user?.id ?? null,
+  readClaims,
+  writeClaims,
   classify: classifySaveFailure,
   readMemory,
   writeMemory: (memory) =>
     writeStorage(SAVED_SYNC_MEMORY_KEY, JSON.stringify(memory)),
   onStatus: (status) => useSavedTracksStore.setState({ status }),
-  onRecords: (records) => useSavedTracksStore.setState(withTracks(records)),
+  onRecords: (claimed, all) =>
+    useSavedTracksStore.setState(
+      withTracks(claimed, all.length - claimed.length),
+    ),
   log: (message) => log("cyan", "saved", message),
 });
 
 export const useSavedTracksStore = create<SavedTracksState>((set, get) => ({
   records: [],
   tracks: [],
+  sharedCount: 0,
   loadState: "idle",
   enabled: readEnabled(),
+  signOutChoice: readSignOutChoice(),
+  signOutAnswer: null,
   limitBytes: readLimit(),
   status: { phase: "starting", pending: 0 },
 
@@ -160,8 +219,8 @@ export const useSavedTracksStore = create<SavedTracksState>((set, get) => ({
     set({ loadState: "loading" });
     try {
       const records = await bridge.savedTracksList();
-      set({ ...withTracks(records), loadState: "ready" });
       sync.setRecords(records);
+      set({ loadState: "ready" });
     } catch {
       set({ loadState: "ready" });
     }
@@ -172,6 +231,16 @@ export const useSavedTracksStore = create<SavedTracksState>((set, get) => ({
     set({ enabled });
     if (enabled) sync.forgetFailures();
     scheduleReconcile(0, enabled);
+  },
+
+  setSignOutChoice: (choice) => {
+    writeStorage(SIGN_OUT_CHOICE_KEY, choice);
+    set({ signOutChoice: choice });
+  },
+
+  answerSignOut: (keep, remember) => {
+    set({ signOutAnswer: keep });
+    if (remember) get().setSignOutChoice(keep ? "keep" : "remove");
   },
 
   setLimitBytes: (bytes) => {
@@ -186,12 +255,15 @@ export const useSavedTracksStore = create<SavedTracksState>((set, get) => ({
     const current = usePlayerStore.getState().currentTrack?.id;
     const removing = get().records.map((record) => record.trackId);
     writeStorage(SAVE_LIKED_ENABLED_KEY, "0");
-    set({ enabled: false, ...withTracks([]) });
-    sync.setRecords([]);
+    set({ enabled: false });
     if (current && removing.includes(current))
       await playerEngine.stopAndClear().catch(() => {});
-    if (removing.length === 0) return 0;
-    return bridge.savedTracksRemove(removing);
+    return sync.removeClaimed();
+  },
+
+  removeShared: async () => {
+    if (!window.linerElectron) return 0;
+    return sync.removeShared();
   },
 }));
 
@@ -218,6 +290,11 @@ export function initSavedTracks() {
   if (started || typeof window === "undefined") return;
   if (!window.linerElectron?.savedTracksList) return;
   started = true;
+  registerSignOutTask(async () => {
+    const { signOutChoice, signOutAnswer } = useSavedTracksStore.getState();
+    useSavedTracksStore.setState({ signOutAnswer: null });
+    await sync.signOut(resolveKeepOnSignOut(signOutChoice, signOutAnswer));
+  });
   void useSavedTracksStore
     .getState()
     .load()

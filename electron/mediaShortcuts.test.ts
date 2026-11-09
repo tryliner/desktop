@@ -5,8 +5,12 @@ vi.mock("electron", () => ({
 }));
 
 const { globalShortcut } = await import("electron");
-const { MediaShortcuts, mediaActionFromCompositor, sanitizeMediaBindings } =
-  await import("./mediaShortcuts");
+const {
+  MediaShortcuts,
+  createRepeatGate,
+  mediaActionFromCompositor,
+  sanitizeMediaBindings,
+} = await import("./mediaShortcuts");
 
 describe("media shortcuts", () => {
   it("keeps only known, non-empty bindings", () => {
@@ -53,5 +57,62 @@ describe("media shortcuts", () => {
     );
     expect(shortcuts.matches({ playPause: "Control+Alt+K" })).toBe(true);
     expect(shortcuts.matches({})).toBe(false);
+  });
+
+  it("reports which binds the os accepted, refused or rejected", () => {
+    const onStatus = vi.fn();
+    const shortcuts = new MediaShortcuts(() => null, vi.fn(), onStatus);
+    vi.mocked(globalShortcut.register)
+      .mockReturnValueOnce(true)
+      .mockReturnValueOnce(false)
+      .mockImplementationOnce(() => {
+        throw new Error("bad accelerator");
+      });
+    shortcuts.setBindings({
+      playPause: "Control+Alt+P",
+      nextTrack: "Control+Shift+Up",
+      prevTrack: "Control+Shift+???",
+    });
+    shortcuts.register();
+
+    expect(onStatus).toHaveBeenCalledWith("playPause", "ok");
+    expect(onStatus).toHaveBeenCalledWith("nextTrack", "taken");
+    expect(onStatus).toHaveBeenCalledWith("prevTrack", "invalid");
+    expect(onStatus).toHaveBeenCalledWith("volumeUp", null);
+  });
+
+  it("falls back to globalShortcut and reports it when the compositor refuses", async () => {
+    const onStatus = vi.fn();
+    const bindShortcut = vi
+      .fn()
+      .mockResolvedValueOnce(true)
+      .mockResolvedValueOnce(false);
+    const compositor = {
+      bindShortcut,
+      unbindShortcut: vi.fn().mockResolvedValue(undefined),
+    } as never;
+    vi.mocked(globalShortcut.register).mockReturnValueOnce(false);
+    const shortcuts = new MediaShortcuts(() => compositor, vi.fn(), onStatus);
+    shortcuts.setBindings({
+      playPause: "Control+Alt+P",
+      nextTrack: "Control+Shift+Up",
+    });
+    shortcuts.register();
+    await vi.waitFor(() => expect(onStatus).toHaveBeenCalledTimes(9));
+
+    expect(onStatus).toHaveBeenCalledWith("playPause", "ok");
+    expect(onStatus).toHaveBeenCalledWith("nextTrack", "taken");
+  });
+});
+
+describe("held key repeat gate", () => {
+  it("lets taps through and drops os auto-repeat while a key is held", () => {
+    const allow = createRepeatGate(600);
+    expect(allow("volumeUp", 0)).toBe(true);
+    expect(allow("volumeUp", 500)).toBe(false);
+    expect(allow("volumeUp", 533)).toBe(false);
+    expect(allow("volumeUp", 566)).toBe(false);
+    expect(allow("volumeDown", 570)).toBe(true);
+    expect(allow("volumeUp", 1300)).toBe(true);
   });
 });

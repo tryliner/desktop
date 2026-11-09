@@ -44,11 +44,12 @@ export function paintLine(frame: SceneFrame, layout: LineLayout) {
       );
       return;
     }
-    drawLine(ctx, layout, top, timeMs, scene.typography, dpr, now);
+    drawLine(ctx, layout, top, timeMs, scene.typography, dpr, now, scene.timed);
   };
 }
 
-function litState(layout: LineLayout, timeMs: number): string {
+function litState(layout: LineLayout, timeMs: number, timed: boolean) {
+  if (!timed) return "static";
   if (timeMs >= lineExitMs(layout.line)) return "done";
   return String(
     layout.tokens.filter((placed) => placed.token.startMs <= timeMs).length,
@@ -63,7 +64,7 @@ export function visibleLines(frame: SceneFrame): VisibleLine[] {
     const exact = layout.top - motion.position + offset;
     const bottom = exact + layout.height + BITMAP_PAD;
     if (bottom < 0 || exact - BITMAP_PAD > scene.height) return;
-    const live = isLineAnimating(layout.line, timeMs, now);
+    const live = scene.timed && isLineAnimating(layout.line, timeMs, now);
     const moving = offset !== 0 || motion.isWheelMoving();
     lines.push({
       index,
@@ -71,7 +72,7 @@ export function visibleLines(frame: SceneFrame): VisibleLine[] {
       top: moving ? exact : Math.round(exact * dpr) / dpr,
       key: live
         ? `live:${now}`
-        : `still:${scene.version}:${litState(layout, timeMs)}`,
+        : `still:${scene.version}:${litState(layout, timeMs, scene.timed)}`,
       live,
       fading: live && timeMs >= lineExitMs(layout.line),
       moving,

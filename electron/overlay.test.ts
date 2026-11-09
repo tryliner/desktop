@@ -56,6 +56,10 @@ const electron = vi.hoisted(() => {
     isVisible() {
       return this.visible;
     }
+    focused = false;
+    isFocused() {
+      return this.focused;
+    }
     getBounds() {
       return this.bounds;
     }
@@ -323,36 +327,112 @@ describe("OverlayManager", () => {
     ready(overlay);
     await vi.advanceTimersByTimeAsync(1_000);
     const update = electron.ipcOn.get("overlay:update-state")!;
+    const track = { id: "t1", title: "Song" };
     const stateSends = () =>
       overlay.webContents.send.mock.calls.filter(
         ([channel]) => channel === "overlay:state",
       );
     overlay.webContents.send.mockClear();
     for (let i = 0; i < 40; i++)
-      update({}, { status: "playing", positionMs: i * 250 });
+      update({}, { status: "playing", track, positionMs: i * 250 });
     const hiddenForwards = stateSends().length;
 
     manager.showOverlay();
     const onShow = stateSends();
-    update({}, { status: "paused", positionMs: 12_000 });
+    update({}, { status: "paused", track, positionMs: 12_000 });
     const visibleForwards = stateSends().length - onShow.length;
 
     manager.closeOverlay();
     await vi.advanceTimersByTimeAsync(100);
     overlay.webContents.send.mockClear();
-    update({}, { status: "playing", positionMs: 13_000 });
+    update({}, { status: "playing", track, positionMs: 13_000 });
     process.stdout.write(
       `[perf] overlay main forwards to hidden window: ${hiddenForwards} of 40 updates\n`,
     );
 
     expect(hiddenForwards).toBe(0);
     expect(onShow).toHaveLength(1);
-    expect(onShow[0][1]).toEqual({ status: "playing", positionMs: 9_750 });
+    expect(onShow[0][1]).toEqual({
+      status: "playing",
+      track,
+      positionMs: 9_750,
+    });
     expect(visibleForwards).toBe(1);
     expect(stateSends()).toHaveLength(0);
     expect(
       await electron.handlers.get("overlay:get-initial-state")?.(),
-    ).toEqual({ status: "playing", positionMs: 13_000 });
+    ).toEqual({ status: "playing", track, positionMs: 13_000 });
+  });
+
+  it("stays closed on minimize and shortcut while nothing is playing", async () => {
+    const { manager, main, overlays, ready } = setup();
+    await vi.advanceTimersByTimeAsync(600);
+    const [overlay] = overlays();
+    ready(overlay);
+    await vi.advanceTimersByTimeAsync(200);
+    electron.ipcOn.get("overlay:update-state")!(
+      {},
+      { status: "idle", track: null },
+    );
+
+    main.emit("minimize");
+    await vi.advanceTimersByTimeAsync(1_000);
+    const toggled = manager.toggleOverlay();
+    await vi.advanceTimersByTimeAsync(1_000);
+
+    expect(toggled).toBe(false);
+    expect(overlay.isVisible()).toBe(false);
+  });
+
+  it("skips the animated minimize hand-off while nothing is playing", async () => {
+    const { manager, overlays, ready } = setup();
+    await vi.advanceTimersByTimeAsync(600);
+    const [overlay] = overlays();
+    ready(overlay);
+    await vi.advanceTimersByTimeAsync(200);
+    const update = electron.ipcOn.get("overlay:update-state")!;
+    update({}, { status: "idle", track: null });
+    const beforeShow = vi.fn();
+
+    expect(manager.willShowOnMinimize()).toBe(false);
+    expect(await manager.openForTransition(beforeShow)).toBeNull();
+    expect(beforeShow).not.toHaveBeenCalled();
+    expect(overlay.isVisible()).toBe(false);
+
+    update({}, { status: "paused", track: { id: "t1", title: "Song" } });
+    expect(manager.willShowOnMinimize()).toBe(true);
+  });
+
+  it("opens again once a track is loaded", async () => {
+    const { manager, overlays, ready } = setup();
+    await vi.advanceTimersByTimeAsync(600);
+    const [overlay] = overlays();
+    ready(overlay);
+    await vi.advanceTimersByTimeAsync(200);
+    const update = electron.ipcOn.get("overlay:update-state")!;
+    update({}, { status: "idle", track: null });
+    update({}, { status: "playing", track: { id: "t1", title: "Song" } });
+
+    expect(manager.toggleOverlay()).toBe(true);
+    await vi.advanceTimersByTimeAsync(1_000);
+    expect(overlay.isVisible()).toBe(true);
+  });
+
+  it("closes an open overlay when playback is cleared", async () => {
+    const { manager, overlays, ready } = setup();
+    await vi.advanceTimersByTimeAsync(600);
+    const [overlay] = overlays();
+    ready(overlay);
+    const update = electron.ipcOn.get("overlay:update-state")!;
+    update({}, { status: "playing", track: { id: "t1", title: "Song" } });
+    manager.showOverlay();
+    await vi.advanceTimersByTimeAsync(1_000);
+    expect(overlay.isVisible()).toBe(true);
+
+    update({}, { status: "idle", track: null });
+    await vi.advanceTimersByTimeAsync(1_000);
+
+    expect(overlay.isVisible()).toBe(false);
   });
 
   it("does not keep a hidden overlay warm when auto-show on minimize is off", async () => {
@@ -397,13 +477,63 @@ describe("OverlayManager", () => {
     expect(fresh.isVisible()).toBe(true);
   });
 
-  it("keeps the warm overlay around when auto-show on minimize is on", async () => {
-    const { manager, overlays, ready } = setup();
+  it("keeps the warm overlay around while the main window is focused", async () => {
+    const { manager, main, overlays, ready } = setup();
+    main.focused = true;
     await vi.advanceTimersByTimeAsync(600);
     const [overlay] = overlays();
     ready(overlay);
     manager.showOverlay();
     manager.closeOverlay();
+    await vi.advanceTimersByTimeAsync(10 * 60_000);
+    expect(overlay.isDestroyed()).toBe(false);
+  });
+
+  it("releases the warm overlay once the main window has been left alone", async () => {
+    const { overlays, ready } = setup();
+    await vi.advanceTimersByTimeAsync(600);
+    const [overlay] = overlays();
+    ready(overlay);
+    await vi.advanceTimersByTimeAsync(3 * 60_000);
+    expect(overlay.isDestroyed()).toBe(true);
+  });
+
+  it("does not release the overlay while the user keeps coming back", async () => {
+    const { manager, overlays, ready } = setup();
+    await vi.advanceTimersByTimeAsync(600);
+    const [overlay] = overlays();
+    ready(overlay);
+    for (let i = 0; i < 5; i++) {
+      await vi.advanceTimersByTimeAsync(2 * 60_000);
+      manager.noteMainPresence();
+    }
+    expect(overlay.isDestroyed()).toBe(false);
+  });
+
+  it("rewarms right away when the user comes back to the main window", async () => {
+    const { manager, main, overlays, ready } = setup();
+    await vi.advanceTimersByTimeAsync(600);
+    ready(overlays()[0]);
+    await vi.advanceTimersByTimeAsync(3 * 60_000);
+    expect(overlays()[0].isDestroyed()).toBe(true);
+
+    manager.noteMainPresence();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(overlays().filter((w) => !w.isDestroyed())).toHaveLength(1);
+
+    await vi.advanceTimersByTimeAsync(3 * 60_000);
+    main.focused = true;
+    main.emit("focus");
+    await vi.advanceTimersByTimeAsync(0);
+    expect(overlays().filter((w) => !w.isDestroyed())).toHaveLength(1);
+  });
+
+  it("never releases the overlay while it is on screen", async () => {
+    const { manager, overlays, ready } = setup();
+    await vi.advanceTimersByTimeAsync(600);
+    const [overlay] = overlays();
+    ready(overlay);
+    manager.showOverlay();
     await vi.advanceTimersByTimeAsync(10 * 60_000);
     expect(overlay.isDestroyed()).toBe(false);
   });

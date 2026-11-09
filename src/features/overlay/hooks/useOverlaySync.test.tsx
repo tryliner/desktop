@@ -5,8 +5,7 @@ import type { Track } from "@/shared/types";
 
 vi.mock("@/features/library/hooks", () => ({
   useIsTrackLiked: () => false,
-  useLikeTrack: () => ({ mutate: vi.fn() }),
-  useUnlikeTrack: () => ({ mutate: vi.fn() }),
+  useToggleTrackLike: () => vi.fn(),
 }));
 
 vi.mock("@/features/covers", () => ({

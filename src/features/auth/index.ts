@@ -10,3 +10,4 @@ export {
   type AuthStatus,
 } from "./store/authStore";
 export { useProfile } from "./hooks/useProfile";
+export { SignOutDialog } from "./ui/SignOutDialog";

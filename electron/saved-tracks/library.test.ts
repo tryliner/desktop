@@ -105,4 +105,24 @@ describe("SavedTrackLibrary", () => {
     expect(usage.count).toBe(0);
     expect(usage.bytes).toBe(0);
   });
+  it("measures only the requested tracks, cover and lyrics included", async () => {
+    const library = new SavedTrackLibrary(root);
+    await library.saveTrack({
+      meta,
+      audio,
+      mimeType: "audio/webm",
+      cover: { data: new Uint8Array([1, 2]), mimeType: "image/jpeg" },
+    });
+    await library.saveTrack({
+      meta: { ...meta, trackId: "other", title: "Other" },
+      audio: new Uint8Array(100),
+      mimeType: "audio/webm",
+    });
+
+    expect(await library.usageOf([meta.trackId])).toEqual({
+      count: 1,
+      bytes: audio.byteLength + 2,
+    });
+    expect(await library.usageOf(["missing"])).toEqual({ count: 0, bytes: 0 });
+  });
 });

@@ -12,6 +12,7 @@ const TOP_INSET = 32;
 export class LyricsScene {
   lines: LyricLineModel[] = [];
   shiftMs = 0;
+  timed = true;
   layouts: LineLayout[] = [];
   width = 0;
   height = 0;
@@ -49,6 +50,7 @@ export class LyricsScene {
     const model = buildLines(lyrics);
     this.lines = model.lines;
     this.shiftMs = model.shiftMs;
+    this.timed = model.timed;
     this.relayout();
     const text = lyrics.map((line) => line.words ?? "").join("\n");
     void loadLyricsFonts(this.typography, text);

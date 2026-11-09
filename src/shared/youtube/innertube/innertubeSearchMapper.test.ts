@@ -164,6 +164,81 @@ describe("innertube search mapper", () => {
     });
   });
 
+  it("gives songs inside an artist card the card's artist", () => {
+    const cardSong = {
+      musicResponsiveListItemRenderer: {
+        flexColumns: [
+          {
+            musicResponsiveListItemFlexColumnRenderer: {
+              text: {
+                runs: [
+                  {
+                    text: "ДИНАСТИЯ",
+                    navigationEndpoint: {
+                      watchEndpoint: { videoId: "abc123DEF45" },
+                    },
+                  },
+                ],
+              },
+            },
+          },
+          {
+            musicResponsiveListItemFlexColumnRenderer: {
+              text: {
+                runs: [{ text: "Song" }, { text: " • " }, { text: "2:31" }],
+              },
+            },
+          },
+        ],
+      },
+    };
+    const response = {
+      contents: {
+        tabbedSearchResultsRenderer: {
+          tabs: [
+            {
+              tabRenderer: {
+                content: {
+                  sectionListRenderer: {
+                    contents: [
+                      {
+                        musicCardShelfRenderer: {
+                          title: {
+                            runs: [
+                              {
+                                text: "madk1d",
+                                navigationEndpoint: artistEndpoint("UCmadk1d"),
+                              },
+                            ],
+                          },
+                          subtitle: { runs: [{ text: "Artist" }] },
+                          contents: [cardSong],
+                        },
+                      },
+                      { musicShelfRenderer: { contents: [songRow] } },
+                    ],
+                  },
+                },
+              },
+            },
+          ],
+        },
+      },
+    };
+    const results = mapSearchResponse(response);
+    const song = results.find((item) => item.id === "abc123DEF45");
+    expect(song).toMatchObject({
+      type: "track",
+      artists: [{ id: "UCmadk1d", name: "madk1d" }],
+      durationMs: 151_000,
+    });
+    const other = results.find((item) => item.id === "4NRXx6U8ABQ");
+    expect(other).toMatchObject({ type: "track" });
+    expect(other?.type === "track" && other.artists[0]?.id).not.toBe(
+      "UCmadk1d",
+    );
+  });
+
   it("reads shelves out of a full search response and dedupes", () => {
     const response = {
       contents: {

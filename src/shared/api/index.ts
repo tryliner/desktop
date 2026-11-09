@@ -74,3 +74,4 @@ export {
   LOCAL_IMPORT_PREFIX,
   type LocalImportHandler,
 } from "./localImports";
+export { registerSignOutTask, runSignOutTasks } from "./signOutTasks";

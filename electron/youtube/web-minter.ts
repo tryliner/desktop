@@ -50,10 +50,13 @@ const webMinter = cachedMinter(async () =>
   createMinter(await fetchWebChallenge(), generateWebIntegrityToken),
 );
 
-export async function mintWebPoToken(identifier: string): Promise<string> {
+export async function mintWebPoToken(
+  identifier: string,
+): Promise<{ token: string; expiresAt: number }> {
   try {
-    const { minter } = await webMinter.get();
-    return await minter.mintAsWebsafeString(identifier);
+    const { minter, expiresAt } = await webMinter.get();
+    const token = await minter.mintAsWebsafeString(identifier);
+    return { token, expiresAt };
   } catch (error) {
     webMinter.reset();
     throw error;

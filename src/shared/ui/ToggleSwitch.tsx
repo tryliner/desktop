@@ -41,7 +41,7 @@ export function ToggleSwitch({
       <span
         aria-hidden
         className={cn(
-          "absolute top-[2px] h-[18px] w-[18px] rounded-full",
+          "absolute inset-y-0 my-auto h-[18px] w-[18px] rounded-full",
           "transition-[left,width,background-color,box-shadow] duration-300 ease-[cubic-bezier(0.34,1.3,0.64,1)]",
           !disabled && "group-active:w-[22px]",
           checked

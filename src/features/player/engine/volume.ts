@@ -1,3 +1,5 @@
+import { stepVolumeLevel } from "@/features/shortcuts/utils/volumeStep";
+
 const VOLUME_CURVE = 2;
 
 function clamp(value: number): number {
@@ -12,4 +14,12 @@ export function toVolumeLevel(gain: number): number {
 // converts ui slider curve back to linear gain
 export function toVolumeGain(level: number): number {
   return Math.pow(clamp(level), VOLUME_CURVE);
+}
+
+export function stepVolumeGain(
+  gain: number,
+  direction: 1 | -1,
+  step: number,
+): number {
+  return toVolumeGain(stepVolumeLevel(toVolumeLevel(gain), direction, step));
 }

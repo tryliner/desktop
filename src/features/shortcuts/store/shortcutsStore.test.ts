@@ -138,4 +138,97 @@ describe("shortcutsStore", () => {
       expect(useShortcutsStore.getState().miniplayer.nextTrack).toBe("N"),
     );
   });
+
+  describe("global shortcut registration verdicts", () => {
+    beforeEach(() => {
+      (window as any).linerElectron = { updateOverlaySettings: vi.fn() };
+      useShortcutsStore.setState({ globalStatus: {}, rejectedGlobal: null });
+    });
+
+    it("reverts a freshly recorded bind the os refused and says why", () => {
+      const store = useShortcutsStore.getState();
+      store.commitGlobalShortcut("volumeUp", "Control+Shift+Up");
+      expect(useShortcutsStore.getState().global.volumeUp).toBe(
+        "Control+Shift+UP",
+      );
+
+      useShortcutsStore.getState().setGlobalStatus({ volumeUp: "taken" });
+
+      const state = useShortcutsStore.getState();
+      expect(state.global.volumeUp).toBe("");
+      expect(state.rejectedGlobal).toEqual({
+        action: "volumeUp",
+        shortcut: "Control+Shift+UP",
+        reason: "taken",
+      });
+    });
+
+    it("keeps a freshly recorded bind the os accepted", () => {
+      useShortcutsStore
+        .getState()
+        .commitGlobalShortcut("volumeUp", "Control+Shift+Up");
+      useShortcutsStore.getState().setGlobalStatus({ volumeUp: "ok" });
+      useShortcutsStore.getState().setGlobalStatus({ volumeUp: "taken" });
+
+      expect(useShortcutsStore.getState().global.volumeUp).toBe(
+        "Control+Shift+UP",
+      );
+      expect(useShortcutsStore.getState().rejectedGlobal).toBeNull();
+    });
+
+    it("ignores the stale verdict of the previous combo", () => {
+      useShortcutsStore.setState({ globalStatus: { volumeUp: "taken" } });
+      useShortcutsStore
+        .getState()
+        .setGlobalShortcut("volumeUp", "Control+Shift+Up");
+      useShortcutsStore
+        .getState()
+        .commitGlobalShortcut("volumeUp", "Control+Alt+Up");
+
+      useShortcutsStore.getState().setGlobalStatus({ volumeUp: "taken" });
+      expect(useShortcutsStore.getState().global.volumeUp).toBe(
+        "Control+Alt+UP",
+      );
+
+      useShortcutsStore.getState().setGlobalStatus({});
+      useShortcutsStore.getState().setGlobalStatus({ volumeUp: "ok" });
+      expect(useShortcutsStore.getState().global.volumeUp).toBe(
+        "Control+Alt+UP",
+      );
+      expect(useShortcutsStore.getState().rejectedGlobal).toBeNull();
+    });
+
+    it("does not revert binds that were taken at startup", () => {
+      useShortcutsStore
+        .getState()
+        .setGlobalShortcut("volumeDown", "Control+Shift+Down");
+      useShortcutsStore.getState().setGlobalStatus({ volumeDown: "taken" });
+      expect(useShortcutsStore.getState().global.volumeDown).toBe(
+        "Control+Shift+DOWN",
+      );
+      expect(useShortcutsStore.getState().globalStatus.volumeDown).toBe(
+        "taken",
+      );
+    });
+  });
+
+  describe("volume hotkey settings", () => {
+    it("accepts only the offered steps", () => {
+      useShortcutsStore.getState().setVolumeStep(0.1);
+      expect(useShortcutsStore.getState().volumeStep).toBe(0.1);
+      useShortcutsStore.getState().setVolumeStep(0.3 as never);
+      expect(useShortcutsStore.getState().volumeStep).toBe(0.1);
+      useShortcutsStore.getState().setVolumeStep(0.05);
+    });
+
+    it("sends the hold behaviour to the main process", () => {
+      const updateOverlaySettings = vi.fn();
+      (window as any).linerElectron = { updateOverlaySettings };
+      useShortcutsStore.getState().setVolumeHoldRepeats(false);
+      expect(updateOverlaySettings).toHaveBeenCalledWith(
+        expect.objectContaining({ volumeHoldRepeats: false }),
+      );
+      useShortcutsStore.getState().setVolumeHoldRepeats(true);
+    });
+  });
 });

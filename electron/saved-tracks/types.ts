@@ -36,3 +36,8 @@ export interface SavedLibraryUsage {
   bytes: number;
   freeBytes: number | null;
 }
+
+export interface SavedTracksPartUsage {
+  count: number;
+  bytes: number;
+}

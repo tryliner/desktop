@@ -25,6 +25,25 @@ function mockKeyEvent(init: {
 }
 
 describe("shortcutMatching", () => {
+  describe("events without a physical key code", () => {
+    it("still matches Ctrl+Shift+Arrow when code is empty", () => {
+      for (const [key, name] of [
+        ["ArrowUp", "Up"],
+        ["ArrowDown", "Down"],
+        ["ArrowLeft", "Left"],
+        ["ArrowRight", "Right"],
+      ]) {
+        const event = mockKeyEvent({ key, ctrlKey: true, shiftKey: true });
+        expect(matchesShortcut(event, `Control+Shift+${name}`)).toBe(true);
+      }
+    });
+
+    it("still matches Ctrl+Shift+Space when code is empty", () => {
+      const event = mockKeyEvent({ key: " ", ctrlKey: true, shiftKey: true });
+      expect(matchesShortcut(event, "Control+Shift+Space")).toBe(true);
+    });
+  });
+
   describe("matchesShortcut with 1-button shortcuts", () => {
     it("matches Space", () => {
       const event = mockKeyEvent({ code: "Space", key: " " });

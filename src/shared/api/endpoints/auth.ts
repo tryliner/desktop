@@ -1,10 +1,12 @@
 import { setAuthSession } from "../auth-session";
 import { call } from "../call";
+import { request } from "../http/request";
 import { proofBody, proofCredentials, withAuthProof } from "./authProof";
 import type {
   AuthTokens,
   AuthUser,
   RecoveryRequestAccepted,
+  UsernameAvailability,
 } from "@/shared/contracts";
 
 export const authApi = {
@@ -57,6 +59,21 @@ export const authApi = {
         { allowRefresh: false, credentials: proofCredentials(proof) },
       ),
     );
+  },
+
+  checkUsername(
+    username: string,
+    signal?: AbortSignal,
+  ): Promise<UsernameAvailability> {
+    const params = new URLSearchParams({
+      username: username.trim().toLowerCase(),
+    });
+    return request({
+      method: "GET",
+      path: `/v1/auth/username-available?${params}`,
+      signal,
+      allowRefresh: false,
+    }) as Promise<UsernameAvailability>;
   },
 
   getMe(): Promise<AuthUser> {

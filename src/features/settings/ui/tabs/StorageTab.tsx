@@ -68,7 +68,7 @@ function TelegramCleaningDuck({ size = 130 }: { size?: number }) {
   );
 }
 
-type ClearKind = "cache" | "liked" | "local";
+type ClearKind = "cache" | "liked" | "local" | "shared";
 
 const CLEAR_COPY: Record<
   ClearKind,
@@ -91,6 +91,12 @@ const CLEAR_COPY: Record<
     workingDesc: "settings.storage.removing_subtitle",
     done: "settings.storage.removed_title",
     doneDesc: "settings.storage.removed_local_subtitle",
+  },
+  shared: {
+    working: "settings.storage.removing_shared_title",
+    workingDesc: "settings.storage.removing_subtitle",
+    done: "settings.storage.removed_title",
+    doneDesc: "settings.storage.removed_shared_subtitle",
   },
 };
 
@@ -116,6 +122,7 @@ export function StorageTab({ searchQuery }: { searchQuery?: string }) {
     getAudioCacheLimitBytes(),
   );
   const savedCount = useSavedTracksStore((state) => state.records.length);
+  const sharedCount = useSavedTracksStore((state) => state.sharedCount);
   const cachedVisibleOnline = useCachedTracksStore(
     (state) => state.visibleOnline,
   );
@@ -155,7 +162,7 @@ export function StorageTab({ searchQuery }: { searchQuery?: string }) {
         });
     }, 600);
     return () => clearTimeout(timer);
-  }, [savedCount, t, toast]);
+  }, [savedCount, sharedCount, t, toast]);
 
   const { cacheCategories, musicCategories } = useMemo(() => {
     const all = analytics?.categories ?? [];
@@ -302,6 +309,7 @@ export function StorageTab({ searchQuery }: { searchQuery?: string }) {
               songBytes={songBytes}
               liked={musicCategories.find((c) => c.id === "liked")}
               local={musicCategories.find((c) => c.id === "local")}
+              shared={musicCategories.find((c) => c.id === "shared")}
               onRemove={(kind, bytes, remove) =>
                 void runClear(kind, bytes, remove)
               }
