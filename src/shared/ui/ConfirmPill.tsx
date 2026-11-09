@@ -58,6 +58,9 @@ export default function ConfirmPill({
   const shown =
     mode === "armed" ? confirmLabel : mode === "hover" ? actionLabel : label;
 
+  const [swap, setSwap] = useState({ mode, key: 0 });
+  if (swap.mode !== mode) setSwap({ mode, key: swap.key + 1 });
+
   const labelRef = useRef<HTMLSpanElement>(null);
   const actionRef = useRef<HTMLSpanElement>(null);
   const confirmRef = useRef<HTMLSpanElement>(null);
@@ -122,7 +125,7 @@ export default function ConfirmPill({
       ))}
       <AnimatePresence mode="popLayout" initial={false}>
         <motion.span
-          key={mode}
+          key={swap.key}
           className="whitespace-nowrap"
           initial={{ y: 12, opacity: 0, filter: "blur(2px)" }}
           animate={{ y: 0, opacity: 1, filter: "blur(0px)" }}
