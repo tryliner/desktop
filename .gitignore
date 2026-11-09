@@ -36,6 +36,7 @@ renderer.log
 .env
 .env.*
 !.env.example
+!.env.staging
 
 # typescript
 *.tsbuildinfo

@@ -7,6 +7,10 @@ import pkg from "./package.json" with { type: "json" };
 import { contentSecurityPolicyPlugin } from "./vite.csp.ts";
 
 export default defineConfig(({ command, mode }) => {
+  const channel =
+    process.env.LINER_CHANNEL ??
+    loadEnv(mode, process.cwd(), ["LINER_CHANNEL"]).LINER_CHANNEL ??
+    "production";
   if (command === "serve") {
     const devEnv = loadEnv(mode, process.cwd(), ["LINER_", "VITE_API_URL"]);
     for (const name of [
@@ -32,9 +36,7 @@ export default defineConfig(({ command, mode }) => {
           entry: "electron/main.ts",
           vite: {
             define: {
-              __LINER_CHANNEL__: JSON.stringify(
-                process.env.LINER_CHANNEL ?? "production",
-              ),
+              __LINER_CHANNEL__: JSON.stringify(channel),
             },
           },
         },
