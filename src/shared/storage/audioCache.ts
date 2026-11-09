@@ -7,6 +7,10 @@ export const MIN_AUDIO_CACHE_LIMIT_BYTES = 250 * 1024 * 1024;
 class AudioCache {
   private activeUrls = new Map<string, string>();
   private generation = 0;
+  private cachedIds = new Set<string>();
+  private cachedIdsState: "idle" | "loading" | "ready" = "idle";
+  private cachedIdsEpoch = 0;
+  private cachedIdsListeners = new Set<() => void>();
 
   // bumped by a clear: downloads started before it must not write back
   currentGeneration(): number {
@@ -16,6 +20,48 @@ class AudioCache {
   invalidate(): void {
     this.generation += 1;
     this.revokeAll();
+    this.cachedIdsEpoch += 1;
+    this.cachedIds.clear();
+    this.cachedIdsState = "ready";
+    this.notifyCachedIds();
+  }
+
+  isCached(trackId: string): boolean {
+    return this.cachedIds.has(trackId);
+  }
+
+  subscribeCachedIds(listener: () => void): () => void {
+    this.cachedIdsListeners.add(listener);
+    if (this.cachedIdsState === "idle") void this.loadCachedIds();
+    return () => {
+      this.cachedIdsListeners.delete(listener);
+    };
+  }
+
+  private async loadCachedIds(): Promise<void> {
+    this.cachedIdsState = "loading";
+    const epoch = this.cachedIdsEpoch;
+    const ids = await linerDb.listAudioIds().catch(() => [] as string[]);
+    if (this.cachedIdsState !== "loading") return;
+    if (epoch !== this.cachedIdsEpoch) {
+      void this.loadCachedIds();
+      return;
+    }
+    this.cachedIds = new Set(ids);
+    this.cachedIdsState = "ready";
+    this.notifyCachedIds();
+  }
+
+  private markCached(trackId: string, cached: boolean): void {
+    this.cachedIdsEpoch += 1;
+    if (cached === this.cachedIds.has(trackId)) return;
+    if (cached) this.cachedIds.add(trackId);
+    else this.cachedIds.delete(trackId);
+    this.notifyCachedIds();
+  }
+
+  private notifyCachedIds(): void {
+    for (const listener of this.cachedIdsListeners) listener();
   }
 
   getLimitBytes(): number {
@@ -94,6 +140,7 @@ class AudioCache {
     if (generation !== undefined && generation !== this.generation)
       return false;
     await linerDb.putAudio(trackId, blob, mimeType);
+    this.markCached(trackId, true);
     await this.enforceCacheLimit();
     return true;
   }
@@ -119,6 +166,7 @@ class AudioCache {
   async deleteAudio(trackId: string): Promise<void> {
     this.revokeTrackUrl(trackId);
     await linerDb.deleteAudio(trackId);
+    this.markCached(trackId, false);
   }
 
   revokeTrackUrl(trackId: string): void {

@@ -65,6 +65,8 @@
     "play_all": "Tümünü çal",
     "add_to_queue": "Sıraya ekle",
     "remove_from_queue": "Sıradan kaldır",
+    "remove_from_cache": "Önbellekten kaldır",
+    "removed_from_cache": "Önbellekten kaldırıldı",
     "removed_from_queue": "Sıradan kaldırıldı",
     "undo": "Geri al",
     "shuffle": "Karıştır",

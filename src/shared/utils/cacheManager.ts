@@ -1,6 +1,7 @@
 import { linerDb } from "@/shared/storage/linerDb";
 import { useLocalLibraryStore } from "@/features/library/local/store/localLibraryStore";
 import { useSavedTracksStore } from "@/features/library/saved/store/savedTracksStore";
+import { useCachedTracksStore } from "@/features/library/cached/store/cachedTracksStore";
 import {
   audioCache,
   DEFAULT_AUDIO_CACHE_LIMIT_BYTES,
@@ -546,6 +547,13 @@ export async function clearStorageCategories(
   }
 }
 
+export async function removeTrackFromCache(trackId: string): Promise<void> {
+  await useCachedTracksStore.getState().remove(trackId);
+  lyricsCache.delete(trackId);
+  await linerDb.deleteLyrics(trackId);
+  await refreshStorageAnalytics(true).catch(() => null);
+}
+
 export async function openCacheFolder(): Promise<boolean> {
   if (typeof window !== "undefined" && window.linerElectron?.openCacheFolder) {
     return window.linerElectron.openCacheFolder();
@@ -596,6 +604,16 @@ function writePersistedAnalytics(data: StorageAnalytics): void {
 
 let cachedStorageAnalytics: StorageAnalytics | null = readPersistedAnalytics();
 let inflightAnalytics: Promise<StorageAnalytics> | null = null;
+const analyticsListeners = new Set<(data: StorageAnalytics) => void>();
+
+export function subscribeStorageAnalytics(
+  listener: (data: StorageAnalytics) => void,
+): () => void {
+  analyticsListeners.add(listener);
+  return () => {
+    analyticsListeners.delete(listener);
+  };
+}
 
 export function forgetStorageAnalytics(): void {
   cachedStorageAnalytics = null;
@@ -624,6 +642,7 @@ export async function refreshStorageAnalytics(
     const data = await request;
     cachedStorageAnalytics = data;
     writePersistedAnalytics(data);
+    for (const listener of analyticsListeners) listener(data);
     return data;
   } finally {
     if (inflightAnalytics === request) {

@@ -13,6 +13,7 @@ import cleanDuckAnimationData from "@/assets/animations/clean_duck.json";
 import {
   getCachedStorageAnalytics,
   refreshStorageAnalytics,
+  subscribeStorageAnalytics,
   clearStorageCategories,
   openCacheFolder,
   formatStorageBytes,
@@ -139,6 +140,8 @@ export function StorageTab({ searchQuery }: { searchQuery?: string }) {
     await setAudioCacheLimitBytes(newLimit);
     await refresh();
   };
+
+  useEffect(() => subscribeStorageAnalytics(setAnalytics), []);
 
   useEffect(() => {
     if (!getCachedStorageAnalytics()) return;
