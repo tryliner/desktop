@@ -1,9 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/shared/lib";
 import { SMOOTH_EASE as EASE } from "@/shared/hooks/useTweenedNumber";
 
 const DISARM_AFTER_MS = 3000;
+const HOVER_INTENT_MS = 140;
+const HOVER_INTENT_DRIFT_PX = 3;
 
 type Mode = "idle" | "hover" | "armed";
 
@@ -41,6 +43,25 @@ export default function ConfirmPill({
   const [hovered, setHovered] = useState(false);
   const [armed, setArmed] = useState(false);
 
+  const intentTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastPoint = useRef({ x: 0, y: 0 });
+
+  const cancelIntent = () => {
+    if (intentTimer.current) clearTimeout(intentTimer.current);
+    intentTimer.current = null;
+  };
+
+  const awaitIntent = (x: number, y: number) => {
+    lastPoint.current = { x, y };
+    cancelIntent();
+    intentTimer.current = setTimeout(() => {
+      intentTimer.current = null;
+      setHovered(true);
+    }, HOVER_INTENT_MS);
+  };
+
+  useEffect(() => cancelIntent, []);
+
   useEffect(() => {
     if (!armed) return;
     const timer = setTimeout(() => setArmed(false), DISARM_AFTER_MS);
@@ -65,12 +86,25 @@ export default function ConfirmPill({
       type="button"
       disabled={disabled}
       aria-label={disabled ? label : armed ? confirmLabel : actionLabel}
-      onPointerEnter={() => setHovered(true)}
+      onPointerEnter={(event) => awaitIntent(event.clientX, event.clientY)}
+      onPointerMove={(event) => {
+        if (hovered) return;
+        const drift = Math.hypot(
+          event.clientX - lastPoint.current.x,
+          event.clientY - lastPoint.current.y,
+        );
+        if (drift > HOVER_INTENT_DRIFT_PX) {
+          awaitIntent(event.clientX, event.clientY);
+        }
+      }}
       onPointerLeave={() => {
+        cancelIntent();
         setHovered(false);
         setArmed(false);
       }}
       onClick={() => {
+        cancelIntent();
+        setHovered(true);
         if (!armed) {
           setArmed(true);
           return;
