@@ -6,8 +6,9 @@ import {
 import { handleTrusted, onTrusted } from "./ipc-guard.js";
 import { IS_STAGING } from "./channel.js";
 
-const SHARE_BASE_URL = IS_STAGING
-  ? "https://staging.tryliner.fun/link"
+const SHARE_BASE_URL =
+  IS_STAGING || process.env.VITE_API_URL?.includes("staging.tryliner.fun")
+    ? "https://staging.tryliner.fun/link"
   : "https://link.tryliner.fun";
 
 const ARRPC_USERNAME = "arrpc";
