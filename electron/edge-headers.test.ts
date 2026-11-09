@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { isEdgeUrl, setEdgeKey, withEdgeHeaders } from "./edge-headers";
+import {
+  isEdgeUrl,
+  rememberOrigin,
+  setEdgeKey,
+  takeOrigin,
+  withEdgeHeaders,
+} from "./edge-headers";
 
 const KEY = "k".repeat(32);
 
@@ -49,5 +55,13 @@ describe("edge headers", () => {
     setEdgeKey(KEY);
     setEdgeKey(null);
     expect(withEdgeHeaders({})["x-liner-edge"]).toBeUndefined();
+  });
+
+  it("hands back the origin of a request once", () => {
+    rememberOrigin(7, { Origin: "http://localhost:5173" });
+    rememberOrigin(8, { Accept: "*/*" });
+    expect(takeOrigin(7)).toBe("http://localhost:5173");
+    expect(takeOrigin(7)).toBeUndefined();
+    expect(takeOrigin(8)).toBeUndefined();
   });
 });

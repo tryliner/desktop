@@ -20,6 +20,28 @@ export interface EdgeState {
 
 const state: EdgeState = { key: null, clearance: null };
 
+const MAX_TRACKED_ORIGINS = 512;
+const requestOrigins = new Map<number, string>();
+
+export function rememberOrigin(
+  id: number,
+  headers: Record<string, string>,
+): void {
+  const name = headerName(headers, "origin");
+  if (!name) return;
+  if (requestOrigins.size >= MAX_TRACKED_ORIGINS) {
+    const oldest = requestOrigins.keys().next().value;
+    if (oldest !== undefined) requestOrigins.delete(oldest);
+  }
+  requestOrigins.set(id, headers[name]);
+}
+
+export function takeOrigin(id: number): string | undefined {
+  const origin = requestOrigins.get(id);
+  requestOrigins.delete(id);
+  return origin;
+}
+
 export function isEdgeUrl(url: string): boolean {
   try {
     const { protocol, hostname } = new URL(url);

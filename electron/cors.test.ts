@@ -51,6 +51,32 @@ describe("withOpenCors", () => {
   });
 });
 
+describe("withOpenCors on an edge refusal", () => {
+  it("answers a credentialed call with its own origin so the app can read the challenge", () => {
+    const { responseHeaders } = withOpenCors(
+      { "cf-mitigated": ["challenge"], "access-control-allow-origin": ["*"] },
+      "GET",
+      true,
+      "http://localhost:5173",
+    );
+    expect(responseHeaders["access-control-allow-origin"]).toEqual([
+      "http://localhost:5173",
+    ]);
+    expect(responseHeaders["access-control-allow-credentials"]).toEqual([
+      "true",
+    ]);
+    expect(responseHeaders["access-control-expose-headers"]![0]).toContain(
+      "cf-mitigated",
+    );
+    expect(responseHeaders["cf-mitigated"]).toEqual(["challenge"]);
+  });
+
+  it("opens cors as before without an origin", () => {
+    const { responseHeaders } = withOpenCors({}, "GET", true);
+    expect(responseHeaders["access-control-allow-origin"]).toEqual(["*"]);
+  });
+});
+
 describe("keepsOwnCors", () => {
   it("keeps cors only for liner hosts and the dev loopback", () => {
     expect(keepsOwnCors("https://api.tryliner.fun/v1/auth/login")).toBe(true);

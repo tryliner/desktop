@@ -61,7 +61,9 @@ import { IS_STAGING, useChannelData } from "./channel.js";
 import {
   EDGE_REQUEST_URLS,
   isEdgeUrl,
+  rememberOrigin,
   setEdgeKey,
+  takeOrigin,
   watchClearance,
   withEdgeHeaders,
 } from "./edge-headers.js";
@@ -841,6 +843,7 @@ if (!gotTheLock) {
       },
       (details, callback) => {
         if (isEdgeUrl(details.url)) {
+          rememberOrigin(details.id, details.requestHeaders);
           callback({ requestHeaders: withEdgeHeaders(details.requestHeaders) });
           return;
         }
@@ -878,6 +881,7 @@ if (!gotTheLock) {
             details.responseHeaders,
             details.method,
             keepsOwnCors(details.url, !app.isPackaged),
+            isEdgeUrl(details.url) ? takeOrigin(details.id) : undefined,
           )
         : {};
       const statusLine = simulatedResponseStatus(details.url, details.method);

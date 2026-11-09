@@ -84,16 +84,36 @@ function allowsCredentials(headers: ResponseHeaders | undefined): boolean {
   );
 }
 
+const EDGE_EXPOSED_HEADERS = [
+  "cf-mitigated",
+  "x-edge-emulator",
+  "retry-after",
+  "date",
+  "x-request-id",
+  "x-instance",
+  "x-liner-instance",
+];
+
 export function withOpenCors(
   headers: ResponseHeaders | undefined,
   method: string,
   ownCors = false,
+  origin?: string,
 ): CorsResponse {
   if (ownCors && headers && allowsCredentials(headers))
     return { responseHeaders: headers };
   const responseHeaders: ResponseHeaders = {};
   for (const [name, value] of Object.entries(headers ?? {})) {
     if (!CORS_HEADERS.has(name.toLowerCase())) responseHeaders[name] = value;
+  }
+  if (ownCors && origin && method !== "OPTIONS") {
+    responseHeaders["access-control-allow-origin"] = [origin];
+    responseHeaders["access-control-allow-credentials"] = ["true"];
+    responseHeaders["access-control-expose-headers"] = [
+      EDGE_EXPOSED_HEADERS.join(", "),
+    ];
+    responseHeaders["vary"] = ["Origin"];
+    return { responseHeaders };
   }
   responseHeaders["access-control-allow-origin"] = ["*"];
   responseHeaders["access-control-allow-headers"] = ["*, authorization"];
