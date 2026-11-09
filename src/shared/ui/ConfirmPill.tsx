@@ -29,7 +29,7 @@ export interface ConfirmPillProps {
 /**
  * Two-step destructive action in one pill: hover names the action, the first
  * click arms it, the second confirms. Disarms by itself after 3s or when the
- * pointer leaves. The width and the label morph between steps.
+ * pointer leaves.
  */
 export default function ConfirmPill({
   label,
@@ -58,14 +58,23 @@ export default function ConfirmPill({
   const shown =
     mode === "armed" ? confirmLabel : mode === "hover" ? actionLabel : label;
 
-  const measureRef = useRef<HTMLSpanElement>(null);
+  const labelRef = useRef<HTMLSpanElement>(null);
+  const actionRef = useRef<HTMLSpanElement>(null);
+  const confirmRef = useRef<HTMLSpanElement>(null);
   const [width, setWidth] = useState<number | null>(null);
 
   useLayoutEffect(() => {
-    if (measureRef.current) {
-      setWidth(Math.ceil(measureRef.current.offsetWidth) + PADDING_X);
-    }
-  }, [shown]);
+    const measure = (node: HTMLSpanElement | null) =>
+      node ? Math.ceil(node.offsetWidth) : 0;
+    const rest = Math.max(
+      measure(labelRef.current),
+      measure(actionRef.current),
+    );
+    const next =
+      (mode === "armed" ? Math.max(rest, measure(confirmRef.current)) : rest) +
+      PADDING_X;
+    setWidth((current) => (current === next ? current : next));
+  }, [label, actionLabel, confirmLabel, mode]);
 
   return (
     <motion.button
@@ -73,14 +82,7 @@ export default function ConfirmPill({
       disabled={disabled}
       aria-label={disabled ? label : armed ? confirmLabel : actionLabel}
       onPointerEnter={() => setHovered(true)}
-      onPointerLeave={(event) => {
-        const rect = event.currentTarget.getBoundingClientRect();
-        const stillInside =
-          event.clientX >= rect.left &&
-          event.clientX <= rect.right &&
-          event.clientY >= rect.top &&
-          event.clientY <= rect.bottom;
-        if (stillInside) return;
+      onPointerLeave={() => {
         setHovered(false);
         setArmed(false);
       }}
@@ -102,13 +104,22 @@ export default function ConfirmPill({
         className,
       )}
     >
-      <span
-        ref={measureRef}
-        aria-hidden
-        className="pointer-events-none invisible absolute whitespace-nowrap"
-      >
-        {shown}
-      </span>
+      {(
+        [
+          [labelRef, label],
+          [actionRef, actionLabel],
+          [confirmRef, confirmLabel],
+        ] as const
+      ).map(([ref, text], index) => (
+        <span
+          key={index}
+          ref={ref}
+          aria-hidden
+          className="pointer-events-none invisible absolute whitespace-nowrap"
+        >
+          {text}
+        </span>
+      ))}
       <AnimatePresence mode="popLayout" initial={false}>
         <motion.span
           key={mode}
