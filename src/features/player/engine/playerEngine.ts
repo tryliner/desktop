@@ -1446,8 +1446,9 @@ class PlayerEngine {
               candidate,
             });
             if (
-              !bestCandidate ||
-              isBetterLyricsCandidate(candidate, bestCandidate)
+              shouldCacheLyricsCandidate(candidate) &&
+              (!bestCandidate ||
+                isBetterLyricsCandidate(candidate, bestCandidate))
             ) {
               bestCandidate = candidate;
             }
@@ -1698,8 +1699,9 @@ class PlayerEngine {
           }
 
           if (
-            !bestCandidate ||
-            isBetterLyricsCandidate(candidate, bestCandidate)
+            shouldCacheLyricsCandidate(candidate) &&
+            (!bestCandidate ||
+              isBetterLyricsCandidate(candidate, bestCandidate))
           ) {
             bestCandidate = candidate;
 

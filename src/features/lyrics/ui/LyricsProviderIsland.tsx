@@ -103,7 +103,8 @@ export function LyricsProviderIsland() {
         (l) => (l.startTimeMs ?? 0) === 0 && (l.durationMs ?? 0) === 0,
       ));
 
-  if (availableProviders.length === 0 || braccatoLyrics.length === 0) {
+  const minProviders = braccatoLyrics.length > 0 ? 1 : 2;
+  if (availableProviders.length < minProviders) {
     return null;
   }
 
