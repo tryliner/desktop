@@ -100,20 +100,27 @@ export function withOpenCors(
   ownCors = false,
   origin?: string,
 ): CorsResponse {
+  if (ownCors && origin && method !== "OPTIONS") {
+    const responseHeaders: ResponseHeaders = {};
+    const exposed = new Set(EDGE_EXPOSED_HEADERS);
+    for (const [name, value] of Object.entries(headers ?? {})) {
+      const lower = name.toLowerCase();
+      if (lower === "access-control-expose-headers") {
+        for (const entry of value.join(",").split(",")) {
+          if (entry.trim()) exposed.add(entry.trim().toLowerCase());
+        }
+      } else if (!CORS_HEADERS.has(lower)) responseHeaders[name] = value;
+    }
+    responseHeaders["access-control-allow-origin"] = [origin];
+    responseHeaders["access-control-allow-credentials"] = ["true"];
+    responseHeaders["access-control-expose-headers"] = [[...exposed].join(", ")];
+    return { responseHeaders };
+  }
   if (ownCors && headers && allowsCredentials(headers))
     return { responseHeaders: headers };
   const responseHeaders: ResponseHeaders = {};
   for (const [name, value] of Object.entries(headers ?? {})) {
     if (!CORS_HEADERS.has(name.toLowerCase())) responseHeaders[name] = value;
-  }
-  if (ownCors && origin && method !== "OPTIONS") {
-    responseHeaders["access-control-allow-origin"] = [origin];
-    responseHeaders["access-control-allow-credentials"] = ["true"];
-    responseHeaders["access-control-expose-headers"] = [
-      EDGE_EXPOSED_HEADERS.join(", "),
-    ];
-    responseHeaders["vary"] = ["Origin"];
-    return { responseHeaders };
   }
   responseHeaders["access-control-allow-origin"] = ["*"];
   responseHeaders["access-control-allow-headers"] = ["*, authorization"];

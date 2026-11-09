@@ -944,7 +944,10 @@ if (!gotTheLock) {
             details.method,
             keepsOwnCors(details.url, !app.isPackaged),
             isEdgeUrl(details.url)
-              ? takeOrigin(details.id, details.referrer)
+              ? takeOrigin(
+                  details.id,
+                  details.referrer || details.webContents?.getURL(),
+                )
               : undefined,
           )
         : {};

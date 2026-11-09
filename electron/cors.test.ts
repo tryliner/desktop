@@ -71,6 +71,25 @@ describe("withOpenCors on an edge refusal", () => {
     expect(responseHeaders["cf-mitigated"]).toEqual(["challenge"]);
   });
 
+  it("fixes a public answer's wildcard for the app's credentialed call and keeps its exposed headers", () => {
+    const { responseHeaders } = withOpenCors(
+      {
+        "access-control-allow-origin": ["*"],
+        "access-control-allow-credentials": ["true"],
+        "access-control-expose-headers": ["x-request-id, etag"],
+      },
+      "GET",
+      true,
+      "http://localhost:5173",
+    );
+    expect(responseHeaders["access-control-allow-origin"]).toEqual([
+      "http://localhost:5173",
+    ]);
+    const exposed = responseHeaders["access-control-expose-headers"]![0];
+    expect(exposed).toContain("etag");
+    expect(exposed).toContain("cf-mitigated");
+  });
+
   it("opens cors as before without an origin", () => {
     const { responseHeaders } = withOpenCors({}, "GET", true);
     expect(responseHeaders["access-control-allow-origin"]).toEqual(["*"]);
