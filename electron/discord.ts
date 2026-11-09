@@ -4,6 +4,11 @@ import {
   type SetActivity,
 } from "@xhayper/discord-rpc";
 import { handleTrusted, onTrusted } from "./ipc-guard.js";
+import { IS_STAGING } from "./channel.js";
+
+const SHARE_BASE_URL = IS_STAGING
+  ? "https://staging.tryliner.fun/link"
+  : "https://link.tryliner.fun";
 
 const ARRPC_USERNAME = "arrpc";
 
@@ -420,7 +425,7 @@ export class DiscordRpcManager {
       if (this.settings.showButton && track.id) {
         buttons.push({
           label: "Listen on Liner",
-          url: `https://link.tryliner.fun/track?id=${encodeURIComponent(track.id)}`,
+          url: `${SHARE_BASE_URL}/track?id=${encodeURIComponent(track.id)}`,
         });
       }
 
