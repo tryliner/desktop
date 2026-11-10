@@ -19,7 +19,7 @@ import {
   EntityHero,
   HERO_TITLE_CLASS,
   HERO_SUBTITLE_CLASS,
-  HERO_CHIP_CLASS,
+  HeroMeta,
   HERO_BUTTON_CLASS,
   HERO_GLASS_BUTTON_CLASS,
   HERO_GLASS_CLASS,
@@ -36,10 +36,8 @@ import {
   PlayFill,
   More1Fill,
   PlaylistFill,
-  MusicLine,
   CheckLine,
   ShareForwardLine,
-  DownloadLine,
 } from "@mingcute/react";
 import { AnimatePresence, motion } from "framer-motion";
 import { LuPencil, LuTrash2, LuText, LuShuffle } from "react-icons/lu";
@@ -722,55 +720,36 @@ function LibraryPlaylistContent() {
                     )
                   }
                   meta={
-                    <div className="flex items-center flex-wrap gap-[6px]">
-                      <div className={HERO_CHIP_CLASS}>
-                        <MusicLine
-                          size={13}
-                          className="text-text-secondary shrink-0"
-                        />
-                        <span>{viewData.countLabel}</span>
-                        <span
-                          className="w-[3px] h-[3px] rounded-full shrink-0 bg-text-secondary/50"
-                          aria-hidden
-                        />
-                        <span>
-                          {(() => {
-                            const totalMs =
-                              viewData.durationMs ??
-                              viewData.tracks.reduce(
-                                (acc, t) => acc + (t.durationMs || 0),
-                                0,
-                              );
-                            const totalMins = Math.floor(totalMs / 60000);
-                            if (totalMins > 60) {
-                              return `${Math.floor(totalMins / 60)} ${t("playlist.hr")} ${totalMins % 60} ${t("playlist.min")}`;
-                            }
-                            const totalSecs = Math.floor(
-                              (totalMs % 60000) / 1000,
+                    <HeroMeta
+                      items={[
+                        viewData.countLabel,
+                        (() => {
+                          const totalMs =
+                            viewData.durationMs ??
+                            viewData.tracks.reduce(
+                              (acc, t) => acc + (t.durationMs || 0),
+                              0,
                             );
-                            return `${totalMins} ${t("playlist.min")} ${totalSecs} ${t("playlist.sec")}`;
-                          })()}
-                        </span>
-                      </div>
-                      {isLikesMode &&
-                      saveLikedEnabled &&
-                      viewData.tracks.length > 0 ? (
-                        <div className={HERO_CHIP_CLASS}>
-                          <DownloadLine
-                            size={13}
-                            className="text-text-secondary shrink-0"
-                          />
-                          <span>
-                            {t("library.saved_count", {
-                              saved: viewData.tracks.filter((track) =>
-                                isSavedTrack(track.id),
-                              ).length,
-                              total: viewData.tracks.length,
-                            })}
-                          </span>
-                        </div>
-                      ) : null}
-                    </div>
+                          const totalMins = Math.floor(totalMs / 60000);
+                          if (totalMins > 60) {
+                            return `${Math.floor(totalMins / 60)} ${t("playlist.hr")} ${totalMins % 60} ${t("playlist.min")}`;
+                          }
+                          const totalSecs = Math.floor(
+                            (totalMs % 60000) / 1000,
+                          );
+                          return `${totalMins} ${t("playlist.min")} ${totalSecs} ${t("playlist.sec")}`;
+                        })(),
+                        isLikesMode &&
+                          saveLikedEnabled &&
+                          viewData.tracks.length > 0 &&
+                          t("library.saved_count", {
+                            saved: viewData.tracks.filter((track) =>
+                              isSavedTrack(track.id),
+                            ).length,
+                            total: viewData.tracks.length,
+                          }),
+                      ]}
+                    />
                   }
                   actions={
                     <>

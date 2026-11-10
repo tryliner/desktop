@@ -8,7 +8,7 @@ import cachedSongsCover from "@/assets/cached-songs-cover.svg";
 import {
   EntityHero,
   HERO_BUTTON_CLASS,
-  HERO_CHIP_CLASS,
+  HeroMeta,
   HERO_GLASS_BUTTON_CLASS,
   HERO_GLASS_CLASS,
   HeroSubtitle,
@@ -108,18 +108,12 @@ export default function CachedTracksPage() {
             }
             subtitle={<HeroSubtitle text={t("library.cached.subtitle")} />}
             meta={
-              <div className={HERO_CHIP_CLASS}>
-                <span>{t("common.songs", { count: tracks.length })}</span>
-                {!empty && (
-                  <>
-                    <span
-                      className="h-[3px] w-[3px] shrink-0 rounded-full bg-text-secondary/50"
-                      aria-hidden
-                    />
-                    <span>{formatStorageBytes(totalBytes)}</span>
-                  </>
-                )}
-              </div>
+              <HeroMeta
+                items={[
+                  t("common.songs", { count: tracks.length }),
+                  !empty && formatStorageBytes(totalBytes),
+                ]}
+              />
             }
             actions={
               <>

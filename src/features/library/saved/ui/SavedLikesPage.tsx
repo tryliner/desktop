@@ -18,7 +18,7 @@ import type { Track } from "@/shared/types";
 import {
   EntityHero,
   HERO_BUTTON_CLASS,
-  HERO_CHIP_CLASS,
+  HeroMeta,
   HERO_GLASS_BUTTON_CLASS,
   HERO_GLASS_CLASS,
   HeroSubtitle,
@@ -207,9 +207,7 @@ export function SavedTracksView({
             title={<h1 className={HERO_TITLE_CLASS}>{title}</h1>}
             subtitle={<HeroSubtitle text={subtitle} />}
             meta={
-              <div className={HERO_CHIP_CLASS}>
-                <span>{t("common.songs", { count: tracks.length })}</span>
-              </div>
+              <HeroMeta items={[t("common.songs", { count: tracks.length })]} />
             }
             actions={
               <>
