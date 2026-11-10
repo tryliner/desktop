@@ -82,7 +82,7 @@ export default function UsageOverview({
   return (
     <div
       className="flex flex-col px-[2px] pt-[4px]"
-      style={{ fontFamily: "var(--font-inter), sans-serif" }}
+      style={{ fontFamily: "var(--font-sf)" }}
     >
       <div className="flex items-baseline justify-between gap-4">
         <div className="flex items-baseline gap-[5px]">

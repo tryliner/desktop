@@ -7,6 +7,17 @@
 @import "@fontsource/rubik-broken-fax";
 @import "@fontsource/comic-neue/400.css";
 
+/* SF Pro variable cut to Latin, Cyrillic and punctuation, width pinned to
+   100; weight 1-1000 and optical size 17-28 stay, so text sizes get the Text
+   design and large headings the Display one, as on macOS */
+@font-face {
+  font-family: "SF Pro";
+  src: url("../assets/fonts/SF-Pro.woff2") format("woff2");
+  font-weight: 1 1000;
+  font-style: normal;
+  font-display: swap;
+}
+
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *, .dark, .dark *));
 
 :root {
@@ -233,7 +244,7 @@
   --text-title: 15px;
   --text-heading: 18px;
 
-  --font-sans: var(--font-inter);
+  --font-sans: var(--font-sf);
   --font-mono: var(--font-geist-mono);
   --font-montserrat: var(--font-montserrat-family);
   --font-medeo-pixel: "Medeo Pixel", "Pixelify Sans Variable", monospace;
@@ -245,7 +256,7 @@
 }
 
 .font-roboto-flex-heading {
-  font-family: var(--font-inter), sans-serif;
+  font-family: var(--font-sf);
   font-weight: 700;
 }
 
@@ -258,6 +269,10 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  font-optical-sizing: auto;
+  font-kerning: normal;
+  /* no faux bold or italic when a weight is missing */
+  font-synthesis: none;
 }
 
 /* Hide scrollbar for Chrome, Safari and Opera */

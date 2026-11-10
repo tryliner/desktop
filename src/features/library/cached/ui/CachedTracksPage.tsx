@@ -31,7 +31,7 @@ import CachedSongsCover from "./CachedSongsCover";
 import CachedTrackList from "./CachedTrackList";
 
 const PAGE_KEY = "cached";
-const INTER = { fontFamily: "var(--font-inter), sans-serif" };
+const SANS_FONT = { fontFamily: "var(--font-sf)" };
 
 export default function CachedTracksPage() {
   const { t } = useTranslation();
@@ -174,7 +174,7 @@ export default function CachedTracksPage() {
           {!loaded ? null : empty ? (
             <div
               className="flex min-h-[50vh] flex-col items-center justify-center gap-[14px] text-center"
-              style={INTER}
+              style={SANS_FONT}
             >
               <Refresh2Line size={40} className="text-border-alpha-33" />
               <div className="flex flex-col gap-[4px]">

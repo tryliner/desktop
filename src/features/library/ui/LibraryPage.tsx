@@ -508,13 +508,13 @@ function OfflineLibraryPage() {
         <div className="px-[12px] pt-[36px] pb-[10px]">
           <h1
             className="text-[26px] font-bold text-text-primary tracking-tight m-0 leading-tight"
-            style={{ fontFamily: "var(--font-inter), sans-serif" }}
+            style={{ fontFamily: "var(--font-sf)" }}
           >
             {t("library.title")}
           </h1>
           <div
             className="mt-[10px] flex flex-wrap items-center gap-[10px] text-body text-text-secondary"
-            style={{ fontFamily: "var(--font-inter), sans-serif" }}
+            style={{ fontFamily: "var(--font-sf)" }}
           >
             <span className="flex items-center gap-[8px]">
               <WifiOffLine size={15} className="text-text-tertiary" />
