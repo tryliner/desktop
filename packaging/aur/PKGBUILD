@@ -1,0 +1,42 @@
+# Maintainer: hkamori <dev@tryliner.fun>
+#
+# repackages the liner-<version>-x86_64.pkg.tar.zst attached to each github
+# release. bump with ./update.sh <version>, never by hand.
+pkgname=liner-bin
+_pkgname=liner
+pkgver=0.2.12
+pkgrel=1
+pkgdesc="Liner Music Player"
+arch=('x86_64')
+url="https://github.com/tryliner/desktop"
+license=('LicenseRef-Liner')
+depends=('gtk3' 'nss' 'alsa-lib' 'libnotify' 'libxss' 'libxtst' 'libsecret'
+         'at-spi2-core' 'util-linux-libs' 'xdg-utils' 'hicolor-icon-theme')
+provides=("${_pkgname}")
+conflicts=("${_pkgname}")
+options=('!strip' '!debug')
+source=("${_pkgname}-${pkgver}-x86_64.pkg.tar.zst::${url}/releases/download/v${pkgver}/${_pkgname}-${pkgver}-x86_64.pkg.tar.zst"
+        "LICENSE-${pkgver}::https://raw.githubusercontent.com/tryliner/desktop/v${pkgver}/LICENSE")
+noextract=("${_pkgname}-${pkgver}-x86_64.pkg.tar.zst")
+sha256sums=('SKIP'
+            'SKIP')
+
+prepare() {
+  mkdir -p root
+  bsdtar -xf "${_pkgname}-${pkgver}-x86_64.pkg.tar.zst" -C root --exclude '.*'
+}
+
+package() {
+  cp -a root/opt root/usr "${pkgdir}/"
+
+  # updates come from the aur: without package-type electron-updater
+  # falls back to its AppImage updater, which stays idle outside an AppImage
+  rm -f "${pkgdir}/opt/Liner/resources/package-type"
+
+  # what the upstream post-install hook does
+  install -dm755 "${pkgdir}/usr/bin"
+  ln -sf /opt/Liner/liner "${pkgdir}/usr/bin/liner"
+  chmod 4755 "${pkgdir}/opt/Liner/chrome-sandbox"
+
+  install -Dm644 "LICENSE-${pkgver}" "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+}

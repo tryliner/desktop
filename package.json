@@ -64,13 +64,31 @@
       "icon": "build/icons",
       "target": [
         "AppImage",
-        "deb"
+        "deb",
+        "pacman"
       ],
       "category": "Audio"
     },
     "deb": {
       "packageName": "liner",
       "artifactName": "liner_${version}_${arch}.${ext}"
+    },
+    "pacman": {
+      "packageName": "liner",
+      "artifactName": "liner-${version}-x86_64.pkg.tar.zst",
+      "compression": "zstd",
+      "depends": [
+        "gtk3",
+        "nss",
+        "alsa-lib",
+        "libnotify",
+        "libxss",
+        "libxtst",
+        "libsecret",
+        "at-spi2-core",
+        "util-linux-libs",
+        "xdg-utils"
+      ]
     },
     "appImage": {
       "artifactName": "Liner-${version}.${ext}"
