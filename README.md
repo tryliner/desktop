@@ -116,7 +116,7 @@ pnpm check
 ## Building
 
 ```bash
-# Linux (AppImage & .deb)
+# Linux (AppImage, .deb & Arch .pkg.tar.zst)
 pnpm electron:build:linux
 
 # Windows (.exe installer)
@@ -125,6 +125,8 @@ pnpm electron:build:win
 # macOS (.dmg & .zip, for both Intel and Apple Silicon)
 pnpm electron:build:mac
 ```
+
+On Arch, install the release package with `sudo pacman -U liner-<version>-x86_64.pkg.tar.zst`. The AUR recipe lives in [`packaging/aur`](./packaging/aur). Building the pacman package on a non-Arch host needs `bsdtar` (`libarchive-tools` on Debian/Ubuntu).
 
 The macOS build produces `x64` (Intel) and `arm64` (Apple Silicon) packages. To build only one, add `--arm64` or `--x64`. Packages are placed in the `release/` directory.
 

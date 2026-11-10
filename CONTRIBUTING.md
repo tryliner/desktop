@@ -62,7 +62,7 @@ Packaging is optional. You only need it when the change is in the installer or t
 
 ```bash
 pnpm electron:build:win    # Windows installer
-pnpm electron:build:linux  # AppImage and deb
+pnpm electron:build:linux  # AppImage, deb and pacman (.pkg.tar.zst)
 pnpm electron:build:mac    # dmg and zip
 ```
 

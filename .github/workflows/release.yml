@@ -31,7 +31,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build Linux packages (AppImage & deb)
+      # fpm needs bsdtar for the pacman .MTREE and zstd for the .pkg.tar.zst
+      - name: Install pacman packaging tools
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libarchive-tools zstd
+
+      - name: Build Linux packages (AppImage, deb & pacman)
         run: pnpm run electron:build:linux
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -45,6 +49,7 @@ jobs:
           path: |
             release/*.AppImage
             release/*.deb
+            release/*.pkg.tar.zst
           if-no-files-found: error
 
   build-windows:
@@ -147,7 +152,7 @@ jobs:
       - name: Write checksums
         run: |
           cd artifacts
-          sha256sum */*.AppImage */*.deb */*.exe */*.dmg */*.zip 2>/dev/null | sed 's#  [^/]*/#  #' > SHA256SUMS.txt
+          sha256sum */*.AppImage */*.deb */*.pkg.tar.zst */*.exe */*.dmg */*.zip 2>/dev/null | sed 's#  [^/]*/#  #' > SHA256SUMS.txt
           cat SHA256SUMS.txt
 
       - name: Publish to GitHub Release
@@ -157,6 +162,7 @@ jobs:
           files: |
             artifacts/linux-packages/*.AppImage
             artifacts/linux-packages/*.deb
+            artifacts/linux-packages/*.pkg.tar.zst
             artifacts/windows-installer/*.exe
             artifacts/macos-packages/*.dmg
             artifacts/macos-packages/*.zip
