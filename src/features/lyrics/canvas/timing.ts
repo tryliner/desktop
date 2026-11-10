@@ -93,7 +93,10 @@ export function isLineAnimating(
   timeMs: number,
   now: number,
 ) {
-  if (timeMs >= lineExitMs(line)) return isExiting(line, timeMs, now);
+  // asked before the exit check too, so a replayed line forgets its old exit
+  // and fades out again instead of dropping its highlight at once
+  const exiting = isExiting(line, timeMs, now);
+  if (timeMs >= lineExitMs(line)) return exiting;
   if (!isLineSelected(line, timeMs)) return false;
   if (line.instrumental) return true;
   return line.tokens.some(

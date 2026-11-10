@@ -3,6 +3,9 @@ import type { LyricLineModel } from "./types";
 
 const FADE_OUT_MS = 500;
 const LINE_END_PAD_MS = 50;
+// the media clock steps back a little when it re-anchors; only a bigger jump
+// back (a seek or a replay) starts the line over
+const REWIND_MS = 200;
 const seenAt = new WeakMap<LyricLineModel, number>();
 
 export function lineExitMs(line: LyricLineModel): number {
@@ -16,7 +19,7 @@ export function exitElapsedMs(
 ): number | null {
   const exit = lineExitMs(line);
   if (timeMs < exit) {
-    seenAt.delete(line);
+    if (timeMs < exit - REWIND_MS) seenAt.delete(line);
     return null;
   }
   const mediaElapsed = timeMs - exit;
