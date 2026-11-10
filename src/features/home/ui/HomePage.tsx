@@ -78,7 +78,9 @@ function HomeFeed({ onRetry }: { onRetry: () => void }) {
   }, [isReady, skeletonExited]);
 
   return (
-    <div className="relative h-full w-full overflow-y-auto overflow-x-hidden bg-transparent pt-(--page-inset-top) pb-(--page-inset-bottom)">
+    // the header only sits on the right now, so the feed starts at the top:
+    // the 36px "Your Mixes" row is centred on the sidebar logo (16px + 23px / 2)
+    <div className="relative h-full w-full overflow-y-auto overflow-x-hidden bg-transparent pt-[10px] pb-(--page-inset-bottom)">
       <div className="relative z-1 grid grid-cols-1 items-start w-full">
         {isReady && nothingLoaded && (
           <div className="col-start-1 row-start-1 flex min-h-[60vh] w-full flex-col items-center justify-center gap-[6px] px-[24px] text-center">
