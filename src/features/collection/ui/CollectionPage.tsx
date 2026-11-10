@@ -15,7 +15,6 @@ import {
   FolderCheckFill,
   ShareForwardLine,
   PlaylistFill,
-  MusicLine,
   CheckLine,
   More1Fill,
 } from "@mingcute/react";
@@ -34,7 +33,7 @@ import {
   HERO_TITLE_CLASS,
   HERO_SUBTITLE_CLASS,
   HeroSubtitle,
-  HERO_CHIP_CLASS,
+  HeroMeta,
   HERO_BUTTON_CLASS,
   HERO_GLASS_BUTTON_CLASS,
   HERO_GLASS_CLASS,
@@ -361,43 +360,26 @@ function CollectionContent() {
                     ) : undefined
                   }
                   meta={
-                    <div className="flex items-center flex-wrap gap-[6px]">
-                      {data.year && (
-                        <div className={HERO_CHIP_CLASS}>
-                          <span>{data.year}</span>
-                        </div>
-                      )}
-
-                      <div className={HERO_CHIP_CLASS}>
-                        <MusicLine
-                          size={13}
-                          className="text-text-secondary shrink-0"
-                        />
-                        <span>
-                          {data.tracks.length} {t("collection.tracks_count")}
-                        </span>
-                        <span
-                          className="w-[3px] h-[3px] rounded-full shrink-0 bg-text-secondary/50"
-                          aria-hidden
-                        />
-                        <span>
-                          {(() => {
-                            const totalMs = data.tracks.reduce(
-                              (acc, t) => acc + (t.durationMs || 0),
-                              0,
-                            );
-                            const totalMins = Math.floor(totalMs / 60000);
-                            if (totalMins > 60) {
-                              return `${Math.floor(totalMins / 60)} ${t("collection.hr")} ${totalMins % 60} ${t("collection.min")}`;
-                            }
-                            const totalSecs = Math.floor(
-                              (totalMs % 60000) / 1000,
-                            );
-                            return `${totalMins} ${t("collection.min")} ${totalSecs} ${t("collection.sec")}`;
-                          })()}
-                        </span>
-                      </div>
-                    </div>
+                    <HeroMeta
+                      items={[
+                        data.year,
+                        `${data.tracks.length} ${t("collection.tracks_count")}`,
+                        (() => {
+                          const totalMs = data.tracks.reduce(
+                            (acc, t) => acc + (t.durationMs || 0),
+                            0,
+                          );
+                          const totalMins = Math.floor(totalMs / 60000);
+                          if (totalMins > 60) {
+                            return `${Math.floor(totalMins / 60)} ${t("collection.hr")} ${totalMins % 60} ${t("collection.min")}`;
+                          }
+                          const totalSecs = Math.floor(
+                            (totalMs % 60000) / 1000,
+                          );
+                          return `${totalMins} ${t("collection.min")} ${totalSecs} ${t("collection.sec")}`;
+                        })(),
+                      ]}
+                    />
                   }
                   actions={
                     <>

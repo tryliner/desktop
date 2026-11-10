@@ -1,11 +1,11 @@
 import type { ReactNode } from "react";
-import { AddLine, MusicLine, PlayFill } from "@mingcute/react";
+import { AddLine, PlayFill } from "@mingcute/react";
 import { LuShuffle, LuTrash2 } from "react-icons/lu";
 import { useTranslation } from "@/languages";
 import {
   EntityHero,
   HERO_BUTTON_CLASS,
-  HERO_CHIP_CLASS,
+  HeroMeta,
   HERO_GLASS_BUTTON_CLASS,
   HeroSubtitle,
   HERO_TITLE_CLASS,
@@ -49,19 +49,12 @@ export default function LocalTracksHero({
       title={<h1 className={HERO_TITLE_CLASS}>{t("library.local.title")}</h1>}
       subtitle={<HeroSubtitle text={t("library.local.subtitle")} />}
       meta={
-        <div className={HERO_CHIP_CLASS}>
-          <MusicLine size={13} className="shrink-0 text-text-secondary" />
-          <span>{t("common.songs", { count: tracks.length })}</span>
-          {!empty && (
-            <>
-              <span
-                className="h-[3px] w-[3px] shrink-0 rounded-full bg-text-secondary/50"
-                aria-hidden
-              />
-              <span>{formatTotalDuration(totalMs, t)}</span>
-            </>
-          )}
-        </div>
+        <HeroMeta
+          items={[
+            t("common.songs", { count: tracks.length }),
+            !empty && formatTotalDuration(totalMs, t),
+          ]}
+        />
       }
       actions={
         <>
