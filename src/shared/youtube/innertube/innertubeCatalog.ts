@@ -8,7 +8,10 @@ import type {
 } from "@/shared/contracts";
 import { InnertubeError, postInnertube } from "./innertubeClient";
 import {
+  getArtistDiscographyBrowses,
   getArtistTopSongsBrowse,
+  mapDiscographyAlbums,
+  mapDiscographySingles,
   mapInnertubeArtistDetails,
 } from "./innertubeArtistMapper";
 import { mapInnertubeBrowseTracks } from "./innertubeCollectionMapper";
@@ -98,20 +101,52 @@ async function getRadio(
   return { items };
 }
 
+// the album and single carousels show only the first releases, so every
+// release comes from the discography pages; a page that fails leaves the
+// carousel's releases
+async function loadDiscography(
+  body: unknown,
+  signal?: AbortSignal,
+): Promise<Partial<Pick<ArtistDetails, "albums" | "singles">>> {
+  const pages = getArtistDiscographyBrowses(body);
+  const [albums, singles] = await Promise.all([
+    pages.albums
+      ? browse(pages.albums.browseId, pages.albums.params, signal)
+          .then(mapDiscographyAlbums)
+          .catch(() => [])
+      : [],
+    pages.singles
+      ? browse(pages.singles.browseId, pages.singles.params, signal)
+          .then(mapDiscographySingles)
+          .catch(() => [])
+      : [],
+  ]);
+  return {
+    ...(albums.length > 0 ? { albums } : {}),
+    ...(singles.length > 0 ? { singles } : {}),
+  };
+}
+
 async function loadArtist(
   artistId: string,
   signal?: AbortSignal,
 ): Promise<ArtistDetails | null> {
   const body = await browse(artistId, undefined, signal);
-  const artist = mapInnertubeArtistDetails(artistId, body);
-  if (!artist) return null;
-  const artistRef = { id: artist.id, name: artist.name };
+  const page = mapInnertubeArtistDetails(artistId, body);
+  if (!page) return null;
+  const artistRef = { id: page.id, name: page.name };
   const topSongs = getArtistTopSongsBrowse(body);
-  const allTracks = topSongs
-    ? await browse(topSongs.browseId, topSongs.params, signal)
-        .then((tracksBody) => mapInnertubeBrowseTracks(tracksBody, [artistRef]))
-        .catch(() => [])
-    : [];
+  const [allTracks, discography] = await Promise.all([
+    topSongs
+      ? browse(topSongs.browseId, topSongs.params, signal)
+          .then((tracksBody) =>
+            mapInnertubeBrowseTracks(tracksBody, [artistRef]),
+          )
+          .catch(() => [])
+      : [],
+    loadDiscography(body, signal),
+  ]);
+  const artist = { ...page, ...discography };
   if (allTracks.length > 0) return { ...artist, tracks: allTracks };
   if (artist.tracks.length > 0) return artist;
   const channelId = channelIdOfArtist(artistId, body);
