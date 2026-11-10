@@ -1,5 +1,5 @@
 Liner Source-Available & Non-Commercial Contribution License
-Version 1.0 (2026)
+Version 1.1 (2026)
 
 Copyright (c) 2024-2026 Liner Project Contributors & feralbureau.
 All Rights Reserved.
@@ -17,13 +17,20 @@ TERMS AND CONDITIONS FOR USE, REPRODUCTION, MODIFICATION, AND CONTRIBUTION
    OPEN SOURCE. ANY USE, COPYING, MODIFICATION, OR REDISTRIBUTION OUTSIDE THE
    EXPLICIT PERMISSIONS OF THIS LICENSE IS STRICTLY PROHIBITED.
 
+   "Official Liner Services" means the servers, APIs and services operated or
+   expressly designated by the copyright holders for the Software, including
+   api.tryliner.fun, beta.tryliner.fun, staging.tryliner.fun and any successor
+   or additional service they announce as official.
+
 2. PERMITTED PERSONAL & EVALUATION USE
    Subject to the terms and limitations of this License, you are granted a
    personal, non-exclusive, non-transferable, royalty-free license to:
    a) Inspect, study, and review the source code of the Software.
    b) Compile, build, and run the Software locally solely for your own personal,
       private, non-commercial, and non-monetized use.
-   c) Modify the Software locally for testing, debugging, or personal experimentation.
+   c) Modify the Software locally for testing, debugging, or personal experimentation,
+      provided the modified Software keeps working only with the Official Liner
+      Services as set out in Section 4(e).
 
 3. UPSTREAM CONTRIBUTION PERMISSION
    You are expressly permitted to create forks, branches, and modifications of
@@ -64,13 +71,38 @@ TERMS AND CONDITIONS FOR USE, REPRODUCTION, MODIFICATION, AND CONTRIBUTION
       service marks, logos ("Liner"), product design, or branding assets of the
       copyright holders.
 
+   e) NO ALTERNATIVE BACKENDS:
+      Any build, fork, branch, or modified version of the Software, including one
+      kept and run privately, must work only with the Official Liner Services.
+      You may NOT modify, configure, or run the Software or any derivative work
+      so that it:
+        - connects to, depends on, or exchanges Liner account, library, playback,
+          lyrics, or other application data with any server, API, proxy, or
+          service other than the Official Liner Services;
+        - works without the Official Liner Services, or with them removed,
+          stubbed, emulated, or replaced by your own or a third party's
+          implementation;
+        - bypasses, disables, or reimplements their authentication, request
+          signing, edge keys, rate limits, or other access controls.
+      Third-party services that the unmodified Software contacts by design
+      (for example YouTube, SoundCloud, or Cloudflare) are not covered by this
+      restriction. Contributors preparing changes under Section 3 may use a
+      local or test service only when the copyright holders have authorized it
+      in writing.
+
 5. TERMINATION
    Any violation of the terms, conditions, or prohibitions of this License
    automatically terminates all rights granted to you hereunder with immediate
    effect. Upon termination, you must destroy all copies, binaries, and modified
    versions of the Software in your possession.
 
-6. DISCLAIMER OF WARRANTY
+6. VERSIONS OF THIS LICENSE
+   Each version of the Software is governed by the License included with it.
+   Versions published with an earlier version of this License remain governed
+   by that earlier version; this version applies to the Software as published
+   with it and to every later version that includes it.
+
+7. DISCLAIMER OF WARRANTY
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL

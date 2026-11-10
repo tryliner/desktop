@@ -159,6 +159,6 @@ Bug fixes, small features, translations and docs fixes are welcome. Read [CONTRI
 Liner is distributed under the **Liner Source-Available & Non-Commercial Contribution License**.
 
 - **Allowed**: Personal non-commercial usage, local builds, and upstream contributions.
-- **Prohibited**: Commercial distribution, public competing forks, or extracting core algorithms for third-party products.
+- **Prohibited**: Commercial distribution, public competing forks, extracting core algorithms for third-party products, or running any build (a private one included) against servers other than the official Liner services.
 
 See [LICENSE](./LICENSE) for details.
