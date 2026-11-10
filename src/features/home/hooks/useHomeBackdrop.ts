@@ -3,7 +3,6 @@ import {
   getCoverElement,
   preloadCoverArt,
 } from "@/features/covers/lib/coverArt";
-import { measureImageTone, pickStrikingIndex } from "@/shared/lib/imageTone";
 import {
   readScreenCache,
   subscribeScreenCache,
@@ -18,7 +17,6 @@ import { useSessionOwner } from "./sessionAwareLoad";
 import type { DailyMix } from "./useDailyMixes";
 
 interface HomeBackdropRecord {
-  mixKey: string;
   cover: string;
   backdrop: string;
 }
@@ -36,11 +34,7 @@ export function useHomeBackdrop(mixes: DailyMix[]): {
 } {
   const owner = useSessionOwner();
   const key = `home:backdrop:${owner}`;
-  const candidates = mixes
-    .slice(0, 4)
-    .map((mix) => mix.coverUrl)
-    .filter((url): url is string => Boolean(url));
-  const mixKey = candidates.join("|");
+  const cover = mixes[0]?.coverUrl || undefined;
 
   const subscribe = useCallback(
     (listener: () => void) => subscribeScreenCache(key, listener),
@@ -50,35 +44,29 @@ export function useHomeBackdrop(mixes: DailyMix[]): {
     subscribe,
     () => readScreenCache<HomeBackdropRecord>(key)?.data,
   );
-  const recordMixKey = record?.mixKey;
+  const recordCover = record?.cover;
 
   useEffect(() => {
-    if (!mixKey || recordMixKey === mixKey) return;
-    const urls = mixKey.split("|");
+    if (!cover || recordCover === cover) return;
     let active = true;
-    void Promise.all(
-      urls.map((url) => preloadCoverArt(url).catch(() => undefined)),
-    ).then(() => {
-      if (!active) return;
-      const tones = urls.map((url) => {
-        const element = loadedCover(url);
-        return element ? measureImageTone(element) : undefined;
+    void preloadCoverArt(cover)
+      .catch(() => undefined)
+      .then(() => {
+        if (!active) return;
+        const element = loadedCover(cover);
+        if (!element) return;
+        const backdrop = svgToDataUrl(
+          buildAccentBackdropSvg(extractColorsFromImage(element)),
+        );
+        writeScreenCache<HomeBackdropRecord>(key, { cover, backdrop });
       });
-      const cover = urls[pickStrikingIndex(tones)];
-      const element = cover ? loadedCover(cover) : undefined;
-      if (!cover || !element) return;
-      const backdrop = svgToDataUrl(
-        buildAccentBackdropSvg(extractColorsFromImage(element)),
-      );
-      writeScreenCache<HomeBackdropRecord>(key, { mixKey, cover, backdrop });
-    });
     return () => {
       active = false;
     };
-  }, [key, mixKey, recordMixKey]);
+  }, [key, cover, recordCover]);
 
   return {
-    cover: record && record.mixKey === mixKey ? record.cover : candidates[0],
+    cover,
     backdrop: record?.backdrop,
   };
 }
