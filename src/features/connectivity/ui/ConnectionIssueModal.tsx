@@ -11,7 +11,7 @@ import {
 } from "../engine/offlineController";
 import type { ConnectionIssue } from "../lib/classify";
 
-const font = { fontFamily: "var(--font-inter), sans-serif" } as const;
+const font = { fontFamily: "var(--font-sf)" } as const;
 
 const COPY: Record<ConnectionIssue, { title: string; desc: string }> = {
   youtube_blocked: {

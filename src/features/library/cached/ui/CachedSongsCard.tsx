@@ -4,7 +4,7 @@ import { useTranslation } from "@/languages";
 import { useCachedTracksStore } from "../store/cachedTracksStore";
 import CachedSongsCover from "./CachedSongsCover";
 
-const INTER = { fontFamily: "var(--font-inter), sans-serif" };
+const SANS_FONT = { fontFamily: "var(--font-sf)" };
 
 export default function CachedSongsCard({
   viewMode = "grid",
@@ -33,7 +33,7 @@ export default function CachedSongsCard({
         <div className="relative h-[48px] w-[48px] shrink-0 overflow-hidden rounded-control">
           <CachedSongsCover />
         </div>
-        <div className="flex min-w-0 flex-col gap-[2px]" style={INTER}>
+        <div className="flex min-w-0 flex-col gap-[2px]" style={SANS_FONT}>
           <h3 className="m-0 truncate text-[16px] leading-[1.2] font-[400] text-text-primary">
             {t("library.cached.title")}
           </h3>

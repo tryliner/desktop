@@ -52,7 +52,7 @@ as one surface):
 
 ## Type
 
-- Inter everywhere (`font-family: var(--font-inter)`), Montserrat only in the player.
+- SF Pro everywhere (`--font-sf`, Tailwind `font-sans`), bundled as `src/assets/fonts/SF-Pro.woff2` (Latin + Cyrillic, weight and optical size axes). Montserrat only in the player.
   Roboto Flex (wide) for the home feed's section headings (24px, Your Mixes 36px) and
   the generated daily mix covers.
 - Section heading icons on home are neutral (`text-text-tertiary`, 20px).

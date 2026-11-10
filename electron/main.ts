@@ -117,6 +117,11 @@ app.commandLine.appendSwitch("enable-gpu-rasterization");
 app.commandLine.appendSwitch("enable-zero-copy");
 app.commandLine.appendSwitch("ignore-gpu-blocklist");
 app.commandLine.appendSwitch("enable-native-gpu-memory-buffers");
+// grayscale antialiasing instead of coloured subpixel (ClearType-style) text,
+// the soft macOS look; macOS itself has dropped subpixel text already
+if (process.platform !== "darwin") {
+  app.commandLine.appendSwitch("disable-lcd-text");
+}
 // forces resilient http/1.1 to prevent chromium err_http2_ping_failed on dropped network frames
 app.commandLine.appendSwitch("disable-http2");
 if (detectCompositor() !== "none") {

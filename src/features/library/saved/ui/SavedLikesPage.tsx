@@ -38,7 +38,7 @@ import { useSavedTracks } from "../hooks/useSavedTracks";
 
 const PAGE_KEY = "saved-likes";
 const ROW_HEIGHT = 64;
-const INTER = { fontFamily: "var(--font-inter), sans-serif" };
+const SANS_FONT = { fontFamily: "var(--font-sf)" };
 
 const SavedTrackRow = memo(function SavedTrackRow({
   track,
@@ -252,7 +252,7 @@ export function SavedTracksView({
           {isLoading ? null : empty ? (
             <div
               className="flex min-h-[50vh] flex-col items-center justify-center gap-[14px] text-center"
-              style={INTER}
+              style={SANS_FONT}
             >
               <HeartLine size={40} className="text-border-alpha-33" />
               <div className="flex flex-col gap-[4px]">

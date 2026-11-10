@@ -14,6 +14,10 @@
     <style>
       :root {
         --font-inter: "Inter Variable", "Inter", sans-serif;
+        /* bundled SF Pro (src/assets/fonts) on every OS, the macOS system
+           font and Inter only while it loads */
+        --font-sf: "SF Pro", -apple-system, BlinkMacSystemFont,
+          var(--font-inter);
         --font-geist-mono: "Geist Mono", monospace;
         --font-roboto-flex: "Roboto Flex", sans-serif;
         --font-montserrat-family: "Montserrat", sans-serif;
