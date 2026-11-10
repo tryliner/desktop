@@ -1,11 +1,6 @@
 @import "tailwindcss";
 @import "@fontsource-variable/inter/opsz.css";
 @import "@fontsource-variable/inter/opsz-italic.css";
-@import "@fontsource-variable/pixelify-sans";
-@import "@fontsource-variable/playfair/wght-italic.css";
-@import "@fontsource/libre-barcode-128-text";
-@import "@fontsource/rubik-broken-fax";
-@import "@fontsource/comic-neue/400.css";
 
 /* SF Pro variable cut to Latin, Cyrillic and punctuation, width pinned to
    100; weight 1-1000 and optical size 17-28 stay, so text sizes get the Text
@@ -247,12 +242,6 @@
   --font-sans: var(--font-sf);
   --font-mono: var(--font-geist-mono);
   --font-montserrat: var(--font-montserrat-family);
-  --font-medeo-pixel: "Medeo Pixel", "Pixelify Sans Variable", monospace;
-  --font-pixelify: "Pixelify Sans Variable", monospace;
-  --font-playfair: "Playfair Variable", serif;
-  --font-barcode: "Libre Barcode 128 Text", monospace;
-  --font-broken-fax: "Rubik Broken Fax", sans-serif;
-  --font-comic: "Comic Sans MS", "Comic Neue", cursive;
 }
 
 .font-roboto-flex-heading {

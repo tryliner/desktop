@@ -1,6 +1,5 @@
-import { Suspense, memo } from "react";
+import { memo } from "react";
 import { Link } from "react-router-dom";
-import { ProfileModalTestButton } from "@/features/profile";
 import logo from "@/assets/logo.svg";
 import { SidebarLibrary } from "./SidebarLibrary";
 import { SidebarNavItems } from "./SidebarNavItems";
@@ -15,7 +14,7 @@ function Sidebar({ searchOpen, onSearchToggle }: SidebarProps) {
   return (
     <div className="h-full w-[52px] flex flex-col items-center gap-[6px]">
       {/* one panel for nav and library; hugs its content and scrolls the
-          library once it reaches the avatar */}
+          library once it reaches the window bottom */}
       <div className="w-full min-h-0 flex flex-col rounded-item bg-bg-glass backdrop-blur-[20px]">
         <nav className="shrink-0 flex flex-col items-center gap-[20px] py-[16px]">
           <Link
@@ -42,15 +41,6 @@ function Sidebar({ searchOpen, onSearchToggle }: SidebarProps) {
         <SidebarLibrary />
       </div>
 
-      {/* 40px avatar in the 52px column: 6px from the sides and the bottom,
-          so 12px from the window's left and bottom edges alike */}
-      {ProfileModalTestButton ? (
-        <div className="mt-auto shrink-0 flex justify-center pb-[6px]">
-          <Suspense fallback={null}>
-            <ProfileModalTestButton />
-          </Suspense>
-        </div>
-      ) : null}
     </div>
   );
 }

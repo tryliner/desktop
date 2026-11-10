@@ -1,7 +1,6 @@
 import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
-import icons from "unplugin-icons/vite";
 import electron from "vite-plugin-electron/simple";
 import path from "path";
 import pkg from "./package.json" with { type: "json" };
@@ -27,7 +26,6 @@ export default defineConfig(({ command, mode }) => {
     plugins: [
       react(),
       tailwindcss(),
-      icons({ compiler: "jsx", jsx: "react" }),
       contentSecurityPolicyPlugin(),
       electron({
         main: {

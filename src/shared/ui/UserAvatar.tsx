@@ -1,6 +1,5 @@
 import { useState, useMemo } from "react";
 import { FaUser } from "react-icons/fa";
-import { cn } from "@/shared/lib";
 
 export interface UserAvatarProps {
   user?: {
@@ -36,10 +35,7 @@ export function UserAvatar({
 
   return (
     <div
-      className={cn(
-        "rounded-item bg-border-alpha-14 flex items-center justify-center text-text-secondary border border-border-primary/50 flex-shrink-0 overflow-hidden select-none",
-        className,
-      )}
+      className={`rounded-item bg-border-alpha-14 flex items-center justify-center text-text-secondary border border-border-primary/50 flex-shrink-0 overflow-hidden select-none ${className}`}
       style={{ width: size, height: size, ...style }}
     >
       {hasImage ? (
