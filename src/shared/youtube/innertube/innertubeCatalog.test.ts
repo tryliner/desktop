@@ -205,6 +205,120 @@ describe("innertubeCatalog", () => {
     );
   });
 
+  it("lists every album and single from the discography pages, not just the carousels", async () => {
+    const discography = (params: string) => ({
+      browseId: "MPADUCweeknd",
+      params,
+      browseEndpointContextSupportedConfigs: {
+        browseEndpointContextMusicConfig: {
+          pageType: "MUSIC_PAGE_TYPE_ARTIST_DISCOGRAPHY",
+        },
+      },
+    });
+    const release = (id: string, title: string, kind: string) => ({
+      musicTwoRowItemRenderer: {
+        title: {
+          runs: [
+            {
+              text: title,
+              navigationEndpoint: {
+                browseEndpoint: {
+                  browseId: id,
+                  browseEndpointContextSupportedConfigs: {
+                    browseEndpointContextMusicConfig: {
+                      pageType: "MUSIC_PAGE_TYPE_ALBUM",
+                    },
+                  },
+                },
+              },
+            },
+          ],
+        },
+        subtitle: { runs: [{ text: kind }, { text: " • " }, { text: "2020" }] },
+      },
+    });
+    const carousel = (title: string, params: string, items: unknown[]) => ({
+      musicCarouselShelfRenderer: {
+        header: {
+          musicCarouselShelfBasicHeaderRenderer: {
+            title: {
+              runs: [
+                {
+                  text: title,
+                  navigationEndpoint: { browseEndpoint: discography(params) },
+                },
+              ],
+            },
+          },
+        },
+        contents: items,
+      },
+    });
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockImplementation(async (_url, init) => {
+        const body = JSON.parse(String(init?.body)) as Record<string, unknown>;
+        if (body.browseId === "MPADUCweeknd" && body.params === "albums") {
+          return json({
+            contents: {
+              gridRenderer: {
+                items: [
+                  release("MPREb_a1", "After Hours", "Album"),
+                  release("MPREb_a2", "Starboy", "Album"),
+                  release("MPREb_a3", "Trilogy", "Album"),
+                ],
+              },
+            },
+          });
+        }
+        if (body.browseId === "MPADUCweeknd") {
+          return json({
+            contents: {
+              gridRenderer: {
+                items: [
+                  release("MPREb_s1", "Blinding Lights", "Single"),
+                  release("MPREb_s2", "My Dear Melancholy,", "EP"),
+                ],
+              },
+            },
+          });
+        }
+        return json({
+          header: {
+            musicImmersiveHeaderRenderer: {
+              title: { runs: [{ text: "The Weeknd" }] },
+            },
+          },
+          contents: {
+            rows: [
+              songRow("aaaaaaaaaaa", "One"),
+              carousel("Albums", "albums", [
+                release("MPREb_a1", "After Hours", "Album"),
+              ]),
+              carousel("Singles & EPs", "singles", [
+                release("MPREb_s1", "Blinding Lights", "Single"),
+              ]),
+            ],
+          },
+        });
+      });
+    const artist = await innertubeCatalog.getArtist("UCweeknd");
+    expect(artist.albums.map((album) => album.title)).toEqual([
+      "After Hours",
+      "Starboy",
+      "Trilogy",
+    ]);
+    expect(artist.singles.map((single) => single.releaseType)).toEqual([
+      "single",
+      "ep",
+    ]);
+    expect(
+      fetchSpy.mock.calls.filter(
+        (call) => bodyOf(call).browseId === "MPADUCweeknd",
+      ),
+    ).toHaveLength(2);
+  });
+
   it("prefixes bare playlist ids with VL when browsing", async () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
       json({
