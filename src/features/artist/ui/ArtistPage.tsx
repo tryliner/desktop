@@ -19,15 +19,12 @@ import SongCardWithMenu from "@/features/player/ui/SongCardWithMenu";
 import AlbumCard from "@/features/collection/ui/AlbumCard";
 import ReleaseCard from "@/features/collection/ui/ReleaseCard";
 import ScrollableRow from "@/shared/ui/ScrollableRow";
-import CoverImage from "@/features/covers/ui/CoverImage";
 import { preloadCoverArt } from "@/features/covers/lib/coverArt";
 import { playerEngine } from "@/features/player";
 import { AnimatePresence, motion } from "framer-motion";
 import type { Track } from "@/shared/types";
 import {
   useToast,
-  EntityHero,
-  HERO_TITLE_CLASS,
   HERO_SUBTITLE_CLASS,
   HERO_BUTTON_CLASS,
   HERO_GLASS_BUTTON_CLASS,
@@ -38,6 +35,7 @@ import { useModalStore } from "@/features/library";
 import { buildShareUrl } from "@/shared/utils/share";
 import { useExternalItems } from "@/features/library/hooks";
 import ArtistAboutText from "./ArtistAboutText";
+import ArtistBanner from "./ArtistBanner";
 import ArtistProfileModal from "./ArtistProfileModal";
 import ArtistPageSkeleton from "./ArtistPageSkeleton";
 import { useArtist } from "../hooks/useArtist";
@@ -46,7 +44,7 @@ function VerifiedBadge() {
   return (
     <svg
       viewBox="0 0 24 24"
-      className="h-[22px] w-[22px] shrink-0 text-[#1d9bf0]"
+      className="h-[32px] w-[32px] shrink-0 translate-y-[3px] text-[#1d9bf0]"
       fill="currentColor"
       aria-label="Verified"
     >
@@ -252,33 +250,18 @@ function ArtistContent() {
             <div
               ref={scrollRef}
               data-no-window-drag
-              className="relative z-10 h-full w-full min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain box-border pt-(--page-inset-top) pb-(--page-inset-bottom)"
+              className="relative z-10 h-full w-full min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain box-border pb-(--page-inset-bottom)"
               style={{ willChange: "scroll-position" }}
             >
-              <div className="pl-[16px] pr-[12px] pt-[8px]" data-no-window-drag>
-                <EntityHero
-                  contentClassName="self-stretch justify-center pt-0 pb-[8px]"
-                  actionsClassName="mt-[14px]"
-                  coverClassName="h-[144px] w-[144px] rounded-full bg-border-alpha-14"
-                  cover={
-                    data.coverUrl ? (
-                      <CoverImage
-                        src={data.coverUrl}
-                        alt={data.title}
-                        fill
-                        sizes="180px"
-                        className="object-cover"
-                        draggable={false}
-                      />
-                    ) : (
-                      <span className="text-[56px] font-[700] text-border-alpha-33">
-                        {data.title.charAt(0)}
-                      </span>
-                    )
-                  }
+              <div>
+                <ArtistBanner
+                  imageUrl={data.coverUrl || data.geniusImageUrl}
+                  alt={data.title}
                   title={
                     <div className="flex items-center gap-[8px] min-w-0">
-                      <h1 className={HERO_TITLE_CLASS}>{data.title}</h1>
+                      <h1 className="font-roboto-flex-heading m-0 text-[48px] leading-[1.05] tracking-[-0.03em] text-text-primary line-clamp-1">
+                        {data.title}
+                      </h1>
                       {data.verified ? <VerifiedBadge /> : null}
                     </div>
                   }
