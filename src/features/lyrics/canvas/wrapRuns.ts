@@ -68,7 +68,11 @@ export function alignOffset(
   rowWidth: number,
   maxWidth: number,
 ): number {
+  if (align === "start") return 0;
+  // a single word wider than the row: end or centre alignment would push it
+  // past the left margin and cut its glow off at the canvas edge, so spread the
+  // overflow over both side margins instead
+  if (rowWidth > maxWidth) return (maxWidth - rowWidth) / 2;
   if (align === "end") return maxWidth - rowWidth;
-  if (align === "center") return (maxWidth - rowWidth) / 2;
-  return 0;
+  return (maxWidth - rowWidth) / 2;
 }
