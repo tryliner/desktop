@@ -32,7 +32,7 @@ import { EqualizerPicker } from "./EqualizerPicker";
 import { isEqActive } from "../engine/equalizer";
 import { TimelineSlider } from "./TimelineSlider";
 import { useTheme } from "next-themes";
-import { useCoverReady, CoverImage, loadCoverElement } from "@/features/covers";
+import { CoverImage, loadCoverElement } from "@/features/covers";
 import { useHasPageBackdrop } from "@/features/settings/store/customizationStore";
 import { ArtistAvatar, ArtistLink } from "@/features/artist";
 import { isLocalTrackId } from "@/shared/media/local";
@@ -40,8 +40,14 @@ import DropdownMenu from "@/shared/ui/DropdownMenu";
 import { useSongMenuItems } from "../hooks/useSongMenuItems";
 
 const PROGRESS_STEP_MS = 1000;
+const TRACK_SWAP_EASE = [0.22, 1, 0.36, 1] as const;
+const COVER_FADE = { duration: 0.25, ease: TRACK_SWAP_EASE };
+const TEXT_SWAP = { duration: 0.2, ease: TRACK_SWAP_EASE };
 const PROGRESS_JUMP_TRANSITION =
   "transform 380ms cubic-bezier(0.22, 1, 0.36, 1)";
+// the fill moves in one eased step per played second instead of a uniform crawl
+const PROGRESS_TICK_TRANSITION =
+  "transform 600ms cubic-bezier(0.22, 1, 0.36, 1)";
 
 function rgbToHsl(r: number, g: number, b: number): [number, number, number] {
   r /= 255;
@@ -202,6 +208,82 @@ export interface MiniPlayerProps {
   embedded?: boolean;
 }
 
+/**
+ * The track cover, crossfading on a track change: the incoming cover fades in
+ * over the outgoing one once it has loaded, and only then is the old one
+ * dropped, so the tile never shows empty in between.
+ */
+function CrossfadeCover({
+  url,
+  onLoad,
+}: {
+  url: string;
+  onLoad: (img: HTMLImageElement) => void;
+}) {
+  const [layers, setLayers] = useState<string[]>(() => (url ? [url] : []));
+  const [loaded, setLoaded] = useState<ReadonlySet<string>>(() => new Set());
+
+  if (!url && layers.length > 0) setLayers([]);
+  else if (url && layers[layers.length - 1] !== url) {
+    setLayers([...layers.filter((layer) => layer !== url), url]);
+  }
+
+  const markLoaded = (layer: string, img: HTMLImageElement) => {
+    if (layer === url) onLoad(img);
+    setLoaded((current) =>
+      current.has(layer) ? current : new Set(current).add(layer),
+    );
+  };
+
+  const dropBelow = (layer: string) => {
+    setLayers((current) => {
+      const index = current.indexOf(layer);
+      return index > 0 ? current.slice(index) : current;
+    });
+    setLoaded((current) => {
+      const next = new Set(
+        [...current].filter((item) => layers.includes(item)),
+      );
+      return next.size === current.size ? current : next;
+    });
+  };
+
+  const nothingShown = !layers.some((layer) => loaded.has(layer));
+
+  return (
+    <>
+      {nothingShown && url && (
+        <div className="absolute inset-0 animate-pulse bg-bg-elevated" />
+      )}
+      {layers.map((layer) => (
+        <motion.div
+          key={layer}
+          className="absolute inset-0"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: loaded.has(layer) ? 1 : 0 }}
+          transition={COVER_FADE}
+          onAnimationComplete={() => {
+            if (loaded.has(layer)) dropBelow(layer);
+          }}
+        >
+          <CoverImage
+            src={layer}
+            alt="Track artwork"
+            width={38}
+            height={38}
+            priority
+            draggable={false}
+            onLoad={(event) =>
+              markLoaded(layer, event.currentTarget as HTMLImageElement)
+            }
+            className="h-[38px] w-[38px] object-cover rounded-control"
+          />
+        </motion.div>
+      ))}
+    </>
+  );
+}
+
 function MiniPlayer({
   onQueueOpenChange,
   onQueueToggle,
@@ -335,15 +417,13 @@ function MiniPlayer({
     isPlaying && durationMs > 0
       ? Math.min(
           1,
-          (Math.floor(player.positionMs / PROGRESS_STEP_MS) + 1) *
+          Math.floor(player.positionMs / PROGRESS_STEP_MS) *
             (PROGRESS_STEP_MS / durationMs),
         )
       : progress;
   const isLoading = player.status === "loading";
   const trackTitle = player.currentTrack?.title ?? t("player.nothing_playing");
   const trackArtists = player.currentTrack?.artists ?? t("player.choose_track");
-
-  const isCoverLoaded = useCoverReady(coverUrl);
 
   const songMenuItems = useSongMenuItems({
     id: currentTrack?.id,
@@ -687,7 +767,7 @@ function MiniPlayer({
                 scrubRatio !== null
                   ? "none"
                   : isPlaying && !progressJumped
-                    ? `transform ${PROGRESS_STEP_MS}ms linear`
+                    ? PROGRESS_TICK_TRANSITION
                     : PROGRESS_JUMP_TRANSITION,
             }}
           />
@@ -753,80 +833,79 @@ function MiniPlayer({
               role="button"
               tabIndex={0}
               aria-label="Open player"
-              className={`relative h-[38px] w-[38px] shrink-0 overflow-hidden rounded-control bg-bg-elevated cursor-pointer pointer-events-auto prevent-seek ${
-                coverUrl && !isCoverLoaded ? "animate-pulse" : ""
-              }`}
+              className="relative h-[38px] w-[38px] shrink-0 overflow-hidden rounded-control bg-bg-elevated cursor-pointer pointer-events-auto prevent-seek"
               onClick={onFullscreenOpen}
               onPointerDown={(e) => e.stopPropagation()}
             >
-              <CoverImage
-                key={coverUrl}
-                src={coverUrl}
-                alt="Track artwork"
-                width={38}
-                height={38}
-                priority
-                draggable={false}
-                onLoad={(e) => {
-                  extractAccentColor(e.currentTarget as HTMLImageElement);
-                }}
-                className="h-[38px] w-[38px] object-cover rounded-control"
-              />
+              <CrossfadeCover url={coverUrl} onLoad={extractAccentColor} />
             </div>
-            <div className="flex min-w-0 flex-col pointer-events-none">
-              <p
-                className="m-0 truncate text-[16px] font-[400] text-text-primary flex items-center gap-[6px] pointer-events-none"
-                style={{
-                  lineHeight: "18px",
-                  letterSpacing: "0",
-                }}
-              >
-                <span
-                  role="button"
-                  tabIndex={0}
-                  aria-label="Open player"
-                  className="min-w-0 truncate cursor-pointer pointer-events-auto prevent-seek"
-                  onClick={onFullscreenOpen}
-                  onPointerDown={(e) => e.stopPropagation()}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      onFullscreenOpen?.();
-                    }
-                  }}
+            {/* old title and artist leave upwards while the new ones come in
+                from below; both share one grid cell so nothing reflows */}
+            <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] pointer-events-none">
+              <AnimatePresence initial={false}>
+                <motion.div
+                  key={player.currentTrack?.id ?? "none"}
+                  className="col-start-1 row-start-1 flex min-w-0 flex-col"
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  transition={TEXT_SWAP}
                 >
-                  {trackTitle}
-                </span>
-              </p>
-              <p
-                className="m-0 mt-[4px] flex min-w-0 items-center gap-[5px] text-body font-[300] text-text-tertiary pointer-events-none"
-                style={{
-                  lineHeight: "15px",
-                }}
-              >
-                {player.currentTrack?.explicit && (
-                  <span className="inline-flex h-[14px] w-[14px] shrink-0 -translate-y-px items-center justify-center rounded-[3.5px] bg-fill-strong text-[8px] font-[600] leading-none text-text-secondary">
-                    <span className="translate-y-[0.5px] [text-box:trim-both_cap_alphabetic]">
-                      E
+                  <p
+                    className="m-0 truncate text-[16px] font-[400] text-text-primary flex items-center gap-[6px] pointer-events-none"
+                    style={{
+                      lineHeight: "18px",
+                      letterSpacing: "0",
+                    }}
+                  >
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      aria-label="Open player"
+                      className="min-w-0 truncate cursor-pointer pointer-events-auto prevent-seek"
+                      onClick={onFullscreenOpen}
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          onFullscreenOpen?.();
+                        }
+                      }}
+                    >
+                      {trackTitle}
                     </span>
-                  </span>
-                )}
-                {!isLocal && (
-                  <ArtistAvatar
-                    artistId={player.currentTrack?.artistId}
-                    artistList={player.currentTrack?.artistList}
-                    size={15}
-                    className="-translate-y-px"
-                  />
-                )}
-                <ArtistLink
-                  name={trackArtists}
-                  artistId={player.currentTrack?.artistId}
-                  artistList={player.currentTrack?.artistList}
-                  plain={isLocal}
-                  className="text-text-tertiary pointer-events-auto"
-                />
-              </p>
+                  </p>
+                  <p
+                    className="m-0 mt-[4px] flex min-w-0 items-center gap-[5px] text-body font-[300] text-text-tertiary pointer-events-none"
+                    style={{
+                      lineHeight: "15px",
+                    }}
+                  >
+                    {player.currentTrack?.explicit && (
+                      <span className="inline-flex h-[14px] w-[14px] shrink-0 -translate-y-px items-center justify-center rounded-[3.5px] bg-fill-strong text-[8px] font-[600] leading-none text-text-secondary">
+                        <span className="translate-y-[0.5px] [text-box:trim-both_cap_alphabetic]">
+                          E
+                        </span>
+                      </span>
+                    )}
+                    {!isLocal && (
+                      <ArtistAvatar
+                        artistId={player.currentTrack?.artistId}
+                        artistList={player.currentTrack?.artistList}
+                        size={15}
+                        className="-translate-y-px"
+                      />
+                    )}
+                    <ArtistLink
+                      name={trackArtists}
+                      artistId={player.currentTrack?.artistId}
+                      artistList={player.currentTrack?.artistList}
+                      plain={isLocal}
+                      className="text-text-tertiary pointer-events-auto"
+                    />
+                  </p>
+                </motion.div>
+              </AnimatePresence>
             </div>
             {!isLocal && (
               <button
