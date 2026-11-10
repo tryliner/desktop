@@ -71,6 +71,7 @@ import {
 } from "@/features/settings";
 import { UpdateModal, UpdateToastBridge } from "@/features/updater";
 import { YoutubeSignInNotice } from "@/features/youtube-auth";
+import { HumanCheckNotice } from "@/features/human-check";
 import { useOfflineModeStore } from "@/features/connectivity";
 
 interface AppFrameProps {
@@ -102,6 +103,9 @@ const AppOverlays = memo(function AppOverlays() {
       <SettingsModal />
       <UpdateModal />
       <YoutubeSignInNotice />
+      {/* cloudflare's check when the edge challenges an api call after sign-in;
+          the login page mounts its own */}
+      <HumanCheckNotice />
       <UpdateToastBridge />
     </>
   );
