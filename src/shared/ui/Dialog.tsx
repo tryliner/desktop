@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { isWindowDraggingActive } from "@/shared/hooks";
 import { isEscapeGuarded } from "@/shared/utils/escapeGuard";
+import { cn } from "@/shared/lib";
 import { PANEL_GLASS_CLASS } from "./Panel";
 
 export interface DialogProps {
@@ -13,6 +14,7 @@ export interface DialogProps {
   minHeight?: number | string;
   maxHeight?: number | string;
   className?: string;
+  backdropClassName?: string;
   zIndex?: number;
 }
 
@@ -26,6 +28,7 @@ export default function Dialog({
   minHeight,
   maxHeight,
   className = "",
+  backdropClassName,
   zIndex,
 }: DialogProps) {
   const [mounted, setMounted] = useState(false);
@@ -110,7 +113,10 @@ export default function Dialog({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
-          className="fixed inset-0 z-[199] bg-black/15 backdrop-blur-[2px] rounded-item overflow-hidden"
+          className={cn(
+            "fixed inset-0 z-[199] bg-black/15 backdrop-blur-[2px] rounded-item overflow-hidden",
+            backdropClassName,
+          )}
           style={zIndex ? { zIndex: zIndex - 1 } : undefined}
           onPointerDown={handlePointerDown}
           onClick={handleBackdropClick}
