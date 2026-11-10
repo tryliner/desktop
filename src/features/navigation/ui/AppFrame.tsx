@@ -79,7 +79,7 @@ interface AppFrameProps {
 }
 
 const RIGHT_DRAWER_WIDTH = 440;
-const SIDEBAR_WIDTH = 58;
+const SIDEBAR_WIDTH = 52;
 const SHELL_EDGE_GAP = 6;
 const SEARCH_QUERY_CACHE_TTL_MS = 60_000;
 const LEGACY_LAYOUT_STORAGE_KEYS = [
@@ -749,7 +749,7 @@ export default function AppFrame({ children }: AppFrameProps) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.22, ease: "easeOut" }}
-            className="absolute inset-x-1.5 top-1.5 z-[45]"
+            className="absolute left-[64px] right-1.5 top-1.5 z-[45]"
           >
             <Header
               searchOpen={searchOpen}
@@ -767,7 +767,7 @@ export default function AppFrame({ children }: AppFrameProps) {
       >
         <aside
           ref={sidebarRef}
-          className="w-[58px] mt-[56px] shrink-0 z-[45] relative flex flex-col"
+          className="w-[52px] shrink-0 z-[45] relative flex flex-col"
         >
           <Sidebar
             searchOpen={searchOpen}
@@ -778,7 +778,9 @@ export default function AppFrame({ children }: AppFrameProps) {
         <div className="flex-1 flex flex-col min-w-0 h-full relative gap-1.5 overflow-hidden">
           <main
             className={cn(
-              "flex-1 min-w-0 flex flex-col relative h-full overflow-hidden [--page-inset-top:56px]",
+              // the header only sits on the right now, so pages start at the top:
+              // with their own 8px the hero lines up with the sidebar logo (16px)
+              "flex-1 min-w-0 flex flex-col relative h-full overflow-hidden [--page-inset-top:8px]",
               "rounded-item",
               shouldShowMiniPlayer && hasPageBackdrop
                 ? "[--page-inset-bottom:64px] [--floating-inset-bottom:70px]"
@@ -815,7 +817,7 @@ export default function AppFrame({ children }: AppFrameProps) {
                     animate={{ x: 0 }}
                     exit={{ x: RIGHT_DRAWER_WIDTH }}
                     transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-                    className="pointer-events-auto absolute top-(--page-inset-top) bottom-(--floating-inset-bottom) right-0 z-[50]"
+                    className="pointer-events-auto absolute top-[56px] bottom-(--floating-inset-bottom) right-0 z-[50]"
                     style={{ width: RIGHT_DRAWER_WIDTH }}
                   >
                     <RightDrawer onClose={closeRightPanel} />

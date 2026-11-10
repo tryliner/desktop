@@ -395,7 +395,7 @@ function OnlineLibraryPage() {
         className="h-full w-full overflow-y-auto bg-transparent pb-(--page-inset-bottom)"
       >
         <div className="relative z-20 bg-transparent">
-          <div className="px-[12px] pt-[36px] pb-[10px]">
+          <div className="px-[12px] pt-[11px] pb-[10px]">
             <h1 className="text-[26px] font-bold text-text-primary tracking-tight m-0 leading-tight">
               {t("library.title")}
             </h1>
@@ -505,7 +505,7 @@ function OfflineLibraryPage() {
   return (
     <div className="relative h-full w-full overflow-hidden">
       <div className="h-full w-full overflow-y-auto bg-transparent pb-(--page-inset-bottom)">
-        <div className="px-[12px] pt-[36px] pb-[10px]">
+        <div className="px-[12px] pt-[11px] pb-[10px]">
           <h1
             className="text-[26px] font-bold text-text-primary tracking-tight m-0 leading-tight"
             style={{ fontFamily: "var(--font-sf)" }}

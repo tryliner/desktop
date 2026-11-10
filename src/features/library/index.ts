@@ -6,6 +6,7 @@ export { default as LibraryGrid } from "./ui/LibraryGrid";
 export { default as LibraryTabs } from "./ui/LibraryTabs";
 export {
   default as PlaylistCard,
+  CoverCollage,
   type PlaylistCardProps,
 } from "./ui/PlaylistCard";
 
