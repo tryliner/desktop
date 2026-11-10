@@ -48,9 +48,14 @@ export const TimelineSlider = memo(function TimelineSlider({
     isDragging && scrubPosition !== null
       ? scrubPosition
       : Math.min(Math.max(0, positionMs), duration || Infinity);
+  // while playing the fill follows whole seconds, each step eased in, instead
+  // of twitching on every position update
+  const shownPosition = isDragging
+    ? currentPosition
+    : Math.floor(currentPosition / 1000) * 1000;
 
   const progress =
-    duration > 0 ? Math.min(1, Math.max(0, currentPosition / duration)) : 0;
+    duration > 0 ? Math.min(1, Math.max(0, shownPosition / duration)) : 0;
   const percentage = progress * 100;
 
   const calculatePositionFromPointer = useCallback(
@@ -189,8 +194,8 @@ export const TimelineSlider = memo(function TimelineSlider({
           className={`relative w-full rounded-full overflow-hidden origin-center ${baseTrackHeights} ${trackClassName}`}
         >
           <div
-            className={`absolute inset-0 rounded-full transition-transform ease-out ${
-              isDragging ? "duration-0" : "duration-100"
+            className={`absolute inset-0 rounded-full transition-transform ease-[cubic-bezier(0.22,1,0.36,1)] ${
+              isDragging ? "duration-0" : "duration-[600ms]"
             } ${fillClassName || "bg-text-primary"}`}
             style={{
               transform: `translateX(${percentage - 100}%)`,
