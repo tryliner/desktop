@@ -2,11 +2,13 @@ import { Link, useLocation, useSearchParams } from "react-router-dom";
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useState,
   useMemo,
   useRef,
   Suspense,
 } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import CollectionPageSkeleton from "./CollectionPageSkeleton";
 import {
   AddLine,
@@ -257,6 +259,42 @@ function CollectionContent() {
     scrollRef.current?.scrollTo({ top: 0 });
   }, [search.activeQuery, sort.option]);
 
+  const listRef = useRef<HTMLDivElement>(null);
+  const [listScrollMargin, setListScrollMargin] = useState(0);
+  const listShown = visibleTracks.length > 0;
+  useLayoutEffect(() => {
+    const list = listRef.current;
+    const scroller = scrollRef.current;
+    if (!list || !scroller) return;
+    const measure = () =>
+      setListScrollMargin(
+        Math.round(
+          list.getBoundingClientRect().top -
+            scroller.getBoundingClientRect().top +
+            scroller.scrollTop,
+        ),
+      );
+    measure();
+    const hero = scroller.firstElementChild;
+    if (!hero || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(hero);
+    return () => observer.disconnect();
+  }, [listShown, data]);
+
+  const estimatedRowHeight = isSingleArtistAlbum ? 44 : 64;
+  const rowVirtualizer = useVirtualizer({
+    scrollMargin: listScrollMargin,
+    count: visibleTracks.length,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => estimatedRowHeight,
+    overscan: 8,
+    getItemKey: (index) => {
+      const entry = visibleTracks[index];
+      return entry ? `${entry.track.id}:${entry.index}` : index;
+    },
+  });
+
   if (!loading && !data) {
     return (
       <div className="h-full w-full bg-transparent flex items-center justify-center">
@@ -386,7 +424,11 @@ function CollectionContent() {
                       <Button
                         variant="primary"
                         onClick={handlePlayAll}
-                        disabled={!data || data.tracks.length === 0}
+                        disabled={
+                          !data ||
+                          data.tracks.length === 0 ||
+                          data.partial === true
+                        }
                         className={`${HERO_BUTTON_CLASS} px-[22px]`}
                       >
                         <PlayFill size={16} />
@@ -395,7 +437,11 @@ function CollectionContent() {
                       <Button
                         variant="secondary"
                         onClick={handleShufflePlay}
-                        disabled={!data || data.tracks.length === 0}
+                        disabled={
+                          !data ||
+                          data.tracks.length === 0 ||
+                          data.partial === true
+                        }
                         className={`${HERO_BUTTON_CLASS} ${HERO_GLASS_BUTTON_CLASS} !w-[52px] !p-0 text-text-primary`}
                         title={t("common.shuffle")}
                       >
@@ -419,7 +465,11 @@ function CollectionContent() {
                       <Button
                         variant="secondary"
                         onClick={handleAddToQueue}
-                        disabled={!data || data.tracks.length === 0}
+                        disabled={
+                          !data ||
+                          data.tracks.length === 0 ||
+                          data.partial === true
+                        }
                         className={`${HERO_BUTTON_CLASS} ${HERO_GLASS_BUTTON_CLASS} px-[22px] ${
                           // optical centring: with three icon buttons beside it the label reads 1px right
                           !isDailyMix ? "[&>*]:-translate-x-px" : ""
@@ -505,44 +555,65 @@ function CollectionContent() {
                       onClear={() => search.setQuery("")}
                     />
                   ) : (
-                    <div className="flex flex-col">
-                      {visibleTracks.map(({ track, index }) => (
-                        <SongCardWithMenu
-                          key={track.id}
-                          id={track.id}
-                          title={track.title}
-                          artists={track.artists}
-                          artistId={track.artistId}
-                          artistList={track.artistList}
-                          coverUrl={track.coverUrl || data.coverUrl}
-                          highlight={search.activeQuery || undefined}
-                          trackNumber={
-                            isAlbum
-                              ? (trackNumberById.get(track.id) ?? index + 1)
-                              : undefined
-                          }
-                          duration={
-                            track.durationMs
-                              ? `${Math.floor(track.durationMs / 60000)}:${Math.floor(
-                                  (track.durationMs % 60000) / 1000,
+                    <div
+                      ref={listRef}
+                      className="relative"
+                      style={{ height: `${rowVirtualizer.getTotalSize()}px` }}
+                    >
+                      {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                        const entry = visibleTracks[virtualRow.index];
+                        if (!entry) return null;
+                        const { track, index } = entry;
+                        return (
+                          <div
+                            key={virtualRow.key}
+                            data-index={virtualRow.index}
+                            ref={rowVirtualizer.measureElement}
+                            style={{
+                              position: "absolute",
+                              top: 0,
+                              left: 0,
+                              width: "100%",
+                              transform: `translateY(${virtualRow.start - listScrollMargin}px)`,
+                            }}
+                          >
+                            <SongCardWithMenu
+                              id={track.id}
+                              title={track.title}
+                              artists={track.artists}
+                              artistId={track.artistId}
+                              artistList={track.artistList}
+                              coverUrl={track.coverUrl || data.coverUrl}
+                              highlight={search.activeQuery || undefined}
+                              trackNumber={
+                                isAlbum
+                                  ? (trackNumberById.get(track.id) ?? index + 1)
+                                  : undefined
+                              }
+                              duration={
+                                track.durationMs
+                                  ? `${Math.floor(track.durationMs / 60000)}:${Math.floor(
+                                      (track.durationMs % 60000) / 1000,
+                                    )
+                                      .toString()
+                                      .padStart(2, "0")}`
+                                  : undefined
+                              }
+                              durationMs={track.durationMs}
+                              explicit={track.explicit}
+                              hideArtists={isSingleArtistAlbum}
+                              onPlay={() =>
+                                playerEngine.playTrack(
+                                  track,
+                                  sortedTracks,
+                                  playbackContext,
+                                  data.coverUrl,
                                 )
-                                  .toString()
-                                  .padStart(2, "0")}`
-                              : undefined
-                          }
-                          durationMs={track.durationMs}
-                          explicit={track.explicit}
-                          hideArtists={isSingleArtistAlbum}
-                          onPlay={() =>
-                            playerEngine.playTrack(
-                              track,
-                              sortedTracks,
-                              playbackContext,
-                              data.coverUrl,
-                            )
-                          }
-                        />
-                      ))}
+                              }
+                            />
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </section>
