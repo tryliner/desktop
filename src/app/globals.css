@@ -444,6 +444,15 @@ button.apple-glass-action:hover,
   color: #000000 !important;
 }
 
+:root[data-user-accent] .apple-glass-prominent,
+:root[data-user-accent] .apple-glass-prominent:hover {
+  color: var(--user-accent-text) !important;
+}
+
+:root[data-user-accent] .apple-glass-prominent:hover {
+  background: color-mix(in srgb, var(--user-accent) 88%, white) !important;
+}
+
 @keyframes lyric-dot {
   0%,
   100% {

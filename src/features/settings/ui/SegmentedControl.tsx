@@ -38,7 +38,7 @@ export function SegmentedControl<T extends string>({
             className={cn(
               "relative inline-flex h-full cursor-pointer items-center whitespace-nowrap rounded-control border-0 bg-transparent px-[12px] text-body leading-none transition-colors",
               isActive
-                ? "text-text-primary"
+                ? "text-text-primary [:root[data-user-accent]_&]:text-(--user-accent)"
                 : "text-text-secondary hover:text-text-primary",
             )}
             style={{ fontWeight: 500 }}

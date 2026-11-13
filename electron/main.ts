@@ -97,7 +97,7 @@ import {
   simulatedResponseStatus,
 } from "./netsim/install.js";
 import { registerLocalTrackScheme } from "./local-tracks/protocol.js";
-import { attachZoomControls } from "./zoom.js";
+import { attachZoomControls, type ZoomControls } from "./zoom.js";
 import {
   YOUTUBE_REQUEST_URLS,
   youtubeOriginFor,
@@ -141,6 +141,7 @@ process.env.VITE_PUBLIC = process.env.VITE_DEV_SERVER_URL
   : RENDERER_DIST;
 
 let mainWindow: BrowserWindow | null = null;
+let zoomControls: ZoomControls | null = null;
 let touchBarManager: TouchBarManager | null = null;
 let overlayManager: OverlayManager | null = null;
 let thumbar: ThumbarController | null = null;
@@ -485,7 +486,13 @@ function createWindow() {
       }
     }
   });
-  attachZoomControls(mainWindow, MIN_WINDOW_WIDTH, MIN_WINDOW_HEIGHT);
+  const zoomWindow = mainWindow;
+  zoomControls = attachZoomControls(
+    zoomWindow,
+    MIN_WINDOW_WIDTH,
+    MIN_WINDOW_HEIGHT,
+    () => screen.getDisplayMatching(zoomWindow.getBounds()).workAreaSize,
+  );
 
   if (process.env.VITE_DEV_SERVER_URL) {
     mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL);
@@ -736,6 +743,13 @@ if (!gotTheLock) {
       );
       return remember;
     });
+
+    handleTrusted("window:get-zoom", () => zoomControls?.current() ?? 1);
+
+    handleTrusted(
+      "window:set-zoom",
+      (_event, factor: unknown) => zoomControls?.setPreferred(factor) ?? 1,
+    );
 
     handleTrusted("app:get-version", () => {
       return app.getVersion();

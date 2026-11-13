@@ -33,7 +33,7 @@ export const Header = forwardRef<HTMLElement, HeaderProps>(function Header(
           transition={WINDOW_CONTROLS_MORPH}
           data-no-window-drag
           data-no-tooltip="true"
-          className="h-[38px] flex items-center gap-[2px] px-[4px] rounded-[10px] shrink-0 bg-bg-glass backdrop-blur-[20px]"
+          className="h-[38px] flex items-center gap-[2px] px-[4px] rounded-[10px] shrink-0 bg-bg-glass [:root[data-user-accent]_&]:bg-(--user-accent-island) backdrop-blur-[20px]"
         >
           <WindowControls bare />
         </motion.div>

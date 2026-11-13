@@ -35,6 +35,28 @@ export function effectiveZoom(preferred: number, maxZoom: number): number {
   return Math.round(Math.min(preferred, maxZoom) * 10) / 10;
 }
 
+export function normalizeZoom(value: unknown): number | null {
+  if (typeof value !== "number" || !Number.isFinite(value)) return null;
+  return Math.round(Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, value)) * 10) / 10;
+}
+
+export interface ZoomControls {
+  current: () => number;
+  setPreferred: (value: unknown) => number;
+}
+
+export function sizeForZoom(
+  current: readonly [number, number],
+  zoom: number,
+  minWidth: number,
+  minHeight: number,
+  area: { width: number; height: number },
+): [number, number] {
+  const width = Math.max(current[0], Math.ceil(minWidth * zoom));
+  const height = Math.max(current[1], Math.ceil(minHeight * zoom));
+  return [Math.min(width, area.width), Math.min(height, area.height)];
+}
+
 export function nextZoomFactor(
   current: number,
   action: ZoomAction,
@@ -52,7 +74,8 @@ export function attachZoomControls(
   window: BrowserWindow,
   minWidth: number,
   minHeight: number,
-) {
+  workArea?: () => { width: number; height: number },
+): ZoomControls {
   const contents = window.webContents;
   const maxZoom = () => {
     const [width, height] = window.getContentSize();
@@ -83,4 +106,29 @@ export function attachZoomControls(
   window.on("resize", sync);
   contents.on("did-finish-load", sync);
   sync();
+
+  return {
+    current: () => contents.getZoomFactor(),
+    setPreferred: (value) => {
+      const next = normalizeZoom(value);
+      if (next !== null) {
+        preferred = next;
+        const area = workArea?.();
+        if (area && !window.isMaximized() && !window.isFullScreen()) {
+          const current = window.getContentSize() as [number, number];
+          const [width, height] = sizeForZoom(
+            current,
+            next,
+            minWidth,
+            minHeight,
+            area,
+          );
+          if (width !== current[0] || height !== current[1])
+            window.setContentSize(width, height);
+        }
+        sync();
+      }
+      return contents.getZoomFactor();
+    },
+  };
 }

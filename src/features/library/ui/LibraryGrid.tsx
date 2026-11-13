@@ -7,6 +7,7 @@ import PlaylistCard from "./PlaylistCard";
 import SourceBadge from "./SourceBadge";
 import CoverImage from "@/features/covers/ui/CoverImage";
 import DropdownMenu, { type DropdownMenuItem } from "@/shared/ui/DropdownMenu";
+import { pinKey, usePinMenuItem } from "@/features/pins";
 import type {
   LibraryItemViewModel,
   LibraryTab,
@@ -96,6 +97,24 @@ export function LibraryGridSkeleton({
 }
 
 function useItemMenuItems(item: LibraryItemViewModel): DropdownMenuItem[] {
+  const baseItems = useLibraryItemMenuItems(item);
+  const pinItem = usePinMenuItem({
+    key: pinKey(
+      item.kind === "artist" || item.kind === "album" ? item.kind : "playlist",
+      item.id,
+    ),
+    kind:
+      item.kind === "artist" || item.kind === "album" ? item.kind : "playlist",
+    title: item.title,
+    coverUrl: item.coverUrls?.[0] ?? item.imageUrl,
+    href: item.href,
+  });
+  return pinItem ? [pinItem, ...baseItems] : baseItems;
+}
+
+function useLibraryItemMenuItems(
+  item: LibraryItemViewModel,
+): DropdownMenuItem[] {
   const { t } = useTranslation();
   return useMemo(() => {
     if (item.source) return [];

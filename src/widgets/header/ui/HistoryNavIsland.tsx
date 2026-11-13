@@ -4,7 +4,7 @@ import { cn } from "@/shared/lib";
 import { useHistoryNavigation } from "../lib/useHistoryNavigation";
 
 const NAV_BUTTON_CLASS =
-  "flex w-[26px] h-[26px] items-center justify-center rounded-control border-0 bg-transparent p-0 cursor-pointer select-none text-text-primary opacity-55 transition-[background-color,color,opacity] duration-150 hover:opacity-100 hover:bg-border-alpha-14 active:scale-95 disabled:!opacity-25 disabled:cursor-default disabled:pointer-events-none";
+  "flex w-[26px] h-[26px] items-center justify-center rounded-control border-0 bg-transparent p-0 cursor-pointer select-none text-text-primary [:root[data-user-accent]_&]:text-(--user-accent-icon) opacity-55 [:root[data-user-accent]_&]:opacity-90 transition-[background-color,color,opacity] duration-150 hover:opacity-100 hover:bg-border-alpha-14 active:scale-95 disabled:!opacity-25 disabled:cursor-default disabled:pointer-events-none";
 
 export interface HistoryNavIslandProps {
   className?: string;
@@ -19,7 +19,7 @@ export function HistoryNavIsland({ className }: HistoryNavIslandProps) {
       data-no-window-drag
       data-no-tooltip="true"
       className={cn(
-        "h-[38px] flex items-center gap-[2px] px-[4px] rounded-[10px] shrink-0 bg-bg-glass backdrop-blur-[20px]",
+        "h-[38px] flex items-center gap-[2px] px-[4px] rounded-[10px] shrink-0 bg-bg-glass [:root[data-user-accent]_&]:bg-(--user-accent-island) backdrop-blur-[20px]",
         className,
       )}
     >

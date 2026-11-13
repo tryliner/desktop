@@ -573,6 +573,14 @@
     "no_results": "No results found",
     "type_to_search": "Type to search"
   },
+  "pins": {
+    "title": "Pinned",
+    "pin": "Pin to sidebar",
+    "unpin": "Unpin",
+    "pinned": "Pinned to sidebar",
+    "unpinned": "Unpinned",
+    "empty_hint": "Nothing pinned yet. Right-click a track or playlist and choose Pin to sidebar."
+  },
   "settings": {
     "title": "Settings",
     "search_placeholder": "Search settings...",
@@ -806,6 +814,34 @@
     "language": {
       "label": "Language",
       "description": "Select the interface language"
+    },
+    "ui_scale": {
+      "title": "Interface size",
+      "description": "Scale the whole app. Works like Ctrl and + or -.",
+      "reset": "Reset"
+    },
+    "accent": {
+      "title": "Accent color",
+      "description": "Color of all buttons, highlights and active elements.",
+      "default": "Default",
+      "custom": "Custom color"
+    },
+    "background": {
+      "title": "Custom background",
+      "description": "Show your own picture or GIF behind the app.",
+      "choose": "Choose image",
+      "remove": "Remove",
+      "dim": "Dimming",
+      "blur": "Blur",
+      "invalid": "Choose an image file",
+      "too_large": "The file is too large, 30 MB at most",
+      "save_failed": "Could not save the background"
+    },
+    "sidebar_position": {
+      "title": "Sidebar position",
+      "description": "Put the navigation panel on the left or at the top.",
+      "left": "Left",
+      "top": "Top"
     },
     "remember_window_bounds": {
       "title": "Remember window size and position",

@@ -20,7 +20,10 @@ import { AppRoutes } from "./routes";
 import DeeplinkHandler from "./DeeplinkHandler";
 import EnvironmentWarning from "./EnvironmentWarning";
 import { ConnectionIssueModal } from "@/features/connectivity";
-import { useThemeCustomizationSync } from "@/features/settings";
+import {
+  useThemeCustomizationSync,
+  useAppearanceSync,
+} from "@/features/settings";
 import "./globals.css";
 
 function AppIconSync() {
@@ -35,6 +38,11 @@ function PresenceSync() {
 
 function ThemeSync() {
   useThemeCustomizationSync();
+  return null;
+}
+
+function AppearanceSync() {
+  useAppearanceSync();
   return null;
 }
 
@@ -67,6 +75,7 @@ export default function App() {
       >
         <GlobalTooltip />
         <ThemeSync />
+        <AppearanceSync />
         <AppIconSync />
         <PresenceSync />
         <TouchBarSync />

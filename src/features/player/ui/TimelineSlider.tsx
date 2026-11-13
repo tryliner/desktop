@@ -196,7 +196,7 @@ export const TimelineSlider = memo(function TimelineSlider({
           <div
             className={`absolute inset-0 rounded-full transition-transform ease-[cubic-bezier(0.22,1,0.36,1)] ${
               isDragging ? "duration-0" : "duration-[600ms]"
-            } ${fillClassName || "bg-text-primary"}`}
+            } ${fillClassName || "bg-text-primary [:root[data-user-accent]_&]:bg-(--user-accent)"}`}
             style={{
               transform: `translateX(${percentage - 100}%)`,
               ...(fillColor ? { backgroundColor: fillColor } : {}),

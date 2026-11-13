@@ -26,7 +26,7 @@ export function ToggleSwitch({
         "transition-colors duration-200 ease-out",
         "focus-visible:ring-2 focus-visible:ring-text-primary/25 focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary",
         checked
-          ? "bg-black/[0.35] dark:bg-white/[0.35]"
+          ? "bg-black/[0.35] dark:bg-white/[0.35] [:root[data-user-accent]_&]:bg-(--user-accent)"
           : "bg-black/[0.1] dark:bg-white/[0.1]",
         disabled
           ? "cursor-not-allowed opacity-40"

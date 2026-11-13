@@ -49,7 +49,7 @@ function PlaylistCover({ urls, title }: { urls: string[]; title: string }) {
 }
 
 // fades the list edge only on the side that has more to scroll
-function useScrollFade() {
+export function useScrollFade() {
   const ref = useRef<HTMLDivElement>(null);
   const [fade, setFade] = useState({ top: false, bottom: false });
 
@@ -83,7 +83,15 @@ function useScrollFade() {
 
 // 40px covers in the 52px nav panel: 6px from the sides and between covers,
 // radius one step under the panel's so the corners nest
-function SidebarLibraryList({ items }: { items: SidebarLibraryItem[] }) {
+type TooltipSide = "right" | "left";
+
+function SidebarLibraryList({
+  items,
+  tooltipSide,
+}: {
+  items: SidebarLibraryItem[];
+  tooltipSide: TooltipSide;
+}) {
   const { pathname, search } = useLocation();
   const fade = useScrollFade();
   const current = pathname + search;
@@ -101,7 +109,7 @@ function SidebarLibraryList({ items }: { items: SidebarLibraryItem[] }) {
             <Tooltip
               key={item.key}
               content={item.title}
-              side="right"
+              side={tooltipSide}
               sideOffset={12}
             >
               <Link
@@ -120,7 +128,7 @@ function SidebarLibraryList({ items }: { items: SidebarLibraryItem[] }) {
   );
 }
 
-function OnlineSidebarLibrary() {
+function OnlineSidebarLibrary({ tooltipSide }: { tooltipSide: TooltipSide }) {
   const { t } = useTranslation();
   const likesCover = useLikesCover();
   const showCached = useCachedTracksStore((state) => state.visibleOnline);
@@ -168,10 +176,10 @@ function OnlineSidebarLibrary() {
     })),
   ];
 
-  return <SidebarLibraryList items={items} />;
+  return <SidebarLibraryList items={items} tooltipSide={tooltipSide} />;
 }
 
-function OfflineSidebarLibrary() {
+function OfflineSidebarLibrary({ tooltipSide }: { tooltipSide: TooltipSide }) {
   const { t } = useTranslation();
   const likesCover = useLikesCover();
   const { tracks: savedLikes, isLoading: savedLoading } = useSavedTracks();
@@ -201,11 +209,19 @@ function OfflineSidebarLibrary() {
     },
   ];
 
-  return <SidebarLibraryList items={items} />;
+  return <SidebarLibraryList items={items} tooltipSide={tooltipSide} />;
 }
 
 /** Library shortcuts under the nav group, same set and order as the library page. */
-export function SidebarLibrary() {
+export function SidebarLibrary({
+  tooltipSide = "right",
+}: {
+  tooltipSide?: TooltipSide;
+}) {
   const offline = useOfflineModeStore((state) => state.offline);
-  return offline ? <OfflineSidebarLibrary /> : <OnlineSidebarLibrary />;
+  return offline ? (
+    <OfflineSidebarLibrary tooltipSide={tooltipSide} />
+  ) : (
+    <OnlineSidebarLibrary tooltipSide={tooltipSide} />
+  );
 }

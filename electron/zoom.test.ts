@@ -5,6 +5,8 @@ import {
   effectiveZoom,
   maxZoomFor,
   nextZoomFactor,
+  normalizeZoom,
+  sizeForZoom,
   zoomActionFor,
 } from "./zoom";
 
@@ -64,5 +66,37 @@ describe("effective zoom", () => {
     expect(effectiveZoom(1.2, 0.9)).toBe(0.9);
     expect(effectiveZoom(1.2, 1.5)).toBe(1.2);
     expect(effectiveZoom(0.8, 1.5)).toBe(0.8);
+  });
+});
+
+describe("normalizeZoom", () => {
+  it("rounds to a tenth and clamps to the allowed range", () => {
+    expect(normalizeZoom(1.14)).toBe(1.1);
+    expect(normalizeZoom(0.2)).toBe(MIN_ZOOM);
+    expect(normalizeZoom(9)).toBe(MAX_ZOOM);
+  });
+
+  it("rejects values that are not finite numbers", () => {
+    expect(normalizeZoom("1.2")).toBeNull();
+    expect(normalizeZoom(Number.NaN)).toBeNull();
+    expect(normalizeZoom(undefined)).toBeNull();
+  });
+});
+
+describe("sizeForZoom", () => {
+  const area = { width: 1920, height: 1040 };
+
+  it("grows the window so the scaled layout still fits", () => {
+    expect(sizeForZoom([1100, 705], 1.2, 1100, 705, area)).toEqual([1320, 846]);
+  });
+
+  it("keeps a window that is already big enough", () => {
+    expect(sizeForZoom([1600, 900], 1.1, 1100, 705, area)).toEqual([1600, 900]);
+  });
+
+  it("never grows past the work area", () => {
+    expect(sizeForZoom([1100, 705], 1.5, 1100, 705, area)).toEqual([
+      1650, 1040,
+    ]);
   });
 });

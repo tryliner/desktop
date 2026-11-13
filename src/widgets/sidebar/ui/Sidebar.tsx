@@ -1,22 +1,56 @@
 import { memo } from "react";
 import { Link } from "react-router-dom";
 import logo from "@/assets/logo.svg";
-import { SidebarLibrary } from "./SidebarLibrary";
+import { cn } from "@/shared/lib";
+import { SidebarPins } from "./SidebarPins";
 import { SidebarNavItems } from "./SidebarNavItems";
 import { SidebarSettingsButton } from "./SidebarSettingsButton";
+
+export type SidebarPlacement = "left" | "top" | "right";
 
 export interface SidebarProps {
   searchOpen: boolean;
   onSearchToggle: () => void;
+  position?: SidebarPlacement;
 }
 
-function Sidebar({ searchOpen, onSearchToggle }: SidebarProps) {
+const TOOLTIP_SIDE = {
+  left: "right",
+  top: "bottom",
+  right: "left",
+} as const;
+
+function Sidebar({
+  searchOpen,
+  onSearchToggle,
+  position = "left",
+}: SidebarProps) {
+  const horizontal = position === "top";
+  const tooltipSide = TOOLTIP_SIDE[position];
+
   return (
-    <div className="h-full w-[52px] flex flex-col items-center gap-[6px]">
+    <div
+      className={cn(
+        "flex items-center gap-[6px]",
+        horizontal ? "h-[52px] w-full pr-[260px]" : "h-full w-[52px] flex-col",
+      )}
+    >
       {/* one panel for nav and library; hugs its content and scrolls the
           library once it reaches the window bottom */}
-      <div className="w-full min-h-0 flex flex-col rounded-item bg-bg-glass backdrop-blur-[20px]">
-        <nav className="shrink-0 flex flex-col items-center gap-[20px] py-[16px]">
+      <div
+        className={cn(
+          "min-h-0 flex rounded-item bg-bg-glass [:root[data-user-accent]_&]:bg-(--user-accent-island) backdrop-blur-[20px]",
+          horizontal
+            ? "h-full min-w-0 flex-row items-center"
+            : "w-full flex-col",
+        )}
+      >
+        <nav
+          className={cn(
+            "shrink-0 flex items-center gap-[20px]",
+            horizontal ? "flex-row px-[18px]" : "flex-col py-[16px]",
+          )}
+        >
           <Link
             to="/"
             title="Liner"
@@ -34,13 +68,18 @@ function Sidebar({ searchOpen, onSearchToggle }: SidebarProps) {
           <SidebarNavItems
             searchOpen={searchOpen}
             onSearchToggle={onSearchToggle}
+            tooltipSide={tooltipSide}
           />
-          <SidebarSettingsButton />
+          <SidebarSettingsButton tooltipSide={tooltipSide} />
         </nav>
 
-        <SidebarLibrary />
+        <SidebarPins
+          horizontal={horizontal}
+          tooltipSide={
+            horizontal ? "bottom" : position === "right" ? "left" : "right"
+          }
+        />
       </div>
-
     </div>
   );
 }
