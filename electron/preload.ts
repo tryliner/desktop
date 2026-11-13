@@ -74,6 +74,8 @@ export interface LinerElectronApi {
   isFullScreen: () => Promise<boolean>;
   getRememberWindowBounds: () => Promise<boolean>;
   setRememberWindowBounds: (enabled: boolean) => Promise<boolean>;
+  getZoomFactor: () => Promise<number>;
+  setZoomFactor: (factor: number) => Promise<number>;
   onWindowStateChange: (cb: (state: WindowState) => void) => () => void;
   onWindowRestored?: (cb: () => void) => () => void;
   onWindowMinimized?: (cb: () => void) => () => void;
@@ -255,6 +257,8 @@ const api: LinerElectronApi = {
     ipcRenderer.invoke("window:get-remember-bounds"),
   setRememberWindowBounds: (enabled) =>
     ipcRenderer.invoke("window:set-remember-bounds", enabled),
+  getZoomFactor: () => ipcRenderer.invoke("window:get-zoom"),
+  setZoomFactor: (factor) => ipcRenderer.invoke("window:set-zoom", factor),
   onWindowStateChange: (cb) => {
     const listener = (_event: unknown, state: WindowState) => cb(state);
     ipcRenderer.on("window:state-changed", listener);

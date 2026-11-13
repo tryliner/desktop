@@ -66,6 +66,9 @@ import {
 } from "@/features/library";
 import {
   SettingsModal,
+  CustomBackground,
+  useAppearanceStore,
+  useHasCustomBackground,
   useHasPageBackdrop,
   useEffectiveCoverGlow,
 } from "@/features/settings";
@@ -726,6 +729,13 @@ export default function AppFrame({ children }: AppFrameProps) {
   const hasPageBackdrop = useHasPageBackdrop();
   const coverGlow = useEffectiveCoverGlow();
   const glassBlur = useGlassBlur();
+  const sidebarPosition = useAppearanceStore((state) => state.sidebarPosition);
+  const hasCustomBackground = useHasCustomBackground();
+  const sidebarInset = SIDEBAR_WIDTH + SHELL_EDGE_GAP;
+  const searchInset = {
+    left: sidebarPosition === "left" ? sidebarInset : SHELL_EDGE_GAP,
+    right: SHELL_EDGE_GAP,
+  };
 
   return (
     <div
@@ -739,7 +749,10 @@ export default function AppFrame({ children }: AppFrameProps) {
         if (e.currentTarget.scrollTop !== 0) e.currentTarget.scrollTop = 0;
       }}
     >
-      {coverGlow ? <DynamicBlurBackground isDark={isDark} /> : null}
+      {coverGlow && !hasCustomBackground ? (
+        <DynamicBlurBackground isDark={isDark} />
+      ) : null}
+      <CustomBackground />
 
       <AnimatePresence>
         {!isFullscreenPlayer && (
@@ -749,7 +762,12 @@ export default function AppFrame({ children }: AppFrameProps) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.22, ease: "easeOut" }}
-            className="absolute left-[64px] right-1.5 top-1.5 z-[45]"
+            className={cn(
+              "absolute right-1.5 top-1.5 z-[45]",
+              sidebarPosition === "left"
+                ? "left-[64px]"
+                : "left-1.5 pointer-events-none [&>*>*]:pointer-events-auto",
+            )}
           >
             <Header
               searchOpen={searchOpen}
@@ -761,17 +779,23 @@ export default function AppFrame({ children }: AppFrameProps) {
 
       <div
         className={cn(
-          "flex-1 min-h-0 flex flex-row w-full gap-1.5 overflow-hidden relative z-10",
+          "flex-1 min-h-0 flex w-full gap-1.5 overflow-hidden relative z-10",
+          sidebarPosition === "top" && "flex-col",
+          sidebarPosition === "left" && "flex-row",
           fullscreenPlayerOpen && fullscreenEffectsReady && "invisible",
         )}
       >
         <aside
           ref={sidebarRef}
-          className="w-[52px] shrink-0 z-[45] relative flex flex-col"
+          className={cn(
+            "shrink-0 z-[45] relative flex",
+            sidebarPosition === "top" ? "h-[52px] w-full" : "w-[52px] flex-col",
+          )}
         >
           <Sidebar
             searchOpen={searchOpen}
             onSearchToggle={handleSearchToggle}
+            position={sidebarPosition}
           />
         </aside>
 
@@ -904,8 +928,8 @@ export default function AppFrame({ children }: AppFrameProps) {
             transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
             className={`absolute right-0 z-[60] flex flex-col items-center pointer-events-none pt-[54px]`}
             style={{
-              left: SIDEBAR_WIDTH + SHELL_EDGE_GAP,
-              right: SHELL_EDGE_GAP,
+              left: searchInset.left,
+              right: searchInset.right,
               top: 6,
             }}
           >

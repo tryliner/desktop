@@ -24,6 +24,7 @@ import { buildShareUrl } from "@/shared/utils/share";
 import { isLocalTrackId } from "@/shared/media/local";
 import { useIsTrackCached } from "@/features/library/cached/hooks/useIsTrackCached";
 import { removeTrackFromCache } from "@/shared/utils/cacheManager";
+import { entityHref, pinKey, usePinMenuItem } from "@/features/pins";
 
 const CLOUD_ONLY_ITEMS = new Set([
   "start-radio",
@@ -52,6 +53,33 @@ export interface SongMenuContext {
 }
 
 export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
+  const items = useBaseSongMenuItems(ctx);
+  const kind = ctx.searchType ?? "track";
+  const pinItem = usePinMenuItem(
+    ctx.id
+      ? {
+          key: pinKey(kind, ctx.id),
+          kind,
+          title: ctx.title,
+          coverUrl: ctx.coverUrl,
+          href: entityHref(kind, ctx.id),
+          track:
+            kind === "track"
+              ? {
+                  id: ctx.id,
+                  title: ctx.title,
+                  artists: ctx.artists,
+                  coverUrl: ctx.coverUrl,
+                  durationMs: ctx.durationMs ?? 0,
+                }
+              : undefined,
+        }
+      : null,
+  );
+  return pinItem ? [pinItem, ...items] : items;
+}
+
+function useBaseSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
   const { t } = useTranslation();
   const {
     id,

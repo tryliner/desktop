@@ -4,7 +4,11 @@ import { useModalStore } from "@/features/library";
 import { Tooltip } from "@/shared/ui";
 import { cn } from "@/shared/lib";
 
-export function SidebarSettingsButton() {
+export function SidebarSettingsButton({
+  tooltipSide = "right",
+}: {
+  tooltipSide?: "right" | "left" | "top" | "bottom";
+}) {
   const { t } = useTranslation();
   const settingsOpen = useModalStore((state) => state.settingsOpen);
   const toggleSettings = useModalStore((state) => state.toggleSettings);
@@ -16,17 +20,21 @@ export function SidebarSettingsButton() {
   const tooltipLabel = t("common.sidebar.settings") || settingsItem.label;
 
   return (
-    <Tooltip content={tooltipLabel} side="right" sideOffset={12}>
+    <Tooltip content={tooltipLabel} side={tooltipSide} sideOffset={12}>
       <button
         type="button"
         aria-pressed={settingsOpen}
         onClick={toggleSettings}
-        className="group relative inline-flex items-center justify-center bg-transparent border-0 p-0 cursor-pointer active:scale-[0.96] transition-transform duration-100"
+        className={cn(
+          "group relative inline-flex items-center justify-center bg-transparent border-0 p-0 cursor-pointer active:scale-[0.96] transition-transform duration-100 text-text-primary",
+          settingsOpen &&
+            "[:root[data-user-accent]_&]:text-(--user-accent-icon)",
+        )}
       >
         <Icon
           size={26}
           className={cn(
-            "relative z-10 text-text-primary transition-opacity duration-150 ease-out",
+            "relative z-10 transition-opacity duration-150 ease-out",
             settingsOpen ? "opacity-100" : "opacity-55 group-hover:opacity-90",
           )}
         />

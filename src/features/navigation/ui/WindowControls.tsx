@@ -86,7 +86,7 @@ export default function WindowControls({
         : "w-[34px] h-[34px]",
     onDarkGlass
       ? "text-white opacity-70 hover:opacity-100 hover:bg-white/12"
-      : "text-text-primary opacity-55 hover:opacity-100 hover:bg-border-alpha-14",
+      : "text-text-primary [:root[data-user-accent]_&]:text-(--user-accent-icon) opacity-55 [:root[data-user-accent]_&]:opacity-90 hover:opacity-100 hover:bg-border-alpha-14",
   );
 
   const buttons = (
