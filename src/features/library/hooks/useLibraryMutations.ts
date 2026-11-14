@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 import { api } from "@/shared/api";
 import { notifyLibraryChanged, evictPlaylistFromCache } from "./usePlaylists";
+import { useLocalPlaylistLinksStore } from "../local/store/localPlaylistLinksStore";
 import { setTrackLiked, toggleTrackLike } from "./useLikedTracks";
 
 type Options = {
@@ -77,6 +78,7 @@ export function useDeletePlaylist() {
   return useMutation(async ({ playlistId }: { playlistId: string }) => {
     evictPlaylistFromCache(playlistId);
     await api.deletePlaylist(playlistId);
+    void useLocalPlaylistLinksStore.getState().removePlaylist(playlistId);
   });
 }
 
@@ -117,6 +119,7 @@ export function useRemoveExternalItem() {
         }
         try {
           const res = await api.deletePlaylist(id);
+          void useLocalPlaylistLinksStore.getState().removePlaylist(id);
           // purge any saved collection reference in case it was both created and saved
           await api.removeCollection("playlists", id).catch(() => {});
           return res;

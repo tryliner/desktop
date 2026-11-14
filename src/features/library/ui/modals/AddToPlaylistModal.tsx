@@ -7,6 +7,8 @@ import {
 } from "@mingcute/react";
 import { useToast } from "@/shared/ui";
 import { ApiError } from "@/shared/api";
+import { isLocalTrackId } from "@/shared/media/local";
+import { addLocalTrackToPlaylist } from "../../local/lib/addLocalTrackToPlaylist";
 import TextInput from "@/shared/ui/TextInput";
 import Dialog from "@/shared/ui/Dialog";
 import { DialogActions, DialogButton } from "@/shared/ui";
@@ -83,6 +85,22 @@ export default function AddToPlaylistModal() {
     const targetPlaylist = playlists.find((p) => p.id === playlistId);
     setAddingTo(playlistId);
     try {
+      if (isLocalTrackId(track.id)) {
+        const result = await addLocalTrackToPlaylist(playlistId, track.id);
+        if (result === "added") {
+          toast(t("common.added_to_playlist"), "checkmark", {
+            description: targetPlaylist?.title || undefined,
+          });
+          close();
+        } else if (result === "duplicate") {
+          toast(t("common.track_already_in_playlist"), "error", {
+            description: track.title || undefined,
+          });
+        } else {
+          toast(t("common.failed_add_playlist"), "error");
+        }
+        return;
+      }
       await addTrack.mutateAsync({ playlistId, trackId: track.id });
       toast(t("common.added_to_playlist"), "checkmark", {
         description: targetPlaylist?.title || undefined,

@@ -33,3 +33,13 @@ export const LOCAL_AUDIO_EXTENSIONS = [
   "wav",
   "webm",
 ] as const;
+
+export interface LocalPlaylistEntry {
+  fileId: string;
+  title: string;
+  artist: string;
+  durationMs: number;
+  addedAt: number;
+}
+
+export type LocalPlaylistLinks = Record<string, LocalPlaylistEntry[]>;

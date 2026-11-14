@@ -10,6 +10,8 @@ import type { MainNetResult } from "./netdiag";
 import type { NetProbeResult } from "./netprobe/types";
 import type {
   LocalImportResult,
+  LocalPlaylistEntry,
+  LocalPlaylistLinks,
   LocalLibraryUsage,
   LocalTrackRecord,
 } from "./local-tracks/types";
@@ -220,6 +222,16 @@ export interface LinerElectronApi {
   localTracksRemove: (ids: string[]) => Promise<void>;
   localTracksRemoveAll: () => Promise<number>;
   localTracksUsage: () => Promise<LocalLibraryUsage>;
+  localPlaylistLinksList: () => Promise<LocalPlaylistLinks>;
+  localPlaylistLinksAdd: (
+    playlistId: string,
+    entry: LocalPlaylistEntry,
+  ) => Promise<boolean>;
+  localPlaylistLinksRemove: (
+    playlistId: string,
+    fileId: string,
+  ) => Promise<void>;
+  localPlaylistLinksRemovePlaylist: (playlistId: string) => Promise<void>;
   savedTracksList: () => Promise<SavedTrackRecord[]>;
   savedTracksSave: (input: SavedTrackInput) => Promise<SavedTrackRecord | null>;
   savedTracksRemove: (trackIds: string[]) => Promise<number>;
@@ -504,6 +516,13 @@ const api: LinerElectronApi = {
   localTracksRemove: (ids) => ipcRenderer.invoke("local-tracks:remove", ids),
   localTracksRemoveAll: () => ipcRenderer.invoke("local-tracks:remove-all"),
   localTracksUsage: () => ipcRenderer.invoke("local-tracks:usage"),
+  localPlaylistLinksList: () => ipcRenderer.invoke("local-playlist-links:list"),
+  localPlaylistLinksAdd: (playlistId, entry) =>
+    ipcRenderer.invoke("local-playlist-links:add", playlistId, entry),
+  localPlaylistLinksRemove: (playlistId, fileId) =>
+    ipcRenderer.invoke("local-playlist-links:remove", playlistId, fileId),
+  localPlaylistLinksRemovePlaylist: (playlistId) =>
+    ipcRenderer.invoke("local-playlist-links:remove-playlist", playlistId),
   savedTracksList: () => ipcRenderer.invoke("saved-tracks:list"),
   savedTracksSave: (input) => ipcRenderer.invoke("saved-tracks:save", input),
   savedTracksRemove: (trackIds) =>

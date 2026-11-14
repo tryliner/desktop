@@ -5,6 +5,8 @@ import { localTrackCoverUrl, toLocalTrackId } from "./localTrackIds";
 export type {
   LocalImportResult,
   LocalLibraryUsage,
+  LocalPlaylistEntry,
+  LocalPlaylistLinks,
   LocalTrackRecord,
 } from "../../../../electron/local-tracks/types";
 

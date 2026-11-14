@@ -266,6 +266,7 @@
       "import_failed_other": "Couldn't add {count} files",
       "unsupported": "These files aren't supported audio",
       "remove": "Remove from device",
+      "missing": "This file is no longer on this device",
       "remove_all": "Remove all imported files",
       "remove_all_title": "Remove all local music?",
       "remove_all_desc": "{tracks} ({size}) will be removed from Liner, together with their covers. Your original files stay where they are.",

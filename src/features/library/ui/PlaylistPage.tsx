@@ -58,6 +58,8 @@ import { statusOf } from "@/features/connectivity";
 import { useListReorder } from "@/shared/hooks";
 import { playerEngine } from "@/features/player";
 import type { Track } from "@/shared/types";
+import { useLocalPlaylistTracks } from "../local/hooks/useLocalPlaylistTracks";
+import MissingLocalTracks from "../local/ui/MissingLocalTracks";
 import { useTranslation } from "@/languages";
 import { api } from "@/shared/api";
 import {
@@ -210,6 +212,18 @@ function LibraryPlaylistContent() {
     error: playlistError,
   } = usePlaylist(isLikesMode ? null : decodedId);
 
+  const local = useLocalPlaylistTracks(isLikesMode ? null : decodedId);
+  const localCount = local.available.length + local.missing.length;
+  const isLocalOnlyPlaylist =
+    playlistDetail?.trackCount === 0 && localCount > 0;
+  const playlistTracks = useMemo(
+    () =>
+      playlistDetail && local.available.length > 0
+        ? [...playlistDetail.tracks, ...local.available]
+        : playlistDetail?.tracks,
+    [playlistDetail, local.available],
+  );
+
   const {
     data: likesData,
     isLoading: likesLoading,
@@ -224,7 +238,7 @@ function LibraryPlaylistContent() {
 
   const isLoading = isLikesMode ? likesLoading : playlistLoading;
 
-  const viewData = (() => {
+  const baseViewData = (() => {
     if (isLikesMode) {
       if (!likesData) return null;
       const tracks: Track[] = (likesData.tracks ?? []).map((t) => ({
@@ -256,6 +270,24 @@ function LibraryPlaylistContent() {
       revision: playlistDetail.revision,
     };
   })();
+  const viewData =
+    baseViewData && playlistDetail && !isLikesMode && localCount > 0
+      ? {
+          ...baseViewData,
+          tracks: playlistTracks ?? baseViewData.tracks,
+          countLabel: t("common.tracks", {
+            count: playlistDetail.trackCount + localCount,
+          }),
+          durationMs:
+            playlistDetail.durationMs === undefined
+              ? undefined
+              : playlistDetail.durationMs +
+                local.available.reduce(
+                  (acc, track) => acc + (track.durationMs || 0),
+                  0,
+                ),
+        }
+      : baseViewData;
   const likesCover = useLikesCover();
   const { data: playlistList } = usePlaylistsList();
   const summary = isLikesMode
@@ -853,6 +885,7 @@ function LibraryPlaylistContent() {
                               id: "share",
                               icon: <ShareForwardLine size={15} />,
                               label: t("common.share"),
+                              disabled: isLocalOnlyPlaylist,
                               onClick: handleShare,
                             },
                             {
@@ -992,6 +1025,13 @@ function LibraryPlaylistContent() {
                       );
                     })}
                   </div>
+                )}
+
+                {!isLikesMode && decodedId && (
+                  <MissingLocalTracks
+                    playlistId={decodedId}
+                    tracks={local.missing}
+                  />
                 )}
 
                 {isDragging && draggedItem && (

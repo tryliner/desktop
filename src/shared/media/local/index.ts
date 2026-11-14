@@ -9,5 +9,7 @@ export {
   localRecordToTrack,
   type LocalImportResult,
   type LocalLibraryUsage,
+  type LocalPlaylistEntry,
+  type LocalPlaylistLinks,
   type LocalTrackRecord,
 } from "./localTrack";

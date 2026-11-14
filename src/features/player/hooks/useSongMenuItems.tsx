@@ -22,6 +22,7 @@ import { useTranslation } from "@/languages";
 import { showToast } from "@/shared/ui";
 import { buildShareUrl } from "@/shared/utils/share";
 import { isLocalTrackId } from "@/shared/media/local";
+import { useLocalPlaylistLinksStore } from "@/features/library/local/store/localPlaylistLinksStore";
 import { useIsTrackCached } from "@/features/library/cached/hooks/useIsTrackCached";
 import { removeTrackFromCache } from "@/shared/utils/cacheManager";
 
@@ -364,6 +365,26 @@ export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
     ];
   }
   const deviceItems = items.filter((item) => !CLOUD_ONLY_ITEMS.has(item.id));
+  const addToPlaylist = items.find((item) => item.id === "add-to-playlist");
+  if (addToPlaylist) {
+    const afterQueue =
+      deviceItems.findIndex((item) => item.id === "add-to-queue") + 1;
+    deviceItems.splice(afterQueue, 0, addToPlaylist);
+  }
+  if (playlistId && id) {
+    deviceItems.push({
+      id: "remove-from-playlist",
+      label: t("common.remove_from_playlist"),
+      icon: <LuTrash2 size={15} />,
+      danger: true,
+      onClick: () => {
+        void useLocalPlaylistLinksStore.getState().remove(playlistId, id);
+        showToast(t("common.removed_from_playlist"), "checkmark", {
+          description: title || undefined,
+        });
+      },
+    });
+  }
   if (!onRemoveFromDevice) return deviceItems;
   return [
     ...deviceItems,

@@ -2,6 +2,7 @@ import path from "node:path";
 import { BrowserWindow, app, dialog } from "electron";
 import { handleTrusted } from "../ipc-guard.js";
 import { LocalTrackLibrary } from "./library.js";
+import { LocalPlaylistLinkStore } from "./playlist-links.js";
 import { handleLocalTrackScheme } from "./protocol.js";
 import type { SavedTrackLibrary } from "../saved-tracks/library.js";
 import { LOCAL_AUDIO_EXTENSIONS } from "./types.js";
@@ -18,6 +19,10 @@ export function setupLocalTracks(saved: SavedTrackLibrary) {
     path.join(app.getPath("userData"), "local-tracks"),
   );
   handleLocalTrackScheme(library, saved);
+
+  const playlistLinks = new LocalPlaylistLinkStore(
+    path.join(app.getPath("userData"), "local-tracks"),
+  );
 
   handleTrusted("local-tracks:list", () => library.list());
 
@@ -45,4 +50,28 @@ export function setupLocalTracks(saved: SavedTrackLibrary) {
   handleTrusted("local-tracks:remove-all", () => library.removeAll());
 
   handleTrusted("local-tracks:usage", () => library.usage());
+
+  handleTrusted("local-playlist-links:list", () => playlistLinks.list());
+
+  handleTrusted(
+    "local-playlist-links:add",
+    (_event, playlistId: unknown, entry: unknown) =>
+      typeof playlistId === "string"
+        ? playlistLinks.add(playlistId, entry)
+        : false,
+  );
+
+  handleTrusted(
+    "local-playlist-links:remove",
+    (_event, playlistId: unknown, fileId: unknown) =>
+      typeof playlistId === "string" && typeof fileId === "string"
+        ? playlistLinks.remove(playlistId, fileId)
+        : undefined,
+  );
+
+  handleTrusted(
+    "local-playlist-links:remove-playlist",
+    (_event, id: unknown) =>
+      typeof id === "string" ? playlistLinks.removePlaylist(id) : undefined,
+  );
 }

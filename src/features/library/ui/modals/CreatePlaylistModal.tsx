@@ -19,6 +19,8 @@ import { useImportStore } from "../../store/importStore";
 import { resolveApiErrorMessage } from "@/shared/api";
 import { isYoutubeHost } from "@/shared/youtube";
 import { useElementSize } from "@/shared/hooks/useElementSize";
+import { isLocalTrackId } from "@/shared/media/local";
+import { addLocalTrackToPlaylist } from "../../local/lib/addLocalTrackToPlaylist";
 
 type Tab = "create" | "import";
 
@@ -170,6 +172,18 @@ export default function CreatePlaylistModal() {
 
       if (pendingTrack) {
         try {
+          if (isLocalTrackId(pendingTrack.id)) {
+            const result = await addLocalTrackToPlaylist(
+              playlist.id,
+              pendingTrack.id,
+            );
+            if (result === "missing") throw new Error("local file is gone");
+            toast(t("common.added_to_playlist"), "checkmark", {
+              description: playlist.title || trimmed,
+            });
+            close();
+            return;
+          }
           await addTrack.mutateAsync({
             playlistId: playlist.id,
             trackId: pendingTrack.id,
