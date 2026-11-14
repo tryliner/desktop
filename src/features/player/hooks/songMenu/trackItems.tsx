@@ -2,6 +2,7 @@ import { LuRadio, LuStepForward, LuListPlus, LuHeart } from "react-icons/lu";
 import { ShareForwardLine } from "@mingcute/react";
 import type { DropdownMenuItem } from "@/shared/ui/DropdownMenu";
 import { showToast } from "@/shared/ui";
+import { cn } from "@/shared/lib";
 import { playerEngine } from "../../engine/playerEngine";
 import type { SongMenuActions, SongMenuContext, Translate } from "./types";
 
@@ -66,7 +67,9 @@ export function likeItem(
     icon: (
       <LuHeart
         size={15}
-        className={liked ? "fill-red-500 text-red-500" : "text-text-secondary"}
+        className={cn(
+          liked ? "fill-red-500 text-red-500" : "text-text-secondary",
+        )}
       />
     ),
     onClick: handleLike,
