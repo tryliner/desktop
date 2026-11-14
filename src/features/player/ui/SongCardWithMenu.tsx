@@ -1,10 +1,6 @@
-import { memo, useCallback, useMemo, useState } from "react";
+import { memo } from "react";
 import SongCard from "./SongCard";
-import { useSongMenuItems } from "../hooks/useSongMenuItems";
-import { playerEngine } from "../engine/playerEngine";
-import { usePlayerStore } from "../store/playerStore";
-import { useToast } from "@/shared/ui";
-import { useTranslation } from "@/languages";
+import { useSongCardMenu } from "../hooks/useSongCardMenu";
 
 import type { TrackArtist } from "@/shared/types";
 import { isLocalTrackId } from "@/shared/media/local";
@@ -44,125 +40,40 @@ export interface SongCardWithMenuProps {
   onRemoveFromPlaylist?: () => Promise<void>;
 }
 
-function SongCardWithMenu({
-  id,
-  title,
-  artists,
-  artistId,
-  artistList,
-  coverUrl,
-  className,
-  onPlay,
-  duration,
-  durationMs,
-  releaseDate,
-  explicit,
-  hideArtists,
-  imageShape,
-  trackNumber,
-  repostedBy,
-  searchType,
-  totalTracks,
-  playlistId,
-  playlistItemId,
-  playlistTitle,
-  onNavigate,
-  compact,
-  icon,
-  showReorderHandle,
-  onGrabStart,
-  highlight,
-  trailingAction,
-  onRemoveFromQueue,
-  onRemoveFromDevice,
-  onRemoveFromPlaylist,
-}: SongCardWithMenuProps) {
-  const resolvedDurationMs = useMemo(() => {
-    if (durationMs !== undefined) return durationMs;
-    if (!duration) return 0;
-    const parts = duration.split(":").map(Number);
-    if (parts.length === 2) {
-      return (parts[0] * 60 + parts[1]) * 1000;
-    }
-    if (parts.length === 3) {
-      return (parts[0] * 3600 + parts[1] * 60 + parts[2]) * 1000;
-    }
-    return 0;
-  }, [duration, durationMs]);
-
-  const menuItems = useSongMenuItems({
+function SongCardWithMenu(props: SongCardWithMenuProps) {
+  const {
     id,
     title,
     artists,
+    artistId,
+    artistList,
     coverUrl,
-    duration,
-    durationMs: resolvedDurationMs,
-    searchType,
-    totalTracks,
-    playlistId,
-    playlistItemId,
-    playlistTitle,
-    onRemoveFromQueue,
-    onRemoveFromDevice,
-    onRemoveFromPlaylist,
-  });
-
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [menuPosition, setMenuPosition] = useState<{
-    x: number;
-    y: number;
-  } | null>(null);
-
-  const { t } = useTranslation();
-  const { toast } = useToast();
-  const trackDoubleClickBehavior = usePlayerStore(
-    (state) => state.trackDoubleClickBehavior,
-  );
-
-  const handleDoubleClick = useCallback(() => {
-    if (!id) return;
-    if (trackDoubleClickBehavior === "queue") {
-      playerEngine.addToQueue({
-        id,
-        title,
-        artists,
-        coverUrl,
-        durationMs: resolvedDurationMs,
-        playCount: 0,
-      });
-      toast(t("common.added_to_queue"), "checkmark", {
-        description: artists ? `${title} — ${artists}` : title,
-      });
-    } else if (onPlay) {
-      onPlay();
-    }
-  }, [
-    trackDoubleClickBehavior,
-    id,
-    title,
-    artists,
-    coverUrl,
-    resolvedDurationMs,
+    className,
     onPlay,
-    toast,
-    t,
-  ]);
+    duration,
+    releaseDate,
+    explicit,
+    hideArtists,
+    imageShape,
+    trackNumber,
+    repostedBy,
+    onNavigate,
+    compact,
+    icon,
+    showReorderHandle,
+    onGrabStart,
+    highlight,
+    trailingAction,
+  } = props;
 
-  const handleContextMenu = useCallback(
-    (e: React.MouseEvent) => {
-      if (menuItems.length === 0) return;
-      e.preventDefault();
-      e.stopPropagation();
-      setMenuPosition({ x: e.clientX, y: e.clientY });
-      setMenuOpen(true);
-    },
-    [menuItems],
-  );
-
-  const handleMenuOpenChange = useCallback((isOpen: boolean) => {
-    setMenuOpen(isOpen);
-    if (!isOpen) setMenuPosition(null);
-  }, []);
+  const {
+    menuItems,
+    menuOpen,
+    menuPosition,
+    handleDoubleClick,
+    handleContextMenu,
+    handleMenuOpenChange,
+  } = useSongCardMenu(props);
 
   return (
     <SongCard
