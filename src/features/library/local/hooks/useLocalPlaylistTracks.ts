@@ -26,7 +26,6 @@ export function useLocalPlaylistTracks(playlistId: string | null | undefined) {
 
   return useMemo(() => {
     const known = new Map(records.map((record) => [record.id, record]));
-    // until the library has loaded, don't flash everything as missing
     const settled = loadState === "ready" || loadState === "unavailable";
     const available: Track[] = [];
     const missing: Track[] = [];

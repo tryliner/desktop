@@ -60,6 +60,8 @@ import { playerEngine } from "@/features/player";
 import type { Track } from "@/shared/types";
 import { useLocalPlaylistTracks } from "../local/hooks/useLocalPlaylistTracks";
 import MissingLocalTracks from "../local/ui/MissingLocalTracks";
+import { useLocalPlaylistLinksStore } from "../local/store/localPlaylistLinksStore";
+import { isLocalTrackId } from "@/shared/media/local";
 import { useTranslation } from "@/languages";
 import { api } from "@/shared/api";
 import {
@@ -92,6 +94,14 @@ const TrackItem = memo(function TrackItem({
   onGrabStart,
   highlight,
 }: TrackItemProps) {
+  const removeLocalLink = useLocalPlaylistLinksStore((state) => state.remove);
+  const onRemoveFromPlaylist = useMemo(
+    () =>
+      playlistId && isLocalTrackId(track.id)
+        ? () => removeLocalLink(playlistId, track.id)
+        : undefined,
+    [playlistId, track.id, removeLocalLink],
+  );
   const handlePlay = useCallback(() => {
     if (typeof window !== "undefined" && window.__linerWasDragging) return;
     const context = playlistId ? `playlist:${playlistId}` : playlistTitle;
@@ -113,6 +123,7 @@ const TrackItem = memo(function TrackItem({
         showReorderHandle={showReorderHandle}
         onGrabStart={onGrabStart}
         highlight={highlight}
+        onRemoveFromPlaylist={onRemoveFromPlaylist}
         duration={
           track.durationMs
             ? `${Math.floor(track.durationMs / 60000)}:${String(
@@ -440,23 +451,32 @@ function LibraryPlaylistContent() {
   const handleReorderCommit = useCallback(
     (fromIndex: number, toIndex: number, movingTrack: Track) => {
       if (!decodedId || !viewData || isLikesMode) return;
-      if (fromIndex === toIndex || !movingTrack.playlistItemId) return;
+      if (!movingTrack.playlistItemId) return;
+
+      const serverCount = currentTracks.filter(
+        (track) => !isLocalTrackId(track.id),
+      ).length;
+      const targetIndex = Math.min(toIndex, serverCount - 1);
+      if (fromIndex === targetIndex) return;
 
       const nextList = [...currentTracks];
       const [item] = nextList.splice(fromIndex, 1);
-      nextList.splice(toIndex, 0, item);
+      nextList.splice(targetIndex, 0, item);
 
-      const nextItem = nextList[toIndex + 1];
+      const nextItem = nextList[targetIndex + 1];
       const beforeItemId = nextItem ? (nextItem.playlistItemId ?? null) : null;
 
       setOptimisticTracks(nextList);
 
-      reorderTracks.mutate({
-        playlistId: decodedId,
-        itemId: movingTrack.playlistItemId,
-        beforeItemId,
-        revision: viewData.revision,
-      });
+      reorderTracks.mutate(
+        {
+          playlistId: decodedId,
+          itemId: movingTrack.playlistItemId,
+          beforeItemId,
+          revision: viewData.revision,
+        },
+        { onError: () => setOptimisticTracks(null) },
+      );
     },
     [currentTracks, decodedId, isLikesMode, reorderTracks, viewData],
   );

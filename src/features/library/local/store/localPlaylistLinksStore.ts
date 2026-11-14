@@ -10,7 +10,6 @@ interface LocalPlaylistLinksState {
   links: LocalPlaylistLinks;
   loaded: boolean;
   load: () => Promise<void>;
-  /** false when the track is already in the playlist or can't be saved */
   add: (playlistId: string, track: Track) => Promise<boolean>;
   remove: (playlistId: string, trackId: string) => Promise<void>;
   removePlaylist: (playlistId: string) => Promise<void>;
@@ -56,22 +55,24 @@ export const useLocalPlaylistLinksStore = create<LocalPlaylistLinksState>(
       const bridge = window.linerElectron;
       if (!bridge) return;
       const fileId = localFileId(trackId);
-      const current = get().links[playlistId] ?? [];
-      const next = current.filter((e) => e.fileId !== fileId);
-      const links = { ...get().links };
+      await bridge.localPlaylistLinksRemove(playlistId, fileId);
+      const latest = get().links;
+      const next = (latest[playlistId] ?? []).filter(
+        (e) => e.fileId !== fileId,
+      );
+      const links = { ...latest };
       if (next.length > 0) links[playlistId] = next;
       else delete links[playlistId];
       set({ links });
-      await bridge.localPlaylistLinksRemove(playlistId, fileId);
     },
 
     removePlaylist: async (playlistId) => {
       const bridge = window.linerElectron;
       if (!bridge) return;
+      await bridge.localPlaylistLinksRemovePlaylist(playlistId);
       const links = { ...get().links };
       delete links[playlistId];
       set({ links });
-      await bridge.localPlaylistLinksRemovePlaylist(playlistId);
     },
   }),
 );

@@ -41,6 +41,7 @@ export interface SongCardWithMenuProps {
   /** play queue rows: adds "Remove from queue" to the card menu */
   onRemoveFromQueue?: () => void;
   onRemoveFromDevice?: () => void;
+  onRemoveFromPlaylist?: () => Promise<void>;
 }
 
 function SongCardWithMenu({
@@ -74,6 +75,7 @@ function SongCardWithMenu({
   trailingAction,
   onRemoveFromQueue,
   onRemoveFromDevice,
+  onRemoveFromPlaylist,
 }: SongCardWithMenuProps) {
   const resolvedDurationMs = useMemo(() => {
     if (durationMs !== undefined) return durationMs;
@@ -102,6 +104,7 @@ function SongCardWithMenu({
     playlistTitle,
     onRemoveFromQueue,
     onRemoveFromDevice,
+    onRemoveFromPlaylist,
   });
 
   const [menuOpen, setMenuOpen] = useState(false);

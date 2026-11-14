@@ -23,6 +23,26 @@ function sanitize(raw: unknown): LocalPlaylistEntry | null {
   };
 }
 
+function parseLinks(raw: string): LocalPlaylistLinks {
+  const links: LocalPlaylistLinks = {};
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return links;
+  }
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed))
+    return links;
+  for (const [playlistId, list] of Object.entries(parsed)) {
+    if (!Array.isArray(list)) continue;
+    const entries = list
+      .map(sanitize)
+      .filter((e): e is LocalPlaylistEntry => e !== null);
+    if (entries.length > 0) links[playlistId] = entries;
+  }
+  return links;
+}
+
 export class LocalPlaylistLinkStore {
   private links: LocalPlaylistLinks | null = null;
   private queue: Promise<unknown> = Promise.resolve();
@@ -41,21 +61,13 @@ export class LocalPlaylistLinkStore {
 
   private async load(): Promise<LocalPlaylistLinks> {
     if (this.links) return this.links;
-    const links: LocalPlaylistLinks = {};
+    let raw: string | null = null;
     try {
-      const parsed: unknown = JSON.parse(
-        await fsp.readFile(this.filePath, "utf8"),
-      );
-      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-        for (const [playlistId, list] of Object.entries(parsed)) {
-          if (!Array.isArray(list)) continue;
-          const entries = list
-            .map(sanitize)
-            .filter((e): e is LocalPlaylistEntry => e !== null);
-          if (entries.length > 0) links[playlistId] = entries;
-        }
-      }
-    } catch {}
+      raw = await fsp.readFile(this.filePath, "utf8");
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+    }
+    const links = raw === null ? {} : parseLinks(raw);
     this.links = links;
     return links;
   }
@@ -71,7 +83,6 @@ export class LocalPlaylistLinkStore {
     return this.serialized(async () => structuredClone(await this.load()));
   }
 
-  /** false when the file is already in that playlist */
   add(playlistId: string, entry: unknown): Promise<boolean> {
     return this.serialized(async () => {
       const clean = sanitize(entry);
@@ -79,8 +90,9 @@ export class LocalPlaylistLinkStore {
       const links = await this.load();
       const current = links[playlistId] ?? [];
       if (current.some((e) => e.fileId === clean.fileId)) return false;
-      links[playlistId] = [...current, clean];
-      await this.save(links);
+      const next = { ...links, [playlistId]: [...current, clean] };
+      await this.save(next);
+      this.links = next;
       return true;
     });
   }
@@ -90,11 +102,13 @@ export class LocalPlaylistLinkStore {
       const links = await this.load();
       const current = links[playlistId];
       if (!current) return;
-      const next = current.filter((e) => e.fileId !== fileId);
-      if (next.length === current.length) return;
-      if (next.length > 0) links[playlistId] = next;
-      else delete links[playlistId];
-      await this.save(links);
+      const filtered = current.filter((e) => e.fileId !== fileId);
+      if (filtered.length === current.length) return;
+      const next = { ...links };
+      if (filtered.length > 0) next[playlistId] = filtered;
+      else delete next[playlistId];
+      await this.save(next);
+      this.links = next;
     });
   }
 
@@ -102,8 +116,10 @@ export class LocalPlaylistLinkStore {
     return this.serialized(async () => {
       const links = await this.load();
       if (!(playlistId in links)) return;
-      delete links[playlistId];
-      await this.save(links);
+      const next = { ...links };
+      delete next[playlistId];
+      await this.save(next);
+      this.links = next;
     });
   }
 }

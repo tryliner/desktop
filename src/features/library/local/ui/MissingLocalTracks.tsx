@@ -1,6 +1,6 @@
 import { memo, useCallback, useMemo, useState } from "react";
 import { LuTrash2 } from "react-icons/lu";
-import SongCard from "@/features/player/ui/SongCard";
+import { SongCard } from "@/features/player";
 import type { DropdownMenuItem } from "@/shared/ui/DropdownMenu";
 import { showToast } from "@/shared/ui";
 import { useTranslation } from "@/languages";
@@ -8,7 +8,6 @@ import type { Track } from "@/shared/types";
 import { formatTrackDuration } from "../lib/formatLocalDurations";
 import { useLocalPlaylistLinksStore } from "../store/localPlaylistLinksStore";
 
-// dims the cover, title and duration, but not the menu button
 const GREYED_OUT =
   "[&>div>div:first-child]:opacity-40 [&>div>div:first-child]:grayscale [&>div>div:first-child]:select-none [&>div>div:last-child>span]:opacity-40";
 
@@ -34,8 +33,13 @@ const MissingRow = memo(function MissingRow({
         label: t("common.remove_from_playlist"),
         icon: <LuTrash2 size={15} />,
         danger: true,
-        onClick: () => {
-          void remove(playlistId, track.id);
+        onClick: async () => {
+          try {
+            await remove(playlistId, track.id);
+          } catch {
+            showToast(t("common.failed_to_remove_track"), "error");
+            return;
+          }
           showToast(t("common.removed_from_playlist"), "checkmark", {
             description: track.title || undefined,
           });
