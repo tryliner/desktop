@@ -40,9 +40,7 @@ describe("channel uploads", () => {
         },
       },
     };
-    expect(channelIdOfArtist(artist.id, body)).toBe(
-      "UCr-EPKkR9kIDJL0yNkF90Ug",
-    );
+    expect(channelIdOfArtist(artist.id, body)).toBe("UCr-EPKkR9kIDJL0yNkF90Ug");
     expect(channelIdOfArtist(artist.id, {})).toBe(artist.id);
     expect(channelIdOfArtist("MPLAUCxyz", {})).toBeUndefined();
   });

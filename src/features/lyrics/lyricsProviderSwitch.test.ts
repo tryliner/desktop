@@ -84,14 +84,24 @@ describe("usable lyrics detection", () => {
   });
 
   it("rejects whitespace and metadata-only lrc", () => {
-    expect(hasUsableLyrics(candidate("a", "plain", "plain", "  \r\n ", 1))).toBe(false);
+    expect(
+      hasUsableLyrics(candidate("a", "plain", "plain", "  \r\n ", 1)),
+    ).toBe(false);
     expect(
       hasUsableLyrics(
-        candidate("b", "line_level", "lrc", "[ar:Drake]\n[ti:Intro]\n[length:00:37]", 1),
+        candidate(
+          "b",
+          "line_level",
+          "lrc",
+          "[ar:Drake]\n[ti:Intro]\n[length:00:37]",
+          1,
+        ),
       ),
     ).toBe(false);
     expect(
-      hasUsableLyrics(candidate("c", "line_level", "lrc", "[00:00.00] \n[00:37.00] ", 1)),
+      hasUsableLyrics(
+        candidate("c", "line_level", "lrc", "[00:00.00] \n[00:37.00] ", 1),
+      ),
     ).toBe(false);
   });
 
@@ -110,7 +120,9 @@ describe("usable lyrics detection", () => {
     ]);
     const item = lyricsCache.get("drake-intro-cache");
     expect(item?.candidate.provider).toBe("genius");
-    expect(item?.availableProviders?.map((p) => p.provider)).toEqual(["genius"]);
+    expect(item?.availableProviders?.map((p) => p.provider)).toEqual([
+      "genius",
+    ]);
     lyricsCache.delete("drake-intro-cache");
   });
 });

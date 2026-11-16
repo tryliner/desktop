@@ -40,7 +40,6 @@ function Sidebar({ searchOpen, onSearchToggle }: SidebarProps) {
 
         <SidebarLibrary />
       </div>
-
     </div>
   );
 }
