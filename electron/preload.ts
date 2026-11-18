@@ -13,6 +13,7 @@ import type {
   PlaylistCoverSetResult,
   PlaylistCoverView,
 } from "./playlist-covers/types";
+import type { WallpaperAddResult, WallpaperView } from "./wallpapers/types";
 import type {
   LocalImportResult,
   LocalLibraryUsage,
@@ -247,6 +248,9 @@ export interface LinerElectronApi {
   }) => Promise<boolean>;
   playlistCoversList: (userId: string) => Promise<PlaylistCoverView[]>;
   playlistCoversUsage: () => Promise<{ count: number; bytes: number }>;
+  wallpapersAdd: (bytes: Uint8Array) => Promise<WallpaperAddResult>;
+  wallpapersList: () => Promise<WallpaperView[]>;
+  wallpapersRemove: (key: string) => Promise<boolean>;
   pathForFile: (file: File) => string;
 }
 
@@ -538,6 +542,9 @@ const api: LinerElectronApi = {
   playlistCoversList: (userId) =>
     ipcRenderer.invoke("playlist-covers:list", userId),
   playlistCoversUsage: () => ipcRenderer.invoke("playlist-covers:usage"),
+  wallpapersAdd: (bytes) => ipcRenderer.invoke("wallpapers:add", bytes),
+  wallpapersList: () => ipcRenderer.invoke("wallpapers:list"),
+  wallpapersRemove: (key) => ipcRenderer.invoke("wallpapers:remove", key),
   pathForFile: (file) => webUtils.getPathForFile(file),
 };
 

@@ -29,15 +29,16 @@ played tracks are evicted (`src/shared/storage/audioCache.ts`).
 
 ## Files managed by the main process
 
-| Path                               | Holds                                          | Code                               |
-| ---------------------------------- | ---------------------------------------------- | ---------------------------------- |
-| `auth/session.json`                | Liner session, encrypted with `safeStorage`    | `electron/auth-session-store.ts`   |
-| `auth/youtube-session.json`        | YouTube account tokens, encrypted the same way | `electron/auth-session-ipc.ts`     |
-| `local-tracks/library.json`        | Index of imported audio files                  | `electron/local-tracks/library.ts` |
-| `local-tracks/audio/<hash>.<ext>`  | Copies of imported audio files                 | same                               |
-| `local-tracks/covers/<hash>.<ext>` | Artwork taken from their tags                  | same                               |
-| `playlist-covers/index.json`       | Index of custom playlist covers, per account   | `electron/user-media/library.ts`   |
-| `playlist-covers/<key>.<ext>`      | The cropped cover (or an animated GIF/WebP)    | `electron/playlist-covers/ipc.ts`  |
+| Path                                              | Holds                                            | Code                               |
+| ------------------------------------------------- | ------------------------------------------------ | ---------------------------------- |
+| `auth/session.json`                               | Liner session, encrypted with `safeStorage`      | `electron/auth-session-store.ts`   |
+| `auth/youtube-session.json`                       | YouTube account tokens, encrypted the same way   | `electron/auth-session-ipc.ts`     |
+| `local-tracks/library.json`                       | Index of imported audio files                    | `electron/local-tracks/library.ts` |
+| `local-tracks/audio/<hash>.<ext>`                 | Copies of imported audio files                   | same                               |
+| `local-tracks/covers/<hash>.<ext>`                | Artwork taken from their tags                    | same                               |
+| `playlist-covers/index.json`                      | Index of custom playlist covers, per account     | `electron/user-media/library.ts`   |
+| `playlist-covers/<key>.<ext>`                     | The cropped cover (or an animated GIF/WebP)      | `electron/playlist-covers/ipc.ts`  |
+| `wallpapers/index.json`, `wallpapers/<key>.<ext>` | The wallpaper gallery (last 8 pictures or clips) | `electron/wallpapers/ipc.ts`       |
 
 Imported files are copies, so the originals can be moved or deleted. They are served to
 the renderer through the `liner-local://audio/<hash>` and `liner-local://cover/<hash>`
@@ -55,22 +56,22 @@ build keeps them in IndexedDB (`liner_playlist_covers_v1`).
 
 Settings and small state, as zustand `persist` stores or plain keys.
 
-| Key                                                                   | Holds                                                                                                    |
-| --------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| `liner_player_session_v2`                                             | Repeat, shuffle, volume and player settings; the queue and position only when "resume" is the start mode |
-| `liner_lyrics_session_v1`                                             | Lyrics view settings                                                                                     |
-| `liner_customization_v1`                                              | Appearance settings                                                                                      |
-| `liner_shortcuts_settings_v1`                                         | Keyboard shortcuts                                                                                       |
-| `liner_overlay_settings_v1`                                           | Overlay settings                                                                                         |
-| `liner_discord_settings_v1`                                           | Discord Rich Presence settings                                                                           |
-| `liner_youtube_preferences`                                           | YouTube playback and sync settings                                                                       |
-| `liner_youtube_page_id`                                               | The brand channel picked for the YouTube account                                                         |
-| `liner_search_history`                                                | Recent searches                                                                                          |
-| `liner_recent_playlists_v1`                                           | The five playlists songs were added to most recently                                                     |
-| `liner_downloads_v1`                                                  | Songs, playlists and albums picked for download, per account (the files are in `saved-tracks/`)          |
-| `liner_library_view_mode`                                             | Grid or list in the library                                                                              |
-| `liner_locale`, `theme`                                               | Language and theme                                                                                       |
-| `liner_lyrics_*`, `liner:artist:*`, `liner:search:*`, `liner:query:*` | Small caches                                                                                             |
+| Key                                                                   | Holds                                                                                                                     |
+| --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `liner_player_session_v2`                                             | Repeat, shuffle, volume and player settings; the queue and position only when "resume" is the start mode                  |
+| `liner_lyrics_session_v1`                                             | Lyrics view settings                                                                                                      |
+| `liner_appearance_v2`                                                 | Colour theme, accent, wallpaper choice and its blur/dim/tint (`liner_customization_v1` is read once for old blur and dim) |
+| `liner_shortcuts_settings_v1`                                         | Keyboard shortcuts                                                                                                        |
+| `liner_overlay_settings_v1`                                           | Overlay settings                                                                                                          |
+| `liner_discord_settings_v1`                                           | Discord Rich Presence settings                                                                                            |
+| `liner_youtube_preferences`                                           | YouTube playback and sync settings                                                                                        |
+| `liner_youtube_page_id`                                               | The brand channel picked for the YouTube account                                                                          |
+| `liner_search_history`                                                | Recent searches                                                                                                           |
+| `liner_recent_playlists_v1`                                           | The five playlists songs were added to most recently                                                                      |
+| `liner_downloads_v1`                                                  | Songs, playlists and albums picked for download, per account (the files are in `saved-tracks/`)                           |
+| `liner_library_view_mode`                                             | Grid or list in the library                                                                                               |
+| `liner_locale`, `theme`                                               | Language and theme                                                                                                        |
+| `liner_lyrics_*`, `liner:artist:*`, `liner:search:*`, `liner:query:*` | Small caches                                                                                                              |
 
 `liner_auth_session` and `liner_youtube_tv_session` are legacy keys. They are moved
 into the encrypted files above on first launch and then removed.

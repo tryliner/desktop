@@ -95,6 +95,7 @@ import {
   createPlaylistCoverLibrary,
   setupPlaylistCovers,
 } from "./playlist-covers/ipc.js";
+import { createWallpaperLibrary, setupWallpapers } from "./wallpapers/ipc.js";
 import { setupNetProbe } from "./netprobe/ipc.js";
 import {
   installNetSimulation,
@@ -598,9 +599,14 @@ if (!gotTheLock) {
     }
     const savedTracks = createSavedTrackLibrary();
     const playlistCovers = createPlaylistCoverLibrary();
-    setupLocalTracks(savedTracks, { "playlist-cover": playlistCovers });
+    const wallpapers = createWallpaperLibrary();
+    setupLocalTracks(savedTracks, {
+      "playlist-cover": playlistCovers,
+      wallpaper: wallpapers,
+    });
     setupSavedTracks(savedTracks);
     setupPlaylistCovers(playlistCovers);
+    setupWallpapers(wallpapers);
     installNetSimulation(session.defaultSession);
     setupNetProbe();
     touchBarManager = new TouchBarManager(
