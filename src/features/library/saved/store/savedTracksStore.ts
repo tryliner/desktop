@@ -5,7 +5,12 @@ import {
   type SavedTrackRecord,
 } from "@/shared/media/saved";
 import type { Track } from "@/shared/types";
-import { getAuthSession, registerSignOutTask } from "@/shared/api";
+import {
+  api,
+  getAuthSession,
+  registerSignOutTask,
+  toClientTrack,
+} from "@/shared/api";
 import { log } from "@/shared/utils/logger";
 import {
   isOfflineMode,
@@ -30,6 +35,11 @@ import {
   saveLyricsToDevice,
   saveTrackToDevice,
 } from "../engine/savedTrackFetcher";
+import {
+  currentDownloads,
+  pinnedTrackList,
+  useDownloadsStore,
+} from "./downloadsStore";
 import {
   parseSignOutChoice,
   resolveKeepOnSignOut,
@@ -160,6 +170,17 @@ const waitForOnline = () =>
     window.addEventListener("online", finish);
   });
 
+/** progress updates are coalesced to whole percents so rows don't re-render per chunk */
+function progressReporter(trackId: string) {
+  let lastStep = -1;
+  return (received: number, total: number | null) => {
+    const step = total ? Math.floor((received / total) * 100) : -1;
+    if (total && step === lastStep) return;
+    lastStep = step;
+    useDownloadsStore.setState({ active: { trackId, received, total } });
+  };
+}
+
 const sync = createSavedTrackSync({
   now: () => Date.now(),
   sleep: (ms) => new Promise((done) => setTimeout(done, ms)),
@@ -174,8 +195,20 @@ const sync = createSavedTrackSync({
     const usage = await window.linerElectron?.savedTracksUsage();
     return usage ?? { bytes: 0, freeBytes: null };
   },
-  saveTrack: (track) =>
-    saveTrackToDevice(track, AbortSignal.timeout(5 * 60_000)),
+  saveTrack: async (track) => {
+    useDownloadsStore.setState({
+      active: { trackId: track.id, received: 0, total: null },
+    });
+    try {
+      return await saveTrackToDevice(
+        track,
+        AbortSignal.timeout(5 * 60_000),
+        progressReporter(track.id),
+      );
+    } finally {
+      useDownloadsStore.setState({ active: null });
+    }
+  },
   saveLyrics: saveLyricsToDevice,
   remove: async (trackIds) => {
     await window.linerElectron?.savedTracksRemove(trackIds);
@@ -190,7 +223,16 @@ const sync = createSavedTrackSync({
   readMemory,
   writeMemory: (memory) =>
     writeStorage(SAVED_SYNC_MEMORY_KEY, JSON.stringify(memory)),
-  onStatus: (status) => useSavedTracksStore.setState({ status }),
+  onStatus: (status) => {
+    useSavedTracksStore.setState({ status });
+    // read lazily: the first status can arrive while `sync` is still being built
+    queueMicrotask(() =>
+      useDownloadsStore.setState({
+        queued: sync.queuedIds(),
+        failed: sync.failedIds(),
+      }),
+    );
+  },
   onRecords: (claimed, all) =>
     useSavedTracksStore.setState(
       withTracks(claimed, all.length - claimed.length),
@@ -302,6 +344,7 @@ export function initSavedTracks() {
       subscribeLikedTracks(() => scheduleReconcile());
       void loadLikedTracks();
       scheduleReconcile(0);
+      watchPinnedDownloads();
     });
   let lastTrackId = usePlayerStore.getState().currentTrack?.id ?? null;
   usePlayerStore.subscribe((state) => {
@@ -310,4 +353,58 @@ export function initSavedTracks() {
     lastTrackId = id;
     void sync.trackChanged();
   });
+}
+
+let lastPinned = "";
+function pushPinned() {
+  const list = pinnedTrackList(currentDownloads());
+  const signature = list.map((track) => track.id).join("|");
+  if (signature === lastPinned) return;
+  lastPinned = signature;
+  void sync.setPinned(list);
+}
+
+let followTimer: ReturnType<typeof setTimeout> | null = null;
+/** pinned playlists follow their playlist: new songs download, removed ones go */
+function followPinnedPlaylists(delay = 2_000) {
+  if (followTimer) clearTimeout(followTimer);
+  followTimer = setTimeout(async () => {
+    followTimer = null;
+    if (!canDownload()) return;
+    // only the user's own playlists change; albums and catalog playlists
+    // (stored as "album:<id>" / "playlist:<id>") stay as downloaded
+    const playlists = Object.values(currentDownloads().collections).filter(
+      (collection) =>
+        collection.kind === "playlist" && !collection.id.includes(":"),
+    );
+    for (const playlist of playlists) {
+      try {
+        const detail = await api.getUserPlaylist(playlist.id);
+        useDownloadsStore.getState().updateCollectionTracks(
+          playlist.id,
+          detail.items.map((item) => toClientTrack(item.track)),
+        );
+      } catch {
+        // offline, deleted or not ours any more: keep what's downloaded
+      }
+    }
+  }, delay);
+}
+
+function watchPinnedDownloads() {
+  pushPinned();
+  useDownloadsStore.subscribe((state, prev) => {
+    if (state.byAccount !== prev.byAccount) pushPinned();
+  });
+  window.addEventListener("auth:changed", () => {
+    lastPinned = "";
+    pushPinned();
+  });
+  window.addEventListener("library:changed", () => followPinnedPlaylists());
+  followPinnedPlaylists(10_000);
+}
+
+/** retry one song now (from a failed row or the Downloads page) */
+export function retryDownload(trackId: string) {
+  void sync.retry(trackId);
 }

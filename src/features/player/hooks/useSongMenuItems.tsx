@@ -30,8 +30,17 @@ import { buildShareUrl } from "@/shared/utils/share";
 import { isLocalTrackId } from "@/shared/media/local";
 import { useIsTrackCached } from "@/features/library/cached/hooks/useIsTrackCached";
 import { removeTrackFromCache } from "@/shared/utils/cacheManager";
+import {
+  canDownloadHere,
+  downloadTracks,
+  removeTrackDownloads,
+  useTrackDownloadState,
+} from "@/features/library/saved/hooks/useDownloads";
+import { LuDownload, LuCircleMinus } from "react-icons/lu";
 
 const CLOUD_ONLY_ITEMS = new Set([
+  "download-track",
+  "remove-download",
   "start-radio",
   "like-track",
   "unlike-track",
@@ -155,6 +164,7 @@ export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
 
   const isTrack = searchType === "track" || !searchType;
   const cached = useIsTrackCached(isTrack ? id : undefined);
+  const download = useTrackDownloadState(isTrack ? id : undefined);
 
   const handleRemoveFromCache = useCallback(() => {
     if (!id) return;
@@ -409,7 +419,47 @@ export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
     t,
   ]);
 
-  const items = buildMenu();
+  const built = buildMenu();
+  const downloadItem: DropdownMenuItem | null =
+    isTrack && id && canDownloadHere()
+      ? download.pinned
+        ? {
+            id: "remove-download",
+            label: t("downloads.remove"),
+            icon: <LuCircleMinus size={15} />,
+            onClick: () => removeTrackDownloads([id], t),
+          }
+        : download.state === "downloaded"
+          ? null
+          : {
+              id: "download-track",
+              label: t("downloads.download"),
+              icon: <LuDownload size={15} />,
+              onClick: () =>
+                downloadTracks(
+                  [
+                    {
+                      id,
+                      title,
+                      artists,
+                      coverUrl,
+                      durationMs: durationMs ?? 0,
+                    },
+                  ],
+                  t,
+                ),
+            }
+      : null;
+  const firstDangerIndex = built.findIndex((item) => item.danger);
+  const items = downloadItem
+    ? firstDangerIndex === -1
+      ? [...built, downloadItem]
+      : [
+          ...built.slice(0, firstDangerIndex),
+          downloadItem,
+          ...built.slice(firstDangerIndex),
+        ]
+    : built;
   if (!isLocalTrackId(id)) {
     if (!cached) return items;
     const removeFromCacheItem: DropdownMenuItem = {

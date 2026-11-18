@@ -41,6 +41,9 @@ const OFFLINE_PATHS = new Set([
   "/library/local",
   "/library/cached",
   "/library/saved",
+  // downloaded playlists and albums open from their snapshot
+  "/library/playlist",
+  "/collection",
   PLAYER_PATH,
 ]);
 

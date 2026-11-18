@@ -13,6 +13,7 @@ import {
   useModalStore,
 } from "@/features/library";
 import { playerEngine } from "../engine/playerEngine";
+import { downloadTracks } from "@/features/library/saved/hooks/useDownloads";
 import {
   selectedTracks,
   useTrackSelectionStore,
@@ -65,6 +66,12 @@ export const selectionActions = {
       cloud.map((track) => setTrackLiked(track.id, true)),
     );
     showToast(t("selection.liked", { count: cloud.length }), "checkmark");
+    state.clear();
+  },
+
+  download(t: TFunction) {
+    const { state, tracks } = current();
+    downloadTracks(cloudOnly(tracks), t);
     state.clear();
   },
 

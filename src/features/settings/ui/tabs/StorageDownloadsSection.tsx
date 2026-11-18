@@ -1,6 +1,13 @@
 import type { ReactNode } from "react";
 import { HeartFill, Download2Line } from "@mingcute/react";
 import { ToggleSwitch } from "@/shared/ui";
+import { useNavigate } from "react-router-dom";
+import { useModalStore } from "@/features/library/store/modalStore";
+import {
+  currentDownloads,
+  pinnedTrackList,
+  useDownloadsStore,
+} from "@/features/library/saved/store/downloadsStore";
 import { PresetPills } from "@/shared/ui/PresetPills";
 import { useTranslation } from "@/languages";
 import { LocalFilesIcon, useLocalLibraryStore } from "@/features/library/local";
@@ -68,6 +75,11 @@ export function StorageDownloadsSection({
   );
 
   const limitSongs = useSongEstimate(limitBytes, songBytes);
+  const navigate = useNavigate();
+  const byAccount = useDownloadsStore((state) => state.byAccount);
+  const picked = currentDownloads({ byAccount });
+  const pickedCollections = Object.keys(picked.collections).length;
+  const pickedCount = pinnedTrackList(picked).length;
   const savedCount = records.length;
   const likedBytes =
     records.length > 0
@@ -146,6 +158,34 @@ export function StorageDownloadsSection({
               ariaLabel={t("settings.storage.liked_toggle")}
             />
           </div>
+        }
+      />
+
+      <SettingRow
+        icon={
+          <RowIcon>
+            <Download2Line size={17} />
+          </RowIcon>
+        }
+        title={t("settings.storage.categories.picked")}
+        description={t("settings.storage.picked_desc", {
+          songs: t("common.songs", { count: pickedCount }),
+          collections: pickedCollections,
+        })}
+        explained
+        titleKey="settings.storage.categories.picked"
+        searchQuery={searchQuery}
+        control={
+          <button
+            type="button"
+            onClick={() => {
+              useModalStore.getState().closeSettings();
+              navigate("/library/saved");
+            }}
+            className="cursor-pointer rounded-control border-none bg-fill px-[12px] py-[6px] text-label font-[500] text-text-primary hover:bg-fill-hover"
+          >
+            {t("settings.storage.open_downloads")}
+          </button>
         }
       />
 

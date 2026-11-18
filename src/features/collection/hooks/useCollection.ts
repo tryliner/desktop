@@ -17,6 +17,8 @@ export interface CollectionPageData {
   isDailyMix?: boolean;
 }
 
+import { pinnedCollectionSnapshot } from "@/features/library/saved/store/downloadsStore";
+
 const COLLECTION_STALE_MS = 5 * 60 * 1000;
 
 async function loadCollection(
@@ -185,7 +187,23 @@ export function useCollection(type: string | null, id: string | null) {
       })
       .catch(() => {
         if (active && !queryCache.get(cacheKey)) {
-          setData(null);
+          // offline: a downloaded album/playlist still opens from its snapshot
+          const pinned = pinnedCollectionSnapshot(
+            `${type === "playlist" ? "playlist" : "album"}:${id}`,
+          );
+          setData(
+            pinned
+              ? {
+                  type: type === "playlist" ? "playlist" : "album",
+                  title: pinned.title,
+                  coverUrl: pinned.coverUrl,
+                  tracks: pinned.tracks.map((track) => ({
+                    ...track,
+                    playCount: 0,
+                  })),
+                }
+              : null,
+          );
           setLoading(false);
         }
       });

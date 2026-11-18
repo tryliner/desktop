@@ -2,6 +2,7 @@ import { memo, useCallback, useMemo, useState } from "react";
 import SongCard from "./SongCard";
 import { useSongMenuItems } from "../hooks/useSongMenuItems";
 import { useSelectionMenuItems } from "../hooks/useSelectionActions";
+import { TrackDownloadBadge } from "@/features/library/saved/ui/TrackDownloadBadge";
 import { playerEngine } from "../engine/playerEngine";
 import { usePlayerStore } from "../store/playerStore";
 import { useToast } from "@/shared/ui";
@@ -203,6 +204,11 @@ function SongCardWithMenu({
       trailingAction={trailingAction}
       selected={selected}
       onSelectClick={onSelectClick}
+      statusBadge={
+        id && (searchType === "track" || !searchType) ? (
+          <TrackDownloadBadge trackId={id} />
+        ) : undefined
+      }
     />
   );
 }

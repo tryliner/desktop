@@ -12,6 +12,7 @@ import {
   useCustomPlaylistCover,
   usePlaylistCoverMap,
 } from "@/features/covers/playlistCovers/playlistCoverStore";
+import { pinnedCollectionSnapshot } from "../saved/store/downloadsStore";
 import type { Track } from "@/shared/types";
 
 export interface LibraryPlaylistSummary {
@@ -415,9 +416,25 @@ export function usePlaylist(id: string | null) {
   }, [id, cacheKey]);
 
   const customCover = useCustomPlaylistCover(id);
+  // offline (or the request failed): a downloaded playlist opens from its snapshot
+  const fallback = useMemo<LibraryPlaylistDetail | null>(() => {
+    if (data || !id || !error) return null;
+    const pinned = pinnedCollectionSnapshot(id);
+    if (!pinned) return null;
+    return {
+      id,
+      title: pinned.title,
+      trackCount: pinned.tracks.length,
+      coverUrl: pinned.coverUrl,
+      coverUrls: pinned.coverUrl ? [pinned.coverUrl] : [],
+      revision: 0,
+      tracks: pinned.tracks.map((track) => ({ ...track, playCount: 0 })),
+    };
+  }, [data, id, error]);
+  const shown = data ?? fallback;
   const withCover = useMemo(
-    () => (data ? withCustomCover(data, customCover) : data),
-    [data, customCover],
+    () => (shown ? withCustomCover(shown, customCover) : shown),
+    [shown, customCover],
   );
-  return { data: withCover, error, isLoading };
+  return { data: withCover, error: fallback ? undefined : error, isLoading };
 }

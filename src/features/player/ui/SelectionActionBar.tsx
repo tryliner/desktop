@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { LuHeart, LuListPlus, LuPlus, LuX } from "react-icons/lu";
+import { LuDownload, LuHeart, LuListPlus, LuPlus, LuX } from "react-icons/lu";
+import { canDownloadHere } from "@/features/library/saved/hooks/useDownloads";
 import { ConfirmPill } from "@/shared/ui";
 import { useTranslation } from "@/languages";
 import { cn } from "@/shared/lib";
@@ -67,6 +68,17 @@ export function SelectionActionBar() {
               <LuHeart size={15} />
               {t("selection.like")}
             </button>
+            {canDownloadHere() && (
+              <button
+                type="button"
+                className={ACTION_CLASS}
+                disabled={allLocal}
+                onClick={() => selectionActions.download(t)}
+              >
+                <LuDownload size={15} />
+                {t("downloads.download")}
+              </button>
+            )}
             {summary.canRemove && (
               <ConfirmPill
                 label={t("selection.remove")}
