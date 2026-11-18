@@ -13,6 +13,12 @@ export interface SliderProps {
   className?: string;
   showValue?: boolean;
   disabled?: boolean;
+  /** a round knob on the fill's end, for sliders people aim at precisely */
+  thumb?: boolean;
+  /** values to mark with a small dot on the track (e.g. every second) */
+  marks?: number[];
+  /** spoken value for screen readers; defaults to the shown label */
+  ariaValueText?: string;
 }
 
 export const Slider = memo(function Slider({
@@ -28,6 +34,9 @@ export const Slider = memo(function Slider({
   className = "",
   showValue = true,
   disabled = false,
+  thumb = false,
+  marks,
+  ariaValueText,
 }: SliderProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -155,24 +164,63 @@ export const Slider = memo(function Slider({
         aria-valuemin={min}
         aria-valuemax={max}
         aria-valuenow={clampedValue}
+        aria-valuetext={ariaValueText ?? displayLabel}
         aria-disabled={disabled}
         tabIndex={disabled ? -1 : 0}
         onKeyDown={handleKeyDown}
         onPointerDown={handlePointerDown}
-        className="relative flex h-full flex-1 items-center outline-none"
+        className="group/slider relative flex h-full flex-1 items-center outline-none"
       >
-        <div
-          ref={trackRef}
-          className={`relative h-[6px] w-full rounded-full overflow-hidden transition-colors duration-150 ${
-            isActive ? "bg-black/[0.20] dark:bg-white/[0.24]" : "bg-fill-strong"
-          }`}
-        >
+        {/* with a thumb the track is inset by its radius, so the knob never
+            pokes out past either end and the pointer maths stay exact */}
+        <div className={`relative w-full ${thumb ? "mx-[8px]" : ""}`}>
           <div
-            className={`absolute inset-y-0 left-0 rounded-full bg-text-primary transition-[width] ease-out ${
-              isDragging ? "duration-0" : "duration-100"
+            ref={trackRef}
+            className={`relative h-[6px] w-full rounded-full overflow-hidden transition-colors duration-150 ${
+              isActive
+                ? "bg-black/[0.20] dark:bg-white/[0.24]"
+                : "bg-fill-strong"
             }`}
-            style={{ width: `${percentage}%` }}
-          />
+          >
+            <div
+              className={`absolute inset-y-0 left-0 rounded-full bg-text-primary transition-[width] ease-out ${
+                isDragging ? "duration-0" : "duration-100"
+              }`}
+              style={{ width: `${percentage}%` }}
+            />
+            {marks?.map((mark) => {
+              const at = ((mark - min) / range) * 100;
+              if (at <= 0 || at >= 100) return null;
+              return (
+                <span
+                  key={mark}
+                  aria-hidden="true"
+                  className={`absolute top-1/2 h-[2px] w-[2px] -translate-x-1/2 -translate-y-1/2 rounded-full ${
+                    mark <= clampedValue
+                      ? "bg-bg-primary/60"
+                      : "bg-text-tertiary"
+                  }`}
+                  style={{ left: `${at}%` }}
+                />
+              );
+            })}
+          </div>
+          {thumb && (
+            <span
+              aria-hidden="true"
+              className={`pointer-events-none absolute top-1/2 h-[16px] w-[16px] rounded-full bg-white shadow-[0_1px_4px_rgba(0,0,0,0.35),0_0_0_0.5px_rgba(0,0,0,0.12)] ease-out group-focus-visible/slider:ring-[3px] group-focus-visible/slider:ring-text-primary/30 ${
+                isDragging
+                  ? "transition-transform duration-100"
+                  : "transition-[left,transform] duration-100"
+              }`}
+              style={{
+                left: `${percentage}%`,
+                transform: `translate(-50%, -50%) scale(${
+                  isDragging ? 1.15 : isActive ? 1.06 : 1
+                })`,
+              }}
+            />
+          )}
         </div>
       </div>
 

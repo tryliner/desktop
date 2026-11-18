@@ -15,6 +15,11 @@ export { default as MenuSelect, type MenuSelectProps } from "./MenuSelect";
 export { default as Notch, type NotchProps } from "./Notch";
 export { default as TextInput, type TextInputProps } from "./TextInput";
 export {
+  default as ColorPicker,
+  type ColorPickerProps,
+  type ColorPickerLabels,
+} from "./ColorPicker";
+export {
   default as ToggleSwitch,
   type ToggleSwitchProps,
 } from "./ToggleSwitch";

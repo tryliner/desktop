@@ -1,5 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { PicLine, PlaylistFill } from "@mingcute/react";
+import {
+  PicLine,
+  PlaylistFill,
+  RefreshAnticlockwise1Line,
+  ZoomInLine,
+  ZoomOutLine,
+} from "@mingcute/react";
 import Dialog from "@/shared/ui/Dialog";
 import {
   DialogActions,
@@ -32,6 +38,17 @@ import {
 const VIEWPORT = 280;
 const ACCEPT = "image/png,image/jpeg,image/webp,image/gif,image/avif";
 const MAX_SOURCE_BYTES = 40 * 1024 * 1024;
+const ZOOM_STEP = 1.25;
+
+// the slider runs on a log scale: equal distances feel like equal zoom
+// steps, so 1x-2x gets as much room as 2x-4x instead of a quarter of it
+const LOG_RANGE = Math.log(MAX_ZOOM / MIN_ZOOM);
+const zoomToSlider = (zoom: number) => Math.log(zoom / MIN_ZOOM) / LOG_RANGE;
+const sliderToZoom = (value: number) => MIN_ZOOM * Math.exp(value * LOG_RANGE);
+const CENTER: Point = { x: VIEWPORT / 2, y: VIEWPORT / 2 };
+
+const ICON_BUTTON =
+  "flex h-[28px] w-[28px] shrink-0 cursor-pointer items-center justify-center rounded-full border-none bg-transparent p-0 text-text-secondary transition-colors hover:bg-fill-hover hover:text-text-primary disabled:cursor-default disabled:opacity-35 disabled:hover:bg-transparent";
 
 interface LoadedImage {
   blob: Blob;
@@ -98,6 +115,7 @@ export default function PlaylistCoverEditorModal() {
   const [offset, setOffset] = useState<Point>({ x: 0, y: 0 });
   const [busy, setBusy] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const [dragging, setDragging] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
   const drag = useRef<{ id: number; start: Point; from: Point } | null>(null);
   const imageRef = useRef<LoadedImage | null>(null);
@@ -184,6 +202,13 @@ export default function PlaylistCoverEditorModal() {
     setZoom(next.zoom);
     setOffset(next.offset);
   };
+
+  const resetCrop = () => {
+    setZoom(MIN_ZOOM);
+    setOffset({ x: 0, y: 0 });
+  };
+  const cropChanged =
+    zoom > MIN_ZOOM + 0.001 || offset.x !== 0 || offset.y !== 0;
 
   const save = async () => {
     if (!playlistId || !image) return;
@@ -289,6 +314,7 @@ export default function PlaylistCoverEditorModal() {
               start: { x: e.clientX, y: e.clientY },
               from: offset,
             };
+            setDragging(true);
           }}
           onPointerMove={(e) => {
             const current = drag.current;
@@ -302,6 +328,11 @@ export default function PlaylistCoverEditorModal() {
           }}
           onPointerUp={() => {
             drag.current = null;
+            setDragging(false);
+          }}
+          onPointerCancel={() => {
+            drag.current = null;
+            setDragging(false);
           }}
           onKeyDown={(e) => {
             if (!image || image.animated) return;
@@ -322,9 +353,11 @@ export default function PlaylistCoverEditorModal() {
                 }),
               );
             } else if (e.key === "+" || e.key === "=") {
-              setZoomAt(zoom * 1.15, { x: VIEWPORT / 2, y: VIEWPORT / 2 });
+              setZoomAt(zoom * 1.15, CENTER);
             } else if (e.key === "-") {
-              setZoomAt(zoom / 1.15, { x: VIEWPORT / 2, y: VIEWPORT / 2 });
+              setZoomAt(zoom / 1.15, CENTER);
+            } else if (e.key === "0") {
+              resetCrop();
             }
           }}
         >
@@ -374,6 +407,20 @@ export default function PlaylistCoverEditorModal() {
               </span>
             </button>
           )}
+          {image && !image.animated && (
+            // rule-of-thirds guide while moving the picture around
+            <div
+              aria-hidden="true"
+              className={`pointer-events-none absolute inset-0 transition-opacity duration-200 ${
+                dragging ? "opacity-100" : "opacity-0"
+              }`}
+              style={{
+                backgroundImage:
+                  "linear-gradient(to right, transparent calc(33.333% - 0.5px), rgba(255,255,255,0.45) calc(33.333% - 0.5px), rgba(255,255,255,0.45) calc(33.333% + 0.5px), transparent calc(33.333% + 0.5px), transparent calc(66.666% - 0.5px), rgba(255,255,255,0.45) calc(66.666% - 0.5px), rgba(255,255,255,0.45) calc(66.666% + 0.5px), transparent calc(66.666% + 0.5px)), linear-gradient(to bottom, transparent calc(33.333% - 0.5px), rgba(255,255,255,0.45) calc(33.333% - 0.5px), rgba(255,255,255,0.45) calc(33.333% + 0.5px), transparent calc(33.333% + 0.5px), transparent calc(66.666% - 0.5px), rgba(255,255,255,0.45) calc(66.666% - 0.5px), rgba(255,255,255,0.45) calc(66.666% + 0.5px), transparent calc(66.666% + 0.5px))",
+                boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.25)",
+              }}
+            />
+          )}
           {busy && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/30">
               <span className="h-[20px] w-[20px] animate-spin rounded-full border-[2px] border-white/40 border-t-white" />
@@ -382,27 +429,69 @@ export default function PlaylistCoverEditorModal() {
         </div>
 
         {image && !image.animated && (
-          <div className="flex items-center gap-[12px]">
-            <div className="min-w-0 flex-1">
-              <Slider
-                ariaLabel={t("playlist_cover.zoom")}
-                value={zoom}
-                min={MIN_ZOOM}
-                max={MAX_ZOOM}
-                step={0.01}
-                showValue={false}
-                onChange={(value) =>
-                  setZoomAt(value, { x: VIEWPORT / 2, y: VIEWPORT / 2 })
-                }
-              />
+          <div className="flex flex-col gap-[8px]">
+            <div className="flex h-[40px] items-center gap-[2px] rounded-full bg-fill px-[6px]">
+              <button
+                type="button"
+                aria-label={t("playlist_cover.zoom_out")}
+                title={t("playlist_cover.zoom_out")}
+                disabled={zoom <= MIN_ZOOM + 0.001}
+                onClick={() => setZoomAt(zoom / ZOOM_STEP, CENTER)}
+                className={ICON_BUTTON}
+              >
+                <ZoomOutLine size={16} />
+              </button>
+              <div className="min-w-0 flex-1 px-[2px]">
+                <Slider
+                  ariaLabel={t("playlist_cover.zoom")}
+                  ariaValueText={`${Math.round(zoom * 100)}%`}
+                  value={zoomToSlider(zoom)}
+                  min={0}
+                  max={1}
+                  step={0.01}
+                  thumb
+                  showValue={false}
+                  onChange={(value) => setZoomAt(sliderToZoom(value), CENTER)}
+                />
+              </div>
+              <button
+                type="button"
+                aria-label={t("playlist_cover.zoom_in")}
+                title={t("playlist_cover.zoom_in")}
+                disabled={zoom >= MAX_ZOOM - 0.001}
+                onClick={() => setZoomAt(zoom * ZOOM_STEP, CENTER)}
+                className={ICON_BUTTON}
+              >
+                <ZoomInLine size={16} />
+              </button>
+              <span className="w-[42px] shrink-0 pr-[6px] text-right text-caption font-[500] tabular-nums text-text-secondary">
+                {Math.round(zoom * 100)}%
+              </span>
             </div>
-            <button
-              type="button"
-              onClick={() => fileInput.current?.click()}
-              className="shrink-0 cursor-pointer rounded-control border-none bg-fill px-[10px] py-[6px] text-caption font-[500] text-text-primary hover:bg-fill-hover"
-            >
-              {t("playlist_cover.change")}
-            </button>
+            <div className="flex items-center justify-between gap-[8px] px-[4px]">
+              <span className="min-w-0 truncate text-caption text-text-tertiary">
+                {t("playlist_cover.drag_hint")}
+              </span>
+              <div className="flex shrink-0 items-center gap-[6px]">
+                {cropChanged && (
+                  <button
+                    type="button"
+                    onClick={resetCrop}
+                    className="flex cursor-pointer items-center gap-[4px] rounded-control border-none bg-transparent px-[8px] py-[5px] text-caption font-[500] text-text-secondary hover:bg-fill-hover hover:text-text-primary"
+                  >
+                    <RefreshAnticlockwise1Line size={13} />
+                    {t("playlist_cover.reset")}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => fileInput.current?.click()}
+                  className="shrink-0 cursor-pointer rounded-control border-none bg-fill px-[10px] py-[5px] text-caption font-[500] text-text-primary hover:bg-fill-hover"
+                >
+                  {t("playlist_cover.change")}
+                </button>
+              </div>
+            </div>
           </div>
         )}
         {image?.animated && (

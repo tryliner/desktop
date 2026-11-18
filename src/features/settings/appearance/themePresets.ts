@@ -224,14 +224,18 @@ export function rgbStringToHex(value: string): string | null {
   );
 }
 
+// !important, not just specificity: globals.css also sets the palette from
+// `@media (prefers-color-scheme: dark) :root:not([data-theme="light"]):not(.light)`,
+// which out-specifies any plain :root selector, so on a Mac in dark mode the
+// preset and accent were silently ignored. Only the root gets these; elements
+// that force the stock dark look (fullscreen player) still redeclare theirs.
 function block(selector: string, vars: ThemeVars): string {
   const body = Object.entries(vars)
-    .map(([name, value]) => `  ${name}: ${value};`)
+    .map(([name, value]) => `  ${name}: ${value} !important;`)
     .join("\n");
   return body ? `${selector} {\n${body}\n}` : "";
 }
 
-// a notch more specific than globals.css (:root[data-theme]) so we always win
 const DARK = 'html:root[data-theme="dark"], html:root.dark';
 const LIGHT = 'html:root[data-theme="light"], html:root.light';
 

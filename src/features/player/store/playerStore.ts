@@ -75,8 +75,10 @@ export interface SessionState {
   isEqEnabled: boolean;
   eqGains: number[];
   eqCustomPresets: EqCustomPreset[];
-  /** overlap between songs, 0 = off (seconds) */
+  /** overlap between songs, 0 = off (seconds); what the engine reads */
   crossfadeSeconds: number;
+  /** the length picked on the slider, kept while crossfade is switched off */
+  crossfadeLength: number;
   /** start the next song exactly where this one ends (no gap) */
   gapless: boolean;
   /** smart transitions: trim silence, follow fades, keep albums seamless */
@@ -131,6 +133,7 @@ export interface PlayerStore extends PlayerState {
   setPauseOnDeviceChange: (value: boolean) => void;
   setAutoplaySimilar: (value: boolean) => void;
   setCrossfadeSeconds: (seconds: number) => void;
+  setCrossfadeEnabled: (enabled: boolean) => void;
   setGapless: (gapless: boolean) => void;
   setAutomix: (automix: boolean) => void;
   setCrossfadeOnSkip: (crossfadeOnSkip: boolean) => void;
@@ -151,6 +154,9 @@ export interface PlayerStore extends PlayerState {
   clearQueue: () => void;
   resetPlayback: () => void;
 }
+
+export const MAX_CROSSFADE_SECONDS = 12;
+export const DEFAULT_CROSSFADE_SECONDS = 6;
 
 const PLAYER_SESSION_STORAGE_KEY = "liner_player_session_v2";
 const PLAYER_RESUME_STORAGE_KEY = "liner_player_resume_v1";
@@ -208,6 +214,7 @@ export const usePlayerStore = create<PlayerStore>()(
       pauseOnDeviceChange: true,
       autoplaySimilar: true,
       crossfadeSeconds: 0,
+      crossfadeLength: DEFAULT_CROSSFADE_SECONDS,
       gapless: false,
       automix: true,
       crossfadeOnSkip: false,
@@ -258,12 +265,21 @@ export const usePlayerStore = create<PlayerStore>()(
         set({ pauseOnDeviceChange }),
       setAutoplaySimilar: (autoplaySimilar: boolean) =>
         set({ autoplaySimilar }),
-      setCrossfadeSeconds: (seconds: number) =>
-        set({
-          crossfadeSeconds: Number.isFinite(seconds)
-            ? Math.min(12, Math.max(0, Math.round(seconds)))
-            : 0,
-        }),
+      setCrossfadeSeconds: (seconds: number) => {
+        const next = Number.isFinite(seconds)
+          ? Math.min(MAX_CROSSFADE_SECONDS, Math.max(0, Math.round(seconds)))
+          : 0;
+        // 0 switches it off but keeps the last length for the toggle
+        set(
+          next > 0
+            ? { crossfadeSeconds: next, crossfadeLength: next }
+            : { crossfadeSeconds: 0 },
+        );
+      },
+      setCrossfadeEnabled: (enabled: boolean) =>
+        set((state) => ({
+          crossfadeSeconds: enabled ? state.crossfadeLength : 0,
+        })),
       setGapless: (gapless: boolean) => set({ gapless }),
       setAutomix: (automix: boolean) => set({ automix }),
       setCrossfadeOnSkip: (crossfadeOnSkip: boolean) =>
@@ -338,6 +354,17 @@ export const usePlayerStore = create<PlayerStore>()(
           ...current,
           ...((persisted ?? {}) as Partial<PlayerStore>),
         };
+        // builds before the on/off switch only saved crossfadeSeconds: keep
+        // that as the length the switch brings back
+        const saved = persisted as Partial<PlayerStore> | null;
+        if (
+          saved &&
+          saved.crossfadeLength === undefined &&
+          typeof saved.crossfadeSeconds === "number" &&
+          saved.crossfadeSeconds > 0
+        ) {
+          merged.crossfadeLength = saved.crossfadeSeconds;
+        }
         const resume = readResumePosition();
         if (resume && merged.currentTrack?.id === resume.trackId) {
           merged.positionMs = resume.positionMs;
@@ -407,9 +434,16 @@ export const usePlayerStore = create<PlayerStore>()(
             state.crossfadeSeconds = 0;
           }
           state.crossfadeSeconds = Math.min(
-            12,
+            MAX_CROSSFADE_SECONDS,
             Math.max(0, Math.round(state.crossfadeSeconds)),
           );
+          const length = state.crossfadeLength;
+          state.crossfadeLength =
+            typeof length === "number" && Number.isFinite(length) && length >= 1
+              ? Math.min(MAX_CROSSFADE_SECONDS, Math.round(length))
+              : state.crossfadeSeconds > 0
+                ? state.crossfadeSeconds
+                : DEFAULT_CROSSFADE_SECONDS;
           if (typeof state.gapless !== "boolean") state.gapless = false;
           if (typeof state.automix !== "boolean") state.automix = true;
           if (typeof state.crossfadeOnSkip !== "boolean") {
@@ -445,6 +479,7 @@ export const usePlayerStore = create<PlayerStore>()(
         pauseOnDeviceChange: state.pauseOnDeviceChange,
         autoplaySimilar: state.autoplaySimilar,
         crossfadeSeconds: state.crossfadeSeconds,
+        crossfadeLength: state.crossfadeLength,
         gapless: state.gapless,
         automix: state.automix,
         crossfadeOnSkip: state.crossfadeOnSkip,

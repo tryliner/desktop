@@ -1,13 +1,9 @@
 import { useState, useEffect } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { useTranslation } from "@/languages";
-import { usePlayerStore } from "@/features/player";
+import { MAX_CROSSFADE_SECONDS, usePlayerStore } from "@/features/player";
 import { Slider, ToggleSwitch } from "@/shared/ui";
-import {
-  SettingBlock,
-  SettingRow,
-  SettingSection,
-  SegmentedControl,
-} from "../controls";
+import { SettingRow, SettingSection, SegmentedControl } from "../controls";
 
 export function PlaybackTab({ searchQuery }: { searchQuery?: string }) {
   const { t } = useTranslation();
@@ -36,9 +32,14 @@ export function PlaybackTab({ searchQuery }: { searchQuery?: string }) {
   );
 
   const crossfadeSeconds = usePlayerStore((state) => state.crossfadeSeconds);
+  const crossfadeLength = usePlayerStore((state) => state.crossfadeLength);
   const setCrossfadeSeconds = usePlayerStore(
     (state) => state.setCrossfadeSeconds,
   );
+  const setCrossfadeEnabled = usePlayerStore(
+    (state) => state.setCrossfadeEnabled,
+  );
+  const crossfadeOn = crossfadeSeconds > 0;
   const gapless = usePlayerStore((state) => state.gapless);
   const setGapless = usePlayerStore((state) => state.setGapless);
   const automix = usePlayerStore((state) => state.automix);
@@ -59,27 +60,75 @@ export function PlaybackTab({ searchQuery }: { searchQuery?: string }) {
   return (
     <div className="flex flex-col gap-[20px]">
       <SettingSection label={t("settings.transitions.section")}>
-        <SettingBlock
+        <SettingRow
           title={t("settings.transitions.crossfade.title")}
-          description={t("settings.transitions.crossfade.description")}
+          description={
+            crossfadeOn
+              ? t("settings.transitions.crossfade.description_on", {
+                  count: crossfadeSeconds,
+                })
+              : t("settings.transitions.crossfade.description")
+          }
           titleKey="settings.transitions.crossfade.title"
           descKey="settings.transitions.crossfade.description"
           searchQuery={searchQuery}
+          control={
+            <ToggleSwitch
+              ariaLabel={t("settings.transitions.crossfade.title")}
+              checked={crossfadeOn}
+              onChange={setCrossfadeEnabled}
+            />
+          }
         >
-          <Slider
-            ariaLabel={t("settings.transitions.crossfade.title")}
-            value={crossfadeSeconds}
-            min={0}
-            max={12}
-            step={1}
-            formatValue={(value) =>
-              value === 0
-                ? t("settings.transitions.crossfade.off")
-                : t("settings.transitions.crossfade.seconds", { count: value })
-            }
-            onChange={setCrossfadeSeconds}
-          />
-        </SettingBlock>
+          <AnimatePresence initial={false}>
+            {crossfadeOn && (
+              <motion.div
+                key="crossfade-length"
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+                className="overflow-hidden"
+              >
+                <div className="px-[16px] pb-[12px]">
+                  <div className="flex items-center gap-[10px] rounded-item bg-fill-subtle py-[8px] pl-[12px] pr-[10px]">
+                    <span className="w-[38px] shrink-0 text-caption font-[500] text-text-tertiary">
+                      {t("settings.transitions.crossfade.shorter")}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <Slider
+                        ariaLabel={t("settings.transitions.crossfade.length")}
+                        ariaValueText={t(
+                          "settings.transitions.crossfade.seconds",
+                          { count: crossfadeLength },
+                        )}
+                        value={crossfadeLength}
+                        min={1}
+                        max={MAX_CROSSFADE_SECONDS}
+                        step={1}
+                        thumb
+                        marks={Array.from(
+                          { length: MAX_CROSSFADE_SECONDS },
+                          (_, i) => i + 1,
+                        )}
+                        showValue={false}
+                        onChange={setCrossfadeSeconds}
+                      />
+                    </div>
+                    <span className="w-[30px] shrink-0 text-caption font-[500] text-text-tertiary">
+                      {t("settings.transitions.crossfade.longer")}
+                    </span>
+                    <span className="min-w-[40px] shrink-0 rounded-full bg-fill px-[8px] py-[3px] text-center text-caption font-[600] tabular-nums text-text-primary">
+                      {t("settings.transitions.crossfade.short", {
+                        count: crossfadeLength,
+                      })}
+                    </span>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </SettingRow>
         <SettingRow
           title={t("settings.transitions.automix.title")}
           description={t("settings.transitions.automix.description")}
@@ -105,7 +154,7 @@ export function PlaybackTab({ searchQuery }: { searchQuery?: string }) {
           control={
             <ToggleSwitch
               checked={crossfadeOnSkip}
-              disabled={crossfadeSeconds === 0}
+              disabled={!crossfadeOn}
               onChange={setCrossfadeOnSkip}
             />
           }

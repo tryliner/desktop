@@ -1102,6 +1102,12 @@
       "crossfade": {
         "title": "Crossfade",
         "description": "Blend the end of a song into the next one.",
+        "description_on_one": "Songs overlap by {count} second at the handover.",
+        "description_on_other": "Songs overlap by {count} seconds at the handover.",
+        "length": "Crossfade length",
+        "short": "{count}s",
+        "shorter": "Quick",
+        "longer": "Long",
         "off": "Off",
         "seconds_one": "{count} second",
         "seconds_other": "{count} seconds"
@@ -1396,6 +1402,9 @@
     "change": "Change cover",
     "choose_photo": "Choose photo",
     "zoom": "Zoom",
+    "zoom_in": "Zoom in",
+    "zoom_out": "Zoom out",
+    "reset": "Reset",
     "drag_hint": "Drag to move, scroll to zoom",
     "animated_note": "Animated covers are kept as they are and shown centred.",
     "save": "Save",
@@ -1465,6 +1474,12 @@
     "accent_default": "Theme",
     "accent_cover": "Match the song",
     "accent_custom": "Pick a colour",
+    "picker": {
+      "saturation": "Saturation and brightness",
+      "hue": "Hue",
+      "hex": "Hex colour code",
+      "eyedropper": "Pick a colour from the screen"
+    },
     "background_section": "Background",
     "wallpaper": "Wallpaper",
     "wallpaper_desc": "A picture or a short looping video behind the whole app.",

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { AddLine, CheckLine, CloseLine } from "@mingcute/react";
 import { useTranslation } from "@/languages";
-import { Slider, ToggleSwitch, showToast } from "@/shared/ui";
+import { ColorPicker, Slider, ToggleSwitch, showToast } from "@/shared/ui";
 import { cn } from "@/shared/lib";
 import { SettingBlock, SettingRow, SettingSection } from "../controls";
 import {
@@ -209,30 +209,30 @@ export function CustomizationTab({ searchQuery }: { searchQuery?: string }) {
                 )}
               </button>
             ))}
-            <label
+            <ColorPicker
+              value={isHexColor(settings.accent) ? settings.accent : "#ff4d4d"}
+              onChange={(hex) => set({ accent: hex })}
+              label={t("customization.accent_custom")}
+              labels={{
+                saturation: t("customization.picker.saturation"),
+                hue: t("customization.picker.hue"),
+                hex: t("customization.picker.hex"),
+                eyedropper: t("customization.picker.eyedropper"),
+              }}
               className={cn(
-                "relative flex h-[24px] w-[24px] cursor-pointer items-center justify-center overflow-hidden rounded-full",
+                "relative flex h-[24px] w-[24px] cursor-pointer items-center justify-center overflow-hidden rounded-full border-none p-0",
                 customAccent && "ring-2 ring-text-primary/70",
               )}
-              title={t("customization.accent_custom")}
               style={{
                 background: customAccent
                   ? settings.accent
                   : "conic-gradient(#ff4d4d, #ffd43b, #4ade80, #22d3ee, #6c8cff, #ff6b9a, #ff4d4d)",
               }}
             >
-              <input
-                type="color"
-                aria-label={t("customization.accent_custom")}
-                value={
-                  isHexColor(settings.accent) ? settings.accent : "#ff4d4d"
-                }
-                onChange={(e) =>
-                  set({ accent: e.target.value as `#${string}` })
-                }
-                className="absolute inset-0 cursor-pointer opacity-0"
-              />
-            </label>
+              {customAccent && (
+                <CheckLine size={14} className="text-black/70" />
+              )}
+            </ColorPicker>
           </div>
         </SettingBlock>
       </SettingSection>

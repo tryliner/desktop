@@ -34,6 +34,7 @@ const EMPTY_STATE: PlayerState = {
   eqGains: FLAT_EQ,
   eqCustomPresets: [],
   crossfadeSeconds: 0,
+  crossfadeLength: 6,
   gapless: false,
   automix: true,
   crossfadeOnSkip: false,

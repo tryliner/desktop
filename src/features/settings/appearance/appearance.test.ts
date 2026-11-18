@@ -35,7 +35,8 @@ describe("theme presets", () => {
   it("writes css only for the modes a preset touches", () => {
     const css = themeCss({ dark: { "--bg-canvas": "#000000" }, light: {} });
     expect(css).toContain('html:root[data-theme="dark"]');
-    expect(css).toContain("--bg-canvas: #000000;");
+    // must beat globals.css's prefers-color-scheme rule, which out-specifies :root
+    expect(css).toContain("--bg-canvas: #000000 !important;");
     expect(css).not.toContain('data-theme="light"');
     expect(themeCss({ dark: {}, light: {} })).toBe("");
   });
