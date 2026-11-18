@@ -1,6 +1,9 @@
 import { useCallback } from "react";
 import { useLocation } from "react-router-dom";
-import { useIsTrackLiked, useToggleTrackLike } from "@/features/library/hooks";
+import {
+  useIsTrackLiked,
+  useToggleTrackLikeWithPlaylistToast,
+} from "@/features/library/hooks";
 import { ArtistAvatar, ArtistLink } from "@/features/artist";
 import { isLocalTrackId } from "@/shared/media/local";
 import { useTranslation } from "@/languages";
@@ -22,11 +25,11 @@ export function FullscreenTrackInfo({ onClose }: FullscreenTrackInfoProps) {
 
   const isLocal = isLocalTrackId(track?.id);
   const isLiked = useIsTrackLiked(track?.id);
-  const toggleLike = useToggleTrackLike();
+  const toggleLike = useToggleTrackLikeWithPlaylistToast();
 
   const handleLikeToggle = useCallback(() => {
     if (!track) return;
-    toggleLike(track.id);
+    toggleLike(track);
   }, [track, toggleLike]);
 
   return (

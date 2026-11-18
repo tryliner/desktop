@@ -215,6 +215,7 @@
   "library": {
     "title": "Mediathek",
     "liked_songs": "Lieblingstitel",
+    "added_to_likes": "Zu Likes hinzugefügt",
     "song": "Titel",
     "songs": "Titel",
     "track": "Titel",

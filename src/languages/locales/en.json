@@ -219,6 +219,7 @@
   "library": {
     "title": "Library",
     "liked_songs": "Liked Songs",
+    "added_to_likes": "Added to Likes",
     "song": "song",
     "songs": "songs",
     "track": "track",

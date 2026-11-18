@@ -222,6 +222,7 @@
   "library": {
     "title": "Biblioteca",
     "liked_songs": "Canciones que te gustan",
+    "added_to_likes": "Añadido a Me gusta",
     "song": "canción",
     "songs": "canciones",
     "track": "canción",

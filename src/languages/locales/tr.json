@@ -215,6 +215,7 @@
   "library": {
     "title": "Kitaplık",
     "liked_songs": "Beğenilen Şarkılar",
+    "added_to_likes": "Beğenilere eklendi",
     "song": "şarkı",
     "songs": "şarkı",
     "track": "parça",
