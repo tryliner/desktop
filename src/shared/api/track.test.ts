@@ -187,9 +187,7 @@ describe("toClientTrack", () => {
 
   it("falls back to plain text when no artist matches the name", async () => {
     const { api } = await import("./api");
-    const search = vi
-      .spyOn(api, "search")
-      .mockResolvedValue({ items: [] });
+    const search = vi.spyOn(api, "search").mockResolvedValue({ items: [] });
 
     const view = await renderArtistLink("Nobody Known");
     await view.click();

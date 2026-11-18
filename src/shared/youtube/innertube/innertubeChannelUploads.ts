@@ -35,10 +35,7 @@ function lockupDurationMs(lockup: Record<string, unknown>): number {
   return durationMs;
 }
 
-export function mapChannelUploads(
-  body: unknown,
-  artist: TrackArtist,
-): Track[] {
+export function mapChannelUploads(body: unknown, artist: TrackArtist): Track[] {
   const tracks: Track[] = [];
   const seen = new Set<string>();
   walkRecords(body, (record) => {
