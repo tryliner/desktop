@@ -1,35 +1,17 @@
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Refresh1Line } from "@mingcute/react";
 import { useTranslation } from "@/languages";
 import {
   useOverlaySettingsStore,
-  type OverlayPosition,
   getEnglishKeyFromEvent,
   normalizeShortcutToEnglish,
 } from "@/features/overlay";
 import { useShortcutsStore } from "@/features/shortcuts";
 import { acquireEscapeGuard } from "@/shared/utils/escapeGuard";
 import { ToggleSwitch, Tooltip } from "@/shared/ui";
-import { SettingRow, SettingSection, SegmentedControl } from "../controls";
-
-const POSITION_CONFIG = [
-  {
-    value: "top-left" as const,
-    key: "settings.overlay.position.top_left",
-    fallback: "Top Left",
-  },
-  {
-    value: "top-center" as const,
-    key: "settings.overlay.position.top_center",
-    fallback: "Top Middle",
-  },
-  {
-    value: "top-right" as const,
-    key: "settings.overlay.position.top_right",
-    fallback: "Top Right",
-  },
-] as const;
+import { SettingRow, SettingSection } from "../controls";
+import { OverlayPositionControl } from "./OverlayPositionControl";
 
 const DEFAULT_SHORTCUT = "Alt+Shift+O";
 
@@ -50,18 +32,6 @@ export function OverlayTab({ searchQuery }: { searchQuery?: string }) {
 
   const enabled = useOverlaySettingsStore((s) => s.enabled);
   const setEnabled = useOverlaySettingsStore((s) => s.setEnabled);
-
-  const position = useOverlaySettingsStore((s) => s.position);
-  const setPosition = useOverlaySettingsStore((s) => s.setPosition);
-
-  const positionOptions = useMemo(
-    () =>
-      POSITION_CONFIG.map((opt) => ({
-        value: opt.value,
-        label: t(opt.key) || opt.fallback,
-      })),
-    [t],
-  );
 
   const shortcut = useOverlaySettingsStore((s) => s.shortcut);
   const setShortcut = useOverlaySettingsStore((s) => s.setShortcut);
@@ -219,15 +189,7 @@ export function OverlayTab({ searchQuery }: { searchQuery?: string }) {
           titleKey="settings.overlay.position.title"
           descKey="settings.overlay.position.description"
           searchQuery={searchQuery}
-          control={
-            <SegmentedControl<OverlayPosition>
-              options={positionOptions}
-              value={position}
-              onChange={setPosition}
-              disabled={!enabled}
-              ariaLabel="Overlay Position"
-            />
-          }
+          control={<OverlayPositionControl disabled={!enabled} />}
         />
 
         <SettingRow

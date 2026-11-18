@@ -681,7 +681,10 @@
         "description": "Elige dónde aparece el reproductor en tu escritorio.",
         "top_left": "Arriba a la izquierda",
         "top_center": "Arriba al centro",
-        "top_right": "Arriba a la derecha"
+        "top_right": "Arriba a la derecha",
+        "bottom_left": "Abajo a la izquierda",
+        "bottom_center": "Abajo al centro",
+        "bottom_right": "Abajo a la derecha"
       },
       "shortcut": {
         "title": "Atajo global",
