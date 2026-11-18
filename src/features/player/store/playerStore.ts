@@ -75,6 +75,16 @@ export interface SessionState {
   isEqEnabled: boolean;
   eqGains: number[];
   eqCustomPresets: EqCustomPreset[];
+  /** overlap between songs, 0 = off (seconds) */
+  crossfadeSeconds: number;
+  /** start the next song exactly where this one ends (no gap) */
+  gapless: boolean;
+  /** smart transitions: trim silence, follow fades, keep albums seamless */
+  automix: boolean;
+  /** a short crossfade on Next too, not only when a song ends */
+  crossfadeOnSkip: boolean;
+  /** turn loud songs down to the level of the others */
+  normalizeVolume: boolean;
 }
 
 export type PlayerState = TransportState &
@@ -120,6 +130,11 @@ export interface PlayerStore extends PlayerState {
   setAccentVariant: (variant: AccentVariant) => void;
   setPauseOnDeviceChange: (value: boolean) => void;
   setAutoplaySimilar: (value: boolean) => void;
+  setCrossfadeSeconds: (seconds: number) => void;
+  setGapless: (gapless: boolean) => void;
+  setAutomix: (automix: boolean) => void;
+  setCrossfadeOnSkip: (crossfadeOnSkip: boolean) => void;
+  setNormalizeVolume: (normalizeVolume: boolean) => void;
   setTrackDoubleClickBehavior: (value: TrackDoubleClickBehavior) => void;
   setDefaultPlaybackContext: (value: DefaultPlaybackContext) => void;
   setFullscreen: (value: boolean) => void;
@@ -192,6 +207,11 @@ export const usePlayerStore = create<PlayerStore>()(
       accentVariant: "default",
       pauseOnDeviceChange: true,
       autoplaySimilar: true,
+      crossfadeSeconds: 0,
+      gapless: false,
+      automix: true,
+      crossfadeOnSkip: false,
+      normalizeVolume: false,
       trackDoubleClickBehavior: "play",
       defaultPlaybackContext: "resume",
       fullscreen: false,
@@ -238,6 +258,18 @@ export const usePlayerStore = create<PlayerStore>()(
         set({ pauseOnDeviceChange }),
       setAutoplaySimilar: (autoplaySimilar: boolean) =>
         set({ autoplaySimilar }),
+      setCrossfadeSeconds: (seconds: number) =>
+        set({
+          crossfadeSeconds: Number.isFinite(seconds)
+            ? Math.min(12, Math.max(0, Math.round(seconds)))
+            : 0,
+        }),
+      setGapless: (gapless: boolean) => set({ gapless }),
+      setAutomix: (automix: boolean) => set({ automix }),
+      setCrossfadeOnSkip: (crossfadeOnSkip: boolean) =>
+        set({ crossfadeOnSkip }),
+      setNormalizeVolume: (normalizeVolume: boolean) =>
+        set({ normalizeVolume }),
       setTrackDoubleClickBehavior: (
         trackDoubleClickBehavior: TrackDoubleClickBehavior,
       ) => set({ trackDoubleClickBehavior }),
@@ -368,6 +400,24 @@ export const usePlayerStore = create<PlayerStore>()(
           if (typeof state.isEqEnabled !== "boolean") {
             state.isEqEnabled = false;
           }
+          if (
+            typeof state.crossfadeSeconds !== "number" ||
+            !Number.isFinite(state.crossfadeSeconds)
+          ) {
+            state.crossfadeSeconds = 0;
+          }
+          state.crossfadeSeconds = Math.min(
+            12,
+            Math.max(0, Math.round(state.crossfadeSeconds)),
+          );
+          if (typeof state.gapless !== "boolean") state.gapless = false;
+          if (typeof state.automix !== "boolean") state.automix = true;
+          if (typeof state.crossfadeOnSkip !== "boolean") {
+            state.crossfadeOnSkip = false;
+          }
+          if (typeof state.normalizeVolume !== "boolean") {
+            state.normalizeVolume = false;
+          }
           state.eqGains = normalizeEqGains(state.eqGains);
           state.eqCustomPresets = normalizeEqCustomPresets(
             state.eqCustomPresets,
@@ -394,6 +444,11 @@ export const usePlayerStore = create<PlayerStore>()(
         accentVariant: state.accentVariant,
         pauseOnDeviceChange: state.pauseOnDeviceChange,
         autoplaySimilar: state.autoplaySimilar,
+        crossfadeSeconds: state.crossfadeSeconds,
+        gapless: state.gapless,
+        automix: state.automix,
+        crossfadeOnSkip: state.crossfadeOnSkip,
+        normalizeVolume: state.normalizeVolume,
         trackDoubleClickBehavior: state.trackDoubleClickBehavior,
         defaultPlaybackContext: state.defaultPlaybackContext,
         playbackRate: state.playbackRate,

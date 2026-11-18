@@ -68,6 +68,31 @@ const SETTING_ITEMS: { tabId: TabId; titleKey: string; descKey?: string }[] = [
   // Playback
   {
     tabId: "Playback",
+    titleKey: "settings.transitions.crossfade.title",
+    descKey: "settings.transitions.crossfade.description",
+  },
+  {
+    tabId: "Playback",
+    titleKey: "settings.transitions.automix.title",
+    descKey: "settings.transitions.automix.description",
+  },
+  {
+    tabId: "Playback",
+    titleKey: "settings.transitions.gapless.title",
+    descKey: "settings.transitions.gapless.description",
+  },
+  {
+    tabId: "Playback",
+    titleKey: "settings.transitions.on_skip.title",
+    descKey: "settings.transitions.on_skip.description",
+  },
+  {
+    tabId: "Playback",
+    titleKey: "settings.transitions.normalize.title",
+    descKey: "settings.transitions.normalize.description",
+  },
+  {
+    tabId: "Playback",
     titleKey: "settings.autoplay_similar.title",
     descKey: "settings.autoplay_similar.description",
   },

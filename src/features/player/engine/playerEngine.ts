@@ -6,6 +6,13 @@ import {
   type PlayerState,
 } from "../store/playerStore";
 import { playerRuntime } from "./playerRuntime";
+import {
+  normalizeGain,
+  planTransition,
+  type TransitionPlan,
+  type TransitionSettings,
+} from "./transitions/planTransition";
+import { ensureAnalysis, knownAnalysis } from "./transitions/analysisCache";
 import { isRadioContext, shouldRefillRadio } from "./radioMode";
 import {
   LazyShuffle,
@@ -344,6 +351,12 @@ class PlayerEngine {
   private consecutiveAutoSkips = 0;
   private consecutiveOfflineSkips = 0;
   private lastPreloadKey: string | null = null;
+  // the song a crossfade/gapless handover already started from (once per play)
+  private transitionedFrom: string | null = null;
+  private plannedTransition: {
+    key: string;
+    plan: TransitionPlan | null;
+  } | null = null;
   private inFlightLyricsPrefetches = new Map<string, Promise<void>>();
 
   constructor() {
@@ -357,6 +370,22 @@ class PlayerEngine {
         this.telemetry.onTrackCompleted(isRepeatOne);
       };
       playerRuntime.onError = (info) => this.handlePlaybackError(info);
+      playerRuntime.onNearEnd = (positionMs) => this.handleNearEnd(positionMs);
+      usePlayerStore.subscribe((state, prev) => {
+        if (
+          state.normalizeVolume !== prev.normalizeVolume ||
+          state.automix !== prev.automix
+        ) {
+          this.plannedTransition = null;
+          this.prepareTransitionsFor(state);
+        }
+        if (
+          state.crossfadeSeconds !== prev.crossfadeSeconds ||
+          state.gapless !== prev.gapless
+        ) {
+          this.plannedTransition = null;
+        }
+      });
     }
 
     if (typeof window !== "undefined") {
@@ -389,6 +418,9 @@ class PlayerEngine {
           }
           void this.fetchLyricsForTrack(state.currentTrack);
           this.preloadNextTrack(state);
+          this.transitionedFrom = null;
+          this.plannedTransition = null;
+          this.prepareTransitionsFor(state);
         }
 
         if (state.status === "playing") {
@@ -744,8 +776,12 @@ class PlayerEngine {
     }
   }
 
-  public async skipNext(isAutoEnd: boolean = false): Promise<void> {
+  public async skipNext(
+    isAutoEnd: boolean = false,
+    transition?: TransitionPlan,
+  ): Promise<void> {
     const store = usePlayerStore.getState();
+    const wasPlaying = store.status === "playing";
     const nextIndex = this.computeNextIndex(isAutoEnd);
 
     if (
@@ -790,7 +826,33 @@ class PlayerEngine {
       store.setStatus("loading", null);
 
       if (playerRuntime) {
-        void playerRuntime.loadAndPlay(nextTrack);
+        const skipFadeMs =
+          !isAutoEnd &&
+          !transition &&
+          wasPlaying &&
+          store.crossfadeOnSkip &&
+          store.crossfadeSeconds > 0
+            ? 1_000
+            : 0;
+        if (transition) {
+          // the outgoing song counts as finished: it played to its handover
+          playerRuntime.onEnded?.();
+          playerRuntime.beginTransition(transition.fadeOutMs);
+          void playerRuntime.loadAndPlay(
+            nextTrack,
+            transition.incomingOffsetMs,
+            false,
+            { fadeInMs: transition.fadeInMs, transition: true },
+          );
+        } else if (skipFadeMs > 0) {
+          playerRuntime.beginTransition(skipFadeMs);
+          void playerRuntime.loadAndPlay(nextTrack, 0, false, {
+            fadeInMs: skipFadeMs,
+            transition: true,
+          });
+        } else {
+          void playerRuntime.loadAndPlay(nextTrack);
+        }
       }
       this.maybeExtendQueue(
         mySession,
@@ -1359,6 +1421,110 @@ class PlayerEngine {
           : track.title,
       });
     void this.skipNext(false);
+  }
+
+  private transitionSettings(state: PlayerState): TransitionSettings {
+    return {
+      crossfadeMs: (state.crossfadeSeconds ?? 0) * 1000,
+      gapless: Boolean(state.gapless),
+      automix: Boolean(state.automix),
+      normalize: Boolean(state.normalizeVolume),
+    };
+  }
+
+  /** AutoMix / normalize need to know the songs: analyse what's on the device */
+  private prepareTransitionsFor(state: PlayerState): void {
+    const current = state.currentTrack;
+    if (!current || !playerRuntime) return;
+    const wantsAnalysis = state.automix || state.normalizeVolume;
+    playerRuntime.setTrackGain(
+      state.normalizeVolume ? normalizeGain(knownAnalysis(current.id)) : 1,
+    );
+    if (!wantsAnalysis) return;
+    const analyse = (track: Track) =>
+      ensureAnalysis(track).then((analysis) => {
+        // a fresh analysis can change the plan for this song
+        this.plannedTransition = null;
+        const now = usePlayerStore.getState();
+        if (now.currentTrack?.id === current.id && now.normalizeVolume) {
+          playerRuntime?.setTrackGain(normalizeGain(analysis));
+        }
+      });
+    void analyse(current);
+    // the current song's audio may only reach the cache once it's downloaded
+    setTimeout(() => {
+      if (usePlayerStore.getState().currentTrack?.id === current.id) {
+        void analyse(current);
+      }
+    }, 30_000);
+    const nextIndex = this.computeNextIndex(true);
+    const next = nextIndex !== null ? state.queue[nextIndex] : null;
+    if (next && next.id !== current.id) {
+      // the next song is preloaded into the cache first; analyse after that
+      setTimeout(() => {
+        if (usePlayerStore.getState().currentTrack?.id === current.id) {
+          void analyse(next);
+        }
+      }, 8_000);
+    }
+  }
+
+  /**
+   * Runs every 50 ms in a song's last 30 s: when crossfade, gapless or
+   * AutoMix is on and the handover point is reached, the next song starts
+   * on a second element while this one fades out.
+   */
+  private handleNearEnd(positionMs: number): void {
+    const state = usePlayerStore.getState();
+    const current = state.currentTrack;
+    if (!current || !playerRuntime) return;
+    if (state.status !== "playing" || playerRuntime.isTransitioning()) return;
+    if (this.transitionedFrom === current.id) return;
+    const settings = this.transitionSettings(state);
+    if (settings.crossfadeMs <= 0 && !settings.gapless) return;
+    // repeat one loops the same song; let the normal end handle it
+    if (state.repeat === "one") return;
+    const nextIndex = this.computeNextIndex(true);
+    if (nextIndex === null) return;
+    const next = state.queue[nextIndex];
+    if (!next || next.id === current.id) return;
+
+    const durationMs = state.durationMs || current.durationMs;
+    const key = [
+      current.id,
+      next.id,
+      durationMs,
+      settings.crossfadeMs,
+      settings.gapless,
+      settings.automix,
+    ].join("|");
+    if (this.plannedTransition?.key !== key) {
+      this.plannedTransition = {
+        key,
+        plan: planTransition(
+          settings,
+          {
+            durationMs,
+            analysis: knownAnalysis(current.id),
+            albumId: current.album?.id,
+          },
+          {
+            durationMs: next.durationMs,
+            analysis: knownAnalysis(next.id),
+            albumId: next.album?.id,
+          },
+        ),
+      };
+    }
+    const plan = this.plannedTransition.plan;
+    if (!plan || positionMs < plan.startAtMs) return;
+    this.transitionedFrom = current.id;
+    log(
+      "cyan",
+      "transition",
+      `${plan.kind} into "${next.title}" (out ${plan.fadeOutMs} ms, in ${plan.fadeInMs} ms, skip ${plan.incomingOffsetMs} ms)`,
+    );
+    void this.skipNext(true, plan);
   }
 
   private computeNextIndex(isAutoEnd: boolean = false): number | null {

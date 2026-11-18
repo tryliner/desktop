@@ -12,6 +12,7 @@ import { pitchShifter } from "./pitchShifter";
 import { FLAT_EQ, isEqActive } from "./equalizer";
 import { resolvePlaybackStream, type PlaybackStream } from "./streamResolver";
 import { logNowPlaying } from "./nowPlayingLog";
+import { fadeOutLevel } from "./transitions/planTransition";
 import {
   downloadAudioBytes,
   isBotCheckError,
@@ -60,6 +61,23 @@ export class PlayerRuntime {
   private waitingTimer: ReturnType<typeof setTimeout> | null = null;
   public onEnded?: () => void;
   public onError?: (info: { trackId: string; message: string }) => void;
+  /**
+   * called with the precise position while a song nears its end (every
+   * 50 ms in the last 30 s), so crossfades and gapless starts land on time
+   */
+  public onNearEnd?: (positionMs: number, durationMs: number) => void;
+  // the song fading out during a crossfade, on its own element
+  private tail: {
+    el: HTMLAudioElement;
+    blobUrl: string | null;
+    release: (() => void) | null;
+    timer: ReturnType<typeof setTimeout> | null;
+  } | null = null;
+  // "normalize volume": loud songs play a bit quieter (1 = as is)
+  private trackGain = 1;
+  // fade-in for the next loadAndPlay; crossfades ask for a longer one
+  private nextFadeInMs = 180;
+  private nearEndTimer: ReturnType<typeof setInterval> | null = null;
 
   constructor() {
     const win = typeof window !== "undefined" ? (window as any) : null;
@@ -93,7 +111,7 @@ export class PlayerRuntime {
       if (state.volume !== prevState.volume) {
         this.cancelFade();
         if (!this.audio.paused) {
-          this.audio.volume = state.volume;
+          this.audio.volume = this.targetVolume();
         }
       }
       if (
@@ -268,6 +286,7 @@ export class PlayerRuntime {
 
       const posMs = Math.round(audioEl.currentTime * 1000);
       usePlayerStore.getState().setPosition(posMs);
+      this.watchNearEnd(audioEl);
       if (
         this.recoveryHoldUntilMs !== null &&
         posMs >= this.recoveryHoldUntilMs
@@ -567,6 +586,168 @@ export class PlayerRuntime {
     this.fadeTimer = setTimeout(tick, 16);
   }
 
+  private targetVolume(): number {
+    return Math.max(
+      0,
+      Math.min(1, usePlayerStore.getState().volume * this.trackGain),
+    );
+  }
+
+  private takeFadeIn(): number {
+    const ms = this.nextFadeInMs;
+    this.nextFadeInMs = 180;
+    // even a "no fade" start gets a few ms, so it doesn't click
+    return Math.max(15, ms);
+  }
+
+  /** "normalize volume": applies right away if a song is playing */
+  public setTrackGain(gain: number): void {
+    const next = Number.isFinite(gain) ? Math.max(0.05, Math.min(1, gain)) : 1;
+    if (Math.abs(next - this.trackGain) < 0.001) return;
+    this.trackGain = next;
+    if (!this.audio.paused && this.fadeTimer === null) {
+      this.fadeVolume(this.targetVolume(), 400);
+    }
+  }
+
+  private watchNearEnd(audioEl: HTMLAudioElement): void {
+    if (!this.onNearEnd) return;
+    const duration = audioEl.duration;
+    if (!Number.isFinite(duration) || duration <= 0) return;
+    const remainingMs = (duration - audioEl.currentTime) * 1000;
+    if (remainingMs > 30_000 || audioEl.paused) {
+      this.stopNearEndTimer();
+      return;
+    }
+    this.onNearEnd(audioEl.currentTime * 1000, duration * 1000);
+    if (this.nearEndTimer !== null) return;
+    // timeupdate only fires ~4 times a second: too coarse for a gapless start
+    this.nearEndTimer = setInterval(() => {
+      const el = this.audio;
+      if (el !== audioEl || el.paused || this.isResetting) {
+        this.stopNearEndTimer();
+        return;
+      }
+      if (!Number.isFinite(el.duration) || el.duration <= 0) return;
+      this.onNearEnd?.(el.currentTime * 1000, el.duration * 1000);
+    }, 50);
+  }
+
+  private stopNearEndTimer(): void {
+    if (this.nearEndTimer !== null) {
+      clearInterval(this.nearEndTimer);
+      this.nearEndTimer = null;
+    }
+  }
+
+  /** is a song still fading out on its own element? */
+  public isTransitioning(): boolean {
+    return this.tail !== null;
+  }
+
+  /**
+   * Hands playback to a fresh audio element and lets the current one fade
+   * out over `fadeOutMs` (0 = let it play to its natural end, for gapless).
+   * Call right before loadAndPlay(next, …, { transition: true }). The old
+   * element keeps its own source, so nothing has to reload and the two
+   * songs overlap; its events are ignored from here on, since every
+   * listener checks `audioEl !== this.audio`.
+   */
+  public beginTransition(fadeOutMs: number): void {
+    this.finishTail(0);
+    this.stopNearEndTimer();
+    this.cancelFade();
+    const outgoing = this.audio;
+    if (!outgoing.src || outgoing.paused) return;
+    const win = typeof window !== "undefined" ? (window as any) : null;
+
+    const fresh = new Audio();
+    fresh.crossOrigin = "anonymous";
+    fresh.preload = "auto";
+    fresh.volume = 0;
+    outgoing.id = "liner-audio-tail";
+    fresh.id = "liner-audio";
+    if (typeof document !== "undefined") document.body.appendChild(fresh);
+    if (win) win.__liner_audio = fresh;
+    this.setupAudioListeners(fresh);
+
+    this.tail = {
+      el: outgoing,
+      blobUrl: this.activeBlobUrl,
+      release: this.releaseActiveStream,
+      timer: null,
+    };
+    // the fading song now owns its blob/stream: don't revoke them on the next attach
+    this.activeBlobUrl = null;
+    this.releaseActiveStream = null;
+    this.attachedTrackId = null;
+    this.audio = fresh;
+    this.applyPlaybackRateAndPitch();
+
+    if (fadeOutMs <= 0) {
+      // gapless: the old song plays out its last moments untouched
+      outgoing.addEventListener("ended", () => this.finishTail(0), {
+        once: true,
+      });
+      const left = (outgoing.duration - outgoing.currentTime) * 1000;
+      const tail = this.tail;
+      tail.timer = setTimeout(
+        () => {
+          if (this.tail === tail) this.finishTail(0);
+        },
+        Number.isFinite(left) ? left + 500 : 2_000,
+      );
+      return;
+    }
+    this.rampTail(fadeOutMs);
+  }
+
+  private rampTail(durationMs: number): void {
+    const tail = this.tail;
+    if (!tail) return;
+    if (tail.timer !== null) clearTimeout(tail.timer);
+    const startVolume = tail.el.volume;
+    const startedAt = performance.now();
+    const tick = () => {
+      if (this.tail !== tail) return;
+      const progress = Math.min(
+        1,
+        (performance.now() - startedAt) / durationMs,
+      );
+      tail.el.volume = Math.max(
+        0,
+        Math.min(1, startVolume * fadeOutLevel(progress)),
+      );
+      if (progress >= 1) {
+        this.finishTail(0);
+        return;
+      }
+      tail.timer = setTimeout(tick, 16);
+    };
+    tail.timer = setTimeout(tick, 16);
+  }
+
+  /** ends the fading song now (or after a short `fadeMs`) and frees it */
+  public finishTail(fadeMs = 0): void {
+    const tail = this.tail;
+    if (!tail) return;
+    if (fadeMs > 0 && !tail.el.paused && tail.el.volume > 0.01) {
+      this.rampTail(fadeMs);
+      return;
+    }
+    this.tail = null;
+    if (tail.timer !== null) clearTimeout(tail.timer);
+    try {
+      tail.el.pause();
+      pitchShifter.detach(tail.el);
+      tail.el.removeAttribute("src");
+      tail.el.load();
+    } catch {}
+    tail.release?.();
+    if (tail.blobUrl) URL.revokeObjectURL(tail.blobUrl);
+    tail.el.remove();
+  }
+
   private releaseStream() {
     this.releaseActiveStream?.();
     this.releaseActiveStream = null;
@@ -611,6 +792,7 @@ export class PlayerRuntime {
   }
 
   private safeResetAudioElement() {
+    this.finishTail(0);
     this.isResetting = true;
     this.currentSessionExpiresAt = null;
     try {
@@ -757,7 +939,11 @@ export class PlayerRuntime {
     track: Track,
     startPositionMs: number = 0,
     bypassCache: boolean = false,
+    options: { fadeInMs?: number; transition?: boolean } = {},
   ) {
+    // a manual change (skip, pick another song) cuts a running crossfade short
+    if (!options.transition) this.finishTail(120);
+    this.nextFadeInMs = options.fadeInMs ?? 180;
     this.cancelFade();
     this.pendingStartPositionMs = startPositionMs;
     const epoch = ++this.loadEpoch;
@@ -863,7 +1049,7 @@ export class PlayerRuntime {
 
         if (epoch === this.loadEpoch) {
           usePlayerStore.getState().setStatus("playing");
-          this.fadeVolume(usePlayerStore.getState().volume, 180);
+          this.fadeVolume(this.targetVolume(), this.takeFadeIn());
         }
         logNowPlaying(track, true, audioStartLatencyMs);
         return;
@@ -935,7 +1121,7 @@ export class PlayerRuntime {
 
       if (epoch === this.loadEpoch) {
         usePlayerStore.getState().setStatus("playing");
-        this.fadeVolume(usePlayerStore.getState().volume, 180);
+        this.fadeVolume(this.targetVolume(), this.takeFadeIn());
         this.cacheAudioInBackground(track, stream, bgCacheController.signal);
       }
       logNowPlaying(track, false, audioStartLatencyMs);
@@ -1022,6 +1208,7 @@ export class PlayerRuntime {
   }
 
   public pause() {
+    this.finishTail(150);
     const epoch = ++this.loadEpoch;
     this.loadAbortController?.abort();
     this.loadAbortController = null;
@@ -1039,7 +1226,7 @@ export class PlayerRuntime {
     this.loadAbortController?.abort();
     this.loadAbortController = null;
 
-    const targetVolume = usePlayerStore.getState().volume;
+    const targetVolume = this.targetVolume();
     usePlayerStore.getState().setStatus("playing");
     pitchShifter.resumeContext();
     this.applyPlaybackRateAndPitch();
@@ -1103,6 +1290,8 @@ export class PlayerRuntime {
   }
 
   public seek(positionMs: number) {
+    // seeking means "this song, here": the one fading out can go
+    this.finishTail(150);
     if (!this.audio.src || this.audio.src === window.location.href) return;
     try {
       if (this.audio.readyState >= 1) {

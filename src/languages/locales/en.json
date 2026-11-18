@@ -1096,6 +1096,32 @@
     },
     "connection": {
       "open_folder": "Open saved location"
+    },
+    "transitions": {
+      "section": "Between songs",
+      "crossfade": {
+        "title": "Crossfade",
+        "description": "Blend the end of a song into the next one.",
+        "off": "Off",
+        "seconds_one": "{count} second",
+        "seconds_other": "{count} seconds"
+      },
+      "automix": {
+        "title": "AutoMix",
+        "description": "Smarter transitions: skips silence at either end, lets songs that fade out fade on their own, keeps loud handovers short and plays albums straight through."
+      },
+      "gapless": {
+        "title": "Gapless playback",
+        "description": "Start the next song right as this one ends, with no pause in between. Best for albums and DJ mixes."
+      },
+      "on_skip": {
+        "title": "Crossfade when skipping",
+        "description": "A quick one-second blend when you press Next."
+      },
+      "normalize": {
+        "title": "Normalize volume",
+        "description": "Turn louder songs down so everything plays at a similar level."
+      }
     }
   },
   "toast": {
