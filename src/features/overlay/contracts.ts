@@ -40,6 +40,7 @@ export interface OverlayAction {
     | "seekBy"
     | "toggleMute"
     | "like"
+    | "addToPlaylist"
     | "volumeUp"
     | "volumeDown"
     | "setVolume"

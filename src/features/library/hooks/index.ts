@@ -1,6 +1,9 @@
 export {
   usePlaylistsList,
   usePlaylist,
+  cachedPlaylistOverlap,
+  getCachedPlaylists,
+  notifyLibraryChanged,
   type LibraryPlaylistSummary,
   type LibraryPlaylistDetail,
 } from "./usePlaylists";
@@ -29,3 +32,4 @@ export {
   useUnlikeTrack,
   useToggleTrackLike,
 } from "./useLibraryMutations";
+export { useRecentPlaylists } from "./useRecentPlaylists";

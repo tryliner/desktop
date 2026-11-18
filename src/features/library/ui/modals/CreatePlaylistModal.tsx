@@ -4,7 +4,11 @@ import { AnimatePresence, motion } from "framer-motion";
 import TextInput from "@/shared/ui/TextInput";
 import Tooltip from "@/shared/ui/Tooltip";
 import { CheckLine, InformationLine, LinkLine } from "@mingcute/react";
-import { useAddPlaylistTracks, useCreatePlaylist } from "../../hooks";
+import { useCreatePlaylist } from "../../hooks";
+import {
+  addTracksToPlaylists,
+  rememberRecentPlaylists,
+} from "../../services/addToPlaylists";
 import { notifyLibraryChanged } from "../../hooks/usePlaylists";
 import Dialog from "@/shared/ui/Dialog";
 import {
@@ -90,8 +94,8 @@ export default function CreatePlaylistModal() {
 
   const open = useModalStore((state) => state.createPlaylistOpen);
   const initialUrl = useModalStore((state) => state.createPlaylistInitialUrl);
-  const pendingTrack = useModalStore(
-    (state) => state.createPlaylistPendingTrack,
+  const pendingTracks = useModalStore(
+    (state) => state.createPlaylistPendingTracks,
   );
   const close = useModalStore((state) => state.closeCreatePlaylist);
 
@@ -108,7 +112,6 @@ export default function CreatePlaylistModal() {
   const titleRef = useRef<HTMLInputElement>(null);
   const linkRef = useRef<HTMLInputElement>(null);
   const createPlaylist = useCreatePlaylist();
-  const addTrack = useAddPlaylistTracks();
 
   const pillId = useId();
   const body = useHeightTween();
@@ -168,16 +171,14 @@ export default function CreatePlaylistModal() {
       });
       notifyLibraryChanged();
 
-      if (pendingTrack) {
-        try {
-          await addTrack.mutateAsync({
-            playlistId: playlist.id,
-            trackId: pendingTrack.id,
-          });
+      if (pendingTracks.length > 0) {
+        const result = await addTracksToPlaylists(pendingTracks, [playlist.id]);
+        if (result.added > 0) {
+          rememberRecentPlaylists([playlist.id]);
           toast(t("common.added_to_playlist"), "checkmark", {
             description: playlist.title || trimmed,
           });
-        } catch {
+        } else if (result.failed > 0) {
           toast(t("common.failed_add_playlist"), "error");
         }
       }
@@ -210,7 +211,9 @@ export default function CreatePlaylistModal() {
     setImportError("");
     setImporting(true);
     try {
-      await useImportStore.getState().startImport(target, pendingTrack);
+      await useImportStore
+        .getState()
+        .startImport(target, pendingTracks[0] ?? null);
       close();
     } catch (err: unknown) {
       setImportError(

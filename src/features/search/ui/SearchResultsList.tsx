@@ -1,6 +1,8 @@
-import { memo, useRef } from "react";
+import { memo, useMemo, useRef } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import SongCardWithMenu from "@/features/player/ui/SongCardWithMenu";
+import { useTrackSelection } from "@/features/player/hooks/useTrackSelection";
+import type { SelectableTrack } from "@/features/player/store/trackSelectionStore";
 import { useTranslation } from "@/languages";
 
 export interface SearchResultsListProps {
@@ -29,6 +31,26 @@ export const SearchResultsList = memo(function SearchResultsList({
   const { t } = useTranslation();
   const internalRef = useRef<HTMLDivElement>(null);
   const containerRef = scrollRef ?? internalRef;
+
+  // only song rows take part in multi-select
+  const selectable = useMemo<SelectableTrack[]>(
+    () =>
+      items
+        .filter((it) => it?._type === "track" && it.id)
+        .map((it) => ({
+          id: it.id,
+          title: it.title || it.name || "",
+          artists: it.artists || it.artist || "",
+          coverUrl: it.coverUrl || it.imageUrl || "",
+          durationMs: it.durationMs ?? it.duration_ms ?? 0,
+        })),
+    [items],
+  );
+  const selectableById = useMemo(
+    () => new Map(selectable.map((track) => [track.id, track])),
+    [selectable],
+  );
+  const selection = useTrackSelection("search", selectable);
 
   // accurate 64px card estimate with 6px gap prevents overlap and restores spacing
   const rowVirtualizer = useVirtualizer({
@@ -84,6 +106,9 @@ export const SearchResultsList = memo(function SearchResultsList({
                 .padStart(2, "0")}`
             : "";
 
+          const selectableTrack =
+            it._type === "track" ? selectableById.get(it.id) : undefined;
+
           return (
             <div
               key={virtualRow.key}
@@ -116,6 +141,16 @@ export const SearchResultsList = memo(function SearchResultsList({
                     : () => onNavigateItem(it)
                 }
                 onNavigate={() => onNavigateItem(it)}
+                selected={
+                  selectableTrack
+                    ? selection.isSelected(selectableTrack)
+                    : undefined
+                }
+                onSelectClick={
+                  selectableTrack
+                    ? (e) => selection.onSelectClick(selectableTrack, e)
+                    : undefined
+                }
               />
             </div>
           );

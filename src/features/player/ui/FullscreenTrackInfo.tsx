@@ -9,6 +9,7 @@ import { usePlayerStore } from "../store/playerStore";
 import { useGlassBlur } from "../store/visualModeStore";
 import { cn } from "@/shared/lib";
 import { LikeMorphIcon } from "./LikeMorphIcon";
+import { AddToPlaylistButton } from "./AddToPlaylistButton";
 
 interface FullscreenTrackInfoProps {
   onClose?: () => void;
@@ -30,7 +31,7 @@ export function FullscreenTrackInfo({ onClose }: FullscreenTrackInfoProps) {
   }, [track, toggleLike]);
 
   return (
-    <div className="flex w-full items-center gap-[12px]">
+    <div className="flex w-full items-center gap-[8px]">
       <div className="flex min-w-0 flex-1 flex-col gap-[4px]">
         <ScrollableText
           text={track?.title || ""}
@@ -71,6 +72,17 @@ export function FullscreenTrackInfo({ onClose }: FullscreenTrackInfoProps) {
         </p>
       </div>
 
+      {!isLocal && (
+        <AddToPlaylistButton
+          track={track}
+          side="top"
+          align="end"
+          className={cn(
+            "relative inline-flex h-[40px] w-[40px] shrink-0 items-center justify-center rounded-[11px] border-none bg-white/[0.06] cursor-pointer text-white transition-colors duration-200 ease-out hover:bg-white/[0.12] active:scale-[0.92]",
+            glassBlur && "backdrop-blur-xl backdrop-brightness-[1.15]",
+          )}
+        />
+      )}
       {!isLocal && (
         <button
           type="button"

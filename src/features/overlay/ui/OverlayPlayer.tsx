@@ -6,7 +6,7 @@ import {
   ICON_PLAY,
   ICON_PAUSE,
 } from "@/features/player/ui/morphPlayerIcons";
-import { HeartFill, HeartLine } from "@mingcute/react";
+import { AddLine, HeartFill, HeartLine } from "@mingcute/react";
 import CoverImage from "@/features/covers/ui/CoverImage";
 import { ScrollableText } from "@/shared/ui/ScrollableText";
 import { useDisableButtonFocus } from "@/features/navigation/hooks/useDisableButtonFocus";
@@ -346,6 +346,25 @@ export function OverlayPlayer() {
             style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
             onMouseDown={(e) => e.stopPropagation()}
           >
+            {!isLocalTrackId(state.track?.id) && state.track && (
+              <button
+                type="button"
+                tabIndex={-1}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  // the picker lives in the main window, which main focuses first
+                  sendAction({ type: "addToPlaylist" });
+                }}
+                className="flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-lg border-0 bg-transparent text-white/40 transition-colors outline-none cursor-pointer hover:text-white active:scale-90"
+                aria-label="Add to playlist"
+              >
+                <AddLine size={16} />
+              </button>
+            )}
             {!isLocalTrackId(state.track?.id) && (
               <button
                 type="button"

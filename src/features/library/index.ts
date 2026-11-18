@@ -32,3 +32,13 @@ export * from "./store/importStore";
 export { LocalTracksPage, LocalFilesCard, LocalDropZone } from "./local";
 export { CachedTracksPage, CachedSongsCard } from "./cached";
 export { SavedLikesPage } from "./saved";
+
+export {
+  addTracksToPlaylists,
+  undoAddToPlaylists,
+  sortByRecent,
+  readRecentPlaylists,
+  type AddableTrack,
+  type AddToPlaylistsResult,
+} from "./services/addToPlaylists";
+export { addAndReport, reportAddResult } from "./lib/addToPlaylistsFeedback";

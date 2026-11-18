@@ -24,7 +24,7 @@ import SongCardWithMenu from "@/features/player/ui/SongCardWithMenu";
 import CoverImage from "@/features/covers/ui/CoverImage";
 import { preloadCoverArt } from "@/features/covers/lib/coverArt";
 import { DailyMixCover } from "@/features/home";
-import { playerEngine } from "@/features/player";
+import { playerEngine, useTrackSelection } from "@/features/player";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   useToast,
@@ -42,7 +42,7 @@ import {
 import { usePageBackdrop } from "@/shared/lib";
 import type { Track } from "@/shared/types";
 import { useTranslation } from "@/languages";
-import { useModalStore } from "@/features/library";
+import { useModalStore, toTrackDetails } from "@/features/library";
 import { buildShareUrl } from "@/shared/utils/share";
 import { useExternalItems } from "@/features/library/hooks";
 import { useCollection } from "../hooks/useCollection";
@@ -167,6 +167,18 @@ function CollectionContent() {
     () =>
       search.matches ?? sortedTracks.map((track, index) => ({ track, index })),
     [search.matches, sortedTracks],
+  );
+  const selectableTracks = useMemo(
+    () =>
+      visibleTracks.map(({ track }) => ({
+        ...track,
+        coverUrl: track.coverUrl || data?.coverUrl || "",
+      })),
+    [visibleTracks, data?.coverUrl],
+  );
+  const selection = useTrackSelection(
+    `${type}:${decodedId ?? ""}`,
+    selectableTracks,
   );
   // album track numbers follow the release order, whatever the sort
   const trackNumberById = useMemo(() => {
@@ -484,6 +496,23 @@ function CollectionContent() {
                               onClick: handleSaveToLibrary,
                             },
                             {
+                              id: "add-all-to-playlist",
+                              icon: <AddLine size={16} />,
+                              label: t("playlist_picker.add_all"),
+                              disabled: !data || data.tracks.length === 0,
+                              onClick: () => {
+                                if (!data) return;
+                                useModalStore.getState().openAddToPlaylist(
+                                  toTrackDetails(
+                                    data.tracks.map((track) => ({
+                                      ...track,
+                                      coverUrl: track.coverUrl || data.coverUrl,
+                                    })),
+                                  ),
+                                );
+                              },
+                            },
+                            {
                               id: "share",
                               icon: <ShareForwardLine size={16} />,
                               label: t("common.share"),
@@ -533,6 +562,16 @@ function CollectionContent() {
                           durationMs={track.durationMs}
                           explicit={track.explicit}
                           hideArtists={isSingleArtistAlbum}
+                          selected={selection.isSelected(track)}
+                          onSelectClick={(e) =>
+                            selection.onSelectClick(
+                              {
+                                ...track,
+                                coverUrl: track.coverUrl || data.coverUrl,
+                              },
+                              e,
+                            )
+                          }
                           onPlay={() =>
                             playerEngine.playTrack(
                               track,

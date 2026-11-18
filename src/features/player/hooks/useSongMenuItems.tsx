@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import {
   LuRadio,
   LuStepForward,
@@ -8,6 +8,8 @@ import {
   LuTrash2,
   LuFolderPlus,
   LuEraser,
+  LuListMusic,
+  LuEllipsis,
 } from "react-icons/lu";
 import { ShareForwardLine } from "@mingcute/react";
 import type { DropdownMenuItem } from "@/shared/ui/DropdownMenu";
@@ -17,6 +19,10 @@ import {
   useToggleTrackLike,
   useIsTrackLiked,
   useModalStore,
+  useRecentPlaylists,
+  sortByRecent,
+  addAndReport,
+  type TrackDetail,
 } from "@/features/library";
 import { useTranslation } from "@/languages";
 import { showToast } from "@/shared/ui";
@@ -51,6 +57,68 @@ export interface SongMenuContext {
   onRemoveFromDevice?: () => void;
 }
 
+const QUICK_PLAYLISTS = 5;
+
+/**
+ * "Add to playlist ▸" with the most recently used playlists one click away,
+ * then "New playlist" and the full multi-select picker.
+ */
+export function useAddToPlaylistMenuItem(
+  track: TrackDetail | null,
+  options: { excludePlaylistId?: string } = {},
+): DropdownMenuItem | null {
+  const { t } = useTranslation();
+  const { data: playlistsData } = usePlaylistsList();
+  const recent = useRecentPlaylists();
+  const { excludePlaylistId } = options;
+
+  return useMemo(() => {
+    if (!track) return null;
+    const all = (playlistsData?.playlists ?? []).filter(
+      (p) => p.id !== excludePlaylistId,
+    );
+    const quick = sortByRecent(all, recent).slice(0, QUICK_PLAYLISTS);
+    const openPicker = () =>
+      useModalStore
+        .getState()
+        .openAddToPlaylist({ ...track, playlists: playlistsData?.playlists });
+    const base: DropdownMenuItem = {
+      id: "add-to-playlist",
+      label: t("common.add_to_playlist"),
+      icon: <LuPlus size={15} />,
+      onClick: openPicker,
+    };
+    if (quick.length === 0) return base;
+    return {
+      ...base,
+      children: [
+        ...quick.map<DropdownMenuItem>((playlist) => ({
+          id: `quick-add-${playlist.id}`,
+          label: playlist.title,
+          icon: <LuListMusic size={15} />,
+          onClick: () => {
+            void addAndReport([track], [playlist], t);
+          },
+        })),
+        {
+          id: "quick-add-new",
+          label: t("playlist_picker.new_playlist"),
+          icon: <LuPlus size={15} />,
+          separator: true,
+          onClick: () =>
+            useModalStore.getState().openCreatePlaylist(undefined, track),
+        },
+        {
+          id: "quick-add-more",
+          label: t("playlist_picker.more"),
+          icon: <LuEllipsis size={15} />,
+          onClick: openPicker,
+        },
+      ],
+    };
+  }, [track, playlistsData?.playlists, recent, excludePlaylistId, t]);
+}
+
 export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
   const { t } = useTranslation();
   const {
@@ -69,7 +137,17 @@ export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
     onRemoveFromDevice,
   } = ctx;
 
-  const { data: playlistsData } = usePlaylistsList();
+  const isTrackRow = searchType === "track" || !searchType;
+  const menuTrack = useMemo<TrackDetail | null>(
+    () =>
+      id && isTrackRow
+        ? { id, title, artists, coverUrl, duration, durationMs }
+        : null,
+    [id, isTrackRow, title, artists, coverUrl, duration, durationMs],
+  );
+  const addToPlaylistItem = useAddToPlaylistMenuItem(menuTrack, {
+    excludePlaylistId: playlistId,
+  });
 
   const toggleLike = useToggleTrackLike();
 
@@ -174,6 +252,7 @@ export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
             ),
             onClick: handleLike,
           },
+          ...(addToPlaylistItem ? [addToPlaylistItem] : []),
           {
             id: "share",
             label: t("common.share"),
@@ -266,22 +345,7 @@ export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
           ),
           onClick: handleLike,
         },
-        {
-          id: "add-to-playlist",
-          label: t("common.add_to_playlist"),
-          icon: <LuPlus size={15} />,
-          onClick: () => {
-            if (!id) return;
-            useModalStore.getState().openAddToPlaylist({
-              id,
-              title,
-              artists,
-              coverUrl,
-              duration,
-              playlists: playlistsData?.playlists ?? [],
-            });
-          },
-        },
+        ...(addToPlaylistItem ? [addToPlaylistItem] : []),
         {
           id: "share",
           label: t("common.share"),
@@ -331,7 +395,6 @@ export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
     title,
     artists,
     coverUrl,
-    duration,
     durationMs,
     searchType,
     totalTracks,
@@ -342,7 +405,7 @@ export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
     liked,
     handleLike,
     handleShare,
-    playlistsData,
+    addToPlaylistItem,
     t,
   ]);
 

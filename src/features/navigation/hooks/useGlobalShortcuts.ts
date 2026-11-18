@@ -10,6 +10,17 @@ import {
   matchesShortcut,
   stepVolumeLevel,
 } from "@/features/shortcuts";
+// deep imports: the library barrel pulls in canvas-heavy UI this hook doesn't need
+import { addAndReport } from "@/features/library/lib/addToPlaylistsFeedback";
+import { readRecentPlaylists } from "@/features/library/services/addToPlaylists";
+import { getCachedPlaylists } from "@/features/library/hooks/usePlaylists";
+import {
+  toTrackDetails,
+  useModalStore,
+} from "@/features/library/store/modalStore";
+import { isLocalTrackId } from "@/shared/media/local";
+import { showToast } from "@/shared/ui";
+import { createTranslatorSync, getStoredLocale } from "@/languages";
 import {
   isBlockingOverlayOpen,
   isKeyHandledByFocusedControl,
@@ -134,6 +145,33 @@ export function useGlobalShortcuts(options: GlobalShortcutsOptions): void {
         event.preventDefault();
         if (opts.rightPanelOpen) opts.closeRightPanel();
         else opts.openRightPanel();
+        return;
+      }
+
+      if (
+        matchesShortcut(event, mainApp.addToPlaylist) ||
+        matchesShortcut(event, mainApp.quickAddToLastPlaylist)
+      ) {
+        event.preventDefault();
+        const t = createTranslatorSync(getStoredLocale());
+        const { currentTrack } = usePlayerStore.getState();
+        if (!currentTrack || isLocalTrackId(currentTrack.id)) {
+          showToast(t("playlist_picker.nothing_playing"), "info");
+          return;
+        }
+        const details = toTrackDetails([currentTrack]);
+        if (matchesShortcut(event, mainApp.addToPlaylist)) {
+          useModalStore.getState().openAddToPlaylist(details);
+          return;
+        }
+        const lastId = readRecentPlaylists()[0];
+        const last = getCachedPlaylists().find((p) => p.id === lastId);
+        if (!last) {
+          showToast(t("playlist_picker.no_last_playlist"), "info");
+          useModalStore.getState().openAddToPlaylist(details);
+          return;
+        }
+        void addAndReport(details, [last], t);
         return;
       }
 

@@ -1,6 +1,7 @@
 import { memo, useCallback, useMemo, useState } from "react";
 import SongCard from "./SongCard";
 import { useSongMenuItems } from "../hooks/useSongMenuItems";
+import { useSelectionMenuItems } from "../hooks/useSelectionActions";
 import { playerEngine } from "../engine/playerEngine";
 import { usePlayerStore } from "../store/playerStore";
 import { useToast } from "@/shared/ui";
@@ -41,6 +42,9 @@ export interface SongCardWithMenuProps {
   /** play queue rows: adds "Remove from queue" to the card menu */
   onRemoveFromQueue?: () => void;
   onRemoveFromDevice?: () => void;
+  /** multi-select wiring from useTrackSelection().rowProps(track) */
+  selected?: boolean;
+  onSelectClick?: (e: React.MouseEvent) => boolean;
 }
 
 function SongCardWithMenu({
@@ -74,6 +78,8 @@ function SongCardWithMenu({
   trailingAction,
   onRemoveFromQueue,
   onRemoveFromDevice,
+  selected,
+  onSelectClick,
 }: SongCardWithMenuProps) {
   const resolvedDurationMs = useMemo(() => {
     if (durationMs !== undefined) return durationMs;
@@ -88,7 +94,7 @@ function SongCardWithMenu({
     return 0;
   }, [duration, durationMs]);
 
-  const menuItems = useSongMenuItems({
+  const rowMenuItems = useSongMenuItems({
     id,
     title,
     artists,
@@ -103,6 +109,9 @@ function SongCardWithMenu({
     onRemoveFromQueue,
     onRemoveFromDevice,
   });
+  // right-clicking a row that's part of a multi-selection acts on all of it
+  const selectionMenuItems = useSelectionMenuItems(Boolean(selected));
+  const menuItems = selectionMenuItems ?? rowMenuItems;
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuPosition, setMenuPosition] = useState<{
@@ -192,6 +201,8 @@ function SongCardWithMenu({
       showReorderHandle={showReorderHandle}
       onGrabStart={onGrabStart}
       trailingAction={trailingAction}
+      selected={selected}
+      onSelectClick={onSelectClick}
     />
   );
 }

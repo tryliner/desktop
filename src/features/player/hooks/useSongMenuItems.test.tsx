@@ -9,13 +9,30 @@ import type { DropdownMenuItem } from "@/shared/ui/DropdownMenu";
 
 (globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
 
+const library = vi.hoisted(() => ({
+  playlists: [] as { id: string; title: string }[],
+  recent: [] as string[],
+  addAndReport: vi.fn(),
+  openAddToPlaylist: vi.fn(),
+  openCreatePlaylist: vi.fn(),
+}));
+
 vi.mock("@/features/library", () => ({
-  usePlaylistsList: () => ({ data: { playlists: [] } }),
+  usePlaylistsList: () => ({ data: { playlists: library.playlists } }),
   useToggleTrackLike: () => vi.fn(),
   useIsTrackLiked: () => false,
+  useRecentPlaylists: () => library.recent,
+  sortByRecent: <T extends { id: string }>(list: T[], recent: string[]) => {
+    const rank = new Map(recent.map((id, i) => [id, i]));
+    return [...list].sort(
+      (a, b) => (rank.get(a.id) ?? 99) - (rank.get(b.id) ?? 99),
+    );
+  },
+  addAndReport: library.addAndReport,
   useModalStore: {
     getState: () => ({
-      openAddToPlaylist: vi.fn(),
+      openAddToPlaylist: library.openAddToPlaylist,
+      openCreatePlaylist: library.openCreatePlaylist,
       openRemoveFromPlaylist: vi.fn(),
       openAddToLibrary: vi.fn(),
     }),
@@ -51,6 +68,8 @@ describe("useSongMenuItems", () => {
   let root: Root;
 
   beforeEach(() => {
+    library.playlists = [];
+    library.recent = [];
     container = document.createElement("div");
     document.body.appendChild(container);
     root = createRoot(container);
@@ -177,5 +196,77 @@ describe("useSongMenuItems", () => {
       coverUrl: "",
     })();
     expect(elsewhere.map((item) => item.id)).not.toContain("remove-from-queue");
+  });
+
+  it("opens the picker directly when there are no playlists yet", () => {
+    const item = renderHookHelper({
+      id: "t1",
+      title: "Demo",
+      artists: "Me",
+      coverUrl: "",
+    })().find((entry) => entry.id === "add-to-playlist");
+    expect(item?.children).toBeUndefined();
+    act(() => item?.onClick?.());
+    expect(library.openAddToPlaylist).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "t1", title: "Demo" }),
+    );
+  });
+
+  it("lists recent playlists first in the add-to-playlist submenu", () => {
+    library.playlists = [
+      { id: "a", title: "Alpha" },
+      { id: "b", title: "Beta" },
+      { id: "c", title: "Gamma" },
+    ];
+    library.recent = ["c"];
+    const item = renderHookHelper({
+      id: "t1",
+      title: "Demo",
+      artists: "Me",
+      coverUrl: "",
+    })().find((entry) => entry.id === "add-to-playlist");
+    const labels = item?.children?.map((child) => child.label);
+    expect(labels?.slice(0, 3)).toEqual(["Gamma", "Alpha", "Beta"]);
+    expect(item?.children?.map((child) => child.id).slice(-2)).toEqual([
+      "quick-add-new",
+      "quick-add-more",
+    ]);
+
+    act(() => item?.children?.[0].onClick?.());
+    expect(library.addAndReport).toHaveBeenCalledWith(
+      [expect.objectContaining({ id: "t1" })],
+      [{ id: "c", title: "Gamma" }],
+      expect.any(Function),
+    );
+  });
+
+  it("offers add-to-playlist inside a playlist, without that playlist", () => {
+    library.playlists = [
+      { id: "playlist-1", title: "Current" },
+      { id: "other", title: "Other" },
+    ];
+    const items = renderHookHelper({
+      id: "track-456",
+      title: "SANGRE !",
+      artists: "Nsqk",
+      coverUrl: "",
+      playlistId: "playlist-1",
+      playlistItemId: "item-1",
+    })();
+    const add = items.find((entry) => entry.id === "add-to-playlist");
+    expect(add).toBeDefined();
+    expect(add?.children?.map((child) => child.label)).not.toContain("Current");
+    expect(add?.children?.map((child) => child.label)).toContain("Other");
+  });
+
+  it("drops add-to-playlist for files on this device", () => {
+    library.playlists = [{ id: "a", title: "Alpha" }];
+    const ids = renderHookHelper({
+      id: "local:abc",
+      title: "Demo",
+      artists: "Me",
+      coverUrl: "",
+    })().map((entry) => entry.id);
+    expect(ids).not.toContain("add-to-playlist");
   });
 });

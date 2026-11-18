@@ -40,13 +40,19 @@ import {
   ShareForwardLine,
 } from "@mingcute/react";
 import { AnimatePresence, motion } from "framer-motion";
-import { LuPencil, LuTrash2, LuText, LuShuffle } from "react-icons/lu";
+import {
+  LuPencil,
+  LuTrash2,
+  LuText,
+  LuShuffle,
+  LuListPlus,
+} from "react-icons/lu";
 import { buildShareUrl } from "@/shared/utils/share";
 import Button from "@/shared/ui/Button";
 import DropdownMenu from "@/shared/ui/DropdownMenu";
 import SongCardWithMenu from "@/features/player/ui/SongCardWithMenu";
 import CoverImage from "@/features/covers/ui/CoverImage";
-import { useModalStore } from "../store/modalStore";
+import { useModalStore, toTrackDetails } from "../store/modalStore";
 import {
   usePlaylist,
   usePlaylistsList,
@@ -56,7 +62,7 @@ import {
 } from "../hooks";
 import { statusOf } from "@/features/connectivity";
 import { useListReorder } from "@/shared/hooks";
-import { playerEngine } from "@/features/player";
+import { playerEngine, useTrackSelection } from "@/features/player";
 import type { Track } from "@/shared/types";
 import { useTranslation } from "@/languages";
 import { api } from "@/shared/api";
@@ -77,6 +83,8 @@ interface TrackItemProps {
   showReorderHandle?: boolean;
   onGrabStart?: (e: React.PointerEvent<HTMLDivElement>) => void;
   highlight?: string;
+  selected?: boolean;
+  onSelectClick?: (track: Track, e: React.MouseEvent) => boolean;
 }
 
 const TrackItem = memo(function TrackItem({
@@ -89,7 +97,13 @@ const TrackItem = memo(function TrackItem({
   showReorderHandle,
   onGrabStart,
   highlight,
+  selected,
+  onSelectClick,
 }: TrackItemProps) {
+  const handleSelectClick = useCallback(
+    (e: React.MouseEvent) => onSelectClick?.(track, e) ?? false,
+    [onSelectClick, track],
+  );
   const handlePlay = useCallback(() => {
     if (typeof window !== "undefined" && window.__linerWasDragging) return;
     const context = playlistId ? `playlist:${playlistId}` : playlistTitle;
@@ -121,6 +135,8 @@ const TrackItem = memo(function TrackItem({
         durationMs={track.durationMs}
         explicit={track.explicit}
         onPlay={handlePlay}
+        selected={selected}
+        onSelectClick={onSelectClick ? handleSelectClick : undefined}
       />
     </div>
   );
@@ -333,6 +349,18 @@ function LibraryPlaylistContent() {
     () =>
       search.matches ?? sortedTracks.map((track, index) => ({ track, index })),
     [search.matches, sortedTracks],
+  );
+
+  const selectableTracks = useMemo(
+    () => visibleTracks.map(({ track }) => track),
+    [visibleTracks],
+  );
+  const selection = useTrackSelection(
+    `playlist:${id ?? ""}`,
+    selectableTracks,
+    isLikesMode
+      ? {}
+      : { playlistId: decodedId ?? undefined, playlistTitle: viewData?.title },
   );
 
   // results start at the top, not wherever the full list was scrolled to
@@ -850,6 +878,18 @@ function LibraryPlaylistContent() {
                               onClick: () => setIsEditingDescription(true),
                             },
                             {
+                              id: "add-all-to-playlist",
+                              icon: <LuListPlus size={15} />,
+                              label: t("playlist_picker.add_all"),
+                              disabled: currentTracks.length === 0,
+                              onClick: () =>
+                                useModalStore
+                                  .getState()
+                                  .openAddToPlaylist(
+                                    toTrackDetails(currentTracks),
+                                  ),
+                            },
+                            {
                               id: "share",
                               icon: <ShareForwardLine size={15} />,
                               label: t("common.share"),
@@ -970,6 +1010,8 @@ function LibraryPlaylistContent() {
                           allTracks={sortedTracks}
                           showReorderHandle={canReorder}
                           highlight={search.activeQuery || undefined}
+                          selected={selection.isSelected(track)}
+                          onSelectClick={selection.onSelectClick}
                           onGrabStart={
                             canReorder && !isDragging
                               ? (e) => handleCardGrab(index, track, e)

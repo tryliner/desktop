@@ -1326,6 +1326,8 @@ export class OverlayManager {
         this.focusMainWindow();
         return;
       }
+      // the playlist picker is a dialog in the main window: bring it forward
+      if (action.type === "addToPlaylist") this.focusMainWindow();
       if (this.mainWindow && !this.mainWindow.isDestroyed()) {
         this.mainWindow.webContents.send("overlay:action", action);
       }

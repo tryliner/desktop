@@ -48,6 +48,7 @@ import {
   MiniPlayer,
   usePlayerStore,
   useGlassBlur,
+  SelectionActionBar,
 } from "@/features/player";
 import SearchResultsList from "@/features/search/ui/SearchResultsList";
 import { SearchHistoryList, useSearchHistoryStore } from "@/features/search";
@@ -93,6 +94,7 @@ const AppOverlays = memo(function AppOverlays() {
   return (
     <>
       <AddToPlaylistModal />
+      <SelectionActionBar />
       <AddToLibraryModal />
       <RemoveFromPlaylistModal />
       <RemoveFromLibraryModal />

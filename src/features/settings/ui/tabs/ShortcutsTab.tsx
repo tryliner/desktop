@@ -19,6 +19,8 @@ import {
   FastForwardLine,
   FastRewindLine,
   ExternalLinkLine,
+  AddLine,
+  AddCircleLine,
 } from "@mingcute/react";
 import { useTranslation } from "@/languages";
 import { ConfirmPill, useToast } from "@/shared/ui";
@@ -316,6 +318,14 @@ export function ShortcutsTab({
           t("settings.shortcuts.toggle_fullscreen_desc") ||
           "Toggle immersive fullscreen player view.",
       },
+      addToPlaylist: {
+        title: t("settings.shortcuts.add_to_playlist"),
+        desc: t("settings.shortcuts.add_to_playlist_desc"),
+      },
+      quickAddToLastPlaylist: {
+        title: t("settings.shortcuts.quick_add_last_playlist"),
+        desc: t("settings.shortcuts.quick_add_last_playlist_desc"),
+      },
     }),
     [t],
   );
@@ -602,6 +612,30 @@ export function ShortcutsTab({
         onChange: (val) => setMainAppShortcut("toggleFullscreen", val),
         onReset: () => resetShortcut("mainApp", "toggleFullscreen"),
         validateCandidate: validateMainAppCandidate("toggleFullscreen"),
+      },
+      {
+        id: "mainApp-addToPlaylist",
+        scope: "mainApp",
+        title: mainAppLabels.addToPlaylist.title,
+        desc: mainAppLabels.addToPlaylist.desc,
+        icon: AddLine,
+        value: mainApp.addToPlaylist,
+        defaultValue: DEFAULT_SHORTCUTS.mainApp.addToPlaylist,
+        onChange: (val) => setMainAppShortcut("addToPlaylist", val),
+        onReset: () => resetShortcut("mainApp", "addToPlaylist"),
+        validateCandidate: validateMainAppCandidate("addToPlaylist"),
+      },
+      {
+        id: "mainApp-quickAddToLastPlaylist",
+        scope: "mainApp",
+        title: mainAppLabels.quickAddToLastPlaylist.title,
+        desc: mainAppLabels.quickAddToLastPlaylist.desc,
+        icon: AddCircleLine,
+        value: mainApp.quickAddToLastPlaylist,
+        defaultValue: DEFAULT_SHORTCUTS.mainApp.quickAddToLastPlaylist,
+        onChange: (val) => setMainAppShortcut("quickAddToLastPlaylist", val),
+        onReset: () => resetShortcut("mainApp", "quickAddToLastPlaylist"),
+        validateCandidate: validateMainAppCandidate("quickAddToLastPlaylist"),
       },
 
       // Miniplayer Actions

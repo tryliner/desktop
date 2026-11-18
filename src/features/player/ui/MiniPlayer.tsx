@@ -38,6 +38,7 @@ import { ArtistAvatar, ArtistLink } from "@/features/artist";
 import { isLocalTrackId } from "@/shared/media/local";
 import DropdownMenu from "@/shared/ui/DropdownMenu";
 import { useSongMenuItems } from "../hooks/useSongMenuItems";
+import { AddToPlaylistButton } from "./AddToPlaylistButton";
 
 const PROGRESS_STEP_MS = 1000;
 const TRACK_SWAP_EASE = [0.22, 1, 0.36, 1] as const;
@@ -922,6 +923,16 @@ function MiniPlayer({
               >
                 {isLiked ? <HeartFill size={20} /> : <HeartLine size={20} />}
               </button>
+            )}
+            {!isLocal && (
+              <div className="-ml-[12px] shrink-0 pointer-events-auto prevent-seek">
+                <AddToPlaylistButton
+                  track={currentTrack}
+                  side="top"
+                  align="start"
+                  className={`${iconButtonClass} text-text-secondary hover:text-text-primary`}
+                />
+              </div>
             )}
           </div>
 

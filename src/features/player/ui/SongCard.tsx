@@ -41,6 +41,10 @@ export interface SongCardProps {
   highlight?: string;
   hideArtists?: boolean;
   trailingAction?: React.ReactNode;
+  /** part of the current multi-selection */
+  selected?: boolean;
+  /** gets every click first; returning true means it was a selection gesture */
+  onSelectClick?: (e: React.MouseEvent) => boolean;
 }
 
 function SongCard({
@@ -71,6 +75,8 @@ function SongCard({
   highlight,
   hideArtists = false,
   trailingAction,
+  selected = false,
+  onSelectClick,
 }: SongCardProps) {
   const { t } = useTranslation();
   const [imageLoaded, setImageLoaded] = useState(() => isCoverReady(coverUrl));
@@ -97,6 +103,14 @@ function SongCard({
   const handleClick = (e: React.MouseEvent) => {
     if (typeof window !== "undefined" && window.__linerWasDragging) {
       e.stopPropagation();
+      e.preventDefault();
+      return;
+    }
+    if (onSelectClick?.(e)) {
+      if (clickTimerRef.current) {
+        clearTimeout(clickTimerRef.current);
+        clickTimerRef.current = null;
+      }
       e.preventDefault();
       return;
     }
@@ -127,7 +141,18 @@ function SongCard({
     <div
       className={`group w-full flex items-center justify-between rounded-control ${paddingClass} outline-none transition-colors duration-150 ease-out ${
         className ?? ""
-      } ${onPlay ? "cursor-pointer" : ""} ${onPlay && !className?.includes("hover:bg-") ? "hover:bg-border-alpha-14" : ""}`}
+      } ${onPlay ? "cursor-pointer" : ""} ${
+        selected
+          ? "bg-fill-strong"
+          : onPlay && !className?.includes("hover:bg-")
+            ? "hover:bg-border-alpha-14"
+            : ""
+      }`}
+      aria-selected={onSelectClick ? selected : undefined}
+      onMouseDown={(e) => {
+        // stop Shift-click from highlighting text across the rows
+        if (onSelectClick && e.shiftKey) e.preventDefault();
+      }}
       onClick={handleClick}
       onPointerDown={(e) => {
         if (clickTimerRef.current) {

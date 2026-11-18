@@ -679,7 +679,11 @@
       "volume_step": {
         "title": "Volume step",
         "description": "How much one press of a volume key changes the volume."
-      }
+      },
+      "add_to_playlist": "Add to playlist",
+      "add_to_playlist_desc": "Choose playlists for the song that's playing.",
+      "quick_add_last_playlist": "Add to last playlist",
+      "quick_add_last_playlist_desc": "Add the playing song to the playlist you used last."
     },
     "overlay": {
       "description": "Desktop overlay behavior, global shortcut and position settings.",
@@ -1306,5 +1310,52 @@
     "youtube_back_title": "YouTube is back",
     "youtube_back_desc": "Every song can play again.",
     "still_youtube_title": "YouTube still isn't available"
+  },
+  "playlist_picker": {
+    "title_one": "Add to playlist",
+    "title_other": "Add {count} songs to playlists",
+    "recent": "Recent",
+    "all_playlists": "All playlists",
+    "new_playlist": "New playlist",
+    "more": "More playlists…",
+    "already_added": "Already added",
+    "partly_added": "{count} already added",
+    "add_to_one": "Add to {count} playlist",
+    "add_to_other": "Add to {count} playlists",
+    "pick_playlists": "Choose playlists",
+    "added_to_one": "Added to {name}",
+    "added_to_other": "Added to {count} playlists",
+    "songs_added_one": "{count} song added",
+    "songs_added_other": "{count} songs added",
+    "already_everywhere": "Already in the selected playlists",
+    "some_already_one": "{count} was already there",
+    "some_already_other": "{count} were already there",
+    "local_skipped_one": "{count} local file skipped: files on this device can't go in a playlist",
+    "local_skipped_other": "{count} local files skipped: files on this device can't go in a playlist",
+    "undo": "Undo",
+    "undone": "Removed again",
+    "add_all": "Add all to playlist",
+    "add_queue": "Add queue to playlist",
+    "no_last_playlist": "Pick a playlist once and this shortcut will reuse it",
+    "nothing_playing": "Nothing is playing"
+  },
+  "selection": {
+    "count_one": "{count} selected",
+    "count_other": "{count} selected",
+    "clear": "Clear selection",
+    "select_all": "Select all",
+    "add_to_playlist": "Add to playlist",
+    "add_to_queue": "Add to queue",
+    "like": "Like",
+    "remove": "Remove",
+    "added_to_queue_one": "{count} song added to queue",
+    "added_to_queue_other": "{count} songs added to queue",
+    "liked_one": "Liked {count} song",
+    "liked_other": "Liked {count} songs",
+    "removed_one": "Removed {count} song",
+    "removed_other": "Removed {count} songs",
+    "hint": "Ctrl-click to select, Shift-click for a range",
+    "remove_confirm_one": "Remove {count} song?",
+    "remove_confirm_other": "Remove {count} songs?"
   }
 }

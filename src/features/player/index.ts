@@ -41,3 +41,6 @@ export {
   type SpeedPitchPickerProps,
 } from "./ui/SpeedPitchPicker";
 export { useGlassBlur } from "./store/visualModeStore";
+export { SelectionActionBar } from "./ui/SelectionActionBar";
+export { useTrackSelection } from "./hooks/useTrackSelection";
+export { AddToPlaylistButton } from "./ui/AddToPlaylistButton";
