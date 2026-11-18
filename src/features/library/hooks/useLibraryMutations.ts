@@ -2,6 +2,15 @@ import { useCallback, useState } from "react";
 import { api } from "@/shared/api";
 import { notifyLibraryChanged, evictPlaylistFromCache } from "./usePlaylists";
 import { setTrackLiked, toggleTrackLike } from "./useLikedTracks";
+import { usePlaylistCoversStore } from "@/features/covers/playlistCovers/playlistCoverStore";
+
+// a deleted playlist's custom cover would otherwise linger on disk forever
+function dropCustomCover(playlistId: string) {
+  void usePlaylistCoversStore
+    .getState()
+    .removeCover(playlistId)
+    .catch(() => undefined);
+}
 
 type Options = {
   onSuccess?: (...args: any[]) => void;
@@ -77,6 +86,7 @@ export function useDeletePlaylist() {
   return useMutation(async ({ playlistId }: { playlistId: string }) => {
     evictPlaylistFromCache(playlistId);
     await api.deletePlaylist(playlistId);
+    dropCustomCover(playlistId);
   });
 }
 
@@ -117,6 +127,7 @@ export function useRemoveExternalItem() {
         }
         try {
           const res = await api.deletePlaylist(id);
+          dropCustomCover(id);
           // purge any saved collection reference in case it was both created and saved
           await api.removeCollection("playlists", id).catch(() => {});
           return res;

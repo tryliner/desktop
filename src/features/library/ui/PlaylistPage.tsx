@@ -38,6 +38,7 @@ import {
   PlaylistFill,
   CheckLine,
   ShareForwardLine,
+  PicLine,
 } from "@mingcute/react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -46,12 +47,14 @@ import {
   LuText,
   LuShuffle,
   LuListPlus,
+  LuImage,
 } from "react-icons/lu";
 import { buildShareUrl } from "@/shared/utils/share";
 import Button from "@/shared/ui/Button";
 import DropdownMenu from "@/shared/ui/DropdownMenu";
 import SongCardWithMenu from "@/features/player/ui/SongCardWithMenu";
 import CoverImage from "@/features/covers/ui/CoverImage";
+import { useCoverEditorStore } from "@/features/covers/playlistCovers/coverEditorStore";
 import { useModalStore, toTrackDetails } from "../store/modalStore";
 import {
   usePlaylist,
@@ -199,6 +202,59 @@ function PlaylistHeroCover({
         );
       })}
     </div>
+  );
+}
+
+/**
+ * Hover "Choose photo" over your own playlist's cover; dropping an image on
+ * it opens the editor already loaded with that image.
+ */
+function EditableCoverOverlay({
+  playlistId,
+  playlistTitle,
+  trackCovers,
+}: {
+  playlistId: string;
+  playlistTitle: string;
+  trackCovers: string[];
+}) {
+  const { t } = useTranslation();
+  const [dragOver, setDragOver] = useState(false);
+  const open = (file?: File) =>
+    useCoverEditorStore.getState().openEditor({
+      playlistId,
+      playlistTitle,
+      trackCovers,
+      file,
+    });
+  return (
+    <button
+      type="button"
+      aria-label={t("playlist_cover.choose_photo")}
+      data-own-drop
+      onClick={() => open()}
+      onDragOver={(e) => {
+        if ([...e.dataTransfer.items].some((item) => item.kind === "file")) {
+          e.preventDefault();
+          setDragOver(true);
+        }
+      }}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={(e) => {
+        e.preventDefault();
+        setDragOver(false);
+        const file = e.dataTransfer.files?.[0];
+        if (file) open(file);
+      }}
+      className={`absolute inset-0 z-[1] flex cursor-pointer flex-col items-center justify-center gap-[6px] border-none bg-black/0 p-0 text-white opacity-0 transition-[opacity,background-color] duration-150 hover:bg-black/45 hover:opacity-100 focus-visible:bg-black/45 focus-visible:opacity-100 ${
+        dragOver ? "!bg-black/55 !opacity-100" : ""
+      }`}
+    >
+      <PicLine size={28} />
+      <span className="text-label font-[600]">
+        {t("playlist_cover.choose_photo")}
+      </span>
+    </button>
   );
 }
 
@@ -644,11 +700,22 @@ function LibraryPlaylistContent() {
               >
                 <EntityHero
                   cover={
-                    <PlaylistHeroCover
-                      urls={viewData.coverUrls}
-                      title={viewData.title}
-                      likesCover={isLikesMode ? likesCover : undefined}
-                    />
+                    <>
+                      <PlaylistHeroCover
+                        urls={viewData.coverUrls}
+                        title={viewData.title}
+                        likesCover={isLikesMode ? likesCover : undefined}
+                      />
+                      {!isLikesMode && decodedId && (
+                        <EditableCoverOverlay
+                          playlistId={decodedId}
+                          playlistTitle={viewData.title}
+                          trackCovers={currentTracks.map(
+                            (track) => track.coverUrl,
+                          )}
+                        />
+                      )}
+                    </>
                   }
                   title={
                     <h1
@@ -876,6 +943,21 @@ function LibraryPlaylistContent() {
                               icon: <LuText size={15} />,
                               label: t("common.edit_description"),
                               onClick: () => setIsEditingDescription(true),
+                            },
+                            {
+                              id: "change-cover",
+                              icon: <LuImage size={15} />,
+                              label: t("playlist_cover.change"),
+                              onClick: () => {
+                                if (!decodedId) return;
+                                useCoverEditorStore.getState().openEditor({
+                                  playlistId: decodedId,
+                                  playlistTitle: viewData.title,
+                                  trackCovers: currentTracks.map(
+                                    (track) => track.coverUrl,
+                                  ),
+                                });
+                              },
                             },
                             {
                               id: "add-all-to-playlist",

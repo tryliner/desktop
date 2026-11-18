@@ -91,6 +91,10 @@ import {
   createSavedTrackLibrary,
   setupSavedTracks,
 } from "./saved-tracks/ipc.js";
+import {
+  createPlaylistCoverLibrary,
+  setupPlaylistCovers,
+} from "./playlist-covers/ipc.js";
 import { setupNetProbe } from "./netprobe/ipc.js";
 import {
   installNetSimulation,
@@ -593,8 +597,10 @@ if (!gotTheLock) {
       app.setAsDefaultProtocolClient(DEEP_LINK_SCHEME);
     }
     const savedTracks = createSavedTrackLibrary();
-    setupLocalTracks(savedTracks);
+    const playlistCovers = createPlaylistCoverLibrary();
+    setupLocalTracks(savedTracks, { "playlist-cover": playlistCovers });
     setupSavedTracks(savedTracks);
+    setupPlaylistCovers(playlistCovers);
     installNetSimulation(session.defaultSession);
     setupNetProbe();
     touchBarManager = new TouchBarManager(

@@ -10,6 +10,22 @@ const draggedFileCount = (event: DragEvent) =>
     (item) => item.kind === "file",
   ).length;
 
+/**
+ * Places that take their own file drops (playlist cover, wallpaper gallery)
+ * mark themselves with `data-own-drop`; "screen" means the whole open dialog
+ * or tab owns drops while it's shown. The audio import stays out of the way.
+ */
+function ownedElsewhere(event: DragEvent): boolean {
+  const target = event.target;
+  if (target instanceof Element && target.closest("[data-own-drop]")) {
+    return true;
+  }
+  return (
+    typeof document !== "undefined" &&
+    Boolean(document.querySelector('[data-own-drop="screen"]'))
+  );
+}
+
 export function isAudioFile(file: File): boolean {
   return AUDIO_EXTENSION.test(file.name);
 }
@@ -27,26 +43,32 @@ export function useAudioFileDrop(onDrop: (files: File[]) => void) {
   useEffect(() => {
     const enter = (event: DragEvent) => {
       if (!carriesFiles(event)) return;
+      if (ownedElsewhere(event)) {
+        depth.current = 0;
+        setDragging(false);
+        return;
+      }
       event.preventDefault();
       depth.current += 1;
       setFileCount(draggedFileCount(event));
       setDragging(true);
     };
     const over = (event: DragEvent) => {
-      if (!carriesFiles(event)) return;
+      if (!carriesFiles(event) || ownedElsewhere(event)) return;
       event.preventDefault();
       if (event.dataTransfer) event.dataTransfer.dropEffect = "copy";
     };
     const leave = (event: DragEvent) => {
-      if (!carriesFiles(event)) return;
+      if (!carriesFiles(event) || ownedElsewhere(event)) return;
       depth.current = Math.max(0, depth.current - 1);
       if (depth.current === 0) setDragging(false);
     };
     const drop = (event: DragEvent) => {
       if (!carriesFiles(event)) return;
-      event.preventDefault();
       depth.current = 0;
       setDragging(false);
+      if (ownedElsewhere(event)) return;
+      event.preventDefault();
       onDropRef.current(Array.from(event.dataTransfer?.files ?? []));
     };
 

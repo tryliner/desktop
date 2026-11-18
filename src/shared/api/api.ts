@@ -187,9 +187,12 @@ function extractSubFromToken(token: string): string | undefined {
   }
 }
 
+// already-resolvable urls: remote, on-device files and in-memory images
+const ABSOLUTE_MEDIA_URL = /^(?:https?:|liner-local:|blob:|data:)/i;
+
 export function mediaUrl(path: string): string {
   if (!path) return "";
-  if (path.startsWith("http://") || path.startsWith("https://")) return path;
+  if (ABSOLUTE_MEDIA_URL.test(path)) return path;
   return getApiBaseUrl() + (path.startsWith("/") ? path : "/" + path);
 }
 

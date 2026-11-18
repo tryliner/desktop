@@ -9,6 +9,11 @@ import type { SolveResult as YoutubeSolveResult } from "./youtube/n-solver";
 import type { MainNetResult } from "./netdiag";
 import type { NetProbeResult } from "./netprobe/types";
 import type {
+  PlaylistCoverSetInput,
+  PlaylistCoverSetResult,
+  PlaylistCoverView,
+} from "./playlist-covers/types";
+import type {
   LocalImportResult,
   LocalLibraryUsage,
   LocalTrackRecord,
@@ -233,6 +238,15 @@ export interface LinerElectronApi {
     state: SavedLyricsState,
     lyrics?: unknown,
   ) => Promise<boolean>;
+  playlistCoversSet: (
+    input: PlaylistCoverSetInput,
+  ) => Promise<PlaylistCoverSetResult>;
+  playlistCoversRemove: (input: {
+    userId: string;
+    playlistId: string;
+  }) => Promise<boolean>;
+  playlistCoversList: (userId: string) => Promise<PlaylistCoverView[]>;
+  playlistCoversUsage: () => Promise<{ count: number; bytes: number }>;
   pathForFile: (file: File) => string;
 }
 
@@ -517,6 +531,13 @@ const api: LinerElectronApi = {
     ipcRenderer.invoke("saved-tracks:lyrics-get", trackId),
   savedTracksSetLyrics: (trackId, state, lyrics) =>
     ipcRenderer.invoke("saved-tracks:lyrics-set", trackId, state, lyrics),
+  playlistCoversSet: (input) =>
+    ipcRenderer.invoke("playlist-covers:set", input),
+  playlistCoversRemove: (input) =>
+    ipcRenderer.invoke("playlist-covers:remove", input),
+  playlistCoversList: (userId) =>
+    ipcRenderer.invoke("playlist-covers:list", userId),
+  playlistCoversUsage: () => ipcRenderer.invoke("playlist-covers:usage"),
   pathForFile: (file) => webUtils.getPathForFile(file),
 };
 

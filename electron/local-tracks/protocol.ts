@@ -5,6 +5,7 @@ import { Readable } from "node:stream";
 import { protocol } from "electron";
 import type { LocalTrackLibrary } from "./library.js";
 import type { SavedTrackLibrary } from "../saved-tracks/library.js";
+import type { UserMediaLibrary } from "../user-media/library.js";
 
 export const LOCAL_TRACK_SCHEME = "liner-local";
 
@@ -13,7 +14,11 @@ const IMAGE_MIME: Record<string, string> = {
   ".png": "image/png",
   ".webp": "image/webp",
   ".gif": "image/gif",
+  ".avif": "image/avif",
 };
+
+/** extra hosts served from user-media libraries (playlist covers, wallpapers) */
+export type UserMediaHosts = Partial<Record<string, UserMediaLibrary>>;
 
 const BASE_HEADERS = {
   "access-control-allow-origin": "*",
@@ -88,6 +93,7 @@ async function locateFile(
   id: string,
   library: LocalTrackLibrary,
   saved: SavedTrackLibrary,
+  media: UserMediaHosts,
 ): Promise<{ path: string; mimeType?: string } | null> {
   if (host === "audio" || host === "cover") {
     const located = await library.locate(host, id);
@@ -99,17 +105,20 @@ async function locateFile(
   }
   if (host === "saved-audio") return saved.locate("audio", id);
   if (host === "saved-cover") return saved.locate("cover", id);
+  const userMedia = Object.hasOwn(media, host) ? media[host] : undefined;
+  if (userMedia) return userMedia.locate(id);
   return null;
 }
 
 export function handleLocalTrackScheme(
   library: LocalTrackLibrary,
   saved: SavedTrackLibrary,
+  media: UserMediaHosts = {},
 ) {
   protocol.handle(LOCAL_TRACK_SCHEME, async (request) => {
     const url = new URL(request.url);
     const id = url.pathname.replace(/^\/+/, "");
-    const located = await locateFile(url.hostname, id, library, saved);
+    const located = await locateFile(url.hostname, id, library, saved, media);
     if (!located) {
       console.warn(
         `[local-tracks] ${url.hostname} ${id} is not in the library`,

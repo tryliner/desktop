@@ -36,10 +36,20 @@ played tracks are evicted (`src/shared/storage/audioCache.ts`).
 | `local-tracks/library.json`        | Index of imported audio files                  | `electron/local-tracks/library.ts` |
 | `local-tracks/audio/<hash>.<ext>`  | Copies of imported audio files                 | same                               |
 | `local-tracks/covers/<hash>.<ext>` | Artwork taken from their tags                  | same                               |
+| `playlist-covers/index.json`       | Index of custom playlist covers, per account   | `electron/user-media/library.ts`   |
+| `playlist-covers/<key>.<ext>`      | The cropped cover (or an animated GIF/WebP)    | `electron/playlist-covers/ipc.ts`  |
 
 Imported files are copies, so the originals can be moved or deleted. They are served to
 the renderer through the `liner-local://audio/<hash>` and `liner-local://cover/<hash>`
 protocol (`electron/local-tracks/protocol.ts`), never through IndexedDB.
+
+Custom playlist covers are served as `liner-local://playlist-cover/<key>`. The key is
+`sha1(userId + "\0" + playlistId)`, so only files in the index can be reached, and the
+file type comes from the bytes (`electron/user-media/sniff.ts`), not from the renderer.
+They stay on this device until the API has a cover field. When it does, a cover the
+server returns wins over the local one, and the adapter in
+`src/features/covers/playlistCovers/playlistCoverStore.ts` can upload instead. The web
+build keeps them in IndexedDB (`liner_playlist_covers_v1`).
 
 ## localStorage
 
@@ -56,6 +66,7 @@ Settings and small state, as zustand `persist` stores or plain keys.
 | `liner_youtube_preferences`                                           | YouTube playback and sync settings                                                                       |
 | `liner_youtube_page_id`                                               | The brand channel picked for the YouTube account                                                         |
 | `liner_search_history`                                                | Recent searches                                                                                          |
+| `liner_recent_playlists_v1`                                           | The five playlists songs were added to most recently                                                     |
 | `liner_library_view_mode`                                             | Grid or list in the library                                                                              |
 | `liner_locale`, `theme`                                               | Language and theme                                                                                       |
 | `liner_lyrics_*`, `liner:artist:*`, `liner:search:*`, `liner:query:*` | Small caches                                                                                             |

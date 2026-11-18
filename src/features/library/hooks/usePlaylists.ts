@@ -1,4 +1,4 @@
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import {
   api,
   getAuthSession,
@@ -8,6 +8,10 @@ import {
   type ApiUserPlaylistItem,
 } from "@/shared/api";
 import { queryCache } from "@/shared/cache/queryCache";
+import {
+  useCustomPlaylistCover,
+  usePlaylistCoverMap,
+} from "@/features/covers/playlistCovers/playlistCoverStore";
 import type { Track } from "@/shared/types";
 
 export interface LibraryPlaylistSummary {
@@ -20,6 +24,8 @@ export interface LibraryPlaylistSummary {
   updatedAt: string;
   createdAt: string;
   revision: number;
+  /** a cover the user picked on this device; already folded into coverUrl(s) */
+  customCoverUrl?: string;
 }
 
 export interface LibraryPlaylistDetail {
@@ -33,6 +39,20 @@ export interface LibraryPlaylistDetail {
   tracks: Track[];
   durationMs?: number;
   partial?: boolean;
+  customCoverUrl?: string;
+}
+
+/** a picked cover replaces the song mosaic everywhere the playlist shows */
+function withCustomCover<
+  T extends { coverUrl: string; coverUrls: string[]; customCoverUrl?: string },
+>(item: T, custom: string | undefined): T {
+  if (!custom) return item;
+  return {
+    ...item,
+    customCoverUrl: custom,
+    coverUrl: custom,
+    coverUrls: [custom],
+  };
 }
 
 const FIRST_PAGE_SIZE = 100;
@@ -253,7 +273,19 @@ export function usePlaylistsList() {
   useEffect(() => {
     void load();
   }, []);
-  return state;
+  const customCovers = usePlaylistCoverMap();
+  return useMemo(() => {
+    if (Object.keys(customCovers).length === 0) return state;
+    return {
+      ...state,
+      data: {
+        ...state.data,
+        playlists: state.data.playlists.map((playlist) =>
+          withCustomCover(playlist, customCovers[playlist.id]),
+        ),
+      },
+    };
+  }, [state, customCovers]);
 }
 
 function toDetail(
@@ -382,5 +414,10 @@ export function usePlaylist(id: string | null) {
     };
   }, [id, cacheKey]);
 
-  return { data, error, isLoading };
+  const customCover = useCustomPlaylistCover(id);
+  const withCover = useMemo(
+    () => (data ? withCustomCover(data, customCover) : data),
+    [data, customCover],
+  );
+  return { data: withCover, error, isLoading };
 }

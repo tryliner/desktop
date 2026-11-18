@@ -1357,5 +1357,27 @@
     "hint": "Ctrl-click to select, Shift-click for a range",
     "remove_confirm_one": "Remove {count} song?",
     "remove_confirm_other": "Remove {count} songs?"
+  },
+  "playlist_cover": {
+    "title": "Playlist cover",
+    "choose": "Choose image",
+    "drop_hint": "or drop or paste one here",
+    "from_songs": "Use a song's cover",
+    "change": "Change cover",
+    "choose_photo": "Choose photo",
+    "zoom": "Zoom",
+    "drag_hint": "Drag to move, scroll to zoom",
+    "animated_note": "Animated covers are kept as they are and shown centred.",
+    "save": "Save",
+    "cancel": "Cancel",
+    "remove": "Use song mosaic",
+    "saved": "Cover updated",
+    "removed": "Back to the song mosaic",
+    "this_device": "Saved on this device only, for now",
+    "error_type": "That file isn't an image Liner can use. Try PNG, JPEG, WebP, GIF or AVIF.",
+    "error_size": "That image is over 8 MB. Pick a smaller one.",
+    "error_load": "Couldn't open that image",
+    "error_save": "Couldn't save the cover",
+    "preview": "Preview"
   }
 }
