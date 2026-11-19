@@ -109,6 +109,25 @@ describe("Player State Machine", () => {
     expect(state.currentIndex).toBe(-1);
   });
 
+  it("does not restart the finished track on play/pause once the queue has ended", async () => {
+    if (!playerRuntime) return;
+    const track = mockTrack("1", "Track 1");
+    await playerEngine.playTrack(track, [track]);
+    playerEngine.setRepeat("off");
+    await playerEngine.skipNext(true);
+    expect(usePlayerStore.getState().currentTrack).toBeNull();
+
+    const resumeSpy = vi
+      .spyOn(playerRuntime, "resume")
+      .mockImplementation(() => {});
+    playerEngine.togglePlayPause();
+    playerEngine.resume();
+
+    expect(resumeSpy).not.toHaveBeenCalled();
+    expect(usePlayerStore.getState().status).toBe("idle");
+    resumeSpy.mockRestore();
+  });
+
   it("restarts track when skipPrevious is called after 3 seconds", async () => {
     const tracks = [mockTrack("1", "Track 1"), mockTrack("2", "Track 2")];
     await playerEngine.playTrack(tracks[1], tracks, undefined, undefined, 1);
