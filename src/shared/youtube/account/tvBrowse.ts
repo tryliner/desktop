@@ -24,6 +24,7 @@ export async function browseTvTiles(
   kind: TvTileKind,
   maxPages: number,
   signal?: AbortSignal,
+  onPage?: (snapshot: TvBrowsePage) => void,
 ): Promise<TvBrowsePage> {
   const firstPage = await browseTv({ browseId }, signal);
   const tiles = new Map<string, TvTile>();
@@ -35,6 +36,7 @@ export async function browseTvTiles(
     }
     const token = extractInnertubeContinuationToken(page);
     if (!token || (pages > 1 && tiles.size === before)) break;
+    onPage?.({ firstPage, tiles: [...tiles.values()] });
     if (pages >= maxPages) {
       log(
         "yellow",

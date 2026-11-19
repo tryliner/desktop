@@ -2,7 +2,11 @@ import { useEffect, useState } from "react";
 import { api, mediaUrl, toClientTrack } from "@/shared/api";
 import { queryCache } from "@/shared/cache/queryCache";
 import type { Track } from "@/shared/types";
-import { YOUTUBE_THUMBNAIL_HOST } from "@/shared/youtube";
+import type { CatalogPlaylistDetails } from "@/shared/contracts";
+import {
+  YOUTUBE_THUMBNAIL_HOST,
+  subscribePlaylistProgress,
+} from "@/shared/youtube";
 import { getDailyMixArtists } from "@/features/home/hooks/useDailyMixes";
 
 export interface CollectionPageData {
@@ -15,9 +19,24 @@ export interface CollectionPageData {
   coverUrl: string;
   tracks: Track[];
   isDailyMix?: boolean;
+  partial?: boolean;
 }
 
 const COLLECTION_STALE_MS = 5 * 60 * 1000;
+
+function toPartialPlaylist(
+  playlist: CatalogPlaylistDetails,
+): CollectionPageData {
+  return {
+    type: "playlist",
+    title: playlist.title,
+    author: playlist.author,
+    description: playlist.description,
+    coverUrl: playlist.cover ? mediaUrl(playlist.cover.url) : "",
+    tracks: playlist.tracks.map((t) => toClientTrack(t)),
+    partial: true,
+  };
+}
 
 async function loadCollection(
   type: string,
@@ -162,6 +181,17 @@ export function useCollection(type: string | null, id: string | null) {
     }
 
     let active = true;
+    let gotPartial = false;
+
+    const unsubscribeProgress =
+      type === "playlist"
+        ? subscribePlaylistProgress(decodeURIComponent(id), (playlist) => {
+            if (!active || queryCache.get(cacheKey)) return;
+            gotPartial = true;
+            setData(toPartialPlaylist(playlist));
+            setLoading(false);
+          })
+        : undefined;
 
     const unsubscribe = queryCache.subscribe<CollectionPageData>(
       cacheKey,
@@ -184,14 +214,18 @@ export function useCollection(type: string | null, id: string | null) {
         }
       })
       .catch(() => {
-        if (active && !queryCache.get(cacheKey)) {
-          setData(null);
-          setLoading(false);
+        if (!active || queryCache.get(cacheKey)) return;
+        if (gotPartial) {
+          setData((prev) => (prev ? { ...prev, partial: false } : prev));
+          return;
         }
+        setData(null);
+        setLoading(false);
       });
 
     return () => {
       active = false;
+      unsubscribeProgress?.();
       unsubscribe();
     };
   }, [type, id, cacheKey]);
