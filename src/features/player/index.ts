@@ -8,6 +8,7 @@ export { toVolumeGain, toVolumeLevel } from "./engine/volume";
 export { isRadioContext, nextRepeatMode } from "./engine/radioMode";
 export {
   usePlayerStore,
+  MAX_CROSSFADE_SECONDS,
   type AccentVariant,
   type AudioQuality,
   type MiniPlayerStyle,

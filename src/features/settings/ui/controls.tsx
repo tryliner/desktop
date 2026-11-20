@@ -59,12 +59,18 @@ interface SettingRowProps extends SearchableProps {
   control?: ReactNode;
   icon?: ReactNode;
   explained?: boolean;
+  children?: ReactNode;
 }
 
-export function SettingRow({ control, icon, ...text }: SettingRowProps) {
+export function SettingRow({
+  control,
+  icon,
+  children,
+  ...text
+}: SettingRowProps) {
   if (!matchesSearch(text)) return null;
 
-  return (
+  const row = (
     <div
       className={cn(
         rowSurface,
@@ -78,6 +84,13 @@ export function SettingRow({ control, icon, ...text }: SettingRowProps) {
       ) : null}
       <RowText {...text} />
       {control ? <div className="shrink-0">{control}</div> : null}
+    </div>
+  );
+  if (!children) return row;
+  return (
+    <div className="flex flex-col">
+      {row}
+      {children}
     </div>
   );
 }

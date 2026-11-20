@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useTranslation } from "@/languages";
 import { usePlayerStore } from "@/features/player";
 import { ToggleSwitch } from "@/shared/ui";
+import { TransitionsSection } from "./playback/TransitionsSection";
 import { SettingRow, SettingSection, SegmentedControl } from "../controls";
 
 export function PlaybackTab({ searchQuery }: { searchQuery?: string }) {
@@ -35,93 +36,97 @@ export function PlaybackTab({ searchQuery }: { searchQuery?: string }) {
   }, []);
 
   return (
-    <SettingSection>
-      <SettingRow
-        title={t("settings.autoplay_similar.title")}
-        description={t("settings.autoplay_similar.description")}
-        titleKey="settings.autoplay_similar.title"
-        descKey="settings.autoplay_similar.description"
-        searchQuery={searchQuery}
-        control={
-          <ToggleSwitch
-            checked={autoplaySimilar}
-            onChange={setAutoplaySimilar}
-          />
-        }
-      />
+    <div className="flex flex-col gap-[20px]">
+      <TransitionsSection searchQuery={searchQuery} />
 
-      <SettingRow
-        title={t("settings.track_double_click.title")}
-        description={t("settings.track_double_click.description")}
-        titleKey="settings.track_double_click.title"
-        descKey="settings.track_double_click.description"
-        searchQuery={searchQuery}
-        control={
-          mounted ? (
-            <SegmentedControl
-              ariaLabel={t("settings.track_double_click.title")}
-              value={trackDoubleClickBehavior}
-              onChange={setTrackDoubleClickBehavior}
-              options={[
-                {
-                  value: "play",
-                  label: t("settings.track_double_click.play"),
-                },
-                {
-                  value: "queue",
-                  label: t("settings.track_double_click.queue"),
-                },
-              ]}
+      <SettingSection>
+        <SettingRow
+          title={t("settings.autoplay_similar.title")}
+          description={t("settings.autoplay_similar.description")}
+          titleKey="settings.autoplay_similar.title"
+          descKey="settings.autoplay_similar.description"
+          searchQuery={searchQuery}
+          control={
+            <ToggleSwitch
+              checked={autoplaySimilar}
+              onChange={setAutoplaySimilar}
             />
-          ) : (
-            <span />
-          )
-        }
-      />
+          }
+        />
 
-      <SettingRow
-        title={t("settings.default_playback_context.title")}
-        description={t("settings.default_playback_context.description")}
-        explained
-        titleKey="settings.default_playback_context.title"
-        descKey="settings.default_playback_context.description"
-        searchQuery={searchQuery}
-        control={
-          mounted ? (
-            <SegmentedControl
-              ariaLabel={t("settings.default_playback_context.title")}
-              value={defaultPlaybackContext}
-              onChange={setDefaultPlaybackContext}
-              options={[
-                {
-                  value: "resume",
-                  label: t("settings.default_playback_context.resume"),
-                },
-                {
-                  value: "empty",
-                  label: t("settings.default_playback_context.empty"),
-                },
-              ]}
+        <SettingRow
+          title={t("settings.track_double_click.title")}
+          description={t("settings.track_double_click.description")}
+          titleKey="settings.track_double_click.title"
+          descKey="settings.track_double_click.description"
+          searchQuery={searchQuery}
+          control={
+            mounted ? (
+              <SegmentedControl
+                ariaLabel={t("settings.track_double_click.title")}
+                value={trackDoubleClickBehavior}
+                onChange={setTrackDoubleClickBehavior}
+                options={[
+                  {
+                    value: "play",
+                    label: t("settings.track_double_click.play"),
+                  },
+                  {
+                    value: "queue",
+                    label: t("settings.track_double_click.queue"),
+                  },
+                ]}
+              />
+            ) : (
+              <span />
+            )
+          }
+        />
+
+        <SettingRow
+          title={t("settings.default_playback_context.title")}
+          description={t("settings.default_playback_context.description")}
+          explained
+          titleKey="settings.default_playback_context.title"
+          descKey="settings.default_playback_context.description"
+          searchQuery={searchQuery}
+          control={
+            mounted ? (
+              <SegmentedControl
+                ariaLabel={t("settings.default_playback_context.title")}
+                value={defaultPlaybackContext}
+                onChange={setDefaultPlaybackContext}
+                options={[
+                  {
+                    value: "resume",
+                    label: t("settings.default_playback_context.resume"),
+                  },
+                  {
+                    value: "empty",
+                    label: t("settings.default_playback_context.empty"),
+                  },
+                ]}
+              />
+            ) : (
+              <span />
+            )
+          }
+        />
+
+        <SettingRow
+          title={t("settings.audio.pause_on_device_change.title")}
+          description={t("settings.audio.pause_on_device_change.description")}
+          titleKey="settings.audio.pause_on_device_change.title"
+          descKey="settings.audio.pause_on_device_change.description"
+          searchQuery={searchQuery}
+          control={
+            <ToggleSwitch
+              checked={pauseOnDeviceChange}
+              onChange={setPauseOnDeviceChange}
             />
-          ) : (
-            <span />
-          )
-        }
-      />
-
-      <SettingRow
-        title={t("settings.audio.pause_on_device_change.title")}
-        description={t("settings.audio.pause_on_device_change.description")}
-        titleKey="settings.audio.pause_on_device_change.title"
-        descKey="settings.audio.pause_on_device_change.description"
-        searchQuery={searchQuery}
-        control={
-          <ToggleSwitch
-            checked={pauseOnDeviceChange}
-            onChange={setPauseOnDeviceChange}
-          />
-        }
-      />
-    </SettingSection>
+          }
+        />
+      </SettingSection>
+    </div>
   );
 }

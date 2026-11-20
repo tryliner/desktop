@@ -6,6 +6,8 @@ import {
   type PlayerState,
 } from "../store/playerStore";
 import { playerRuntime } from "./playerRuntime";
+import type { TransitionPlan } from "./transitions/planTransition";
+import { TransitionDirector } from "./transitions/transitionDirector";
 import { isRadioContext, shouldRefillRadio } from "./radioMode";
 import {
   LazyShuffle,
@@ -344,6 +346,12 @@ class PlayerEngine {
   private consecutiveAutoSkips = 0;
   private consecutiveOfflineSkips = 0;
   private lastPreloadKey: string | null = null;
+  private transitions = new TransitionDirector({
+    getState: () => usePlayerStore.getState(),
+    nextIndex: () => this.computeNextIndex(true),
+    setTrackGain: (gain) => playerRuntime?.setTrackGain(gain),
+    isTransitioning: () => Boolean(playerRuntime?.isTransitioning()),
+  });
   private inFlightLyricsPrefetches = new Map<string, Promise<void>>();
 
   constructor() {
@@ -357,6 +365,25 @@ class PlayerEngine {
         this.telemetry.onTrackCompleted(isRepeatOne);
       };
       playerRuntime.onError = (info) => this.handlePlaybackError(info);
+      playerRuntime.onNearEnd = (positionMs) => {
+        const plan = this.transitions.due(positionMs);
+        if (plan) void this.skipNext(true, plan);
+      };
+      usePlayerStore.subscribe((state, prev) => {
+        if (
+          state.normalizeVolume !== prev.normalizeVolume ||
+          state.automix !== prev.automix
+        ) {
+          this.transitions.forgetPlan();
+          this.transitions.prepareFor(state);
+        }
+        if (
+          state.crossfadeSeconds !== prev.crossfadeSeconds ||
+          state.gapless !== prev.gapless
+        ) {
+          this.transitions.forgetPlan();
+        }
+      });
     }
 
     if (typeof window !== "undefined") {
@@ -389,6 +416,7 @@ class PlayerEngine {
           }
           void this.fetchLyricsForTrack(state.currentTrack);
           this.preloadNextTrack(state);
+          this.transitions.trackChanged(state);
         }
 
         if (state.status === "playing") {
@@ -420,6 +448,7 @@ class PlayerEngine {
           prevTrackId = restoredTrack.id;
           void this.fetchLyricsForTrack(restoredTrack);
           this.preloadNextTrack(state);
+          this.transitions.prepareFor(state);
         }
       };
 
@@ -745,8 +774,12 @@ class PlayerEngine {
     }
   }
 
-  public async skipNext(isAutoEnd: boolean = false): Promise<void> {
+  public async skipNext(
+    isAutoEnd: boolean = false,
+    transition?: TransitionPlan,
+  ): Promise<void> {
     const store = usePlayerStore.getState();
+    const wasPlaying = store.status === "playing";
     const nextIndex = this.computeNextIndex(isAutoEnd);
 
     if (
@@ -784,14 +817,41 @@ class PlayerEngine {
     const mySession = this.sessionId;
     const nextTrack = store.queue[nextIndex];
     if (nextTrack) {
-      // Optimistic synchronous UI update
+      if (transition && playerRuntime) playerRuntime.onEnded?.();
       store.setCurrentTrack(nextTrack, nextIndex);
       store.setPosition(0);
       store.setDuration(nextTrack.durationMs ?? 0);
       store.setStatus("loading", null);
 
       if (playerRuntime) {
-        void playerRuntime.loadAndPlay(nextTrack);
+        const skipFadeMs =
+          !isAutoEnd &&
+          !transition &&
+          wasPlaying &&
+          store.crossfadeOnSkip &&
+          store.crossfadeSeconds > 0
+            ? 1_000
+            : 0;
+        if (transition) {
+          const rate = store.playbackRate > 0 ? store.playbackRate : 1;
+          playerRuntime.beginTransition(transition.fadeOutMs, {
+            delayMs: transition.fadeOutDelayMs,
+          });
+          void playerRuntime.loadAndPlay(
+            nextTrack,
+            transition.incomingOffsetMs,
+            false,
+            { fadeInMs: transition.fadeInMs / rate, transition: true },
+          );
+        } else if (skipFadeMs > 0) {
+          playerRuntime.beginTransition(skipFadeMs, { clock: "wall" });
+          void playerRuntime.loadAndPlay(nextTrack, 0, false, {
+            fadeInMs: skipFadeMs,
+            transition: true,
+          });
+        } else {
+          void playerRuntime.loadAndPlay(nextTrack);
+        }
       }
       this.maybeExtendQueue(
         mySession,

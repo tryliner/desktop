@@ -1088,6 +1088,40 @@
     },
     "connection": {
       "open_folder": "Open saved location"
+    },
+    "transitions": {
+      "section": "Between songs",
+      "crossfade": {
+        "title": "Crossfade",
+        "description": "Blend the end of a song into the next one.",
+        "description_on_one": "Songs overlap by {count} second at the handover.",
+        "description_on_other": "Songs overlap by {count} seconds at the handover.",
+        "description_on_plural": "Songs overlap by {count} seconds at the handover.",
+        "length": "Crossfade length",
+        "short": "{count}s",
+        "shorter": "Quick",
+        "longer": "Long",
+        "off": "Off",
+        "seconds_one": "{count} second",
+        "seconds_other": "{count} seconds",
+        "seconds_plural": "{count} seconds"
+      },
+      "automix": {
+        "title": "AutoMix",
+        "description": "Smarter transitions: skips silence at either end, lets songs that fade out fade on their own, keeps loud handovers short and plays albums straight through."
+      },
+      "gapless": {
+        "title": "Gapless playback",
+        "description": "Start the next song right as this one ends, with no pause in between. Best for albums and DJ mixes."
+      },
+      "on_skip": {
+        "title": "Crossfade when skipping",
+        "description": "A quick one-second blend when you press Next."
+      },
+      "normalize": {
+        "title": "Normalize volume",
+        "description": "Turn louder songs down so everything plays at a similar level."
+      }
     }
   },
   "toast": {
