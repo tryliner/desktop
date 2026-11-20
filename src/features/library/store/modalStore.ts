@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import type { ImportReview } from "@/shared/api";
+import type { Track } from "@/shared/types";
 
 export interface LibraryItemDetail {
   id: string;
@@ -26,6 +27,18 @@ export interface TrackDetail {
   duration?: string;
   durationMs?: number;
   playlists?: PlaylistOption[];
+}
+
+export function toTrackDetails(
+  tracks: Pick<Track, "id" | "title" | "artists" | "coverUrl" | "durationMs">[],
+): TrackDetail[] {
+  return tracks.map((track) => ({
+    id: track.id,
+    title: track.title,
+    artists: track.artists,
+    coverUrl: track.coverUrl,
+    durationMs: track.durationMs,
+  }));
 }
 
 export interface RemoveLibraryDetail {
@@ -57,16 +70,18 @@ interface ModalState {
   // Add to playlist
   addToPlaylistOpen: boolean;
   addToPlaylistTrack: TrackDetail | null;
-  openAddToPlaylist: (track: TrackDetail) => void;
+  addToPlaylistTracks: TrackDetail[];
+  openAddToPlaylist: (tracks: TrackDetail | TrackDetail[]) => void;
   closeAddToPlaylist: () => void;
 
   // Create playlist
   createPlaylistOpen: boolean;
   createPlaylistInitialUrl: string;
   createPlaylistPendingTrack: TrackDetail | null;
+  createPlaylistPendingTracks: TrackDetail[];
   openCreatePlaylist: (
     initialUrl?: string,
-    pendingTrack?: TrackDetail | null,
+    pendingTracks?: TrackDetail | TrackDetail[] | null,
   ) => void;
   closeCreatePlaylist: () => void;
 
@@ -113,6 +128,13 @@ interface ModalState {
   toggleSettings: () => void;
 }
 
+function toTrackList(
+  tracks: TrackDetail | TrackDetail[] | null | undefined,
+): TrackDetail[] {
+  if (!tracks) return [];
+  return Array.isArray(tracks) ? tracks : [tracks];
+}
+
 export const useModalStore = create<ModalState>((set) => ({
   addToLibraryOpen: false,
   addToLibraryItem: null,
@@ -123,25 +145,42 @@ export const useModalStore = create<ModalState>((set) => ({
 
   addToPlaylistOpen: false,
   addToPlaylistTrack: null,
-  openAddToPlaylist: (track) =>
-    set({ addToPlaylistOpen: true, addToPlaylistTrack: track }),
+  addToPlaylistTracks: [],
+  openAddToPlaylist: (tracks) => {
+    const list = toTrackList(tracks);
+    if (list.length === 0) return;
+    set({
+      addToPlaylistOpen: true,
+      addToPlaylistTrack: list[0],
+      addToPlaylistTracks: list,
+    });
+  },
   closeAddToPlaylist: () =>
-    set({ addToPlaylistOpen: false, addToPlaylistTrack: null }),
+    set({
+      addToPlaylistOpen: false,
+      addToPlaylistTrack: null,
+      addToPlaylistTracks: [],
+    }),
 
   createPlaylistOpen: false,
   createPlaylistInitialUrl: "",
   createPlaylistPendingTrack: null,
-  openCreatePlaylist: (initialUrl = "", pendingTrack = null) =>
+  createPlaylistPendingTracks: [],
+  openCreatePlaylist: (initialUrl = "", pendingTracks = null) => {
+    const list = toTrackList(pendingTracks);
     set({
       createPlaylistOpen: true,
       createPlaylistInitialUrl: initialUrl,
-      createPlaylistPendingTrack: pendingTrack,
-    }),
+      createPlaylistPendingTrack: list[0] ?? null,
+      createPlaylistPendingTracks: list,
+    });
+  },
   closeCreatePlaylist: () =>
     set({
       createPlaylistOpen: false,
       createPlaylistInitialUrl: "",
       createPlaylistPendingTrack: null,
+      createPlaylistPendingTracks: [],
     }),
 
   removeFromLibraryOpen: false,

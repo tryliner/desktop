@@ -40,13 +40,19 @@ import {
   ShareForwardLine,
 } from "@mingcute/react";
 import { AnimatePresence, motion } from "framer-motion";
-import { LuPencil, LuTrash2, LuText, LuShuffle } from "react-icons/lu";
+import {
+  LuPencil,
+  LuTrash2,
+  LuText,
+  LuShuffle,
+  LuListPlus,
+} from "react-icons/lu";
 import { buildShareUrl } from "@/shared/utils/share";
 import Button from "@/shared/ui/Button";
 import DropdownMenu from "@/shared/ui/DropdownMenu";
 import SongCardWithMenu from "@/features/player/ui/SongCardWithMenu";
 import CoverImage from "@/features/covers/ui/CoverImage";
-import { useModalStore } from "../store/modalStore";
+import { useModalStore, toTrackDetails } from "../store/modalStore";
 import {
   usePlaylist,
   usePlaylistsList,
@@ -848,6 +854,18 @@ function LibraryPlaylistContent() {
                               icon: <LuText size={15} />,
                               label: t("common.edit_description"),
                               onClick: () => setIsEditingDescription(true),
+                            },
+                            {
+                              id: "add-all-to-playlist",
+                              icon: <LuListPlus size={15} />,
+                              label: t("playlist_picker.add_all"),
+                              disabled: currentTracks.length === 0,
+                              onClick: () =>
+                                useModalStore
+                                  .getState()
+                                  .openAddToPlaylist(
+                                    toTrackDetails(currentTracks),
+                                  ),
                             },
                             {
                               id: "share",

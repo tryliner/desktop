@@ -42,7 +42,7 @@ import {
 import { usePageBackdrop } from "@/shared/lib";
 import type { Track } from "@/shared/types";
 import { useTranslation } from "@/languages";
-import { useModalStore } from "@/features/library";
+import { useModalStore, toTrackDetails } from "@/features/library";
 import { buildShareUrl } from "@/shared/utils/share";
 import { useExternalItems } from "@/features/library/hooks";
 import { useCollection } from "../hooks/useCollection";
@@ -482,6 +482,23 @@ function CollectionContent() {
                                 ? t("common.remove_from_library")
                                 : t("common.save_to_library"),
                               onClick: handleSaveToLibrary,
+                            },
+                            {
+                              id: "add-all-to-playlist",
+                              icon: <AddLine size={16} />,
+                              label: t("playlist_picker.add_all"),
+                              disabled: !data || data.tracks.length === 0,
+                              onClick: () => {
+                                if (!data) return;
+                                useModalStore.getState().openAddToPlaylist(
+                                  toTrackDetails(
+                                    data.tracks.map((track) => ({
+                                      ...track,
+                                      coverUrl: track.coverUrl || data.coverUrl,
+                                    })),
+                                  ),
+                                );
+                              },
                             },
                             {
                               id: "share",

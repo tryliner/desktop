@@ -1,6 +1,12 @@
 import type { ReactNode } from "react";
 import { LeftLine } from "@mingcute/react";
-import { Repeat, RepeatOne, Shuffle, TrashBin2 } from "@solar-icons/react";
+import {
+  AddSquare,
+  Repeat,
+  RepeatOne,
+  Shuffle,
+  TrashBin2,
+} from "@solar-icons/react";
 import { useTranslation } from "@/languages";
 import { Tooltip } from "@/shared/ui";
 import { cn } from "@/shared/lib";
@@ -14,6 +20,8 @@ export interface RightDrawerHeaderProps {
   onShuffleToggle: () => void;
   onRepeatCycle: () => void;
   onClear: () => void;
+  onSaveToPlaylist?: () => void;
+  canSaveToPlaylist?: boolean;
   onClose?: () => void;
 }
 
@@ -61,6 +69,8 @@ export function RightDrawerHeader({
   onShuffleToggle,
   onRepeatCycle,
   onClear,
+  onSaveToPlaylist,
+  canSaveToPlaylist = false,
   onClose,
 }: RightDrawerHeaderProps) {
   const { t } = useTranslation();
@@ -107,6 +117,15 @@ export function RightDrawerHeader({
         >
           <RepeatIcon size={18} weight="Outline" />
         </QueueAction>
+        {onSaveToPlaylist && (
+          <QueueAction
+            label={t("playlist_picker.add_queue")}
+            disabled={!canSaveToPlaylist}
+            onClick={onSaveToPlaylist}
+          >
+            <AddSquare size={18} weight="Outline" />
+          </QueueAction>
+        )}
         <QueueAction
           label={t("player.clear_queue")}
           disabled={!canClear}
