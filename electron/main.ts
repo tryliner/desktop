@@ -91,6 +91,7 @@ import {
   createSavedTrackLibrary,
   setupSavedTracks,
 } from "./saved-tracks/ipc.js";
+import { createWallpaperLibrary, setupWallpapers } from "./wallpapers/ipc.js";
 import { setupNetProbe } from "./netprobe/ipc.js";
 import {
   installNetSimulation,
@@ -593,8 +594,10 @@ if (!gotTheLock) {
       app.setAsDefaultProtocolClient(DEEP_LINK_SCHEME);
     }
     const savedTracks = createSavedTrackLibrary();
-    setupLocalTracks(savedTracks);
+    const wallpapers = createWallpaperLibrary();
+    setupLocalTracks(savedTracks, { wallpaper: wallpapers });
     setupSavedTracks(savedTracks);
+    setupWallpapers(wallpapers);
     installNetSimulation(session.defaultSession);
     setupNetProbe();
     touchBarManager = new TouchBarManager(

@@ -603,3 +603,21 @@ html[data-hover-reset] [data-window-controls] button:hover {
 .lyrics-edge-fog[data-at-bottom] {
   --lyrics-fog-bottom: 0%;
 }
+
+/* a new wallpaper (or new blur) eases in instead of popping */
+@keyframes wallpaper-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.wallpaper-fade-in {
+  animation: wallpaper-fade-in 280ms ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .wallpaper-fade-in {
+    animation: none;
+  }
+}

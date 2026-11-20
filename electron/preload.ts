@@ -8,6 +8,7 @@ import type { TvSession as YoutubeTvSession } from "./youtube/tv-session";
 import type { SolveResult as YoutubeSolveResult } from "./youtube/n-solver";
 import type { MainNetResult } from "./netdiag";
 import type { NetProbeResult } from "./netprobe/types";
+import type { WallpaperAddResult, WallpaperView } from "./wallpapers/types";
 import type {
   LocalImportResult,
   LocalLibraryUsage,
@@ -233,6 +234,9 @@ export interface LinerElectronApi {
     state: SavedLyricsState,
     lyrics?: unknown,
   ) => Promise<boolean>;
+  wallpapersAdd: (bytes: Uint8Array) => Promise<WallpaperAddResult>;
+  wallpapersList: () => Promise<WallpaperView[]>;
+  wallpapersRemove: (key: string) => Promise<boolean>;
   pathForFile: (file: File) => string;
 }
 
@@ -517,6 +521,9 @@ const api: LinerElectronApi = {
     ipcRenderer.invoke("saved-tracks:lyrics-get", trackId),
   savedTracksSetLyrics: (trackId, state, lyrics) =>
     ipcRenderer.invoke("saved-tracks:lyrics-set", trackId, state, lyrics),
+  wallpapersAdd: (bytes) => ipcRenderer.invoke("wallpapers:add", bytes),
+  wallpapersList: () => ipcRenderer.invoke("wallpapers:list"),
+  wallpapersRemove: (key) => ipcRenderer.invoke("wallpapers:remove", key),
   pathForFile: (file) => webUtils.getPathForFile(file),
 };
 

@@ -50,6 +50,7 @@ import {
   useGlassBlur,
 } from "@/features/player";
 import SearchResultsList from "@/features/search/ui/SearchResultsList";
+import { useVisualModeStore } from "@/features/player/store/visualModeStore";
 import { SearchHistoryList, useSearchHistoryStore } from "@/features/search";
 import { useTranslation } from "@/languages";
 import { useTheme } from "next-themes";
@@ -68,6 +69,9 @@ import {
   SettingsModal,
   useHasPageBackdrop,
   useEffectiveCoverGlow,
+  WallpaperLayer,
+  useAppearanceCss,
+  useAppearanceStore,
 } from "@/features/settings";
 import { UpdateModal, UpdateToastBridge } from "@/features/updater";
 import { YoutubeSignInNotice } from "@/features/youtube-auth";
@@ -726,6 +730,10 @@ export default function AppFrame({ children }: AppFrameProps) {
   const hasPageBackdrop = useHasPageBackdrop();
   const coverGlow = useEffectiveCoverGlow();
   const glassBlur = useGlassBlur();
+  useAppearanceCss();
+  const hasWallpaper = useAppearanceStore((s) => Boolean(s.wallpaperKey));
+  const albumBackdrop = useAppearanceStore((s) => s.albumBackdrop);
+  const liteVisuals = useVisualModeStore((s) => s.mode === "lite");
 
   return (
     <div
@@ -739,7 +747,17 @@ export default function AppFrame({ children }: AppFrameProps) {
         if (e.currentTarget.scrollTop !== 0) e.currentTarget.scrollTop = 0;
       }}
     >
-      {coverGlow ? <DynamicBlurBackground isDark={isDark} /> : null}
+      {hasWallpaper && !isFullscreenPlayer ? (
+        <WallpaperLayer isDark={isDark} lite={liteVisuals} />
+      ) : null}
+      {coverGlow && !hasWallpaper ? (
+        <DynamicBlurBackground isDark={isDark} />
+      ) : null}
+      {coverGlow && hasWallpaper && albumBackdrop ? (
+        <div className="pointer-events-none absolute inset-0 opacity-55">
+          <DynamicBlurBackground isDark={isDark} />
+        </div>
+      ) : null}
 
       <AnimatePresence>
         {!isFullscreenPlayer && (
