@@ -30,6 +30,8 @@ import {
   saveLyricsToDevice,
   saveTrackToDevice,
 } from "../engine/savedTrackFetcher";
+import { useDownloadsStore } from "./downloadsStore";
+import { watchPinnedDownloads } from "./pinnedDownloadsWatcher";
 import {
   parseSignOutChoice,
   resolveKeepOnSignOut,
@@ -160,6 +162,16 @@ const waitForOnline = () =>
     window.addEventListener("online", finish);
   });
 
+function progressReporter(trackId: string) {
+  let lastStep = -1;
+  return (received: number, total: number | null) => {
+    const step = total ? Math.floor((received / total) * 100) : -1;
+    if (total && step === lastStep) return;
+    lastStep = step;
+    useDownloadsStore.setState({ active: { trackId, received, total } });
+  };
+}
+
 const sync = createSavedTrackSync({
   now: () => Date.now(),
   sleep: (ms) => new Promise((done) => setTimeout(done, ms)),
@@ -174,8 +186,20 @@ const sync = createSavedTrackSync({
     const usage = await window.linerElectron?.savedTracksUsage();
     return usage ?? { bytes: 0, freeBytes: null };
   },
-  saveTrack: (track) =>
-    saveTrackToDevice(track, AbortSignal.timeout(5 * 60_000)),
+  saveTrack: async (track) => {
+    useDownloadsStore.setState({
+      active: { trackId: track.id, received: 0, total: null },
+    });
+    try {
+      return await saveTrackToDevice(
+        track,
+        AbortSignal.timeout(5 * 60_000),
+        progressReporter(track.id),
+      );
+    } finally {
+      useDownloadsStore.setState({ active: null });
+    }
+  },
   saveLyrics: saveLyricsToDevice,
   remove: async (trackIds) => {
     await window.linerElectron?.savedTracksRemove(trackIds);
@@ -190,7 +214,15 @@ const sync = createSavedTrackSync({
   readMemory,
   writeMemory: (memory) =>
     writeStorage(SAVED_SYNC_MEMORY_KEY, JSON.stringify(memory)),
-  onStatus: (status) => useSavedTracksStore.setState({ status }),
+  onStatus: (status) => {
+    useSavedTracksStore.setState({ status });
+    queueMicrotask(() =>
+      useDownloadsStore.setState({
+        queued: sync.queuedIds(),
+        failed: sync.failedIds(),
+      }),
+    );
+  },
   onRecords: (claimed, all) =>
     useSavedTracksStore.setState(
       withTracks(claimed, all.length - claimed.length),
@@ -302,6 +334,10 @@ export function initSavedTracks() {
       subscribeLikedTracks(() => scheduleReconcile());
       void loadLikedTracks();
       scheduleReconcile(0);
+      watchPinnedDownloads({
+        setPinned: (tracks) => void sync.setPinned(tracks),
+        canDownload,
+      });
     });
   let lastTrackId = usePlayerStore.getState().currentTrack?.id ?? null;
   usePlayerStore.subscribe((state) => {
@@ -310,4 +346,8 @@ export function initSavedTracks() {
     lastTrackId = id;
     void sync.trackChanged();
   });
+}
+
+export function retryDownload(trackId: string) {
+  void sync.retry(trackId);
 }

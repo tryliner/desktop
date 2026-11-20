@@ -82,4 +82,35 @@ describe("downloadAudioBytes", () => {
       downloadAudioBytes("https://api.tryliner.fun/v1/playback/pb/media"),
     ).resolves.toBeNull();
   });
+
+  it("reports progress chunk by chunk, ending at the full size", async () => {
+    rangeServer();
+    const seen: [number, number | null][] = [];
+    await downloadAudioBytes(STREAM_URL, {
+      contentLength: source.length,
+      chunkSize: 1000,
+      concurrency: 1,
+      onProgress: (received, total) => seen.push([received, total]),
+    });
+    expect(seen[0]).toEqual([0, 2500]);
+    expect(seen.at(-1)).toEqual([2500, 2500]);
+    const received = seen.map(([value]) => value);
+    expect(received).toEqual([...received].sort((a, b) => a - b));
+  });
+
+  it("streams whole-file downloads with progress from content-length", async () => {
+    vi.spyOn(globalThis, "fetch").mockImplementation(
+      async () =>
+        new Response(source.slice(), {
+          status: 200,
+          headers: { "content-length": String(source.length) },
+        }),
+    );
+    const seen: [number, number | null][] = [];
+    const bytes = await downloadAudioBytes("https://cdn.example/a.webm", {
+      onProgress: (received, total) => seen.push([received, total]),
+    });
+    expect(bytes).toEqual(source);
+    expect(seen.at(-1)).toEqual([2500, 2500]);
+  });
 });

@@ -100,6 +100,7 @@ export function createSavedTrackSync(deps: SavedTrackSyncDeps) {
   let records: SavedTrackRecord[] = [];
   let queue: Track[] = [];
   let liked: Track[] = [];
+  let pinned: Track[] = [];
   let authoritative = false;
   let startAt = deps.now() + START_DELAY_MS;
   let pausedUntil = 0;
@@ -119,6 +120,23 @@ export function createSavedTrackSync(deps: SavedTrackSyncDeps) {
     });
 
   const remember = () => deps.writeMemory(memory);
+
+  const active = () => deps.isEnabled() || pinned.length > 0;
+
+  let cutWait: (() => void) | null = null;
+  const waitUntilStart = (ms: number) =>
+    new Promise<void>((resolve) => {
+      cutWait = resolve;
+      void deps.sleep(ms).then(resolve);
+    }).finally(() => {
+      cutWait = null;
+    });
+
+  const wantedForQueue = () =>
+    wantedForSaving([...pinned, ...(deps.isEnabled() ? liked : [])]);
+
+  const keepIds = () =>
+    new Set(wantedForSaving([...pinned, ...liked]).map((track) => track.id));
 
   const savedIds = () => new Set(records.map((record) => record.trackId));
 
@@ -156,6 +174,10 @@ export function createSavedTrackSync(deps: SavedTrackSyncDeps) {
   const syncClaims = () => {
     const owner = deps.accountId();
     if (owner === claimOwner) return;
+    if (claimOwner !== undefined) {
+      generation += 1;
+      queue = [];
+    }
     claimOwner = owner;
     const stored = deps.readClaims(owner);
     claimed = new Set(
@@ -166,7 +188,7 @@ export function createSavedTrackSync(deps: SavedTrackSyncDeps) {
   };
 
   const claimWanted = () => {
-    const wanted = new Set(wantedForSaving(liked).map((track) => track.id));
+    const wanted = keepIds();
     let changed = false;
     for (const record of records) {
       if (!wanted.has(record.trackId) || claimed.has(record.trackId)) continue;
@@ -189,14 +211,14 @@ export function createSavedTrackSync(deps: SavedTrackSyncDeps) {
 
   const rebuildQueue = () => {
     const saved = savedIds();
-    queue = wantedForSaving(liked).filter(
+    queue = wantedForQueue().filter(
       (track) => !saved.has(track.id) && !isGivenUp(track.id),
     );
   };
 
   const applyRemovals = async () => {
     if (!authoritative || records.length === 0) return;
-    const wanted = new Set(wantedForSaving(liked).map((track) => track.id));
+    const wanted = keepIds();
     const playing = deps.currentTrackId();
     const stale = claimedRecords()
       .map((record) => record.trackId)
@@ -216,7 +238,7 @@ export function createSavedTrackSync(deps: SavedTrackSyncDeps) {
 
   const backfillLyrics = async (): Promise<boolean> => {
     for (const record of records.filter((entry) => !entry.lyrics)) {
-      if (!deps.isEnabled() || queue.length > 0) return false;
+      if (!active() || queue.length > 0) return false;
       if (!deps.isOnline() || deps.now() < startAt) return false;
       const outcome = await deps
         .saveLyrics(record)
@@ -237,18 +259,18 @@ export function createSavedTrackSync(deps: SavedTrackSyncDeps) {
   const drain = async () => {
     for (;;) {
       if (queue.length === 0) {
-        if (!deps.isEnabled()) break;
+        if (!active()) break;
         await backfillLyrics();
         if (queue.length === 0) break;
       }
-      if (!deps.isEnabled()) {
+      if (!active()) {
         status("disabled");
         return;
       }
       const now = deps.now();
       if (now < startAt) {
         status("starting", startAt);
-        await deps.sleep(startAt - now);
+        await waitUntilStart(startAt - now);
         continue;
       }
       if (!deps.isOnline()) {
@@ -282,12 +304,14 @@ export function createSavedTrackSync(deps: SavedTrackSyncDeps) {
       }
 
       const track = queue[0];
+      if (!track) continue;
       const startedIn = generation;
       status("saving");
       try {
         const saved = await deps.saveTrack(track);
-        if (startedIn !== generation) {
+        if (startedIn !== generation || !keepIds().has(track.id)) {
           if (saved) await deps.remove([saved.record.trackId]);
+          queue = queue.filter((entry) => entry.id !== track.id);
           continue;
         }
         queue = queue.filter((entry) => entry.id !== track.id);
@@ -321,6 +345,10 @@ export function createSavedTrackSync(deps: SavedTrackSyncDeps) {
         }
       } catch (error) {
         if (startedIn !== generation) continue;
+        if (!keepIds().has(track.id)) {
+          queue = queue.filter((entry) => entry.id !== track.id);
+          continue;
+        }
         const failure = deps.classify(error);
         if (failure.kind === "offline") continue;
         if (failure.kind === "rate_limited") {
@@ -356,7 +384,7 @@ export function createSavedTrackSync(deps: SavedTrackSyncDeps) {
         remember();
       }
     }
-    status(deps.isEnabled() ? "idle" : "disabled");
+    status(active() ? "idle" : "disabled");
   };
 
   const run = (): Promise<void> => {
@@ -402,12 +430,44 @@ export function createSavedTrackSync(deps: SavedTrackSyncDeps) {
       if (authoritative) claimWanted();
       await applyRemovals();
       rebuildQueue();
-      if (!deps.isEnabled()) {
+      if (!active()) {
         status("disabled");
         return;
       }
       void run();
     },
+    async setPinned(next: Track[]) {
+      syncClaims();
+      const before = new Set(pinned.map((track) => track.id));
+      pinned = wantedForSaving(next);
+      const added = pinned.some((track) => !before.has(track.id));
+      if (authoritative) claimWanted();
+      await applyRemovals();
+      rebuildQueue();
+      if (!active()) {
+        status("disabled");
+        return;
+      }
+      if (added) {
+        startAt = Math.min(startAt, deps.now());
+        cutWait?.();
+      }
+      void run();
+    },
+    pinnedIds: () => new Set(pinned.map((track) => track.id)),
+    queuedIds: () => queue.map((track) => track.id),
+    retry(trackId: string) {
+      const { [trackId]: _a, ...attempts } = memory.attempts;
+      const { [trackId]: _g, ...givenUp } = memory.givenUp;
+      memory = { ...memory, attempts, givenUp };
+      remember();
+      startAt = Math.min(startAt, deps.now());
+      cutWait?.();
+      rebuildQueue();
+      return run();
+    },
+    failedIds: () =>
+      Object.keys(memory.givenUp).filter((trackId) => isGivenUp(trackId)),
     async trackChanged() {
       if (pendingRemovals.size === 0) return;
       await applyRemovals();
@@ -425,6 +485,7 @@ export function createSavedTrackSync(deps: SavedTrackSyncDeps) {
       liked = [];
       authoritative = false;
       pendingRemovals = new Set();
+      pinned = [];
       memory = { ...memory, attempts: {}, givenUp: {} };
       remember();
       if (claimOwner !== undefined) deps.writeClaims(claimOwner, []);
@@ -436,7 +497,7 @@ export function createSavedTrackSync(deps: SavedTrackSyncDeps) {
         await deps.removeAll();
       }
       syncClaims();
-      status(deps.isEnabled() ? "idle" : "disabled");
+      status(active() ? "idle" : "disabled");
       return removed;
     },
     forgetFailures() {

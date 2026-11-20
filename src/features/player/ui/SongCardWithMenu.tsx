@@ -1,6 +1,7 @@
 import { memo, useCallback, useMemo, useState } from "react";
 import SongCard from "./SongCard";
 import { useSongMenuItems } from "../hooks/useSongMenuItems";
+import { TrackDownloadBadge } from "@/features/library";
 import { playerEngine } from "../engine/playerEngine";
 import { usePlayerStore } from "../store/playerStore";
 import { useToast } from "@/shared/ui";
@@ -192,6 +193,11 @@ function SongCardWithMenu({
       showReorderHandle={showReorderHandle}
       onGrabStart={onGrabStart}
       trailingAction={trailingAction}
+      statusBadge={
+        id && (searchType === "track" || !searchType) ? (
+          <TrackDownloadBadge trackId={id} />
+        ) : undefined
+      }
     />
   );
 }

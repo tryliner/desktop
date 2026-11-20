@@ -42,9 +42,12 @@ async function fromAudioCache(trackId: string): Promise<FetchedAudio | null> {
   };
 }
 
+export type SaveProgress = (received: number, total: number | null) => void;
+
 async function fromNetwork(
   track: Track,
   signal: AbortSignal,
+  onProgress?: SaveProgress,
 ): Promise<FetchedAudio> {
   const stream = await resolvePlaybackStream(track, signal);
   try {
@@ -56,6 +59,7 @@ async function fromNetwork(
       audio = await downloadAudioBytes(stream.url, {
         contentLength: stream.contentLength,
         signal,
+        onProgress,
       });
     if (!audio) throw new Error("download came back empty");
     assertAudio(audio);
@@ -131,11 +135,13 @@ export async function findLyrics(
 export async function saveTrackToDevice(
   track: Track,
   signal: AbortSignal,
+  onProgress?: SaveProgress,
 ): Promise<{ record: SavedTrackRecord; source: SavedAudioSource } | null> {
   const bridge = window.linerElectron;
   if (!bridge) return null;
   const fetched =
-    (await fromAudioCache(track.id)) ?? (await fromNetwork(track, signal));
+    (await fromAudioCache(track.id)) ??
+    (await fromNetwork(track, signal, onProgress));
   const [cover, lyrics] = await Promise.all([
     fetchCover(track.coverUrl),
     findLyrics(track).catch(() => null),

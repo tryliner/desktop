@@ -24,8 +24,11 @@ import { buildShareUrl } from "@/shared/utils/share";
 import { isLocalTrackId } from "@/shared/media/local";
 import { useIsTrackCached } from "@/features/library/cached/hooks/useIsTrackCached";
 import { removeTrackFromCache } from "@/shared/utils/cacheManager";
+import { useDownloadMenuItem } from "./useDownloadMenuItem";
 
 const CLOUD_ONLY_ITEMS = new Set([
+  "download-track",
+  "remove-download",
   "start-radio",
   "like-track",
   "unlike-track",
@@ -77,6 +80,9 @@ export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
 
   const isTrack = searchType === "track" || !searchType;
   const cached = useIsTrackCached(isTrack ? id : undefined);
+  const downloadItem = useDownloadMenuItem(
+    isTrack && id ? { id, title, artists, coverUrl, durationMs } : null,
+  );
 
   const handleRemoveFromCache = useCallback(() => {
     if (!id) return;
@@ -346,7 +352,17 @@ export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
     t,
   ]);
 
-  const items = buildMenu();
+  const built = buildMenu();
+  const firstDangerIndex = built.findIndex((item) => item.danger);
+  const items = downloadItem
+    ? firstDangerIndex === -1
+      ? [...built, downloadItem]
+      : [
+          ...built.slice(0, firstDangerIndex),
+          downloadItem,
+          ...built.slice(firstDangerIndex),
+        ]
+    : built;
   if (!isLocalTrackId(id)) {
     if (!cached) return items;
     const removeFromCacheItem: DropdownMenuItem = {

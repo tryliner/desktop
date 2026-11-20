@@ -17,6 +17,8 @@ export interface CollectionPageData {
   isDailyMix?: boolean;
 }
 
+import { pinnedCollectionSnapshot } from "@/features/library";
+
 const COLLECTION_STALE_MS = 5 * 60 * 1000;
 
 async function loadCollection(
@@ -135,6 +137,14 @@ export function prefetchCollection(type: string, id: string): void {
     .catch(() => undefined);
 }
 
+function safeDecode(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
 export function useCollection(type: string | null, id: string | null) {
   const cacheKey = type && id ? `collection:${type}:${id}` : null;
   const cached = cacheKey
@@ -185,7 +195,22 @@ export function useCollection(type: string | null, id: string | null) {
       })
       .catch(() => {
         if (active && !queryCache.get(cacheKey)) {
-          setData(null);
+          const pinned = pinnedCollectionSnapshot(
+            `${type === "playlist" ? "playlist" : "album"}:${safeDecode(id)}`,
+          );
+          setData(
+            pinned
+              ? {
+                  type: type === "playlist" ? "playlist" : "album",
+                  title: pinned.title,
+                  coverUrl: pinned.coverUrl,
+                  tracks: pinned.tracks.map((track) => ({
+                    ...track,
+                    playCount: 0,
+                  })),
+                }
+              : null,
+          );
           setLoading(false);
         }
       });
