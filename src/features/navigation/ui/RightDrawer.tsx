@@ -16,6 +16,8 @@ import {
   showToast,
 } from "@/shared/ui";
 import { useListReorder } from "@/shared/hooks";
+import { isLocalTrackId } from "@/shared/media/local";
+import { useModalStore, toTrackDetails } from "@/features/library";
 import RightDrawerHeader from "./RightDrawerHeader";
 
 const QUEUE_ITEM_HEIGHT = 68;
@@ -320,6 +322,10 @@ export interface RightDrawerProps {
 function RightDrawer({ onClose }: RightDrawerProps) {
   const player = usePlayerState();
   const { t } = useTranslation();
+  const cloudQueue = useMemo(
+    () => player.queue.filter((track) => !isLocalTrackId(track.id)),
+    [player.queue],
+  );
   const queueScrollRef = useRef<HTMLDivElement>(null);
   const [queueLimit, setQueueLimit] = useState(() =>
     Math.max(
@@ -393,6 +399,13 @@ function RightDrawer({ onClose }: RightDrawerProps) {
           )
         }
         onClear={() => playerEngine.clearQueue()}
+        canSaveToPlaylist={cloudQueue.length > 0}
+        onSaveToPlaylist={() => {
+          if (cloudQueue.length === 0) return;
+          useModalStore
+            .getState()
+            .openAddToPlaylist(toTrackDetails(cloudQueue));
+        }}
         onClose={onClose}
       />
 

@@ -92,6 +92,18 @@ export function evictPlaylistFromCache(id: string) {
   emit();
 }
 
+export function cachedPlaylistOverlap(
+  playlistId: string,
+  trackIds: string[],
+): number | undefined {
+  const detail = queryCache.get<LibraryPlaylistDetail>(
+    `playlist:detail:${playlistId}`,
+  );
+  if (!detail || detail.partial) return undefined;
+  const present = new Set(detail.tracks.map((track) => track.id));
+  return trackIds.filter((id) => present.has(id)).length;
+}
+
 function emit(error?: unknown, isLoading = false) {
   view = { data: cache, error, isLoading };
   listeners.forEach((l) => l());
