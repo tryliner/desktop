@@ -1374,9 +1374,12 @@ export class OverlayManager {
         }
 
         let shouldAnimate = false;
-        if (isOverlayPosition(settings.position)) {
-          const changed = this.position !== settings.position;
-          this.position = settings.position;
+        if (settings.position !== undefined) {
+          const position = isOverlayPosition(settings.position)
+            ? settings.position
+            : "top-center";
+          const changed = this.position !== position;
+          this.position = position;
           if (
             changed &&
             this.overlayWindow &&

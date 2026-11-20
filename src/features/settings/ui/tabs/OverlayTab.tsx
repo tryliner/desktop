@@ -6,6 +6,7 @@ import {
   useOverlaySettingsStore,
   getEnglishKeyFromEvent,
   normalizeShortcutToEnglish,
+  type OverlayPosition,
 } from "@/features/overlay";
 import { useShortcutsStore } from "@/features/shortcuts";
 import { acquireEscapeGuard } from "@/shared/utils/escapeGuard";
@@ -14,6 +15,11 @@ import { SettingRow, SettingSection } from "../controls";
 import { OverlayPositionControl } from "./OverlayPositionControl";
 
 const DEFAULT_SHORTCUT = "Alt+Shift+O";
+
+const POSITION_ROWS = [
+  ["top-left", "top-center", "top-right"],
+  ["bottom-left", "bottom-center", "bottom-right"],
+] as const satisfies readonly (readonly OverlayPosition[])[];
 
 function formatAcceleratorForDisplay(accelerator: string): string {
   if (!accelerator) return "None";
@@ -32,6 +38,9 @@ export function OverlayTab({ searchQuery }: { searchQuery?: string }) {
 
   const enabled = useOverlaySettingsStore((s) => s.enabled);
   const setEnabled = useOverlaySettingsStore((s) => s.setEnabled);
+
+  const position = useOverlaySettingsStore((s) => s.position);
+  const setPosition = useOverlaySettingsStore((s) => s.setPosition);
 
   const shortcut = useOverlaySettingsStore((s) => s.shortcut);
   const setShortcut = useOverlaySettingsStore((s) => s.setShortcut);
@@ -189,7 +198,14 @@ export function OverlayTab({ searchQuery }: { searchQuery?: string }) {
           titleKey="settings.overlay.position.title"
           descKey="settings.overlay.position.description"
           searchQuery={searchQuery}
-          control={<OverlayPositionControl disabled={!enabled} />}
+          control={
+            <OverlayPositionControl
+              rows={POSITION_ROWS}
+              value={position}
+              onChange={setPosition}
+              disabled={!enabled}
+            />
+          }
         />
 
         <SettingRow

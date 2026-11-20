@@ -1,111 +1,9 @@
-import fs from "node:fs";
-import os from "node:os";
-import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { setupOverlay } from "./overlay.testSetup";
 
-const electron = vi.hoisted(() => {
-  const { EventEmitter } =
-    require("node:events") as typeof import("node:events");
-  const ipcOn = new Map<string, (...args: unknown[]) => unknown>();
-  const handlers = new Map<string, (...args: unknown[]) => unknown>();
-  const windows: FakeWindow[] = [];
-  let nextId = 1;
-
-  class FakeContents extends EventEmitter {
-    id = nextId++;
-    send = vi.fn();
-    executeJavaScript = vi.fn(async () => 1);
-  }
-
-  class FakeWindow extends EventEmitter {
-    webContents = new FakeContents();
-    visible: boolean;
-    destroyed = false;
-    bounds: { x: number; y: number; width: number; height: number };
-    loadFile = vi.fn(async () => {});
-    loadURL = vi.fn(async () => {});
-    showInactive = vi.fn(() => {
-      this.visible = true;
-    });
-    hide = vi.fn(() => {
-      this.visible = false;
-    });
-    constructor(
-      options: {
-        show?: boolean;
-        x?: number;
-        y?: number;
-        width?: number;
-        height?: number;
-      } = {},
-    ) {
-      super();
-      this.visible = options.show ?? true;
-      this.bounds = {
-        x: options.x ?? 0,
-        y: options.y ?? 0,
-        width: options.width ?? 0,
-        height: options.height ?? 0,
-      };
-      windows.push(this);
-    }
-    isDestroyed() {
-      return this.destroyed;
-    }
-    destroy() {
-      this.destroyed = true;
-      this.emit("closed");
-    }
-    isVisible() {
-      return this.visible;
-    }
-    focused = false;
-    isFocused() {
-      return this.focused;
-    }
-    getBounds() {
-      return this.bounds;
-    }
-    setBounds(b: { x: number; y: number; width: number; height: number }) {
-      this.bounds = b;
-    }
-    opacity = 1;
-    setOpacity = vi.fn((value: number) => {
-      this.opacity = value;
-    });
-    setAlwaysOnTop() {}
-    moveTop = vi.fn(() => {
-      this.visible = true;
-    });
-    setVisibleOnAllWorkspaces() {}
-  }
-
-  const display = { workArea: { x: 0, y: 0, width: 1920, height: 1080 } };
-  return {
-    ipcOn,
-    handlers,
-    windows,
-    FakeWindow,
-    module: {
-      BrowserWindow: FakeWindow,
-      ipcMain: {
-        on: (channel: string, handler: (...args: unknown[]) => unknown) =>
-          ipcOn.set(channel, handler),
-        handle: (channel: string, handler: (...args: unknown[]) => unknown) =>
-          handlers.set(channel, handler),
-      },
-      screen: {
-        getPrimaryDisplay: () => display,
-        getDisplayMatching: () => display,
-      },
-      globalShortcut: { register: () => true, unregister: () => {} },
-      app: {
-        getPath: () =>
-          require("node:os").tmpdir() + "/liner-overlay-test-missing",
-      },
-    },
-  };
-});
+const electron = await vi.hoisted(
+  async () => (await import("./overlay.testSetup")).electron,
+);
 
 vi.mock("electron", () => electron.module);
 vi.mock("./ipc-guard.js", () => ({
@@ -119,21 +17,7 @@ vi.mock("./compositor/index.js", () => ({
 
 import { OverlayManager } from "./overlay";
 
-type Win = InstanceType<typeof electron.FakeWindow>;
-
-function setup(signedIn = true) {
-  const manager = new OverlayManager("/preload.cjs", "/dist");
-  const main = new electron.FakeWindow({ show: true }) as Win;
-  manager.setMainWindow(main as never);
-  manager.bindAuthSource(
-    () => signedIn,
-    () => {},
-  );
-  const overlays = () => electron.windows.filter((w) => w !== main) as Win[];
-  const ready = (win: Win) =>
-    electron.ipcOn.get("overlay:ready")?.({ sender: win.webContents });
-  return { manager, main, overlays, ready };
-}
+const setup = (signedIn = true) => setupOverlay(OverlayManager, signedIn);
 
 describe("OverlayManager", () => {
   beforeEach(() => {
@@ -303,97 +187,6 @@ describe("OverlayManager", () => {
     await vi.advanceTimersByTimeAsync(1_000);
     expect(overlay.moveTop).not.toHaveBeenCalled();
     expect(overlay.isVisible()).toBe(false);
-  });
-
-  it("saves all six positions, restores them on startup and falls back for an invalid value", () => {
-    const userData = fs.mkdtempSync(
-      path.join(os.tmpdir(), "liner-overlay-test-"),
-    );
-    vi.spyOn(electron.module.app, "getPath").mockReturnValue(userData);
-    try {
-      new OverlayManager("/preload.cjs", "/dist");
-      const positions = [
-        ["top-left", 20, 20],
-        ["top-center", 800, 20],
-        ["top-right", 1580, 20],
-        ["bottom-left", 20, 1004],
-        ["bottom-center", 800, 1004],
-        ["bottom-right", 1580, 1004],
-      ] as const;
-
-      for (const [position, x, y] of positions) {
-        electron.ipcOn.get("overlay:update-settings")?.({}, { position });
-        const restarted = new OverlayManager("/preload.cjs", "/dist");
-        expect(restarted.getPillBounds()).toMatchObject({ x, y });
-      }
-
-      fs.writeFileSync(
-        path.join(userData, "overlay-settings.json"),
-        JSON.stringify({ position: "invalid" }),
-      );
-      const restarted = new OverlayManager("/preload.cjs", "/dist");
-      expect(restarted.getPillBounds()).toMatchObject({ x: 800, y: 20 });
-    } finally {
-      fs.rmSync(userData, { recursive: true, force: true });
-    }
-  });
-
-  it("animates a visible overlay to the bottom and keeps it anchored while resizing", async () => {
-    const { manager, overlays, ready } = setup();
-    await vi.advanceTimersByTimeAsync(600);
-    const [overlay] = overlays();
-    ready(overlay);
-    await vi.advanceTimersByTimeAsync(100);
-    manager.showOverlay();
-
-    electron.ipcOn.get("overlay:update-settings")?.(
-      {},
-      { position: "bottom-center" },
-    );
-    await vi.advanceTimersByTimeAsync(64);
-    expect(overlay.getBounds().y).toBeGreaterThan(20);
-    expect(overlay.getBounds().y).toBeLessThan(1004);
-    await vi.advanceTimersByTimeAsync(80);
-    expect(overlay.getBounds()).toEqual({
-      x: 800,
-      y: 1004,
-      width: 320,
-      height: 56,
-    });
-
-    for (const height of [120, 56]) {
-      const target = manager["getWindowBounds"](320, height);
-      expect(target.y + height).toBe(1060);
-      const setBounds = vi.spyOn(overlay, "setBounds").mockClear();
-      manager["animateWindowBounds"](target);
-      await vi.advanceTimersByTimeAsync(144);
-      expect(setBounds.mock.calls.length).toBeGreaterThan(1);
-      for (const [bounds] of setBounds.mock.calls) {
-        expect(bounds.y + bounds.height).toBe(1060);
-      }
-      expect(overlay.getBounds()).toEqual(target);
-    }
-  });
-
-  it("keeps the top edge fixed while resizing a top-anchored overlay", async () => {
-    const { manager, overlays, ready } = setup();
-    await vi.advanceTimersByTimeAsync(600);
-    const [overlay] = overlays();
-    ready(overlay);
-    await vi.advanceTimersByTimeAsync(100);
-    manager.showOverlay();
-
-    const { y } = overlay.getBounds();
-    const target = manager["getWindowBounds"](320, 120);
-    const setBounds = vi.spyOn(overlay, "setBounds").mockClear();
-    manager["animateWindowBounds"](target);
-    await vi.advanceTimersByTimeAsync(144);
-
-    expect(setBounds.mock.calls.length).toBeGreaterThan(1);
-    for (const [bounds] of setBounds.mock.calls) {
-      expect(bounds.y).toBe(y);
-    }
-    expect(overlay.getBounds()).toEqual(target);
   });
 
   it("revealing always really shows the window, even if windows already reports it visible", async () => {
