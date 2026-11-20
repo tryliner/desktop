@@ -11,6 +11,7 @@ import { ScrollMotion } from "./scrollMotion";
 export interface LyricsClock {
   timeMs: () => number;
   playing: () => boolean;
+  subscribe?: (listener: () => void) => () => void;
 }
 
 export type EdgesListener = (atTop: boolean, atBottom: boolean) => void;
@@ -45,8 +46,14 @@ export class LyricsCanvasRenderer {
 
   setLyrics(lyrics: Lyric[]) {
     this.scene.setLyrics(lyrics);
-    this.motion.jumpTo(0);
-    this.snap();
+    // Lyrics can be refreshed while a song is already scrolling (for example
+    // when translations arrive). Keep the current viewport and ease toward
+    // the new lyric target instead of snapping back to the first line.
+    this.motion.setMax(this.scene.maxScroll());
+    this.follower.reset();
+    this.signature = "";
+    if (this.following) this.followScroll(performance.now());
+    this.loop.poke();
   }
 
   resize(width: number, height: number, dpr: number) {
@@ -59,6 +66,12 @@ export class LyricsCanvasRenderer {
 
   setFogEnabled(enabled: boolean) {
     this.fog.enabled = enabled;
+    this.signature = "";
+    this.loop.poke();
+  }
+
+  setTextColor(color: string) {
+    this.scene.setTextColor(color);
     this.signature = "";
     this.loop.poke();
   }

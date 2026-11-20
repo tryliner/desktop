@@ -36,7 +36,7 @@ export type GlobalShortcutStatus = Partial<
 >;
 
 const MEDIA_OVERLAY_ACTIONS: Record<
-  Exclude<MediaShortcutAction, "showMainWindow">,
+  Exclude<MediaShortcutAction, "showMainWindow" | "toggleLyricsPopup">,
   { type: string; payload?: Record<string, unknown> }
 > = {
   playPause: { type: "togglePlay" },
@@ -160,6 +160,7 @@ function waitForFrame(win: BrowserWindow, timeoutMs: number): Promise<void> {
 
 export class OverlayManager {
   private mainWindow: BrowserWindow | null = null;
+  private toggleLyricsPopup: (() => void) | null = null;
   private overlayWindow: BrowserWindow | null = null;
   private latestState: any = null;
   private preloadPath: string;
@@ -233,6 +234,10 @@ export class OverlayManager {
   }
 
   private handleMediaShortcut(action: MediaShortcutAction) {
+    if (action === "toggleLyricsPopup") {
+      this.toggleLyricsPopup?.();
+      return;
+    }
     if (!this.isAuthenticated) return;
     if (
       !this.volumeHoldRepeats &&
@@ -437,6 +442,10 @@ export class OverlayManager {
         this.syncBundle(),
       );
     }
+  }
+
+  public setLyricsPopupToggle(handler: () => void) {
+    this.toggleLyricsPopup = handler;
   }
 
   public destroy() {

@@ -7,10 +7,15 @@ import { applyStoredTheme } from "@/shared/utils/storedTheme";
 initGlobalErrorHandlers();
 
 const isOverlay = window.location.hash.startsWith("#/overlay");
+const isLyricsPopup = window.location.hash.startsWith("#/lyrics-popup");
 
 if (!isOverlay) applyStoredTheme();
 
 async function loadRoot(): Promise<React.ReactElement> {
+  if (isLyricsPopup) {
+    const { default: LyricsPopupApp } = await import("./app/LyricsPopupApp");
+    return <LyricsPopupApp />;
+  }
   if (isOverlay) {
     const { default: OverlayApp } = await import("./app/OverlayApp");
     return <OverlayApp />;

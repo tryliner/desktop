@@ -205,6 +205,35 @@ export interface LinerElectronApi {
   onOverlaySettingsChanged: (cb: (settings: any) => void) => () => void;
   onOverlayVisibility: (cb: (visible: boolean) => void) => () => void;
   setOverlayAuthenticated?: (authenticated: boolean) => void;
+  lyricsPopupUpdateState: (state: unknown) => void;
+  lyricsPopupUpdateClock: (clock: unknown) => void;
+  lyricsPopupGetState: () => Promise<any>;
+  lyricsPopupUpdatePreferences: (preferences: unknown) => void;
+  lyricsPopupGetPreferences: () => Promise<any>;
+  lyricsPopupToggle: () => Promise<boolean>;
+  onLyricsPopupShown: (cb: () => void) => () => void;
+  onLyricsPopupState: (cb: (state: any) => void) => () => void;
+  onLyricsPopupClock: (cb: (clock: any) => void) => () => void;
+  onLyricsPopupPreferences: (cb: (preferences: any) => void) => () => void;
+  lyricsPopupAction: (
+    action:
+      | "togglePlay"
+      | "next"
+      | "prev"
+      | "like"
+      | "toggleShuffle"
+      | "cycleRepeat"
+      | "setPlaybackRate"
+      | "setPitchSemitones"
+      | "setPitchLinked"
+      | "setReverbEnabled"
+      | "setReverbLevel"
+      | "setEqEnabled"
+      | "setEqGains",
+    payload?: unknown,
+  ) => void;
+  lyricsPopupSeek: (positionMs: number) => void;
+  lyricsPopupSetVolume: (volume: number) => void;
   discordUpdateState: (state: any) => void;
   discordUpdateSettings: (settings: any) => void;
   getDiscordStatus: () => Promise<DiscordStatus>;
@@ -241,6 +270,13 @@ const isHyprland = Boolean(
   process.env.XDG_CURRENT_DESKTOP?.toLowerCase().includes("hyprland") ||
   process.env.XDG_SESSION_DESKTOP?.toLowerCase().includes("hyprland"),
 );
+
+let lyricsPopupWasShown = false;
+const lyricsPopupShownListeners = new Set<() => void>();
+ipcRenderer.on("lyrics-popup:shown", () => {
+  lyricsPopupWasShown = true;
+  for (const listener of lyricsPopupShownListeners) listener();
+});
 
 const api: LinerElectronApi = {
   platform: process.platform,
@@ -485,6 +521,51 @@ const api: LinerElectronApi = {
   },
   setOverlayAuthenticated: (authenticated) => {
     ipcRenderer.send("overlay:set-authenticated", authenticated);
+  },
+  lyricsPopupUpdateState: (state) => {
+    ipcRenderer.send("lyrics-popup:update-state", state);
+  },
+  lyricsPopupUpdateClock: (clock) => {
+    ipcRenderer.send("lyrics-popup:update-clock", clock);
+  },
+  lyricsPopupGetState: () => ipcRenderer.invoke("lyrics-popup:get-state"),
+  lyricsPopupUpdatePreferences: (preferences) => {
+    ipcRenderer.send("lyrics-popup:update-preferences", preferences);
+  },
+  lyricsPopupGetPreferences: () =>
+    ipcRenderer.invoke("lyrics-popup:get-preferences"),
+  lyricsPopupToggle: () => ipcRenderer.invoke("lyrics-popup:toggle"),
+  onLyricsPopupShown: (cb) => {
+    if (lyricsPopupWasShown) {
+      cb();
+      return () => undefined;
+    }
+    lyricsPopupShownListeners.add(cb);
+    return () => lyricsPopupShownListeners.delete(cb);
+  },
+  onLyricsPopupState: (cb) => {
+    const listener = (_event: unknown, state: any) => cb(state);
+    ipcRenderer.on("lyrics-popup:state", listener);
+    return () => ipcRenderer.removeListener("lyrics-popup:state", listener);
+  },
+  onLyricsPopupClock: (cb) => {
+    const listener = (_event: unknown, clock: any) => cb(clock);
+    ipcRenderer.on("lyrics-popup:clock", listener);
+    return () => ipcRenderer.removeListener("lyrics-popup:clock", listener);
+  },
+  onLyricsPopupPreferences: (cb) => {
+    const listener = (_event: unknown, preferences: any) => cb(preferences);
+    ipcRenderer.on("lyrics-popup:preferences", listener);
+    return () => ipcRenderer.removeListener("lyrics-popup:preferences", listener);
+  },
+  lyricsPopupAction: (action, payload) => {
+    ipcRenderer.send("lyrics-popup:action", action, payload);
+  },
+  lyricsPopupSeek: (positionMs) => {
+    ipcRenderer.send("lyrics-popup:seek", positionMs);
+  },
+  lyricsPopupSetVolume: (volume) => {
+    ipcRenderer.send("lyrics-popup:volume", volume);
   },
   discordUpdateState: (state) => {
     ipcRenderer.send("discord:update-state", state);

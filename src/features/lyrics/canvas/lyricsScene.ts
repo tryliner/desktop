@@ -56,6 +56,12 @@ export class LyricsScene {
     void loadLyricsFonts(this.typography, text);
   }
 
+  setTextColor(color: string) {
+    if (this.typography.color === color) return;
+    this.typography = { ...this.typography, color };
+    this.relayout();
+  }
+
   setSize(width: number, height: number) {
     const widthChanged = width !== this.width;
     this.width = width;

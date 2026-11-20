@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type RefObject } from "react";
 import type { Lyric } from "@braccato/parsers";
-import { LyricsCanvasRenderer } from "@/features/lyrics";
+import { LyricsCanvasRenderer, type LyricsClock } from "@/features/lyrics";
 import { usePlayerStore } from "../store/playerStore";
 import { playerEngine } from "../engine/playerEngine";
 import { shouldReleaseTopPin, startsPinnedToTop } from "../ui/lyricsTopPin";
@@ -31,6 +31,8 @@ export function useLyricsCanvas(
   refs: LyricsCanvasRefs,
   lyrics: Lyric[],
   fogEnabled: boolean,
+  clockOverride?: LyricsClock,
+  textColor = "#ffffff",
 ): LyricsCanvasHandle {
   const rendererRef = useRef<LyricsCanvasRenderer | null>(null);
   const pinnedRef = useRef(false);
@@ -51,7 +53,7 @@ export function useLyricsCanvas(
     const canvas = refs.canvas.current;
     const live = refs.live.current;
     if (!host || !stage || !canvas || !live) return;
-    const clock = createMediaClock();
+    const clock = clockOverride ?? createMediaClock();
     const renderer = new LyricsCanvasRenderer(
       canvas,
       live,
@@ -60,7 +62,8 @@ export function useLyricsCanvas(
     );
     rendererRef.current = renderer;
     const { status, positionMs } = usePlayerStore.getState();
-    pinnedRef.current = startsPinnedToTop(status, positionMs);
+    pinnedRef.current =
+      !clockOverride && startsPinnedToTop(status, positionMs);
     renderer.setPinnedTop(pinnedRef.current);
     const pinnedAt = performance.now();
 
@@ -76,27 +79,29 @@ export function useLyricsCanvas(
     observer.observe(host);
     const snapTimer = window.setInterval(snap, SNAP_CHECK_MS);
 
-    const stopWatchingPlayer = usePlayerStore.subscribe((state, previous) => {
-      if (
-        state.status === previous.status &&
-        state.positionMs === previous.positionMs
-      ) {
-        return;
-      }
-      renderer.invalidate();
-      if (!pinnedRef.current) return;
-      const audio = audioElement();
-      const release = shouldReleaseTopPin({
-        status: playerEngine.getSnapshot().status,
-        audioPaused: !audio || audio.paused,
-        audioTimeMs: clock.timeMs(),
-        pinnedForMs: performance.now() - pinnedAt,
-      });
-      if (release) {
-        pinnedRef.current = false;
-        renderer.setPinnedTop(false);
-      }
-    });
+    const stopWatchingPlayer = clockOverride
+      ? (clockOverride.subscribe?.(() => renderer.invalidate()) ?? (() => {}))
+      : usePlayerStore.subscribe((state, previous) => {
+          if (
+            state.status === previous.status &&
+            state.positionMs === previous.positionMs
+          ) {
+            return;
+          }
+          renderer.invalidate();
+          if (!pinnedRef.current) return;
+          const audio = audioElement();
+          const release = shouldReleaseTopPin({
+            status: playerEngine.getSnapshot().status,
+            audioPaused: !audio || audio.paused,
+            audioTimeMs: clock.timeMs(),
+            pinnedForMs: performance.now() - pinnedAt,
+          });
+          if (release) {
+            pinnedRef.current = false;
+            renderer.setPinnedTop(false);
+          }
+        });
 
     return () => {
       stopWatchingPlayer();
@@ -105,7 +110,7 @@ export function useLyricsCanvas(
       renderer.dispose();
       rendererRef.current = null;
     };
-  }, [refs]);
+  }, [refs, clockOverride]);
 
   useEffect(() => {
     rendererRef.current?.setLyrics(lyrics);
@@ -114,6 +119,10 @@ export function useLyricsCanvas(
   useEffect(() => {
     rendererRef.current?.setFogEnabled(fogEnabled);
   }, [fogEnabled]);
+
+  useEffect(() => {
+    rendererRef.current?.setTextColor(textColor);
+  }, [textColor]);
 
   return { rendererRef, edges, releasePin };
 }

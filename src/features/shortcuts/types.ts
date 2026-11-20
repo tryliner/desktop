@@ -1,5 +1,6 @@
 export interface GlobalShortcutsSettings {
   toggleOverlay: string; // e.g. "Alt+Shift+O"
+  toggleLyricsPopup: string;
   quickLikeSong: string; // e.g. "Alt+Shift+L"
   playPause: string;
   nextTrack: string;
@@ -22,6 +23,7 @@ export const OPTIONAL_GLOBAL_ACTIONS = [
   "volumeDown",
   "toggleMute",
   "showMainWindow",
+  "toggleLyricsPopup",
 ] as const satisfies readonly (keyof GlobalShortcutsSettings)[];
 
 export type OptionalGlobalAction = (typeof OPTIONAL_GLOBAL_ACTIONS)[number];
@@ -61,6 +63,7 @@ export interface ShortcutsSettings {
 export const DEFAULT_SHORTCUTS: ShortcutsSettings = {
   global: {
     toggleOverlay: "Alt+Shift+O",
+    toggleLyricsPopup: "Alt+Shift+P",
     quickLikeSong: "Alt+Shift+L",
     playPause: "",
     nextTrack: "",

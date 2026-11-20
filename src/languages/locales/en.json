@@ -617,6 +617,8 @@
       "miniplayer_desc": "Active when the desktop overlay miniplayer is focused.",
       "toggle_overlay": "Toggle miniplayer overlay",
       "toggle_overlay_desc": "Show or hide the floating desktop overlay from anywhere in the OS.",
+      "toggle_lyrics_popup": "Toggle lyrics pop-up",
+      "toggle_lyrics_popup_desc": "Show or hide the detached lyrics pop-up from anywhere in the OS.",
       "quick_like_song": "Quick like current song",
       "quick_like_song_desc": "Like or unlike current playing track system-wide without focusing the player.",
       "show_main_window": "Show Liner",
@@ -710,6 +712,28 @@
         "title": "Always on top",
         "description": "Keep the overlay floating above other windows."
       }
+    },
+    "lyrics_popup": {
+      "title": "Lyrics & pop-up",
+      "description": "Set lyric color and glow across Liner and configure the floating lyrics window.",
+      "lyrics_section": "Lyrics across Liner",
+      "background_section": "Pop-up appearance",
+      "window_section": "Pop-up window",
+      "lyricsOnly": "Transparent lyrics only",
+      "showBackground": "Artwork background",
+      "backgroundDim": "Background dim",
+      "useCustomLyricsColor": "Use custom lyric color",
+      "lyricsColor": "Lyric color",
+      "textGlow": "Lyric glow",
+      "glowSize": "Glow strength",
+      "lyricsOpacity": "Lyrics opacity",
+      "textShadow": "Text shadow",
+      "shadowSize": "Shadow strength",
+      "windowShadow": "Pop-up window shadow",
+      "topbar_section": "Pop-up top bar",
+      "autoHideControls": "Auto-hide controls after 3 seconds",
+      "showSpeedPitchButton": "Show speed & pitch button",
+      "showEqualizerButton": "Show equalizer button"
     },
     "youtube": {
       "description": "Sign in to your YouTube account to prevent playback errors.",

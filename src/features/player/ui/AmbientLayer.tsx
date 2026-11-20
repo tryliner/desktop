@@ -15,6 +15,7 @@ import { usePlayerStore } from "../store/playerStore";
 
 interface AmbientLayerProps {
   trackId: string | undefined;
+  playingOverride?: boolean;
 }
 
 interface AmbientScene {
@@ -93,9 +94,13 @@ function useAmbientScript(trackId: string | undefined): string | null {
   return script ?? null;
 }
 
-export default function AmbientLayer({ trackId }: AmbientLayerProps) {
+export default function AmbientLayer({
+  trackId,
+  playingOverride,
+}: AmbientLayerProps) {
   const script = useAmbientScript(trackId);
-  const playing = usePlayerStore((s) => s.status === "playing");
+  const storePlaying = usePlayerStore((s) => s.status === "playing");
+  const playing = playingOverride ?? storePlaying;
   const enabled = useAmbientEnabled();
   const setAmbientAvailable = useVisualModeStore((s) => s.setAmbientAvailable);
   const wanted = useMemo<AmbientScene | null>(

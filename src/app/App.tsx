@@ -15,6 +15,7 @@ import { CoverSwRegistrar } from "@/features/covers";
 import { usePresenceSync } from "@/shared/presence";
 import { useTouchBarSync } from "@/features/touchbar";
 import { useOverlaySync } from "@/features/overlay";
+import { useLyricsPopupSync } from "@/features/lyrics/hooks/useLyricsPopupSync";
 import { useDiscordSync } from "@/features/discord";
 import { AppRoutes } from "./routes";
 import DeeplinkHandler from "./DeeplinkHandler";
@@ -48,6 +49,11 @@ function OverlaySync() {
   return null;
 }
 
+function LyricsPopupSync() {
+  useLyricsPopupSync();
+  return null;
+}
+
 function DiscordSync() {
   useDiscordSync();
   return null;
@@ -71,6 +77,7 @@ export default function App() {
         <PresenceSync />
         <TouchBarSync />
         <OverlaySync />
+        <LyricsPopupSync />
         <DiscordSync />
         <AppleEmojiProvider>
           <I18nProvider>

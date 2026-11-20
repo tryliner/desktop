@@ -11,6 +11,7 @@ export const MEDIA_SHORTCUT_ACTIONS = [
   "volumeDown",
   "toggleMute",
   "showMainWindow",
+  "toggleLyricsPopup",
 ] as const;
 
 export type MediaShortcutAction = (typeof MEDIA_SHORTCUT_ACTIONS)[number];

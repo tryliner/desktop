@@ -61,7 +61,7 @@ export function drawInstrumental(
   ctx.save();
   ctx.translate(left, noteTop);
   ctx.scale(scale, scale);
-  ctx.fillStyle = white(INACTIVE_ALPHA);
+  ctx.fillStyle = white(INACTIVE_ALPHA, type.color);
   ctx.fill(note());
   ctx.restore();
 
@@ -76,13 +76,13 @@ export function drawInstrumental(
   fill.translate(pad, pad);
   fill.scale(scale, scale);
   fill.clip(waveClip(state));
-  fill.fillStyle = white(1);
+  fill.fillStyle = white(1, type.color);
   fill.fill(note());
   fill.restore();
 
   ctx.save();
   ctx.globalAlpha = state.opacity;
-  ctx.shadowColor = white(GLOW_ALPHA);
+  ctx.shadowColor = white(GLOW_ALPHA, type.color);
   ctx.shadowBlur = GLOW_SIGMA * scale * 2 * dpr;
   ctx.drawImage(
     scratch,

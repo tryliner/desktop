@@ -42,6 +42,7 @@ export function drawLine(
         base: background ? BACKGROUND_ALPHA : INACTIVE_ALPHA,
         remPx: REM_PX,
         dpr,
+        color: type.color,
       },
       placed,
       timed
@@ -51,7 +52,7 @@ export function drawLine(
   }
   if (layout.subtitle.length === 0) return;
   ctx.font = subtitleFont(type);
-  ctx.fillStyle = white(SUBTITLE_ALPHA);
+  ctx.fillStyle = white(SUBTITLE_ALPHA, type.color);
   for (const text of layout.subtitle) {
     ctx.fillText(
       text.text,

@@ -5,15 +5,25 @@ import { isWindowDraggingActive } from "@/shared/hooks";
 import { useLyricsEdgeBlur, useLyricsEdgeFade } from "../store/visualModeStore";
 import { useLyricsCanvas } from "../hooks/useLyricsCanvas";
 import { playerEngine } from "../engine/playerEngine";
+import type { LyricsClock } from "@/features/lyrics";
+import { useLyricsPopupPreferencesStore } from "@/features/lyrics/store/lyricsPopupPreferencesStore";
 
 const FREE_SCROLL_MS = 6000;
 const LINE_DELTA_PX = 40;
 
 export interface CanvasLyricsViewProps {
   lyrics: Lyric[];
+  clock?: LyricsClock;
+  onSeek?: (positionMs: number) => void;
+  textColor?: string;
 }
 
-export function CanvasLyricsView({ lyrics }: CanvasLyricsViewProps) {
+export function CanvasLyricsView({
+  lyrics,
+  clock,
+  onSeek,
+  textColor,
+}: CanvasLyricsViewProps) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const stageRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -30,10 +40,23 @@ export function CanvasLyricsView({ lyrics }: CanvasLyricsViewProps) {
   const freeTimerRef = useRef<number | null>(null);
   const edgeFade = useLyricsEdgeFade();
   const edgeBlur = useLyricsEdgeBlur();
+  const textGlow = useLyricsPopupPreferencesStore((state) => state.textGlow);
+  const glowSize = useLyricsPopupPreferencesStore((state) => state.glowSize);
+  const lyricsColor = useLyricsPopupPreferencesStore(
+    (state) => state.lyricsColor,
+  );
+  const useCustomLyricsColor = useLyricsPopupPreferencesStore(
+    (state) => state.useCustomLyricsColor,
+  );
+  const effectiveLyricsColor = useCustomLyricsColor
+    ? textColor ?? lyricsColor
+    : "#ffffff";
   const { rendererRef, edges, releasePin } = useLyricsCanvas(
     refs,
     lyrics,
     edgeFade,
+    clock,
+    effectiveLyricsColor,
   );
 
   const clearFreeTimer = () => {
@@ -67,7 +90,8 @@ export function CanvasLyricsView({ lyrics }: CanvasLyricsViewProps) {
     const startMs = lineStartAt(event);
     if (startMs === null) return;
     releasePin();
-    playerEngine.seek(startMs, true);
+    if (onSeek) onSeek(startMs);
+    else playerEngine.seek(startMs, true);
     followAgain();
   };
 
@@ -83,7 +107,16 @@ export function CanvasLyricsView({ lyrics }: CanvasLyricsViewProps) {
       ref={hostRef}
       className="relative flex flex-col flex-1 w-full h-full min-h-0"
     >
-      <div ref={stageRef} className="absolute top-0 left-0">
+      <div
+        ref={stageRef}
+        className="absolute top-0 left-0"
+        style={{
+          filter:
+            textGlow && glowSize > 0
+              ? `drop-shadow(0 0 ${glowSize}px ${effectiveLyricsColor}cc) drop-shadow(0 0 ${glowSize * 1.8}px ${effectiveLyricsColor}80)`
+              : undefined,
+        }}
+      >
         <canvas
           ref={canvasRef}
           aria-hidden

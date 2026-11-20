@@ -14,6 +14,7 @@ import { showToast } from "@/shared/ui/Toast";
 import type { OverlayAction, OverlayStatePayload } from "../contracts";
 import { useOverlaySettingsStore } from "../store/overlaySettingsStore";
 import { useShortcutsStore } from "@/features/shortcuts/store/shortcutsStore";
+import { isRadioContext, nextRepeatMode } from "@/features/player/engine/radioMode";
 
 const PLAYING_RESYNC_DRIFT_MS = 1_500;
 const PAUSED_RESYNC_DRIFT_MS = 250;
@@ -152,6 +153,53 @@ export function useOverlaySync() {
                   );
                 },
               });
+            }
+            break;
+          case "toggleShuffle":
+            playerEngine.setShuffle(!usePlayerStore.getState().shuffle);
+            break;
+          case "cycleRepeat": {
+            const player = usePlayerStore.getState();
+            playerEngine.setRepeat(
+              nextRepeatMode(
+                player.repeat,
+                isRadioContext(player.playbackContext),
+              ),
+            );
+            break;
+          }
+          case "setPlaybackRate":
+            if (Number.isFinite(action.payload?.rate))
+              playerEngine.setPlaybackRate(action.payload.rate);
+            break;
+          case "setPitchSemitones":
+            if (Number.isFinite(action.payload?.semitones))
+              playerEngine.setPitchSemitones(action.payload.semitones);
+            break;
+          case "setPitchLinked":
+            if (typeof action.payload?.linked === "boolean")
+              playerEngine.setIsPitchLinked(action.payload.linked);
+            break;
+          case "setReverbEnabled":
+            if (typeof action.payload?.enabled === "boolean")
+              playerEngine.setIsReverbEnabled(action.payload.enabled);
+            break;
+          case "setReverbLevel":
+            if (Number.isFinite(action.payload?.level))
+              playerEngine.setReverbLevel(action.payload.level);
+            break;
+          case "setEqEnabled":
+            if (typeof action.payload?.enabled === "boolean")
+              playerEngine.setIsEqEnabled(action.payload.enabled);
+            break;
+          case "setEqGains":
+            if (
+              Array.isArray(action.payload?.gains) &&
+              action.payload.gains.every(Number.isFinite)
+            ) {
+              playerEngine.setEqGains(action.payload.gains);
+              if (!usePlayerStore.getState().isEqEnabled)
+                playerEngine.setIsEqEnabled(true);
             }
             break;
           case "volumeUp":
