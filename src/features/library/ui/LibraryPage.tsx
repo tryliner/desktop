@@ -65,13 +65,16 @@ function LikesPlaylistCard({
   isLoading,
   onClick,
   viewMode = "grid",
+  title,
 }: {
   count?: number;
   isLoading?: boolean;
   onClick: () => void;
   viewMode?: LibraryViewMode;
+  title?: string;
 }) {
   const { t } = useTranslation();
+  const label = title ?? t("library.liked_songs");
   const likesCover = useLikesCover();
 
   if (viewMode === "list") {
@@ -97,7 +100,7 @@ function LikesPlaylistCard({
                 fontWeight: 400,
               }}
             >
-              {t("library.liked_songs")}
+              {label}
             </h3>
             <p
               className="m-0 flex min-w-0 items-center text-title leading-[1.2] overflow-hidden text-text-secondary"
@@ -133,7 +136,7 @@ function LikesPlaylistCard({
       </div>
       <div className="flex flex-col gap-[4px]">
         <span className="truncate text-label font-[500] text-text-primary">
-          {t("library.liked_songs")}
+          {label}
         </span>
         {isLoading || count === undefined ? (
           <div className="h-[13px] w-[56%] animate-pulse rounded bg-border-alpha-14" />
@@ -152,6 +155,8 @@ function OnlineLibraryPage() {
   const { t } = useTranslation();
   const likesCover = useLikesCover();
   usePageBackdrop(likesCover, { blur: 56, dim: 0.22 });
+  const { tracks: downloadedTracks } = useSavedTracks();
+  const downloadedCount = downloadedTracks.length;
   const [activeTab, setActiveTab] = useState<LibraryTab>("all");
   const [stateByTab, setStateByTab] = useState<LibraryState>(initialState);
   const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -459,6 +464,17 @@ function OnlineLibraryPage() {
                               navigate("/library/playlist?id=likes")
                             }
                           />,
+                          ...(downloadedCount > 0
+                            ? [
+                                <LikesPlaylistCard
+                                  key="downloads-card"
+                                  title={t("downloads.title")}
+                                  count={downloadedCount}
+                                  viewMode={viewMode}
+                                  onClick={() => navigate("/library/saved")}
+                                />,
+                              ]
+                            : []),
                           ...(showCachedSongs
                             ? [
                                 <CachedSongsCard
@@ -546,6 +562,7 @@ function OfflineLibraryPage() {
             <OfflineMixCard />
             {savedLikes.length > 0 || savedLoading ? (
               <LikesPlaylistCard
+                title={t("downloads.title")}
                 count={savedLikes.length}
                 isLoading={savedLoading}
                 onClick={() => navigate("/library/saved")}

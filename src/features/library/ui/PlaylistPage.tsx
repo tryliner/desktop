@@ -46,6 +46,7 @@ import Button from "@/shared/ui/Button";
 import DropdownMenu from "@/shared/ui/DropdownMenu";
 import SongCardWithMenu from "@/features/player/ui/SongCardWithMenu";
 import CoverImage from "@/features/covers/ui/CoverImage";
+import { DownloadToggleButton } from "../saved";
 import { useModalStore } from "../store/modalStore";
 import {
   usePlaylist,
@@ -825,6 +826,15 @@ function LibraryPlaylistContent() {
                         sort={sort}
                         disabled={currentTracks.length < 2}
                       />
+                      {!isLikesMode && decodedId && (
+                        <DownloadToggleButton
+                          id={decodedId}
+                          kind="playlist"
+                          title={viewData.title}
+                          coverUrl={viewData.coverUrl}
+                          tracks={currentTracks}
+                        />
+                      )}
                       {!isLikesMode && (
                         <DropdownMenu
                           trigger={

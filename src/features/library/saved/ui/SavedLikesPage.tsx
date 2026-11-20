@@ -35,6 +35,7 @@ import { TrackSortMenu, useTrackSort } from "../../ui/TrackSort";
 import { useLikesCover } from "../../hooks/useLikesCover";
 import { formatTrackDuration } from "../../local/lib/formatLocalDurations";
 import { useSavedTracks } from "../hooks/useSavedTracks";
+import { DownloadsSummary } from "./DownloadsSummary";
 
 const PAGE_KEY = "saved-likes";
 const ROW_HEIGHT = 64;
@@ -140,6 +141,7 @@ interface SavedTracksViewProps {
   isLoading: boolean;
   emptyTitle: string;
   emptySubtitle: string;
+  header?: React.ReactNode;
 }
 
 export function SavedTracksView({
@@ -151,6 +153,7 @@ export function SavedTracksView({
   isLoading,
   emptyTitle,
   emptySubtitle,
+  header,
 }: SavedTracksViewProps) {
   const { t } = useTranslation();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -246,6 +249,8 @@ export function SavedTracksView({
           />
         </div>
 
+        {header}
+
         <ListPanel>
           {isLoading ? null : empty ? (
             <div
@@ -289,13 +294,14 @@ export default function SavedLikesPage() {
   return (
     <SavedTracksView
       pageKey={PAGE_KEY}
-      title={t("library.liked_songs")}
-      subtitle={t("library.saved.subtitle")}
+      title={t("downloads.title")}
+      subtitle={t("downloads.subtitle")}
       cover={likesCover}
       tracks={tracks}
       isLoading={isLoading}
-      emptyTitle={t("library.saved.empty_title")}
-      emptySubtitle={t("library.saved.empty_subtitle")}
+      emptyTitle={t("downloads.empty_title")}
+      emptySubtitle={t("downloads.empty_subtitle")}
+      header={<DownloadsSummary />}
     />
   );
 }

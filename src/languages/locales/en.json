@@ -895,7 +895,8 @@
         "metadata": "Catalog & Search",
         "local": "Imported files",
         "liked": "Liked songs",
-        "shared": "Kept from earlier sign-ins"
+        "shared": "Kept from earlier sign-ins",
+        "picked": "Picked downloads"
       },
       "local_confirm_title": "Remove imported files?",
       "local_confirm_desc": "{tracks} ({size}) will be deleted from Liner, together with their covers. Your original files stay where they are.",
@@ -958,7 +959,9 @@
       "sign_out_desc_keep": "The {songs} you downloaded ({size}) will stay on this device for the next sign-in.",
       "sign_out_keep_toggle": "Keep downloads",
       "sign_out_confirm": "Sign out",
-      "sign_out_dont_ask": "Don't ask again"
+      "sign_out_dont_ask": "Don't ask again",
+      "picked_desc": "{songs} you chose, from {collections} playlists and albums plus single songs. They stay until you remove them.",
+      "open_downloads": "Open Downloads"
     },
     "theme": {
       "title": "Theme",
@@ -1306,5 +1309,41 @@
     "youtube_back_title": "YouTube is back",
     "youtube_back_desc": "Every song can play again.",
     "still_youtube_title": "YouTube still isn't available"
+  },
+  "downloads": {
+    "title": "Downloads",
+    "subtitle": "Songs saved on this device, ready without a connection",
+    "download": "Download",
+    "downloaded": "Downloaded",
+    "downloading": "Downloading {done} of {total}",
+    "remove": "Remove download",
+    "remove_confirm": "Remove from device?",
+    "queued_badge": "Waiting to download",
+    "failed_badge": "Couldn't download, click to retry",
+    "downloaded_badge": "Downloaded",
+    "queued_one": "{count} song will download",
+    "queued_other": "{count} songs will download",
+    "collection_queued": "Downloading {name}",
+    "estimate_one": "{count} song, about {size}",
+    "estimate_other": "{count} songs, about {size}",
+    "some_ready_one": "{count} already on this device",
+    "some_ready_other": "{count} already on this device",
+    "over_limit": "About {size}: more than fits in your {limit} download limit. Raise it in Settings → Storage.",
+    "already_downloaded": "Already downloaded",
+    "removed_one": "Removed from downloads",
+    "removed_other": "Removed {count} songs from downloads",
+    "kept_because_liked": "Still saved, because it's a liked song",
+    "collection_removed": "Playlist removed from downloads",
+    "now": "Downloading now",
+    "waiting_one": "{count} waiting",
+    "waiting_other": "{count} waiting",
+    "failed_one": "{count} couldn't download",
+    "failed_other": "{count} couldn't download",
+    "retry_all": "Retry",
+    "collections": "Downloaded playlists and albums",
+    "songs_downloaded": "{done} of {total} downloaded",
+    "empty_title": "Nothing downloaded yet",
+    "empty_subtitle": "Use Download on a playlist, album or song to listen without a connection.",
+    "desktop_only": "Downloads need the desktop app"
   }
 }

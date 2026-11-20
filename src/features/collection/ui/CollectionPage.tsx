@@ -42,7 +42,7 @@ import {
 import { usePageBackdrop } from "@/shared/lib";
 import type { Track } from "@/shared/types";
 import { useTranslation } from "@/languages";
-import { useModalStore } from "@/features/library";
+import { useModalStore, DownloadToggleButton } from "@/features/library";
 import { buildShareUrl } from "@/shared/utils/share";
 import { useExternalItems } from "@/features/library/hooks";
 import { useCollection } from "../hooks/useCollection";
@@ -167,6 +167,14 @@ function CollectionContent() {
     () =>
       search.matches ?? sortedTracks.map((track, index) => ({ track, index })),
     [search.matches, sortedTracks],
+  );
+  const downloadableTracks = useMemo(
+    () =>
+      (data?.tracks ?? NO_TRACKS).map((track) => ({
+        ...track,
+        coverUrl: track.coverUrl || data?.coverUrl || "",
+      })),
+    [data?.tracks, data?.coverUrl],
   );
   // album track numbers follow the release order, whatever the sort
   const trackNumberById = useMemo(() => {
@@ -459,6 +467,15 @@ function CollectionContent() {
                         sort={sort}
                         disabled={!data || data.tracks.length < 2}
                       />
+                      {!isDailyMix && data && decodedId && (
+                        <DownloadToggleButton
+                          id={`${entityType}:${decodedId}`}
+                          kind={isAlbum ? "album" : "playlist"}
+                          title={data.title}
+                          coverUrl={data.coverUrl}
+                          tracks={downloadableTracks}
+                        />
+                      )}
                       {!isDailyMix && (
                         <DropdownMenu
                           trigger={

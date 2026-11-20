@@ -41,6 +41,7 @@ export interface SongCardProps {
   highlight?: string;
   hideArtists?: boolean;
   trailingAction?: React.ReactNode;
+  statusBadge?: React.ReactNode;
 }
 
 function SongCard({
@@ -71,6 +72,7 @@ function SongCard({
   highlight,
   hideArtists = false,
   trailingAction,
+  statusBadge,
 }: SongCardProps) {
   const { t } = useTranslation();
   const [imageLoaded, setImageLoaded] = useState(() => isCoverReady(coverUrl));
@@ -249,6 +251,7 @@ function SongCard({
       </div>
 
       <div className="flex items-center shrink-0 ml-[16px] gap-[16px]">
+        {statusBadge}
         {releaseDate && (
           <span
             className="text-label text-text-tertiary"

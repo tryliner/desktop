@@ -1,6 +1,7 @@
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import {
   api,
+  ApiError,
   getAuthSession,
   mediaUrl,
   toClientTrack,
@@ -8,6 +9,7 @@ import {
   type ApiUserPlaylistItem,
 } from "@/shared/api";
 import { queryCache } from "@/shared/cache/queryCache";
+import { pinnedCollectionSnapshot } from "../saved/store/downloadsStore";
 import type { Track } from "@/shared/types";
 
 export interface LibraryPlaylistSummary {
@@ -213,6 +215,12 @@ if (typeof window !== "undefined") {
   window.addEventListener("auth:changed", handleRefresh);
 }
 
+function isGoneOrForbidden(error: unknown): boolean {
+  return (
+    error instanceof ApiError && (error.status === 403 || error.status === 404)
+  );
+}
+
 function toTrack(item: ApiUserPlaylistItem): Track {
   const base = toClientTrack(item.track);
   return {
@@ -360,5 +368,23 @@ export function usePlaylist(id: string | null) {
     };
   }, [id, cacheKey]);
 
-  return { data, error, isLoading };
+  const fallback = useMemo<LibraryPlaylistDetail | null>(() => {
+    if (data || !id || !error || isGoneOrForbidden(error)) return null;
+    const pinned = pinnedCollectionSnapshot(id);
+    if (!pinned) return null;
+    return {
+      id,
+      title: pinned.title,
+      trackCount: pinned.tracks.length,
+      coverUrl: pinned.coverUrl,
+      coverUrls: pinned.coverUrl ? [pinned.coverUrl] : [],
+      revision: 0,
+      tracks: pinned.tracks.map((track) => ({ ...track, playCount: 0 })),
+    };
+  }, [data, id, error]);
+  return {
+    data: data ?? fallback,
+    error: fallback ? undefined : error,
+    isLoading,
+  };
 }

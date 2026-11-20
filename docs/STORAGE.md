@@ -56,6 +56,7 @@ Settings and small state, as zustand `persist` stores or plain keys.
 | `liner_youtube_preferences`                                           | YouTube playback and sync settings                                                                       |
 | `liner_youtube_page_id`                                               | The brand channel picked for the YouTube account                                                         |
 | `liner_search_history`                                                | Recent searches                                                                                          |
+| `liner_downloads_v1`                                                  | Songs, playlists and albums picked for download, per account (the files are in `saved-tracks/`)          |
 | `liner_library_view_mode`                                             | Grid or list in the library                                                                              |
 | `liner_locale`, `theme`                                               | Language and theme                                                                                       |
 | `liner_lyrics_*`, `liner:artist:*`, `liner:search:*`, `liner:query:*` | Small caches                                                                                             |

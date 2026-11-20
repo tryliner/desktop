@@ -22,6 +22,10 @@ vi.mock("@/features/library", () => ({
   },
 }));
 
+vi.mock("./useDownloadMenuItem", () => ({
+  useDownloadMenuItem: () => null,
+}));
+
 vi.mock("@/languages", () => ({
   useTranslation: () => ({
     t: (key: string) => {
