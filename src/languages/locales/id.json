@@ -212,6 +212,7 @@
   "library": {
     "title": "Pustaka",
     "liked_songs": "Lagu yang Disukai",
+    "added_to_likes": "Ditambahkan ke Disukai",
     "song": "lagu",
     "songs": "lagu",
     "track": "lagu",

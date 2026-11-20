@@ -23,7 +23,10 @@ import { usePlayerState } from "../hooks/usePlayerState";
 import { playerEngine } from "../engine/playerEngine";
 import { isRadioContext, nextRepeatMode } from "../engine/radioMode";
 import { useTranslation } from "@/languages";
-import { useIsTrackLiked, useToggleTrackLike } from "@/features/library/hooks";
+import {
+  useIsTrackLiked,
+  useToggleTrackLikeWithPlaylistToast,
+} from "@/features/library/hooks";
 import { usePlayerStore } from "../store/playerStore";
 import { toVolumeGain, toVolumeLevel } from "../engine/volume";
 import { VolumeColumn } from "./VolumeColumn";
@@ -396,11 +399,11 @@ function MiniPlayer({
   const isLocal = isLocalTrackId(currentTrack?.id);
   const isLiked = useIsTrackLiked(currentTrack?.id);
   const eqActive = isEqActive(player.isEqEnabled, player.eqGains);
-  const toggleLike = useToggleTrackLike();
+  const toggleLike = useToggleTrackLikeWithPlaylistToast();
 
   const handleLikeToggle = useCallback(() => {
     if (!currentTrack) return;
-    toggleLike(currentTrack.id);
+    toggleLike(currentTrack);
   }, [currentTrack, toggleLike]);
 
   const durationMs =

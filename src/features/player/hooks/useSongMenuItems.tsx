@@ -14,7 +14,7 @@ import type { DropdownMenuItem } from "@/shared/ui/DropdownMenu";
 import { playerEngine } from "../engine/playerEngine";
 import {
   usePlaylistsList,
-  useToggleTrackLike,
+  useToggleTrackLikeWithPlaylistToast,
   useIsTrackLiked,
   useModalStore,
 } from "@/features/library";
@@ -71,7 +71,7 @@ export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
 
   const { data: playlistsData } = usePlaylistsList();
 
-  const toggleLike = useToggleTrackLike();
+  const toggleLike = useToggleTrackLikeWithPlaylistToast();
 
   const liked = useIsTrackLiked(id);
 
@@ -89,8 +89,8 @@ export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
 
   const handleLike = useCallback(() => {
     if (!id) return;
-    toggleLike(id);
-  }, [id, toggleLike]);
+    toggleLike({ id, title, artists, coverUrl, duration, durationMs });
+  }, [id, title, artists, coverUrl, duration, durationMs, toggleLike]);
 
   const handleShare = useCallback(() => {
     if (!id) return;

@@ -224,6 +224,7 @@
   "library": {
     "title": "Bibliothèque",
     "liked_songs": "Titres aimés",
+    "added_to_likes": "Ajouté aux titres aimés",
     "song": "titre",
     "songs": "titres",
     "track": "titre",

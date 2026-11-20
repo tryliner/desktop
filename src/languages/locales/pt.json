@@ -221,6 +221,7 @@
   "library": {
     "title": "Biblioteca",
     "liked_songs": "Músicas curtidas",
+    "added_to_likes": "Adicionada às curtidas",
     "song": "música",
     "songs": "músicas",
     "track": "faixa",

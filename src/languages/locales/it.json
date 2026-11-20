@@ -215,6 +215,7 @@
   "library": {
     "title": "Libreria",
     "liked_songs": "Brani che ti piacciono",
+    "added_to_likes": "Aggiunto ai Mi piace",
     "song": "brano",
     "songs": "brani",
     "track": "brano",
