@@ -215,7 +215,7 @@ type BranchName = "pitch" | "reverb" | "eq";
 interface AudioEffectsGraph {
   version: number;
   ctx: AudioContext;
-  sourceNode: MediaElementAudioSourceNode;
+  sourceNode: AudioNode;
   pitchDryGain: GainNode;
   pitchWetGain: GainNode;
   pitchStageOutput: GainNode;
@@ -397,7 +397,7 @@ function disposeStaleGraph(graph: any): void {
 
 function buildGraph(
   ctx: AudioContext,
-  sourceNode: MediaElementAudioSourceNode,
+  sourceNode: AudioNode,
 ): AudioEffectsGraph {
   const pitchDryGain = ctx.createGain();
   const pitchWetGain = ctx.createGain();
@@ -489,13 +489,15 @@ function buildGraph(
 
 export class PitchShifterController {
   private context: AudioContext | null = null;
-  private sourceNode: MediaElementAudioSourceNode | null = null;
+  private sourceNode: AudioNode | null = null;
   private graph: AudioEffectsGraph | null = null;
   private audio: HTMLAudioElement | null = null;
   private isConnected = false;
   private suspendTimer: ReturnType<typeof setTimeout> | null = null;
+  private elements = new Set<HTMLAudioElement>();
 
   public attach(audio: HTMLAudioElement): void {
+    this.elements.add(audio);
     if (typeof window === "undefined") return;
     const win = window as any;
 
@@ -512,34 +514,38 @@ export class PitchShifterController {
       this.context = ctx;
 
       const audioObj = audio as any;
-      let sourceNode = audioObj.__liner_source_node as
+      let elementSource = audioObj.__liner_source_node as
         MediaElementAudioSourceNode | undefined;
 
-      if (!sourceNode) {
+      if (!elementSource) {
         if (
           win.__liner_media_source_node &&
           win.__liner_media_source_node.mediaElement === audio
         ) {
-          sourceNode = win.__liner_media_source_node;
-          audioObj.__liner_source_node = sourceNode;
+          elementSource = win.__liner_media_source_node;
         } else {
-          try {
-            sourceNode = ctx.createMediaElementSource(audio);
-            audioObj.__liner_source_node = sourceNode;
-            win.__liner_media_source_node = sourceNode;
-          } catch (sourceErr: any) {
-            if (win.__liner_media_source_node) {
-              sourceNode = win.__liner_media_source_node;
-              audioObj.__liner_source_node = sourceNode;
-            } else {
-              throw sourceErr;
-            }
-          }
+          elementSource = ctx.createMediaElementSource(audio);
+          win.__liner_media_source_node = elementSource;
         }
+        audioObj.__liner_source_node = elementSource;
       }
 
-      if (!sourceNode) {
+      if (!elementSource) {
         return;
+      }
+
+      let sourceNode = win.__liner_effects_input as GainNode | undefined;
+      if (!sourceNode || sourceNode.context !== ctx) {
+        sourceNode = ctx.createGain();
+        sourceNode.gain.value = 1;
+        win.__liner_effects_input = sourceNode;
+      }
+      if (audioObj.__liner_bus !== sourceNode) {
+        try {
+          elementSource.disconnect();
+        } catch {}
+        elementSource.connect(sourceNode);
+        audioObj.__liner_bus = sourceNode;
       }
 
       const isCompleteGraph = (g: any): g is AudioEffectsGraph => {
@@ -594,6 +600,22 @@ export class PitchShifterController {
     return this.isConnected;
   }
 
+  public detach(audio: HTMLAudioElement): void {
+    this.elements.delete(audio);
+    const audioObj = audio as any;
+    const elementSource = audioObj.__liner_source_node as
+      MediaElementAudioSourceNode | undefined;
+    if (!elementSource) return;
+    try {
+      elementSource.disconnect();
+    } catch {}
+    delete audioObj.__liner_bus;
+    const win = typeof window !== "undefined" ? (window as any) : null;
+    if (win?.__liner_media_source_node === elementSource) {
+      delete win.__liner_media_source_node;
+    }
+  }
+
   public resumeContext(): void {
     this.clearSuspendTimer();
     if (this.context && this.context.state === "suspended") {
@@ -601,7 +623,14 @@ export class PitchShifterController {
         console.warn("[AudioEffects] AudioContext resume failed:", err);
       });
     }
-    if (this.audio?.paused) this.scheduleSuspend();
+    if (!this.anyPlaying()) this.scheduleSuspend();
+  }
+
+  private anyPlaying(): boolean {
+    for (const el of this.elements) {
+      if (!el.paused) return true;
+    }
+    return Boolean(this.audio && !this.audio.paused);
   }
 
   private bindPlaybackState(audio: HTMLAudioElement): void {
@@ -645,13 +674,13 @@ export class PitchShifterController {
     this.clearSuspendTimer();
     const audio = this.audio;
     const ctx = this.context;
-    if (!audio || !ctx || !audio.paused) return;
+    if (!audio || !ctx || this.anyPlaying()) return;
     const delay = this.graph?.reverbConnected
       ? REVERB_TAIL_SUSPEND_MS
       : IDLE_SUSPEND_MS;
     this.suspendTimer = setTimeout(() => {
       this.suspendTimer = null;
-      if (audio.paused && ctx.state === "running") {
+      if (!this.anyPlaying() && ctx.state === "running") {
         void ctx.suspend().catch(() => {});
       }
     }, delay);

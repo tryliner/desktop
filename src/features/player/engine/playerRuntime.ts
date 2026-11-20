@@ -9,6 +9,7 @@ import { markLinerStreamFailed } from "@/shared/media/liner/linerPlayback";
 import { isLocalTrackId } from "@/shared/media/local";
 import { isSavedTrack } from "@/shared/media/saved";
 import { pitchShifter } from "./pitchShifter";
+import { CrossfadeTail } from "./crossfadeTail";
 import { FLAT_EQ, isEqActive } from "./equalizer";
 import { resolvePlaybackStream, type PlaybackStream } from "./streamResolver";
 import { logNowPlaying } from "./nowPlayingLog";
@@ -60,6 +61,14 @@ export class PlayerRuntime {
   private waitingTimer: ReturnType<typeof setTimeout> | null = null;
   public onEnded?: () => void;
   public onError?: (info: { trackId: string; message: string }) => void;
+  public onNearEnd?: (positionMs: number, durationMs: number) => void;
+  private tailFade = new CrossfadeTail(
+    () => usePlayerStore.getState().volume,
+    (el) => pitchShifter.detach(el),
+  );
+  private trackGain = 1;
+  private nextFadeInMs = 180;
+  private nearEndTimer: ReturnType<typeof setInterval> | null = null;
 
   constructor() {
     const win = typeof window !== "undefined" ? (window as any) : null;
@@ -93,8 +102,9 @@ export class PlayerRuntime {
       if (state.volume !== prevState.volume) {
         this.cancelFade();
         if (!this.audio.paused) {
-          this.audio.volume = state.volume;
+          this.audio.volume = this.targetVolume();
         }
+        this.tailFade.applyVolume();
       }
       if (
         state.playbackRate !== prevState.playbackRate ||
@@ -268,6 +278,7 @@ export class PlayerRuntime {
 
       const posMs = Math.round(audioEl.currentTime * 1000);
       usePlayerStore.getState().setPosition(posMs);
+      this.watchNearEnd(audioEl);
       if (
         this.recoveryHoldUntilMs !== null &&
         posMs >= this.recoveryHoldUntilMs
@@ -567,6 +578,101 @@ export class PlayerRuntime {
     this.fadeTimer = setTimeout(tick, 16);
   }
 
+  private targetVolume(): number {
+    return Math.max(
+      0,
+      Math.min(1, usePlayerStore.getState().volume * this.trackGain),
+    );
+  }
+
+  private takeFadeIn(): number {
+    const ms = this.nextFadeInMs;
+    this.nextFadeInMs = 180;
+    return Math.max(15, ms);
+  }
+
+  public setTrackGain(gain: number): void {
+    const next = Number.isFinite(gain) ? Math.max(0.05, Math.min(1, gain)) : 1;
+    if (Math.abs(next - this.trackGain) < 0.001) return;
+    this.trackGain = next;
+    if (!this.audio.paused && this.fadeTimer === null) {
+      this.fadeVolume(this.targetVolume(), 400);
+    }
+  }
+
+  private watchNearEnd(audioEl: HTMLAudioElement): void {
+    if (!this.onNearEnd) return;
+    const duration = audioEl.duration;
+    if (!Number.isFinite(duration) || duration <= 0) return;
+    const remainingMs = (duration - audioEl.currentTime) * 1000;
+    if (remainingMs > 30_000 || audioEl.paused) {
+      this.stopNearEndTimer();
+      return;
+    }
+    this.onNearEnd(audioEl.currentTime * 1000, duration * 1000);
+    if (this.nearEndTimer !== null) return;
+    this.nearEndTimer = setInterval(() => {
+      const el = this.audio;
+      if (el !== audioEl || el.paused || this.isResetting) {
+        this.stopNearEndTimer();
+        return;
+      }
+      if (!Number.isFinite(el.duration) || el.duration <= 0) return;
+      this.onNearEnd?.(el.currentTime * 1000, el.duration * 1000);
+    }, 50);
+  }
+
+  private stopNearEndTimer(): void {
+    if (this.nearEndTimer !== null) {
+      clearInterval(this.nearEndTimer);
+      this.nearEndTimer = null;
+    }
+  }
+
+  public isTransitioning(): boolean {
+    return this.tailFade.active;
+  }
+
+  public beginTransition(
+    fadeOutMs: number,
+    options: { delayMs?: number; clock?: "media" | "wall" } = {},
+  ): void {
+    this.finishTail(0);
+    this.stopNearEndTimer();
+    this.cancelFade();
+    const outgoing = this.audio;
+    if (!outgoing.src || outgoing.paused) return;
+    const win = typeof window !== "undefined" ? (window as any) : null;
+
+    const fresh = new Audio();
+    fresh.crossOrigin = "anonymous";
+    fresh.preload = "auto";
+    fresh.volume = 0;
+    outgoing.id = "liner-audio-tail";
+    fresh.id = "liner-audio";
+    if (typeof document !== "undefined") document.body.appendChild(fresh);
+    if (win) win.__liner_audio = fresh;
+    this.setupAudioListeners(fresh);
+
+    const tailSource = {
+      el: outgoing,
+      blobUrl: this.activeBlobUrl,
+      release: this.releaseActiveStream,
+      gain: this.trackGain,
+    };
+    this.activeBlobUrl = null;
+    this.releaseActiveStream = null;
+    this.attachedTrackId = null;
+    this.audio = fresh;
+    this.applyPlaybackRateAndPitch();
+
+    this.tailFade.start(tailSource, fadeOutMs, options);
+  }
+
+  public finishTail(fadeMs = 0): void {
+    this.tailFade.finish(fadeMs);
+  }
+
   private releaseStream() {
     this.releaseActiveStream?.();
     this.releaseActiveStream = null;
@@ -611,6 +717,7 @@ export class PlayerRuntime {
   }
 
   private safeResetAudioElement() {
+    this.finishTail(0);
     this.isResetting = true;
     this.currentSessionExpiresAt = null;
     try {
@@ -757,7 +864,10 @@ export class PlayerRuntime {
     track: Track,
     startPositionMs: number = 0,
     bypassCache: boolean = false,
+    options: { fadeInMs?: number; transition?: boolean } = {},
   ) {
+    if (!options.transition) this.finishTail(120);
+    this.nextFadeInMs = options.fadeInMs ?? 180;
     this.cancelFade();
     this.pendingStartPositionMs = startPositionMs;
     const epoch = ++this.loadEpoch;
@@ -863,7 +973,7 @@ export class PlayerRuntime {
 
         if (epoch === this.loadEpoch) {
           usePlayerStore.getState().setStatus("playing");
-          this.fadeVolume(usePlayerStore.getState().volume, 180);
+          this.fadeVolume(this.targetVolume(), this.takeFadeIn());
         }
         logNowPlaying(track, true, audioStartLatencyMs);
         return;
@@ -935,7 +1045,7 @@ export class PlayerRuntime {
 
       if (epoch === this.loadEpoch) {
         usePlayerStore.getState().setStatus("playing");
-        this.fadeVolume(usePlayerStore.getState().volume, 180);
+        this.fadeVolume(this.targetVolume(), this.takeFadeIn());
         this.cacheAudioInBackground(track, stream, bgCacheController.signal);
       }
       logNowPlaying(track, false, audioStartLatencyMs);
@@ -1022,6 +1132,7 @@ export class PlayerRuntime {
   }
 
   public pause() {
+    this.finishTail(150);
     const epoch = ++this.loadEpoch;
     this.loadAbortController?.abort();
     this.loadAbortController = null;
@@ -1039,7 +1150,7 @@ export class PlayerRuntime {
     this.loadAbortController?.abort();
     this.loadAbortController = null;
 
-    const targetVolume = usePlayerStore.getState().volume;
+    const targetVolume = this.targetVolume();
     usePlayerStore.getState().setStatus("playing");
     pitchShifter.resumeContext();
     this.applyPlaybackRateAndPitch();
@@ -1103,6 +1214,7 @@ export class PlayerRuntime {
   }
 
   public seek(positionMs: number) {
+    this.finishTail(150);
     if (!this.audio.src || this.audio.src === window.location.href) return;
     try {
       if (this.audio.readyState >= 1) {

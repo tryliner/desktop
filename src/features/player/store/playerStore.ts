@@ -75,6 +75,12 @@ export interface SessionState {
   isEqEnabled: boolean;
   eqGains: number[];
   eqCustomPresets: EqCustomPreset[];
+  crossfadeSeconds: number;
+  crossfadeLength: number;
+  gapless: boolean;
+  automix: boolean;
+  crossfadeOnSkip: boolean;
+  normalizeVolume: boolean;
 }
 
 export type PlayerState = TransportState &
@@ -120,6 +126,12 @@ export interface PlayerStore extends PlayerState {
   setAccentVariant: (variant: AccentVariant) => void;
   setPauseOnDeviceChange: (value: boolean) => void;
   setAutoplaySimilar: (value: boolean) => void;
+  setCrossfadeSeconds: (seconds: number) => void;
+  setCrossfadeEnabled: (enabled: boolean) => void;
+  setGapless: (gapless: boolean) => void;
+  setAutomix: (automix: boolean) => void;
+  setCrossfadeOnSkip: (crossfadeOnSkip: boolean) => void;
+  setNormalizeVolume: (normalizeVolume: boolean) => void;
   setTrackDoubleClickBehavior: (value: TrackDoubleClickBehavior) => void;
   setDefaultPlaybackContext: (value: DefaultPlaybackContext) => void;
   setFullscreen: (value: boolean) => void;
@@ -136,6 +148,9 @@ export interface PlayerStore extends PlayerState {
   clearQueue: () => void;
   resetPlayback: () => void;
 }
+
+export const MAX_CROSSFADE_SECONDS = 12;
+export const DEFAULT_CROSSFADE_SECONDS = 6;
 
 const PLAYER_SESSION_STORAGE_KEY = "liner_player_session_v2";
 const PLAYER_RESUME_STORAGE_KEY = "liner_player_resume_v1";
@@ -192,6 +207,12 @@ export const usePlayerStore = create<PlayerStore>()(
       accentVariant: "default",
       pauseOnDeviceChange: true,
       autoplaySimilar: true,
+      crossfadeSeconds: 0,
+      crossfadeLength: DEFAULT_CROSSFADE_SECONDS,
+      gapless: false,
+      automix: true,
+      crossfadeOnSkip: false,
+      normalizeVolume: false,
       trackDoubleClickBehavior: "play",
       defaultPlaybackContext: "resume",
       fullscreen: false,
@@ -238,6 +259,26 @@ export const usePlayerStore = create<PlayerStore>()(
         set({ pauseOnDeviceChange }),
       setAutoplaySimilar: (autoplaySimilar: boolean) =>
         set({ autoplaySimilar }),
+      setCrossfadeSeconds: (seconds: number) => {
+        const next = Number.isFinite(seconds)
+          ? Math.min(MAX_CROSSFADE_SECONDS, Math.max(0, Math.round(seconds)))
+          : 0;
+        set(
+          next > 0
+            ? { crossfadeSeconds: next, crossfadeLength: next }
+            : { crossfadeSeconds: 0 },
+        );
+      },
+      setCrossfadeEnabled: (enabled: boolean) =>
+        set((state) => ({
+          crossfadeSeconds: enabled ? state.crossfadeLength : 0,
+        })),
+      setGapless: (gapless: boolean) => set({ gapless }),
+      setAutomix: (automix: boolean) => set({ automix }),
+      setCrossfadeOnSkip: (crossfadeOnSkip: boolean) =>
+        set({ crossfadeOnSkip }),
+      setNormalizeVolume: (normalizeVolume: boolean) =>
+        set({ normalizeVolume }),
       setTrackDoubleClickBehavior: (
         trackDoubleClickBehavior: TrackDoubleClickBehavior,
       ) => set({ trackDoubleClickBehavior }),
@@ -306,6 +347,15 @@ export const usePlayerStore = create<PlayerStore>()(
           ...current,
           ...((persisted ?? {}) as Partial<PlayerStore>),
         };
+        const saved = persisted as Partial<PlayerStore> | null;
+        if (
+          saved &&
+          saved.crossfadeLength === undefined &&
+          typeof saved.crossfadeSeconds === "number" &&
+          saved.crossfadeSeconds > 0
+        ) {
+          merged.crossfadeLength = saved.crossfadeSeconds;
+        }
         const resume = readResumePosition();
         if (resume && merged.currentTrack?.id === resume.trackId) {
           merged.positionMs = resume.positionMs;
@@ -368,6 +418,31 @@ export const usePlayerStore = create<PlayerStore>()(
           if (typeof state.isEqEnabled !== "boolean") {
             state.isEqEnabled = false;
           }
+          if (
+            typeof state.crossfadeSeconds !== "number" ||
+            !Number.isFinite(state.crossfadeSeconds)
+          ) {
+            state.crossfadeSeconds = 0;
+          }
+          state.crossfadeSeconds = Math.min(
+            MAX_CROSSFADE_SECONDS,
+            Math.max(0, Math.round(state.crossfadeSeconds)),
+          );
+          const length = state.crossfadeLength;
+          state.crossfadeLength =
+            typeof length === "number" && Number.isFinite(length) && length >= 1
+              ? Math.min(MAX_CROSSFADE_SECONDS, Math.round(length))
+              : state.crossfadeSeconds > 0
+                ? state.crossfadeSeconds
+                : DEFAULT_CROSSFADE_SECONDS;
+          if (typeof state.gapless !== "boolean") state.gapless = false;
+          if (typeof state.automix !== "boolean") state.automix = true;
+          if (typeof state.crossfadeOnSkip !== "boolean") {
+            state.crossfadeOnSkip = false;
+          }
+          if (typeof state.normalizeVolume !== "boolean") {
+            state.normalizeVolume = false;
+          }
           state.eqGains = normalizeEqGains(state.eqGains);
           state.eqCustomPresets = normalizeEqCustomPresets(
             state.eqCustomPresets,
@@ -394,6 +469,12 @@ export const usePlayerStore = create<PlayerStore>()(
         accentVariant: state.accentVariant,
         pauseOnDeviceChange: state.pauseOnDeviceChange,
         autoplaySimilar: state.autoplaySimilar,
+        crossfadeSeconds: state.crossfadeSeconds,
+        crossfadeLength: state.crossfadeLength,
+        gapless: state.gapless,
+        automix: state.automix,
+        crossfadeOnSkip: state.crossfadeOnSkip,
+        normalizeVolume: state.normalizeVolume,
         trackDoubleClickBehavior: state.trackDoubleClickBehavior,
         defaultPlaybackContext: state.defaultPlaybackContext,
         playbackRate: state.playbackRate,

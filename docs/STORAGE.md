@@ -23,6 +23,11 @@ in front of it.
 | `lyrics`  | `trackId` | Lyrics and the providers that had them                | 100        |
 | `artists` | `id`      | Cached artist pages                                   | 100        |
 
+AutoMix keeps its song analyses (silence at either end, loudness, whether a song fades
+out) in a separate small IndexedDB, `liner_analysis_v1`. Clearing only the Audio
+category keeps these analyses; clearing every category removes them with the rest.
+Songs are only analysed from audio already on the device.
+
 The audio cache is limited to 3 GB by default (`liner_audio_cache_limit_bytes`, minimum
 250 MB, changed in Settings → Cache & Storage). Over the limit, the least recently
 played tracks are evicted (`src/shared/storage/audioCache.ts`).
