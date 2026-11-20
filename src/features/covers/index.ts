@@ -20,3 +20,6 @@ export {
   getCoverProxyUrl,
   signCoverUrl,
 } from "./lib/coverSigner";
+export { default as PlaylistCoverEditorModal } from "./playlistCovers/PlaylistCoverEditorModal";
+export { useCoverEditorStore } from "./playlistCovers/coverEditorStore";
+export { usePlaylistCoverOverrides } from "./playlistCovers/playlistCoverStore";

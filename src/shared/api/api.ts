@@ -1063,6 +1063,25 @@ export const api = {
     );
   },
 
+  setPlaylistCover(
+    id: string,
+    cover: { image: string; contentType: string },
+  ): Promise<ApiUserPlaylist> {
+    return request<ApiUserPlaylist>(
+      `/v1/me/playlists/${encodeURIComponent(id)}/cover`,
+      { method: "PUT", body: JSON.stringify(cover) },
+      true,
+      60_000,
+    );
+  },
+
+  removePlaylistCover(id: string): Promise<ApiUserPlaylist> {
+    return request<ApiUserPlaylist>(
+      `/v1/me/playlists/${encodeURIComponent(id)}/cover`,
+      { method: "DELETE" },
+    );
+  },
+
   deletePlaylist(id: string): Promise<void> {
     return request<void>(`/v1/me/playlists/${encodeURIComponent(id)}`, {
       method: "DELETE",
