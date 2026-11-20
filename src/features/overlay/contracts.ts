@@ -1,4 +1,17 @@
-export type OverlayPosition = "top-left" | "top-center" | "top-right";
+const OVERLAY_POSITIONS = [
+  "top-left",
+  "top-center",
+  "top-right",
+  "bottom-left",
+  "bottom-center",
+  "bottom-right",
+] as const;
+
+export type OverlayPosition = (typeof OVERLAY_POSITIONS)[number];
+
+export function isOverlayPosition(value: unknown): value is OverlayPosition {
+  return OVERLAY_POSITIONS.some((position) => position === value);
+}
 
 export interface OverlaySettings {
   enabled: boolean;

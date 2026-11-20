@@ -692,7 +692,10 @@
         "description": "Choose where the overlay appears on your desktop.",
         "top_left": "Top Left",
         "top_center": "Top Middle",
-        "top_right": "Top Right"
+        "top_right": "Top Right",
+        "bottom_left": "Bottom Left",
+        "bottom_center": "Bottom Middle",
+        "bottom_right": "Bottom Right"
       },
       "shortcut": {
         "title": "Global shortcut",

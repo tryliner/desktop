@@ -502,7 +502,13 @@
       },
       "position": {
         "title": "Position",
-        "description": "Wähle, wo das Overlay auf deinem Desktop erscheint."
+        "description": "Wähle, wo das Overlay auf deinem Desktop erscheint.",
+        "top_left": "Oben links",
+        "top_center": "Oben mittig",
+        "top_right": "Oben rechts",
+        "bottom_left": "Unten links",
+        "bottom_center": "Unten mittig",
+        "bottom_right": "Unten rechts"
       },
       "shortcut": {
         "title": "Globale Tastenkombination",

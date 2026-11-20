@@ -557,7 +557,10 @@
         "description": "Scegli dove appare l'overlay sul desktop.",
         "top_left": "In alto a sinistra",
         "top_center": "In alto al centro",
-        "top_right": "In alto a destra"
+        "top_right": "In alto a destra",
+        "bottom_left": "In basso a sinistra",
+        "bottom_center": "In basso al centro",
+        "bottom_right": "In basso a destra"
       },
       "shortcut": {
         "title": "Scorciatoia globale",

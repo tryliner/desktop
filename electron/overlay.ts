@@ -6,6 +6,7 @@ import {
   createCompositorBridge,
   type CompositorBridge,
 } from "./compositor/index.js";
+import { overlayOrigin } from "./compositor/placement.js";
 import {
   MEDIA_SHORTCUT_ACTIONS,
   MediaShortcuts,
@@ -18,7 +19,20 @@ import {
   type ShortcutRegistrationState,
 } from "./mediaShortcuts.js";
 
-export type OverlayPosition = "top-left" | "top-center" | "top-right";
+const OVERLAY_POSITIONS = [
+  "top-left",
+  "top-center",
+  "top-right",
+  "bottom-left",
+  "bottom-center",
+  "bottom-right",
+] as const;
+
+export type OverlayPosition = (typeof OVERLAY_POSITIONS)[number];
+
+function isOverlayPosition(value: unknown): value is OverlayPosition {
+  return OVERLAY_POSITIONS.some((position) => position === value);
+}
 
 const OVERLAY_TITLE = "Liner Overlay";
 const OVERLAY_MARGIN = 20;
@@ -188,7 +202,6 @@ export class OverlayManager {
   private disposed = false;
 
   private moveAnimationTimer: NodeJS.Timeout | null = null;
-  private currentAnimatedX: number | null = null;
   private closeTimeout: NodeJS.Timeout | null = null;
   private compositor: CompositorBridge | null = null;
   private rendererAuthenticated = false;
@@ -347,11 +360,7 @@ export class OverlayManager {
         const raw = fs.readFileSync(filePath, "utf-8");
         const data = JSON.parse(raw);
         if (typeof data.enabled === "boolean") this.enabled = data.enabled;
-        if (
-          data.position === "top-left" ||
-          data.position === "top-center" ||
-          data.position === "top-right"
-        ) {
+        if (isOverlayPosition(data.position)) {
           this.position = data.position;
         }
         if (typeof data.shortcut === "string" && data.shortcut.trim()) {
@@ -642,27 +651,14 @@ export class OverlayManager {
       targetDisplay = screen.getPrimaryDisplay();
     }
 
-    const { workArea } = targetDisplay;
-    const padding = 20;
     const finalHeight = height ?? this.getTargetHeight();
-
-    let x: number;
-    const y = Math.round(workArea.y + padding);
-
-    switch (this.position) {
-      case "top-left":
-        x = Math.round(workArea.x + padding);
-        break;
-      case "top-right":
-        x = Math.round(workArea.x + workArea.width - width - padding);
-        break;
-      case "top-center":
-      default:
-        x = Math.round(workArea.x + (workArea.width - width) / 2);
-        break;
-    }
-
-    return { x, y, width, height: finalHeight };
+    const origin = overlayOrigin(targetDisplay.workArea, {
+      width,
+      height: finalHeight,
+      anchor: this.position,
+      margin: OVERLAY_MARGIN,
+    });
+    return { ...origin, width, height: finalHeight };
   }
 
   private stopMoveAnimation() {
@@ -680,44 +676,46 @@ export class OverlayManager {
 
     this.stopMoveAnimation();
 
-    const startX = this.currentAnimatedX ?? this.overlayWindow.getBounds().x;
-
-    if (startX === targetBounds.x) {
-      this.currentAnimatedX = null;
+    const start = this.overlayWindow.getBounds();
+    if (
+      start.x === targetBounds.x &&
+      start.y === targetBounds.y &&
+      start.width === targetBounds.width &&
+      start.height === targetBounds.height
+    )
       return;
-    }
 
     const startTime = performance.now();
-    // Cubic ease out: 1 - Math.pow(1 - t, 3)
-    const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
     const interval = 8;
+    const isBottomAnchored = this.position.startsWith("bottom-");
 
     this.moveAnimationTimer = setInterval(() => {
       if (!this.overlayWindow || this.overlayWindow.isDestroyed()) {
         this.stopMoveAnimation();
-        this.currentAnimatedX = null;
         return;
       }
 
       const elapsed = performance.now() - startTime;
       const progress = Math.min(1, elapsed / durationMs);
-      const eased = easeOutCubic(progress);
-
-      const currentX = Math.round(startX + (targetBounds.x - startX) * eased);
-      this.currentAnimatedX = currentX;
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const interpolate = (from: number, to: number) =>
+        Math.round(from + (to - from) * eased);
+      const height = interpolate(start.height, targetBounds.height);
+      const y = isBottomAnchored
+        ? interpolate(
+            start.y + start.height,
+            targetBounds.y + targetBounds.height,
+          ) - height
+        : interpolate(start.y, targetBounds.y);
 
       this.overlayWindow.setBounds({
-        x: currentX,
-        y: targetBounds.y,
-        width: targetBounds.width,
-        height: targetBounds.height,
+        x: interpolate(start.x, targetBounds.x),
+        y,
+        width: interpolate(start.width, targetBounds.width),
+        height,
       });
 
-      if (progress >= 1) {
-        this.stopMoveAnimation();
-        this.currentAnimatedX = null;
-        this.overlayWindow.setBounds(targetBounds);
-      }
+      if (progress >= 1) this.stopMoveAnimation();
     }, interval);
   }
 
@@ -1376,13 +1374,12 @@ export class OverlayManager {
         }
 
         let shouldAnimate = false;
-        if (
-          settings.position === "top-left" ||
-          settings.position === "top-center" ||
-          settings.position === "top-right"
-        ) {
-          const changed = this.position !== settings.position;
-          this.position = settings.position;
+        if (settings.position !== undefined) {
+          const position = isOverlayPosition(settings.position)
+            ? settings.position
+            : "top-center";
+          const changed = this.position !== position;
+          this.position = position;
           if (
             changed &&
             this.overlayWindow &&
@@ -1463,12 +1460,13 @@ export class OverlayManager {
           ) {
             void this.placeWithCompositor();
           }
-        } else if (shouldAnimate) {
-          const targetBounds = this.getWindowBounds();
-          this.animateWindowBounds(targetBounds);
         } else if (this.overlayWindow && !this.overlayWindow.isDestroyed()) {
-          const bounds = this.getWindowBounds();
-          this.overlayWindow.setBounds(bounds);
+          const targetBounds = this.getWindowBounds();
+          if (shouldAnimate || this.moveAnimationTimer) {
+            this.animateWindowBounds(targetBounds);
+          } else {
+            this.overlayWindow.setBounds(targetBounds);
+          }
         }
 
         this.savePersistedSettings();

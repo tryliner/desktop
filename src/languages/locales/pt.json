@@ -570,7 +570,10 @@
         "description": "Escolha onde o overlay aparece no seu desktop.",
         "top_left": "Superior esquerdo",
         "top_center": "Superior central",
-        "top_right": "Superior direito"
+        "top_right": "Superior direito",
+        "bottom_left": "Inferior esquerdo",
+        "bottom_center": "Inferior central",
+        "bottom_right": "Inferior direito"
       },
       "shortcut": {
         "title": "Atalho global",

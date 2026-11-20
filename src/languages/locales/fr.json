@@ -683,7 +683,10 @@
         "description": "Choisis où l'overlay apparaît sur ton bureau.",
         "top_left": "En haut à gauche",
         "top_center": "En haut au centre",
-        "top_right": "En haut à droite"
+        "top_right": "En haut à droite",
+        "bottom_left": "En bas à gauche",
+        "bottom_center": "En bas au centre",
+        "bottom_right": "En bas à droite"
       },
       "shortcut": {
         "title": "Raccourci global",

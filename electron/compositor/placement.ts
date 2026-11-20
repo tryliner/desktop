@@ -1,4 +1,10 @@
-export type OverlayAnchor = "top-left" | "top-center" | "top-right";
+export type OverlayAnchor =
+  | "top-left"
+  | "top-center"
+  | "top-right"
+  | "bottom-left"
+  | "bottom-center"
+  | "bottom-right";
 
 export interface PlacementRequest {
   title: string;
@@ -21,13 +27,17 @@ const POLL_INTERVAL_MS = 40;
 
 export function overlayOrigin(
   area: WorkArea,
-  request: PlacementRequest,
+  request: Pick<PlacementRequest, "width" | "height" | "anchor" | "margin">,
 ): { x: number; y: number } {
-  const y = Math.round(area.y + request.margin);
-  if (request.anchor === "top-left") {
+  const y = Math.round(
+    request.anchor.startsWith("bottom-")
+      ? area.y + area.height - request.height - request.margin
+      : area.y + request.margin,
+  );
+  if (request.anchor.endsWith("-left")) {
     return { x: Math.round(area.x + request.margin), y };
   }
-  if (request.anchor === "top-right") {
+  if (request.anchor.endsWith("-right")) {
     return {
       x: Math.round(area.x + area.width - request.width - request.margin),
       y,

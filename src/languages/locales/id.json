@@ -560,7 +560,10 @@
         "description": "Pilih tempat overlay muncul di desktopmu.",
         "top_left": "Kiri Atas",
         "top_center": "Tengah Atas",
-        "top_right": "Kanan Atas"
+        "top_right": "Kanan Atas",
+        "bottom_left": "Kiri Bawah",
+        "bottom_center": "Tengah Bawah",
+        "bottom_right": "Kanan Bawah"
       },
       "shortcut": {
         "title": "Pintasan global",

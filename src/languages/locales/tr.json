@@ -557,7 +557,10 @@
         "description": "Katmanın masaüstünde nerede görüneceğini seç.",
         "top_left": "Sol üst",
         "top_center": "Orta üst",
-        "top_right": "Sağ üst"
+        "top_right": "Sağ üst",
+        "bottom_left": "Sol alt",
+        "bottom_center": "Orta alt",
+        "bottom_right": "Sağ alt"
       },
       "shortcut": {
         "title": "Genel kısayol",

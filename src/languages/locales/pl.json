@@ -561,7 +561,10 @@
         "description": "Wybierz, gdzie nakładka pojawi się na pulpicie.",
         "top_left": "U góry po lewej",
         "top_center": "U góry na środku",
-        "top_right": "U góry po prawej"
+        "top_right": "U góry po prawej",
+        "bottom_left": "Na dole po lewej",
+        "bottom_center": "Na dole na środku",
+        "bottom_right": "Na dole po prawej"
       },
       "shortcut": {
         "title": "Skrót globalny",
