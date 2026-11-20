@@ -1,4 +1,5 @@
 import {
+  useId,
   useLayoutEffect,
   useEffect,
   useRef,
@@ -7,6 +8,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
+import { DropdownMenuItems } from "./DropdownMenuItems";
 
 export interface DropdownMenuItem {
   id: string;
@@ -17,6 +19,8 @@ export interface DropdownMenuItem {
   disabled?: boolean;
   /** persistent highlight for the currently selected option */
   active?: boolean;
+  children?: DropdownMenuItem[];
+  separator?: boolean;
 }
 
 export interface DropdownMenuProps {
@@ -90,6 +94,7 @@ export default function DropdownMenu({
   const setOpen = onOpenChange ?? setInternalOpen;
   const containerRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const ownerId = useId();
 
   const [computedPos, setComputedPos] = useState<{
     x: number;
@@ -119,9 +124,14 @@ export default function DropdownMenu({
   useEffect(() => {
     if (!open) return;
     const onMouseDown = (e: MouseEvent) => {
+      const target = e.target as Node;
       if (
-        menuRef.current?.contains(e.target as Node) ||
-        containerRef.current?.contains(e.target as Node)
+        menuRef.current?.contains(target) ||
+        containerRef.current?.contains(target) ||
+        (target instanceof Element &&
+          target
+            .closest("[data-dropdown-owner]")
+            ?.getAttribute("data-dropdown-owner") === ownerId)
       ) {
         return;
       }
@@ -139,7 +149,7 @@ export default function DropdownMenu({
       document.removeEventListener("mousedown", onMouseDown);
       document.removeEventListener("keydown", onKeyDown);
     };
-  }, [open, setOpen]);
+  }, [open, setOpen, ownerId]);
 
   const menuContent = (
     <AnimatePresence>
@@ -148,6 +158,7 @@ export default function DropdownMenu({
           key="dropdown-menu"
           ref={menuRef}
           data-dropdown-menu="true"
+          data-dropdown-owner={ownerId}
           initial={{ opacity: 0, scale: 0.96, y: side === "top" ? 2 : -2 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.96, y: side === "top" ? 2 : -2 }}
@@ -162,41 +173,11 @@ export default function DropdownMenu({
           style={isFixed ? fixedStyle : {}}
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="flex flex-col gap-[1px]">
-            {items.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                disabled={item.disabled}
-                onClick={async (e) => {
-                  e.stopPropagation();
-                  setOpen(false);
-                  await item.onClick();
-                }}
-                className={`group flex w-full h-[30px] items-center gap-[8px] rounded-control px-[9px] text-body font-normal transition-colors border-none bg-transparent text-left cursor-pointer select-none outline-none ${
-                  item.danger
-                    ? "text-red-400 hover:bg-red-500/10 hover:text-red-400"
-                    : "text-text-primary hover:bg-fill"
-                } ${
-                  item.active ? "bg-fill" : ""
-                } disabled:pointer-events-none disabled:opacity-40`}
-                aria-current={item.active ? "true" : undefined}
-              >
-                {item.icon && (
-                  <span
-                    className={`shrink-0 flex items-center justify-center text-title ${
-                      item.danger
-                        ? "text-red-400"
-                        : "text-text-secondary group-hover:text-text-primary"
-                    } transition-colors`}
-                  >
-                    {item.icon}
-                  </span>
-                )}
-                <span className="truncate flex-1">{item.label}</span>
-              </button>
-            ))}
-          </div>
+          <DropdownMenuItems
+            items={items}
+            ownerId={ownerId}
+            onClose={() => setOpen(false)}
+          />
         </motion.div>
       )}
     </AnimatePresence>
