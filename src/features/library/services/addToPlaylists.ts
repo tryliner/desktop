@@ -4,37 +4,29 @@ import type { Track } from "@/shared/contracts";
 import { isLocalTrackId } from "@/shared/media/local";
 import { notifyLibraryChanged } from "../hooks/usePlaylists";
 import { chunk, dedupeById, mapLimit } from "./batching";
+import { createdItems } from "./recoverAddedItems";
 
-export interface AddableTrack {
-  id: string;
-  title: string;
-}
+import type {
+  AddableTrack,
+  AddedItem,
+  AddToPlaylistsResult,
+  UndoResult,
+} from "./addToPlaylistsTypes";
 
-export interface AddedItem {
-  playlistId: string;
-  itemId: string;
-  trackId: string;
-}
-
-export interface AddToPlaylistsResult {
-  playlistsTouched: string[];
-  added: number;
-  alreadyIn: number;
-  failed: number;
-  skippedLocal: number;
-  items: AddedItem[];
-}
-
-export interface UndoResult {
-  removed: number;
-  failed: AddedItem[];
-}
+export type {
+  AddableTrack,
+  AddedItem,
+  AddToPlaylistsResult,
+  UndoResult,
+} from "./addToPlaylistsTypes";
 
 export interface AddToPlaylistsDeps {
   resolveSnapshot: (id: string) => Promise<Track | undefined>;
   addSnapshots: typeof api.addPlaylistTrackSnapshots;
   addOne: typeof api.addPlaylistTrack;
   removeItem: typeof api.removePlaylistItem;
+  listItems: (playlistId: string) => Promise<ApiUserPlaylistItem[]>;
+  now: () => number;
   notify: () => void;
 }
 
@@ -46,6 +38,9 @@ const defaultDeps: AddToPlaylistsDeps = {
     api.addPlaylistTrack(playlistId, trackId, snapshot),
   removeItem: (playlistId, itemId) =>
     api.removePlaylistItem(playlistId, itemId),
+  listItems: async (playlistId) =>
+    (await api.getUserPlaylist(playlistId)).items,
+  now: () => Date.now(),
   notify: notifyLibraryChanged,
 };
 
@@ -79,10 +74,17 @@ async function sendBatch(
     targets.map(async (playlistId) => {
       if (resolved.length > 0) {
         try {
+          const startedAt = deps.now();
           const res = await deps.addSnapshots(playlistId, resolved);
           result.added += res.added;
           result.alreadyIn += res.rejected;
-          result.items.push(...itemsFrom(playlistId, res.items));
+          const created = await createdItems(
+            res,
+            resolved.map((t) => t.id),
+            startedAt,
+            () => deps.listItems(playlistId),
+          );
+          result.items.push(...itemsFrom(playlistId, created));
           if (res.added > 0) touched.add(playlistId);
         } catch {
           result.failed += resolved.length;

@@ -42,6 +42,8 @@ function makeDeps(overrides: Partial<AddToPlaylistsDeps> = {}) {
       item(track(trackId)),
     ),
     removeItem: vi.fn(async () => undefined),
+    listItems: vi.fn(async () => []),
+    now: () => Date.parse("2026-11-20T12:00:00Z"),
     notify: vi.fn(),
     ...overrides,
   };

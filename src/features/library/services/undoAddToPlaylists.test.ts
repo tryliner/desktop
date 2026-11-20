@@ -12,6 +12,8 @@ function makeDeps(removeItem: AddToPlaylistsDeps["removeItem"]) {
     addSnapshots: vi.fn(),
     addOne: vi.fn(),
     removeItem: vi.fn(removeItem),
+    listItems: vi.fn(async () => []),
+    now: () => 0,
     notify: vi.fn(),
   };
   return { deps };
