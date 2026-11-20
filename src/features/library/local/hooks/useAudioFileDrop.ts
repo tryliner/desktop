@@ -10,6 +10,14 @@ const draggedFileCount = (event: DragEvent) =>
     (item) => item.kind === "file",
   ).length;
 
+function ownedElsewhere(event: DragEvent): boolean {
+  const target = event.target;
+  if (target instanceof Element && target.closest("[data-own-drop]")) {
+    return true;
+  }
+  return Boolean(document.querySelector('[data-own-drop="screen"]'));
+}
+
 export function isAudioFile(file: File): boolean {
   return AUDIO_EXTENSION.test(file.name);
 }
@@ -28,6 +36,11 @@ export function useAudioFileDrop(onDrop: (files: File[]) => void) {
     const enter = (event: DragEvent) => {
       if (!carriesFiles(event)) return;
       event.preventDefault();
+      if (ownedElsewhere(event)) {
+        depth.current = 0;
+        setDragging(false);
+        return;
+      }
       depth.current += 1;
       setFileCount(draggedFileCount(event));
       setDragging(true);
@@ -38,7 +51,7 @@ export function useAudioFileDrop(onDrop: (files: File[]) => void) {
       if (event.dataTransfer) event.dataTransfer.dropEffect = "copy";
     };
     const leave = (event: DragEvent) => {
-      if (!carriesFiles(event)) return;
+      if (!carriesFiles(event) || ownedElsewhere(event)) return;
       depth.current = Math.max(0, depth.current - 1);
       if (depth.current === 0) setDragging(false);
     };
@@ -47,6 +60,7 @@ export function useAudioFileDrop(onDrop: (files: File[]) => void) {
       event.preventDefault();
       depth.current = 0;
       setDragging(false);
+      if (ownedElsewhere(event)) return;
       onDropRef.current(Array.from(event.dataTransfer?.files ?? []));
     };
 

@@ -602,7 +602,8 @@
       "overlay": "Overlay",
       "discord": "Discord RPC",
       "youtube": "YouTube",
-      "privacy": "Privacy"
+      "privacy": "Privacy",
+      "customization": "Customization"
     },
     "playback": {
       "description": "Queue behavior, click actions and audio output."
@@ -1306,5 +1307,31 @@
     "youtube_back_title": "YouTube is back",
     "youtube_back_desc": "Every song can play again.",
     "still_youtube_title": "YouTube still isn't available"
+  },
+  "customization": {
+    "description": "Your own picture or looping video behind the app.",
+    "background_section": "Background",
+    "wallpaper": "Wallpaper",
+    "wallpaper_desc": "A picture or a short looping video behind the whole app.",
+    "none": "None",
+    "add": "Add",
+    "add_hint": "Drop a file here or paste one. PNG, JPEG, WebP, GIF, AVIF, MP4 or WebM, up to 60 MB. The last 8 are kept.",
+    "remove_wallpaper": "Remove wallpaper",
+    "blur": "Blur",
+    "dim": "Dim",
+    "saturation": "Saturation",
+    "panels": "Panel tint",
+    "panels_desc": "How solid the sidebar and player look over the wallpaper.",
+    "readable": "Keep text readable",
+    "readable_desc": "Darkens (or lightens) bright pictures a bit more by itself.",
+    "album_backdrop": "Album art glow",
+    "album_backdrop_desc": "Keep tinting the background with the cover of the page you're on.",
+    "reset": "Reset looks",
+    "reset_desc": "Back to the default blur, dim and panel settings. Your wallpapers stay in the gallery.",
+    "reset_button": "Reset",
+    "error_size": "That file is over 60 MB",
+    "error_type": "Liner can't show that file. Try PNG, JPEG, WebP, GIF, AVIF, MP4 or WebM.",
+    "error_add": "Couldn't add that wallpaper",
+    "desktop_only": "Backgrounds need the desktop app."
   }
 }

@@ -2,7 +2,7 @@ import path from "node:path";
 import { BrowserWindow, app, dialog } from "electron";
 import { handleTrusted } from "../ipc-guard.js";
 import { LocalTrackLibrary } from "./library.js";
-import { handleLocalTrackScheme } from "./protocol.js";
+import { handleLocalTrackScheme, type UserMediaHosts } from "./protocol.js";
 import type { SavedTrackLibrary } from "../saved-tracks/library.js";
 import { LOCAL_AUDIO_EXTENSIONS } from "./types.js";
 
@@ -13,11 +13,14 @@ const stringList = (value: unknown): string[] =>
       )
     : [];
 
-export function setupLocalTracks(saved: SavedTrackLibrary) {
+export function setupLocalTracks(
+  saved: SavedTrackLibrary,
+  media: UserMediaHosts = {},
+) {
   const library = new LocalTrackLibrary(
     path.join(app.getPath("userData"), "local-tracks"),
   );
-  handleLocalTrackScheme(library, saved);
+  handleLocalTrackScheme(library, saved, media);
 
   handleTrusted("local-tracks:list", () => library.list());
 
