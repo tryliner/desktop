@@ -11,8 +11,9 @@ vi.mock("./useLibraryMutations", () => ({
   useToggleTrackLike: vi.fn(),
 }));
 
-// @ts-expect-error - act support flag in vitest browserless DOM environment
-globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+(
+  globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }
+).IS_REACT_ACT_ENVIRONMENT = true;
 
 it("offers to add the track to a playlist only after a successful like", async () => {
   const mutation = vi.fn<ReturnType<typeof useToggleTrackLike>>();
