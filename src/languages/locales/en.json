@@ -1306,5 +1306,31 @@
     "youtube_back_title": "YouTube is back",
     "youtube_back_desc": "Every song can play again.",
     "still_youtube_title": "YouTube still isn't available"
+  },
+  "playlist_cover": {
+    "title": "Playlist cover",
+    "choose": "Choose image",
+    "drop_hint": "or drop or paste one here",
+    "from_songs": "Use a song's cover",
+    "use_song_cover": "Use this song's cover",
+    "change": "Change cover",
+    "choose_photo": "Choose photo",
+    "zoom": "Zoom",
+    "zoom_in": "Zoom in",
+    "zoom_out": "Zoom out",
+    "reset": "Reset",
+    "drag_hint": "Drag to move, scroll to zoom",
+    "animated_note": "Animated covers are kept as they are and shown centred.",
+    "save": "Save",
+    "cancel": "Cancel",
+    "remove": "Use song mosaic",
+    "saved": "Cover updated",
+    "removed": "Back to the song mosaic",
+    "error_type": "That file isn't an image Liner can use. Try PNG, JPEG, WebP, GIF or AVIF.",
+    "error_size": "That image is too big. Animated covers can be up to 4 MB.",
+    "error_load": "Couldn't open that image",
+    "error_save": "Couldn't save the cover",
+    "error_remove": "Couldn't remove the cover",
+    "error_unavailable": "Custom covers aren't available yet. Try again after the next update."
   }
 }

@@ -40,13 +40,17 @@ import {
   ShareForwardLine,
 } from "@mingcute/react";
 import { AnimatePresence, motion } from "framer-motion";
-import { LuPencil, LuTrash2, LuText, LuShuffle } from "react-icons/lu";
+import { LuPencil, LuTrash2, LuText, LuShuffle, LuImage } from "react-icons/lu";
 import { buildShareUrl } from "@/shared/utils/share";
 import Button from "@/shared/ui/Button";
 import DropdownMenu from "@/shared/ui/DropdownMenu";
 import SongCardWithMenu from "@/features/player/ui/SongCardWithMenu";
 import CoverImage from "@/features/covers/ui/CoverImage";
 import { useModalStore } from "../store/modalStore";
+import {
+  PlaylistCoverOverlay,
+  openPlaylistCoverEditor,
+} from "./PlaylistCoverOverlay";
 import {
   usePlaylist,
   usePlaylistsList,
@@ -323,6 +327,26 @@ function LibraryPlaylistContent() {
   const currentTracks = useMemo(() => {
     return optimisticTracks ?? viewData?.tracks ?? [];
   }, [optimisticTracks, viewData?.tracks]);
+
+  const viewTitle = viewData?.title;
+  const coverTarget = useMemo(
+    () =>
+      !isLikesMode && decodedId && viewTitle !== undefined
+        ? {
+            playlistId: decodedId,
+            playlistTitle: viewTitle,
+            currentCover: playlistDetail?.customCoverUrl ?? null,
+            trackCovers: currentTracks.map((track) => track.coverUrl),
+          }
+        : null,
+    [
+      isLikesMode,
+      decodedId,
+      viewTitle,
+      playlistDetail?.customCoverUrl,
+      currentTracks,
+    ],
+  );
 
   const sort = useTrackSort(currentTracks, id);
   const sortedTracks = sort.sorted;
@@ -616,11 +640,14 @@ function LibraryPlaylistContent() {
               >
                 <EntityHero
                   cover={
-                    <PlaylistHeroCover
-                      urls={viewData.coverUrls}
-                      title={viewData.title}
-                      likesCover={isLikesMode ? likesCover : undefined}
-                    />
+                    <>
+                      <PlaylistHeroCover
+                        urls={viewData.coverUrls}
+                        title={viewData.title}
+                        likesCover={isLikesMode ? likesCover : undefined}
+                      />
+                      {coverTarget && <PlaylistCoverOverlay {...coverTarget} />}
+                    </>
                   }
                   title={
                     <h1
@@ -849,6 +876,17 @@ function LibraryPlaylistContent() {
                               label: t("common.edit_description"),
                               onClick: () => setIsEditingDescription(true),
                             },
+                            ...(coverTarget
+                              ? [
+                                  {
+                                    id: "change-cover",
+                                    icon: <LuImage size={15} />,
+                                    label: t("playlist_cover.change"),
+                                    onClick: () =>
+                                      openPlaylistCoverEditor(coverTarget),
+                                  },
+                                ]
+                              : []),
                             {
                               id: "share",
                               icon: <ShareForwardLine size={15} />,

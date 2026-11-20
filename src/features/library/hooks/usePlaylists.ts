@@ -1,4 +1,4 @@
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import {
   api,
   getAuthSession,
@@ -8,6 +8,8 @@ import {
   type ApiUserPlaylistItem,
 } from "@/shared/api";
 import { queryCache } from "@/shared/cache/queryCache";
+import { usePlaylistCoverOverrides } from "@/features/covers";
+import { customCoverOf, withCustomCover } from "../lib/customCover";
 import type { Track } from "@/shared/types";
 
 export interface LibraryPlaylistSummary {
@@ -20,6 +22,7 @@ export interface LibraryPlaylistSummary {
   updatedAt: string;
   createdAt: string;
   revision: number;
+  customCoverUrl?: string;
 }
 
 export interface LibraryPlaylistDetail {
@@ -33,6 +36,7 @@ export interface LibraryPlaylistDetail {
   tracks: Track[];
   durationMs?: number;
   partial?: boolean;
+  customCoverUrl?: string;
 }
 
 const FIRST_PAGE_SIZE = 100;
@@ -146,6 +150,7 @@ function load(force = false): Promise<void> {
             trackCount: playlist.trackCount,
             coverUrl: coverUrls[0] ?? "",
             coverUrls,
+            customCoverUrl: customCoverOf(playlist),
           };
         }
 
@@ -157,6 +162,7 @@ function load(force = false): Promise<void> {
             trackCount: cached.trackCount,
             coverUrl: cached.coverUrls[0] ?? "",
             coverUrls: cached.coverUrls,
+            customCoverUrl: customCoverOf(playlist),
           };
         }
 
@@ -173,6 +179,7 @@ function load(force = false): Promise<void> {
           trackCount: detail.items.length,
           coverUrl: covers[0] ?? "",
           coverUrls: covers,
+          customCoverUrl: customCoverOf(playlist),
         };
       }),
     );
@@ -231,7 +238,13 @@ export function usePlaylistsList() {
   useEffect(() => {
     void load();
   }, []);
-  return state;
+  const overrides = usePlaylistCoverOverrides();
+  return useMemo(() => {
+    const playlists = state.data.playlists.map((playlist) =>
+      withCustomCover(playlist, overrides[playlist.id]),
+    );
+    return { ...state, data: { ...state.data, playlists } };
+  }, [state, overrides]);
 }
 
 function toDetail(
@@ -249,6 +262,7 @@ function toDetail(
     trackCount,
     coverUrl: covers[0] ?? "",
     coverUrls: covers,
+    customCoverUrl: customCoverOf(playlist),
     revision: playlist.revision,
     tracks: items.map(toTrack),
     durationMs,
@@ -360,5 +374,10 @@ export function usePlaylist(id: string | null) {
     };
   }, [id, cacheKey]);
 
-  return { data, error, isLoading };
+  const override = usePlaylistCoverOverrides()[id ?? ""];
+  const withCover = useMemo(
+    () => (data ? withCustomCover(data, override) : data),
+    [data, override],
+  );
+  return { data: withCover, error, isLoading };
 }

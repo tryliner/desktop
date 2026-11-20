@@ -50,6 +50,7 @@ import {
   useGlassBlur,
 } from "@/features/player";
 import SearchResultsList from "@/features/search/ui/SearchResultsList";
+import { PlaylistCoverEditorModal } from "@/features/covers";
 import { SearchHistoryList, useSearchHistoryStore } from "@/features/search";
 import { useTranslation } from "@/languages";
 import { useTheme } from "next-themes";
@@ -93,6 +94,7 @@ const AppOverlays = memo(function AppOverlays() {
   return (
     <>
       <AddToPlaylistModal />
+      <PlaylistCoverEditorModal />
       <AddToLibraryModal />
       <RemoveFromPlaylistModal />
       <RemoveFromLibraryModal />
