@@ -4,10 +4,12 @@ import {
   BrowserWindow,
   globalShortcut,
   ipcMain,
+  Menu,
   shell,
   screen,
   session,
   nativeImage,
+  Tray,
   powerSaveBlocker,
 } from "electron";
 import type { Display, Rectangle } from "electron";
@@ -52,6 +54,7 @@ import { TouchBarManager } from "./touchbar.js";
 import { registerAuthSessionIpc } from "./auth-session-ipc.js";
 import { ThumbarController } from "./thumbar.js";
 import { OverlayManager } from "./overlay.js";
+import { LyricsPopupManager } from "./lyrics-popup.js";
 import { detectCompositor } from "./compositor/index.js";
 import { BundleManager } from "./bundle-manager.js";
 import { createBundleErrorStamp } from "./bundle-stamp.js";
@@ -143,6 +146,8 @@ process.env.VITE_PUBLIC = process.env.VITE_DEV_SERVER_URL
 let mainWindow: BrowserWindow | null = null;
 let touchBarManager: TouchBarManager | null = null;
 let overlayManager: OverlayManager | null = null;
+let lyricsPopupManager: LyricsPopupManager | null = null;
+let lyricsPopupTray: Tray | null = null;
 let thumbar: ThumbarController | null = null;
 let bundleManager: BundleManager | null = null;
 let discordRpcManager: DiscordRpcManager | null = null;
@@ -154,6 +159,41 @@ function getWindowStateStore() {
     path.join(app.getPath("userData"), "window-state.json"),
   );
   return windowStateStore;
+}
+
+function showMainWindow() {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  if (mainWindow.isMinimized()) mainWindow.restore();
+  mainWindow.show();
+  mainWindow.focus();
+}
+
+function destroyLyricsPopupTray() {
+  if (!lyricsPopupTray) return;
+  lyricsPopupTray.destroy();
+  lyricsPopupTray = null;
+}
+
+function createLyricsPopupTray() {
+  if (lyricsPopupTray) return;
+  const icon = nativeImage
+    .createFromPath(path.join(process.env.VITE_PUBLIC!, "icon.png"))
+    .resize({ width: 16, height: 16 });
+  if (icon.isEmpty()) return;
+  lyricsPopupTray = new Tray(icon);
+  lyricsPopupTray.setToolTip("Liner Lyrics");
+  lyricsPopupTray.setContextMenu(
+    Menu.buildFromTemplate([
+      { label: "Show Liner", click: showMainWindow },
+      {
+        label: "Toggle Lyrics Pop-up",
+        click: () => lyricsPopupManager?.toggle(),
+      },
+      { type: "separator" },
+      { label: "Quit Liner", click: () => shutdown.quit() },
+    ]),
+  );
+  lyricsPopupTray.on("click", () => lyricsPopupManager?.toggle());
 }
 
 function mainWindowSnapshot(): WindowSnapshot | null {
@@ -216,6 +256,8 @@ const shutdown = createShutdown({
   cleanup: [
     () => touchBarManager?.unregisterShortcut(),
     () => overlayManager?.dispose(),
+    () => lyricsPopupManager?.close(),
+    destroyLyricsPopupTray,
     () => {
       // drop the discord ipc socket so presence clears and nothing keeps the process alive
       discordRpcManager?.destroy();
@@ -513,6 +555,16 @@ function createWindow() {
     flushPendingDeeplink();
   });
 
+  mainWindow.on("close", (event) => {
+    if (shutdown.isQuitting() || !lyricsPopupManager?.isOpen()) return;
+    // Keep the player renderer and audio alive while the detached lyrics
+    // window is in use. Closing that window restores the main app.
+    event.preventDefault();
+    mainWindow?.hide();
+    createLyricsPopupTray();
+    lyricsPopupManager.focus();
+  });
+
   mainWindow.on("closed", () => {
     // a hidden drag-snap preview would otherwise keep window-all-closed from firing
     if (snapPreview && !snapPreview.isDestroyed()) snapPreview.destroy();
@@ -532,7 +584,11 @@ function createWindow() {
 
   touchBarManager?.setMainWindow(mainWindow);
   overlayManager?.setMainWindow(mainWindow);
-  mainWindow.on("show", () => thumbar?.refresh());
+  lyricsPopupManager?.setMainWindow(mainWindow);
+  mainWindow.on("show", () => {
+    destroyLyricsPopupTray();
+    thumbar?.refresh();
+  });
   mainWindow.on("restore", () => thumbar?.refresh());
 }
 
@@ -632,6 +688,15 @@ if (!gotTheLock) {
         path.join(RENDERER_DIST, "index.html"),
     );
     overlayManager.setMainWindow(mainWindow);
+    lyricsPopupManager = new LyricsPopupManager(
+      path.join(__dirname, "preload.cjs"),
+      RENDERER_DIST,
+      () =>
+        bundleManager?.getEffectiveIndexPath() ??
+        path.join(RENDERER_DIST, "index.html"),
+    );
+    lyricsPopupManager.setMainWindow(mainWindow);
+    overlayManager.setLyricsPopupToggle(() => lyricsPopupManager?.toggle());
     // F in the overlay: the window grows back out of the pill (windows 11 + add-on)
     overlayManager.setFocusMainHandler((restore) => {
       const overlay = overlayManager;

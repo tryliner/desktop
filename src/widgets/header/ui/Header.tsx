@@ -1,5 +1,6 @@
 import { forwardRef, memo } from "react";
 import { motion } from "framer-motion";
+import { MusicNote } from "@solar-icons/react";
 import WindowControls, {
   WINDOW_CONTROLS_LAYOUT_ID,
   WINDOW_CONTROLS_MORPH,
@@ -28,6 +29,16 @@ export const Header = forwardRef<HTMLElement, HeaderProps>(function Header(
     >
       <div className="flex items-center gap-[8px] mr-[6px] shrink-0">
         <HistoryNavIsland />
+        <button
+          type="button"
+          aria-label="Open lyrics pop-up"
+          title="Open lyrics pop-up"
+          data-no-window-drag
+          onClick={() => void window.linerElectron?.lyricsPopupToggle?.()}
+          className="inline-flex h-[38px] w-[38px] items-center justify-center rounded-[10px] border-0 bg-bg-glass text-text-secondary backdrop-blur-[20px] transition-colors hover:bg-bg-toolbox-active hover:text-text-primary"
+        >
+          <MusicNote size={18} weight="Outline" />
+        </button>
         <motion.div
           layoutId={WINDOW_CONTROLS_LAYOUT_ID}
           transition={WINDOW_CONTROLS_MORPH}

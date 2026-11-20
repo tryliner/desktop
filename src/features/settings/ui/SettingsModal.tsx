@@ -12,6 +12,7 @@ import {
   InfoCircle,
   Database,
   Widget5,
+  Tuning2,
 } from "@solar-icons/react";
 import Dialog from "@/shared/ui/Dialog";
 import { DialogHeader } from "@/shared/ui";
@@ -27,6 +28,7 @@ import {
   OverlayTab,
   DiscordTab,
   YoutubeTab,
+  LyricsPopupTab,
 } from "./tabs";
 import { SettingsSidebar, type SettingsNavIconProps } from "./SettingsSidebar";
 
@@ -34,6 +36,7 @@ type TabId =
   | "Playback"
   | "Shortcuts"
   | "Overlay"
+  | "LyricsPopup"
   | "Discord"
   | "Youtube"
   | "Appearance"
@@ -44,6 +47,7 @@ const TAB_ICONS: Record<TabId, React.ComponentType<SettingsNavIconProps>> = {
   Playback: Play,
   Shortcuts: KeyboardFill,
   Overlay: Widget5,
+  LyricsPopup: Tuning2,
   Discord: DiscordFill,
   Youtube: YoutubeFill,
   Appearance: Palette,
@@ -55,7 +59,7 @@ type TabGroupKey = "player" | "interface" | "integrations" | "application";
 
 const TAB_GROUPS: { labelKey: TabGroupKey; ids: TabId[] }[] = [
   { labelKey: "player", ids: ["Playback", "Shortcuts"] },
-  { labelKey: "interface", ids: ["Appearance", "Overlay"] },
+  { labelKey: "interface", ids: ["Appearance", "Overlay", "LyricsPopup"] },
   { labelKey: "integrations", ids: ["Youtube", "Discord"] },
   { labelKey: "application", ids: ["Storage", "About"] },
 ];
@@ -136,6 +140,30 @@ const SETTING_ITEMS: { tabId: TabId; titleKey: string; descKey?: string }[] = [
     titleKey: "settings.overlay.position.title",
     descKey: "settings.overlay.position.description",
   },
+  {
+    tabId: "LyricsPopup",
+    titleKey: "settings.lyrics_popup.title",
+    descKey: "settings.lyrics_popup.description",
+  },
+  ...[
+    "lyricsOnly",
+    "showBackground",
+    "backgroundDim",
+    "useCustomLyricsColor",
+    "lyricsColor",
+    "textGlow",
+    "glowSize",
+    "lyricsOpacity",
+    "textShadow",
+    "shadowSize",
+    "windowShadow",
+    "autoHideControls",
+    "showSpeedPitchButton",
+    "showEqualizerButton",
+  ].map((key) => ({
+    tabId: "LyricsPopup" as const,
+    titleKey: `settings.lyrics_popup.${key}`,
+  })),
   {
     tabId: "Overlay",
     titleKey: "settings.overlay.show_lyrics.title",
@@ -281,6 +309,7 @@ export default function SettingsModal() {
     Playback: t("settings.tabs.playback"),
     Shortcuts: t("settings.tabs.shortcuts") || "Shortcuts",
     Overlay: t("settings.tabs.overlay") || "Overlay",
+    LyricsPopup: t("settings.lyrics_popup.title") || "Lyrics & pop-up",
     Discord: t("settings.tabs.discord") || "Discord RPC",
     Youtube: t("settings.tabs.youtube") || "YouTube",
     Appearance: t("settings.tabs.appearance"),
@@ -296,6 +325,9 @@ export default function SettingsModal() {
     Overlay:
       t("settings.overlay.description") ||
       "Desktop overlay behavior, position and lyrics display.",
+    LyricsPopup:
+      t("settings.lyrics_popup.description") ||
+      "Set lyric color and glow across Liner and configure the floating lyrics window.",
     Discord:
       t("settings.discord.description") ||
       "Show what you're listening to on Discord with artwork, artist badge and progress bar.",
@@ -316,6 +348,7 @@ export default function SettingsModal() {
       Playback: "settings.tabs.playback",
       Shortcuts: "settings.tabs.shortcuts",
       Overlay: "settings.tabs.overlay",
+      LyricsPopup: "settings.lyrics_popup.title",
       Discord: "settings.tabs.discord",
       Youtube: "settings.tabs.youtube",
       Appearance: "settings.theme.title",
@@ -327,6 +360,7 @@ export default function SettingsModal() {
       Playback: "settings.playback.description",
       Shortcuts: "settings.shortcuts.description",
       Overlay: "settings.overlay.description",
+      LyricsPopup: "settings.lyrics_popup.description",
       Discord: "settings.discord.description",
       Youtube: "settings.youtube.description",
       Appearance: "settings.theme.description",
@@ -445,6 +479,9 @@ export default function SettingsModal() {
               )}
               {activeTab === "Overlay" && (
                 <OverlayTab searchQuery={searchQuery} />
+              )}
+              {activeTab === "LyricsPopup" && (
+                <LyricsPopupTab searchQuery={searchQuery} />
               )}
               {activeTab === "Discord" && (
                 <DiscordTab searchQuery={searchQuery} />

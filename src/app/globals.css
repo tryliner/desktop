@@ -2,6 +2,192 @@
 @import "@fontsource-variable/inter/opsz.css";
 @import "@fontsource-variable/inter/opsz-italic.css";
 
+html:has(.lyrics-popup),
+body:has(.lyrics-popup),
+body:has(.lyrics-popup) #root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+.lyrics-popup--entering {
+  animation: lyrics-popup-enter 280ms ease-out both;
+}
+
+@keyframes lyrics-popup-enter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lyrics-popup--entering {
+    animation-duration: 1ms;
+  }
+
+  .lyrics-popup__settings-panel {
+    animation-duration: 1ms;
+  }
+}
+
+.lyrics-popup__bar {
+  -webkit-app-region: drag;
+}
+
+.lyrics-popup__settings-panel {
+  -webkit-app-region: no-drag;
+  animation: lyrics-popup-panel-enter 260ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  transform-origin: top right;
+}
+
+@keyframes lyrics-popup-panel-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.lyrics-popup--lyrics-only .lyrics-popup__bar--lyrics-only {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 180ms ease, visibility 180ms ease;
+  visibility: hidden;
+}
+
+.lyrics-popup--lyrics-only:hover .lyrics-popup__bar--lyrics-only {
+  opacity: 1;
+  pointer-events: auto;
+  visibility: visible;
+}
+
+.lyrics-popup__topbar-tools {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-12px);
+  transition: opacity 380ms ease, transform 520ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.lyrics-popup__topbar-tools--visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.lyrics-popup__footer {
+  transform: translateY(0);
+  opacity: 1;
+  transition: opacity 380ms ease, transform 560ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.lyrics-popup__footer--hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(calc(100% + 10px));
+}
+
+.lyrics-popup__lyrics-only-controls {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(calc(100% + 10px));
+  transition: opacity 380ms ease, transform 560ms cubic-bezier(0.22, 1, 0.36, 1), visibility 380ms ease;
+  visibility: hidden;
+}
+
+.lyrics-popup__lyrics-only-controls--visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+  visibility: visible;
+}
+
+.lyrics-popup__button {
+  -webkit-app-region: no-drag;
+  display: inline-flex;
+  width: 34px;
+  height: 34px;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.72);
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease, transform 140ms ease;
+}
+
+.lyrics-popup__button:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: white;
+}
+
+.lyrics-popup__button--active {
+  background: rgba(255, 255, 255, 0.12);
+  color: white;
+}
+
+.lyrics-popup__button--liked {
+  color: #ff6b85;
+}
+
+.lyrics-popup__button:active {
+  transform: scale(0.94);
+}
+
+.lyrics-popup__play {
+  width: 38px;
+  height: 38px;
+  background: rgba(255, 255, 255, 0.16);
+  color: white;
+}
+
+.lyrics-popup__range {
+  height: 14px;
+  margin: 0;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.lyrics-popup__range::-webkit-slider-runnable-track {
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.lyrics-popup__range::-webkit-slider-thumb {
+  width: 9px;
+  height: 9px;
+  margin-top: -3px;
+  appearance: none;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+}
+
+.lyrics-popup__range::-moz-range-track {
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.lyrics-popup__range::-moz-range-thumb {
+  width: 9px;
+  height: 9px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+}
+
 /* SF Pro variable cut to Latin, Cyrillic and punctuation, width pinned to
    100; weight 1-1000 and optical size 17-28 stay, so text sizes get the Text
    design and large headings the Display one, as on macOS */

@@ -72,6 +72,7 @@ const OPTIONAL_GLOBAL_ICONS: Record<
   volumeDown: VolumeSmall,
   toggleMute: VolumeCross,
   showMainWindow: ExternalLinkLine,
+  toggleLyricsPopup: MaximizeSquare,
 };
 
 export function ShortcutsTab({
@@ -178,6 +179,14 @@ export function ShortcutsTab({
         desc:
           t("settings.shortcuts.toggle_overlay_desc") ||
           "Show or hide the floating desktop overlay from anywhere in the OS.",
+      },
+      toggleLyricsPopup: {
+        title:
+          t("settings.shortcuts.toggle_lyrics_popup") ||
+          "Toggle lyrics pop-up",
+        desc:
+          t("settings.shortcuts.toggle_lyrics_popup_desc") ||
+          "Show or hide the detached lyrics pop-up from anywhere in the OS.",
       },
       quickLikeSong: {
         title:

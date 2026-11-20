@@ -49,6 +49,7 @@ export interface LineLayout {
 
 export interface LyricsTypography {
   family: string;
+  color?: string;
   size: number;
   weight: number;
   lineHeight: number;
