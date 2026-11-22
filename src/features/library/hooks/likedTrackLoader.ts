@@ -4,6 +4,7 @@ import {
   clearLikedCache,
   dropConfirmedOverrides,
   emitLikedTracks,
+  getAuthGeneration,
   getLikedSyncEpoch,
   likedWasFetchedFromServer,
   optimisticOverrides,
@@ -45,6 +46,7 @@ export function loadLikedTracks(force = false): Promise<void> {
   if (!loaded) emitLikedTracks(true);
 
   const startEpoch = getLikedSyncEpoch();
+  const startGeneration = getAuthGeneration();
   requestOwner = owner;
   request = (async () => {
     const tracks: Track[] = [];
@@ -59,14 +61,20 @@ export function loadLikedTracks(force = false): Promise<void> {
       );
       cursor = page.nextCursor ?? undefined;
     } while (cursor);
-    if ((getAuthSession()?.user?.id ?? null) !== owner) return;
+    if (
+      getAuthGeneration() !== startGeneration ||
+      (getAuthSession()?.user?.id ?? null) !== owner
+    ) return;
     setLikedCache(tracks, true);
     loaded = true;
     setLikedLoadFailed(false);
     dropConfirmedOverrides(startEpoch);
   })()
     .catch(() => {
-      if ((getAuthSession()?.user?.id ?? null) !== owner) return;
+      if (
+        getAuthGeneration() !== startGeneration ||
+        (getAuthSession()?.user?.id ?? null) !== owner
+      ) return;
       if (!likedWasFetchedFromServer()) clearLikedCache();
       loaded = likedWasFetchedFromServer();
       setLikedLoadFailed(true);

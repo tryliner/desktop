@@ -9,20 +9,21 @@ import type { Track } from "@/shared/types";
 export type LikeTarget = string | Track;
 
 export function toCatalogTrack(track: Track): CatalogTrack {
-  const artists =
-    track.artistList?.map((artist) => ({
-      id: artist.id ?? "",
-      name: artist.name,
-    })) ??
-    track.artists
-      .split(",")
-      .map((name) => name.trim())
-      .filter(Boolean)
-      .map((name) => ({ id: "", name }));
+  const structuredArtists =
+    track.artistList && track.artistList.length > 0
+      ? track.artistList.map((artist) => ({
+          id: artist.id ?? "",
+          name: artist.name,
+        }))
+      : track.artists
+          .split(",")
+          .map((name) => name.trim())
+          .filter(Boolean)
+          .map((name) => ({ id: "", name }));
   return {
     id: track.id,
     title: track.title,
-    artists,
+    artists: structuredArtists,
     durationMs: track.durationMs,
   };
 }
