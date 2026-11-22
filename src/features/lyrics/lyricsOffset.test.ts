@@ -2,6 +2,9 @@ import { describe, expect, it, beforeEach } from "vitest";
 import { applyLyricsOffset, parseRawLyrics } from "./engine/lyricsParser";
 import { useLyricsStore } from "./store/lyricsStore";
 import type { Lyric } from "@braccato/parsers";
+import { debouncedStorage } from "@/shared/utils/storage";
+
+const LYRICS_SESSION_STORAGE_KEY = "liner_lyrics_session_v1";
 
 describe("applyLyricsOffset", () => {
   const sampleBraccatoLyrics: Lyric[] = [
@@ -95,6 +98,7 @@ describe("applyLyricsOffset", () => {
 
 describe("useLyricsStore offset handling", () => {
   beforeEach(() => {
+    debouncedStorage.removeItem(LYRICS_SESSION_STORAGE_KEY);
     useLyricsStore.getState().reset();
   });
 
@@ -155,6 +159,59 @@ describe("useLyricsStore offset handling", () => {
 
     expect(useLyricsStore.getState().offsetMs).toBe(400);
     expect(useLyricsStore.getState().braccatoLyrics[0].startTimeMs).toBe(1400);
+  });
+
+  it("does not carry a track offset into an offset-less track", () => {
+    useLyricsStore.getState().setLyricsState({
+      currentLyricsTrackId: "track-a",
+      braccatoLyrics: [{ startTimeMs: 1000, durationMs: 1000, words: "A" }],
+      syncedLines: [{ timeMs: 1000, text: "A" }],
+    });
+    useLyricsStore.getState().setOffset(200);
+
+    useLyricsStore.getState().setLyricsState({
+      currentLyricsTrackId: "track-b",
+      braccatoLyrics: [{ startTimeMs: 1000, durationMs: 1000, words: "B" }],
+      syncedLines: [{ timeMs: 1000, text: "B" }],
+    });
+
+    expect(useLyricsStore.getState().offsetMs).toBe(0);
+    expect(useLyricsStore.getState().braccatoLyrics[0].startTimeMs).toBe(1000);
+    expect(useLyricsStore.getState().syncedLines[0].timeMs).toBe(1000);
+  });
+
+  it("restores a saved offset for the active track when rehydrated", async () => {
+    debouncedStorage.setItem(
+      LYRICS_SESSION_STORAGE_KEY,
+      JSON.stringify({
+        state: {
+          currentLyricsTrackId: "track-a",
+          trackOffsets: { "track-a": 400 },
+        },
+      }),
+    );
+
+    await useLyricsStore.persist.rehydrate();
+
+    expect(useLyricsStore.getState().currentLyricsTrackId).toBe("track-a");
+    expect(useLyricsStore.getState().offsetMs).toBe(400);
+  });
+
+  it("rehydrates an offset-less active track without inheriting another track offset", async () => {
+    debouncedStorage.setItem(
+      LYRICS_SESSION_STORAGE_KEY,
+      JSON.stringify({
+        state: {
+          currentLyricsTrackId: "track-b",
+          trackOffsets: { "track-a": 400 },
+        },
+      }),
+    );
+
+    await useLyricsStore.persist.rehydrate();
+
+    expect(useLyricsStore.getState().currentLyricsTrackId).toBe("track-b");
+    expect(useLyricsStore.getState().offsetMs).toBe(0);
   });
 
   it("correctly parses richsync with relative and absolute offsets without time doubling", () => {
