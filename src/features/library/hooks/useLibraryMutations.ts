@@ -1,11 +1,6 @@
 import { useCallback, useState } from "react";
 import { api } from "@/shared/api";
 import { notifyLibraryChanged, evictPlaylistFromCache } from "./usePlaylists";
-import {
-  setTrackLiked,
-  toggleTrackLike,
-  type LikeTarget,
-} from "./useLikedTracks";
 
 type Options = {
   onSuccess?: (...args: any[]) => void;
@@ -46,7 +41,6 @@ export function useAddPlaylistTracks() {
       api.addPlaylistTrack(playlistId, trackId),
   );
 }
-
 export function useRemovePlaylistTracks() {
   return useMutation(
     ({ playlistId, itemId }: { playlistId: string; itemId: string }) =>
@@ -134,61 +128,5 @@ export function useRemoveExternalItem() {
       }
       return api.removeCollection(`${type}s` as "albums" | "artists", id);
     },
-  );
-}
-
-type TrackMutationInput =
-  LikeTarget | { trackId: string; [key: string]: unknown };
-
-function isLikeTarget(input: TrackMutationInput): input is LikeTarget {
-  return (
-    typeof input === "string" ||
-    ("id" in input && "title" in input && "artists" in input)
-  );
-}
-
-function useTrackLikeMutation(liked: boolean) {
-  const mutateAsync = useCallback(
-    (input: TrackMutationInput) =>
-      setTrackLiked(isLikeTarget(input) ? input : input.trackId, liked),
-    [liked],
-  );
-  const mutate = useCallback(
-    (input: TrackMutationInput, options?: Options) => {
-      void mutateAsync(input)
-        .then((value) => options?.onSuccess?.(value))
-        .catch((error) => options?.onError?.(error))
-        .finally(() => options?.onSettled?.());
-    },
-    [mutateAsync],
-  );
-  return { mutate, mutateAsync, isPending: false };
-}
-
-export function useLikeTrack() {
-  return useTrackLikeMutation(true);
-}
-
-export function useUnlikeTrack() {
-  return useTrackLikeMutation(false);
-}
-
-export function useToggleTrackLike() {
-  return useCallback(
-    (
-      target: LikeTarget,
-      options?: {
-        onSuccess?: (liked: boolean) => void;
-        onError?: (error: unknown) => void;
-      },
-    ): boolean => {
-      const { liked, settled } = toggleTrackLike(target);
-      settled.then(
-        () => options?.onSuccess?.(liked),
-        (error) => options?.onError?.(error),
-      );
-      return liked;
-    },
-    [],
   );
 }
