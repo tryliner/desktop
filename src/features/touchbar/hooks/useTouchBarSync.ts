@@ -141,7 +141,7 @@ export function useTouchBarSync() {
   const fullscreen = usePlayerStore((s) => s.fullscreen);
   const syncedLines = useLyricsStore((s) => s.syncedLines);
   const offsetMs = useLyricsStore((s) => s.offsetMs);
-  const isLiked = useIsTrackLiked(currentTrack?.id);
+  const isLiked = useIsTrackLiked(currentTrack);
   const toggleLike = useToggleTrackLike();
   const lastStateSentRef = useRef<string>("");
   const lastLinesSentRef = useRef<LyricLine[] | null>(null);
@@ -222,7 +222,7 @@ export function useTouchBarSync() {
             }
             break;
           case "like":
-            if (currentTrack) toggleLike(currentTrack.id);
+            if (currentTrack) toggleLike(currentTrack);
             break;
           case "navigate":
             if (action.payload?.route) {

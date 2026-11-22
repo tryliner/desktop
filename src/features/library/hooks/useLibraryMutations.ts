@@ -1,7 +1,11 @@
 import { useCallback, useState } from "react";
 import { api } from "@/shared/api";
 import { notifyLibraryChanged, evictPlaylistFromCache } from "./usePlaylists";
-import { setTrackLiked, toggleTrackLike } from "./useLikedTracks";
+import {
+  setTrackLiked,
+  toggleTrackLike,
+  type LikeTarget,
+} from "./useLikedTracks";
 
 type Options = {
   onSuccess?: (...args: any[]) => void;
@@ -133,13 +137,20 @@ export function useRemoveExternalItem() {
   );
 }
 
-type TrackMutationInput = string | { trackId: string; [key: string]: unknown };
-const trackIdFrom = (input: TrackMutationInput) =>
-  typeof input === "string" ? input : input.trackId;
+type TrackMutationInput =
+  LikeTarget | { trackId: string; [key: string]: unknown };
+
+function isLikeTarget(input: TrackMutationInput): input is LikeTarget {
+  return (
+    typeof input === "string" ||
+    ("id" in input && "title" in input && "artists" in input)
+  );
+}
 
 function useTrackLikeMutation(liked: boolean) {
   const mutateAsync = useCallback(
-    (input: TrackMutationInput) => setTrackLiked(trackIdFrom(input), liked),
+    (input: TrackMutationInput) =>
+      setTrackLiked(isLikeTarget(input) ? input : input.trackId, liked),
     [liked],
   );
   const mutate = useCallback(
@@ -165,13 +176,13 @@ export function useUnlikeTrack() {
 export function useToggleTrackLike() {
   return useCallback(
     (
-      trackId: string,
+      target: LikeTarget,
       options?: {
         onSuccess?: (liked: boolean) => void;
         onError?: (error: unknown) => void;
       },
     ): boolean => {
-      const { liked, settled } = toggleTrackLike(trackId);
+      const { liked, settled } = toggleTrackLike(target);
       settled.then(
         () => options?.onSuccess?.(liked),
         (error) => options?.onError?.(error),

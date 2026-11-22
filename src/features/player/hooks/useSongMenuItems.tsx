@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import {
   LuRadio,
   LuStepForward,
@@ -24,6 +24,7 @@ import { buildShareUrl } from "@/shared/utils/share";
 import { isLocalTrackId } from "@/shared/media/local";
 import { useIsTrackCached } from "@/features/library/cached/hooks/useIsTrackCached";
 import { removeTrackFromCache } from "@/shared/utils/cacheManager";
+import type { Track } from "@/shared/types";
 
 const CLOUD_ONLY_ITEMS = new Set([
   "start-radio",
@@ -36,8 +37,10 @@ const CLOUD_ONLY_ITEMS = new Set([
 
 export interface SongMenuContext {
   id?: string;
+  track?: Track;
   title: string;
   artists: string;
+  artistList?: Track["artistList"];
   coverUrl: string;
   duration?: string;
   durationMs?: number;
@@ -55,8 +58,10 @@ export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
   const { t } = useTranslation();
   const {
     id,
+    track,
     title,
     artists,
+    artistList,
     coverUrl,
     duration,
     durationMs,
@@ -73,7 +78,23 @@ export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
 
   const toggleLike = useToggleTrackLike();
 
-  const liked = useIsTrackLiked(id);
+  const likeTarget = useMemo(
+    () =>
+      track ??
+      (id
+        ? {
+            id,
+            title,
+            artists,
+            artistList,
+            coverUrl,
+            durationMs: durationMs ?? 0,
+            playCount: 0,
+          }
+        : undefined),
+    [artistList, artists, coverUrl, durationMs, id, title, track],
+  );
+  const liked = useIsTrackLiked(likeTarget);
 
   const isTrack = searchType === "track" || !searchType;
   const cached = useIsTrackCached(isTrack ? id : undefined);
@@ -89,8 +110,8 @@ export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
 
   const handleLike = useCallback(() => {
     if (!id) return;
-    toggleLike(id);
-  }, [id, toggleLike]);
+    if (likeTarget) toggleLike(likeTarget);
+  }, [id, likeTarget, toggleLike]);
 
   const handleShare = useCallback(() => {
     if (!id) return;

@@ -2,6 +2,8 @@ import { useEffect, useSyncExternalStore } from "react";
 import { api, getAuthSession, toClientTrack } from "@/shared/api";
 import { notifyLibraryChanged } from "./usePlaylists";
 import type { Track } from "@/shared/types";
+import { isSameRecording, recordingProfile } from "@/shared/media/matching";
+import type { Track as CatalogTrack } from "@/shared/contracts";
 
 type LikedData = { tracks: Track[]; total: number };
 const EMPTY: LikedData = { tracks: [], total: 0 };
@@ -70,6 +72,52 @@ function snapshot() {
 
 const SERVER_SNAPSHOT = { data: EMPTY, isLoading: true, error: false };
 
+export type LikeTarget = string | Track;
+
+function toCatalogTrack(track: Track): CatalogTrack {
+  const artists =
+    track.artistList?.map((artist) => ({
+      id: artist.id ?? "",
+      name: artist.name,
+    })) ??
+    track.artists
+      .split(",")
+      .map((name) => name.trim())
+      .filter(Boolean)
+      .map((name) => ({ id: "", name }));
+  return {
+    id: track.id,
+    title: track.title,
+    artists,
+    durationMs: track.durationMs,
+  };
+}
+
+function equivalentTrack(target: Track, candidate: Track): boolean {
+  return isSameRecording(
+    recordingProfile(toCatalogTrack(target)),
+    toCatalogTrack(candidate),
+  );
+}
+
+function likedTrackFor(target: Track): Track | undefined {
+  if (cache.tracks.some((track) => track.id === target.id)) {
+    return cache.tracks.find((track) => track.id === target.id);
+  }
+  return cache.tracks.find((track) => equivalentTrack(target, track));
+}
+
+function likeIdFor(target: LikeTarget): string {
+  if (typeof target === "string") return target;
+  return likedTrackFor(target)?.id ?? target.id;
+}
+
+function isLikedById(trackId: string): boolean {
+  const override = optimisticOverrides.get(trackId);
+  if (override !== undefined) return override;
+  return cache.tracks.some((track) => track.id === trackId);
+}
+
 function load(force = false): Promise<void> {
   if (request) {
     if (force) reloadQueued = true;
@@ -135,10 +183,10 @@ function dropConfirmedOverrides(startEpoch: number) {
   }
 }
 
-export function isTrackLikedNow(trackId: string): boolean {
-  const override = optimisticOverrides.get(trackId);
-  if (override !== undefined) return override;
-  return cache.tracks.some((t) => t.id === trackId);
+export function isTrackLikedNow(target: LikeTarget): boolean {
+  if (typeof target === "string") return isLikedById(target);
+  const matching = likedTrackFor(target);
+  return matching ? isLikedById(matching.id) : isLikedById(target.id);
 }
 
 function settleLikeWaiters(trackId: string, error?: unknown) {
@@ -177,13 +225,17 @@ async function syncTrackLike(trackId: string, confirmed: boolean) {
   if (sent) notifyLibraryChanged();
 }
 
-export function setTrackLiked(trackId: string, liked: boolean): Promise<void> {
+export function setTrackLiked(
+  target: LikeTarget,
+  liked: boolean,
+): Promise<void> {
+  const trackId = likeIdFor(target);
   const settled = new Promise<void>((resolve, reject) => {
     const waiters = likeWaiters.get(trackId) ?? [];
     waiters.push({ resolve, reject });
     likeWaiters.set(trackId, waiters);
   });
-  const confirmed = isTrackLikedNow(trackId);
+  const confirmed = isTrackLikedNow(target);
   desiredLikes.set(trackId, liked);
   optimisticOverrides.set(trackId, liked);
   emit(false);
@@ -191,12 +243,12 @@ export function setTrackLiked(trackId: string, liked: boolean): Promise<void> {
   return settled;
 }
 
-export function toggleTrackLike(trackId: string): {
+export function toggleTrackLike(target: LikeTarget): {
   liked: boolean;
   settled: Promise<void>;
 } {
-  const liked = !isTrackLikedNow(trackId);
-  return { liked, settled: setTrackLiked(trackId, liked) };
+  const liked = !isTrackLikedNow(target);
+  return { liked, settled: setTrackLiked(target, liked) };
 }
 
 export function reloadLikedTracks(): Promise<void> {

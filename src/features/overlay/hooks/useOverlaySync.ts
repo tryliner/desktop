@@ -36,7 +36,7 @@ export function useOverlaySync() {
   const volume = usePlayerStore((s) => s.volume);
   const playbackRate = usePlayerStore((s) => s.playbackRate);
   const effectiveCover = useCoverSrc(currentTrack?.coverUrl);
-  const isLiked = useIsTrackLiked(currentTrack?.id);
+  const isLiked = useIsTrackLiked(currentTrack);
   const toggleLike = useToggleTrackLike();
   const sentPositionRef = useRef<SentPosition | null>(null);
   const lastUnmutedLevelRef = useRef(DEFAULT_UNMUTE_LEVEL);
@@ -137,7 +137,7 @@ export function useOverlaySync() {
                 (action.payload as any)?.fromGlobalShortcut ||
                 (action as any).fromGlobalShortcut,
               );
-              toggleLike(currentTrack.id, {
+              toggleLike(currentTrack, {
                 onSuccess: (liked) => {
                   if (!fromGlobal) return;
                   showToast(

@@ -394,13 +394,13 @@ function MiniPlayer({
   const currentTrack = player.currentTrack;
   const volumeLevel = toVolumeLevel(player.volume);
   const isLocal = isLocalTrackId(currentTrack?.id);
-  const isLiked = useIsTrackLiked(currentTrack?.id);
+  const isLiked = useIsTrackLiked(currentTrack);
   const eqActive = isEqActive(player.isEqEnabled, player.eqGains);
   const toggleLike = useToggleTrackLike();
 
   const handleLikeToggle = useCallback(() => {
     if (!currentTrack) return;
-    toggleLike(currentTrack.id);
+    toggleLike(currentTrack);
   }, [currentTrack, toggleLike]);
 
   const durationMs =
@@ -427,6 +427,7 @@ function MiniPlayer({
 
   const songMenuItems = useSongMenuItems({
     id: currentTrack?.id,
+    track: currentTrack ?? undefined,
     title: currentTrack?.title ?? "",
     artists: currentTrack?.artists ?? "",
     coverUrl: currentTrack?.coverUrl ?? "",

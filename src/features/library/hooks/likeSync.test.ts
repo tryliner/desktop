@@ -52,12 +52,20 @@ vi.mock("@/shared/api", () => ({
     }),
   },
   getAuthSession: () => ({ accessToken: "token", user: { id: "u1" } }),
-  toClientTrack: (track: { id: string }) => ({
+  toClientTrack: (track: {
+    id: string;
+    title?: string;
+    artists?: string | { id?: string; name: string }[];
+    durationMs?: number;
+  }) => ({
     id: track.id,
-    title: "",
-    artists: "",
+    title: track.title ?? "",
+    artists: Array.isArray(track.artists)
+      ? track.artists.map((artist) => artist.name).join(", ")
+      : (track.artists ?? ""),
+    artistList: Array.isArray(track.artists) ? track.artists : undefined,
     coverUrl: "",
-    durationMs: 0,
+    durationMs: track.durationMs ?? 0,
     playCount: 0,
   }),
 }));
@@ -69,6 +77,7 @@ import {
   setTrackLiked,
   toggleTrackLike,
 } from "./useLikedTracks";
+import { api } from "@/shared/api";
 
 const flush = async () => {
   for (let i = 0; i < 20; i++) await Promise.resolve();
@@ -162,5 +171,43 @@ describe("like sync", () => {
     calls.shift()!.reject(new Error("offline"));
     await expect(settled).rejects.toThrow("offline");
     expect(isTrackLikedNow("broken")).toBe(false);
+  });
+
+  it("treats equivalent album and liked-list versions as one like", async () => {
+    vi.mocked(api.listLikedTracks).mockResolvedValueOnce({
+      items: [
+        {
+          track: {
+            id: "liked-version",
+            title: "Song",
+            artists: [{ id: "artist", name: "Artist" }],
+            durationMs: 180_000,
+          },
+          likedAt: "2026-11-08",
+        },
+      ],
+      nextCursor: null,
+    });
+    await reloadLikedTracks();
+
+    const albumVersion = {
+      id: "album-version",
+      title: "Song",
+      artists: "Artist",
+      durationMs: 180_500,
+      coverUrl: "",
+      playCount: 0,
+    };
+
+    expect(isTrackLikedNow(albumVersion)).toBe(true);
+    const { liked, settled } = toggleTrackLike(albumVersion);
+    expect(liked).toBe(false);
+    expect(calls.map((call) => [call.method, call.id])).toEqual([
+      ["unlike", "liked-version"],
+    ]);
+
+    calls.shift()!.resolve();
+    await settled;
+    expect(isTrackLikedNow(albumVersion)).toBe(false);
   });
 });
