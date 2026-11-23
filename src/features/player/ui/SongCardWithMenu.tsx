@@ -7,10 +7,12 @@ import { useToast } from "@/shared/ui";
 import { useTranslation } from "@/languages";
 
 import type { TrackArtist } from "@/shared/types";
+import type { Track } from "@/shared/types";
 import { isLocalTrackId } from "@/shared/media/local";
 
 export interface SongCardWithMenuProps {
   id?: string;
+  track?: Track;
   title: string;
   artists: string;
   artistId?: string;
@@ -45,6 +47,7 @@ export interface SongCardWithMenuProps {
 
 function SongCardWithMenu({
   id,
+  track,
   title,
   artists,
   artistId,
@@ -90,8 +93,10 @@ function SongCardWithMenu({
 
   const menuItems = useSongMenuItems({
     id,
+    track,
     title,
     artists,
+    artistList,
     coverUrl,
     duration,
     durationMs: resolvedDurationMs,

@@ -1,7 +1,6 @@
 import { useCallback, useState } from "react";
 import { api } from "@/shared/api";
 import { notifyLibraryChanged, evictPlaylistFromCache } from "./usePlaylists";
-import { setTrackLiked, toggleTrackLike } from "./useLikedTracks";
 
 type Options = {
   onSuccess?: (...args: any[]) => void;
@@ -42,7 +41,6 @@ export function useAddPlaylistTracks() {
       api.addPlaylistTrack(playlistId, trackId),
   );
 }
-
 export function useRemovePlaylistTracks() {
   return useMutation(
     ({ playlistId, itemId }: { playlistId: string; itemId: string }) =>
@@ -130,54 +128,5 @@ export function useRemoveExternalItem() {
       }
       return api.removeCollection(`${type}s` as "albums" | "artists", id);
     },
-  );
-}
-
-type TrackMutationInput = string | { trackId: string; [key: string]: unknown };
-const trackIdFrom = (input: TrackMutationInput) =>
-  typeof input === "string" ? input : input.trackId;
-
-function useTrackLikeMutation(liked: boolean) {
-  const mutateAsync = useCallback(
-    (input: TrackMutationInput) => setTrackLiked(trackIdFrom(input), liked),
-    [liked],
-  );
-  const mutate = useCallback(
-    (input: TrackMutationInput, options?: Options) => {
-      void mutateAsync(input)
-        .then((value) => options?.onSuccess?.(value))
-        .catch((error) => options?.onError?.(error))
-        .finally(() => options?.onSettled?.());
-    },
-    [mutateAsync],
-  );
-  return { mutate, mutateAsync, isPending: false };
-}
-
-export function useLikeTrack() {
-  return useTrackLikeMutation(true);
-}
-
-export function useUnlikeTrack() {
-  return useTrackLikeMutation(false);
-}
-
-export function useToggleTrackLike() {
-  return useCallback(
-    (
-      trackId: string,
-      options?: {
-        onSuccess?: (liked: boolean) => void;
-        onError?: (error: unknown) => void;
-      },
-    ): boolean => {
-      const { liked, settled } = toggleTrackLike(trackId);
-      settled.then(
-        () => options?.onSuccess?.(liked),
-        (error) => options?.onError?.(error),
-      );
-      return liked;
-    },
-    [],
   );
 }

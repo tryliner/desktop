@@ -21,12 +21,12 @@ export function FullscreenTrackInfo({ onClose }: FullscreenTrackInfoProps) {
   const glassBlur = useGlassBlur();
 
   const isLocal = isLocalTrackId(track?.id);
-  const isLiked = useIsTrackLiked(track?.id);
+  const isLiked = useIsTrackLiked(track);
   const toggleLike = useToggleTrackLike();
 
   const handleLikeToggle = useCallback(() => {
     if (!track) return;
-    toggleLike(track.id);
+    toggleLike(track);
   }, [track, toggleLike]);
 
   return (

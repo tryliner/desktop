@@ -1,10 +1,9 @@
-import { useMemo } from "react";
-import { useLikedTracks } from "./useLikedTracks";
+import { isTrackLikedNow, useLikedTracks } from "./useLikedTracks";
+import type { Track } from "@/shared/types";
 
-export function useIsTrackLiked(trackId: string | undefined): boolean {
-  const { data } = useLikedTracks();
-  return useMemo(() => {
-    if (!trackId || !data?.tracks) return false;
-    return data.tracks.some((t) => t.id === trackId);
-  }, [trackId, data]);
+export function useIsTrackLiked(
+  track: string | Track | null | undefined,
+): boolean {
+  useLikedTracks();
+  return track ? isTrackLikedNow(track) : false;
 }

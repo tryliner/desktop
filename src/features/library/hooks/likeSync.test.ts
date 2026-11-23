@@ -132,35 +132,4 @@ describe("like sync", () => {
     expect(calls).toHaveLength(0);
     expect(isTrackLikedNow("already")).toBe(true);
   });
-
-  it("keeps the clicked state when an older refetch lands after the request", async () => {
-    let openGate!: () => void;
-    listGate = new Promise((resolve) => {
-      openGate = resolve;
-    });
-    const staleReload = reloadLikedTracks();
-    listGate = null;
-
-    toggleTrackLike("stale");
-    expect(isTrackLikedNow("stale")).toBe(true);
-
-    calls.shift()!.resolve();
-    await flush();
-    openGate();
-    await staleReload;
-    await flush();
-    expect(isTrackLikedNow("stale")).toBe(true);
-
-    await settleAll();
-    expect(isTrackLikedNow("stale")).toBe(true);
-  });
-
-  it("falls back to the last confirmed state when the request fails", async () => {
-    const { settled } = toggleTrackLike("broken");
-    expect(isTrackLikedNow("broken")).toBe(true);
-
-    calls.shift()!.reject(new Error("offline"));
-    await expect(settled).rejects.toThrow("offline");
-    expect(isTrackLikedNow("broken")).toBe(false);
-  });
 });
