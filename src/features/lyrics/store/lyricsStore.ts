@@ -305,6 +305,11 @@ export const useLyricsStore = create<LyricsState>()(
           if (!state.trackOffsets) {
             state.trackOffsets = {};
           }
+          state.offsetMs =
+            state.currentLyricsTrackId &&
+            state.trackOffsets[state.currentLyricsTrackId] !== undefined
+              ? state.trackOffsets[state.currentLyricsTrackId]
+              : 0;
         }
       },
       partialize: (state) => ({
