@@ -73,6 +73,7 @@ export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
     onRemoveFromQueue,
     onRemoveFromDevice,
   } = ctx;
+  const effectiveId = id ?? track?.id;
 
   const { data: playlistsData } = usePlaylistsList();
 
@@ -80,50 +81,50 @@ export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
 
   const likeTarget = useMemo(
     () =>
-      track ??
-      (id
-        ? {
-            id,
-            title,
-            artists,
-            artistList,
-            coverUrl,
-            durationMs: durationMs ?? 0,
-            playCount: 0,
-          }
-        : undefined),
-    [artistList, artists, coverUrl, durationMs, id, title, track],
+      effectiveId
+        ? track?.id === effectiveId
+          ? track
+          : {
+              id: effectiveId,
+              title,
+              artists,
+              artistList,
+              coverUrl,
+              durationMs: durationMs ?? 0,
+              playCount: 0,
+            }
+        : undefined,
+    [artistList, artists, coverUrl, durationMs, effectiveId, title, track],
   );
   const liked = useIsTrackLiked(likeTarget);
 
   const isTrack = searchType === "track" || !searchType;
-  const cached = useIsTrackCached(isTrack ? id : undefined);
+  const cached = useIsTrackCached(isTrack ? effectiveId : undefined);
 
   const handleRemoveFromCache = useCallback(() => {
-    if (!id) return;
-    void removeTrackFromCache(id).then(() => {
+    if (!effectiveId) return;
+    void removeTrackFromCache(effectiveId).then(() => {
       showToast(t("common.removed_from_cache"), "checkmark", {
         description: artists ? `${title} — ${artists}` : title,
       });
     });
-  }, [id, title, artists, t]);
+  }, [effectiveId, title, artists, t]);
 
   const handleLike = useCallback(() => {
-    if (!id) return;
     if (likeTarget) toggleLike(likeTarget);
-  }, [id, likeTarget, toggleLike]);
+  }, [likeTarget, toggleLike]);
 
   const handleShare = useCallback(() => {
-    if (!id) return;
+    if (!effectiveId) return;
     if (typeof navigator !== "undefined" && navigator.clipboard) {
       const type =
         (searchType as "track" | "album" | "artist" | "playlist") || "track";
-      void navigator.clipboard.writeText(buildShareUrl(type, id));
+      void navigator.clipboard.writeText(buildShareUrl(type, effectiveId));
       showToast(t("common.link_copied"), "checkmark", {
         description: artists ? `${title} — ${artists}` : title,
       });
     }
-  }, [id, searchType, title, artists, t]);
+  }, [effectiveId, searchType, title, artists, t]);
 
   const buildMenu = useCallback((): DropdownMenuItem[] => {
     const isTrack = searchType === "track" || !searchType;
@@ -136,9 +137,9 @@ export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
             label: t("common.start_radio"),
             icon: <LuRadio size={15} />,
             onClick: () => {
-              if (!id) return;
+              if (!effectiveId) return;
               void playerEngine.startRadioStation({
-                id,
+                id: effectiveId,
                 title,
                 artists,
                 coverUrl,
@@ -152,9 +153,9 @@ export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
             label: t("common.play_next"),
             icon: <LuStepForward size={15} />,
             onClick: () => {
-              if (!id) return;
+              if (!effectiveId) return;
               playerEngine.playNext({
-                id,
+                id: effectiveId,
                 title,
                 artists,
                 coverUrl,
@@ -168,9 +169,9 @@ export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
             label: t("common.add_to_queue"),
             icon: <LuListPlus size={15} />,
             onClick: () => {
-              if (!id) return;
+              if (!effectiveId) return;
               playerEngine.addToQueue({
-                id,
+                id: effectiveId,
                 title,
                 artists,
                 coverUrl,
@@ -207,9 +208,9 @@ export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
             icon: <LuTrash2 size={15} />,
             danger: true,
             onClick: () => {
-              if (!id) return;
+              if (!effectiveId) return;
               useModalStore.getState().openRemoveFromPlaylist({
-                trackId: id,
+                trackId: effectiveId,
                 playlistItemId,
                 trackTitle: title,
                 trackArtists: artists,
@@ -228,9 +229,9 @@ export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
           label: t("common.start_radio"),
           icon: <LuRadio size={15} />,
           onClick: () => {
-            if (!id) return;
+            if (!effectiveId) return;
             void playerEngine.startRadioStation({
-              id,
+              id: effectiveId,
               title,
               artists,
               coverUrl,
@@ -244,9 +245,9 @@ export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
           label: t("common.play_next"),
           icon: <LuStepForward size={15} />,
           onClick: () => {
-            if (!id) return;
+            if (!effectiveId) return;
             playerEngine.playNext({
-              id,
+              id: effectiveId,
               title,
               artists,
               coverUrl,
@@ -260,9 +261,9 @@ export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
           label: t("common.add_to_queue"),
           icon: <LuListPlus size={15} />,
           onClick: () => {
-            if (!id) return;
+            if (!effectiveId) return;
             playerEngine.addToQueue({
-              id,
+              id: effectiveId,
               title,
               artists,
               coverUrl,
@@ -292,9 +293,9 @@ export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
           label: t("common.add_to_playlist"),
           icon: <LuPlus size={15} />,
           onClick: () => {
-            if (!id) return;
+            if (!effectiveId) return;
             useModalStore.getState().openAddToPlaylist({
-              id,
+              id: effectiveId,
               title,
               artists,
               coverUrl,
@@ -329,9 +330,9 @@ export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
         label: t("common.add_to_library"),
         icon: <LuFolderPlus size={15} />,
         onClick: () => {
-          if (!id) return;
+          if (!effectiveId) return;
           useModalStore.getState().openAddToLibrary({
-            id,
+            id: effectiveId,
             title,
             coverUrl,
             type: (searchType as "album" | "artist" | "playlist") || "album",
@@ -348,7 +349,7 @@ export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
       },
     ];
   }, [
-    id,
+    effectiveId,
     title,
     artists,
     coverUrl,
@@ -368,7 +369,7 @@ export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
   ]);
 
   const items = buildMenu();
-  if (!isLocalTrackId(id)) {
+  if (!isLocalTrackId(effectiveId)) {
     if (!cached) return items;
     const removeFromCacheItem: DropdownMenuItem = {
       id: "remove-from-cache",

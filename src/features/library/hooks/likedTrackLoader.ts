@@ -20,6 +20,22 @@ let request: Promise<void> | null = null;
 let reloadQueued = false;
 let requestOwner: string | null = null;
 let activeOwner: string | null = null;
+let reloadPromise: Promise<void> | null = null;
+let resolveReloadPromise: (() => void) | null = null;
+
+function beginForcedReload(): Promise<void> {
+  if (reloadPromise) return reloadPromise;
+  reloadPromise = new Promise<void>((resolve) => {
+    resolveReloadPromise = resolve;
+  });
+  return reloadPromise;
+}
+
+function finishForcedReload() {
+  resolveReloadPromise?.();
+  resolveReloadPromise = null;
+  reloadPromise = null;
+}
 
 export function loadLikedTracks(force = false): Promise<void> {
   const session = getAuthSession();
@@ -36,10 +52,14 @@ export function loadLikedTracks(force = false): Promise<void> {
     optimisticTracks.clear();
     likeSettledEpoch.clear();
     emitLikedTracks(false);
+    finishForcedReload();
     return Promise.resolve();
   }
   if (request) {
-    if (force || owner !== requestOwner) reloadQueued = true;
+    if (force || owner !== requestOwner) {
+      reloadQueued = true;
+      if (force) return beginForcedReload();
+    }
     return request;
   }
   if (loaded && !force) return Promise.resolve();
@@ -64,7 +84,8 @@ export function loadLikedTracks(force = false): Promise<void> {
     if (
       getAuthGeneration() !== startGeneration ||
       (getAuthSession()?.user?.id ?? null) !== owner
-    ) return;
+    )
+      return;
     setLikedCache(tracks, true);
     loaded = true;
     setLikedLoadFailed(false);
@@ -74,7 +95,8 @@ export function loadLikedTracks(force = false): Promise<void> {
       if (
         getAuthGeneration() !== startGeneration ||
         (getAuthSession()?.user?.id ?? null) !== owner
-      ) return;
+      )
+        return;
       if (!likedWasFetchedFromServer()) clearLikedCache();
       loaded = likedWasFetchedFromServer();
       setLikedLoadFailed(true);
@@ -85,9 +107,11 @@ export function loadLikedTracks(force = false): Promise<void> {
       if (reloadQueued) {
         reloadQueued = false;
         void loadLikedTracks(true);
+      } else {
+        finishForcedReload();
       }
     });
-  return request;
+  return reloadPromise ?? request;
 }
 
 export function reloadLikedTracks() {

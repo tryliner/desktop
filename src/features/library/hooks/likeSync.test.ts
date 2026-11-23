@@ -132,5 +132,4 @@ describe("like sync", () => {
     expect(calls).toHaveLength(0);
     expect(isTrackLikedNow("already")).toBe(true);
   });
-
 });

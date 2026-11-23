@@ -16,11 +16,20 @@ function isLikedById(trackId: string): boolean {
 
 export function likedTrackFor(target: Track): Track | undefined {
   const cache = getLikedCache();
+  const exactOverride = optimisticOverrides.get(target.id);
+  if (exactOverride !== undefined) {
+    const exactCache = cache.tracks.find((track) => track.id === target.id);
+    return exactCache ?? target;
+  }
   const exactCache = cache.tracks.find((track) => track.id === target.id);
   if (exactCache) return exactCache;
-  const cachedMatch = cache.tracks.find((track) =>
+  const equivalentMatches = cache.tracks.filter((track) =>
     equivalentTrack(target, track),
   );
+  const likedCachedMatch = equivalentMatches.find((track) =>
+    isLikedById(track.id),
+  );
+  const cachedMatch = likedCachedMatch ?? equivalentMatches[0];
   if (cachedMatch) return cachedMatch;
   const pending = [...optimisticTracks.entries()].find(
     ([id, track]) =>

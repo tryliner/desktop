@@ -9,9 +9,11 @@ import type { DropdownMenuItem } from "@/shared/ui/DropdownMenu";
 
 (globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
 
+const toggleLike = vi.hoisted(() => vi.fn());
+
 vi.mock("@/features/library", () => ({
   usePlaylistsList: () => ({ data: { playlists: [] } }),
-  useToggleTrackLike: () => vi.fn(),
+  useToggleTrackLike: () => toggleLike,
   useIsTrackLiked: () => false,
   useModalStore: {
     getState: () => ({
@@ -105,6 +107,31 @@ describe("useSongMenuItems", () => {
     expect(showToast).toHaveBeenCalledWith("Link copied", "checkmark", {
       description: "Tarde o temprano — Nsqk",
     });
+  });
+
+  it("likes a full track when the context has no separate id", () => {
+    const track = {
+      id: "track-123",
+      title: "Tarde o temprano",
+      artists: "Nsqk",
+      artistList: [{ id: "artist-1", name: "Nsqk" }],
+      coverUrl: "https://covers.tryliner.fun/test.jpg",
+      durationMs: 180_000,
+      playCount: 0,
+    };
+    const getResult = renderHookHelper({
+      track,
+      title: track.title,
+      artists: track.artists,
+      artistList: track.artistList,
+      coverUrl: track.coverUrl,
+      durationMs: track.durationMs,
+    });
+
+    const likeItem = getResult().find((item) => item.id === "like-track");
+    expect(likeItem).toBeDefined();
+    act(() => likeItem?.onClick?.());
+    expect(toggleLike).toHaveBeenCalledWith(track);
   });
 
   it("includes share item when inside a playlist with remove-from-playlist option", () => {

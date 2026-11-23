@@ -17,10 +17,7 @@ export {
   applyOptimisticLike,
   applyOptimisticUnlike,
 } from "./likedTrackOptimistic";
-export {
-  reloadLikedTracks,
-  loadLikedTracks,
-};
+export { reloadLikedTracks, loadLikedTracks };
 export { subscribeLikedTracks } from "./likedTrackStore";
 export type { LikeTarget } from "./likedTrackMatching";
 

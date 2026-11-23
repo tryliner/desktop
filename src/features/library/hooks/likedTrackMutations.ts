@@ -1,10 +1,7 @@
 import { api } from "@/shared/api";
 import { notifyLibraryChanged } from "./usePlaylists";
 import type { LikeTarget } from "./likedTrackMatching";
-import {
-  isTrackLikedNow,
-  likeIdFor,
-} from "./likedTrackResolver";
+import { isTrackLikedNow, likeIdFor } from "./likedTrackResolver";
 import {
   emitLikedTracks,
   incrementLikedSyncEpoch,
@@ -13,6 +10,7 @@ import {
   optimisticOverrides,
   optimisticTracks,
   syncingLikes,
+  bumpOptimisticOverrideVersion,
 } from "./likedTrackStore";
 
 const desiredLikesByGeneration = new Map<string, boolean>();
@@ -89,6 +87,7 @@ async function syncTrackLike(
   const epoch = incrementLikedSyncEpoch();
   likeSettledEpoch.set(trackId, epoch);
   optimisticOverrides.set(trackId, serverLiked);
+  bumpOptimisticOverrideVersion(trackId, "setter");
   if (!serverLiked) optimisticTracks.delete(trackId);
   emitLikedTracks(false);
   settleLikeWaiters(generation, trackId, failure);
@@ -110,6 +109,7 @@ export function setTrackLiked(
   const confirmed = isTrackLikedNow(target);
   desiredLikesByGeneration.set(key, liked);
   optimisticOverrides.set(trackId, liked);
+  bumpOptimisticOverrideVersion(trackId, "setter");
   if (liked && typeof target !== "string") {
     optimisticTracks.set(trackId, target);
   }

@@ -15,6 +15,8 @@ export const optimisticOverrides = new Map<string, boolean>();
 export const optimisticTracks = new Map<string, Track>();
 export const syncingLikes = new Set<string>();
 export const likeSettledEpoch = new Map<string, number>();
+export const optimisticOverrideVersions = new Map<string, number>();
+export const optimisticOverrideWriters = new Map<string, symbol | "setter">();
 const listeners = new Set<() => void>();
 
 export const SERVER_SNAPSHOT = { data: EMPTY, isLoading: true, error: false };
@@ -30,18 +32,24 @@ export function buildLikedView(isLoading: boolean) {
     if (!liked || tracks.some((track) => track.id === id)) continue;
     const track = optimisticTracks.get(id);
     tracks = [
-      track ? { ...track, id } : ({
-        id,
-        title: "",
-        artists: "",
-        coverUrl: "",
-        durationMs: 0,
-        playCount: 0,
-      } as Track),
+      track
+        ? { ...track, id }
+        : ({
+            id,
+            title: "",
+            artists: "",
+            coverUrl: "",
+            durationMs: 0,
+            playCount: 0,
+          } as Track),
       ...tracks,
     ];
   }
-  return { data: { tracks, total: tracks.length }, isLoading, error: loadFailed };
+  return {
+    data: { tracks, total: tracks.length },
+    isLoading,
+    error: loadFailed,
+  };
 }
 
 export function emitLikedTracks(isLoading = false) {
@@ -93,6 +101,16 @@ export function incrementLikedSyncEpoch() {
   return likeEpoch;
 }
 
+export function bumpOptimisticOverrideVersion(
+  trackId: string,
+  writer?: symbol | "setter",
+) {
+  const version = (optimisticOverrideVersions.get(trackId) ?? 0) + 1;
+  optimisticOverrideVersions.set(trackId, version);
+  if (writer) optimisticOverrideWriters.set(trackId, writer);
+  return version;
+}
+
 export function dropConfirmedOverrides(startEpoch: number) {
   for (const id of optimisticOverrides.keys()) {
     if (syncingLikes.has(id)) continue;
@@ -119,6 +137,8 @@ export function setActiveAuthOwner(owner: string | null) {
   optimisticTracks.clear();
   syncingLikes.clear();
   likeSettledEpoch.clear();
+  optimisticOverrideVersions.clear();
+  optimisticOverrideWriters.clear();
   emitLikedTracks(false);
   return true;
 }
