@@ -56,6 +56,10 @@ import { detectCompositor } from "./compositor/index.js";
 import { BundleManager } from "./bundle-manager.js";
 import { createBundleErrorStamp } from "./bundle-stamp.js";
 import { createSleepBlocker } from "./sleep-blocker.js";
+import {
+  BackgroundTray,
+  shouldKeepPlayingInBackground,
+} from "./background-playback.js";
 import { keepsOwnCors, needsOpenCors, withOpenCors } from "./cors.js";
 import { IS_STAGING, useChannelData } from "./channel.js";
 import {
@@ -141,6 +145,9 @@ process.env.VITE_PUBLIC = process.env.VITE_DEV_SERVER_URL
   : RENDERER_DIST;
 
 let mainWindow: BrowserWindow | null = null;
+let backgroundTray: BackgroundTray | null = null;
+// last playback status the renderer reported; decides whether closing the window keeps playing
+let playbackStatus: string | undefined;
 let touchBarManager: TouchBarManager | null = null;
 let overlayManager: OverlayManager | null = null;
 let thumbar: ThumbarController | null = null;
@@ -210,10 +217,32 @@ function unmaximizeWindow() {
   else resize();
 }
 
+// tray icon shown while the window is hidden and music keeps playing
+function getBackgroundTray(): BackgroundTray {
+  backgroundTray ??= new BackgroundTray({
+    iconPath: path.join(process.env.VITE_PUBLIC!, "icon.png"),
+    onShow: () => {
+      if (!mainWindow || mainWindow.isDestroyed()) {
+        createWindow();
+        return;
+      }
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.show();
+      mainWindow.focus();
+    },
+    onQuit: () => shutdown.quit(),
+  });
+  return backgroundTray;
+}
+
 // single owner of "the app is going away": releases the overlay, shortcuts,
 // helper processes and every window, then quits and force-exits if that stalls
 const shutdown = createShutdown({
   cleanup: [
+    () => {
+      backgroundTray?.hide();
+      backgroundTray = null;
+    },
     () => touchBarManager?.unregisterShortcut(),
     () => overlayManager?.dispose(),
     () => {
@@ -401,7 +430,18 @@ function createWindow() {
   mainWindow.on("move", trackWindowState);
   mainWindow.on("maximize", trackWindowState);
   mainWindow.on("unmaximize", trackWindowState);
-  mainWindow.on("close", () => windowState.flush(mainWindowSnapshot));
+  mainWindow.on("close", (event) => {
+    windowState.flush(mainWindowSnapshot);
+    // closing while music plays hides the window and keeps the app (and audio) running
+    // in the background; the tray brings it back or quits. macOS already keeps the app alive.
+    if (process.platform === "darwin") return;
+    if (!shouldKeepPlayingInBackground(playbackStatus, shutdown.isQuitting())) {
+      return;
+    }
+    event.preventDefault();
+    mainWindow?.hide();
+    getBackgroundTray().show();
+  });
   mainWindow.on("minimize", () => {
     broadcastWindowState();
     if (!mainWindow || mainWindow.isDestroyed()) return;
@@ -532,7 +572,10 @@ function createWindow() {
 
   touchBarManager?.setMainWindow(mainWindow);
   overlayManager?.setMainWindow(mainWindow);
-  mainWindow.on("show", () => thumbar?.refresh());
+  mainWindow.on("show", () => {
+    backgroundTray?.hide();
+    thumbar?.refresh();
+  });
   mainWindow.on("restore", () => thumbar?.refresh());
 }
 
@@ -614,6 +657,7 @@ if (!gotTheLock) {
     onTrusted(
       "touchbar:update-state",
       (_event, state: { status: string; track?: unknown }) => {
+        playbackStatus = state.status;
         updateSleepBlocker(state.status);
         poTokenService?.setPlaybackActive(
           state.status === "playing" || state.status === "loading",
